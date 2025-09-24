@@ -38,6 +38,7 @@
     "@heroui/scroll-shadow": "2.3.17",
     "@heroui/select": "2.4.27",
     "@heroui/skeleton": "2.2.16",
+    "@heroui/slider": "^2.4.23",
     "@heroui/snippet": "2.2.27",
     "@heroui/spacer": "2.2.20",
     "@heroui/spinner": "2.2.23",

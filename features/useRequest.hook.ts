@@ -1,29 +1,32 @@
-import { useRouter } from "next/router";
+"use client";
 import { useState } from "react";
-import { postPrompt } from "./openAi.services";
+import { QuizFormErrors } from "@/types";
+import { addToast } from "@heroui/toast";
 
-export function useRequest() {
+export function useRequest(requestMethod: (args: any) => Promise<any>) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const router = useRouter();
+  const [error, setError] = useState<QuizFormErrors>({});
 
-  const request = async (formData: FormData) => {
+  const request = async (formData: FormData, onSuccess?: () => void) => {
     setLoading(true);
-    setError(null);
+    setError({});
 
     try {
-      const result = await postPrompt(formData);
-      if (!result.ok) {
-        throw new Error("Network result was not ok");
-      }
-      return await result.json();
-    } catch (error) {
+      const questionare = await requestMethod(formData);
+      if (onSuccess) onSuccess();
+      return questionare;
+    } catch (error: any) {
       setError(error);
-      throw error;
+      addToast({
+        title: `Falha ao gerar questões`,
+        description:
+          error instanceof Error ? error.message : "Erro desconhecido",
+        color: "danger",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  return { loading, error, request };
+  return { loading, error, setError, request };
 }

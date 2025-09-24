@@ -1,17 +1,21 @@
 import { OPENAI_POST_URL } from "@/config/constants";
+import { Questionare } from "@/types";
 import api from "@/lib/bff.api";
-import { RequestBody } from "@/types";
 
-export async function postPrompt(formData: FormData) {
+export async function getQuestions(formData: FormData): Promise<Questionare> {
   const { num_questions, topic, difficulty_distribution } = parseFormData(
     formData,
     ["num_questions", "topic", "difficulty_distribution"]
   );
 
-  const { data } = await api.post(OPENAI_POST_URL, {
-    num_questions,
-    topic,
-    difficulty_distribution,
+  const { data } = await api.get<Questionare>(OPENAI_POST_URL, {
+    params: {
+      num_questions,
+      topic,
+      easy: 0.20,
+      medium: 0.50,
+      hard: 0.30,
+    },
   });
 
   return data;

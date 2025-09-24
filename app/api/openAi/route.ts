@@ -1,21 +1,36 @@
-import { RequestBody } from "@/types";
 import { NextRequest, NextResponse } from "next/server";
 import { OpenAI } from "openai";
 
-export async function POST(request: NextRequest) {
-  const body: RequestBody = await request.json();
+export async function GET(request: NextRequest) {
+
+  let topic: string | undefined;
+  let num_questions: number = 10;
+  let difficulty_distribution: { easy: number; medium: number; hard: number } | undefined;
+
+  try {
+    const url = new URL(request.url);
+    const params = url.searchParams;
+
+    topic = params.get("topic")?.trim() ?? undefined;
+    num_questions = Number(params.get("num_questions"));
+    const easy = Number(params.get("easy"));
+    const medium = Number(params.get("medium"));
+    const hard = Number(params.get("hard"));
+
+    difficulty_distribution = { easy, medium, hard };
+
+  } catch (err) {
+    return NextResponse.json({ error: "invalid query parameters" }, { status: 400 });
+  }
 
   const apiKey = process.env.OPENAI_API_KEY;
   const client = new OpenAI({ apiKey });
 
   const defaultDifficulty = { easy: 25, medium: 45, hard: 30 };
-  const topic = String(body.topic).trim();
-  const difficulty_distribution =
-    body.difficulty_distribution ?? defaultDifficulty;
+  const finalDifficulty = difficulty_distribution ?? defaultDifficulty;
 
-  const num_questions = Number(body?.num_questions ?? 10);
   if (!Number.isInteger(num_questions) || num_questions <= 0) {
-    return { error: "num_questions must be an integer > 0" };
+    return NextResponse.json({ error: "num_questions must be an integer > 0" }, { status: 400 });
   }
 
   const prompt = `You are an expert exam question writer for SAP certifications, specializing in SAP Commerce Cloud (Business User). Generate multiple-choice questions aligned with the SAP Certified Associate – Business User – SAP Commerce Cloud exam (C_C4H32_2411).
@@ -54,9 +69,9 @@ JSON format (exact schema, required when FORMATO_SAIDA is "json"):
       "estimated_time_sec": 90
     }
   ],
-  "answer_key": [
+  "answers": [
     {
-      "id": 1,
+      "question_id": 1,
       "correct_options": ["A","C"],
       "explanations": {"A":"...","B":"...","C":"...","D":"...","E":"..."}
     }
