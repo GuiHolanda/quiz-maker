@@ -61,12 +61,11 @@ JSON format (exact schema, required when FORMATO_SAIDA is "json"):
   "questions": [
     {
       "id": 1,
-      "question": "...",
-      "correct_count": 1,
+      "text": "...",
+      "correctCount": 1,
       "options": {"A":"...","B":"...","C":"...","D":"...","E":"..."},
-      "topic_subarea": "catalog",
+      "topicSubarea": "catalog",
       "difficulty": "medium",
-      "estimated_time_sec": 90
     }
   ],
   "answers": [
@@ -100,7 +99,7 @@ Acceptance criteria (model must satisfy when returning JSON):
   "questions": [
     {
       "id": 1,
-      "question": "Scenario: A marketing team wants to apply a 10% promotional discount to all products in the Summer Umbrella category for a limited time. The discount should automatically apply during checkout across all channels. Which SAP Commerce Cloud feature should you configure to achieve this? (Number of correct answers: 1)",
+      "question": "Scenario: A marketing team wants to apply a 10% promotional discount to all products in the Summer Umbrella category for a limited time. The discount should automatically apply during checkout across all channels. Which SAP Commerce Cloud feature should you configure to achieve this?",
       "correct_count": 1,
       "options": {
         "A": "Create a SmartEdit banner and link it to the promotion",
@@ -115,7 +114,7 @@ Acceptance criteria (model must satisfy when returning JSON):
     },
     {
       "id": 2,
-      "question": "Which two components are used to enforce an editorial workflow in Commerce Cloud to ensure catalog and content changes go through review before publishing? (Number of correct answers: 2)",
+      "question": "Which two components are used to enforce an editorial workflow in Commerce Cloud to ensure catalog and content changes go through review before publishing?",
       "correct_count": 2,
       "options": {
         "A": "Backoffice workflows to route tasks for approval",
@@ -130,7 +129,7 @@ Acceptance criteria (model must satisfy when returning JSON):
     },
     {
       "id": 3,
-      "question": "To avoid duplicating media assets across catalogs and ensure a single source of truth for product images, which SAP Commerce Cloud feature best supports centralized media management? (Number of correct answers: 1)",
+      "question": "To avoid duplicating media assets across catalogs and ensure a single source of truth for product images, which SAP Commerce Cloud feature best supports centralized media management?",
       "correct_count": 1,
       "options": {
         "A": "Media Library with global media items",
@@ -145,7 +144,7 @@ Acceptance criteria (model must satisfy when returning JSON):
     },
     {
       "id": 4,
-      "question": "You're tasked with updating the base price of a product for multiple currencies in the Backoffice. Which approach is supported in SAP Commerce Cloud? (Number of correct answers: 1)",
+      "question": "You're tasked with updating the base price of a product for multiple currencies in the Backoffice. Which approach is supported in SAP Commerce Cloud?",
       "correct_count": 1,
       "options": {
         "A": "Use price rows in the Price / Base Price section and specify currency",
@@ -160,7 +159,7 @@ Acceptance criteria (model must satisfy when returning JSON):
     },
     {
       "id": 5,
-      "question": "What is the primary purpose of Experience Fragments in SAP Commerce Cloud, and how do they relate to SmartEdit? (Number of correct answers: 1)",
+      "question": "What is the primary purpose of Experience Fragments in SAP Commerce Cloud, and how do they relate to SmartEdit?",
       "correct_count": 1,
       "options": {
         "A": "They store reusable layout and content fragments that can be reused across pages and channels, and can be edited via SmartEdit; they can be included in pages via slots.",
