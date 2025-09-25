@@ -50,6 +50,7 @@
     "@heroui/toast": "2.0.16",
     "@heroui/tooltip": "2.2.23",
     "@heroui/user": "2.2.21",
+    "@prisma/client": "^6.16.2",
     "@react-aria/ssr": "3.9.10",
     "@react-aria/visually-hidden": "3.8.27",
     "axios": "^1.12.2",
@@ -59,6 +60,7 @@
     "next": "15.3.1",
     "next-themes": "0.4.6",
     "openai": "^5.22.1",
+    "prisma": "^6.16.2",
     "react": "18.3.1",
     "react-dom": "18.3.1"
   },
