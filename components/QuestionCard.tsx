@@ -40,7 +40,7 @@ export function QuestionCard({ q }: { q: Question }) {
             <RadioGroup name={`q-${q.id}`}>
               {Object.entries(q.options).map(([key, val]) => (
                 <Radio key={key} value={key} classNames={{ label: "text-sm" }} className="w-4/5">
-                  {val}
+                  {String(val)}
                 </Radio>
               ))}
             </RadioGroup>

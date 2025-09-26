@@ -34,35 +34,19 @@ export interface Question {
   id: number;
   text: string;
   correctCount: number;
-  options: Record<string, string>;
-  topicSubarea: string;
+  topic: string;
   difficulty: string;
+  options: Option[];
+  answer: Answer;
+  topicSubarea?: string;
 }
 
-export interface Options {
-  id: number;
-  questionId: number;
-  question: Question;
-  explanations: Explanation[];
+export interface Option {
   label: string;
   text: string;
 }
 
 export interface Answer {
-  id: number;
-  questionId: number;
-  question: Question;
   correctOptions: string[];
-  explanations: Explanation[];
-}
-
-export interface Explanation {
-  id: number;
-  questionId: number;
-  question: Question;
-  answerId?: number;
-  answer?: Answer;
-  optionId?: number;
-  option?: Options;
-  text: string;
+  explanations: Option[];
 }
