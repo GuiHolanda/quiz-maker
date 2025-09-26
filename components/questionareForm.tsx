@@ -10,7 +10,7 @@ import { Slider } from "@heroui/slider";
 
 interface QuestionareFormProps {
   onGenerated: (questions: Questionare) => void;
-};
+}
 
 export function QuestionareForm({ onGenerated }: QuestionareFormProps) {
   const { loading, error, setError, request } = useRequest(getQuestions);
@@ -33,8 +33,8 @@ export function QuestionareForm({ onGenerated }: QuestionareFormProps) {
       return;
     }
 
-  const questions = await request(formData, () => form.reset());
-  onGenerated(questions);
+    const questions = await request(formData, () => form.reset());
+    onGenerated(questions);
   };
   return (
     <Form onSubmit={handleSubmit} validationErrors={error}>
@@ -57,37 +57,40 @@ export function QuestionareForm({ onGenerated }: QuestionareFormProps) {
             variant="flat"
           />
         </div>
-        <div className="flex w-full flex-col flex-wrap md:flex-nowrap gap-4">
-          <p className="text-sm">Difficulty distribution</p>
-          <div className="flex gap-6">
-            {difficultyLevels.map((level) => (
-              <Slider
-                key={level}
-                className="w-48 [&_.heroui-slider-label]:text-xs"
-                classNames={{
-                  label: "text-xs",
-                  value: "text-xs",
-                }}
-                name={`difficulty_distribution`}
-                formatOptions={{ style: "percent" }}
-                label={level}
-                size="sm"
-                maxValue={1}
-                minValue={0}
-                showTooltip={true}
-                step={0.1}
-              />
-            ))}
+        <div className="flex flex-col gap-6 md:gap-0 md:flex-row md:items-end">
+          <div className="flex flex-col flex-wrap md:flex-nowrap gap-4">
+            <p className="text-sm">Difficulty distribution</p>
+            <div className="flex gap-6">
+              {difficultyLevels.map((level) => (
+                <Slider
+                  key={level}
+                  className="w-36 [&_.heroui-slider-label]:text-xs"
+                  classNames={{
+                    label: "text-xs font-bold",
+                    value: "text-xs font-bolde",
+                    thumb: "h-3 w-4",
+                  }}
+                  name={`difficulty_distribution`}
+                  formatOptions={{ style: "percent" }}
+                  label={level}
+                  size="sm"
+                  maxValue={1}
+                  minValue={0}
+                  showTooltip={true}
+                  step={0.1}
+                />
+              ))}
+            </div>
           </div>
+          <Button
+            className="ml-auto bg-primary"
+            variant="flat"
+            type="submit"
+            disabled={loading}
+          >
+            Generate questions
+          </Button>
         </div>
-        <Button
-          className="ml-auto bg-primary"
-          variant="flat"
-          type="submit"
-          disabled={loading}
-        >
-          Generate questions
-        </Button>
       </CardBody>
     </Form>
   );
