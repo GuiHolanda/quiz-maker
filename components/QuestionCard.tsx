@@ -1,5 +1,5 @@
-import { ChangeEvent, FormEvent, useState } from "react";
-import { Card, CardHeader, CardBody, CardFooter } from "@heroui/card";
+import { FormEvent, useState, useEffect } from "react";
+import { Card, CardHeader, CardBody } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Question } from "@/types";
 import { CheckboxGroup, Checkbox } from "@heroui/checkbox";
@@ -8,28 +8,47 @@ import { Form } from "@heroui/form";
 
 interface QuestionCardProps {
   question: Question;
-  onAnswerChange?: (questionId: number, value: string | string[]) => void;
+  onAnswerChange: (questionId: number, value: string | string[]) => void;
+  initialValue?: string[];
 }
 
-export function QuestionCard({ question, onAnswerChange }: QuestionCardProps) {
+export function QuestionCard({
+  question,
+  onAnswerChange,
+  initialValue,
+}: QuestionCardProps) {
   const [selectedCount, setSelectedCount] = useState(0);
+  const [currentSelection, setCurrentSelection] = useState<string[]>(
+    question.correctCount && question.correctCount > 1 ? [] : [""]
+  );
+
+  useEffect(() => {
+    if (initialValue) {
+      setCurrentSelection(initialValue);
+      setSelectedCount(Array.isArray(initialValue) ? initialValue.length : 1);
+    } else {
+      setCurrentSelection(
+        question.correctCount && question.correctCount > 1 ? [] : [""]
+      );
+      setSelectedCount(0);
+    }
+  }, [question.id, question.correctCount, initialValue]);
+
+  useEffect(() => {
+    setSelectedCount(
+      Array.isArray(currentSelection)
+        ? currentSelection.length
+        : currentSelection
+          ? 1
+          : 0
+    );
+  }, [currentSelection]);
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const form = e.currentTarget;
-    const formData = new FormData(form);
-
-    if (question.correctCount && question.correctCount > 1) {
-      const values = formData
-        .getAll("option")
-        .map((value) => String(value))
-        .filter(Boolean);
-
-      onAnswerChange?.(question.id, values);
-    } else {
-      const value = formData.get("option")!.toString();
-      onAnswerChange?.(question.id, value);
-    }
+    const answer = currentSelection;
+    if (!answer) return;
+    onAnswerChange?.(question.id, answer);
   };
 
   return (
@@ -49,38 +68,37 @@ export function QuestionCard({ question, onAnswerChange }: QuestionCardProps) {
       <CardBody>
         <Form onSubmit={handleSubmit} className="flex flex-row items-end">
           {question.correctCount && question.correctCount > 1 ? (
-            <CheckboxGroup label={`${question.correctCount} correct answers`}>
-              {Object.entries(question.options).map(([key, val]) => (
-                <Checkbox
-                  key={key}
-                  name="opetion"
-                  value={key}
-                  defaultChecked={false}
-                  size="sm"
-                  className="w-4/5"
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                    setSelectedCount((c) => (e.target.checked ? c + 1 : c - 1));
-                  }}
-                >
-                  {String(val)}
-                </Checkbox>
-              ))}
+            <CheckboxGroup
+              label={`${question.correctCount} correct answers`}
+              value={currentSelection}
+              onValueChange={(value) => setCurrentSelection(value)}
+            >
+              {Object.entries(question.options).map(([key, val]) => {
+                return (
+                  <Checkbox
+                    key={key}
+                    value={key}
+                    size="sm"
+                    className="w-4/5"
+                    classNames={{ label: "text-sm font-light" }}
+                  >
+                    {String(val)}
+                  </Checkbox>
+                );
+              })}
             </CheckboxGroup>
           ) : (
-            <RadioGroup name={`q-${question.id}`}>
-              {Object.entries(question.options).map(([key, val]) => (
-                <Radio
-                  key={key}
-                  name="opetion"
-                  value={key}
-                  defaultChecked={false}
-                  size="sm"
-                  className="w-4/5"
-                  onChange={() => setSelectedCount(1)}
-                >
-                  {String(val)}
-                </Radio>
-              ))}
+            <RadioGroup
+              value={currentSelection[0]}
+              onValueChange={(value) => setCurrentSelection([value])}
+            >
+              {Object.entries(question.options).map(([key, val]) => {
+                return (
+                  <Radio key={key} value={key} size="sm" className="w-4/5">
+                    {String(val)}
+                  </Radio>
+                );
+              })}
             </RadioGroup>
           )}
           {selectedCount >=
@@ -92,7 +110,7 @@ export function QuestionCard({ question, onAnswerChange }: QuestionCardProps) {
               variant="flat"
               type="submit"
             >
-              Submit
+              submit
             </Button>
           ) : (
             <input type="hidden" aria-hidden />

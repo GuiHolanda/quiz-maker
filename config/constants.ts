@@ -82,12 +82,11 @@ export const response = `{
   ]
 }`;
 
-export const response01 = `{
-  "questions": [
+export const response01 = `[
     {
       "id": 1,
       "text": "A marketing team wants to apply a 10% promotional discount to all products in the Summer Umbrella category for a limited time. The discount should automatically apply during checkout across all channels. Which SAP Commerce Cloud feature should you configure to achieve this?",
-      "correctCount": 1,
+      "correctCount": 3,
       "topic": "Commerce Management",
       "topicSubarea": "promotions",
       "difficulty": "easy",
@@ -108,7 +107,31 @@ export const response01 = `{
           "E": "A channel-specific price list is not the mechanism to apply a time-bound promotional discount across all channels; promotions and rule engines handle this more robustly."
         }
       }
+    },
+    {
+      "id": 2,
+      "text": "A marketing team wants to apply a 15% promotional discount to all products in the Winter Umbrella category for a limited time. The discount should automatically apply during checkout across all channels. Which SAP Commerce Cloud feature should you configure to achieve this?",
+      "correctCount": 1,
+      "topic": "Commerce Management",
+      "topicSubarea": "promotions",
+      "difficulty": "easy",
+      "options": {
+        "A": "Create a SmartEdit banner and link it to the promotion",
+        "B": "Create a Promotion with a discount rule of 15% and conditions: productCategory = 'Umbrella', catalog = 'Winter', date range set",
+        "C": "Manually adjust product prices in Backoffice",
+        "D": "Attach a customer segment to the promotion",
+        "E": "Create a channel-specific price list"
+      },
+      "answer": {
+        "correctOptions": ["B"],
+        "explanations": {
+          "A": "SmartEdit banners are for content presentation, not for implementing pricing logic. They do not enforce a discounted price at checkout, so this option cannot guarantee the 15% promotion across channels.",
+          "B": "This is the correct approach. A Promotion with a 15% rule and conditions on category, catalog, and date range directly ties into the Promotions module and checkout flow, ensuring automatic application across channels.",
+          "C": "Manually adjusting prices in Backoffice is not scalable and does not guarantee consistency across channels or time-limited promotions. It also bypasses the automated promotion engine.",
+          "D": "Attaching a customer segment can influence promotion eligibility but does not define the discount rule or ensure automatic application across the entire umbrella category.",
+          "E": "A channel-specific price list is not the mechanism to apply a time-bound promotional discount across all channels; promotions and rule engines handle this more robustly."
+        }
+      }
     }
-  ]
-}`
+  ]`
 

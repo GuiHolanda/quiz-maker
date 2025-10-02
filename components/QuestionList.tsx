@@ -1,35 +1,94 @@
 import React from "react";
-import { Questionare } from "@/types";
+import { Question } from "@/types";
 import { QuestionCard } from "./QuestionCard";
-import { Card, CardHeader, CardBody } from "@heroui/card";
+import { Pagination } from "@heroui/pagination";
+import { Button } from "@heroui/button";
+import { Progress } from "@heroui/progress";
 
-export function QuestionList({ data }: { data: Questionare }) {
-  const total = data.questions.length;
-  const byDifficulty = data.questions.reduce((acc, q) => {
-    acc[q.difficulty] = (acc[q.difficulty] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+type AnswersMap = Record<number, string[]>;
+
+export function QuestionList({
+  questions,
+  onFinish,
+}: {
+  questions: Question[];
+  onFinish?: (answers: Record<number, string[]>) => void;
+}) {
+  const [answers, setAnswers] = React.useState<AnswersMap>({});
+  const [currentPage, setCurrentPage] = React.useState(1);
+
+  const handleAnswerChange = (questionId: number, value: string | string[]) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [questionId]: Array.isArray(value) ? value : [value],
+    }));
+    if (currentPage < questions.length) setCurrentPage((i) => i + 1);
+  };
 
   return (
-      <Card className="mb-4">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-semibold">Questions</h3>
-              <p className="text-xs text-muted-foreground">Total: {total}</p>
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {Object.entries(byDifficulty).map(([k, v]) => (
-                <span key={k} className="ml-3">{k}: {v}</span>
-              ))}
-            </div>
-          </div>
-        </CardHeader>
-        <CardBody>
-          {data.questions.map((q) => (
-            <QuestionCard key={q.id} q={q} />
-          ))}
-        </CardBody>
-      </Card>
+    <div className="flex flex-col gap-4 mt-8">
+      <Progress
+        aria-label="Quiz Progress"
+        label="Questions answered"
+        classNames={{ label: "text-sm font-bold" , value: "text-sm font-bold"}}
+        valueLabel={`${answers ? Object.keys(answers).length : 0} of ${questions.length}`}
+        formatOptions={undefined}
+        color="primary"
+        showValueLabel={true}
+        size="md"
+        value={answers ? Object.keys(answers).length : 0}
+        maxValue={ questions.length }
+      />
+      <div className="flex flex-col gap-3">
+        {questions.length > 0 && (
+          <QuestionCard
+            key={questions[currentPage - 1].id}
+            question={questions[currentPage - 1]}
+            onAnswerChange={handleAnswerChange}
+            initialValue={answers[questions[currentPage - 1].id]}
+          />
+        )}
+      </div>
+
+      <div className="flex gap-2">
+        <Button
+          color="primary"
+          size="sm"
+          variant="ghost"
+          onPress={() => setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev))}
+          isDisabled={currentPage === 1}
+        >
+          Previous
+        </Button>
+        <Pagination
+          color="primary"
+          page={currentPage}
+          total={questions.length}
+          onChange={setCurrentPage}
+        />
+        <Button
+          color="primary"
+          size="sm"
+          variant="ghost"
+          onPress={() =>
+            setCurrentPage((prev) => (prev < 10 ? prev + 1 : prev))
+          }
+          isDisabled={currentPage === questions.length}
+        >
+          Next
+        </Button>
+
+        <Button
+        className="ml-auto"
+          variant="flat"
+          color="primary"
+          size="sm"
+          onPress={() => onFinish?.(answers)}
+          hidden={Object.keys(answers).length !== questions.length}
+        >
+          Finish Quiz
+        </Button>
+      </div>
+    </div>
   );
 }
