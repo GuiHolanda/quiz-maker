@@ -3,13 +3,12 @@ import { OpenAI } from "openai";
 import { PROMPT_CONFIG, response01 } from "@/config/constants";
 import { buildPrompt } from "@/features/openAi.services";
 import { QuestionService } from "@/services/question.service";
-import { Questionare } from "@/types";
+import { Question } from "@/types";
 import { parseNumber, safeJsonParse } from "@/utils";
 
 const questionService = new QuestionService();
 
 export async function GET(request: NextRequest) {
-  debugger;
   const url = new URL(request.url);
   const params = url.searchParams;
 
@@ -38,9 +37,9 @@ export async function GET(request: NextRequest) {
     difficulty_distribution,
   });
 
-  let payload: Questionare | null = null;
+  let payload: Question[] | null = null;
 
-  const parsedResponse = safeJsonParse<Questionare>(response01);
+  const parsedResponse = safeJsonParse<Question[]>(response01);
   if (!parsedResponse.ok) {
     console.error("Response is not valid JSON:", parsedResponse.error);
     return NextResponse.json(
@@ -69,8 +68,8 @@ export async function GET(request: NextRequest) {
   // Basic payload validation
   if (
     !payload ||
-    !Array.isArray(payload.questions) ||
-    payload.questions.length === 0
+    !Array.isArray(payload) ||
+    payload.length === 0
   ) {
     return NextResponse.json(
       { error: "Payload has no questions" },
@@ -79,7 +78,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const created = await questionService.createFromPayload(payload);
+    //await questionService.createFromPayload(payload);
     return NextResponse.json(payload);
   } catch (err) {
     console.error("Failed to persist generated questions:", err);

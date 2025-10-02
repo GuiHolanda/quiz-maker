@@ -4,11 +4,11 @@ import { Card, CardHeader } from "@heroui/card";
 import { Divider } from "@heroui/divider";
 import { QuestionareForm } from "@/components/questionareForm";
 import { title } from "@/components/primitives";
-import { Questionare } from "@/types";
-import { QuestionCard } from "@/components/QuestionCard";
+import { Question } from "@/types";
+import { QuestionList } from "@/components/QuestionList";
 
 export default function AboutPage() {
-  const [questions, setQuestions] = useState<Questionare | null>(null);
+  const [questions, setQuestions] = useState<Question[] | null>(null);
 
   return (
     <>
@@ -29,10 +29,7 @@ export default function AboutPage() {
         <QuestionareForm onGenerated={setQuestions} />
       </Card>
 
-      <div className="flex flex-col gap-4 mt-8">
-        {questions &&
-          questions.questions.map((q) => <QuestionCard key={q.id} question={q} />)}
-      </div>
+      {questions && <QuestionList questions={questions} />}
     </>
   );
 }

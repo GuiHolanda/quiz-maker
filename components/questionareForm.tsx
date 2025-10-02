@@ -1,7 +1,7 @@
 "use client";
 import { getQuestions } from "@/features/openAi.services";
 import { useRequest } from "@/features/useRequest.hook";
-import { QuizForm, Questionare } from "@/types";
+import { QuizForm, Question } from "@/types";
 import { Button } from "@heroui/button";
 import { CardBody } from "@heroui/card";
 import { Form } from "@heroui/form";
@@ -9,7 +9,7 @@ import { Input } from "@heroui/input";
 import { Slider } from "@heroui/slider";
 
 interface QuestionareFormProps {
-  onGenerated: (questions: Questionare) => void;
+  onGenerated: (questions: Question[]) => void;
 }
 
 export function QuestionareForm({ onGenerated }: QuestionareFormProps) {
