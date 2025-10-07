@@ -63,8 +63,7 @@ export type Params = {
 
 export type AnswersMap = Record<number, string[]>;
 export interface QuizPayload {
-  id: string;
-  meta: { topic: string; num_questions: number; generatedAt: string; plan?: any };
+  meta: { topic: string; num_questions: number };
   questions: Question[];
   answers: AnswersMap;
 }

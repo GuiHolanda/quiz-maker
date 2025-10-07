@@ -15,19 +15,13 @@ export function QuestionList({
 }>) {
   const [currentPage, setCurrentPage] = React.useState(1);
   const { quiz, setAnswers } = useQuizStore();
-  const [localAnswers, setLocalAnswers] = React.useState<AnswersMap>({});
-
-  const answers: AnswersMap = quiz?.answers ?? localAnswers;
+  const answers: AnswersMap = quiz?.answers ?? {};
 
   const handleAnswerChange = (questionId: number, value: string | string[]) => {
     const arr = Array.isArray(value) ? value : [value];
-    const newAnswers = { ...(answers || {}), [questionId]: arr } as AnswersMap;
+    const newAnswers = { ...(quiz?.answers || {}), [questionId]: arr } as AnswersMap;
 
-    if (quiz?.id) {
-      setAnswers(quiz.id, newAnswers);
-    } else {
-      setLocalAnswers(newAnswers);
-    }
+    setAnswers(newAnswers);
 
     if (currentPage < questions.length) setCurrentPage((i) => i + 1);
   };

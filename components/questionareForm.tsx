@@ -7,6 +7,7 @@ import { CardBody } from "@heroui/card";
 import { Form } from "@heroui/form";
 import { Input } from "@heroui/input";
 import { Slider } from "@heroui/slider";
+import { BusyDialog } from "./bustDialog";
 
 interface QuestionareFormProps {
   onGenerated: (questions: Question[]) => void;
@@ -37,6 +38,7 @@ export function QuestionareForm({ onGenerated }: QuestionareFormProps) {
     onGenerated(questions);
   };
   return (
+    <>
     <Form onSubmit={handleSubmit} validationErrors={error}>
       <CardBody>
         <div className="flex w-full flex-wrap md:flex-nowrap mb-6 gap-4">
@@ -93,5 +95,7 @@ export function QuestionareForm({ onGenerated }: QuestionareFormProps) {
         </div>
       </CardBody>
     </Form>
+    <BusyDialog isOpen={loading} />
+    </>
   );
 }

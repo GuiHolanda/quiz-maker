@@ -6,7 +6,7 @@ import { QUIZ_LOCAL_STORAGE_KEY } from "@/config/constants";
 type State = QuizPayload | null;
 type Action =
   | { type: "init"; payload: QuizPayload }
-  | { type: "setAnswers"; payload: { id: string; answers: AnswersMap } }
+  | { type: "setAnswers"; payload: { answers: AnswersMap } }
   | { type: "replace"; payload: QuizPayload }
   | { type: "clear" };
 
@@ -15,7 +15,7 @@ function reducer(state: State, action: Action): State {
     case "init":
       return action.payload;
     case "setAnswers":
-      if (!state || state.id !== action.payload.id) return state;
+      if (!state || state.questions.length === 0) return state;
       return { ...state, answers: action.payload.answers };
     case "replace":
       return action.payload;
@@ -47,8 +47,8 @@ export function useQuizStore() {
     }
   }, [state]);
 
-  const setAnswers = useCallback((id: string, answers: AnswersMap) => {
-    dispatch({ type: "setAnswers", payload: { id, answers } });
+  const setAnswers = useCallback((answers: AnswersMap) => {
+    dispatch({ type: "setAnswers", payload: { answers } });
   }, []);
 
   const replaceQuiz = useCallback((payload: QuizPayload) => {

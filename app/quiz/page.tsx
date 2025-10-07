@@ -14,11 +14,9 @@ export default function AboutPage() {
 
   const onQuestionsGenerated = (questions: Question[]) => {
     replaceQuiz({
-      id: `${questions[0]?.topic ?? 'default'}|${questions.length}|${Date.now()}`,
       meta: {
         topic: questions[0]?.topic ?? '',
         num_questions: questions.length,
-        generatedAt: new Date().toISOString(),
       },
       questions,
       answers: {},
