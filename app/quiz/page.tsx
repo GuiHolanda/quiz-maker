@@ -1,14 +1,30 @@
-"use client";
-import { useState } from "react";
-import { Card, CardHeader } from "@heroui/card";
-import { Divider } from "@heroui/divider";
-import { QuestionareForm } from "@/components/questionareForm";
-import { title } from "@/components/primitives";
-import { Question } from "@/types";
-import { QuestionList } from "@/components/QuestionList";
+'use client';
+import { useState } from 'react';
+import { Card, CardHeader } from '@heroui/card';
+import { Divider } from '@heroui/divider';
+import { QuestionareForm } from '@/components/questionareForm';
+import { title } from '@/components/primitives';
+import { Question } from '@/types';
+import { QuestionList } from '@/components/QuestionList';
+import { useQuizStore } from '@/features/useQuizStore.hook';
 
 export default function AboutPage() {
+  const { quiz, replaceQuiz } = useQuizStore();
   const [questions, setQuestions] = useState<Question[] | null>(null);
+
+  const onQuestionsGenerated = (questions: Question[]) => {
+    replaceQuiz({
+      id: `${questions[0]?.topic ?? 'default'}|${questions.length}|${Date.now()}`,
+      meta: {
+        topic: questions[0]?.topic ?? '',
+        num_questions: questions.length,
+        generatedAt: new Date().toISOString(),
+      },
+      questions,
+      answers: {},
+    });
+    setQuestions(questions);
+  };
 
   return (
     <>
@@ -26,10 +42,10 @@ export default function AboutPage() {
           </div>
         </CardHeader>
         <Divider />
-        <QuestionareForm onGenerated={setQuestions} />
+        <QuestionareForm onGenerated={onQuestionsGenerated} />
       </Card>
 
-      {questions && <QuestionList questions={questions} />}
+      {(quiz?.questions ?? questions) && <QuestionList questions={quiz?.questions ?? questions ?? []} />}
     </>
   );
 }

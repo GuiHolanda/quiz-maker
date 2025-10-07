@@ -60,3 +60,11 @@ export type Params = {
   dryRun: boolean;
   timeoutMs: number;
 };
+
+export type AnswersMap = Record<number, string[]>;
+export interface QuizPayload {
+  id: string;
+  meta: { topic: string; num_questions: number; generatedAt: string; plan?: any };
+  questions: Question[];
+  answers: AnswersMap;
+}

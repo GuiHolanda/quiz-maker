@@ -67,7 +67,6 @@ export function QuestionCard({
                     key={key}
                     value={key}
                     size="sm"
-                    className="w-4/5"
                     classNames={{ label: "text-sm font-light" }}
                   >
                     {String(val)}
@@ -82,7 +81,7 @@ export function QuestionCard({
             >
               {Object.entries(question.options).map(([key, val]) => {
                 return (
-                  <Radio key={key} value={key} size="sm" className="w-4/5">
+                  <Radio key={key} value={key} size="sm" classNames={{ label: "text-sm ml-2" }}>
                     {String(val)}
                   </Radio>
                 );

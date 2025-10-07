@@ -1,4 +1,5 @@
 export const OPENAI_POST_URL = "/openAi";
+export const QUIZ_LOCAL_STORAGE_KEY = "MY_CURRENT_QUIZ";
 
 export const PROMPT_CONFIG = {
   role: "You are an expert exam question writer for SAP certifications, specializing in SAP Commerce Cloud (Business User).",
