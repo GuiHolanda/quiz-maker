@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useReducer, useEffect } from "react";
 import { Question } from "@/types";
 import { QuestionCard } from "./QuestionCard";
 import { Pagination } from "@heroui/pagination";
@@ -7,21 +7,59 @@ import { Progress } from "@heroui/progress";
 
 type AnswersMap = Record<number, string[]>;
 
+const STORAGE_KEY = "myquiz.answers.v1";
+
+type Action =
+  | { type: "init"; payload: AnswersMap }
+  | { type: "set"; payload: { id: number; value: string[] } }
+  | { type: "reset" };
+
+function answersReducer(state: AnswersMap, action: Action): AnswersMap {
+  switch (action.type) {
+    case "init":
+      return { ...action.payload };
+    case "set":
+      return { ...state, [action.payload.id]: action.payload.value };
+    case "reset":
+      return {};
+    default:
+      return state;
+  }
+}
+
 export function QuestionList({
   questions,
   onFinish,
-}: {
+}: Readonly<{
   questions: Question[];
   onFinish?: (answers: Record<number, string[]>) => void;
-}) {
-  const [answers, setAnswers] = React.useState<AnswersMap>({});
+}>) {
+  const [answers, dispatch] = useReducer(answersReducer, {} as AnswersMap);
   const [currentPage, setCurrentPage] = React.useState(1);
 
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as AnswersMap;
+        dispatch({ type: "init", payload: parsed });
+      }
+    } catch (err) {
+      console.warn("Failed to restore answers from localStorage", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(answers));
+    } catch (err) {
+      console.warn("Failed to persist answers to localStorage", err);
+    }
+  }, [answers]);
+
   const handleAnswerChange = (questionId: number, value: string | string[]) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionId]: Array.isArray(value) ? value : [value],
-    }));
+    const arr = Array.isArray(value) ? value : [value];
+    dispatch({ type: "set", payload: { id: questionId, value: arr } });
     if (currentPage < questions.length) setCurrentPage((i) => i + 1);
   };
 

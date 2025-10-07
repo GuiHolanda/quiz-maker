@@ -7,9 +7,9 @@ import { RadioGroup, Radio } from "@heroui/radio";
 import { Form } from "@heroui/form";
 
 interface QuestionCardProps {
-  question: Question;
-  onAnswerChange: (questionId: number, value: string | string[]) => void;
-  initialValue?: string[];
+  readonly question: Question;
+  readonly onAnswerChange: (questionId: number, value: string | string[]) => void;
+  readonly initialValue?: string[];
 }
 
 export function QuestionCard({
@@ -17,32 +17,15 @@ export function QuestionCard({
   onAnswerChange,
   initialValue,
 }: QuestionCardProps) {
-  const [selectedCount, setSelectedCount] = useState(0);
-  const [currentSelection, setCurrentSelection] = useState<string[]>(
-    question.correctCount && question.correctCount > 1 ? [] : [""]
-  );
+  const [currentSelection, setCurrentSelection] = useState<string[]>([]);
 
   useEffect(() => {
     if (initialValue) {
       setCurrentSelection(initialValue);
-      setSelectedCount(Array.isArray(initialValue) ? initialValue.length : 1);
     } else {
-      setCurrentSelection(
-        question.correctCount && question.correctCount > 1 ? [] : [""]
-      );
-      setSelectedCount(0);
+      setCurrentSelection([]);
     }
   }, [question.id, question.correctCount, initialValue]);
-
-  useEffect(() => {
-    setSelectedCount(
-      Array.isArray(currentSelection)
-        ? currentSelection.length
-        : currentSelection
-          ? 1
-          : 0
-    );
-  }, [currentSelection]);
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -50,6 +33,11 @@ export function QuestionCard({
     if (!answer) return;
     onAnswerChange?.(question.id, answer);
   };
+
+  const minSelectionCount =
+    question.correctCount && question.correctCount > 0
+      ? question.correctCount
+      : 1;
 
   return (
     <Card className="p-4">
@@ -101,10 +89,7 @@ export function QuestionCard({
               })}
             </RadioGroup>
           )}
-          {selectedCount >=
-          (question.correctCount && question.correctCount > 0
-            ? question.correctCount
-            : 1) ? (
+          {currentSelection.length >= minSelectionCount ? (
             <Button
               className="ml-auto bg-primary py-0"
               variant="flat"
@@ -113,7 +98,7 @@ export function QuestionCard({
               submit
             </Button>
           ) : (
-            <input type="hidden" aria-hidden />
+            <input type="hidden" />
           )}
         </Form>
       </CardBody>
