@@ -17,14 +17,12 @@ export const PROMPT_CONFIG = {
     "Shuffle correct answer positions between A..E to avoid patterns.",
     "Output must be 'strict JSON only' according to the schema.",
   ],
-  outputSchema: {
-    questions: [
-      {
-        id: "number",
-        text: "string",
-        correctCount: "number",
-        topic: "string",
-        topicSubarea: "string",
+  questionSchema: {
+    id: "number",
+    text: "string",
+    correctCount: "number",
+    topic: "string",
+    topicSubarea: "string",
         difficulty: "easy|medium|hard",
         options: {
           A: "string",
@@ -44,9 +42,7 @@ export const PROMPT_CONFIG = {
           },
         },
       },
-    ],
-  },
-};
+    };
 
 export const response = `{
   "questions": [

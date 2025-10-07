@@ -50,3 +50,13 @@ export interface Answer {
   correctOptions: string[];
   explanations: Option[];
 }
+
+export type Params = {
+  topic: string;
+  numQuestions: number;
+  difficulty: { easy: number; medium: number; hard: number };
+  newPercent: number; // 0..1
+  newCount?: number | null;
+  dryRun: boolean;
+  timeoutMs: number;
+};

@@ -6,10 +6,10 @@ export function parseNumber(value: string | null, fallback: number | null = null
 
 export function safeJsonParse<T = unknown>(
   s: string
-): { ok: true; value: T } | { ok: false; error: string } {
+): { ok: boolean; error: string | null; value: T | null } {
   try {
-    return { ok: true, value: JSON.parse(s) as T };
+    return { ok: true, error: null, value: JSON.parse(s) as T };
   } catch (err: any) {
-    return { ok: false, error: err?.message ?? String(err) };
+    return { ok: false, error: err?.message ?? String(err), value: null };
   }
 }
