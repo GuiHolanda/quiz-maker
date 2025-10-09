@@ -2,26 +2,42 @@
 import { useState } from 'react';
 import { Card, CardHeader } from '@heroui/card';
 import { Divider } from '@heroui/divider';
-import { QuestionareForm } from '@/components/questionareForm';
 import { title } from '@/components/primitives';
 import { Question } from '@/types';
 import { QuestionList } from '@/components/QuestionList';
-import { useQuizStore } from '@/features/useQuizStore.hook';
+import { QuestionareForm } from '@/components/QuestionareForm';
+import { QuizProvider } from '@/features/quiz.provider';
+import useQuizContext from '@/features/quiz.hooks';
 
-export default function AboutPage() {
-  const { quiz, replaceQuiz } = useQuizStore();
+export default function QuizPage() {
   const [questions, setQuestions] = useState<Question[] | null>(null);
 
-  const onQuestionsGenerated = (questions: Question[]) => {
+  return (
+    <QuizProvider>
+      <QuizPageContent questions={questions} setQuestions={setQuestions} />
+    </QuizProvider>
+  );
+}
+
+interface QuizPageContentProps {
+  questions: Question[] | null;
+  setQuestions: (q: Question[]) => void;
+}
+
+function QuizPageContent({ questions, setQuestions }: QuizPageContentProps) {
+  const { quiz, replaceQuiz } = useQuizContext();
+
+  const onQuestionsGenerated = (questionsArr: Question[]) => {
     replaceQuiz({
       meta: {
-        topic: questions[0]?.topic ?? '',
-        num_questions: questions.length,
+        topic: questionsArr[0]?.topic ?? '',
+        num_questions: questionsArr.length,
       },
-      questions,
+      questions: questionsArr,
       answers: {},
+      isFinished: false,
     });
-    setQuestions(questions);
+    setQuestions(questionsArr);
   };
 
   return (

@@ -36,19 +36,19 @@ export interface Question {
   correctCount: number;
   topic: string;
   difficulty: string;
-  options: Option[];
+  options: Option;
   answer: Answer;
   topicSubarea?: string;
 }
 
-export interface Option {
-  label: string;
-  text: string;
-}
+// export interface Option {
+//   label: string;
+//   text: string;
+// }
 
 export interface Answer {
   correctOptions: string[];
-  explanations: Option[];
+  explanations: Option;
 }
 
 export type Params = {
@@ -62,8 +62,10 @@ export type Params = {
 };
 
 export type AnswersMap = Record<number, string[]>;
+export type Option = Record<string, string>;
 export interface QuizPayload {
   meta: { topic: string; num_questions: number };
   questions: Question[];
   answers: AnswersMap;
+  isFinished: boolean;
 }

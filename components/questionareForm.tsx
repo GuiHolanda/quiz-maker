@@ -7,7 +7,7 @@ import { CardBody } from "@heroui/card";
 import { Form } from "@heroui/form";
 import { Input } from "@heroui/input";
 import { Slider } from "@heroui/slider";
-import { BusyDialog } from "./bustDialog";
+import { BusyDialog } from "./BusyDialog";
 
 interface QuestionareFormProps {
   onGenerated: (questions: Question[]) => void;

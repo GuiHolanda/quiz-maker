@@ -8,7 +8,6 @@ import { safeJsonParse } from '@/utils';
 const questionService = new QuestionService();
 
 export async function GET(request: NextRequest) {
-  debugger
   const url = new URL(request.url);
   const parsed = questionService.parseParams(url);
   if ('error' in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
