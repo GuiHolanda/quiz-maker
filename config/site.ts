@@ -4,14 +4,10 @@ export const siteConfig = {
   name: "My Quiz",
   description: "Make smart quizzes for you certification practice.",
   navItems: [
-    {
-      label: "Home",
-      href: "/",
-    },
-    {
-      label: "Quiz",
-      href: "/quiz",
-    },
+    // {
+    //   label: "Home",
+    //   href: "/",
+    // },
   ],
   navMenuItems: [
     {
@@ -21,10 +17,6 @@ export const siteConfig = {
     {
       label: "Help & Feedback",
       href: "/help-feedback",
-    },
-    {
-      label: "Logout",
-      href: "/logout",
     },
   ],
   links: {

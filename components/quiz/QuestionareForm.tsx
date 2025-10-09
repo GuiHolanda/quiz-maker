@@ -1,13 +1,13 @@
 "use client";
-import { getQuestions } from "@/features/openAi.services";
-import { useRequest } from "@/features/useRequest.hook";
+import { getQuestions } from "@/features/quizGenerator.service";
+import { useRequest } from "@/features/hooks/useRequest.hook";
 import { QuizForm, Question } from "@/types";
 import { Button } from "@heroui/button";
 import { CardBody } from "@heroui/card";
 import { Form } from "@heroui/form";
 import { Input } from "@heroui/input";
 import { Slider } from "@heroui/slider";
-import { BusyDialog } from "./BusyDialog";
+import { BusyDialog } from "../ui/BusyDialog";
 
 interface QuestionareFormProps {
   onGenerated: (questions: Question[]) => void;

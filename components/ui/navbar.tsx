@@ -16,7 +16,7 @@ import NextLink from "next/link";
 import clsx from "clsx";
 
 import { siteConfig } from "@/config/site";
-import { ThemeSwitch } from "@/components/theme-switch";
+import { ThemeSwitch } from "@/components/ui/theme-switch";
 import {
   TwitterIcon,
   GithubIcon,
@@ -58,7 +58,7 @@ export const Navbar = () => {
           </NextLink>
         </NavbarBrand>
         <ul className="hidden lg:flex gap-4 justify-start ml-2">
-          {siteConfig.navItems.map((item) => (
+          {siteConfig.navItems && siteConfig.navItems.length > 0 && siteConfig.navItems.map((item: any) => (
             <NavbarItem key={item.href}>
               <NextLink
                 className={clsx(

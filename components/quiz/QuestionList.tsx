@@ -5,7 +5,7 @@ import { Pagination } from '@heroui/pagination';
 import { Button } from '@heroui/button';
 import { Progress } from '@heroui/progress';
 import { AnsweredQuestionCard } from './AnswredQuestionCard';
-import useQuizContext from '@/features/quiz.hooks';
+import useQuizContext from '@/features/hooks/useQuizContext.hook';
 
 export function QuestionList({
   questions,
