@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
 import { PROMPT_CONFIG } from '@/config/constants';
 import { buildPrompt } from '@/features/quizGenerator.service';
-import { QuestionService } from '@/app/api/openAi/question.service';
+import { QuestionService } from '@/app/api/quizGenerator/question.service';
 import { safeJsonParse } from '@/utils';
 
 const questionService = new QuestionService();
