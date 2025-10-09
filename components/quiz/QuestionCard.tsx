@@ -83,8 +83,8 @@ export function QuestionCard({ question, onAnswerChange, initialValue }: Questio
             </CheckboxGroup>
           ) : (
             <RadioGroup
-              value={currentSelection[0]}
-              onValueChange={(value) => setCurrentSelection([value])}
+              value={currentSelection[0] ?? ''}
+              onValueChange={(value) => setCurrentSelection(value ? [value] : [])}
               className="w-4/5"
             >
               {Object.entries(question.options).map(([key, val]) => {
