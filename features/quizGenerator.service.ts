@@ -3,16 +3,16 @@ import { Question, QuizForm } from "@/types";
 import api from "@/lib/bff.api";
 
 export async function getQuestions(formData: FormData): Promise<Question[]> {
-  const { num_questions, topic, difficulty_distribution, new_percent } = parseFormData(
+  const { num_questions, topic, newQuestionsPercentage } = parseFormData(
     formData,
-    ["num_questions", "topic", "difficulty_distribution", "new_percent"]
+    ["num_questions", "topic", "newQuestionsPercentage"]
   );
 
   const { data } = await api.get<Question[]>(OPENAI_POST_URL, {
     params: {
       topic,
       num_questions,
-      new_percent: 0.3,
+      new_percent: newQuestionsPercentage ?? 0.3,
       easy: 0.2,
       medium: 0.5,
       hard: 0.3,

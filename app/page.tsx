@@ -52,7 +52,7 @@ function QuizPageContent({ questions, setQuestions }: QuizPageContentProps) {
       <Card className="w-full p-4">
         <CardHeader className="flex gap-3">
           <div className="flex flex-col">
-            <p className="text-md">Configure the questionaire</p>
+            <p className="text-md font-bold">Configure the questionaire</p>
           </div>
         </CardHeader>
         <Divider />
