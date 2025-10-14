@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
-import { PROMPT_CONFIG } from '@/config/constants';
+import { PROMPT_CONFIG } from '@/config/constants/promptConfig';
 import { buildPrompt } from '@/features/quizGenerator.service';
 import { QuestionService } from '@/app/api/quizGenerator/question.service';
 import { safeJsonParse } from '@/utils';
@@ -8,6 +8,7 @@ import { safeJsonParse } from '@/utils';
 const questionService = new QuestionService();
 
 export async function GET(request: NextRequest) {
+  debugger
   const url = new URL(request.url);
   const parsed = questionService.parseParams(url);
   if ('error' in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
