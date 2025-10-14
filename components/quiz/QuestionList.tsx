@@ -82,7 +82,7 @@ export function QuestionList({
           color="primary"
           size="sm"
           variant="ghost"
-          onPress={() => setCurrentPage((prev) => (prev < 10 ? prev + 1 : prev))}
+          onPress={() => setCurrentPage((prev) => (prev < questions.length ? prev + 1 : prev))}
           isDisabled={currentPage === questions.length}
         >
           Next

@@ -13,7 +13,7 @@ interface QuestionareFormProps {
   onGenerated: (questions: Question[]) => void;
 }
 
-export function QuestionareForm({ onGenerated }: QuestionareFormProps) {
+export function QuestionareForm({ onGenerated }: Readonly<QuestionareFormProps>) {
   const { loading, error, setError, request } = useRequest(getQuestions);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {

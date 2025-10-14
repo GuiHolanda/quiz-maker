@@ -1,24 +1,32 @@
-export const OPENAI_POST_URL = "/quizGenerator";
-export const QUIZ_LOCAL_STORAGE_KEY = "MY_CURRENT_QUIZ";
-
 export const PROMPT_CONFIG = {
   role: "You are an expert exam question writer for SAP certifications, specializing in SAP Commerce Cloud (Business User).",
   exam: "SAP Certified Associate – Business User – SAP Commerce Cloud (C_C4H32_2411)",
-  format: "json",
   rules: [
     "Produce exactly NUM_QUESTIONS questions.",
+    "All the generated questions must be about (or related to) the TOPIC provided in the input parameters.",
     "Each question must have exactly 5 options labeled A, B, C, D, E.",
-    "Questions may be single-choice or multiple-choice; always state the correct_count. in the json.",
-    "Make shure to vary the quantity of correct answers across questions; some should have 1 correct option, others 2 with the maximum being 3.",
+    "Questions may be single-choice or multiple-choice; always state the correctCount in the json.",
+    "Make sure to vary the quantity of correct answers across questions; some should have 1 correct option, others 2 with the maximum being 3.",
     "For each option in the answer key, include a clear explanation (at least 2 full sentences) of why it is correct or incorrect.",
     "Mix original questions and credible, publicly available sample questions (rephrased).",
-    "Encourage scenario-based stems that avoid ambiguity, but no need for use Scenario: in the beginning of the question text.",
+    "Encourage scenario-based stems that avoid ambiguity, but no need for use Scenario: (or similar) in the beginning of the question text.",
     "Do not use 'All of the above' or 'None of the above'.",
     "Distribute questions across difficulty levels according to the DIFFICULTY_DISTRIBUTION.",
     "Explanations must connect to real Commerce Cloud functions (Backoffice, SmartEdit, PIM, promotions, workflows).",
     "Shuffle correct answer positions between A..E to avoid patterns.",
     "All the options do not need to be of the same length (some can be short, others longer), make sure to vary the length.",
     "Output must be 'strict JSON only' according to the schema.",
+  ],
+  acceptance: [
+    "The top-level object must be valid JSON and parseable by JSON.parse.",
+    "All the generated questions must be about (or related to) the TOPIC provided in the input parameters.",
+    "The number of items in questions must equal NUM_QUESTIONS.",
+    "Each question must have exactly five options A..E.",
+    "Each question's correctCount must match the length of correctOptions in the answer_key for that id.",
+    "answer_key must contain one entry for each question id and each explanations must include keys A..E with at least 2 full sentences per explanation.",
+    "difficulty values must be one of [\"easy\", \"medium\", \"hard\"] and distribution across questions should approximately follow DIFFICULTY_DISTRIBUTION.",
+    "Do not include extraneous top-level keys; return only the JSON object described.",
+    "If any rule cannot be satisfied, return a JSON object with an error field explaining which acceptance rule failed.",
   ],
   questionSchema: {
     id: "number",

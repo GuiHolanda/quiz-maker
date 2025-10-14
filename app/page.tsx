@@ -24,7 +24,7 @@ interface QuizPageContentProps {
   setQuestions: (q: Question[]) => void;
 }
 
-function QuizPageContent({ questions, setQuestions }: QuizPageContentProps) {
+function QuizPageContent({ questions, setQuestions }: Readonly<QuizPageContentProps>) {
   const { quiz, replaceQuiz } = useQuizContext();
 
   const onQuestionsGenerated = (questionsArr: Question[]) => {
