@@ -8,6 +8,7 @@
       "id": { "type": "integer" },
       "text": { "type": "string", "minLength": 20 },
       "correctCount": { "type": "integer", "minimum": 1, "maximum": 3 },
+      "certificationTitle": { "type": "string", "minLength": 5 },
       "topic": { "type": "string" },
       "topicSubarea": { "type": "string" },
       "difficulty": { "type": "string", "enum": ["easy", "medium", "hard"] },
@@ -48,7 +49,7 @@
         "required": ["correctOptions", "explanations"]
       }
     },
-    "required": ["id", "text", "correctCount", "topic", "difficulty", "options", "answer"],
+    "required": ["id", "text", "certificationTitle", "correctCount", "topic", "difficulty", "options", "answer"],
     "additionalProperties": false
   }
 }

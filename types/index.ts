@@ -1,7 +1,26 @@
 import { SVGProps } from "react";
 
+export type AnswersMap = Record<number, string[]>;
+export type Option = Record<string, string>;
 export type IconSvgProps = SVGProps<SVGSVGElement> & {
   size?: number;
+};
+
+// export type PromptParams = {
+//   certificationTitle: string;
+//   topic: string;
+//   num_questions: string;
+//   difficulty_distribution?: {
+//     easy?: number;
+//     medium?: number;
+//     hard?: number;
+//   };
+// };
+
+export type QuizFormErrors = {
+  certificationTitle?: string;
+  topic?: string;
+  num_questions?: string;
 };
 
 export interface RequestBody {
@@ -10,28 +29,9 @@ export interface RequestBody {
   difficulty_distribution: { easy: number; medium: number; hard: number };
 }
 
-export type QuizForm = {
-  topic: string;
-  num_questions: string;
-  difficulty_distribution?: {
-    easy?: number;
-    medium?: number;
-    hard?: number;
-  };
-};
-
-export type QuizFormErrors = {
-  topic?: string;
-  num_questions?: string;
-};
-
-export interface Questionare {
-  questions: Question[];
-  answers: Answer[];
-}
-
 export interface Question {
   id: number;
+  certificationTitle: string;
   text: string;
   correctCount: number;
   topic: string;
@@ -41,28 +41,19 @@ export interface Question {
   topicSubarea?: string;
 }
 
-// export interface Option {
-//   label: string;
-//   text: string;
-// }
-
 export interface Answer {
   correctOptions: string[];
-  explanations: Option;
+  explanations: Option[];
 }
 
-export type Params = {
+export type QuizParams = {
+  certificationTitle: string;
   topic: string;
   numQuestions: number;
   difficulty: { easy: number; medium: number; hard: number };
-  newPercent: number; // 0..1
-  newCount?: number | null;
-  dryRun: boolean;
-  timeoutMs: number;
+  newPercent?: number;
+  timeoutMs?: number;
 };
-
-export type AnswersMap = Record<number, string[]>;
-export type Option = Record<string, string>;
 export interface QuizPayload {
   meta: { topic: string; num_questions: number };
   questions: Question[];

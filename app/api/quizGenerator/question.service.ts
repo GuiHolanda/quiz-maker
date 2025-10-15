@@ -1,12 +1,12 @@
 import { prisma, PrismaService } from "@/lib/prisma";
-import { Params, Question } from "@/types";
+import { Question, QuizParams } from "@/types";
 import { parseNumber } from "@/utils";
 import { OpenAI } from "openai/client";
 
 export class QuestionService {
   constructor(private readonly prismaService: PrismaService = prisma) {}
 
-  public async fetchAiQuestions(client: OpenAI, prompt: string, timeoutMs: number): Promise<string | null> {
+  public async fetchAiQuestions(client: OpenAI, prompt: string, timeoutMs: number | undefined): Promise<string | null> {
     const call = client.responses.create({ model: 'gpt-5-nano', input: prompt });
     const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('LLM timeout')), timeoutMs));
     const res: any = await Promise.race([call, timeout]);
@@ -24,8 +24,9 @@ export class QuestionService {
   return { ok: true, value: obj as Question[] };
 }
 
-  public  parseParams(url: URL): Params | { error: string } {
+  public  parseParams(url: URL): QuizParams | { error: string } {
     const params = url.searchParams;
+    const certificationTitle = params.get('certificationTitle')?.trim() || 'General Certification';
     const topic = params.get('topic')?.trim() ?? '';
     const numQuestions = parseNumber(params.get('num_questions'), 10) ?? 10;
     if (!Number.isInteger(numQuestions) || numQuestions <= 0) {
@@ -41,15 +42,14 @@ export class QuestionService {
     if (newPercentRaw > 1 && newPercentRaw <= 100) newPercentRaw = newPercentRaw / 100;
     if (newPercentRaw < 0) newPercentRaw = 0;
   
-    const dryRun = params.get('dry_run') === '1' || params.get('dry_run') === 'true';
     const timeoutMs = parseNumber(params.get('timeout_ms'), 180000) ?? 180000;
 
     return {
+      certificationTitle,
       topic,
       numQuestions,
       difficulty: { easy: Number(easy) || 0, medium: Number(medium) || 0, hard: Number(hard) || 0 },
       newPercent: newPercentRaw,
-      dryRun,
       timeoutMs,
     };
   }
@@ -102,6 +102,7 @@ export class QuestionService {
       const results: any[] = [];
       for (const question of questions) {
         const {
+          certificationTitle,
           text,
           correctCount,
           options,
@@ -113,6 +114,7 @@ export class QuestionService {
 
         const createdQuestion = await tx.question.create({
           data: {
+            certificationTitle,
             text,
             correctCount,
             topic,
@@ -165,12 +167,13 @@ export class QuestionService {
   }
 
   async handleNewQuestionsDistribution(
-    topic: string | undefined,
+    topic: string,
     num_questions: number,
-    newPercent: number
+    newPercent: number | undefined
   ): Promise<{ desiredNew: number; recycledNeeded: number }> {
     try {
       const existingCount = await this.countByTopic(topic || undefined);
+      newPercent = newPercent ?? 0.3;
       const newCount = newPercent * num_questions;
 
       let desiredNew = 0;

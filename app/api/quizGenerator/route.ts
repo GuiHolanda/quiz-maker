@@ -8,27 +8,27 @@ import { safeJsonParse } from '@/utils';
 const questionService = new QuestionService();
 
 export async function GET(request: NextRequest) {
-  debugger
   const url = new URL(request.url);
-  const parsed = questionService.parseParams(url);
-  if ('error' in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
+  const parsedParams = questionService.parseParams(url);
+  if ('error' in parsedParams) return NextResponse.json({ error: parsedParams.error }, { status: 400 });
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
 
-  const { topic, numQuestions, difficulty, newPercent, timeoutMs } = parsed;
+  const { topic, numQuestions, difficulty, newPercent, timeoutMs, certificationTitle } = parsedParams;
 
   try {
     const { desiredNew, recycledNeeded } = await questionService.handleNewQuestionsDistribution(
-      topic || undefined,
+      topic,
       numQuestions,
       newPercent
     );
 
     const prompt = buildPrompt({
-      num_questions: String(desiredNew),
+      certificationTitle,
+      numQuestions: desiredNew,
       topic,
-      difficulty_distribution: difficulty,
+      difficulty: difficulty,
     }, PROMPT_CONFIG);
 
     const client = new OpenAI({ apiKey });

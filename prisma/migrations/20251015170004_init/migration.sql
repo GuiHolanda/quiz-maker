@@ -4,6 +4,7 @@ CREATE TABLE "Question" (
     "text" TEXT NOT NULL,
     "correctCount" INTEGER NOT NULL,
     "topic" TEXT NOT NULL,
+    "certificationTitle" TEXT NOT NULL,
     "difficulty" TEXT NOT NULL,
     "topicSubarea" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP

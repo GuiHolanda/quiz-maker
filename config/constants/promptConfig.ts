@@ -1,41 +1,60 @@
-export const PROMPT_CONFIG = {
-  prompt_version: '1.1',
-  role: 'You are an expert exam question writer for SAP certifications, specializing in SAP Commerce Cloud (Business User).',
-  exam: 'SAP Certified Associate – Business User – SAP Commerce Cloud (C_C4H32_2411)',
+export interface PromptExample {
+  name: string;
+  input: Record<string, unknown>;
+  output: unknown;
+}
 
+export interface PromptGenerationConfig {
+  temperature: number;
+  top_p?: number;
+  retries?: number;
+  // max_tokens intentionally omitted (handled at client call site)
+}
+
+export interface PromptConfig {
+  prompt_version: string;
+  role: string;
+  generation: PromptGenerationConfig;
+  rules: string[];
+  acceptance: string[];
+  questionSchema: any;
+  examples: PromptExample[];
+}
+
+export const PROMPT_CONFIG: PromptConfig = {
+  prompt_version: '1.2',
+  role: 'You are an expert exam question writer for SAP certifications',
   generation: {
     temperature: 0.0,
     top_p: 0.9,
-    // max_tokens: 1600,
-    retries: 2,
+    retries: 1,
   },
-
   rules: [
+    `All the questions must be about the certification exam being targeted in the input parameter CERTIFICATION_TITLE.`,
+    'All generated questions must relate to the provided TOPIC (direct concept, application, scenario or implication).',
     'Produce exactly NUM_QUESTIONS questions.',
-    'All generated questions must be about (or related to) the TOPIC provided in the input parameters.',
     'Each question must have exactly 5 options labeled A, B, C, D, E.',
-    'Questions may be single-choice or multiple-choice; always include correctCount as an integer.',
-    'Vary the number of correct answers across the set (1..3); never exceed 3 correct options.',
-    'For each option in the answer key, include an explanation of why it is correct or incorrect (minimum ~40 characters, ideally 2 sentences).',
-    'Mix original items and credible, publicly available sample questions (rephrased).',
-    'Favor scenario-based stems that avoid ambiguity.',
-    "Do not use 'All of the above' or 'None of the above'.",
-    'Distribute questions across difficulty levels according to DIFFICULTY_DISTRIBUTION.',
-    'Explanations must reference real Commerce Cloud functions where applicable (Backoffice, SmartEdit, PIM, promotions, workflows).',
-    'Shuffle correct answer positions between A..E to avoid predictable patterns.',
-    'Return only strict JSON that matches the provided schema — no markdown, no surrounding text, no extra keys.',
+    'Questions may be single-choice or multiple-choice; always include correctCount (1..3).',
+    'Vary the number of correct answers across the set (some 1, some 2, optionally a few 3).',
+    'For EVERY option include an explanation stating WHY it is correct or incorrect (minimum ~40 characters, ideally 2 sentences).',
+    'Mix original items and rephrased public sample questions (maintain accuracy).',
+    'Favor concise, scenario-based stems; avoid ambiguity and trivia wording.',
+    "Never use 'All of the above' or 'None of the above'.",
+    'Distribute difficulty roughly following DIFFICULTY_DISTRIBUTION (easy/medium/hard).',
+    'Shuffle correct answers among A..E to avoid patterns.',
+    'Return ONLY a JSON array (no wrapper object, no markdown, no extra prose).',
   ],
-
   acceptance: [
-    'The number of items in the array must equal NUM_QUESTIONS.',
-    'Each question must have exactly five options A..E and a correctCount matching the correctOptions length.',
-    'Each explanation must be descriptive (2 sentences preferred) and contain at least ~40 characters.',
-    'Difficulty must be one of ["easy", "medium", "hard"] and follow DIFFICULTY_DISTRIBUTION approximately.',
-    'If unable to comply, return { "error": "explanation here" } and no other top-level keys.',
+    'Output is a single top-level JSON array parseable by JSON.parse.',
+    'Array length equals NUM_QUESTIONS.',
+    'Each question has fields: id, text, topic, (optional topicSubarea), difficulty, correctCount, options, answer.',
+    'options contains exactly keys A..E (strings).',
+    'answer.correctOptions length equals correctCount and all values in [A,B,C,D,E].',
+    'answer.explanations includes keys A..E with meaningful text (>= ~40 chars each).',
+    'difficulty ∈ ["easy","medium","hard"] and global distribution approximates DIFFICULTY_DISTRIBUTION.',
+    'If any rule cannot be satisfied return: {"error":"explanation here"} (object, not array) and nothing else.',
   ],
-
   questionSchema: require('../promptSchemas/questionSchema.json'),
-
   examples: [
     {
       name: 'perfect_single',
@@ -43,8 +62,9 @@ export const PROMPT_CONFIG = {
       output: [
         {
           id: 1,
-          text: 'In SmartEdit, which configuration allows editors to personalize storefront components at runtime?',
+          text: 'In SmartEdit, which configuration allows editors to personalize storefront components during runtime?',
           correctCount: 1,
+          certificationTitle: 'SAP Commerce Cloud',
           topic: 'SmartEdit',
           topicSubarea: 'personalization',
           difficulty: 'easy',
@@ -58,11 +78,11 @@ export const PROMPT_CONFIG = {
           answer: {
             correctOptions: ['A'],
             explanations: {
-              A: 'Component Variants allow editors to define different presentations of a component and are used by SmartEdit for runtime personalization. This makes them the correct choice.',
-              B: 'Backoffice Widgets are used for administrative UIs and not for runtime storefront personalization.',
-              C: 'PIM Exports are related to product data exchange and not SmartEdit UI configuration.',
-              D: 'Workflow Steps coordinate business processes and are unrelated to SmartEdit personalization.',
-              E: 'Promotion Rules apply pricing/discount logic and are not for component presentation.',
+              A: 'Component Variants define alternative component versions and enable runtime personalization in SmartEdit.',
+              B: 'Backoffice Widgets provide admin UI functionality, not runtime storefront personalization.',
+              C: 'PIM Exports move product data; they do not manage live component personalization.',
+              D: 'Workflow Steps coordinate approval processes, unrelated to dynamic personalization logic.',
+              E: 'Promotion Rules govern pricing strategies, not direct component rendering variants.',
             },
           },
         },

@@ -1,17 +1,19 @@
 import { OPENAI_POST_URL } from '@/config/constants';
-import { PROMPT_CONFIG } from '@/config/constants/promptConfig';
-import { Question, QuizForm } from '@/types';
+import { PROMPT_CONFIG, PromptConfig } from '@/config/constants/promptConfig';
+import { Question, QuizParams } from '@/types';
 import api from '@/lib/bff.api';
 
 export async function getQuestions(formData: FormData): Promise<Question[]> {
-  const { num_questions, topic, newQuestionsPercentage } = parseFormData(formData, [
+  const { num_questions, topic, newQuestionsPercentage, certificationTitle } = parseFormData(formData, [
     'num_questions',
     'topic',
     'newQuestionsPercentage',
+    'certificationTitle',
   ]);
 
   const { data } = await api.get<Question[]>(OPENAI_POST_URL, {
     params: {
+      certificationTitle,
       topic,
       num_questions,
       new_percent: newQuestionsPercentage ?? 0.3,
@@ -24,55 +26,73 @@ export async function getQuestions(formData: FormData): Promise<Question[]> {
   return data;
 }
 
-export function buildPrompt(params: QuizForm, promptConfig: any = PROMPT_CONFIG) {
-  const defaultDifficulty = { easy: 25, medium: 45, hard: 30 };
-  const finalDifficulty = params.difficulty_distribution ?? defaultDifficulty;
+/**
+ * buildPrompt
+ * Creates a deterministic, instruction-rich prompt for the LLM.
+ * Output contract: a single top-level JSON array of question objects OR an {"error": string} object.
+ */
+export function buildPrompt(params: QuizParams, cfg: PromptConfig = PROMPT_CONFIG): string {
+  const { numQuestions, topic, difficulty, certificationTitle } = params;
+  const safeTopic = (topic || '').trim() || 'General';
 
-  const header = `${promptConfig.role} Generate multiple-choice questions aligned with the ${promptConfig.exam}.`;
+  const header = `${cfg.role} specialized in the ${certificationTitle} exam\nExam: ${certificationTitle}`;
+  const gen = cfg.generation;
+  const generationMeta = `Generation: temperature=${gen.temperature} top_p=${gen.top_p ?? 1} (Return ONLY JSON)`;
 
-  const generationHint = `GenerationHint: use temperature=${promptConfig.generation?.temperature ?? 0.0}, top_p=${promptConfig.generation?.top_p ?? 1.0}. Prefer deterministic, structured JSON output.`;
+  const section = (title: string) => `\n${title.toUpperCase()}:`;
+  const numbered = (items: string[]) => items.map((r, i) => `${i + 1}. ${r}`);
 
-  const input = [
-    `NUM_QUESTIONS: ${params.num_questions}`,
-    `TOPIC: "${params.topic}"`,
-    `DIFFICULTY_DISTRIBUTION: ${JSON.stringify(finalDifficulty)}`,
+  const inputBlock = [
+    `CERTIFICATION_TITLE="${certificationTitle}"`,
+    `TOPIC="${safeTopic}"`,
+    `NUM_QUESTIONS=${numQuestions}`,
+    `DIFFICULTY_DISTRIBUTION=${JSON.stringify(difficulty)}`,
   ];
 
-  const rules = (promptConfig.rules || []).map((r: string, i: number) => `${i + 1}. ${r}`);
-  const acceptance = (promptConfig.acceptance || []).map((r: string, i: number) => `${i + 1}. ${r}`);
+  const rules = numbered(cfg.rules);
+  const acceptance = numbered(cfg.acceptance);
 
-  const outputInstructions = [
-    `JSON top-level object containing an array of question following the structure of the schema: ${JSON.stringify(promptConfig.questionSchema, null, 2)}`,
-    `Do NOT include the full JSON Schema in your output`,
+  const schemaSummary = `Top-level JSON array where each item should follow the question schema: ${JSON.stringify(cfg.questionSchema)}`;
+  const outputDirectives = [
+    'Return ONLY the JSON array (no wrapper object, no prose).',
+    'If validation impossible: return {"error":"explanation here"} (object, not array).',
+    'Never echo this instruction text back.',
+    'Do NOT include the schema JSON itself.',
   ];
-  const examples: string[] = [];
-  if (Array.isArray(promptConfig.examples)) {
-    for (const ex of promptConfig.examples) {
-      try {
-        const exInput = ex.input ? `Input:\n${JSON.stringify(ex.input, null, 2)}` : '';
-        const exOutput = ex.output ? `Output (exact JSON):\n${JSON.stringify(ex.output, null, 2)}` : '';
-        examples.push(`Example: ${ex.name}\n${exInput}\n${exOutput}`);
-      } catch (err) {}
+
+  const exampleBlocks: string[] = [];
+  for (const ex of cfg.examples || []) {
+    try {
+      exampleBlocks.push(
+        [
+          `Example: ${ex.name}`,
+          ex.input ? `Input:\n${JSON.stringify(ex.input, null, 2)}` : '',
+          ex.output ? `Output:\n${JSON.stringify(ex.output, null, 2)}` : '',
+        ]
+          .filter(Boolean)
+          .join('\n')
+      );
+    } catch {
+      // ignore malformed example
     }
   }
 
-  const parts = [
-    header,
-    generationHint,
-    '\nINPUT PARAMETERS:',
-    ...input,
-    '\nRULES:',
-    ...rules,
-    '\nOUTPUT INSTRUCTIONS:',
-    ...outputInstructions,
-  ];
-
-  if (examples.length) {
-    parts.push('\nFEW-SHOT EXAMPLES (do not add commentary):');
-    parts.push(...examples);
+  const parts: string[] = [];
+  parts.push(header);
+  parts.push(generationMeta);
+  parts.push(section('Input Parameters'));
+  parts.push(...inputBlock);
+  parts.push(section('Rules'));
+  parts.push(...rules);
+  parts.push(section('Schema Summary'));
+  parts.push(schemaSummary);
+  parts.push(section('Output Instructions'));
+  parts.push(...outputDirectives);
+  if (exampleBlocks.length) {
+    parts.push(section('Few-Shot Examples'));
+    parts.push(...exampleBlocks);
   }
-
-  parts.push('\nACCEPTANCE CRITERIA:');
+  parts.push(section('Acceptance Criteria'));
   parts.push(...acceptance);
 
   return parts.join('\n');
