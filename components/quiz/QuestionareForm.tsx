@@ -9,25 +9,35 @@ import { Input } from '@heroui/input';
 import { Slider } from '@heroui/slider';
 import { BusyDialog } from '../ui/BusyDialog';
 import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
-import { CERTIFICATIONS } from '@/config/constants';
 import { useState } from 'react';
+import { useDisclosure } from '@heroui/modal';
+import { faCirclePlus, faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { NewCertificationModal } from './NewCertificationModal';
+import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
+import { Tooltip } from '@heroui/tooltip';
 
 interface QuestionareFormProps {
   onGenerated: (questions: Question[]) => void;
 }
 
 export function QuestionareForm({ onGenerated }: Readonly<QuestionareFormProps>) {
+  const { certifications, removeCertification } = useCertificationsContext();
   const { loading, error, setError, request } = useRequest(getQuestions);
   const [certificationTitle, setCertificationTitle] = useState<string>('');
   const [topics, setTopics] = useState<string[]>([]);
   const [selectedTopic, setSelectedTopic] = useState<any>(null);
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
 
   const onCertificationChange = (key: any) => {
-    const certification = CERTIFICATIONS.find((cert) => cert.key === key);
+    const certification = certifications.find((cert) => cert.key === key);
     setCertificationTitle(certification?.label || '');
     setTopics(certification?.topics || []);
-  }
+  };
 
+  const onDeleteCertification = (certificationKey: string) => {
+    removeCertification(certificationKey);
+  };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -36,7 +46,6 @@ export function QuestionareForm({ onGenerated }: Readonly<QuestionareFormProps>)
 
     const num_questions = formData.get('num_questions')?.toString().trim();
     const newQuestionsPercentage = formData.get('newQuestionsPercentage')?.toString().trim();
-
 
     const newErrors: QuizFormErrors = {};
     if (!certificationTitle) newErrors.certificationTitle = 'Certification Title is required';
@@ -51,7 +60,7 @@ export function QuestionareForm({ onGenerated }: Readonly<QuestionareFormProps>)
       certificationTitle,
       topic: selectedTopic,
       numQuestions: Number(num_questions),
-      newPercent: Number(newQuestionsPercentage) || 0.3
+      newPercent: Number(newQuestionsPercentage) || 0.3,
     };
 
     const questions = await request(requestPayload, () => form.reset());
@@ -62,13 +71,31 @@ export function QuestionareForm({ onGenerated }: Readonly<QuestionareFormProps>)
       <Form onSubmit={handleSubmit} validationErrors={error}>
         <CardBody>
           <div className="flex flex-col gap-6 py-4">
-            <div className="flex w-full gap-4">
-              <Autocomplete className='w-2/3' label="Select an Certification" name='certificationTitle' onSelectionChange={onCertificationChange}>
-                {CERTIFICATIONS.map((certification) => (
-                  <AutocompleteItem key={certification.key}>{certification.label}</AutocompleteItem>
+            <div className="flex w-full gap-4 items-center">
+              <Autocomplete
+                className="w-2/3"
+                label="Select an Certification"
+                name="certificationTitle"
+                onSelectionChange={onCertificationChange}
+              >
+                {certifications.map((certification) => (
+                  <AutocompleteItem key={certification.key} textValue={certification.label}>
+                    <div className="flex justify-between items-center w-full">
+                      <p>{certification.label}</p>
+                        <Button onPress={() => onDeleteCertification(certification.key)} variant="light" size="sm">
+                          <FontAwesomeIcon icon={faTrashCan} className="text-danger text-lg hover:scale-110" />
+                        </Button>
+                      </div>
+                  </AutocompleteItem>
                 ))}
               </Autocomplete>
-              <Autocomplete className='w-1/3' label="Select an Topic" name='topic' onSelectionChange={setSelectedTopic}>
+              <Tooltip content="Add Certification" showArrow={true}>
+                <Button onPress={onOpen} variant="light" size="sm">
+                  <FontAwesomeIcon icon={faCirclePlus} className="text-success text-2xl" />
+                </Button>
+              </Tooltip>
+              <NewCertificationModal isOpen={isOpen} onOpenChange={onOpenChange} onClose={onClose} />
+              <Autocomplete className="w-1/3" label="Select an Topic" name="topic" onSelectionChange={setSelectedTopic}>
                 {topics.map((topic) => (
                   <AutocompleteItem key={topic}>{topic}</AutocompleteItem>
                 ))}
