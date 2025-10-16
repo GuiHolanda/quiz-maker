@@ -1,20 +1,12 @@
 import React, { useReducer, useEffect, useCallback, useMemo } from 'react';
-import type { AnswersMap, QuizPayload } from '@/types';
+import type { AnswersMap, QuizPayload, QuizStoreApi } from '@/types';
 import { QUIZ_LOCAL_STORAGE_KEY } from '@/config/constants';
-import quizReducer, { State as QuizState } from './quiz.reducer';
-
-type QuizStoreApi = {
-  quiz: QuizState;
-  setAnswers: (answers: AnswersMap) => void;
-  replaceQuiz: (payload: QuizPayload) => void;
-  setFinished: (isFinished: boolean) => void;
-  clear: () => void;
-};
+import { quizReducer } from '../reducers/quiz.reducer';
 
 export const QuizContext = React.createContext<QuizStoreApi | null>(null);
 
-export function QuizProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(quizReducer, null as QuizState);
+export function QuizProvider({ children }: Readonly<{ children: React.ReactNode }>) {
+  const [state, dispatch] = useReducer(quizReducer, null as any);
 
   useEffect(() => {
     try {
@@ -53,14 +45,10 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'clear' });
   }, []);
 
-  const api = useMemo<QuizStoreApi>(() => ({ quiz: state, setAnswers, replaceQuiz, setFinished, clear }), [
-    state,
-    setAnswers,
-    replaceQuiz,
-    setFinished,
-    clear,
-  ]);
+  const api = useMemo<QuizStoreApi>(
+    () => ({ quiz: state ?? null, setAnswers, replaceQuiz, setFinished, clear }),
+    [state, setAnswers, replaceQuiz, setFinished, clear]
+  );
 
   return <QuizContext.Provider value={api}>{children}</QuizContext.Provider>;
 }
-

@@ -1,33 +1,16 @@
-import { SVGProps } from "react";
+import { quizReducer } from '@/features/reducers/quiz.reducer';
+import { SVGProps } from 'react';
 
 export type AnswersMap = Record<number, string[]>;
 export type Option = Record<string, string>;
 export type IconSvgProps = SVGProps<SVGSVGElement> & {
   size?: number;
 };
-
-// export type PromptParams = {
-//   certificationTitle: string;
-//   topic: string;
-//   num_questions: string;
-//   difficulty_distribution?: {
-//     easy?: number;
-//     medium?: number;
-//     hard?: number;
-//   };
-// };
-
 export type QuizFormErrors = {
   certificationTitle?: string;
   topic?: string;
   num_questions?: string;
 };
-
-export interface RequestBody {
-  num_questions: number;
-  topic: string;
-  difficulty_distribution: { easy: number; medium: number; hard: number };
-}
 
 export interface Question {
   id: number;
@@ -50,7 +33,7 @@ export type QuizParams = {
   certificationTitle: string;
   topic: string;
   numQuestions: number;
-  difficulty: { easy: number; medium: number; hard: number };
+  difficulty?: { easy: number; medium: number; hard: number };
   newPercent?: number;
   timeoutMs?: number;
 };
@@ -59,4 +42,28 @@ export interface QuizPayload {
   questions: Question[];
   answers: AnswersMap;
   isFinished: boolean;
+}
+
+export interface Certification {
+  label: string;
+  key: string;
+  topics?: string[];
+}
+
+export type Certifications = Certification[];
+
+export interface QuizStoreApi {
+  quiz: ReturnType<typeof quizReducer>;
+  setAnswers: (answers: AnswersMap) => void;
+  replaceQuiz: (payload: QuizPayload) => void;
+  setFinished: (isFinished: boolean) => void;
+  clear: () => void;
+}
+
+export interface CertificationsStoreApi {
+  certifications: Certifications;
+  setCertifications: (certs: Certifications) => void;
+  addCertification: (cert: Certification) => void;
+  removeCertification: (key: string) => void;
+  updateCertification: (key: string, patch: Partial<Certification>) => void;
 }
