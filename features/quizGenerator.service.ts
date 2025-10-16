@@ -3,20 +3,15 @@ import { PROMPT_CONFIG, PromptConfig } from '@/config/constants/promptConfig';
 import { Question, QuizParams } from '@/types';
 import api from '@/lib/bff.api';
 
-export async function getQuestions(formData: FormData): Promise<Question[]> {
-  const { num_questions, topic, newQuestionsPercentage, certificationTitle } = parseFormData(formData, [
-    'num_questions',
-    'topic',
-    'newQuestionsPercentage',
-    'certificationTitle',
-  ]);
+export async function getQuestions(requestPayload: QuizParams): Promise<Question[]> {
+  const { numQuestions, topic, newPercent, certificationTitle } = requestPayload;
 
   const { data } = await api.get<Question[]>(OPENAI_POST_URL, {
     params: {
       certificationTitle,
       topic,
-      num_questions,
-      new_percent: newQuestionsPercentage ?? 0.3,
+      numQuestions,
+      newPercent: newPercent ?? 0.3,
       easy: 0.2,
       medium: 0.5,
       hard: 0.3,
