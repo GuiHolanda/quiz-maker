@@ -1,5 +1,5 @@
-import { quizReducer } from '@/features/reducers/quiz.reducer';
 import { SVGProps } from 'react';
+import type { QuizState } from '@/features/reducers/quiz.reducer';
 
 export type AnswersMap = Record<number, string[]>;
 export type Option = Record<string, string>;
@@ -47,23 +47,29 @@ export interface QuizPayload {
 export interface Certification {
   label: string;
   key: string;
-  topics?: string[];
+  topics: string[];
 }
 
-export type Certifications = Certification[];
 
 export interface QuizStoreApi {
-  quiz: ReturnType<typeof quizReducer>;
+  quiz: QuizState;
   setAnswers: (answers: AnswersMap) => void;
   replaceQuiz: (payload: QuizPayload) => void;
   setFinished: (isFinished: boolean) => void;
   clear: () => void;
 }
 
+export interface CertificationPayload{
+  certifications: Certification[];
+  selectedCertification: Certification | null;
+}
+
 export interface CertificationsStoreApi {
-  certifications: Certifications;
-  setCertifications: (certs: Certifications) => void;
-  addCertification: (cert: Certification) => void;
+  certifications: Certification[];
+  selectedCertification: Certification | null;
+  setCertifications: (certifications: Certification[]) => void;
+  setSelectedCertification: (certification: Certification | null) => void;
+  addCertification: (certification: Certification) => void;
   removeCertification: (key: string) => void;
   updateCertification: (key: string, patch: Partial<Certification>) => void;
 }

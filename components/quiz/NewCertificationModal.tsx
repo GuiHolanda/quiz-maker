@@ -101,7 +101,7 @@ export const NewCertificationModal = ({
           </div>
         </ModalBody>
         <ModalFooter>
-          <Button color="danger" onPress={onClose}>
+          <Button color="default" onPress={onClose}>
             Close
           </Button>
           <Button color="primary" onPress={onSaveCertification}>

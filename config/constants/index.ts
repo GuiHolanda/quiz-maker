@@ -1,7 +1,10 @@
+import { CertificationsState } from "@/features/reducers/certifications.reducer";
+
 export const OPENAI_POST_URL = "/quizGenerator";
 export const QUIZ_LOCAL_STORAGE_KEY = "QUIZ";
 export const CERTIFICATIONS_LOCAL_STORAGE_KEY = 'CERTIFICATIONS';
-export const CERTIFICATIONS = [
+export const INITIAL_CERTIFICATIONS_STATE: CertificationsState = {
+  certifications: [
   {
     label: 'SAP Certified Associate - Business User - SAP Commerce Cloud',
     key: '(C_C4H32_2411)',
@@ -115,4 +118,6 @@ export const CERTIFICATIONS = [
       'Backup, Recovery and High Availability',
     ],
   },
-];
+],
+  selectedCertification: null,
+}

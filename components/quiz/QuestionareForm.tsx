@@ -11,32 +11,34 @@ import { BusyDialog } from '../ui/BusyDialog';
 import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
 import { useState } from 'react';
 import { useDisclosure } from '@heroui/modal';
-import { faCirclePlus, faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import { faEllipsisVertical, faPenSquare, faPlusCircle, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { NewCertificationModal } from './NewCertificationModal';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
-import { Tooltip } from '@heroui/tooltip';
+import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@heroui/dropdown';
 
 interface QuestionareFormProps {
   onGenerated: (questions: Question[]) => void;
 }
 
 export function QuestionareForm({ onGenerated }: Readonly<QuestionareFormProps>) {
-  const { certifications, removeCertification } = useCertificationsContext();
+  const { certifications, selectedCertification, setSelectedCertification, removeCertification } =
+    useCertificationsContext();
   const { loading, error, setError, request } = useRequest(getQuestions);
-  const [certificationTitle, setCertificationTitle] = useState<string>('');
-  const [topics, setTopics] = useState<string[]>([]);
   const [selectedTopic, setSelectedTopic] = useState<any>(null);
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
 
   const onCertificationChange = (key: any) => {
-    const certification = certifications.find((cert) => cert.key === key);
-    setCertificationTitle(certification?.label || '');
-    setTopics(certification?.topics || []);
+  const certification = certifications.find((cert) => cert.key === key);
+  setSelectedCertification(certification || null);
   };
 
-  const onDeleteCertification = (certificationKey: string) => {
-    removeCertification(certificationKey);
+  const onDeleteCertification = () => {
+    if (selectedCertification) {
+      removeCertification(selectedCertification.key);
+      setSelectedCertification(null);
+      setSelectedTopic(null);
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -48,7 +50,7 @@ export function QuestionareForm({ onGenerated }: Readonly<QuestionareFormProps>)
     const newQuestionsPercentage = formData.get('newQuestionsPercentage')?.toString().trim();
 
     const newErrors: QuizFormErrors = {};
-    if (!certificationTitle) newErrors.certificationTitle = 'Certification Title is required';
+    if (!selectedCertification) newErrors.certificationTitle = 'Certification Title is required';
     if (!selectedTopic) newErrors.topic = 'Topic is required';
     if (!num_questions) newErrors.num_questions = 'Number of questions is required';
     if (Object.keys(newErrors).length > 0) {
@@ -57,7 +59,7 @@ export function QuestionareForm({ onGenerated }: Readonly<QuestionareFormProps>)
     }
 
     const requestPayload: QuizParams = {
-      certificationTitle,
+      certificationTitle: selectedCertification?.label || '',
       topic: selectedTopic,
       numQuestions: Number(num_questions),
       newPercent: Number(newQuestionsPercentage) || 0.3,
@@ -77,29 +79,56 @@ export function QuestionareForm({ onGenerated }: Readonly<QuestionareFormProps>)
                 label="Select an Certification"
                 name="certificationTitle"
                 onSelectionChange={onCertificationChange}
+                selectedKey={selectedCertification?.key}
               >
                 {certifications.map((certification) => (
                   <AutocompleteItem key={certification.key} textValue={certification.label}>
-                    <div className="flex justify-between items-center w-full">
-                      <p>{certification.label}</p>
-                        <Button onPress={() => onDeleteCertification(certification.key)} variant="light" size="sm">
-                          <FontAwesomeIcon icon={faTrashCan} className="text-danger text-lg hover:scale-110" />
-                        </Button>
-                      </div>
+                    {certification.label}
                   </AutocompleteItem>
                 ))}
               </Autocomplete>
-              <Tooltip content="Add Certification" showArrow={true}>
-                <Button onPress={onOpen} variant="light" size="sm">
-                  <FontAwesomeIcon icon={faCirclePlus} className="text-success text-2xl" />
-                </Button>
-              </Tooltip>
               <NewCertificationModal isOpen={isOpen} onOpenChange={onOpenChange} onClose={onClose} />
               <Autocomplete className="w-1/3" label="Select an Topic" name="topic" onSelectionChange={setSelectedTopic}>
-                {topics.map((topic) => (
-                  <AutocompleteItem key={topic}>{topic}</AutocompleteItem>
-                ))}
+                {selectedCertification
+                  ? selectedCertification.topics.map((topic) => (
+                      <AutocompleteItem key={topic}>{topic}</AutocompleteItem>
+                    ))
+                  : []}
               </Autocomplete>
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button variant="light" size="sm">
+                    <FontAwesomeIcon icon={faEllipsisVertical} className="text-2xl" />
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu aria-label="Dropdown menu with icons" variant="faded">
+                  <DropdownItem
+                    onClick={onOpen}
+                    key="new"
+                    startContent={
+                      <FontAwesomeIcon icon={faPlusCircle} className="text-success text-lg hover:scale-110" />
+                    }
+                  >
+                    Add certification
+                  </DropdownItem>
+                  <DropdownItem
+                    key="edit"
+                    startContent={<FontAwesomeIcon icon={faPenSquare} className="text-info text-lg hover:scale-110" />}
+                  >
+                    Edit certification
+                  </DropdownItem>
+                  <DropdownItem
+                    hidden={!selectedCertification}
+                    key="delete"
+                    className="text-danger"
+                    color="danger"
+                    startContent={<FontAwesomeIcon icon={faTrashCan} className="text-danger text-lg hover:scale-110" />}
+                    onClick={onDeleteCertification}
+                  >
+                    Delete certification
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
             </div>
             <div className="flex w-full items-baseline gap-4">
               <Input
