@@ -1,53 +1,133 @@
-# Next.js & HeroUI Template
+# Quiz Maker — Next.js + OpenAI
 
-This is a template for creating applications using Next.js 14 (app directory) and HeroUI (v2).
+This repository contains a Quiz Maker application: a Next.js 14 + TypeScript app that uses the OpenAI API to generate examination-style questions per certification and topic, persists data with Prisma (SQLite in development), and provides a UI to manage certifications and quizzes.
 
-[Try it on CodeSandbox](https://githubbox.com/heroui-inc/heroui/next-app-template)
+Key features
+- Generate question banks per certification and topic using OpenAI.
+- Persist quiz data with Prisma (SQLite by default in development).
+- Manage certifications from the UI; state is held by React Context + reducers.
 
-## Technologies Used
+Technologies
+- Next.js 14 (app router)
+- TypeScript
+- Tailwind CSS + HeroUI
+- Prisma (SQLite for development)
+- OpenAI (GPT) for question generation
 
-- [Next.js 14](https://nextjs.org/docs/getting-started)
-- [HeroUI v2](https://heroui.com/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Tailwind Variants](https://tailwind-variants.org)
-- [TypeScript](https://www.typescriptlang.org/)
-- [Framer Motion](https://www.framer.com/motion/)
-- [next-themes](https://github.com/pacocoursey/next-themes)
+Quick start (development)
+1. Prerequisites
+	 - Node.js 18+ (recommended)
+	 - Git
+	 - (optional) pnpm or yarn
 
-## How to Use
-
-### Use the template with create-next-app
-
-To create a new project based on this template using `create-next-app`, run the following command:
+2. Clone
 
 ```bash
-npx create-next-app -e https://github.com/heroui-inc/next-app-template
+git clone git@github.com:GuiHolanda/quiz-maker.git
+cd quiz-maker
 ```
 
-### Install dependencies
-
-You can use one of them `npm`, `yarn`, `pnpm`, `bun`, Example using `npm`:
+3. Install dependencies
 
 ```bash
 npm install
+# or: pnpm install
 ```
 
-### Run the development server
+4. Environment variables
+
+- Create a `.env` file in the project root. Minimum variables required:
+
+```env
+OPENAI_API_KEY=sk-...
+DATABASE_URL="file:./prisma/dev.db"
+# (optional) other variables for your environment
+```
+
+- Replace `sk-...` with your OpenAI API key (see below for how to obtain one). Never commit `.env` to source control.
+
+5. Run the app
 
 ```bash
 npm run dev
+# open http://localhost:3000
 ```
 
-### Setup pnpm (optional)
+Obtaining an OpenAI API key
+- Create an account at OpenAI: https://platform.openai.com/
+- Visit the API keys page to create a key: https://platform.openai.com/account/api-keys
+- Click "Create new secret key" and copy the key into your local `.env` as `OPENAI_API_KEY`.
+- If a key is ever exposed, revoke it immediately from the same page and create a replacement.
 
-If you are using `pnpm`, you need to add the following code to your `.npmrc` file:
+Prisma — migrations and database management
+- Backup (SQLite file):
 
 ```bash
-public-hoist-pattern[]=*@heroui/*
+mkdir -p prisma/backups
+cp prisma/dev.db prisma/backups/dev.db.$(date +%Y%m%d_%H%M%S).db
 ```
 
-After modifying the `.npmrc` file, you need to run `pnpm install` again to ensure that the dependencies are installed correctly.
+- Generate and apply a migration (development):
 
-## License
+```bash
+npx prisma migrate dev --name add-some-field
+# regenerates Prisma Client automatically
+```
 
-Licensed under the [MIT license](https://github.com/heroui-inc/next-app-template/blob/main/LICENSE).
+- Push schema without creating migrations (fast, use in dev only):
+
+```bash
+npx prisma db push
+npx prisma generate
+```
+
+- Reset (destructive):
+
+```bash
+npx prisma migrate reset --force --skip-seed
+```
+
+- Apply migrations in production / CI:
+
+```bash
+npx prisma migrate deploy
+npx prisma generate
+```
+
+- Open Prisma Studio to inspect data:
+
+```bash
+npx prisma studio
+```
+
+Notes on migrations
+- `migrate dev` creates a migration and applies it (recommended in development).
+- `db push` syncs schema to the database without creating migration files (useful for experiments in dev).
+- In production, prefer creating migration files and applying them with `migrate deploy`.
+
+Architecture overview
+- Providers and state:
+	- `features/providers/CertificationsProvider` — manages `certifications` and `selectedCertification` using a reducer and local persistence.
+	- `features/providers/QuizProvider` — manages quiz state (questions, answers, finished state) and local persistence.
+
+- Hooks:
+	- `features/hooks/useCertificationsContext.hook.ts` — consumable hook for certifications.
+	- `features/hooks/useQuizContext.hook.ts` — consumable hook for quiz state.
+
+- OpenAI integration:
+	- Server route(s) under `app/api` call OpenAI to generate questions. Prompt construction and validation live in `features/` and `config/` (including JSON Schema validations in `config/promptSchemas`).
+
+Where to edit the certifications list
+- Default certifications are seeded or kept in `config/constants/index.ts`.
+- You can add, edit or remove certifications from the UI; they persist in local storage via the certifications provider.
+
+Best practices
+- Never commit secrets. Use environment variables in your deployment platform (Vercel, Render, etc.).
+- Rotate OpenAI keys when they are exposed.
+
+Helpful commands
+- Type-check the project:
+
+```bash
+npx tsc --noEmit
+```
