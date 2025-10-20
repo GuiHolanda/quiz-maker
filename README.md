@@ -16,9 +16,9 @@ Technologies
 
 Quick start (development)
 1. Prerequisites
-	 - Node.js 18+ (recommended)
-	 - Git
-	 - (optional) pnpm or yarn
+   - Node.js 18+ (recommended)
+   - Git
+   - (optional) pnpm or yarn
 
 2. Clone
 
@@ -40,11 +40,26 @@ npm install
 
 ```env
 OPENAI_API_KEY=sk-...
-DATABASE_URL="file:./prisma/dev.db"
+DATABASE_URL="file:.dev.db"
 # (optional) other variables for your environment
 ```
 
-- Replace `sk-...` with your OpenAI API key (see below for how to obtain one). Never commit `.env` to source control.
+- Replace `sk-...` with your OpenAI API key. Never commit `.env` to source control.
+
+Obtaining an OpenAI API key (do this before running the app)
+- Create an account at OpenAI: https://platform.openai.com/
+- Visit the API keys page to create a key: https://platform.openai.com/account/api-keys
+- Click "Create new secret key" and copy the key into your local `.env` as `OPENAI_API_KEY`.
+- If a key is ever exposed, revoke it immediately from the same page and create a replacement.
+
+4.5 Generate local database (create dev.db)
+- If you already have committed Prisma migrations (recommended), run:
+
+```bash
+npx prisma migrate dev
+```
+
+This will create/apply migrations, populate `prisma/dev.db`, and regenerate the Prisma Client.
 
 5. Run the app
 
@@ -52,12 +67,6 @@ DATABASE_URL="file:./prisma/dev.db"
 npm run dev
 # open http://localhost:3000
 ```
-
-Obtaining an OpenAI API key
-- Create an account at OpenAI: https://platform.openai.com/
-- Visit the API keys page to create a key: https://platform.openai.com/account/api-keys
-- Click "Create new secret key" and copy the key into your local `.env` as `OPENAI_API_KEY`.
-- If a key is ever exposed, revoke it immediately from the same page and create a replacement.
 
 Prisma — migrations and database management
 - Backup (SQLite file):
@@ -107,15 +116,15 @@ Notes on migrations
 
 Architecture overview
 - Providers and state:
-	- `features/providers/CertificationsProvider` — manages `certifications` and `selectedCertification` using a reducer and local persistence.
-	- `features/providers/QuizProvider` — manages quiz state (questions, answers, finished state) and local persistence.
+  - `features/providers/CertificationsProvider` — manages `certifications` and `selectedCertification` using a reducer and local persistence.
+  - `features/providers/QuizProvider` — manages quiz state (questions, answers, finished state) and local persistence.
 
 - Hooks:
-	- `features/hooks/useCertificationsContext.hook.ts` — consumable hook for certifications.
-	- `features/hooks/useQuizContext.hook.ts` — consumable hook for quiz state.
+  - `features/hooks/useCertificationsContext.hook.ts` — consumable hook for certifications.
+  - `features/hooks/useQuizContext.hook.ts` — consumable hook for quiz state.
 
 - OpenAI integration:
-	- Server route(s) under `app/api` call OpenAI to generate questions. Prompt construction and validation live in `features/` and `config/` (including JSON Schema validations in `config/promptSchemas`).
+  - Server route(s) under `app/api` call OpenAI to generate questions. Prompt construction and validation live in `features/` and `config/` (including JSON Schema validations in `config/promptSchemas`).
 
 Where to edit the certifications list
 - Default certifications are seeded or kept in `config/constants/index.ts`.
@@ -124,6 +133,7 @@ Where to edit the certifications list
 Best practices
 - Never commit secrets. Use environment variables in your deployment platform (Vercel, Render, etc.).
 - Rotate OpenAI keys when they are exposed.
+- Commit Prisma migration files (prisma/migrations) but do not commit the generated database (`prisma/dev.db`).
 
 Helpful commands
 - Type-check the project:

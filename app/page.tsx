@@ -30,7 +30,8 @@ interface QuizPageContentProps {
 function QuizPageContent({ questions, setQuestions }: Readonly<QuizPageContentProps>) {
   const { quiz, replaceQuiz } = useQuizContext();
 
-  const onQuestionsGenerated = (questionsArr: Question[]) => {
+  const onQuestionsGenerated = (questionsArr: Question[] | undefined) => {
+    if (!questionsArr) return;
     replaceQuiz({
       meta: {
         topic: questionsArr[0]?.topic ?? '',

@@ -10,10 +10,10 @@ const questionService = new QuestionService();
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const parsedParams = questionService.parseParams(url);
-  if ('error' in parsedParams) return NextResponse.json({ error: parsedParams.error }, { status: 400 });
+  if ('error' in parsedParams) return NextResponse.json({ message: parsedParams.error }, { status: 400 });
 
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
+  if (!apiKey) return NextResponse.json({ message: 'API key not configured' }, { status: 500 });
 
   const { topic, numQuestions, difficulty, newPercent, timeoutMs, certificationTitle } = parsedParams;
 
@@ -36,11 +36,11 @@ export async function GET(request: NextRequest) {
     const parsedResp = safeJsonParse<any>(outputText ?? '');
     if (!parsedResp.ok) {
       console.error('invalid response from LLM', parsedResp.error);
-      return NextResponse.json({ error: 'invalid response JSON from LLM' }, { status: 502 });
+      return NextResponse.json({ message: 'invalid response JSON from LLM' }, { status: 502 });
     }
 
     const { ok, value: questionsFromAi, error } = questionService.validateQuestions(parsedResp.value);
-    if (!ok || !questionsFromAi) return NextResponse.json({ error: `Invalid questions: ${error}` }, { status: 502 });
+    if (!ok || !questionsFromAi) return NextResponse.json({ message: `Invalid questions: ${error}` }, { status: 502 });
 
     await questionService.createFromPayload(questionsFromAi);
 
@@ -49,8 +49,8 @@ export async function GET(request: NextRequest) {
 
     const final = [...recycledQuestions, ...questionsFromAi];
     return NextResponse.json(final, { status: 200 });
-  } catch (err) {
+  } catch (err: any) {
     console.error('Failed to process request:', err);
-    return NextResponse.json({ error: 'Failed to process request' }, { status: 500 });
+    return NextResponse.json({ error: err, message: err.message || "Failed to process request" }, { status: err.status || 500 });
   }
 }
