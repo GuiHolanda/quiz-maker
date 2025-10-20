@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     const final = [...recycledQuestions, ...questionsFromAi];
     return NextResponse.json(final, { status: 200 });
   } catch (err) {
-    console.error('Failed to compute persistence plan:', err);
-    return NextResponse.json({ error: 'Failed to compute persistence plan' }, { status: 500 });
+    console.error('Failed to process request:', err);
+    return NextResponse.json({ error: 'Failed to process request' }, { status: 500 });
   }
 }
