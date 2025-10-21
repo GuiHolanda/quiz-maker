@@ -31,16 +31,16 @@ export class QuestionService {
     const params = url.searchParams;
     const certificationTitle = params.get('certificationTitle')?.trim() || 'General Certification';
     const topic = params.get('topic')?.trim() ?? '';
-    const numQuestions = parseNumber(params.get('num_questions'), 10) ?? 10;
+    const numQuestions = parseNumber(params.get('numQuestions'), 10) ?? 10;
     if (!Number.isInteger(numQuestions) || numQuestions <= 0) {
-      return { error: 'num_questions must be an integer > 0' };
+      return { error: 'numQuestions must be an integer > 0' };
     }
 
     const easy = parseNumber(params.get('easy'), 0) ?? 0;
     const medium = parseNumber(params.get('medium'), 0) ?? 0;
     const hard = parseNumber(params.get('hard'), 0) ?? 0;
 
-    let newPercentRaw = Number.parseFloat(params.get('new_percent') ?? '0');
+    let newPercentRaw = Number.parseFloat(params.get('newPercent') ?? '0');
     if (Number.isNaN(newPercentRaw)) newPercentRaw = 0;
     if (newPercentRaw > 1 && newPercentRaw <= 100) newPercentRaw = newPercentRaw / 100;
     if (newPercentRaw < 0) newPercentRaw = 0;

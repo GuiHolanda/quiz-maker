@@ -8,6 +8,8 @@ export interface PromptGenerationConfig {
   temperature: number;
   top_p?: number;
   retries?: number;
+  presence_penalty?: number;
+  frequency_penalty?: number;
   // max_tokens intentionally omitted (handled at client call site)
 }
 
@@ -25,9 +27,11 @@ export const PROMPT_CONFIG: PromptConfig = {
   prompt_version: '1.2',
   role: 'You are an expert exam question writer for SAP certifications',
   generation: {
-    temperature: 0.0,
-    top_p: 0.9,
-    retries: 1,
+  temperature: 0.4,
+  top_p: 0.9,
+  retries: 2,
+  presence_penalty: 0.15,
+  frequency_penalty: 0.15,
   },
   rules: [
     `All the questions must be about the certification exam being targeted in the input parameter CERTIFICATION_TITLE.`,
@@ -37,12 +41,12 @@ export const PROMPT_CONFIG: PromptConfig = {
     'Produce exactly NUM_QUESTIONS questions.',
     'Each question must have exactly 5 options labeled A, B, C, D, E.',
     'Questions may be single-choice or multiple-choice; always include correctCount (1..3).',
-    'Vary the number of correct answers across the set of questions (some 1, some 2, some 3).',
+    'You must vary the number of correct answers across the set of questions (some 1, some 2, some 3).',
     'For EVERY option include an explanation stating WHY it is correct or incorrect (minimum ~40 characters, ideally 2 sentences).',
     'Mix original items and rephrased public sample questions (maintain accuracy).',
     "Never use 'All of the above' or 'None of the above'.",
     'Distribute difficulty roughly following DIFFICULTY_DISTRIBUTION (easy/medium/hard).',
-    'Shuffle correct answers among A..E to avoid patterns.',
+    'You must shuffle the correct options among A to E to avoid patterns (e.g., not always A or B).',
     'Return ONLY a JSON array (no wrapper object, no markdown, no extra prose).',
   ],
   acceptance: [
@@ -89,5 +93,70 @@ export const PROMPT_CONFIG: PromptConfig = {
         },
       ],
     },
+    {
+      name: 'perfect_double',
+      input: { NUM_QUESTIONS: 1, TOPIC: 'SmartEdit' },
+      output: [
+        {
+          id: 1,
+          text: 'Which two SmartEdit features together allow content editors to preview component variations and manage personalization during runtime?',
+          correctCount: 2,
+          certificationTitle: 'SAP Commerce Cloud',
+          topic: 'SmartEdit',
+          topicSubarea: 'preview and personalization',
+          difficulty: 'medium',
+          options: {
+            A: 'Backoffice Widgets',
+            B: 'PIM Exporters',
+            C: 'Component Variants',
+            D: 'Experience Editor',
+            E: 'Promotion Rules',
+          },
+          answer: {
+            correctOptions: ['C', 'D'],
+            explanations: {
+              A: 'Backoffice Widgets provide admin UI for management tasks but do not enable storefront runtime personalization.',
+              B: 'PIM Exporters handle product data export and are unrelated to runtime content variation.',
+              C: 'Component Variants define alternative component versions that can be previewed in SmartEdit.',
+              D: 'Experience Editor (or similar runtime editor) allows editors to apply and preview personalization rules during runtime.',
+              E: 'Promotion Rules manage pricing and promotions, not component personalization or previewing.',
+            },
+          },
+        },
+      ],
+    },
+    {
+      name: 'perfect_triple',
+      input: { NUM_QUESTIONS: 1, TOPIC: 'Checkout' },
+      output: [
+        {
+          id: 1,
+          text: 'During checkout, which three features collectively improve validation, payment handling, and order confirmation flow?',
+          correctCount: 3,
+          certificationTitle: 'SAP Commerce Cloud',
+          topic: 'Checkout',
+          topicSubarea: 'validation & payments',
+          difficulty: 'hard',
+          options: {
+            A: 'Catalog Sync',
+            B: 'Payment Provider Integration',
+            C: 'Checkout Validation Hooks',
+            D: 'UI Personalization',
+            E: 'Order Confirmation Service',
+          },
+          answer: {
+            correctOptions: ['B', 'C', 'E'],
+            explanations: {
+              A: 'Catalog Sync keeps product data consistent but does not directly handle checkout validation or payments.',
+              B: 'Payment Provider Integration handles transaction processing and is essential for payment handling during checkout.',
+              C: 'Checkout Validation Hooks provide server-side validation for input and business rules during the checkout flow.',
+              D: 'UI Personalization can improve user experience but does not guarantee payment handling or order confirmation logic.',
+              E: 'Order Confirmation Service is responsible for finalizing orders and notifying downstream systems after successful checkout.',
+            },
+          },
+        },
+      ],
+    },
+    
   ],
 };

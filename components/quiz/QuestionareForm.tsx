@@ -156,6 +156,7 @@ export function QuestionareForm({ onGenerated }: Readonly<QuestionareFormProps>)
                 formatOptions={{ style: 'percent' }}
                 label="New Questions"
                 size="sm"
+                defaultValue={1}
                 maxValue={1}
                 minValue={0}
                 showTooltip={true}

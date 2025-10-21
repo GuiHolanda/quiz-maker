@@ -7,8 +7,7 @@ import { safeJsonParse } from '@/utils';
 const questionService = new QuestionService();
 
 export async function GET(request: NextRequest) {
-  const url = new URL(request.url);
-  const parsedParams = questionService.parseParams(url);
+  const parsedParams = questionService.parseParams(new URL(request.url));
   if ('error' in parsedParams) return NextResponse.json({ message: parsedParams.error }, { status: 400 });
 
   const { topic, numQuestions, difficulty, newPercent, timeoutMs, certificationTitle } = parsedParams;
