@@ -1,12 +1,15 @@
-import { prisma, PrismaService } from "@/lib/prisma";
-import { Question, QuizParams } from "@/types";
-import { parseNumber } from "@/utils";
-import { OpenAI } from "openai/client";
+import { prisma, PrismaService } from '@/lib/prisma';
+import { Question, QuizParams } from '@/types';
+import { parseNumber } from '@/utils';
+import { OpenAI } from 'openai/client';
 
 export class QuestionService {
   constructor(private readonly prismaService: PrismaService = prisma) {}
 
-  public async fetchAiQuestions(client: OpenAI, prompt: string, timeoutMs: number | undefined): Promise<string | null> {
+  public async fetchAiQuestions(prompt: string, timeoutMs: number | undefined): Promise<string | null> {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) throw new Error('API key not configured');
+    const client = new OpenAI({ apiKey });
     const call = client.responses.create({ model: 'gpt-5-nano', input: prompt });
     const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('LLM timeout')), timeoutMs));
     const res: any = await Promise.race([call, timeout]);
@@ -15,16 +18,16 @@ export class QuestionService {
   }
 
   public validateQuestions(obj: unknown) {
-  if (!Array.isArray(obj)) return { ok: false, error: 'not-an-array' };
-  for (const q of obj) {
-    if (!q || typeof q.text !== 'string') return { ok: false, error: 'missing-text' };
-    if (!q.options || typeof q.options !== 'object') return { ok: false, error: 'missing-options' };
-    if (!q.answer || !Array.isArray(q.answer.correctOptions)) return { ok: false, error: 'missing-answer' };
+    if (!Array.isArray(obj)) return { ok: false, error: 'not-an-array' };
+    for (const q of obj) {
+      if (!q || typeof q.text !== 'string') return { ok: false, error: 'missing-text' };
+      if (!q.options || typeof q.options !== 'object') return { ok: false, error: 'missing-options' };
+      if (!q.answer || !Array.isArray(q.answer.correctOptions)) return { ok: false, error: 'missing-answer' };
+    }
+    return { ok: true, value: obj as Question[] };
   }
-  return { ok: true, value: obj as Question[] };
-}
 
-  public  parseParams(url: URL): QuizParams | { error: string } {
+  public parseParams(url: URL): QuizParams | { error: string } {
     const params = url.searchParams;
     const certificationTitle = params.get('certificationTitle')?.trim() || 'General Certification';
     const topic = params.get('topic')?.trim() ?? '';
@@ -32,16 +35,16 @@ export class QuestionService {
     if (!Number.isInteger(numQuestions) || numQuestions <= 0) {
       return { error: 'num_questions must be an integer > 0' };
     }
-  
+
     const easy = parseNumber(params.get('easy'), 0) ?? 0;
     const medium = parseNumber(params.get('medium'), 0) ?? 0;
     const hard = parseNumber(params.get('hard'), 0) ?? 0;
-  
-    let newPercentRaw = parseFloat(params.get('new_percent') ?? '0');
-    if (isNaN(newPercentRaw)) newPercentRaw = 0;
+
+    let newPercentRaw = Number.parseFloat(params.get('new_percent') ?? '0');
+    if (Number.isNaN(newPercentRaw)) newPercentRaw = 0;
     if (newPercentRaw > 1 && newPercentRaw <= 100) newPercentRaw = newPercentRaw / 100;
     if (newPercentRaw < 0) newPercentRaw = 0;
-  
+
     const timeoutMs = parseNumber(params.get('timeout_ms'), 180000) ?? 180000;
 
     return {
@@ -67,7 +70,7 @@ export class QuestionService {
     const rows = await this.prismaService.question.findMany({
       where,
       take: limit,
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       include: {
         options: true,
         answer: { include: { explanations: true } },
@@ -101,16 +104,7 @@ export class QuestionService {
     return this.prismaService.$transaction(async (tx) => {
       const results: any[] = [];
       for (const question of questions) {
-        const {
-          certificationTitle,
-          text,
-          correctCount,
-          options,
-          topic,
-          difficulty,
-          topicSubarea,
-          answer,
-        } = question;
+        const { certificationTitle, text, correctCount, options, topic, difficulty, topicSubarea, answer } = question;
 
         const createdQuestion = await tx.question.create({
           data: {
@@ -179,7 +173,7 @@ export class QuestionService {
       let desiredNew = 0;
       if (newCount && newCount >= 0) {
         desiredNew = Math.min(newCount, num_questions);
-      } else if (isFinite(newPercent) && newPercent > 0) {
+      } else if (Number.isFinite(newPercent) && newPercent > 0) {
         desiredNew = Math.ceil(newPercent * num_questions);
       } else {
         desiredNew = num_questions;
@@ -194,10 +188,9 @@ export class QuestionService {
       }
 
       return { desiredNew, recycledNeeded };
-
     } catch (error) {
-      console.error("Failed to compute new questions distribution:", error);
-      throw new Error("Failed to compute new questions distribution");
+      console.error('Failed to compute new questions distribution:', error);
+      throw new Error('Failed to compute new questions distribution');
     }
   }
 }

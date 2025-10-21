@@ -92,15 +92,3 @@ export function buildPrompt(params: QuizParams, cfg: PromptConfig = PROMPT_CONFI
 
   return parts.join('\n');
 }
-
-function parseFormData(formData: FormData, fields: string[]) {
-  const data: Record<string, string> = {};
-
-  fields.forEach((field) => {
-    const value = formData.get(field);
-
-    if (typeof value === 'string') data[field] = value;
-  });
-
-  return data;
-}

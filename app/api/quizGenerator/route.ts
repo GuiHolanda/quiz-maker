@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { OpenAI } from 'openai';
 import { PROMPT_CONFIG } from '@/config/constants/promptConfig';
 import { buildPrompt } from '@/features/quizGenerator.service';
 import { QuestionService } from '@/app/api/quizGenerator/question.service';
@@ -11,9 +10,6 @@ export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const parsedParams = questionService.parseParams(url);
   if ('error' in parsedParams) return NextResponse.json({ message: parsedParams.error }, { status: 400 });
-
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return NextResponse.json({ message: 'API key not configured' }, { status: 500 });
 
   const { topic, numQuestions, difficulty, newPercent, timeoutMs, certificationTitle } = parsedParams;
 
@@ -31,9 +27,8 @@ export async function GET(request: NextRequest) {
       difficulty: difficulty,
     }, PROMPT_CONFIG);
 
-    const client = new OpenAI({ apiKey });
-    const outputText = await questionService.fetchAiQuestions(client, prompt, timeoutMs);
-    const parsedResp = safeJsonParse<any>(outputText ?? '');
+    const outputText = await questionService.fetchAiQuestions( prompt, timeoutMs);
+    const parsedResp = safeJsonParse(outputText ?? '');
     if (!parsedResp.ok) {
       console.error('invalid response from LLM', parsedResp.error);
       return NextResponse.json({ message: 'invalid response JSON from LLM' }, { status: 502 });
