@@ -158,6 +158,7 @@ export function QuestionareForm({ onGenerated }: Readonly<QuestionareFormProps>)
                 variant="underlined"
                 labelPlacement="outside-top"
                 max={20}
+                min={1}
               />
               <Slider
                 className="w-48"
