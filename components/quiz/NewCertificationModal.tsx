@@ -1,5 +1,6 @@
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
-import { faCirclePlus, faCircleXmark } from '@fortawesome/free-solid-svg-icons';
+import { Certification } from '@/types';
+import { faCirclePlus, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
@@ -14,22 +15,43 @@ export const NewCertificationModal = ({
   isOpen,
   onOpenChange,
   onClose,
+  editingCertification,
 }: {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onClose: () => void;
+  editingCertification?: Certification | null;
 }) => {
-  const { addCertification } = useCertificationsContext();
-  const [topicsList, setTopicsList] = useState<string[]>([]);
+  const { addCertification, updateCertification } = useCertificationsContext();
+  const [topicsList, setTopicsList] = useState<string[]>([...(editingCertification?.topics || [])]);
+  const [topicName, setTopicName] = useState<string>('');
+
   const topicNameInputRef = useRef<HTMLInputElement>(null);
   const certificationTitleInputRef = useRef<HTMLInputElement>(null);
   const certificationCodeInputRef = useRef<HTMLInputElement>(null);
 
+    useEffect(() => {
+    if (isOpen && editingCertification) {
+      setTopicsList([...editingCertification.topics]);
+      if (certificationTitleInputRef.current) certificationTitleInputRef.current.value = editingCertification.label;
+      if (certificationCodeInputRef.current) certificationCodeInputRef.current.value = editingCertification.key;
+      return;
+    }
+    if (!isOpen) {
+      setTopicsList([]);
+      setTopicName('');
+      if (topicNameInputRef.current) topicNameInputRef.current.value = '';
+      if (certificationTitleInputRef.current) certificationTitleInputRef.current.value = '';
+      if (certificationCodeInputRef.current) certificationCodeInputRef.current.value = '';
+    }
+  }, [isOpen, editingCertification]);
+
   const onAddTopic = () => {
-    const topicName = topicNameInputRef.current?.value.trim();
-    if (!topicName) return;
-    if (topicsList.includes(topicName)) return;
-    setTopicsList((prev) => [...prev, topicName]);
+    const name = topicName?.trim();
+    if (!name) return;
+    if (topicsList.includes(name)) return;
+    setTopicsList((prev) => [...prev, name]);
+    setTopicName('');
     if (topicNameInputRef.current) topicNameInputRef.current.value = '';
   };
 
@@ -50,21 +72,23 @@ export const NewCertificationModal = ({
       return;
     }
 
-    addCertification({
-      label: certificationTitle,
-      key: certificationCode,
-      topics: topicsList,
-    });
+    if (editingCertification) {
+      updateCertification(editingCertification.key, {
+        label: certificationTitle,
+        key: certificationCode,
+        topics: topicsList,
+      });
+    } else {
+      addCertification({
+        label: certificationTitle,
+        key: certificationCode,
+        topics: topicsList,
+      });
+    }
 
     onClose();
   };
 
-  useEffect(() => {
-    if (!isOpen) {
-      setTopicsList([]);
-      if (topicNameInputRef.current) topicNameInputRef.current.value = '';
-    }
-  }, [isOpen]);
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="5xl">
       <ModalContent>
@@ -76,7 +100,13 @@ export const NewCertificationModal = ({
           </div>
           <h4 className="font-bold">Topics</h4>
           <div className="flex items-center gap-4 max-w-2xl">
-            <Input label="Topic Name" type="text" ref={topicNameInputRef} />
+            <Input
+              label="Topic Name"
+              type="text"
+              ref={topicNameInputRef}
+              value={topicName}
+              onChange={(e: any) => setTopicName(e?.target?.value ?? '')}
+            />
             <Button size="sm" variant="light" onPress={onAddTopic}>
               <FontAwesomeIcon icon={faCirclePlus} className="text-success text-2xl" />
             </Button>
@@ -86,14 +116,14 @@ export const NewCertificationModal = ({
             {topicsList.length === 0 && <p className="text-sm italic text-zinc-400">No topics added yet</p>}
             {topicsList.map((topic) => (
               <Badge
+                showOutline={false}
+                size='sm'
                 isOneChar
                 key={topic}
-                color="default"
-                variant="solid"
-                shape="circle"
-                content={<FontAwesomeIcon icon={faCircleXmark} />}
+                color='danger'
+                content={<FontAwesomeIcon icon={faXmark}  size='xs'/>}
                 onClick={() => onRemoveTopic(topic)}
-                className="hover:bg-primary-200 hover:scale-105"
+                className="hover:scale-105"
               >
                 <Chip color="primary">{topic}</Chip>
               </Badge>

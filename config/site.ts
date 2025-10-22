@@ -20,7 +20,7 @@ export const siteConfig = {
     },
   ],
   links: {
-    github: "https://github.com/heroui-inc/heroui",
+    github: "https://github.com/GuiHolanda/quiz-maker/tree/main",
     docs: "https://heroui.com",
   },
 };

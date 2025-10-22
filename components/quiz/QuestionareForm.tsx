@@ -1,7 +1,7 @@
 'use client';
 import { getQuestions } from '@/features/quizGenerator.service';
 import { useRequest } from '@/features/hooks/useRequest.hook';
-import { Question, QuizParams, QuizFormErrors } from '@/types';
+import { Question, QuizParams, QuizFormErrors, Certification } from '@/types';
 import { Button } from '@heroui/button';
 import { CardBody } from '@heroui/card';
 import { Form } from '@heroui/form';
@@ -24,13 +24,14 @@ interface QuestionareFormProps {
 export function QuestionareForm({ onGenerated }: Readonly<QuestionareFormProps>) {
   const { certifications, selectedCertification, setSelectedCertification, removeCertification } =
     useCertificationsContext();
+  const [editingCert, setEditingCert] = useState<Certification | null>(null);
   const { loading, error, setError, request } = useRequest(getQuestions);
   const [selectedTopic, setSelectedTopic] = useState<any>(null);
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
 
   const onCertificationChange = (key: any) => {
-  const certification = certifications.find((cert) => cert.key === key);
-  setSelectedCertification(certification || null);
+    const certification = certifications.find((cert) => cert.key === key);
+    setSelectedCertification(certification || null);
   };
 
   const onDeleteCertification = () => {
@@ -65,7 +66,7 @@ export function QuestionareForm({ onGenerated }: Readonly<QuestionareFormProps>)
       newPercent: Number(newQuestionsPercentage) || 0.3,
     };
 
-    const questions = await request(requestPayload, () => form.reset());
+    const questions = await request(requestPayload);
     onGenerated(questions);
   };
   return (
@@ -87,7 +88,12 @@ export function QuestionareForm({ onGenerated }: Readonly<QuestionareFormProps>)
                   </AutocompleteItem>
                 ))}
               </Autocomplete>
-              <NewCertificationModal isOpen={isOpen} onOpenChange={onOpenChange} onClose={onClose} />
+              <NewCertificationModal
+                isOpen={isOpen}
+                onOpenChange={onOpenChange}
+                onClose={onClose}
+                editingCertification={editingCert}
+              />
               <Autocomplete className="w-1/3" label="Select an Topic" name="topic" onSelectionChange={setSelectedTopic}>
                 {selectedCertification
                   ? selectedCertification.topics.map((topic) => (
@@ -103,7 +109,10 @@ export function QuestionareForm({ onGenerated }: Readonly<QuestionareFormProps>)
                 </DropdownTrigger>
                 <DropdownMenu aria-label="Dropdown menu with icons" variant="faded">
                   <DropdownItem
-                    onClick={onOpen}
+                    onClick={() => {
+                      setEditingCert(null);
+                      onOpen();
+                    }}
                     key="new"
                     startContent={
                       <FontAwesomeIcon icon={faPlusCircle} className="text-success text-lg hover:scale-110" />
@@ -112,7 +121,12 @@ export function QuestionareForm({ onGenerated }: Readonly<QuestionareFormProps>)
                     Add certification
                   </DropdownItem>
                   <DropdownItem
+                    hidden={!selectedCertification}
                     key="edit"
+                    onClick={() => {
+                      setEditingCert(selectedCertification || null);
+                      onOpen();
+                    }}
                     startContent={<FontAwesomeIcon icon={faPenSquare} className="text-info text-lg hover:scale-110" />}
                   >
                     Edit certification

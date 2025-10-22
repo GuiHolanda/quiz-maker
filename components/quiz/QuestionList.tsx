@@ -27,6 +27,7 @@ export function QuestionList({
 
   const onFinishQuiz = () => {
     setFinished(true);
+    setCurrentPage(1);
   }
 
   const onRestartQuiz = () => {
