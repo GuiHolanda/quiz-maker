@@ -11,12 +11,16 @@ export class QuestionService {
     const { certificationTitle, topic, numQuestions } = variables;
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) throw new Error('API key not configured');
+    const promptId = process.env.PROMPT_ID;
+    if (!promptId) throw new Error('PROMPT_ID not configured');
+    const promptVersion = process.env.PROMPT_VERSION;
+    if (!promptVersion) throw new Error('PROMPT_VERSION not configured');
     const client = new OpenAI({ apiKey });
     const call = client.responses.create({
       model: 'gpt-5-nano',
       prompt: {
-        id: 'pmpt_68fa81f052d88194b295ebf06a4f92540c251c826627e65d',
-        version: '5',
+        id: promptId,
+        version: promptVersion,
         variables: {
           certification_name: certificationTitle,
           topic_name: topic,
