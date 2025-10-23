@@ -3,6 +3,14 @@ import { Question, QuizParams } from '@/types';
 import { parseNumber } from '@/utils';
 import { OpenAI } from 'openai/client';
 
+function toSafeString(v: unknown) {
+  if (typeof v === 'string') return v;
+  if (v == null) return '';
+  // Prefer JSON when possible
+  const json = JSON.stringify(v);
+  return json || Object.prototype.toString.call(v);
+}
+
 export class QuestionService {
   constructor(private readonly prismaService: PrismaService = prisma) {}
 
@@ -91,10 +99,10 @@ export class QuestionService {
       answer: q.answer
         ? {
             correctOptions: q.answer.correctOptions as string[],
-            explanations: (q.answer.explanations || []).reduce(
-              (a: Record<string, string>, ex) => ((a[ex.label] = ex.text), a),
-              {}
-            ),
+            explanations: (q.answer.explanations || []).reduce((a: Record<string, string>, ex) => {
+              a[ex.label] = ex.text;
+              return a;
+            }, {}),
           }
         : { correctOptions: [], explanations: {} },
     }));
@@ -120,15 +128,16 @@ export class QuestionService {
         const optionMap: Record<string, number> = {};
         const optionsObj: Record<string, string> = {};
         for (const [label, txt] of Object.entries(options)) {
+          const textVal = toSafeString(txt);
           const opt = await tx.option.create({
             data: {
               questionId: createdQuestion.id,
               label,
-              text: String(txt),
+              text: textVal,
             },
           });
           optionMap[label] = opt.id;
-          optionsObj[label] = String(txt);
+          optionsObj[label] = textVal;
         }
 
         const createdAnswer = await tx.answer.create({
@@ -140,11 +149,12 @@ export class QuestionService {
 
         const explanationsObj = answer.explanations || {};
         for (const [label, txt] of Object.entries(explanationsObj)) {
+          const textVal = toSafeString(txt);
           await tx.explanation.create({
             data: {
               answerId: createdAnswer.id,
               label: label,
-              text: String(txt),
+              text: textVal,
             },
           });
         }
@@ -192,5 +202,57 @@ export class QuestionService {
       console.error('Failed to compute new questions distribution:', error);
       throw new Error('Failed to compute new questions distribution');
     }
+  }
+
+  // Server-side safeguard: shuffle option labels (A..E) and remap correctOptions
+  public shuffleQuestionOptions(question: Question) {
+    // Build the canonical label list and keep only labels actually present on the question
+    const allLabels = ['A', 'B', 'C', 'D', 'E'];
+  const presentLabels = allLabels.filter((l) => question.options?.[l] != null && question.options?.[l] !== '');
+
+    // If there are no or only one option, nothing to shuffle
+    if (!presentLabels.length || presentLabels.length <= 1) return question;
+
+    // Build entries pairing original label, text and its explanation so they move together
+    const entries = presentLabels.map((lbl) => ({
+      originalLabel: lbl,
+      text: toSafeString(question.options[lbl]),
+  explanation: (question.answer as any)?.explanations?.[lbl] ?? '',
+    }));
+
+    // Fisher-Yates shuffle
+    for (let i = entries.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [entries[i], entries[j]] = [entries[j], entries[i]];
+    }
+
+    // Rebuild maps: new label -> text, new label -> explanation, and old->new mapping
+    const newOptions: Record<string, string> = {};
+    const newExplanations: Record<string, string> = {};
+    const oldToNew: Record<string, string> = {};
+
+    for (let i = 0; i < entries.length; i++) {
+      const targetLabel = presentLabels[i];
+      const e = entries[i];
+      newOptions[targetLabel] = e.text;
+      newExplanations[targetLabel] = e.explanation;
+      oldToNew[e.originalLabel] = targetLabel;
+    }
+
+    // Remap correct options using old->new mapping
+    const originalCorrect: string[] = (question.answer && Array.isArray(question.answer.correctOptions) ? question.answer.correctOptions : []);
+    const newCorrect = originalCorrect.map((old) => oldToNew[old] || old).filter(Boolean);
+
+    // Ensure explanations object has entries for all canonical labels (A..E) but prefer presentLabels
+    const finalExplanations: Record<string, string> = {};
+    for (const lbl of allLabels) {
+      finalExplanations[lbl] = newExplanations[lbl] ?? '';
+    }
+
+    // Assign back to the question object
+    question.options = newOptions;
+    question.answer = { ...(question.answer ?? { correctOptions: [], explanations: {} }), correctOptions: newCorrect, explanations: finalExplanations as any };
+    question.correctCount = Array.isArray(question.answer.correctOptions) ? question.answer.correctOptions.length : question.correctCount;
+    return question;
   }
 }
