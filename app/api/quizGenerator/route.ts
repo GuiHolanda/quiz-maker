@@ -5,7 +5,6 @@ import { QuestionService } from '@/app/api/quizGenerator/question.service';
 const questionService = new QuestionService();
 
 export async function GET(request: NextRequest) {
-  debugger
   const parsedParams = questionService.parseParams(new URL(request.url));
   if ('error' in parsedParams) return NextResponse.json({ message: parsedParams.error }, { status: 400 });
 
