@@ -40,8 +40,9 @@ npm install
 
 ```env
 OPENAI_API_KEY=sk-...
+PROMPT_ID=<YOUR PROMPT ID>
+PROMPT_VERSION=<YOUR PROMPT VERSION>
 DATABASE_URL="file:.dev.db"
-# (optional) other variables for your environment
 ```
 
 - Replace `sk-...` with your OpenAI API key. Never commit `.env` to source control.
