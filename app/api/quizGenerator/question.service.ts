@@ -1,30 +1,50 @@
 import { prisma, PrismaService } from '@/lib/prisma';
 import { Question, QuizParams } from '@/types';
 import { parseNumber, toSafeString } from '@/utils';
+import questionSchema from '@/config/promptSchemas/questionSchema.json';
 import { OpenAI } from 'openai/client';
 
 export class QuestionService {
   constructor(private readonly prismaService: PrismaService = prisma) {}
 
-  public async fetchAiQuestions(prompt: string, timeoutMs: number | undefined): Promise<string | null> {
+  public async fetchAiQuestions(variables: QuizParams, timeoutMs: number | undefined): Promise<string> {
+    const { certificationTitle, topic, numQuestions } = variables;
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) throw new Error('API key not configured');
     const client = new OpenAI({ apiKey });
-    const call = client.responses.create({ model: 'gpt-5-nano', input: prompt });
+    const call = client.responses.create({
+      model: 'gpt-5-nano',
+      prompt: {
+        id: 'pmpt_68fa81f052d88194b295ebf06a4f92540c251c826627e65d',
+        version: '5',
+        variables: {
+          certification_name: certificationTitle,
+          topic_name: topic,
+          num_questions: numQuestions.toString(),
+        },
+      },
+      text: {
+        format: {
+          type: 'json_schema',
+          name: 'questions_schema',
+          schema: questionSchema,
+        },
+      },
+    });
     const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('LLM timeout')), timeoutMs));
     const res: any = await Promise.race([call, timeout]);
     const outputText = res?.output_text ?? res?.output?.[0]?.content?.[0]?.text ?? null;
     return outputText;
   }
 
-  public validateQuestions(obj: unknown) {
-    if (!Array.isArray(obj)) return { ok: false, error: 'not-an-array' };
-    for (const q of obj) {
+  public validateQuestions(obj: any) {
+    if (!Array.isArray(obj?.questions)) return { ok: false, error: 'not-an-array' };
+    for (const q of obj.questions) {
       if (!q || typeof q.text !== 'string') return { ok: false, error: 'missing-text' };
       if (!q.options || typeof q.options !== 'object') return { ok: false, error: 'missing-options' };
       if (!q.answer || !Array.isArray(q.answer.correctOptions)) return { ok: false, error: 'missing-answer' };
     }
-    return { ok: true, value: obj as Question[] };
+    return { ok: true, value: obj.questions as Question[] };
   }
 
   public parseParams(url: URL): QuizParams | { error: string } {
@@ -207,7 +227,8 @@ export class QuestionService {
 
     const { newOptions, newExplanations, oldToNew } = this.rebuildMappings(entries, presentLabels);
 
-    const originalCorrect: string[] = (question.answer && Array.isArray(question.answer.correctOptions) ? question.answer.correctOptions : []);
+    const originalCorrect: string[] =
+      question.answer && Array.isArray(question.answer.correctOptions) ? question.answer.correctOptions : [];
     const newCorrect = this.remapCorrectOptions(originalCorrect, oldToNew);
 
     const finalExplanations = this.buildFinalExplanations(newExplanations, allLabels);
@@ -218,7 +239,9 @@ export class QuestionService {
       correctOptions: newCorrect,
       explanations: finalExplanations as any,
     };
-    question.correctCount = Array.isArray(question.answer.correctOptions) ? question.answer.correctOptions.length : question.correctCount;
+    question.correctCount = Array.isArray(question.answer.correctOptions)
+      ? question.answer.correctOptions.length
+      : question.correctCount;
     return question;
   }
 
@@ -247,7 +270,10 @@ export class QuestionService {
     }
   }
 
-  private rebuildMappings(entries: { originalLabel: string; text: string; explanation: string }[], presentLabels: string[]) {
+  private rebuildMappings(
+    entries: { originalLabel: string; text: string; explanation: string }[],
+    presentLabels: string[]
+  ) {
     const newOptions: Record<string, string> = {};
     const newExplanations: Record<string, string> = {};
     const oldToNew: Record<string, string> = {};

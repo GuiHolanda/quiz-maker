@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PROMPT_CONFIG } from '@/config/constants/promptConfig';
-import { buildPrompt } from '@/features/quizGenerator.service';
 import { QuestionService } from '@/app/api/quizGenerator/question.service';
 const questionService = new QuestionService();
 
@@ -8,7 +6,7 @@ export async function GET(request: NextRequest) {
   const parsedParams = questionService.parseParams(new URL(request.url));
   if ('error' in parsedParams) return NextResponse.json({ message: parsedParams.error }, { status: 400 });
 
-  const { topic, numQuestions, difficulty, newPercent, timeoutMs, certificationTitle } = parsedParams;
+  const { topic, numQuestions, newPercent, timeoutMs, certificationTitle } = parsedParams;
 
   try {
     const { desiredNew, recycledNeeded } = await questionService.handleNewQuestionsDistribution(
@@ -17,19 +15,13 @@ export async function GET(request: NextRequest) {
       newPercent
     );
 
-    const prompt = buildPrompt(
-      {
-        certificationTitle,
-        numQuestions: desiredNew,
-        topic,
-        difficulty: difficulty,
-      },
-      PROMPT_CONFIG
-    );
-
-    const outputText = await questionService.fetchAiQuestions(prompt, timeoutMs);
-    const parsedResp = outputText ? JSON.parse(outputText) : null;
-    const validated = questionService.validateQuestions(parsedResp);
+    const response = await questionService.fetchAiQuestions({
+      numQuestions: desiredNew,
+      certificationTitle,
+      topic
+    }, timeoutMs);
+   
+    const validated = questionService.validateQuestions(JSON.parse(response));
     if (!validated.ok || !validated.value) {
       console.error('Invalid questions from LLM', validated.error);
       return NextResponse.json({ message: `Invalid questions: ${validated.error}` }, { status: 502 });

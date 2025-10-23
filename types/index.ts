@@ -26,7 +26,7 @@ export interface Question {
 
 export interface Answer {
   correctOptions: string[];
-  explanations: Option;
+  explanations: Option[];
 }
 
 export type QuizParams = {
