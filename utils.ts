@@ -13,3 +13,11 @@ export function safeJsonParse<T = unknown>(
     return { ok: false, error: err?.message ?? String(err), value: null };
   }
 }
+
+export function toSafeString(v: unknown) {
+  if (typeof v === 'string') return v;
+  if (v == null) return '';
+  // Prefer JSON when possible
+  const json = JSON.stringify(v);
+  return json || Object.prototype.toString.call(v);
+}
