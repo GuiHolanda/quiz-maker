@@ -1,0 +1,46 @@
+generator prod_client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Question {
+  id                 Int      @id @default(autoincrement())
+  text               String
+  correctCount       Int
+  options            Option[]
+  topic              String
+  certificationTitle String
+  difficulty         String
+  topicSubarea       String?
+  answer             Answer?
+  createdAt          DateTime @default(now())
+}
+
+model Option {
+  id         Int      @id @default(autoincrement())
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id])
+  label      String
+  text       String
+}
+
+model Answer {
+  id             Int           @id @default(autoincrement())
+  questionId     Int           @unique
+  question       Question      @relation(fields: [questionId], references: [id])
+  correctOptions Json
+  explanations   Explanation[]
+}
+
+model Explanation {
+  id        Int      @id @default(autoincrement())
+  answerId  Int
+  answer    Answer   @relation(fields: [answerId], references: [id])
+  label     String
+  text      String
+  createdAt DateTime @default(now())
+}
