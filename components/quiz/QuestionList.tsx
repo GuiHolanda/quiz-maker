@@ -41,7 +41,7 @@ export function QuestionList({
       <Progress
         aria-label="Quiz Progress"
         label="Questions answered"
-        classNames={{ label: 'text-sm font-bold', value: 'text-sm font-bold' }}
+        classNames={{ label: 'text-sm font-bold pl-2', value: 'text-sm font-bold' }}
         valueLabel={`${answers ? Object.keys(answers).length : 0} of ${questions.length}`}
         formatOptions={undefined}
         color="primary"

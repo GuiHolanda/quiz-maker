@@ -18,9 +18,8 @@ export function useRequest(requestMethod: (args: any) => Promise<any>) {
     } catch (error: any) {
       setError(error);
       addToast({
-        title: `Falha ao gerar questões`,
-        description:
-          error instanceof Error ? error.message : "Erro desconhecido",
+        title: `Failed to generate questions`,
+        description:"Something went wrong while generating questions. Please try again.",
         color: "danger",
       });
     } finally {

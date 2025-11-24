@@ -52,16 +52,8 @@ function QuizPageContent({ questions, setQuestions }: Readonly<QuizPageContentPr
           Create personalized quizzes for your certifications practice
         </h3>
       </div>
-
-      <Card className="w-full p-4">
-        <CardHeader className="flex gap-3">
-          <div className="flex flex-col">
-            <p className="text-md font-bold">Configure the questionaire</p>
-          </div>
-        </CardHeader>
-        <Divider />
-        <QuestionareForm onGenerated={onQuestionsGenerated} />
-      </Card>
+      
+      <QuestionareForm onGenerated={onQuestionsGenerated} />
 
       {(quiz?.questions ?? questions) && <QuestionList questions={quiz?.questions ?? questions ?? []} />}
     </>
