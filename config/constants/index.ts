@@ -1,6 +1,6 @@
 import { CertificationsState } from "@/features/reducers/certifications.reducer";
 
-export const OPENAI_POST_URL = "/quizGenerator";
+export const OPENAI_POST_URL = "/get-questions";
 export const QUIZ_LOCAL_STORAGE_KEY = "QUIZ";
 export const CERTIFICATIONS_LOCAL_STORAGE_KEY = 'CERTIFICATIONS';
 export const INITIAL_CERTIFICATIONS_STATE: CertificationsState = {

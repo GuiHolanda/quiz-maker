@@ -4,10 +4,10 @@ export const siteConfig = {
   name: "My Quiz",
   description: "Make smart quizzes for you certification practice.",
   navItems: [
-    // {
-    //   label: "Home",
-    //   href: "/",
-    // },
+    {
+      label: "Generate Questions",
+      href: "/generate-questions",
+    },
   ],
   navMenuItems: [
     {

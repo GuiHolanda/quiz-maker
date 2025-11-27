@@ -12,7 +12,17 @@ export type QuizFormErrors = {
   num_questions?: string;
 };
 
-export interface Question {
+export interface AIQuestion {
+  certificationTitle: string;
+  text: string;
+  correctCount: number;
+  topic: string;
+  difficulty: string;
+  options: Option;
+  topicSubarea?: string;
+}
+
+export interface StoredQuestion {
   id: number;
   certificationTitle: string;
   text: string;
@@ -39,7 +49,7 @@ export type QuizParams = {
 };
 export interface QuizPayload {
   meta: { topic: string; num_questions: number };
-  questions: Question[];
+  questions: StoredQuestion[];
   answers: AnswersMap;
   isFinished: boolean;
 }
@@ -50,7 +60,6 @@ export interface Certification {
   topics: string[];
 }
 
-
 export interface QuizStoreApi {
   quiz: QuizState;
   setAnswers: (answers: AnswersMap) => void;
@@ -59,7 +68,7 @@ export interface QuizStoreApi {
   clear: () => void;
 }
 
-export interface CertificationPayload{
+export interface CertificationPayload {
   certifications: Certification[];
   selectedCertification: Certification | null;
 }

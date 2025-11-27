@@ -1,9 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { Card, CardHeader } from '@heroui/card';
-import { Divider } from '@heroui/divider';
 import { title } from '@/components/primitives';
-import { Question } from '@/types';
+import { StoredQuestion } from '@/types';
 import { QuestionList } from '@/components/quiz/QuestionList';
 import { QuestionareForm } from '@/components/quiz/QuestionareForm';
 import { QuizProvider } from '@/features/providers/quiz.provider';
@@ -11,7 +9,7 @@ import { CertificationsProvider } from '@/features/providers/certifications.prov
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
 
 export default function QuizPage() {
-  const [questions, setQuestions] = useState<Question[] | null>(null);
+  const [questions, setQuestions] = useState<StoredQuestion[] | null>(null);
 
   return (
     <CertificationsProvider>
@@ -23,14 +21,14 @@ export default function QuizPage() {
 }
 
 interface QuizPageContentProps {
-  questions: Question[] | null;
-  setQuestions: (q: Question[]) => void;
+  questions: StoredQuestion[] | null;
+  setQuestions: (q: StoredQuestion[]) => void;
 }
 
 function QuizPageContent({ questions, setQuestions }: Readonly<QuizPageContentProps>) {
   const { quiz, replaceQuiz } = useQuizContext();
 
-  const onQuestionsGenerated = (questionsArr: Question[] | undefined) => {
+  const onQuestionsGenerated = (questionsArr: StoredQuestion[] | undefined) => {
     if (!questionsArr) return;
     replaceQuiz({
       meta: {

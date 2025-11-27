@@ -24,7 +24,7 @@ interface QuestionareFormProps {
   onGenerated: (questions: StoredQuestion[]) => void;
 }
 
-export function QuestionareForm({ onGenerated }: Readonly<QuestionareFormProps>) {
+export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormProps>) {
   const { certifications, selectedCertification, setSelectedCertification, removeCertification } =
     useCertificationsContext();
   

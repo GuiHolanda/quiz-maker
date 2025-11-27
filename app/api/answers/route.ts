@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { QuestionService } from '@/app/api/quizGenerator/question.service';
+import { QuestionService } from '@/app/api/get-questions/question.service';
 const questionService = new QuestionService();
 
 export async function GET(request: NextRequest) {

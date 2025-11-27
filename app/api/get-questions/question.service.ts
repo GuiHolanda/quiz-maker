@@ -1,5 +1,5 @@
 import { prisma, PrismaService } from '@/lib/prisma';
-import { Question, QuizParams } from '@/types';
+import { AIQuestion, QuizParams } from '@/types';
 import { parseNumber, toSafeString } from '@/utils';
 import questionSchema from '@/config/promptSchemas/questionSchema.json';
 import { OpenAI } from 'openai/client';
@@ -48,7 +48,7 @@ export class QuestionService {
       if (!q.options || typeof q.options !== 'object') return { ok: false, error: 'missing-options' };
       if (!q.answer || !Array.isArray(q.answer.correctOptions)) return { ok: false, error: 'missing-answer' };
     }
-    return { ok: true, value: obj.questions as Question[] };
+    return { ok: true, value: obj.questions as AIQuestion[] };
   }
 
   public parseParams(url: URL): QuizParams | { error: string } {
@@ -69,7 +69,7 @@ export class QuestionService {
     if (newPercentRaw > 1 && newPercentRaw <= 100) newPercentRaw = newPercentRaw / 100;
     if (newPercentRaw < 0) newPercentRaw = 0;
 
-    const timeoutMs = parseNumber(params.get('timeout_ms'), 180000) ?? 180000;
+    const timeoutMs = parseNumber(params.get('timeout_ms'), 240000) ?? 240000;
 
     return {
       certificationTitle,
@@ -124,11 +124,11 @@ export class QuestionService {
     }));
   }
 
-  async createFromPayload(questions: Question[]) {
+  async saveQuestions(questions: AIQuestion[]) {
     return this.prismaService.$transaction(async (tx) => {
       const results: any[] = [];
       for (const question of questions) {
-        const { certificationTitle, text, correctCount, options, topic, difficulty, topicSubarea, answer } = question;
+        const { certificationTitle, text, correctCount, options, topic, difficulty, topicSubarea } = question;
 
         const createdQuestion = await tx.question.create({
           data: {
@@ -156,30 +156,9 @@ export class QuestionService {
           optionsObj[label] = textVal;
         }
 
-        const createdAnswer = await tx.answer.create({
-          data: {
-            questionId: createdQuestion.id,
-            correctOptions: answer.correctOptions,
-          },
-        });
-
-        const explanationsObj = answer.explanations || {};
-        for (const [label, txt] of Object.entries(explanationsObj)) {
-          const textVal = toSafeString(txt);
-          await tx.explanation.create({
-            data: {
-              answerId: createdAnswer.id,
-              label: label,
-              text: textVal,
-            },
-          });
-        }
-
         results.push({
           question: createdQuestion,
-          answer: createdAnswer,
           options: optionsObj,
-          explanations: explanationsObj,
         });
       }
       return results;
@@ -220,52 +199,52 @@ export class QuestionService {
     }
   }
 
-  public shuffleQuestionOptions(question: Question) {
-    const allLabels = this.getAllLabels();
-    const presentLabels = this.getPresentLabels(question, allLabels);
+  // public shuffleQuestionOptions(question: AIQuestion) {
+  //   const allLabels = this.getAllLabels();
+  //   const presentLabels = this.getPresentLabels(question, allLabels);
 
-    if (presentLabels.length <= 1) return question;
+  //   if (presentLabels.length <= 1) return question;
 
-    const entries = this.buildEntries(question, presentLabels);
-    this.shuffleInPlace(entries);
+  //   const entries = this.buildEntries(question, presentLabels);
+  //   this.shuffleInPlace(entries);
 
-    const { newOptions, newExplanations, oldToNew } = this.rebuildMappings(entries, presentLabels);
+  //   const { newOptions, newExplanations, oldToNew } = this.rebuildMappings(entries, presentLabels);
 
-    const originalCorrect: string[] =
-      question.answer && Array.isArray(question.answer.correctOptions) ? question.answer.correctOptions : [];
-    const newCorrect = this.remapCorrectOptions(originalCorrect, oldToNew);
+  //   const originalCorrect: string[] =
+  //     question.answer && Array.isArray(question.answer.correctOptions) ? question.answer.correctOptions : [];
+  //   const newCorrect = this.remapCorrectOptions(originalCorrect, oldToNew);
 
-    const finalExplanations = this.buildFinalExplanations(newExplanations, allLabels);
+  //   const finalExplanations = this.buildFinalExplanations(newExplanations, allLabels);
 
-    question.options = newOptions;
-    question.answer = {
-      ...(question.answer ?? { correctOptions: [], explanations: {} }),
-      correctOptions: newCorrect,
-      explanations: finalExplanations as any,
-    };
-    question.correctCount = Array.isArray(question.answer.correctOptions)
-      ? question.answer.correctOptions.length
-      : question.correctCount;
-    return question;
-  }
+  //   question.options = newOptions;
+  //   question.answer = {
+  //     ...(question.answer ?? { correctOptions: [], explanations: {} }),
+  //     correctOptions: newCorrect,
+  //     explanations: finalExplanations as any,
+  //   };
+  //   question.correctCount = Array.isArray(question.answer.correctOptions)
+  //     ? question.answer.correctOptions.length
+  //     : question.correctCount;
+  //   return question;
+  // }
 
   private getAllLabels() {
     return ['A', 'B', 'C', 'D', 'E'];
   }
 
-  private getPresentLabels(question: Question, allLabels: string[]): string[] {
+  private getPresentLabels(question: AIQuestion, allLabels: string[]): string[] {
     const opts = question.options ?? {};
     const allPresent = allLabels.every((l) => typeof opts[l] === 'string' && opts[l].trim() !== '');
     return allPresent ? allLabels : allLabels.filter((l) => opts[l] != null && opts[l] !== '');
   }
 
-  private buildEntries(question: Question, presentLabels: string[]) {
-    return presentLabels.map((lbl) => ({
-      originalLabel: lbl,
-      text: toSafeString(question.options[lbl]),
-      explanation: (question.answer as any)?.explanations?.[lbl] ?? '',
-    }));
-  }
+  // private buildEntries(question: AIQuestion, presentLabels: string[]) {
+  //   return presentLabels.map((lbl) => ({
+  //     originalLabel: lbl,
+  //     text: toSafeString(question.options[lbl]),
+  //     explanation: (question.answer as any)?.explanations?.[lbl] ?? '',
+  //   }));
+  // }
 
   private shuffleInPlace<T>(arr: T[]) {
     for (let i = arr.length - 1; i > 0; i--) {

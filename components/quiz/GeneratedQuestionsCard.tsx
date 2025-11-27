@@ -1,33 +1,31 @@
 import { FormEvent, useState, useEffect } from 'react';
 import { Card, CardHeader, CardBody } from '@heroui/card';
 import { Button } from '@heroui/button';
-import { StoredQuestion } from '@/types';
+import { AIQuestion } from '@/types';
 import { CheckboxGroup, Checkbox } from '@heroui/checkbox';
 import { RadioGroup, Radio } from '@heroui/radio';
 import { Form } from '@heroui/form';
 
 interface QuestionCardProps {
-  readonly question: StoredQuestion;
-  readonly onAnswerChange: (questionId: number, value: string | string[]) => void;
-  readonly initialValue?: string[];
+  readonly question: AIQuestion;
+  index: number;
 }
 
-export function QuestionCard({ question, onAnswerChange, initialValue }: QuestionCardProps) {
+export function GeneratedQuestionsCard({ question, index }: QuestionCardProps) {
   const [currentSelection, setCurrentSelection] = useState<string[]>([]);
 
-  useEffect(() => {
-    if (initialValue) {
-      setCurrentSelection(initialValue);
-    } else {
-      setCurrentSelection([]);
-    }
-  }, [question.id, question.correctCount, initialValue]);
+  // useEffect(() => {
+  //   if (initialValue) {
+  //     setCurrentSelection(initialValue);
+  //   } else {
+  //     setCurrentSelection([]);
+  //   }
+  // }, [question.id, question.correctCount, initialValue]);
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const answer = currentSelection;
     if (!answer) return;
-    onAnswerChange?.(question.id, answer);
   };
 
   const onCheckboxChange = (value: string | string[]) => {
@@ -64,7 +62,7 @@ export function QuestionCard({ question, onAnswerChange, initialValue }: Questio
         <div className="flex-1">
           <h4 className="font-semibold text-foreground">
             <span>
-              <span className="inline-block mr-2">{String(question.id).padStart(2, '0')}.</span>
+              <span className="inline-block mr-2">{index + 1}.</span>
             </span>
             {question.text}
           </h4>
