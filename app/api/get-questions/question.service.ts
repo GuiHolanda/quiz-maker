@@ -46,7 +46,6 @@ export class QuestionService {
     for (const q of obj.questions) {
       if (!q || typeof q.text !== 'string') return { ok: false, error: 'missing-text' };
       if (!q.options || typeof q.options !== 'object') return { ok: false, error: 'missing-options' };
-      if (!q.answer || !Array.isArray(q.answer.correctOptions)) return { ok: false, error: 'missing-answer' };
     }
     return { ok: true, value: obj.questions as AIQuestion[] };
   }

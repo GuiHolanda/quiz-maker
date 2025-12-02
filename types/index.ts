@@ -47,9 +47,11 @@ export type QuizParams = {
   newPercent?: number;
   timeoutMs?: number;
 };
-export interface QuizPayload {
+export interface QuizLocalStoragePayload {
   meta: { topic: string; num_questions: number };
   questions: StoredQuestion[];
+  aiQuestions: AIQuestion[];
+  selectedAIQuestions: number[] | null;
   answers: AnswersMap;
   isFinished: boolean;
 }
@@ -61,9 +63,11 @@ export interface Certification {
 }
 
 export interface QuizStoreApi {
-  quiz: QuizState;
+  state: QuizState;
+  setAIquestions: (aiQuestions: AIQuestion[], selectedAIQuestions: AIQuestion[] | null) => void;
+  setSelectedAIquestions: (selectedAIQuestions: number[] | null) => void;
   setAnswers: (answers: AnswersMap) => void;
-  replaceQuiz: (payload: QuizPayload) => void;
+  replaceQuiz: (payload: QuizLocalStoragePayload) => void;
   setFinished: (isFinished: boolean) => void;
   clear: () => void;
 }

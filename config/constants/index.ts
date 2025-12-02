@@ -3,6 +3,12 @@ import { CertificationsState } from "@/features/reducers/certifications.reducer"
 export const OPENAI_POST_URL = "/get-questions";
 export const QUIZ_LOCAL_STORAGE_KEY = "QUIZ";
 export const CERTIFICATIONS_LOCAL_STORAGE_KEY = 'CERTIFICATIONS';
+export const QUESTIONS_PER_PAGE_OPTIONS = [
+            { key: '1', label: '1' },
+            { key: '5', label: '5' },
+            { key: '10', label: '10' },
+            { key: '20', label: '20' },
+          ]
 export const INITIAL_CERTIFICATIONS_STATE: CertificationsState = {
   certifications: [
   {

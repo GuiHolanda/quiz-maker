@@ -8,7 +8,6 @@
       "items": {
         "type": "object",
         "properties": {
-          "id": { "type": "integer" },
           "text": { "type": "string", "minLength": 20 },
           "correctCount": { "type": "integer", "minimum": 1, "maximum": 3 },
           "certificationTitle": { "type": "string", "minLength": 5 },
@@ -25,34 +24,9 @@
             },
             "additionalProperties": false,
             "required": ["A", "B", "C", "D", "E"]
-          },
-          "answer": {
-            "type": "object",
-            "properties": {
-              "correctOptions": {
-                "type": "array",
-                "items": { "type": "string", "enum": ["A", "B", "C", "D", "E"] },
-                "minItems": 1,
-                "maxItems": 3
-              },
-              "explanations": {
-                "type": "object",
-                "properties": {
-                  "A": { "type": "string", "minLength": 40 },
-                  "B": { "type": "string", "minLength": 40 },
-                  "C": { "type": "string", "minLength": 40 },
-                  "D": { "type": "string", "minLength": 40 },
-                  "E": { "type": "string", "minLength": 40 }
-                },
-                "additionalProperties": false,
-                "required": ["A", "B", "C", "D", "E"]
-              }
-            },
-            "required": ["correctOptions", "explanations"],
-            "additionalProperties": false
           }
         },
-  "required": ["id", "text", "certificationTitle", "correctCount", "topic", "difficulty", "options", "answer"],
+        "required": ["text", "certificationTitle", "correctCount", "topic", "difficulty", "options"],
         "additionalProperties": false
       }
     }

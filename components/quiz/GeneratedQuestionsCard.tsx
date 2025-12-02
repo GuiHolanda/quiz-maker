@@ -1,107 +1,59 @@
-import { FormEvent, useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardHeader, CardBody } from '@heroui/card';
-import { Button } from '@heroui/button';
 import { AIQuestion } from '@/types';
-import { CheckboxGroup, Checkbox } from '@heroui/checkbox';
-import { RadioGroup, Radio } from '@heroui/radio';
-import { Form } from '@heroui/form';
+import { Checkbox } from '@heroui/checkbox';
+import { Listbox, ListboxItem } from '@heroui/listbox';
+import useQuizContext from '@/features/hooks/useQuizContext.hook';
 
 interface QuestionCardProps {
   readonly question: AIQuestion;
-  index: number;
+  readonly index: number;
 }
 
 export function GeneratedQuestionsCard({ question, index }: QuestionCardProps) {
-  const [currentSelection, setCurrentSelection] = useState<string[]>([]);
+  const { state, setSelectedAIquestions } = useQuizContext();
+  const [isSelected, setIsSelected] = React.useState(false);
 
-  // useEffect(() => {
-  //   if (initialValue) {
-  //     setCurrentSelection(initialValue);
-  //   } else {
-  //     setCurrentSelection([]);
-  //   }
-  // }, [question.id, question.correctCount, initialValue]);
+  useEffect(() => {
+    if (!state?.selectedAIQuestions) return;
+    const isSelected = state.selectedAIQuestions.includes(index);
+    setIsSelected(isSelected);
+  }, []);
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const answer = currentSelection;
-    if (!answer) return;
+  const onCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { checked } = event.target;
+    if (!state?.selectedAIQuestions) return;
+    const selected = new Set(state.selectedAIQuestions);
+    if (checked) {
+      selected.add(index);
+      setIsSelected(true);
+    } else {
+      selected.delete(index);
+      setIsSelected(false);
+    }
+    setSelectedAIquestions(Array.from(selected));
   };
-
-  const onCheckboxChange = (value: string | string[]) => {
-    const next = Array.isArray(value) ? value : [value];
-    if (question.correctCount && next.length > question.correctCount) return;
-    setCurrentSelection(next);
-  };
-
-  const renderCheckboxes = () => {
-    return Object.entries(question.options).map(([key, val]) => {
-      const isChecked = currentSelection.includes(key);
-      const disableIfLimitReached =
-        !!question.correctCount && currentSelection.length >= question.correctCount && !isChecked;
-
-      return (
-        <Checkbox
-          key={key}
-          value={key}
-          size="sm"
-          disabled={disableIfLimitReached}
-          classNames={{ label: 'text-sm font-light' }}
-        >
-          {String(val)}
-        </Checkbox>
-      );
-    });
-  };
-
-  const minSelectionCount = question.correctCount && question.correctCount > 0 ? question.correctCount : 1;
 
   return (
     <Card className="p-4">
       <CardHeader className="flex items-start justify-between gap-4">
-        <div className="flex-1">
+        <div className="flex items-center justify-between w-full">
           <h4 className="font-semibold text-foreground">
             <span>
               <span className="inline-block mr-2">{index + 1}.</span>
             </span>
             {question.text}
           </h4>
+          <Checkbox isSelected={isSelected} onChange={onCheckboxChange} className='ml-auto'></Checkbox>
         </div>
       </CardHeader>
       <CardBody>
-        <Form onSubmit={handleSubmit} className="flex flex-row items-end">
-          {question.correctCount && question.correctCount > 1 ? (
-            <CheckboxGroup
-              label={`${question.correctCount} correct answers`}
-              value={currentSelection}
-              onValueChange={onCheckboxChange}
-              className="w-4/5"
-            >
-              {renderCheckboxes()}
-            </CheckboxGroup>
-          ) : (
-            <RadioGroup
-              value={currentSelection[0] ?? ''}
-              onValueChange={(value) => setCurrentSelection(value ? [value] : [])}
-              className="w-4/5"
-            >
-              {Object.entries(question.options).map(([key, val]) => {
-                return (
-                  <Radio key={key} value={key} size="sm" classNames={{ label: 'text-sm ml-2' }}>
-                    {String(val)}
-                  </Radio>
-                );
-              })}
-            </RadioGroup>
-          )}
-          {currentSelection.length >= minSelectionCount ? (
-            <Button className="ml-auto bg-primary py-0" variant="flat" type="submit">
-              submit
-            </Button>
-          ) : (
-            <input type="hidden" />
-          )}
-        </Form>
+        <h4 className='text-neutral-500 text-sm font-bold'>{`${question.correctCount} correct answers`}</h4>
+        <Listbox aria-label="Actions">
+          {Object.entries(question.options).map(([key, val]) => (
+            <ListboxItem key={key}>{String(val)}</ListboxItem>
+          ))}
+        </Listbox>
       </CardBody>
     </Card>
   );

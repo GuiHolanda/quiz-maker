@@ -1,62 +1,70 @@
 import React from 'react';
-import { AIQuestion, AnswersMap } from '@/types';
+import { AIQuestion } from '@/types';
 import { Pagination } from '@heroui/pagination';
 import { Button } from '@heroui/button';
-import { Progress } from '@heroui/progress';
-import useQuizContext from '@/features/hooks/useQuizContext.hook';
+import { Select, SelectItem } from '@heroui/select';
 import { GeneratedQuestionsCard } from './GeneratedQuestionsCard';
+import { QUESTIONS_PER_PAGE_OPTIONS } from '@/config/constants';
+import useQuizContext from '@/features/hooks/useQuizContext.hook';
 
 export function AIQuestionList({
   questions,
 }: Readonly<{
   questions: AIQuestion[];
 }>) {
+  const { state } = useQuizContext();
   const [currentPage, setCurrentPage] = React.useState(1);
-  const { quiz, setAnswers, setFinished } = useQuizContext();
-  const answers: AnswersMap = quiz?.answers ?? {};
+  const [questionsPerPage, setQuestionsPerPage] = React.useState<number>(5);
 
-  const handleAnswerChange = (questionId: number, value: string | string[]) => {
-    const arr = Array.isArray(value) ? value : [value];
-    const newAnswers = { ...(quiz?.answers || {}), [questionId]: arr } as AnswersMap;
+  const totalPages = Math.max(1, Math.ceil(questions.length / questionsPerPage));
+  const startIndex = (currentPage - 1) * questionsPerPage;
+  const endIndex = startIndex + questionsPerPage;
+  const visibleQuestions = questions.slice(startIndex, endIndex);
 
-    setAnswers(newAnswers);
-
-    if (currentPage < questions.length) setCurrentPage((i) => i + 1);
-  };
-
-  const onFinishQuiz = () => {
-    setFinished(true);
+  const onItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const v = Number(e.target.value) || 1;
+    const bounded = Math.max(1, Math.min(questions.length, v));
+    setQuestionsPerPage(bounded);
     setCurrentPage(1);
   };
 
-  const onRestartQuiz = () => {
-    setFinished(false);
-    setAnswers({});
-    setCurrentPage(1);
+  const onSaveSelectedQuestions = () => {
+    // No action needed, quiz will use selected questions
   };
 
   return (
     <div className="flex flex-col gap-4 mt-8">
-      <Progress
-        aria-label="Quiz Progress"
-        label="Questions answered"
-        classNames={{ label: 'text-sm font-bold pl-2', value: 'text-sm font-bold' }}
-        valueLabel={`${answers ? Object.keys(answers).length : 0} of ${questions.length}`}
-        formatOptions={undefined}
-        color="primary"
-        showValueLabel={true}
-        size="md"
-        value={answers ? Object.keys(answers).length : 0}
-        maxValue={questions.length}
-      />
+      <div className="flex items-center justify-between">
+        <h3 hidden={(state?.selectedAIQuestions?.length ?? 0) === 0} className="font-bold text-sm mt-auto">Selected questions: {state?.selectedAIQuestions?.length || 0}</h3>
+        <div className="flex flex-col items-center gap-2 ml-auto">
+          <label htmlFor="questionsPerPage" className="text-sm font-bold">
+            Questions per page:
+          </label>
+          <Select
+            id="questionsPerPage"
+            defaultSelectedKeys={QUESTIONS_PER_PAGE_OPTIONS[1].key}
+            items={QUESTIONS_PER_PAGE_OPTIONS}
+            value={String(questionsPerPage)}
+            onChange={onItemsPerPageChange}
+            className="w-24 ml-auto"
+          >
+            {(item) => <SelectItem key={item.key}>{item.label}</SelectItem>}
+          </Select>
+        </div>
+      </div>
+
       <div className="flex flex-col gap-3">
-        {questions.length > 0 && questions.map((question, index) => (
-          <GeneratedQuestionsCard
-            key={`${question.topic}-${index}`}
-            question={question}
-            index={index}
-          />
-        ))}
+        {visibleQuestions.length > 0 &&
+          visibleQuestions.map((question, idx) => {
+            const globalIndex = startIndex + idx;
+            return (
+              <GeneratedQuestionsCard
+                key={`${question.topic}-${globalIndex}`}
+                question={question}
+                index={globalIndex}
+              />
+            );
+          })}
       </div>
 
       <div className="flex gap-2">
@@ -69,13 +77,13 @@ export function AIQuestionList({
         >
           Previous
         </Button>
-        <Pagination color="primary" page={currentPage} total={questions.length} onChange={setCurrentPage} />
+        <Pagination color="primary" page={currentPage} total={totalPages} onChange={setCurrentPage} />
         <Button
           color="primary"
           size="sm"
           variant="ghost"
-          onPress={() => setCurrentPage((prev) => (prev < questions.length ? prev + 1 : prev))}
-          isDisabled={currentPage === questions.length}
+          onPress={() => setCurrentPage((prev) => (prev < totalPages ? prev + 1 : prev))}
+          isDisabled={currentPage === totalPages}
         >
           Next
         </Button>
@@ -85,10 +93,10 @@ export function AIQuestionList({
           variant="flat"
           color="primary"
           size="sm"
-          onPress={quiz?.isFinished ? onRestartQuiz : onFinishQuiz}
-          hidden={Object.keys(answers).length !== questions.length}
+          onPress={onSaveSelectedQuestions}
+          hidden={(state?.selectedAIQuestions?.length ?? 0) === 0}
         >
-          {quiz?.isFinished ? 'Restart Quiz' : 'Finish Quiz'}
+          Save Selected questions
         </Button>
       </div>
     </div>

@@ -1,12 +1,11 @@
 'use client';
 import { getQuestions } from '@/features/quizGenerator.service';
 import { useRequest } from '@/features/hooks/useRequest.hook';
-import { StoredQuestion, QuizParams, QuizFormErrors, Certification } from '@/types';
+import { QuizParams, QuizFormErrors, Certification, AIQuestion } from '@/types';
 import { Button } from '@heroui/button';
 import { Card } from '@heroui/card';
 import { Form } from '@heroui/form';
 import { Input } from '@heroui/input';
-import { Slider } from '@heroui/slider';
 import { BusyDialog } from '../ui/BusyDialog';
 import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
 import { useState } from 'react';
@@ -21,7 +20,7 @@ import { Divider } from '@heroui/divider';
 import { Switch } from '@heroui/switch';
 
 interface QuestionareFormProps {
-  onGenerated: (questions: StoredQuestion[]) => void;
+  onGenerated: (questions: AIQuestion[]) => void;
 }
 
 export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormProps>) {
@@ -54,7 +53,6 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
     const formData = new FormData(form);
 
     const num_questions = formData.get('num_questions')?.toString().trim();
-    const newQuestionsPercentage = formData.get('newQuestionsPercentage')?.toString().trim();
 
     const newErrors: QuizFormErrors = {};
     if (!selectedCertification) newErrors.certificationTitle = 'Certification Title is required';
@@ -69,7 +67,6 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
       certificationTitle: selectedCertification?.label || '',
       topic: selectedTopic,
       numQuestions: Number(num_questions),
-      newPercent: Number(newQuestionsPercentage) || 0.3,
     };
 
     const questions = await request(requestPayload);
@@ -193,23 +190,6 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
                   labelPlacement="outside-top"
                   max={20}
                   min={1}
-                />
-                <Slider
-                  className="w-48"
-                  classNames={{
-                    label: 'text-xs text-stone-400 mb-8',
-                    value: 'text-xs font-bolde items-start',
-                    thumb: 'h-3 w-4',
-                  }}
-                  name={`newQuestionsPercentage`}
-                  formatOptions={{ style: 'percent' }}
-                  label="New Questions"
-                  size="sm"
-                  defaultValue={1}
-                  maxValue={1}
-                  minValue={0}
-                  showTooltip={true}
-                  step={0.1}
                 />
                 <Button className="ml-auto mt-auto bg-primary" variant="flat" type="submit" disabled={loading}>
                   Generate

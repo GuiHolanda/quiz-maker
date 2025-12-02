@@ -1,5 +1,5 @@
 import React, { useReducer, useEffect, useCallback, useMemo } from 'react';
-import type { AnswersMap, QuizPayload, QuizStoreApi } from '@/types';
+import type { AIQuestion, AnswersMap, QuizLocalStoragePayload, QuizStoreApi } from '@/types';
 import { QUIZ_LOCAL_STORAGE_KEY } from '@/config/constants';
 import { quizReducer } from '../reducers/quiz.reducer';
 
@@ -11,7 +11,7 @@ export function QuizProvider({ children }: Readonly<{ children: React.ReactNode 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(QUIZ_LOCAL_STORAGE_KEY);
-      if (raw) dispatch({ type: 'init', payload: JSON.parse(raw) as QuizPayload });
+      if (raw) dispatch({ type: 'init', payload: JSON.parse(raw) as QuizLocalStoragePayload });
     } catch (err) {
       console.warn('Failed to read quiz from storage', err);
     }
@@ -26,11 +26,25 @@ export function QuizProvider({ children }: Readonly<{ children: React.ReactNode 
     }
   }, [state]);
 
+  const setAIquestions = useCallback(
+    (aiQuestions: AIQuestion[], selectedAIQuestions: AIQuestion[] | null) => {
+      dispatch({ type: 'updateAIQuestions', payload: { aiQuestions, selectedAIQuestions } });
+    },
+    []
+  );
+
+  const setSelectedAIquestions = useCallback(
+    (selectedAIQuestions: number[] | null) => {
+      dispatch({ type: 'updateSelectedAIQuestions', payload: { selectedAIQuestions } });
+    },
+    []
+  );
+
   const setAnswers = useCallback((answers: AnswersMap) => {
     dispatch({ type: 'setAnswers', payload: { answers } });
   }, []);
 
-  const replaceQuiz = useCallback((payload: QuizPayload) => {
+  const replaceQuiz = useCallback((payload: QuizLocalStoragePayload) => {
     dispatch({ type: 'replace', payload });
   }, []);
 
@@ -46,8 +60,8 @@ export function QuizProvider({ children }: Readonly<{ children: React.ReactNode 
   }, []);
 
   const api = useMemo<QuizStoreApi>(
-    () => ({ quiz: state ?? null, setAnswers, replaceQuiz, setFinished, clear }),
-    [state, setAnswers, replaceQuiz, setFinished, clear]
+    () => ({ state: state ?? null, setAIquestions, setSelectedAIquestions, setAnswers, replaceQuiz, setFinished, clear }),
+    [state, setAIquestions, setSelectedAIquestions, setAnswers, replaceQuiz, setFinished, clear]
   );
 
   return <QuizContext.Provider value={api}>{children}</QuizContext.Provider>;
