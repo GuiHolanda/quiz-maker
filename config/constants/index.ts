@@ -120,4 +120,5 @@ export const INITIAL_CERTIFICATIONS_STATE: CertificationsState = {
   },
 ],
   selectedCertification: null,
+  selectedTopics: [],
 }

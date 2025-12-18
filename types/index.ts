@@ -31,7 +31,7 @@ export interface Answer {
 
 export type QuizParams = {
   certificationTitle: string;
-  topic: string;
+  topics: string[];
   numQuestions: number;
   difficulty?: { easy: number; medium: number; hard: number };
   newPercent?: number;
@@ -67,8 +67,10 @@ export interface CertificationPayload{
 export interface CertificationsStoreApi {
   certifications: Certification[];
   selectedCertification: Certification | null;
+  selectedTopics: string[];
   setCertifications: (certifications: Certification[]) => void;
   setSelectedCertification: (certification: Certification | null) => void;
+  setSelectedTopics: (topics: string[]) => void;
   addCertification: (certification: Certification) => void;
   removeCertification: (key: string) => void;
   updateCertification: (key: string, patch: Partial<Certification>) => void;

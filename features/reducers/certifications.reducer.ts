@@ -3,12 +3,14 @@ import type { Certification } from '@/types';
 export interface CertificationsState {
   certifications: Certification[];
   selectedCertification: Certification | null;
+  selectedTopics: string[];
 }
 
 export type CertificationsAction =
   | { type: 'setState'; payload: { state: CertificationsState } }
   | { type: 'setCertifications'; payload: { certifications: Certification[] } }
   | { type: 'setSelectedCertification'; payload: { key: string | null } }
+  | { type: 'setSelectedTopics'; payload: { topics: string[] } }
   | { type: 'addCertification'; payload: { certification: Certification } }
   | { type: 'removeCertification'; payload: { key: string } }
   | { type: 'updateCertification'; payload: { key: string; certification: Partial<Certification> } };
@@ -24,6 +26,8 @@ export function certificationsReducer(state: CertificationsState, action: Certif
         ...state,
         selectedCertification: state.certifications.find((c) => c.key === action.payload.key) || null,
       };
+    case 'setSelectedTopics':
+      return { ...state, selectedTopics: action.payload.topics };
     case 'addCertification':
       return { ...state, certifications: [...state.certifications, action.payload.certification] };
     case 'removeCertification':
