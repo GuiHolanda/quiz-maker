@@ -1,5 +1,5 @@
 'use client';
-import { getQuestions } from '@/features/quizGenerator.service';
+import { getQuestions } from '@/features/connectors';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { Question, QuizParams, QuizFormErrors, QuestionParams } from '@/types';
 import { Button } from '@heroui/button';

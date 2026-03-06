@@ -27,7 +27,7 @@ export function QuizProvider({ children }: Readonly<{ children: React.ReactNode 
   }, [state]);
 
   const setAIquestions = useCallback(
-    (aiQuestions: AIQuestion[], selectedAIQuestions: AIQuestion[] | null) => {
+  (aiQuestions: AIQuestion[], selectedAIQuestions: number[] | null) => {
       dispatch({ type: 'updateAIQuestions', payload: { aiQuestions, selectedAIQuestions } });
     },
     []

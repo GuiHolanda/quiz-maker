@@ -15,10 +15,12 @@ export function GeneratedQuestionsCard({ question, index }: QuestionCardProps) {
   const [isSelected, setIsSelected] = React.useState(false);
 
   useEffect(() => {
-    if (!state?.selectedAIQuestions) return;
-    const isSelected = state.selectedAIQuestions.includes(index);
-    setIsSelected(isSelected);
-  }, []);
+    if (!state?.selectedAIQuestions) {
+      setIsSelected(false);
+      return;
+    }
+    setIsSelected(state.selectedAIQuestions.includes(question.id));
+  }, [state?.selectedAIQuestions, index]);
 
   const onCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { checked } = event.target;
@@ -51,7 +53,7 @@ export function GeneratedQuestionsCard({ question, index }: QuestionCardProps) {
         <h4 className='text-neutral-500 text-sm font-bold'>{`${question.correctCount} correct answers`}</h4>
         <Listbox aria-label="Actions">
           {Object.entries(question.options).map(([key, val]) => (
-            <ListboxItem key={key}>{String(val)}</ListboxItem>
+            <ListboxItem key={key}><strong className='mr-2'>{key}.</strong> {val}</ListboxItem>
           ))}
         </Listbox>
       </CardBody>

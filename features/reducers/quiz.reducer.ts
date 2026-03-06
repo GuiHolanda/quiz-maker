@@ -4,7 +4,7 @@ export type QuizState = Readonly<QuizLocalStoragePayload> | null;
 
 export type QuizAction =
   | { type: 'init'; payload: QuizLocalStoragePayload }
-  | { type: 'updateAIQuestions'; payload: { aiQuestions: AIQuestion[]; selectedAIQuestions: AIQuestion[] | null } }
+  | { type: 'updateAIQuestions'; payload: { aiQuestions: AIQuestion[]; selectedAIQuestions: number[] | null } }
   | { type: 'updateSelectedAIQuestions'; payload: { selectedAIQuestions: number[] | null } }
   | { type: 'setAnswers'; payload: { answers: AnswersMap } }
   | { type: 'replace'; payload: QuizLocalStoragePayload }
@@ -16,14 +16,13 @@ export function quizReducer(state: QuizState, action: QuizAction): QuizState {
     case 'init':
       return action.payload;
     case 'updateAIQuestions':
-      if (!state || state.questions.length === 0) return state;
+  if (!state) return state;
       return {
         ...state,
         aiQuestions: action.payload.aiQuestions,
         selectedAIQuestions: action.payload.selectedAIQuestions,
       } as QuizState;
     case 'updateSelectedAIQuestions':
-      if (!state?.selectedAIQuestions) return state;
       return {
         ...state,
         selectedAIQuestions: action.payload.selectedAIQuestions,

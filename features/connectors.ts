@@ -1,4 +1,4 @@
-import { OPENAI_POST_URL } from '@/config/constants';
+import { OPENAI_POST_URL, SAVE_QUESTIONS_URL } from '@/config/constants';
 import { AIQuestion, QuestionParams } from '@/types';
 import api from '@/lib/bff.api';
 
@@ -14,4 +14,8 @@ export async function getQuestions(requestPayload: QuestionParams): Promise<AIQu
   });
 
   return data;
+}
+
+export async function saveQuestions(questions: AIQuestion[]): Promise<void> {
+  await api.post(SAVE_QUESTIONS_URL, questions);
 }

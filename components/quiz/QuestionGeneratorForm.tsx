@@ -1,7 +1,7 @@
 'use client';
-import { getQuestions } from '@/features/quizGenerator.service';
+import { getQuestions } from '@/features/connectors';
 import { useRequest } from '@/features/hooks/useRequest.hook';
-import { QuizParams, QuizFormErrors, Certification, AIQuestion } from '@/types';
+import { QuizParams, QuizFormErrors, Certification, AIQuestion, QuestionParams } from '@/types';
 import { Button } from '@heroui/button';
 import { Card } from '@heroui/card';
 import { Form } from '@heroui/form';
@@ -52,7 +52,7 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
     const form = event.currentTarget;
     const formData = new FormData(form);
 
-    const num_questions = formData.get('num_questions')?.toString().trim();
+    const num_questions = formData.get('num_questions')?.toString().trim() ?? '5';
 
     const newErrors: QuizFormErrors = {};
     if (!selectedCertification) newErrors.certificationTitle = 'Certification Title is required';
@@ -63,10 +63,10 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
       return;
     }
 
-    const requestPayload: QuizParams = {
-      certificationTitle: selectedCertification?.label || '',
-      topic: selectedTopic,
-      numQuestions: Number(num_questions),
+    const requestPayload: QuestionParams = {
+      certification_name: selectedCertification?.label || '',
+      topic_name: selectedTopic,
+      num_questions: num_questions,
     };
 
     const questions = await request(requestPayload);
@@ -74,8 +74,8 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
   };
   return (
     <Card className="p-2">
-      <Accordion>
-        <AccordionItem title="Configure the questionaire" classNames={{ title: 'text-md font-bold' }}>
+      <Accordion defaultExpandedKeys={['configure questionaire']}>
+        <AccordionItem title="Configure the questionaire" classNames={{ title: 'text-md font-bold' }} key="configure questionaire">
           <Form onSubmit={handleSubmit} validationErrors={error}>
             <Divider />
             <div className="w-full flex flex-col gap-6 p-4">
@@ -124,7 +124,7 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
                 >
                   {selectedCertification
                     ? selectedCertification.topics.map((topic) => (
-                        <AutocompleteItem key={topic}>{topic}</AutocompleteItem>
+                        <AutocompleteItem key={topic.name}>{topic.name}</AutocompleteItem>
                       ))
                     : []}
                 </Autocomplete>

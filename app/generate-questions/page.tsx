@@ -9,24 +9,18 @@ import { AIQuestionList } from '@/components/quiz/AIQuestionList';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
 
 export default function QuizPage() {
-  const [questions, setQuestions] = useState<AIQuestion[] | null>(null);
 
   return (
     <CertificationsProvider>
       <QuizProvider>
-        <AIQuestionPageContent questions={questions} setQuestions={setQuestions} />
+        <AIQuestionPageContent  />
       </QuizProvider>
     </CertificationsProvider>
   );
 }
 
-interface QuizPageContentProps {
-  questions: AIQuestion[] | null;
-  setQuestions: (q: AIQuestion[]) => void;
-}
-
-function AIQuestionPageContent({ questions, setQuestions }: Readonly<QuizPageContentProps>) {
-  const { state, replaceQuiz } = useQuizContext();
+function AIQuestionPageContent() {
+  const { state, replaceQuiz, setAIquestions } = useQuizContext();
 
   const onQuestionsGenerated = (generatedQuestions: AIQuestion[] | undefined) => {
     if (!generatedQuestions) return;
@@ -41,7 +35,7 @@ function AIQuestionPageContent({ questions, setQuestions }: Readonly<QuizPageCon
       aiQuestions: generatedQuestions,
       selectedAIQuestions: [],
     });
-    setQuestions(generatedQuestions);
+    setAIquestions(generatedQuestions, null);
   };
 
   return (
@@ -55,7 +49,7 @@ function AIQuestionPageContent({ questions, setQuestions }: Readonly<QuizPageCon
 
       <QuestionGeneratorForm onGenerated={onQuestionsGenerated} />
 
-      {(state?.aiQuestions ?? questions) && <AIQuestionList questions={state?.aiQuestions ?? questions ?? []} />}
+      {(state?.aiQuestions.length ?? 0) > 0 && <AIQuestionList questions={state?.aiQuestions ?? []} />}
     </>
   );
 }

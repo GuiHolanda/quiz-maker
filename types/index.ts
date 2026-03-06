@@ -13,6 +13,7 @@ export type QuizFormErrors = {
 };
 
 export interface AIQuestion {
+  id: number;
   certificationTitle: string;
   text: string;
   correctCount: number;
@@ -77,7 +78,7 @@ questions?: number;
 
 export interface QuizStoreApi {
   state: QuizState;
-  setAIquestions: (aiQuestions: AIQuestion[], selectedAIQuestions: AIQuestion[] | null) => void;
+  setAIquestions: (aiQuestions: AIQuestion[], selectedAIQuestions: number[] | null) => void;
   setSelectedAIquestions: (selectedAIQuestions: number[] | null) => void;
   setAnswers: (answers: AnswersMap) => void;
   replaceQuiz: (payload: QuizLocalStoragePayload) => void;
