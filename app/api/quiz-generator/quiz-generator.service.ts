@@ -7,40 +7,6 @@ import { OpenAI } from 'openai/client';
 export class QuestionService {
   constructor(private readonly prismaService: PrismaService = prisma) {}
 
-  public async fetchAiQuestions(variables: QuizParams, timeoutMs: number | undefined): Promise<string> {
-    const { certificationTitle, topic, numQuestions } = variables;
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) throw new Error('API key not configured');
-    const promptId = process.env.PROMPT_ID;
-    if (!promptId) throw new Error('PROMPT_ID not configured');
-    const promptVersion = process.env.PROMPT_VERSION;
-    if (!promptVersion) throw new Error('PROMPT_VERSION not configured');
-    const client = new OpenAI({ apiKey });
-    const call = client.responses.create({
-      model: 'gpt-5-nano',
-      prompt: {
-        id: promptId,
-        version: promptVersion,
-        variables: {
-          certification_name: certificationTitle,
-          topic_name: topic,
-          num_questions: numQuestions.toString(),
-        },
-      },
-      text: {
-        format: {
-          type: 'json_schema',
-          name: 'questions_schema',
-          schema: questionSchema,
-        },
-      },
-    });
-    const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('LLM timeout')), timeoutMs));
-    const res: any = await Promise.race([call, timeout]);
-    const outputText = res?.output_text ?? res?.output?.[0]?.content?.[0]?.text ?? null;
-    return outputText;
-  }
-
   public validateQuestions(obj: any) {
     if (!Array.isArray(obj?.questions)) return { ok: false, error: 'not-an-array' };
     for (const q of obj.questions) {
@@ -60,24 +26,10 @@ export class QuestionService {
       return { error: 'numQuestions must be an integer > 0' };
     }
 
-    const easy = parseNumber(params.get('easy'), 0) ?? 0;
-    const medium = parseNumber(params.get('medium'), 0) ?? 0;
-    const hard = parseNumber(params.get('hard'), 0) ?? 0;
-
-    let newPercentRaw = Number.parseFloat(params.get('newPercent') ?? '0');
-    if (Number.isNaN(newPercentRaw)) newPercentRaw = 0;
-    if (newPercentRaw > 1 && newPercentRaw <= 100) newPercentRaw = newPercentRaw / 100;
-    if (newPercentRaw < 0) newPercentRaw = 0;
-
-    const timeoutMs = parseNumber(params.get('timeout_ms'), 180000) ?? 180000;
-
     return {
       certificationTitle,
-      topic,
+      topics: topic ? [topic] : [],
       numQuestions,
-      difficulty: { easy: Number(easy) || 0, medium: Number(medium) || 0, hard: Number(hard) || 0 },
-      newPercent: newPercentRaw,
-      timeoutMs,
     };
   }
 
@@ -88,9 +40,15 @@ export class QuestionService {
     return this.prismaService.question.count({ where });
   }
 
-  async fetchRecycledQuestions(topic?: string, limit = 10) {
+  async fetchStoredQuestions(certificationTitle: string, topics: string[], limit = 10) {
     if (!limit || limit <= 0) return [];
-    const where = topic ? { topic } : {};
+    const where = { certificationTitle}
+    if (topics && topics.length > 0) {
+      Object.assign(where, {
+        topic: { in: topics }
+      });
+    }
+    
     const rows = await this.prismaService.question.findMany({
       where,
       take: limit,
@@ -186,39 +144,6 @@ export class QuestionService {
     });
   }
 
-  async handleNewQuestionsDistribution(
-    topic: string,
-    num_questions: number,
-    newPercent: number | undefined
-  ): Promise<{ desiredNew: number; recycledNeeded: number }> {
-    try {
-      const existingCount = await this.countByTopic(topic || undefined);
-      newPercent = newPercent ?? 0.3;
-      const newCount = newPercent * num_questions;
-
-      let desiredNew = 0;
-      if (newCount && newCount >= 0) {
-        desiredNew = Math.min(newCount, num_questions);
-      } else if (Number.isFinite(newPercent) && newPercent > 0) {
-        desiredNew = Math.ceil(newPercent * num_questions);
-      } else {
-        desiredNew = num_questions;
-      }
-
-      let recycledNeeded = Math.max(0, num_questions - desiredNew);
-
-      if (existingCount < recycledNeeded) {
-        const shortage = recycledNeeded - existingCount;
-        recycledNeeded = existingCount;
-        desiredNew = Math.min(num_questions, desiredNew + shortage);
-      }
-
-      return { desiredNew, recycledNeeded };
-    } catch (error) {
-      console.error('Failed to compute new questions distribution:', error);
-      throw new Error('Failed to compute new questions distribution');
-    }
-  }
 
   public shuffleQuestionOptions(question: Question) {
     const allLabels = this.getAllLabels();

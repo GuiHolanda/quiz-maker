@@ -1,7 +1,5 @@
 'use client';
 import { useState } from 'react';
-import { Card, CardHeader } from '@heroui/card';
-import { Divider } from '@heroui/divider';
 import { title } from '@/components/primitives';
 import { Question } from '@/types';
 import { QuestionList } from '@/components/quiz/QuestionList';
@@ -9,6 +7,7 @@ import { QuestionareForm } from '@/components/quiz/QuestionareForm';
 import { QuizProvider } from '@/features/providers/quiz.provider';
 import { CertificationsProvider } from '@/features/providers/certifications.provider';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
+import { QuizForm } from '@/components/quiz/QuizForm';
 
 export default function QuizPage() {
   const [questions, setQuestions] = useState<Question[] | null>(null);
@@ -53,7 +52,8 @@ function QuizPageContent({ questions, setQuestions }: Readonly<QuizPageContentPr
         </h3>
       </div>
       
-      <QuestionareForm onGenerated={onQuestionsGenerated} />
+      {/* <QuestionareForm onGenerated={onQuestionsGenerated} /> */}
+      <QuizForm onGenerated={onQuestionsGenerated} />
 
       {(quiz?.questions ?? questions) && <QuestionList questions={quiz?.questions ?? questions ?? []} />}
     </>

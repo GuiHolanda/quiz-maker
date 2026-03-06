@@ -1,7 +1,7 @@
 'use client';
 import { getQuestions } from '@/features/quizGenerator.service';
 import { useRequest } from '@/features/hooks/useRequest.hook';
-import { Question, QuizParams, QuizFormErrors, Certification } from '@/types';
+import { Question, QuizParams, QuizFormErrors, Certification, QuestionParams } from '@/types';
 import { Button } from '@heroui/button';
 import { Card } from '@heroui/card';
 import { Form } from '@heroui/form';
@@ -18,6 +18,7 @@ import useCertificationsContext from '@/features/hooks/useCertificationsContext.
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@heroui/dropdown';
 import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Divider } from '@heroui/divider';
+import { CertificationManager } from './CertificationManager';
 
 interface QuestionareFormProps {
   onGenerated: (questions: Question[]) => void;
@@ -49,7 +50,7 @@ export function QuestionareForm({ onGenerated }: Readonly<QuestionareFormProps>)
     const form = event.currentTarget;
     const formData = new FormData(form);
 
-    const num_questions = formData.get('num_questions')?.toString().trim();
+    const num_questions = formData.get('num_questions')?.toString().trim() ?? '10';
     const newQuestionsPercentage = formData.get('newQuestionsPercentage')?.toString().trim();
 
     const newErrors: QuizFormErrors = {};
@@ -61,11 +62,10 @@ export function QuestionareForm({ onGenerated }: Readonly<QuestionareFormProps>)
       return;
     }
 
-    const requestPayload: QuizParams = {
-      certificationTitle: selectedCertification?.label || '',
-      topic: selectedTopic,
-      numQuestions: Number(num_questions),
-      newPercent: Number(newQuestionsPercentage) || 0.3,
+    const requestPayload: QuestionParams = {
+      certification_name: selectedCertification?.label || '',
+      topic_name: selectedTopic,
+      num_questions: num_questions,
     };
 
     const questions = await request(requestPayload);
@@ -79,83 +79,7 @@ export function QuestionareForm({ onGenerated }: Readonly<QuestionareFormProps>)
             <Divider />
             <div className="w-full flex flex-col gap-6 p-4">
               <div className="flex w-full gap-4 items-center">
-                <Autocomplete
-                  className="w-2/3"
-                  label="Select an Certification"
-                  name="certificationTitle"
-                  onSelectionChange={onCertificationChange}
-                  selectedKey={selectedCertification?.key}
-                >
-                  {certifications.map((certification) => (
-                    <AutocompleteItem key={certification.key} textValue={certification.label}>
-                      {certification.label}
-                    </AutocompleteItem>
-                  ))}
-                </Autocomplete>
-                <NewCertificationModal
-                  isOpen={isOpen}
-                  onOpenChange={onOpenChange}
-                  onClose={onClose}
-                  editingCertification={editingCert}
-                />
-                <Autocomplete
-                  className="w-1/3"
-                  label="Select an Topic"
-                  name="topic"
-                  onSelectionChange={setSelectedTopic}
-                >
-                  {selectedCertification
-                    ? selectedCertification.topics.map((topic) => (
-                        <AutocompleteItem key={topic}>{topic}</AutocompleteItem>
-                      ))
-                    : []}
-                </Autocomplete>
-                <Dropdown>
-                  <DropdownTrigger>
-                    <Button variant="light" size="sm">
-                      <FontAwesomeIcon icon={faEllipsisVertical} className="text-2xl" />
-                    </Button>
-                  </DropdownTrigger>
-                  <DropdownMenu aria-label="Dropdown menu with icons" variant="faded">
-                    <DropdownItem
-                      onClick={() => {
-                        setEditingCert(null);
-                        onOpen();
-                      }}
-                      key="new"
-                      startContent={
-                        <FontAwesomeIcon icon={faPlusCircle} className="text-success text-lg hover:scale-110" />
-                      }
-                    >
-                      Add certification
-                    </DropdownItem>
-                    <DropdownItem
-                      hidden={!selectedCertification}
-                      key="edit"
-                      onClick={() => {
-                        setEditingCert(selectedCertification || null);
-                        onOpen();
-                      }}
-                      startContent={
-                        <FontAwesomeIcon icon={faPenSquare} className="text-info text-lg hover:scale-110" />
-                      }
-                    >
-                      Edit certification
-                    </DropdownItem>
-                    <DropdownItem
-                      hidden={!selectedCertification}
-                      key="delete"
-                      className="text-danger"
-                      color="danger"
-                      startContent={
-                        <FontAwesomeIcon icon={faTrashCan} className="text-danger text-lg hover:scale-110" />
-                      }
-                      onClick={onDeleteCertification}
-                    >
-                      Delete certification
-                    </DropdownItem>
-                  </DropdownMenu>
-                </Dropdown>
+                <CertificationManager />
               </div>
               <div className="flex w-full items-baseline gap-4">
                 <Input

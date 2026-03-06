@@ -1,25 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { QuestionService } from '@/app/api/quizGenerator/question.service';
+import { QuestionService } from '@/app/api/question-generator/question.service';
 const questionService = new QuestionService();
 
 export async function GET(request: NextRequest) {
   const parsedParams = questionService.parseParams(new URL(request.url));
   if ('error' in parsedParams) return NextResponse.json({ message: parsedParams.error }, { status: 400 });
 
-  const { topic, numQuestions, newPercent, timeoutMs, certificationTitle } = parsedParams;
+  const { topics, numQuestions, newPercent, timeoutMs, certificationTitle } = parsedParams;
 
   try {
-    const { desiredNew, recycledNeeded } = await questionService.handleNewQuestionsDistribution(
-      topic,
-      numQuestions,
-      newPercent
-    );
 
-    const response = await questionService.fetchAiQuestions({
-      numQuestions: desiredNew,
-      certificationTitle,
-      topic
-    }, timeoutMs);
+
    
     const validated = questionService.validateQuestions(JSON.parse(response));
     if (!validated.ok || !validated.value) {

@@ -66,7 +66,7 @@ export const CertificationManager = ({ isMultiple }: CertificationManagerProps) 
       />
       <Select className="w-1/3" label="Select an Topic" name="topic" onChange={onTopicsChange} selectionMode={isMultiple ? 'multiple' : 'single'} selectedKeys={selectedTopics}>
         {selectedCertification
-          ? selectedCertification.topics.map((topic) => <SelectItem key={topic}>{topic}</SelectItem>)
+          ? selectedCertification.topics.map((topic) => <SelectItem key={topic.name}>{topic.name}</SelectItem>)
           : []}
       </Select>
       <Dropdown>

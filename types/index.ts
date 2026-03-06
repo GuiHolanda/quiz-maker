@@ -29,6 +29,12 @@ export interface Answer {
   explanations: Option[];
 }
 
+export interface QuestionParams {
+  certification_name: string;
+  topic_name: string;
+  num_questions: string;
+}
+
 export type QuizParams = {
   certificationTitle: string;
   topics: string[];
@@ -47,7 +53,14 @@ export interface QuizPayload {
 export interface Certification {
   label: string;
   key: string;
-  topics: string[];
+  topics: CertificationTopic[];
+}
+
+export interface CertificationTopic {
+name: string;
+maxQuestions: number;
+minQuestions: number;
+questions?: number;
 }
 
 

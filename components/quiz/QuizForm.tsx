@@ -1,7 +1,7 @@
 'use client';
 import { getQuestions } from '@/features/quizGenerator.service';
 import { useRequest } from '@/features/hooks/useRequest.hook';
-import { Question, QuizParams, QuizFormErrors } from '@/types';
+import { Question, QuizParams, QuizFormErrors, QuestionParams } from '@/types';
 import { Button } from '@heroui/button';
 import { Card } from '@heroui/card';
 import { Form } from '@heroui/form';
@@ -25,7 +25,7 @@ export function QuizForm({ onGenerated }: Readonly<QuestionareFormProps>) {
     const form = event.currentTarget;
     const formData = new FormData(form);
 
-    const num_questions = formData.get('num_questions')?.toString().trim();
+    const num_questions = formData.get('num_questions')?.toString().trim() ?? '10';
 
     const newErrors: QuizFormErrors = {};
     if (!selectedCertification) newErrors.certificationTitle = 'Certification Title is required';
@@ -36,10 +36,10 @@ export function QuizForm({ onGenerated }: Readonly<QuestionareFormProps>) {
       return;
     }
 
-    const requestPayload: QuizParams = {
-      certificationTitle: selectedCertification?.label || '',
-      topics: selectedTopics,
-      numQuestions: Number(num_questions),
+    const requestPayload: QuestionParams = {
+      certification_name: selectedCertification?.label || '',
+      topic_name: selectedTopics.join(', '),
+      num_questions: num_questions,
     };
 
     const questions = await request(requestPayload);
