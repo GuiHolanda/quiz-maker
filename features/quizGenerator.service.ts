@@ -1,15 +1,15 @@
 import { OPENAI_POST_URL } from '@/config/constants';
-import { AIQuestion, QuizParams } from '@/types';
+import { AIQuestion, QuestionParams } from '@/types';
 import api from '@/lib/bff.api';
 
-export async function getQuestions(requestPayload: QuizParams): Promise<AIQuestion[]> {
-  const { numQuestions, topic, certificationTitle } = requestPayload;
+export async function getQuestions(requestPayload: QuestionParams): Promise<AIQuestion[]> {
+  const { num_questions, topic_name, certification_name } = requestPayload;
 
   const { data } = await api.get<AIQuestion[]>(OPENAI_POST_URL, {
     params: {
-      certificationTitle,
-      topic,
-      numQuestions,
+      certification_name,
+      topic_name,
+      num_questions,
     },
   });
 

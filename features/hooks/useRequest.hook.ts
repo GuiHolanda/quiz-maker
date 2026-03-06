@@ -7,7 +7,7 @@ export function useRequest(requestMethod: (args: any) => Promise<any>) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<QuizFormErrors>({});
 
-  const request = async (payload: QuizParams, onSuccess?: () => void) => {
+  const request = async (payload: any, onSuccess?: () => void) => {
     setLoading(true);
     setError({});
 

@@ -14,14 +14,15 @@ export function CertificationsProvider({ children }: Readonly<{ children: React.
       if (!raw) return;
 
       const parsed = JSON.parse(raw);
-      let normalized: { certifications: Certification[]; selectedCertification: Certification | null } | null = null;
+      let normalized: { certifications: Certification[]; selectedCertification: Certification | null, selectedTopics: string[] } | null = null;
       if (parsed && typeof parsed === 'object' && Array.isArray(parsed.certifications)) {
         normalized = {
           certifications: parsed.certifications,
           selectedCertification: parsed.selectedCertification || null,
+          selectedTopics: parsed.selectedTopics || [],
         };
       } else if (Array.isArray(parsed)) {
-        normalized = { certifications: parsed, selectedCertification: null };
+        normalized = { certifications: parsed, selectedCertification: null, selectedTopics: [] };
       }
 
       if (normalized) {
@@ -34,12 +35,12 @@ export function CertificationsProvider({ children }: Readonly<{ children: React.
 
   useEffect(() => {
     try {
-      const toStore = { certifications: state.certifications, selectedCertification: state.selectedCertification };
+      const toStore = { certifications: state.certifications, selectedCertification: state.selectedCertification, selectedTopics: state.selectedTopics };
       localStorage.setItem(CERTIFICATIONS_LOCAL_STORAGE_KEY, JSON.stringify(toStore));
     } catch (err) {
       console.warn('Persist certifications failed', err);
     }
-  }, [state.certifications, state.selectedCertification]);
+  }, [state.certifications, state.selectedCertification, state.selectedTopics]);
 
   const setCertifications = useCallback(
     (certs: Certification[]) => dispatch({ type: 'setCertifications', payload: { certifications: certs } }),
@@ -48,6 +49,11 @@ export function CertificationsProvider({ children }: Readonly<{ children: React.
 
   const setSelectedCertification = useCallback(
     (cert: Certification | null) => dispatch({ type: 'setSelectedCertification', payload: { key: cert?.key || null } }),
+    []
+  );
+
+  const setSelectedTopics = useCallback(
+    (topics: string[]) => dispatch({ type: 'setSelectedTopics', payload: { topics } }),
     []
   );
 
@@ -71,8 +77,10 @@ export function CertificationsProvider({ children }: Readonly<{ children: React.
     () => ({
       certifications: state.certifications,
       selectedCertification: state.selectedCertification,
+      selectedTopics: state.selectedTopics,
       setCertifications,
       setSelectedCertification,
+      setSelectedTopics,
       addCertification,
       removeCertification,
       updateCertification,
@@ -80,8 +88,10 @@ export function CertificationsProvider({ children }: Readonly<{ children: React.
     [
       state.certifications,
       state.selectedCertification,
+      state.selectedTopics,
       setCertifications,
       setSelectedCertification,
+      setSelectedTopics,
       addCertification,
       removeCertification,
       updateCertification,

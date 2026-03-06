@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint --fix",
+    "db:clear:dev": "DATABASE_URL=\"file:./prisma/dev.db\" npx tsx ./prisma/dev/scripts/clear-dev-db.ts",
     "prisma:generate:prod": "prisma generate --schema=./prisma/prod/schema.prisma",
     "prisma:migrate:prod": "prisma migrate deploy --schema=./prisma/prod/schema.prisma",
     "prisma:generate:dev": "prisma generate --schema=./prisma/dev/schema.prisma",
@@ -59,6 +60,8 @@
     "@heroui/toast": "2.0.16",
     "@heroui/tooltip": "2.2.23",
     "@heroui/user": "2.2.21",
+    "@libsql/client": "^0.17.0",
+    "@prisma/adapter-libsql": "^7.4.2",
     "@prisma/client": "^6.16.2",
     "@react-aria/ssr": "3.9.10",
     "@react-aria/visually-hidden": "3.8.27",
@@ -98,6 +101,7 @@
     "prettier": "3.5.3",
     "tailwind-variants": "3.1.1",
     "tailwindcss": "4.1.11",
+    "tsx": "^4.21.0",
     "typescript": "5.6.3"
   }
 }
