@@ -5,7 +5,6 @@ const questionService = new QuestionService();
 
 export async function POST(request: NextRequest) {
   try {
-    debugger
     const body = await request.json().catch(() => null);
     const payload = Array.isArray(body) ? { questions: body } : body;
     const questions: AIQuestion[] = questionService.getValidatedQuestions(payload);

@@ -6,13 +6,11 @@ const questionService = new QuestionService();
 const openAIService = new OpenAIService();
 
 export async function GET(request: NextRequest) {
-  debugger
   const questionParams = questionService.getQuestionParams(new URL(request.url));
 
   try {
     const response = await openAIService.generateQuestions(Templates.GENERATE_QUESTIONS, questionParams);
     const questionsFromAi = questionService.getValidatedQuestions(JSON.parse(response));
-    //const shuffledQuestions = questionsFromAi.map((q) => questionService.shuffleQuestionOptions(q));
 
     return NextResponse.json(questionsFromAi, { status: 200 });
   } catch (err: any) {
