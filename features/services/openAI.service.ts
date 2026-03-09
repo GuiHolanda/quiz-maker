@@ -8,7 +8,7 @@ export interface TemplateReference {
 export class OpenAIService {
     constructor(private readonly openAIClient: OpenAI = new OpenAI()) { }
 
-    async generateQuestions(template: TemplateReference, variables: any): Promise<string> {
+    async getLLMResponse(template: TemplateReference, variables: any): Promise<string> {
         const { promptId, version } = template;
         const apiKey = process.env.OPENAI_API_KEY;
         if (!apiKey) throw new Error('API key not configured');

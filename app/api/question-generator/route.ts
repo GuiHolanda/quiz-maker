@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   const questionParams = questionService.getQuestionParams(new URL(request.url));
 
   try {
-    const response = await openAIService.generateQuestions(Templates.GENERATE_QUESTIONS, questionParams);
+    const response = await openAIService.getLLMResponse(Templates.GENERATE_QUESTIONS, questionParams);
     const questionsFromAi = questionService.getValidatedQuestions(JSON.parse(response));
 
     return NextResponse.json(questionsFromAi, { status: 200 });

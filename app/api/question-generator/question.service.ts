@@ -1,8 +1,6 @@
 import { prisma, PrismaService } from '@/lib/prisma';
-import { AIQuestion, QuestionParams, QuizParams } from '@/types';
-import { parseNumber, toSafeString } from '@/utils';
-import questionSchema from '@/config/promptSchemas/questionSchema.json';
-import { OpenAI } from 'openai/client';
+import { AIQuestion, Answer, QuestionParams } from '@/types';
+import { toSafeString } from '@/utils';
 
 export class QuestionService {
   constructor(private readonly prismaService: PrismaService = prisma) {}
@@ -29,49 +27,7 @@ export class QuestionService {
     };
   }
 
-  async fetchStoredQuestions(certificationTitle: string, topics: string[], limit = 10) {
-    if (!limit || limit <= 0) return [];
-    const where = { certificationTitle}
-    if (topics && topics.length > 0) {
-      Object.assign(where, {
-        topic: { in: topics }
-      });
-    }
-    
-    const rows = await this.prismaService.question.findMany({
-      where,
-      take: limit,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        options: true,
-        answer: { include: { explanations: true } },
-      },
-    });
-
-    return rows.map((q) => ({
-      id: q.id,
-      text: q.text,
-      correctCount: q.correctCount,
-      topic: q.topic,
-      difficulty: q.difficulty,
-      topicSubarea: q.topicSubarea ?? undefined,
-      options: q.options.reduce((acc: Record<string, string>, o) => {
-        acc[o.label] = o.text;
-        return acc;
-      }, {}),
-      answer: q.answer
-        ? {
-            correctOptions: q.answer.correctOptions as string[],
-            explanations: (q.answer.explanations || []).reduce((a: Record<string, string>, ex) => {
-              a[ex.label] = ex.text;
-              return a;
-            }, {}),
-          }
-        : { correctOptions: [], explanations: {} },
-    }));
-  }
-
-  async createFromPayload(questions: AIQuestion[]) {
+  public async createFromPayload(questions: AIQuestion[]) {
     return this.prismaService.$transaction(async (tx) => {
       const results: any[] = [];
       for (const question of questions) {
@@ -130,6 +86,19 @@ export class QuestionService {
         });
       }
       return results;
+    });
+  }
+
+  public async saveAnswers(answers: Answer[]) {
+    return this.prismaService.$transaction(async (tx) => {
+      for (const answer of answers) {
+        await tx.answer.create({
+          data: {
+            questionId: answer.questionId,
+            correctOptions: answer.correctOptions,
+          },
+        });
+      }
     });
   }
 

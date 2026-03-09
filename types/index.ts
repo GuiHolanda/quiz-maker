@@ -36,6 +36,7 @@ export interface StoredQuestion {
 }
 
 export interface Answer {
+  questionId: number;
   correctOptions: string[];
   explanations: Option[];
 }

@@ -10,6 +10,7 @@ import useQuizContext from '@/features/hooks/useQuizContext.hook';
 import { Chip } from '@heroui/chip';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { saveQuestions } from '@/features/connectors';
+import { BusyDialog } from '../ui/BusyDialog';
 
 export function AIQuestionList({
   questions,
@@ -125,6 +126,8 @@ export function AIQuestionList({
           Save Selected questions
         </Button>
       </div>
+
+      <BusyDialog isOpen={loading} />
     </div>
   );
 }

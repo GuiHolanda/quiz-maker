@@ -1,0 +1,31 @@
+{
+  "name": "answer_schema",
+  "strict": false,
+  "schema": {
+    "type": "object",
+    "properties": {
+      "answers": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "properties": {
+            "questionId": {
+              "type": "integer"
+            },
+            "correctOptions": {
+              "type": "array",
+              "items": { "type": "string", "enum": ["A", "B", "C", "D", "E"] },
+              "minItems": 1,
+              "maxItems": 3
+            }
+          },
+          "required": ["questionId", "correctOptions"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": ["answers"],
+    "additionalProperties": false
+  }
+}
