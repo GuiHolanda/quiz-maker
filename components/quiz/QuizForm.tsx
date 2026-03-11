@@ -1,19 +1,19 @@
 'use client';
 import { getQuestions } from '@/features/connectors';
 import { useRequest } from '@/features/hooks/useRequest.hook';
-import { Question, QuizParams, QuizFormErrors, QuestionParams } from '@/types';
-import { Button } from '@heroui/button';
+import { QuizFormErrors, QuestionParams, AIQuestion } from '@/types';
 import { Card } from '@heroui/card';
 import { Form } from '@heroui/form';
-import { Input } from '@heroui/input';
 import { BusyDialog } from '../ui/BusyDialog';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
 import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Divider } from '@heroui/divider';
 import { CertificationManager } from './CertificationManager';
+import { SectionsTable } from './SectionsTable';
+import { NumberInput } from '@heroui/number-input';
 
 interface QuestionareFormProps {
-  onGenerated: (questions: Question[]) => void;
+  onGenerated: (questions: AIQuestion[]) => void;
 }
 
 export function QuizForm({ onGenerated }: Readonly<QuestionareFormProps>) {
@@ -46,33 +46,18 @@ export function QuizForm({ onGenerated }: Readonly<QuestionareFormProps>) {
     onGenerated(questions);
   };
   return (
-    <Card>
-      <Accordion>
-        <AccordionItem title="Configure the questionaire" classNames={{ title: 'text-md font-bold' }}>
+    <Card className="p-2">
+      <Accordion defaultExpandedKeys={['quizForm']}>
+        <AccordionItem title="Configure the questionaire" classNames={{ title: 'text-md font-bold' }} key="quizForm">
           <Form onSubmit={handleSubmit} validationErrors={error}>
             <Divider />
             <div className="w-full flex flex-col gap-6 p-4">
-              <div className="flex w-full gap-4 items-center">
-                <CertificationManager isMultiple/>
+              <div className="flex gap-4 items-center">
+                <CertificationManager isMultiple noTopics className='flex w-3/4 gap-4 items-center'/>
+                <NumberInput className="w-1/4" placeholder="Number of Questions" aria-label="Number of Questions" />
               </div>
               <div className="flex w-full items-baseline gap-4">
-                <Input
-                  id="num_questions"
-                  name="num_questions"
-                  className="w-48"
-                  classNames={{
-                    inputWrapper: 'border-b-2',
-                    label: 'text-xs text-stone-400',
-                  }}
-                  label="Number of Questions"
-                  type="number"
-                  variant="underlined"
-                  labelPlacement="outside-top"
-                  min={1}
-                />
-                <Button className="ml-auto mt-auto bg-primary" variant="flat" type="submit" disabled={loading}>
-                  Generate
-                </Button>
+                <SectionsTable selectedCertification={selectedCertification} />
               </div>
             </div>
             <div className="flex flex-col gap-6 md:gap-0 md:flex-row md:items-end"></div>

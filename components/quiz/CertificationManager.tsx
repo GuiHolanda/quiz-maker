@@ -10,13 +10,20 @@ import { useDisclosure } from '@heroui/modal';
 import { useState } from 'react';
 import { Certification } from '@/types';
 
-interface CertificationManagerProps {
-    isMultiple?: boolean;
+interface CertificationManagerProps extends React.HTMLAttributes<HTMLDivElement> {
+  isMultiple?: boolean;
+  noTopics?: boolean;
 }
 
-export const CertificationManager = ({ isMultiple }: CertificationManagerProps) => {
-  const { certifications, selectedCertification, selectedTopics, setSelectedCertification, removeCertification, setSelectedTopics } =
-    useCertificationsContext();
+export const CertificationManager = ({ isMultiple, noTopics, ...props }: CertificationManagerProps) => {
+  const {
+    certifications,
+    selectedCertification,
+    selectedTopics,
+    setSelectedCertification,
+    removeCertification,
+    setSelectedTopics,
+  } = useCertificationsContext();
   const [editingCert, setEditingCert] = useState<Certification | null>(null);
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
 
@@ -44,13 +51,13 @@ export const CertificationManager = ({ isMultiple }: CertificationManagerProps) 
   };
 
   return (
-    <>
+    <div className={props.className} {...props}>
       <Autocomplete
-        className="w-2/3"
+        className={noTopics ? 'w-full' : 'w-2/3'}
         label="Select an Certification"
         name="certificationTitle"
         onSelectionChange={onCertificationChange}
-        selectedKey={selectedCertification?.key}
+        selectedKey={selectedCertification?.key ?? ''}
       >
         {certifications.map((certification) => (
           <AutocompleteItem key={certification.key} textValue={certification.label}>
@@ -64,11 +71,20 @@ export const CertificationManager = ({ isMultiple }: CertificationManagerProps) 
         onClose={onClose}
         editingCertification={editingCert}
       />
-      <Select className="w-1/3" label="Select an Topic" name="topic" onChange={onTopicsChange} selectionMode={isMultiple ? 'multiple' : 'single'} selectedKeys={selectedTopics}>
-        {selectedCertification
-          ? selectedCertification.topics.map((topic) => <SelectItem key={topic.name}>{topic.name}</SelectItem>)
-          : []}
-      </Select>
+      {!noTopics && (
+        <Select
+          className="w-1/3"
+          label="Select an Topic"
+          name="topic"
+          onChange={onTopicsChange}
+          selectionMode={isMultiple ? 'multiple' : 'single'}
+          selectedKeys={selectedTopics}
+        >
+          {selectedCertification
+            ? selectedCertification.topics.map((topic) => <SelectItem key={topic.name}>{topic.name}</SelectItem>)
+            : []}
+        </Select>
+      )}
       <Dropdown>
         <DropdownTrigger>
           <Button variant="light" size="sm">
@@ -109,6 +125,6 @@ export const CertificationManager = ({ isMultiple }: CertificationManagerProps) 
           </DropdownItem>
         </DropdownMenu>
       </Dropdown>
-    </>
+    </div>
   );
 };

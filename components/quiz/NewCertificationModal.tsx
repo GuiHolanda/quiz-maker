@@ -3,11 +3,9 @@ import { Certification, CertificationTopic } from '@/types';
 import { faCirclePlus, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button } from '@heroui/button';
-import { Chip } from '@heroui/chip';
 import { Divider } from '@heroui/divider';
 import { Input } from '@heroui/input';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
-import { Badge } from '@heroui/badge';
 import { useRef, useState, useEffect } from 'react';
 import { addToast } from '@heroui/toast';
 import { Slider } from '@heroui/slider';
@@ -20,7 +18,7 @@ import {
   TableRow,
   TableCell
 } from "@heroui/table";
-const TOPICS_TABLE_HEADERS = ['Topic Name', 'Min Questions', 'Max Questions', 'Actions'];
+const TOPICS_TABLE_HEADERS = [{ key: 'topic', label: 'Topic Name' }, { key: 'minQuestions', label: 'Min Questions' }, { key: 'maxQuestions', label: 'Max Questions' }, { key: 'actions', label: 'Actions' }];
 
 export const NewCertificationModal = ({
   isOpen,
@@ -177,15 +175,15 @@ export const NewCertificationModal = ({
               <Table isStriped aria-label="Example static collection table">
                 <TableHeader columns={TOPICS_TABLE_HEADERS}>
                     {(column) => (
-                      <TableColumn key={column}>{column}</TableColumn>
+                      <TableColumn key={column.key}>{column.label}</TableColumn>
                     )}
                 </TableHeader>
                 <TableBody items={topicsList}>
                   {(topic) => (
                     <TableRow key={topic.name}>
                       <TableCell>{topic.name}</TableCell>
-                      <TableCell>{topic.minQuestions}</TableCell>
-                      <TableCell>{topic.maxQuestions}</TableCell>
+                      <TableCell>{topic.minQuestions.toLocaleString(undefined, { style: 'percent', minimumFractionDigits: 0 })}</TableCell>
+                      <TableCell>{topic.maxQuestions.toLocaleString(undefined, { style: 'percent', minimumFractionDigits: 0 })}</TableCell>
                       <TableCell>
                         <Button  onPress={() => onRemoveTopic(topic)}>
                           Remove
@@ -196,20 +194,6 @@ export const NewCertificationModal = ({
                 </TableBody>
               </Table>
             )}
-            {/* {topicsList.map((topic) => (
-              <Badge
-                showOutline={false}
-                size="sm"
-                isOneChar
-                key={topic.name}
-                color="danger"
-                content={<FontAwesomeIcon icon={faXmark} size="xs" />}
-                onClick={() => onRemoveTopic(topic)}
-                className="hover:scale-105"
-              >
-                <Chip color="primary">{topic.name}</Chip>
-              </Badge>
-            ))} */}
           </div>
         </ModalBody>
         <ModalFooter>

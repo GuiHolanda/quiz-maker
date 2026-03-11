@@ -15,7 +15,6 @@ export class OpenAIService {
         this.openAIClient.apiKey = apiKey;
 
         const response = await this.openAIClient.responses.create({
-            model: 'gpt-5-nano',
             prompt: {
                 id: promptId,
                 version,

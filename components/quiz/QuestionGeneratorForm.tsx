@@ -18,34 +18,16 @@ import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@heroui/d
 import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Divider } from '@heroui/divider';
 import { Switch } from '@heroui/switch';
+import { CertificationManager } from './CertificationManager';
+import { NumberInput } from '@heroui/number-input';
 
 interface QuestionareFormProps {
   onGenerated: (questions: AIQuestion[]) => void;
 }
 
 export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormProps>) {
-  const { certifications, selectedCertification, setSelectedCertification, removeCertification } =
-    useCertificationsContext();
-  
-  const [isCertificationMode, setIsCertificationMode] = useState<boolean>(true);
-  const [editingCert, setEditingCert] = useState<Certification | null>(null);
-  const [selectedTopic, setSelectedTopic] = useState<any>(null);
-
+  const { selectedCertification, selectedTopics } = useCertificationsContext();
   const { loading, error, setError, request } = useRequest(getQuestions);
-  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
-
-  const onCertificationChange = (key: any) => {
-    const certification = certifications.find((cert) => cert.key === key);
-    setSelectedCertification(certification || null);
-  };
-
-  const onDeleteCertification = () => {
-    if (selectedCertification) {
-      removeCertification(selectedCertification.key);
-      setSelectedCertification(null);
-      setSelectedTopic(null);
-    }
-  };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -53,6 +35,7 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
     const formData = new FormData(form);
 
     const num_questions = formData.get('num_questions')?.toString().trim() ?? '5';
+    const selectedTopic = selectedTopics[0];
 
     const newErrors: QuizFormErrors = {};
     if (!selectedCertification) newErrors.certificationTitle = 'Certification Title is required';
@@ -75,121 +58,26 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
   return (
     <Card className="p-2">
       <Accordion defaultExpandedKeys={['configure questionaire']}>
-        <AccordionItem title="Configure the questionaire" classNames={{ title: 'text-md font-bold' }} key="configure questionaire">
+        <AccordionItem
+          title="Configure the questionaire"
+          classNames={{ title: 'text-md font-bold' }}
+          key="configure questionaire"
+        >
           <Form onSubmit={handleSubmit} validationErrors={error}>
             <Divider />
             <div className="w-full flex flex-col gap-6 p-4">
-              <Switch size="sm" isSelected={isCertificationMode} onValueChange={setIsCertificationMode}>
-                Certification Mode
-              </Switch>
               <div className="flex w-full gap-4 items-center">
-                <Autocomplete
-                  className="w-2/3"
-                  label={isCertificationMode ? 'Select an Certification' : 'Selecione um Concurso'}
-                  name="certificationTitle"
-                  onSelectionChange={onCertificationChange}
-                  selectedKey={selectedCertification?.key}
-                >
-                  {certifications.map((certification) => (
-                    <AutocompleteItem key={certification.key} textValue={certification.label}>
-                      {certification.label}
-                    </AutocompleteItem>
-                  ))}
-                </Autocomplete>
-                <NewCertificationModal
-                  isOpen={isOpen}
-                  onOpenChange={onOpenChange}
-                  onClose={onClose}
-                  editingCertification={editingCert}
-                />
-                {!isCertificationMode && (
-                  <Autocomplete
-                    className="w-1/3"
-                    label={isCertificationMode ? 'Select an Topic' : 'Selecione uma Banca'}
-                    name="banca"
-                    onSelectionChange={setSelectedTopic}
-                  >
-                  {certifications.map((certification) => (
-                    <AutocompleteItem key={certification.key} textValue={certification.label}>
-                      {certification.label}
-                    </AutocompleteItem>
-                  ))}
-                  </Autocomplete>
-                )}
-                <Autocomplete
-                  className="w-1/3"
-                  label={isCertificationMode ? 'Select an Topic' : 'Selecione uma Matéria'}
-                  name="topic"
-                  onSelectionChange={setSelectedTopic}
-                >
-                  {selectedCertification
-                    ? selectedCertification.topics.map((topic) => (
-                        <AutocompleteItem key={topic.name}>{topic.name}</AutocompleteItem>
-                      ))
-                    : []}
-                </Autocomplete>
-                <Dropdown>
-                  <DropdownTrigger>
-                    <Button variant="light" size="sm">
-                      <FontAwesomeIcon icon={faEllipsisVertical} className="text-2xl" />
-                    </Button>
-                  </DropdownTrigger>
-                  <DropdownMenu aria-label="Dropdown menu with icons" variant="faded">
-                    <DropdownItem
-                      onClick={() => {
-                        setEditingCert(null);
-                        onOpen();
-                      }}
-                      key="new"
-                      startContent={
-                        <FontAwesomeIcon icon={faPlusCircle} className="text-success text-lg hover:scale-110" />
-                      }
-                    >
-                      {isCertificationMode ? 'Add certification' : 'Adicionar concurso'}
-                    </DropdownItem>
-                    <DropdownItem
-                      hidden={!selectedCertification}
-                      key="edit"
-                      onClick={() => {
-                        setEditingCert(selectedCertification || null);
-                        onOpen();
-                      }}
-                      startContent={
-                        <FontAwesomeIcon icon={faPenSquare} className="text-info text-lg hover:scale-110" />
-                      }
-                    >
-                      {isCertificationMode ? 'Edit certification' : 'Editar concurso'}
-                    </DropdownItem>
-                    <DropdownItem
-                      hidden={!selectedCertification}
-                      key="delete"
-                      className="text-danger"
-                      color="danger"
-                      startContent={
-                        <FontAwesomeIcon icon={faTrashCan} className="text-danger text-lg hover:scale-110" />
-                      }
-                      onClick={onDeleteCertification}
-                    >
-                      {isCertificationMode ? 'Delete certification' : 'Excluir concurso'}
-                    </DropdownItem>
-                  </DropdownMenu>
-                </Dropdown>
+                <CertificationManager className="flex w-full gap-4 items-center" />
               </div>
               <div className="flex w-full items-baseline gap-4">
-                <Input
+                <NumberInput
                   id="num_questions"
                   name="num_questions"
-                  className="w-48"
-                  classNames={{
-                    inputWrapper: 'border-b-2',
-                    label: 'text-xs text-stone-400',
-                  }}
-                  label="Number of Questions"
-                  type="number"
-                  variant="underlined"
-                  labelPlacement="outside-top"
-                  max={20}
-                  min={1}
+                  className="w-1/4"
+                  placeholder="Number of Questions"
+                  aria-label="Number of Questions"
+                  maxValue={20}
+                  minValue={1}
                 />
                 <Button className="ml-auto mt-auto bg-primary" variant="flat" type="submit" disabled={loading}>
                   Generate
