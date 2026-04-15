@@ -7,6 +7,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Certification {
+  id     String               @id @default(cuid())
+  label  String
+  key    String               @unique
+  topics CertificationTopic[]
+}
+
+model CertificationTopic {
+  id              String        @id @default(cuid())
+  name            String
+  maxQuestions     Float
+  minQuestions     Float
+  certificationId String
+  certification   Certification @relation(fields: [certificationId], references: [id], onDelete: Cascade)
+
+  @@unique([certificationId, name])
+}
+
 model Question {
   id                 Int      @id @default(autoincrement())
   text               String
