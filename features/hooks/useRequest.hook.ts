@@ -16,7 +16,7 @@ export function useRequest(requestMethod: (args: any) => Promise<any>) {
       if (onSuccess) onSuccess();
       return questionare;
     } catch (error: any) {
-      setError(error);
+      queueMicrotask(() => setError(error));
       addToast({
         title: `Failed to generate questions`,
         description:"Something went wrong while generating questions. Please try again.",

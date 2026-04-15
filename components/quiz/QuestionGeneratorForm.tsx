@@ -42,7 +42,7 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
     if (!selectedTopic) newErrors.topic = 'Topic is required';
     if (!num_questions) newErrors.num_questions = 'Number of questions is required';
     if (Object.keys(newErrors).length > 0) {
-      setError(newErrors);
+      queueMicrotask(() => setError(newErrors));
       return;
     }
 
