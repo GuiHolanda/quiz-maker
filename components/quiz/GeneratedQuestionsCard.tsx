@@ -27,10 +27,10 @@ export function GeneratedQuestionsCard({ question, index }: QuestionCardProps) {
     if (!state?.selectedAIQuestions) return;
     const selected = new Set(state.selectedAIQuestions);
     if (checked) {
-      selected.add(index);
+      selected.add(index + 1);
       setIsSelected(true);
     } else {
-      selected.delete(index);
+      selected.delete(index + 1);
       setIsSelected(false);
     }
     setSelectedAIquestions(Array.from(selected));

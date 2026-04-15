@@ -54,6 +54,17 @@ export function AIQuestionList({
     setAIquestions([], null);
   };
 
+  const onDiscardQuestions = () => {
+    if (selectedCount > 0) {
+      const remaining = questions.filter((q) => !state?.selectedAIQuestions?.includes(q.id));
+      setSelectedAIquestions([]);
+      setAIquestions(remaining, null);
+    } else {
+      setSelectedAIquestions([]);
+      setAIquestions([], null);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4 mt-8">
       <div className="flex items-end justify-between">
@@ -117,6 +128,15 @@ export function AIQuestionList({
 
         <Button
           className="ml-auto"
+          variant="flat"
+          color="danger"
+          size="sm"
+          onPress={onDiscardQuestions}
+        >
+          {selectedCount > 0 ? 'Discard Selected' : 'Discard All'}
+        </Button>
+
+        <Button
           variant="flat"
           color="primary"
           size="sm"
