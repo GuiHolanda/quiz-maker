@@ -6,6 +6,7 @@ const questionService = new QuestionService();
 const openAIService = new OpenAIService();
 
 export async function GET(request: NextRequest) {
+  debugger
   const questionParams = questionService.getQuestionParams(new URL(request.url));
 
   try {

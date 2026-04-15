@@ -53,7 +53,9 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
     };
 
     const questions = await request(requestPayload);
-    onGenerated(questions);
+    if (questions) {
+      onGenerated(questions);
+    }
   };
   return (
     <Card className="p-2">

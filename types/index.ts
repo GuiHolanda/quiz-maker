@@ -57,11 +57,17 @@ export type QuizParams = {
 };
 export interface QuizLocalStoragePayload {
   meta: { topic: string; num_questions: number };
-  questions: StoredQuestion[];
   aiQuestions: AIQuestion[];
   selectedAIQuestions: number[] | null;
-  answers: AnswersMap;
-  isFinished: boolean;
+  answers?: AnswersMap;
+  isFinished?: boolean;
+  questions?: StoredQuestion[];
+}
+
+export interface AIQuestionsStoragePayload {
+  meta: { topic: string; num_questions: number };
+  questions: AIQuestion[];
+  selectedAIQuestions: number[] | null;
 }
 
 export interface Certification {

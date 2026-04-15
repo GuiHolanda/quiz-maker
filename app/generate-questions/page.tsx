@@ -49,7 +49,7 @@ function AIQuestionPageContent() {
 
       <QuestionGeneratorForm onGenerated={onQuestionsGenerated} />
 
-      {(state?.aiQuestions.length ?? 0) > 0 && <AIQuestionList questions={state?.aiQuestions ?? []} />}
+      {(state?.aiQuestions?.length ?? 0) > 0 && <AIQuestionList questions={state?.aiQuestions ?? []} />}
     </>
   );
 }

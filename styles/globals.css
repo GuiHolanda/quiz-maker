@@ -1,3 +1,16 @@
 @import "tailwindcss";
 
-@config "../tailwind.config.js"
+@config "../tailwind.config.js";
+
+/* Hide number input spinners (Chrome, Safari, Edge) */
+.no-number-spinners input[type='number']::-webkit-outer-spin-button,
+.no-number-spinners input[type='number']::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+/* Hide number input spinners (Firefox) */
+.no-number-spinners input[type='number'] {
+	-moz-appearance: textfield;
+	appearance: textfield;
+}

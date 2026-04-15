@@ -8,6 +8,10 @@ export const siteConfig = {
       label: "Generate Questions",
       href: "/generate-questions",
     },
+    {
+      label: "Configure Certification",
+      href: "/configure-certification",
+    },
   ],
   navMenuItems: [
     {

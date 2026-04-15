@@ -6,6 +6,7 @@ import { Button } from '@heroui/button';
 
 interface SectionsTableProps {
   selectedCertification: Certification | null;
+  topicsList?: CertificationTopic[];
 }
 
 const TOPICS_TABLE_CONFIG = {
@@ -17,7 +18,7 @@ const TOPICS_TABLE_CONFIG = {
   ],
 };
 
-export function SectionsTable({ selectedCertification }: SectionsTableProps) {
+export function SectionsTable({ selectedCertification, topicsList }: SectionsTableProps) {
   const renderCell = useCallback((entry: any, columnKey: Key) => {
     const cellValue = entry[columnKey as keyof typeof entry];
 
@@ -52,7 +53,7 @@ export function SectionsTable({ selectedCertification }: SectionsTableProps) {
       <TableHeader columns={TOPICS_TABLE_CONFIG.columns}>
         {(column) => <TableColumn key={column.key}>{column.label}</TableColumn>}
       </TableHeader>
-      <TableBody items={selectedCertification?.topics || []} emptyContent={'No certification selected'}>
+      <TableBody items={selectedCertification?.topics || topicsList || []} emptyContent={'No certification selected'}>
         {(topic) => (
             <TableRow key={topic.name}>{(columnKey) => <TableCell>{renderCell(topic, columnKey)}</TableCell>}</TableRow>
         )}

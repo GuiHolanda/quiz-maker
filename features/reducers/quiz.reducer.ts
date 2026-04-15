@@ -28,13 +28,13 @@ export function quizReducer(state: QuizState, action: QuizAction): QuizState {
         selectedAIQuestions: action.payload.selectedAIQuestions,
       } as QuizState;
     case 'setAnswers': {
-      if (!state || state.questions.length === 0) return state;
+      if (!state || state.questions?.length === 0) return state;
       return { ...state, answers: action.payload.answers } as QuizState;
     }
     case 'replace':
       return { ...action.payload, isFinished: false } as QuizState;
     case 'setFinished':
-      if (!state || state.questions.length === 0) return state;
+      if (!state || state.questions?.length === 0) return state;
       return { ...state, isFinished: action.payload.isFinished } as QuizState;
     case 'clear':
       return null;
