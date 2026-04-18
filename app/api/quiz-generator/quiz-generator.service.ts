@@ -1,64 +1,71 @@
 import { prisma, PrismaService } from '@/lib/prisma';
-import { AIQuestion, QuizParams } from '@/types';
-import { parseNumber, toSafeString } from '@/utils';
-import questionSchema from '@/config/promptSchemas/questionSchema.json';
-import { OpenAI } from 'openai/client';
+import { CertificationTopic } from '@/types';
+import { parseNumber } from '@/utils';
 
-export class QuestionService {
+export class QuizGeneratorService {
   constructor(private readonly prismaService: PrismaService = prisma) {}
 
-  public validateQuestions(obj: any) {
-    if (!Array.isArray(obj?.questions)) return { ok: false, error: 'not-an-array' };
-    for (const q of obj.questions) {
-      if (!q || typeof q.text !== 'string') return { ok: false, error: 'missing-text' };
-      if (!q.options || typeof q.options !== 'object') return { ok: false, error: 'missing-options' };
-    }
-    return { ok: true, value: obj.questions as AIQuestion[] };
-  }
-
-  public parseParams(url: URL): QuizParams | { error: string } {
+  public parseParams(url: URL): { certificationTitle: string; numQuestions: number } | { error: string } {
     const params = url.searchParams;
-    const certificationTitle = params.get('certificationTitle')?.trim() || 'General Certification';
-    const topic = params.get('topic')?.trim() ?? '';
-    const numQuestions = parseNumber(params.get('numQuestions'), 10) ?? 10;
-    if (!Number.isInteger(numQuestions) || numQuestions <= 0) {
+    const certificationTitle = params.get('certificationTitle')?.trim();
+    if (!certificationTitle) return { error: 'certificationTitle is required' };
+
+    const numQuestions = parseNumber(params.get('numQuestions'), null);
+    if (numQuestions === null || !Number.isInteger(numQuestions) || numQuestions <= 0) {
       return { error: 'numQuestions must be an integer > 0' };
     }
 
-    const easy = parseNumber(params.get('easy'), 0) ?? 0;
-    const medium = parseNumber(params.get('medium'), 0) ?? 0;
-    const hard = parseNumber(params.get('hard'), 0) ?? 0;
-
-    let newPercentRaw = Number.parseFloat(params.get('newPercent') ?? '0');
-    if (Number.isNaN(newPercentRaw)) newPercentRaw = 0;
-    if (newPercentRaw > 1 && newPercentRaw <= 100) newPercentRaw = newPercentRaw / 100;
-    if (newPercentRaw < 0) newPercentRaw = 0;
-
-    const timeoutMs = parseNumber(params.get('timeout_ms'), 240000) ?? 240000;
-
-    return {
-      certificationTitle,
-      topics: topic ? [topic] : [],
-      numQuestions,
-    };
+    return { certificationTitle, numQuestions };
   }
 
-  private async countByTopic(topic?: string, difficulty?: string) {
-    const where: any = {};
-    if (topic) where.topic = topic;
-    if (difficulty) where.difficulty = difficulty;
-    return this.prismaService.question.count({ where });
+  public distributeQuestions(topics: CertificationTopic[], total: number): Map<string, number> {
+    if (total <= 0) throw new Error('numQuestions must be > 0');
+    if (topics.length === 0) throw new Error('Certification has no topics');
+
+    const allocation = new Map<string, number>();
+    const mins = new Map<string, number>();
+    const maxs = new Map<string, number>();
+
+    for (const t of topics) {
+      const minCount = Math.floor(t.minQuestions * total);
+      const maxCount = Math.ceil(t.maxQuestions * total);
+      mins.set(t.name, minCount);
+      maxs.set(t.name, maxCount);
+      allocation.set(t.name, minCount);
+    }
+
+    let remaining = total - Array.from(allocation.values()).reduce((a, b) => a + b, 0);
+    const sorted = [...topics].sort((a, b) => (maxs.get(b.name) ?? 0) - (maxs.get(a.name) ?? 0));
+
+    for (const t of sorted) {
+      if (remaining <= 0) break;
+      const current = allocation.get(t.name) ?? 0;
+      const canAdd = (maxs.get(t.name) ?? 0) - current;
+      const add = Math.min(canAdd, remaining);
+      allocation.set(t.name, current + add);
+      remaining -= add;
+    }
+
+    // overflow bucket: if percentages don't sum to 1, add excess to highest-weight topic
+    if (remaining > 0 && sorted.length > 0) {
+      const top = sorted[0].name;
+      allocation.set(top, (allocation.get(top) ?? 0) + remaining);
+    }
+
+    for (const [name, count] of Array.from(allocation.entries())) {
+      if (count === 0) allocation.delete(name);
+    }
+
+    return allocation;
   }
 
   async fetchStoredQuestions(certificationTitle: string, topics: string[], limit = 10) {
     if (!limit || limit <= 0) return [];
-    const where = { certificationTitle}
+    const where: Record<string, unknown> = { certificationTitle };
     if (topics && topics.length > 0) {
-      Object.assign(where, {
-        topic: { in: topics }
-      });
+      Object.assign(where, { topic: { in: topics } });
     }
-    
+
     const rows = await this.prismaService.question.findMany({
       where,
       take: limit,
@@ -71,6 +78,7 @@ export class QuestionService {
 
     return rows.map((q) => ({
       id: q.id,
+      certificationTitle: q.certificationTitle,
       text: q.text,
       correctCount: q.correctCount,
       topic: q.topic,
@@ -82,138 +90,14 @@ export class QuestionService {
       }, {}),
       answer: q.answer
         ? {
+            questionId: q.id,
             correctOptions: q.answer.correctOptions as string[],
             explanations: (q.answer.explanations || []).reduce((a: Record<string, string>, ex) => {
               a[ex.label] = ex.text;
               return a;
             }, {}),
           }
-        : { correctOptions: [], explanations: {} },
+        : { questionId: q.id, correctOptions: [], explanations: {} },
     }));
-  }
-
-  async saveQuestions(questions: AIQuestion[]) {
-    return this.prismaService.$transaction(async (tx) => {
-      const results: any[] = [];
-      for (const question of questions) {
-        const { certificationTitle, text, correctCount, options, topic, difficulty, topicSubarea } = question;
-
-        const createdQuestion = await tx.question.create({
-          data: {
-            certificationTitle,
-            text,
-            correctCount,
-            topic,
-            difficulty,
-            topicSubarea: topicSubarea ?? null,
-          },
-        });
-
-        const optionMap: Record<string, number> = {};
-        const optionsObj: Record<string, string> = {};
-        for (const [label, txt] of Object.entries(options)) {
-          const textVal = toSafeString(txt);
-          const opt = await tx.option.create({
-            data: {
-              questionId: createdQuestion.id,
-              label,
-              text: textVal,
-            },
-          });
-          optionMap[label] = opt.id;
-          optionsObj[label] = textVal;
-        }
-
-        results.push({
-          question: createdQuestion,
-          options: optionsObj,
-        });
-      }
-      return results;
-    });
-  }
-
-
-  // public shuffleQuestionOptions(question: AIQuestion) {
-  //   const allLabels = this.getAllLabels();
-  //   const presentLabels = this.getPresentLabels(question, allLabels);
-
-  //   if (presentLabels.length <= 1) return question;
-
-  //   const entries = this.buildEntries(question, presentLabels);
-  //   this.shuffleInPlace(entries);
-
-  //   const { newOptions, newExplanations, oldToNew } = this.rebuildMappings(entries, presentLabels);
-
-  //   const originalCorrect: string[] =
-  //     question.answer && Array.isArray(question.answer.correctOptions) ? question.answer.correctOptions : [];
-  //   const newCorrect = this.remapCorrectOptions(originalCorrect, oldToNew);
-
-  //   const finalExplanations = this.buildFinalExplanations(newExplanations, allLabels);
-
-  //   question.options = newOptions;
-  //   question.answer = {
-  //     ...(question.answer ?? { correctOptions: [], explanations: {} }),
-  //     correctOptions: newCorrect,
-  //     explanations: finalExplanations as any,
-  //   };
-  //   question.correctCount = Array.isArray(question.answer.correctOptions)
-  //     ? question.answer.correctOptions.length
-  //     : question.correctCount;
-  //   return question;
-  // }
-
-  private getAllLabels() {
-    return ['A', 'B', 'C', 'D', 'E'];
-  }
-
-  private getPresentLabels(question: AIQuestion, allLabels: string[]): string[] {
-    const opts = question.options ?? {};
-    const allPresent = allLabels.every((l) => typeof opts[l] === 'string' && opts[l].trim() !== '');
-    return allPresent ? allLabels : allLabels.filter((l) => opts[l] != null && opts[l] !== '');
-  }
-
-  // private buildEntries(question: AIQuestion, presentLabels: string[]) {
-  //   return presentLabels.map((lbl) => ({
-  //     originalLabel: lbl,
-  //     text: toSafeString(question.options[lbl]),
-  //     explanation: (question.answer as any)?.explanations?.[lbl] ?? '',
-  //   }));
-  // }
-
-  private shuffleInPlace<T>(arr: T[]) {
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-  }
-
-  private rebuildMappings(
-    entries: { originalLabel: string; text: string; explanation: string }[],
-    presentLabels: string[]
-  ) {
-    const newOptions: Record<string, string> = {};
-    const newExplanations: Record<string, string> = {};
-    const oldToNew: Record<string, string> = {};
-    for (let i = 0; i < entries.length; i++) {
-      const targetLabel = presentLabels[i];
-      const e = entries[i];
-      newOptions[targetLabel] = e.text;
-      newExplanations[targetLabel] = e.explanation;
-      oldToNew[e.originalLabel] = targetLabel;
-    }
-    return { newOptions, newExplanations, oldToNew };
-  }
-
-  private remapCorrectOptions(originalCorrect: string[], oldToNew: Record<string, string>) {
-    return originalCorrect.map((old) => oldToNew[old] || old).filter(Boolean);
-  }
-
-  private buildFinalExplanations(newExplanations: Record<string, string>, allLabels: string[]) {
-    const final: Record<string, string> = {};
-    for (const lbl of allLabels) {
-      final[lbl] = newExplanations[lbl] ?? '';
-    }
-    return final;
   }
 }

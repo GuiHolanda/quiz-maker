@@ -1,5 +1,5 @@
-import { OPENAI_POST_URL, SAVE_QUESTIONS_URL, SAVE_CERTIFICATION_URL } from '@/config/constants';
-import { AIQuestion, Certification, QuestionParams, TopicUpdatePayload } from '@/types';
+import { OPENAI_POST_URL, SAVE_QUESTIONS_URL, SAVE_CERTIFICATION_URL, QUIZ_GENERATOR_URL } from '@/config/constants';
+import { AIQuestion, Certification, QuestionParams, StoredQuestion, TopicUpdatePayload } from '@/types';
 import api from '@/lib/bff.api';
 
 export async function getCertifications(): Promise<Certification[]> {
@@ -32,4 +32,11 @@ export async function saveCertification(certification: Certification): Promise<C
 
 export async function updateCertificationTopic(payload: TopicUpdatePayload): Promise<void> {
   await api.patch(SAVE_CERTIFICATION_URL, payload);
+}
+
+export async function getQuizQuestions(params: { certificationTitle: string; numQuestions: number }): Promise<StoredQuestion[]> {
+  const { data } = await api.get<StoredQuestion[]>(QUIZ_GENERATOR_URL, {
+    params: { certificationTitle: params.certificationTitle, numQuestions: params.numQuestions },
+  });
+  return data;
 }

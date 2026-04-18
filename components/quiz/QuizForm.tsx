@@ -1,7 +1,7 @@
 'use client';
-import { getQuestions } from '@/features/connectors';
+import { getQuizQuestions } from '@/features/connectors';
 import { useRequest } from '@/features/hooks/useRequest.hook';
-import { QuizFormErrors, QuestionParams, AIQuestion } from '@/types';
+import { QuizFormErrors, StoredQuestion } from '@/types';
 import { Card } from '@heroui/card';
 import { Form } from '@heroui/form';
 import { BusyDialog } from '../ui/BusyDialog';
@@ -11,56 +11,63 @@ import { Divider } from '@heroui/divider';
 import { CertificationManager } from './CertificationManager';
 import { SectionsTable } from './SectionsTable';
 import { NumberInput } from '@heroui/number-input';
+import { Button } from '@heroui/button';
 
-interface QuestionareFormProps {
-  onGenerated: (questions: AIQuestion[]) => void;
+interface QuizFormProps {
+  onGenerated: (questions: StoredQuestion[]) => void;
 }
 
-export function QuizForm({ onGenerated }: Readonly<QuestionareFormProps>) {
-  const { selectedCertification, selectedTopics } = useCertificationsContext();
-  const { loading, error, setError, request } = useRequest(getQuestions);
+export function QuizForm({ onGenerated }: Readonly<QuizFormProps>) {
+  const { selectedCertification } = useCertificationsContext();
+  const { loading, error, setError, request } = useRequest(getQuizQuestions);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
 
-    const num_questions = formData.get('num_questions')?.toString().trim() ?? '10';
+    const num_questions = formData.get('num_questions')?.toString().trim() ?? '';
 
     const newErrors: QuizFormErrors = {};
-    if (!selectedCertification) newErrors.certificationTitle = 'Certification Title is required';
-    if (!selectedTopics.length) newErrors.topic = 'Topic is required';
+    if (!selectedCertification) newErrors.certificationTitle = 'Certification is required';
     if (!num_questions) newErrors.num_questions = 'Number of questions is required';
     if (Object.keys(newErrors).length > 0) {
       setError(newErrors);
       return;
     }
 
-    const requestPayload: QuestionParams = {
-      certification_name: selectedCertification?.label || '',
-      topic_name: selectedTopics.join(', '),
-      num_questions: num_questions,
-    };
+    const questions = await request({
+      certificationTitle: selectedCertification!.label,
+      numQuestions: Number(num_questions),
+    });
 
-    const questions = await request(requestPayload);
-    onGenerated(questions);
+    if (questions) onGenerated(questions);
   };
+
   return (
     <Card className="p-2">
       <Accordion defaultExpandedKeys={['quizForm']}>
-        <AccordionItem title="Configure the questionaire" classNames={{ title: 'text-md font-bold' }} key="quizForm">
+        <AccordionItem title="Configure the quiz" classNames={{ title: 'text-md font-bold' }} key="quizForm">
           <Form onSubmit={handleSubmit} validationErrors={error}>
             <Divider />
             <div className="w-full flex flex-col gap-6 p-4">
               <div className="flex gap-4 items-center">
-                <CertificationManager isMultiple noTopics className='flex w-3/4 gap-4 items-center'/>
-                <NumberInput className="w-1/4" placeholder="Number of Questions" aria-label="Number of Questions" />
+                <CertificationManager isMultiple noTopics className="flex w-3/4 gap-4 items-center" />
+                <NumberInput
+                  className="w-1/4"
+                  name="num_questions"
+                  label="Number of Questions"
+                  placeholder="e.g. 20"
+                  minValue={1}
+                />
               </div>
-              <div className="flex w-full items-baseline gap-4">
-                <SectionsTable selectedCertification={selectedCertification} />
-              </div>
+              <SectionsTable selectedCertification={selectedCertification} />
             </div>
-            <div className="flex flex-col gap-6 md:gap-0 md:flex-row md:items-end"></div>
+            <div className="flex w-full justify-end p-4">
+              <Button type="submit" color="primary" isLoading={loading}>
+                Generate Quiz
+              </Button>
+            </div>
           </Form>
           <BusyDialog isOpen={loading} />
         </AccordionItem>

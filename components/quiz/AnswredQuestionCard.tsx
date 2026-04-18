@@ -1,11 +1,11 @@
 import { Card, CardHeader, CardBody } from '@heroui/card';
-import { Question } from '@/types';
+import { StoredQuestion } from '@/types';
 import { Alert } from '@heroui/alert';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleCheck, faCircleXmark } from '@fortawesome/free-solid-svg-icons';
 
 interface QuestionCardProps {
-  readonly question: Question;
+  readonly question: StoredQuestion;
   readonly answer: string[];
 }
 

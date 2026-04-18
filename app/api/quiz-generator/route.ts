@@ -1,34 +1,76 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { QuestionService } from '@/app/api/question-generator/question.service';
-const questionService = new QuestionService();
+import { QuizGeneratorService } from './quiz-generator.service';
+import { prisma } from '@/lib/prisma';
+import { INITIAL_CERTIFICATIONS_STATE } from '@/config/constants';
+
+const service = new QuizGeneratorService();
+
+function shuffleArray<T>(arr: T[]): T[] {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
 
 export async function GET(request: NextRequest) {
-  const parsedParams = questionService.parseParams(new URL(request.url));
-  if ('error' in parsedParams) return NextResponse.json({ message: parsedParams.error }, { status: 400 });
+  const parsed = service.parseParams(new URL(request.url));
+  if ('error' in parsed) {
+    return NextResponse.json({ message: parsed.error }, { status: 400 });
+  }
 
-  const { topics, numQuestions, newPercent, timeoutMs, certificationTitle } = parsedParams;
+  const { certificationTitle, numQuestions } = parsed;
 
   try {
+    // try DB first, fall back to constants (certs may not be persisted yet)
+    let topics: { name: string; minQuestions: number; maxQuestions: number }[] | null = null;
 
+    const dbCert = await prisma.certification.findFirst({
+      where: { label: certificationTitle },
+      include: { topics: true },
+    });
 
-   
-    const validated = questionService.validateQuestions(JSON.parse(response));
-    if (!validated.ok || !validated.value) {
-      console.error('Invalid questions from LLM', validated.error);
-      return NextResponse.json({ message: `Invalid questions: ${validated.error}` }, { status: 502 });
+    if (dbCert) {
+      topics = dbCert.topics;
+    } else {
+      const fallback = INITIAL_CERTIFICATIONS_STATE.certifications.find(
+        (c) => c.label === certificationTitle
+      );
+      if (fallback) topics = fallback.topics;
     }
-    const questionsFromAi = validated.value;
 
-    const shuffled = questionsFromAi.map((q) => questionService.shuffleQuestionOptions(q));
-    await questionService.createFromPayload(shuffled);
+    if (!topics || topics.length === 0) {
+      return NextResponse.json(
+        { message: `Certification not found: ${certificationTitle}` },
+        { status: 400 }
+      );
+    }
 
-    const recycledQuestions =
-      recycledNeeded > 0 ? await questionService.fetchRecycledQuestions(topic || undefined, recycledNeeded) : [];
+    const allocation = service.distributeQuestions(topics, numQuestions);
 
-    const final = [...recycledQuestions, ...shuffled];
-    return NextResponse.json(final, { status: 200 });
+    const perTopicResults = await Promise.all(
+      Array.from(allocation.entries()).map(async ([topicName, count]) => {
+        const questions = await service.fetchStoredQuestions(certificationTitle, [topicName], count);
+        return { topicName, required: count, questions };
+      })
+    );
+
+    const shortfalls = perTopicResults.filter((r) => r.questions.length < r.required);
+    if (shortfalls.length > 0) {
+      const details = shortfalls
+        .map((r) => `'${r.topicName}' (need ${r.required}, found ${r.questions.length})`)
+        .join(', ');
+      return NextResponse.json(
+        { message: `Insufficient questions for topics: ${details}` },
+        { status: 400 }
+      );
+    }
+
+    const all = perTopicResults.flatMap((r) => r.questions);
+    return NextResponse.json(shuffleArray(all), { status: 200 });
   } catch (err: any) {
-    console.error('Failed to process request:', err);
+    console.error('quiz-generator error:', err);
     return NextResponse.json(
       { error: err, message: err.message || 'Failed to process request' },
       { status: err.status || 500 }

@@ -26,7 +26,7 @@ interface QuizPageContentProps {
 }
 
 function QuizPageContent({ questions, setQuestions }: Readonly<QuizPageContentProps>) {
-  const { quiz, replaceQuiz } = useQuizContext();
+  const { state: quiz, replaceQuiz } = useQuizContext();
 
   const onQuestionsGenerated = (questionsArr: StoredQuestion[] | undefined) => {
     if (!questionsArr) return;
@@ -35,6 +35,8 @@ function QuizPageContent({ questions, setQuestions }: Readonly<QuizPageContentPr
         topic: questionsArr[0]?.topic ?? '',
         num_questions: questionsArr.length,
       },
+      aiQuestions: [],
+      selectedAIQuestions: null,
       questions: questionsArr,
       answers: {},
       isFinished: false,

@@ -18,8 +18,8 @@ export function useRequest(requestMethod: (args: any) => Promise<any>) {
     } catch (error: any) {
       queueMicrotask(() => setError(error));
       addToast({
-        title: `Failed to generate questions`,
-        description:"Something went wrong while generating questions. Please try again.",
+        title: `Failed to load questions`,
+        description: error?.response?.data?.message || "Something went wrong. Please try again.",
         color: "danger",
       });
     } finally {
