@@ -5,7 +5,7 @@ import { AIQuestion } from '@/types';
 import { QuizProvider } from '@/features/providers/quiz.provider';
 import { CertificationsProvider } from '@/features/providers/certifications.provider';
 import { QuestionGeneratorForm } from '@/components/quiz/QuestionGeneratorForm';
-import { AIQuestionList } from '@/components/quiz/AIQuestionList';
+import { GeneratedQuestionsList } from '@/components/quiz/GeneratedQuestionsList';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
 
 export default function QuizPage() {
@@ -49,7 +49,7 @@ function AIQuestionPageContent() {
 
       <QuestionGeneratorForm onGenerated={onQuestionsGenerated} />
 
-      {(state?.aiQuestions?.length ?? 0) > 0 && <AIQuestionList questions={state?.aiQuestions ?? []} />}
+      {(state?.aiQuestions?.length ?? 0) > 0 && <GeneratedQuestionsList questions={state?.aiQuestions ?? []} />}
     </div>
   );
 }

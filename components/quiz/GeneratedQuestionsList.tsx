@@ -1,18 +1,17 @@
 import React from 'react';
 import { AIQuestion } from '@/types';
-import { Pagination } from '@heroui/pagination';
 import { Button } from '@heroui/button';
-import { Select, SelectItem } from '@heroui/select';
 import { GeneratedQuestionsCard } from './GeneratedQuestionsCard';
-import { QUESTIONS_PER_PAGE_OPTIONS } from '@/config/constants';
 import { Checkbox } from '@heroui/checkbox';
+import { PaginationControls } from '../ui/PaginationControls';
+import { ItemsPerPageSelect } from '../ui/ItemsPerPageSelect';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
 import { Chip } from '@heroui/chip';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { saveQuestions } from '@/features/connectors';
 import { BusyDialog } from '../ui/BusyDialog';
 
-export function AIQuestionList({
+export function GeneratedQuestionsList({
   questions,
 }: Readonly<{
   questions: AIQuestion[];
@@ -74,21 +73,7 @@ export function AIQuestionList({
           </Checkbox>
           {selectedCount > 0 && <Chip color="primary"><strong>Selected questions: {selectedCountLabel}</strong></Chip>}
         </div>
-        <div className="flex flex-col items-center gap-2 ml-auto">
-          <label htmlFor="questionsPerPage" className="text-sm font-bold">
-            Questions per page:
-          </label>
-          <Select
-            id="questionsPerPage"
-            defaultSelectedKeys={QUESTIONS_PER_PAGE_OPTIONS[1].key}
-            items={QUESTIONS_PER_PAGE_OPTIONS}
-            value={String(questionsPerPage)}
-            onChange={onItemsPerPageChange}
-            className="w-24 ml-auto"
-          >
-            {(item) => <SelectItem key={item.key}>{item.label}</SelectItem>}
-          </Select>
-        </div>
+        <ItemsPerPageSelect value={questionsPerPage} onChange={onItemsPerPageChange} />
       </div>
 
       <div className="flex flex-col gap-3">
@@ -106,25 +91,7 @@ export function AIQuestionList({
       </div>
 
       <div className="flex gap-2">
-        <Button
-          color="primary"
-          size="sm"
-          variant="ghost"
-          onPress={() => setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev))}
-          isDisabled={currentPage === 1}
-        >
-          Previous
-        </Button>
-        <Pagination color="primary" page={currentPage} total={totalPages} onChange={setCurrentPage} />
-        <Button
-          color="primary"
-          size="sm"
-          variant="ghost"
-          onPress={() => setCurrentPage((prev) => (prev < totalPages ? prev + 1 : prev))}
-          isDisabled={currentPage === totalPages}
-        >
-          Next
-        </Button>
+        <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
 
         <Button
           className="ml-auto"

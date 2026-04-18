@@ -1,11 +1,12 @@
 import React from 'react';
 import { AnswersMap, StoredQuestion } from '@/types';
 import { QuestionCard } from './QuestionCard';
-import { Pagination } from '@heroui/pagination';
 import { Button } from '@heroui/button';
 import { Progress } from '@heroui/progress';
 import { AnsweredQuestionCard } from './AnswredQuestionCard';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
+import { PaginationControls } from '../ui/PaginationControls';
+import { ItemsPerPageSelect } from '../ui/ItemsPerPageSelect';
 
 export function QuestionList({
   questions,
@@ -13,8 +14,13 @@ export function QuestionList({
   questions: StoredQuestion[];
 }>) {
   const [currentPage, setCurrentPage] = React.useState(1);
+  const [questionsPerPage, setQuestionsPerPage] = React.useState<number>(5);
   const { state: quiz, setAnswers, setFinished } = useQuizContext();
   const answers: AnswersMap = quiz?.answers ?? {};
+
+  const totalPages = Math.max(1, Math.ceil(questions.length / questionsPerPage));
+  const startIndex = (currentPage - 1) * questionsPerPage;
+  const visibleQuestions = questions.slice(startIndex, startIndex + questionsPerPage);
 
   const handleAnswerChange = (questionId: number, value: string | string[]) => {
     const arr = Array.isArray(value) ? value : [value];
@@ -22,72 +28,63 @@ export function QuestionList({
 
     setAnswers(newAnswers);
 
-    if (currentPage < questions.length) setCurrentPage((i) => i + 1);
+    if (questionsPerPage === 1 && currentPage < totalPages) setCurrentPage((i) => i + 1);
+  };
+
+  const onItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const v = Number(e.target.value) || 1;
+    const bounded = Math.max(1, Math.min(questions.length, v));
+    setQuestionsPerPage(bounded);
+    setCurrentPage(1);
   };
 
   const onFinishQuiz = () => {
     setFinished(true);
     setCurrentPage(1);
-  }
+  };
 
   const onRestartQuiz = () => {
     setFinished(false);
     setAnswers({});
     setCurrentPage(1);
-  }
+  };
 
   return (
     <div className="flex flex-col gap-4 mt-8">
       {questions.length > 0 && (
         <>
-          <Progress
-            aria-label="Quiz Progress"
-            label="Questions answered"
-            classNames={{ label: 'text-sm font-bold pl-2', value: 'text-sm font-bold' }}
-            valueLabel={`${Object.keys(answers).length} of ${questions.length}`}
-            formatOptions={undefined}
-            color="primary"
-            showValueLabel={true}
-            size="md"
-            value={Object.keys(answers).length}
-            maxValue={questions.length}
-          />
+          <div className="flex items-end justify-between">
+            <Progress
+              aria-label="Quiz Progress"
+              label="Questions answered"
+              classNames={{ label: 'text-sm font-bold pl-2', value: 'text-sm font-bold' }}
+              valueLabel={`${Object.keys(answers).length} of ${questions.length}`}
+              formatOptions={undefined}
+              color="primary"
+              showValueLabel={true}
+              size="md"
+              value={Object.keys(answers).length}
+              maxValue={questions.length}
+              className="flex-1"
+            />
+          </div>
           <div className="flex flex-col gap-3">
-            {!quiz?.isFinished ? (
-              <QuestionCard
-                key={questions[currentPage - 1].id}
-                question={questions[currentPage - 1]}
-                onAnswerChange={handleAnswerChange}
-                initialValue={answers[questions[currentPage - 1].id]}
-              />
-            ) : (
-              <AnsweredQuestionCard
-                key={questions[currentPage - 1].id}
-                question={questions[currentPage - 1]}
-                answer={answers[questions[currentPage - 1].id]}
-              />
+            {visibleQuestions.map((question) =>
+              !quiz?.isFinished ? (
+                <QuestionCard
+                  key={question.id}
+                  question={question}
+                  onAnswerChange={handleAnswerChange}
+                  initialValue={answers[question.id]}
+                />
+              ) : (
+                <AnsweredQuestionCard key={question.id} question={question} answer={answers[question.id]} />
+              )
             )}
           </div>
-          <div className="flex gap-2">
-            <Button
-              color="primary"
-              size="sm"
-              variant="ghost"
-              onPress={() => setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev))}
-              isDisabled={currentPage === 1}
-            >
-              Previous
-            </Button>
-            <Pagination color="primary" page={currentPage} total={questions.length} onChange={setCurrentPage} />
-            <Button
-              color="primary"
-              size="sm"
-              variant="ghost"
-              onPress={() => setCurrentPage((prev) => (prev < questions.length ? prev + 1 : prev))}
-              isDisabled={currentPage === questions.length}
-            >
-              Next
-            </Button>
+          <div className="flex gap-2 items-end">
+            <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
+            <ItemsPerPageSelect value={questionsPerPage} onChange={onItemsPerPageChange} />
             <Button
               className="ml-auto"
               variant="flat"
