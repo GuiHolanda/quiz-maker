@@ -26,30 +26,69 @@ MyQuiz is a **certification exam prep platform** being built as a product for pu
 ## Project Structure
 
 ```
-app/                   # Next.js App Router (pages + API routes)
-  api/                 # Route handlers — one folder per endpoint
-  (pages)/page.tsx     # Page components
-components/            # React components grouped by domain
-  quiz/                # Quiz flow components
-  certification-management/  # Certification CRUD components
-  ui/                  # Generic UI utilities
+app/                          # Next.js App Router (pages + API routes)
+  api/                        # Route handlers — one folder per endpoint
+    certifications/route.ts
+    get-anwers/route.ts
+    question-generator/       # route.ts + question.service.ts
+    quiz-generator/           # route.ts + quiz-generator.service.ts
+    save-certification/       # route.ts + certification.service.ts
+    save-questions/route.ts
+  configure-certification/
+    page.tsx
+    components/               # Components used exclusively by this page
+      CertificationHeader.tsx
+      CertificationsListTab.tsx
+      EditCertificationTab.tsx
+      NewCertificationTab.tsx
+      TopicForm.tsx
+  generate-questions/
+    page.tsx
+    components/
+      GeneratedQuestionsCard.tsx
+      GeneratedQuestionsList.tsx
+      QuestionGeneratorForm.tsx
+  quiz/
+    page.tsx
+    components/
+      AnswredQuestionCard.tsx
+      QuestionCard.tsx
+      QuestionList.tsx
+      QuizForm.tsx
+sharedComponents/             # Components reused across multiple pages
+  CertificationManager.tsx
+  SectionsTable.tsx
+  icons.tsx
+  primitives.ts
+  ui/                         # Generic UI primitives
+    BusyDialog.tsx
+    ItemsPerPageSelect.tsx
+    NumberInput.tsx
+    PaginationControls.tsx
+    navbar.tsx
+    theme-switch.tsx
 config/
-  constants/index.ts   # App-wide constants, API URLs, initial certifications state (10 SAP certs pre-loaded), localStorage keys
-  promptSchemas/       # LLM prompt templates
-  site.ts              # Site metadata and nav config
+  constants/index.ts          # App-wide constants, API URLs, localStorage keys
+  promptSchemas/              # LLM prompt templates (JSON schemas)
+  site.ts                     # Site metadata and nav config
 features/
-  connectors.ts        # All HTTP client calls (single file)
-  hooks/               # Custom React hooks (*.hook.ts)
-  providers/           # Context providers (*.provider.tsx)
-  reducers/            # State reducers (*.reducer.ts)
+  connectors.ts               # All HTTP client calls (single file)
+  hooks/                      # Custom React hooks (*.hook.ts)
+  providers/                  # Context providers (*.provider.tsx)
+  reducers/                   # State reducers (*.reducer.ts)
+  services/                   # Client-side services (e.g. openAI.service.ts)
 lib/
-  prisma.ts            # Prisma client singleton
-  bff.api.ts           # Axios instance (baseURL: "/api")
+  prisma.ts                   # Prisma client singleton
+  bff.api.ts                  # Axios instance (baseURL: "/api")
 prisma/
-  dev/                 # SQLite dev schema + migrations
-  prod/                # LibSQL prod schema + migrations
-types/index.ts         # All shared TypeScript types (AIQuestion, StoredQuestion, Certification, CertificationTopic, QuizParams, etc.)
+  dev/                        # SQLite dev schema + migrations + scripts
+  prod/                       # LibSQL prod schema + migrations
+types/index.ts                # All shared TypeScript types (AIQuestion, StoredQuestion, Certification, CertificationTopic, QuizParams, etc.)
 ```
+
+### Component co-location rule
+
+Page-specific components live in `app/<page>/components/`. Components used by more than one page live in `sharedComponents/`. Never put page-specific components in `sharedComponents/`.
 
 ---
 
@@ -123,6 +162,7 @@ Useful scripts:
 ```bash
 npm run prisma:migrate:dev    # Run dev migrations
 npm run prisma:generate:dev   # Regenerate Prisma client (dev)
+npm run db:seed:dev           # Seed dev database with sample certifications + questions
 npm run db:clear:dev          # Wipe dev database
 ```
 
