@@ -2,6 +2,11 @@ import { OPENAI_POST_URL, SAVE_QUESTIONS_URL, SAVE_CERTIFICATION_URL } from '@/c
 import { AIQuestion, Certification, QuestionParams, TopicUpdatePayload } from '@/types';
 import api from '@/lib/bff.api';
 
+export async function getCertifications(): Promise<Certification[]> {
+  const { data } = await api.get<{ certifications: Certification[] }>('/certifications');
+  return data.certifications;
+}
+
 export async function getQuestions(requestPayload: QuestionParams): Promise<AIQuestion[]> {
   const { num_questions, topic_name, certification_name } = requestPayload;
 

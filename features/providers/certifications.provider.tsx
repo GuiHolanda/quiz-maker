@@ -2,6 +2,7 @@ import React, { useReducer, useEffect, useCallback, useMemo } from 'react';
 import type { Certification, CertificationsStoreApi } from '@/types';
 import { CERTIFICATIONS_LOCAL_STORAGE_KEY, INITIAL_CERTIFICATIONS_STATE } from '@/config/constants';
 import { certificationsReducer } from '../reducers/certifications.reducer';
+import { getCertifications } from '../connectors';
 
 export const CertificationsContext = React.createContext<CertificationsStoreApi | null>(null);
 
@@ -11,36 +12,37 @@ export function CertificationsProvider({ children }: Readonly<{ children: React.
   useEffect(() => {
     try {
       const raw = localStorage.getItem(CERTIFICATIONS_LOCAL_STORAGE_KEY);
-      if (!raw) return;
-
-      const parsed = JSON.parse(raw);
-      let normalized: { certifications: Certification[]; selectedCertification: Certification | null, selectedTopics: string[] } | null = null;
-      if (parsed && typeof parsed === 'object' && Array.isArray(parsed.certifications)) {
-        normalized = {
-          certifications: parsed.certifications,
-          selectedCertification: parsed.selectedCertification || null,
-          selectedTopics: parsed.selectedTopics || [],
-        };
-      } else if (Array.isArray(parsed)) {
-        normalized = { certifications: parsed, selectedCertification: null, selectedTopics: [] };
-      }
-
-      if (normalized) {
-        dispatch({ type: 'setState', payload: { state: normalized } });
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        dispatch({ type: 'setSelectedCertification', payload: { key: parsed?.selectedCertification?.key ?? null } });
+        dispatch({ type: 'setSelectedTopics', payload: { topics: parsed?.selectedTopics ?? [] } });
       }
     } catch (err) {
-      console.warn('Failed to read certifications from storage', err);
+      console.warn('Failed to read UI state from storage', err);
     }
+
+    getCertifications()
+      .then((certs) => dispatch({ type: 'setCertifications', payload: { certifications: certs } }))
+      .catch(() => {
+        try {
+          const raw = localStorage.getItem(CERTIFICATIONS_LOCAL_STORAGE_KEY);
+          if (!raw) return;
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed?.certifications)) {
+            dispatch({ type: 'setCertifications', payload: { certifications: parsed.certifications } });
+          }
+        } catch {}
+      });
   }, []);
 
   useEffect(() => {
     try {
-      const toStore = { certifications: state.certifications, selectedCertification: state.selectedCertification, selectedTopics: state.selectedTopics };
+      const toStore = { selectedCertification: state.selectedCertification, selectedTopics: state.selectedTopics };
       localStorage.setItem(CERTIFICATIONS_LOCAL_STORAGE_KEY, JSON.stringify(toStore));
     } catch (err) {
       console.warn('Persist certifications failed', err);
     }
-  }, [state.certifications, state.selectedCertification, state.selectedTopics]);
+  }, [state.selectedCertification, state.selectedTopics]);
 
   const setCertifications = useCallback(
     (certs: Certification[]) => dispatch({ type: 'setCertifications', payload: { certifications: certs } }),
