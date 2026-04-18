@@ -1,12 +1,12 @@
 'use client';
 import { useState } from 'react';
-import { title } from '@/components/primitives';
+import { title } from '@/sharedComponents/primitives';
 import { AIQuestion } from '@/types';
 import { QuizProvider } from '@/features/providers/quiz.provider';
 import { CertificationsProvider } from '@/features/providers/certifications.provider';
-import { QuestionGeneratorForm } from '@/components/quiz/QuestionGeneratorForm';
-import { GeneratedQuestionsList } from '@/components/quiz/GeneratedQuestionsList';
+import { GeneratedQuestionsList } from '@/app/generate-questions/components/GeneratedQuestionsList';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
+import { QuestionGeneratorForm } from './components/QuestionGeneratorForm';
 
 export default function QuizPage() {
 

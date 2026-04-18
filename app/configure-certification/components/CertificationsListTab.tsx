@@ -1,6 +1,6 @@
+import { SectionsTable } from "@/sharedComponents/SectionsTable";
 import useCertificationsContext from "@/features/hooks/useCertificationsContext.hook";
 import { Accordion, AccordionItem } from "@heroui/accordion";
-import { SectionsTable } from "../quiz/SectionsTable";
 
 export function CertificationsListTab() {
    const { certifications } = useCertificationsContext();

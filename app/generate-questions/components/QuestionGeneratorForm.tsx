@@ -1,25 +1,16 @@
 'use client';
 import { getQuestions } from '@/features/connectors';
 import { useRequest } from '@/features/hooks/useRequest.hook';
-import { QuizParams, QuizFormErrors, Certification, AIQuestion, QuestionParams } from '@/types';
+import { QuizFormErrors, AIQuestion, QuestionParams } from '@/types';
 import { Button } from '@heroui/button';
 import { Card } from '@heroui/card';
 import { Form } from '@heroui/form';
-import { Input } from '@heroui/input';
-import { BusyDialog } from '../ui/BusyDialog';
-import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
-import { useState } from 'react';
-import { useDisclosure } from '@heroui/modal';
-import { faEllipsisVertical, faPenSquare, faPlusCircle, faTrashCan } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { NewCertificationModal } from './NewCertificationModal';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@heroui/dropdown';
 import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Divider } from '@heroui/divider';
-import { Switch } from '@heroui/switch';
-import { CertificationManager } from './CertificationManager';
 import { NumberInput } from '@heroui/number-input';
+import { CertificationManager } from '@/sharedComponents/CertificationManager';
+import { BusyDialog } from '@/sharedComponents/ui/BusyDialog';
 
 interface QuestionareFormProps {
   onGenerated: (questions: AIQuestion[]) => void;

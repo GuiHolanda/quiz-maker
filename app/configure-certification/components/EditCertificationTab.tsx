@@ -1,7 +1,7 @@
+import { SectionsTable } from '@/sharedComponents/SectionsTable';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
 import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
-import { SectionsTable } from '../quiz/SectionsTable';
-import { Certification, CertificationTopic } from '@/types';
+
 
 export function EditCertificationTab() {
   const { certifications, setSelectedCertification, selectedCertification, updateCertification } = useCertificationsContext();

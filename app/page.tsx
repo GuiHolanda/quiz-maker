@@ -2,7 +2,7 @@ import NextLink from 'next/link';
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { tv } from 'tailwind-variants';
-import { title, subtitle } from '@/components/primitives';
+import { title, subtitle } from '@/sharedComponents/primitives';
 
 const clayCard = tv({
   base: 'relative overflow-hidden rounded-3xl p-8 border-2 backdrop-blur-sm',

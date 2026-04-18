@@ -5,8 +5,8 @@ import { Button } from '@heroui/button';
 import { Progress } from '@heroui/progress';
 import { AnsweredQuestionCard } from './AnswredQuestionCard';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
-import { PaginationControls } from '../ui/PaginationControls';
-import { ItemsPerPageSelect } from '../ui/ItemsPerPageSelect';
+import { PaginationControls } from '../../../sharedComponents/ui/PaginationControls';
+import { ItemsPerPageSelect } from '../../../sharedComponents/ui/ItemsPerPageSelect';
 
 export function QuestionList({
   questions,

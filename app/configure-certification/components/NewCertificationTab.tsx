@@ -8,10 +8,10 @@ import useCertificationsContext from '@/features/hooks/useCertificationsContext.
 import { useCertificationDraft } from '@/features/hooks/useCertificationDraft.hook';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 
-import { BusyDialog } from '../ui/BusyDialog';
-import { SectionsTable } from '../quiz/SectionsTable';
 import { CertificationHeader } from './CertificationHeader';
 import { TopicForm } from './TopicForm';
+import { SectionsTable } from '@/sharedComponents/SectionsTable';
+import { BusyDialog } from '@/sharedComponents/ui/BusyDialog';
 
 export function NewCertificationTab() {
   const { addCertification, selectedCertification, certifications } = useCertificationsContext();

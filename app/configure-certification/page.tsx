@@ -1,10 +1,12 @@
 'use client';
-import { title } from '@/components/primitives';
+import { title } from '@/sharedComponents/primitives';
 import { Tabs, Tab } from '@heroui/tabs';
-import { NewCertificationTab } from '@/components/certification-management/NewCertificationTab';
-import { CertificationsListTab } from '@/components/certification-management/CertificationsListTab';
-import { EditCertificationTab } from '@/components/certification-management/EditCertificationTab';
+
 import CertificationsProvider from '@/features/providers/certifications.provider';
+import { CertificationsListTab } from './components/CertificationsListTab';
+import { EditCertificationTab } from './components/EditCertificationTab';
+import { NewCertificationTab } from './components/NewCertificationTab';
+
 
 export default function ConfigureCertificationPage() {
 

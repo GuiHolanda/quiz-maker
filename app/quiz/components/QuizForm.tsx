@@ -4,12 +4,12 @@ import { useRequest } from '@/features/hooks/useRequest.hook';
 import { QuizFormErrors, StoredQuestion } from '@/types';
 import { Card } from '@heroui/card';
 import { Form } from '@heroui/form';
-import { BusyDialog } from '../ui/BusyDialog';
+import { BusyDialog } from '../../../sharedComponents/ui/BusyDialog';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
 import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Divider } from '@heroui/divider';
-import { CertificationManager } from './CertificationManager';
-import { SectionsTable } from './SectionsTable';
+import { CertificationManager } from '../../../sharedComponents/CertificationManager';
+import { SectionsTable } from '../../../sharedComponents/SectionsTable';
 import { NumberInput } from '@heroui/number-input';
 import { Button } from '@heroui/button';
 

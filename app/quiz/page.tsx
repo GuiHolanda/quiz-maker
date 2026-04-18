@@ -1,12 +1,12 @@
 'use client';
 import { useState } from 'react';
-import { title } from '@/components/primitives';
+import { title } from '@/sharedComponents/primitives';
 import { StoredQuestion } from '@/types';
-import { QuestionList } from '@/components/quiz/QuestionList';
+import { QuestionList } from '@/app/quiz/components/QuestionList';
 import { QuizProvider } from '@/features/providers/quiz.provider';
 import { CertificationsProvider } from '@/features/providers/certifications.provider';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
-import { QuizForm } from '@/components/quiz/QuizForm';
+import { QuizForm } from '@/app/quiz/components/QuizForm';
 
 export default function QuizPage() {
   const [questions, setQuestions] = useState<StoredQuestion[] | null>(null);
