@@ -83,6 +83,13 @@ minQuestions: number;
 questions?: number;
 }
 
+export interface TopicUpdatePayload {
+  certificationKey: string;
+  topicName: string;
+  minQuestions: number;
+  maxQuestions: number;
+}
+
 export interface QuizStoreApi {
   state: QuizState;
   setAIquestions: (aiQuestions: AIQuestion[], selectedAIQuestions: number[] | null) => void;

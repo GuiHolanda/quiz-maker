@@ -22,3 +22,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: err, message }, { status });
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json().catch(() => null);
+    const payload = certificationService.validateTopicUpdate(body);
+    const updated = await certificationService.updateTopic(payload);
+
+    return NextResponse.json(
+      { message: 'Topic updated successfully', topic: updated },
+      { status: 200 }
+    );
+  } catch (err: any) {
+    console.error('Failed to update topic:', err);
+
+    const status = err.status || 500;
+    const message = err.message || 'Failed to update topic';
+
+    return NextResponse.json({ error: err, message }, { status });
+  }
+}

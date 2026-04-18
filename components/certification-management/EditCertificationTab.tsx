@@ -1,15 +1,26 @@
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
 import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
-import { Card, CardBody } from '@heroui/card';
 import { SectionsTable } from '../quiz/SectionsTable';
+import { Certification, CertificationTopic } from '@/types';
 
 export function EditCertificationTab() {
-  const { certifications, setSelectedCertification, selectedCertification } = useCertificationsContext();
+  const { certifications, setSelectedCertification, selectedCertification, updateCertification } = useCertificationsContext();
 
   const onCertificationChange = (key: any) => {
     const certification = certifications.find((cert) => cert.key === key);
     setSelectedCertification(certification || null);
   };
+
+  const handleTopicChanged = (topicName: string, field: 'minQuestions' | 'maxQuestions', value: number) => {
+    if (!selectedCertification) return;
+
+    const updatedTopics = selectedCertification.topics.map((t) =>
+      t.name === topicName ? { ...t, [field]: value } : t
+    );
+
+    updateCertification(selectedCertification.key, { topics: updatedTopics });
+  };
+
   return (
     <>
       <Autocomplete
@@ -27,7 +38,11 @@ export function EditCertificationTab() {
       </Autocomplete>
       {selectedCertification && (
         <div className='mt-4'>
-          <SectionsTable selectedCertification={selectedCertification} />
+          <SectionsTable
+            selectedCertification={selectedCertification}
+            editable
+            onTopicChanged={handleTopicChanged}
+          />
         </div>
       )}
     </>

@@ -1,5 +1,5 @@
 import { prisma, PrismaService } from '@/lib/prisma';
-import { Certification } from '@/types';
+import { Certification, TopicUpdatePayload } from '@/types';
 
 export class CertificationService {
   constructor(private readonly prismaService: PrismaService = prisma) {}
@@ -61,6 +61,49 @@ export class CertificationService {
       });
 
       return created;
+    });
+  }
+
+  public validateTopicUpdate(body: unknown): TopicUpdatePayload {
+    if (!body || typeof body !== 'object') {
+      throw new Error('Invalid request body');
+    }
+
+    const { certificationKey, topicName, minQuestions, maxQuestions } = body as Record<string, unknown>;
+
+    if (!certificationKey || typeof certificationKey !== 'string') {
+      throw new Error('certificationKey is required');
+    }
+    if (!topicName || typeof topicName !== 'string') {
+      throw new Error('topicName is required');
+    }
+    if (typeof minQuestions !== 'number' || typeof maxQuestions !== 'number') {
+      throw new TypeError('minQuestions and maxQuestions must be numbers');
+    }
+
+    return { certificationKey, topicName, minQuestions, maxQuestions };
+  }
+
+  public async updateTopic(payload: TopicUpdatePayload) {
+    const { certificationKey, topicName, minQuestions, maxQuestions } = payload;
+
+    const certification = await this.prismaService.certification.findUnique({ where: { key: certificationKey } });
+
+    if (!certification) {
+      throw Object.assign(new Error(`Certification "${certificationKey}" not found`), { status: 404 });
+    }
+
+    const topic = await this.prismaService.certificationTopic.findUnique({
+      where: { certificationId_name: { certificationId: certification.id, name: topicName } },
+    });
+
+    if (!topic) {
+      throw Object.assign(new Error(`Topic "${topicName}" not found`), { status: 404 });
+    }
+
+    return this.prismaService.certificationTopic.update({
+      where: { id: topic.id },
+      data: { minQuestions, maxQuestions },
     });
   }
 }
