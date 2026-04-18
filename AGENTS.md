@@ -12,7 +12,7 @@ MyQuiz is a **certification exam prep platform** being built for public launch. 
 |---|---|
 | Framework | Next.js 15 (App Router) + React 18 |
 | Language | TypeScript 5 (strict mode) |
-| UI | HeroUI component library + Tailwind CSS 4 |
+| UI | [HeroUI](https://heroui.com/docs/react/components) component library + Tailwind CSS 4 |
 | Icons | FontAwesome (`@fortawesome/react-fontawesome`) |
 | Animations | Framer Motion |
 | State | React Context + useReducer (no Redux/Zustand) |
@@ -33,7 +33,7 @@ components/            # React components grouped by domain
   certification-management/  # Certification CRUD components
   ui/                  # Generic UI utilities
 config/
-  constants/           # App-wide constants, initial state, API URLs
+  constants/index.ts   # App-wide constants, API URLs, initial certifications state (10 SAP certs pre-loaded), localStorage keys
   promptSchemas/       # LLM prompt templates
   site.ts              # Site metadata and nav config
 features/
@@ -47,7 +47,7 @@ lib/
 prisma/
   dev/                 # SQLite dev schema + migrations
   prod/                # LibSQL prod schema + migrations
-types/index.ts         # All shared TypeScript types
+types/index.ts         # All shared TypeScript types (AIQuestion, StoredQuestion, Certification, CertificationTopic, QuizParams, etc.)
 ```
 
 ---
@@ -75,6 +75,7 @@ types/index.ts         # All shared TypeScript types
 - `'use client'` at the top of interactive components
 - No barrel `index.ts` files in component directories
 - No JSDoc or multi-line comment blocks
+- UI built exclusively with **[HeroUI](https://heroui.com/docs/react/components)** — always check available components there before building custom ones
 
 ### State Management
 - Context + Reducer pattern everywhere
