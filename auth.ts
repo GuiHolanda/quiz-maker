@@ -15,7 +15,7 @@ declare module 'next-auth' {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma),
-  session: { strategy: 'database' },
+  session: { strategy: 'jwt' },
   providers: [
     Credentials({
       credentials: {
@@ -23,12 +23,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (typeof credentials?.email !== 'string' || typeof credentials?.password !== 'string') return null;
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
+          where: { email: credentials.email },
         });
         if (!user?.password) return null;
-        const valid = await bcrypt.compare(credentials.password as string, user.password);
+        const valid = await bcrypt.compare(credentials.password, user.password);
         if (!valid) return null;
         return { id: user.id, name: user.name, email: user.email, image: user.image };
       },
@@ -37,8 +37,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     ...authConfig.callbacks,
-    session({ session, user }) {
-      session.user.id = user.id;
+    jwt({ token, user }) {
+      if (user) token.sub = user.id;
+      return token;
+    },
+    session({ session, token }) {
+      if (token.sub) session.user.id = token.sub;
       return session;
     },
   },
