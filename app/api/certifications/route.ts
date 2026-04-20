@@ -1,9 +1,18 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/auth';
 
 export async function GET() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
-    const records = await prisma.certification.findMany({ include: { topics: true } });
+    const records = await prisma.certification.findMany({
+      where: { userId: session.user.id },
+      include: { topics: true },
+    });
 
     const certifications = records.map(({ label, key, topics }) => ({
       label,
