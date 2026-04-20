@@ -2,10 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { QuestionService } from '@/app/api/question-generator/question.service';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { Templates } from '@/config/constants/templates';
+import { auth } from '@/auth';
+
 const questionService = new QuestionService();
 const openAIService = new OpenAIService();
 
 export async function GET(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const questionParams = questionService.getQuestionParams(new URL(request.url));
 
   try {

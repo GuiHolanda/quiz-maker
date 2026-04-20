@@ -27,7 +27,7 @@ export class QuestionService {
     };
   }
 
-  public async createFromPayload(questions: AIQuestion[]) {
+  public async createFromPayload(questions: AIQuestion[], userId: string) {
     return this.prismaService.$transaction(async (tx) => {
       const results: any[] = [];
       for (const question of questions) {
@@ -41,6 +41,7 @@ export class QuestionService {
             topic,
             difficulty,
             topicSubarea: topicSubarea ?? null,
+            userId,
           },
         });
 
