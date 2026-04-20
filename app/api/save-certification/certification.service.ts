@@ -35,7 +35,7 @@ export class CertificationService {
     return { label: label.trim(), key: key.trim(), topics };
   }
 
-  public async save(certification: Certification) {
+  public async save(certification: Certification, userId: string) {
     const { label, key, topics } = certification;
 
     return this.prismaService.$transaction(async (tx) => {
@@ -49,6 +49,7 @@ export class CertificationService {
         data: {
           label,
           key,
+          userId,
           topics: {
             create: topics.map((topic) => ({
               name: topic.name,
@@ -84,13 +85,19 @@ export class CertificationService {
     return { certificationKey, topicName, minQuestions, maxQuestions };
   }
 
-  public async updateTopic(payload: TopicUpdatePayload) {
+  public async updateTopic(payload: TopicUpdatePayload, userId: string) {
     const { certificationKey, topicName, minQuestions, maxQuestions } = payload;
 
-    const certification = await this.prismaService.certification.findUnique({ where: { key: certificationKey } });
+    const certification = await this.prismaService.certification.findUnique({
+      where: { key: certificationKey },
+    });
 
     if (!certification) {
       throw Object.assign(new Error(`Certification "${certificationKey}" not found`), { status: 404 });
+    }
+
+    if (certification.userId !== userId) {
+      throw Object.assign(new Error('Forbidden'), { status: 403 });
     }
 
     const topic = await this.prismaService.certificationTopic.findUnique({
