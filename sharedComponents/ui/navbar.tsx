@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Navbar as HeroUINavbar,
   NavbarContent,
@@ -10,15 +12,20 @@ import {
 import { Kbd } from '@heroui/kbd';
 import { Link } from '@heroui/link';
 import { Input } from '@heroui/input';
+import { Button } from '@heroui/button';
 import { link as linkStyles } from '@heroui/theme';
+import { Avatar } from '@heroui/avatar';
 import NextLink from 'next/link';
 import clsx from 'clsx';
+import { useSession, signOut } from 'next-auth/react';
 
 import { siteConfig } from '@/config/site';
 import { ThemeSwitch } from '@/sharedComponents/ui/theme-switch';
 import { GithubIcon, SearchIcon, Logo } from '@/sharedComponents/icons';
 
 export const Navbar = () => {
+  const { data: session, status } = useSession();
+
   const searchInput = (
     <Input
       aria-label="Search"
@@ -68,11 +75,27 @@ export const Navbar = () => {
       </NavbarContent>
 
       <NavbarContent className="hidden sm:flex basis-1/5 sm:basis-full" justify="end">
-        <NavbarItem className="hidden sm:flex gap-2">
+        <NavbarItem className="hidden sm:flex gap-2 items-center">
           <Link isExternal aria-label="Github" href={siteConfig.links.github}>
             <GithubIcon className="text-default-500" />
           </Link>
           <ThemeSwitch />
+          {status === 'authenticated' && session?.user ? (
+            <div className="flex items-center gap-2">
+              <Avatar
+                size="sm"
+                src={session.user.image ?? undefined}
+                name={session.user.name ?? session.user.email ?? undefined}
+              />
+              <Button size="sm" variant="flat" onPress={() => signOut({ callbackUrl: '/login' })}>
+                Sign Out
+              </Button>
+            </div>
+          ) : (
+            <Button as={NextLink} href="/login" size="sm" color="primary" variant="flat">
+              Sign In
+            </Button>
+          )}
         </NavbarItem>
       </NavbarContent>
 
@@ -81,6 +104,15 @@ export const Navbar = () => {
           <GithubIcon className="text-default-500" />
         </Link>
         <ThemeSwitch />
+        {status === 'authenticated' ? (
+          <Button size="sm" variant="flat" onPress={() => signOut({ callbackUrl: '/login' })}>
+            Sign Out
+          </Button>
+        ) : (
+          <Button as={NextLink} href="/login" size="sm" color="primary" variant="flat">
+            Sign In
+          </Button>
+        )}
         <NavbarMenuToggle />
       </NavbarContent>
 
