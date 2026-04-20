@@ -17,6 +17,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   questions     Question[]
+  certifications Certification[]
   createdAt     DateTime   @default(now())
 }
 
@@ -52,6 +53,26 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Certification {
+  id     String               @id @default(cuid())
+  label  String
+  key    String               @unique
+  topics CertificationTopic[]
+  userId String?
+  user   User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CertificationTopic {
+  id              String        @id @default(cuid())
+  name            String
+  maxQuestions    Float
+  minQuestions    Float
+  certificationId String
+  certification   Certification @relation(fields: [certificationId], references: [id], onDelete: Cascade)
+
+  @@unique([certificationId, name])
 }
 
 model Question {
