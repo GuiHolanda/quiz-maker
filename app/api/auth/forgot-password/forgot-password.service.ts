@@ -31,6 +31,10 @@ export class ForgotPasswordService {
       data: { identifier: normalizedEmail, token, expires },
     });
 
+    if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) {
+      throw Object.assign(new Error('Email service is not configured'), { status: 500 });
+    }
+
     const resetUrl = `${process.env.AUTH_URL}/reset-password?token=${token}`;
 
     await resend.emails.send({
