@@ -116,3 +116,10 @@ export interface CertificationsStoreApi {
   removeCertification: (key: string) => void;
   updateCertification: (key: string, patch: Partial<Certification>) => void;
 }
+
+export interface AuthUser {
+  id: string;
+  name: string | null;
+  email: string;
+  image: string | null;
+}

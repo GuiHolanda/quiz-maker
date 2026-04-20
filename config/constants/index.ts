@@ -131,3 +131,7 @@ export const INITIAL_CERTIFICATIONS_STATE: CertificationsState = {
   selectedCertification: null,
   selectedTopics: [],
 }
+
+export const REGISTER_URL = '/auth/register';
+export const FORGOT_PASSWORD_URL = '/auth/forgot-password';
+export const RESET_PASSWORD_URL = '/auth/reset-password';
