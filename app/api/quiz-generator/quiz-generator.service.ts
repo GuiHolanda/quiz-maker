@@ -59,11 +59,14 @@ export class QuizGeneratorService {
     return allocation;
   }
 
-  async fetchStoredQuestions(certificationTitle: string, topics: string[], limit = 10) {
+  async fetchStoredQuestions(certificationTitle: string, topics: string[], limit = 10, userId?: string) {
     if (!limit || limit <= 0) return [];
     const where: Record<string, unknown> = { certificationTitle };
     if (topics && topics.length > 0) {
       Object.assign(where, { topic: { in: topics } });
+    }
+    if (userId) {
+      Object.assign(where, { userId });
     }
 
     const rows = await this.prismaService.question.findMany({

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { QuizGeneratorService } from './quiz-generator.service';
 import { prisma } from '@/lib/prisma';
 import { INITIAL_CERTIFICATIONS_STATE } from '@/config/constants';
+import { auth } from '@/auth';
 
 const service = new QuizGeneratorService();
 
@@ -15,6 +16,11 @@ function shuffleArray<T>(arr: T[]): T[] {
 }
 
 export async function GET(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const parsed = service.parseParams(new URL(request.url));
   if ('error' in parsed) {
     return NextResponse.json({ message: parsed.error }, { status: 400 });
@@ -23,11 +29,10 @@ export async function GET(request: NextRequest) {
   const { certificationTitle, numQuestions } = parsed;
 
   try {
-    // try DB first, fall back to constants (certs may not be persisted yet)
     let topics: { name: string; minQuestions: number; maxQuestions: number }[] | null = null;
 
     const dbCert = await prisma.certification.findFirst({
-      where: { label: certificationTitle },
+      where: { label: certificationTitle, userId: session.user.id },
       include: { topics: true },
     });
 
@@ -51,7 +56,12 @@ export async function GET(request: NextRequest) {
 
     const perTopicResults = await Promise.all(
       Array.from(allocation.entries()).map(async ([topicName, count]) => {
-        const questions = await service.fetchStoredQuestions(certificationTitle, [topicName], count);
+        const questions = await service.fetchStoredQuestions(
+          certificationTitle,
+          [topicName],
+          count,
+          session.user.id
+        );
         return { topicName, required: count, questions };
       })
     );
