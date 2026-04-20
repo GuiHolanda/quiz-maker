@@ -3,10 +3,17 @@ import { QuestionService } from '@/app/api/question-generator/question.service';
 import { AIQuestion } from '@/types';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { Templates } from '@/config/constants/templates';
+import { auth } from '@/auth';
+
 const questionService = new QuestionService();
 const openAIService = new OpenAIService();
 
 export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const body = await request.json().catch(() => null);
     const payload = Array.isArray(body) ? { questions: body } : body;
