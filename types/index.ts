@@ -117,6 +117,14 @@ export interface CertificationsStoreApi {
   updateCertification: (key: string, patch: Partial<Certification>) => void;
 }
 
+export type Language = 'en' | 'pt';
+
+export interface LanguageStoreApi {
+  readonly language: Language;
+  readonly messages: Record<string, string>;
+  readonly setLanguage: (lang: Language) => void;
+}
+
 export interface AuthUser {
   id: string;
   name: string | null;

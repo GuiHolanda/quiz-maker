@@ -6,6 +6,7 @@ export const SAVE_CERTIFICATION_URL = "/save-certification";
 export const QUIZ_GENERATOR_URL = "/quiz-generator";
 export const QUIZ_LOCAL_STORAGE_KEY = "QUIZ";
 export const CERTIFICATIONS_LOCAL_STORAGE_KEY = 'CERTIFICATIONS';
+export const LANGUAGE_LOCAL_STORAGE_KEY = 'app-language';
 export const QUESTIONS_PER_PAGE_OPTIONS = [
             { key: '1', label: '1' },
             { key: '5', label: '5' },
