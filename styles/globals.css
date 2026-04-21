@@ -14,3 +14,52 @@
 	-moz-appearance: textfield;
 	appearance: textfield;
 }
+
+/* ── Auth Background ─────────────────────────────────────── */
+
+.auth-bg {
+  position: relative;
+  min-height: calc(100vh - 4rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: radial-gradient(125% 125% at 50% 0%, #0f0a1e 40%, #1a0a3d 70%, #0d1b3e 100%);
+  overflow: hidden;
+}
+
+.auth-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(600px circle at -10% -20%, rgba(124, 58, 237, 0.25) 0%, transparent 60%),
+    radial-gradient(400px circle at 110% 110%, rgba(59, 130, 246, 0.15) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* ── Clay Card ───────────────────────────────────────────── */
+
+.clay-card {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.07) 0%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 28px;
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.5),
+    0 8px 24px rgba(0, 0, 0, 0.35),
+    0 2px 6px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+/* ── Clay Divider ────────────────────────────────────────── */
+
+.clay-divider {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
