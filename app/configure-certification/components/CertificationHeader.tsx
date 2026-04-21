@@ -1,4 +1,7 @@
+'use client';
 import { Input } from '@heroui/input';
+
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface CertificationHeaderProps {
   title: string;
@@ -8,17 +11,19 @@ interface CertificationHeaderProps {
 }
 
 export function CertificationHeader({ title, code, onTitleChange, onCodeChange }: Readonly<CertificationHeaderProps>) {
+  const { t } = useTranslation();
+
   return (
     <div className="flex gap-4 mb-4">
       <Input
-        label="Certification Title"
+        label={t('certification.certificationTitle')}
         type="text"
         className="w-2/3"
         value={title}
         onChange={(e) => onTitleChange(e.target.value)}
       />
       <Input
-        label="Certification Code"
+        label={t('certification.certificationCode')}
         type="text"
         className="w-1/3"
         value={code}

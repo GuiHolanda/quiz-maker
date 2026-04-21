@@ -3,6 +3,7 @@
 import React from 'react';
 import { Select, SelectItem } from '@heroui/select';
 import { QUESTIONS_PER_PAGE_OPTIONS } from '@/config/constants';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface ItemsPerPageSelectProps {
   readonly value: number;
@@ -10,10 +11,12 @@ interface ItemsPerPageSelectProps {
 }
 
 export function ItemsPerPageSelect({ value, onChange }: ItemsPerPageSelectProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="flex flex-col items-center gap-2 ml-auto">
       <label htmlFor="questionsPerPage" className="text-sm font-bold">
-        Questions per page:
+        {t('common.questionsPerPage')}
       </label>
       <Select
         id="questionsPerPage"

@@ -5,6 +5,7 @@ import { Button } from '@heroui/button';
 import { Slider } from '@heroui/slider';
 import { updateCertificationTopic } from '@/features/connectors';
 import { addToast } from '@heroui/toast';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface SectionsTableProps {
   selectedCertification: Certification | null;
@@ -22,14 +23,15 @@ const SLIDER_CLASS_NAMES = {
 
 const TOPICS_TABLE_CONFIG = {
   columns: [
-    { key: 'name', label: 'Topic Name' },
-    { key: 'minQuestions', label: 'Min Questions' },
-    { key: 'maxQuestions', label: 'Max Questions' },
-    { key: 'actions', label: 'Actions' },
+    { key: 'name', label: 'certification.topicName' },
+    { key: 'minQuestions', label: 'certification.minQuestions' },
+    { key: 'maxQuestions', label: 'certification.maxQuestions' },
+    { key: 'actions', label: 'certification.actions' },
   ],
 };
 
 export function SectionsTable({ selectedCertification, topicsList, editable = false, onTopicChanged }: SectionsTableProps) {
+  const { t } = useTranslation();
   const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
 
   const persistTopicChange = useCallback(
@@ -49,11 +51,11 @@ export function SectionsTable({ selectedCertification, topicsList, editable = fa
             maxQuestions: field === 'maxQuestions' ? value : topic.maxQuestions,
           });
         } catch {
-          addToast({ title: 'Error', description: `Failed to update "${topicName}".`, color: 'danger' });
+          addToast({ title: t('toast.error'), description: t('toast.failedToUpdate', { name: topicName }), color: 'danger' });
         }
       }, 600);
     },
-    []
+    [t]
   );
 
   const handleSliderChange = useCallback(
@@ -95,22 +97,22 @@ export function SectionsTable({ selectedCertification, topicsList, editable = fa
         case 'actions':
           return (
             <Button variant="flat" size="sm" color="danger">
-              Remove
+              {t('common.remove')}
             </Button>
           );
         default:
           return cellValue;
       }
     },
-    [editable, handleSliderChange]
+    [editable, handleSliderChange, t]
   );
 
   return (
-    <Table isStriped aria-label="Certification topics table">
+    <Table isStriped aria-label={t('aria.certificationTopics')}>
       <TableHeader columns={TOPICS_TABLE_CONFIG.columns}>
-        {(column) => <TableColumn key={column.key}>{column.label}</TableColumn>}
+        {(column) => <TableColumn key={column.key}>{t(column.label)}</TableColumn>}
       </TableHeader>
-      <TableBody items={selectedCertification?.topics || topicsList || []} emptyContent="No topics available">
+      <TableBody items={selectedCertification?.topics || topicsList || []} emptyContent={t('certification.noTopics')}>
         {(topic) => (
           <TableRow key={topic.name}>
             {(columnKey) => <TableCell>{renderCell(topic, columnKey)}</TableCell>}

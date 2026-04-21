@@ -1,10 +1,12 @@
 import { SectionsTable } from '@/sharedComponents/SectionsTable';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
 
 
 export function EditCertificationTab() {
   const { certifications, setSelectedCertification, selectedCertification, updateCertification } = useCertificationsContext();
+  const { t } = useTranslation();
 
   const onCertificationChange = (key: any) => {
     const certification = certifications.find((cert) => cert.key === key);
@@ -24,7 +26,7 @@ export function EditCertificationTab() {
   return (
     <div className="clay-section p-6 mt-2">
       <Autocomplete
-        label="Select a Certification"
+        label={t('certification.selectCertification')}
         className='w-3/4'
         name="certificationTitle"
         onSelectionChange={onCertificationChange}

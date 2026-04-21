@@ -1,4 +1,5 @@
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { Select, SelectItem } from '@heroui/select';
 import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
 import { useDisclosure } from '@heroui/modal';
@@ -11,6 +12,7 @@ interface CertificationManagerProps extends React.HTMLAttributes<HTMLDivElement>
 }
 
 export const CertificationManager = ({ isMultiple, noTopics, ...props }: CertificationManagerProps) => {
+  const { t } = useTranslation();
   const {
     certifications,
     selectedCertification,
@@ -38,7 +40,7 @@ export const CertificationManager = ({ isMultiple, noTopics, ...props }: Certifi
     <div className={props.className} {...props}>
       <Autocomplete
         className={noTopics ? 'w-full' : 'w-2/3'}
-        label="Select an Certification"
+        label={t('certification.selectCertification')}
         name="certificationTitle"
         onSelectionChange={onCertificationChange}
         selectedKey={selectedCertification?.key ?? ''}
@@ -52,7 +54,7 @@ export const CertificationManager = ({ isMultiple, noTopics, ...props }: Certifi
       {!noTopics && (
         <Select
           className="w-1/3"
-          label="Select an Topic"
+          label={t('certification.selectTopic')}
           name="topic"
           onChange={onTopicsChange}
           selectionMode={isMultiple ? 'multiple' : 'single'}

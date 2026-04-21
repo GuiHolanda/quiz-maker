@@ -10,6 +10,7 @@ import { Divider } from '@heroui/divider';
 import { NumberInput } from '@heroui/number-input';
 import { CertificationManager } from '@/sharedComponents/CertificationManager';
 import { BusyDialog } from '@/sharedComponents/ui/BusyDialog';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface QuestionareFormProps {
   onGenerated: (questions: AIQuestion[]) => void;
@@ -18,6 +19,7 @@ interface QuestionareFormProps {
 export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormProps>) {
   const { selectedCertification, selectedTopics } = useCertificationsContext();
   const { loading, error, setError, request } = useRequest(getQuestions);
+  const { t } = useTranslation();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -28,9 +30,9 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
     const selectedTopic = selectedTopics[0];
 
     const newErrors: QuizFormErrors = {};
-    if (!selectedCertification) newErrors.certificationTitle = 'Certification Title is required';
-    if (!selectedTopic) newErrors.topic = 'Topic is required';
-    if (!num_questions) newErrors.num_questions = 'Number of questions is required';
+    if (!selectedCertification) newErrors.certificationTitle = t('error.certificationTitleRequired');
+    if (!selectedTopic) newErrors.topic = t('error.topicRequired');
+    if (!num_questions) newErrors.num_questions = t('error.numQuestionsRequired');
     if (Object.keys(newErrors).length > 0) {
       queueMicrotask(() => setError(newErrors));
       return;
@@ -60,7 +62,7 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
         }}
       >
         <AccordionItem
-          title="Configure the questionnaire"
+          title={t('generate.configureQuestionnaire')}
           key="configure questionaire"
         >
           <Form onSubmit={handleSubmit} validationErrors={error}>
@@ -74,8 +76,8 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
                   id="num_questions"
                   name="num_questions"
                   className="w-1/4"
-                  placeholder="Number of Questions"
-                  aria-label="Number of Questions"
+                  placeholder={t('common.numberOfQuestions')}
+                  aria-label={t('common.numberOfQuestions')}
                   maxValue={20}
                   minValue={1}
                 />
@@ -84,7 +86,7 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
                   type="submit"
                   disabled={loading}
                 >
-                  Generate
+                  {t('common.generate')}
                 </Button>
               </div>
             </div>

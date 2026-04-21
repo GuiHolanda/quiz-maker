@@ -2,10 +2,12 @@
 import { useState } from "react";
 import { QuizFormErrors, QuizParams } from "@/types";
 import { addToast } from "@heroui/toast";
+import { useTranslation } from "@/features/hooks/useTranslation.hook";
 
 export function useRequest(requestMethod: (args: any) => Promise<any>) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<QuizFormErrors>({});
+  const { t } = useTranslation();
 
   const request = async (payload: any, onSuccess?: () => void) => {
     setLoading(true);
@@ -18,8 +20,8 @@ export function useRequest(requestMethod: (args: any) => Promise<any>) {
     } catch (error: any) {
       queueMicrotask(() => setError(error));
       addToast({
-        title: `Failed to load questions`,
-        description: error?.response?.data?.message || "Something went wrong. Please try again.",
+        title: t('toast.failedToLoad'),
+        description: error?.response?.data?.message || t('toast.somethingWrong'),
         color: "danger",
       });
     } finally {

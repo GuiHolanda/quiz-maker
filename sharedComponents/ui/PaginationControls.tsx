@@ -2,6 +2,7 @@
 
 import { Button } from '@heroui/button';
 import { Pagination } from '@heroui/pagination';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface PaginationControlsProps {
   readonly currentPage: number;
@@ -10,6 +11,8 @@ interface PaginationControlsProps {
 }
 
 export function PaginationControls({ currentPage, totalPages, onChange }: PaginationControlsProps) {
+  const { t } = useTranslation();
+
   return (
     <>
       <Button
@@ -19,7 +22,7 @@ export function PaginationControls({ currentPage, totalPages, onChange }: Pagina
         onPress={() => onChange(currentPage > 1 ? currentPage - 1 : currentPage)}
         isDisabled={currentPage === 1}
       >
-        Previous
+        {t('common.previous')}
       </Button>
       <Pagination color="primary" page={currentPage} total={totalPages} onChange={onChange} />
       <Button
@@ -29,7 +32,7 @@ export function PaginationControls({ currentPage, totalPages, onChange }: Pagina
         onPress={() => onChange(currentPage < totalPages ? currentPage + 1 : currentPage)}
         isDisabled={currentPage === totalPages}
       >
-        Next
+        {t('common.next')}
       </Button>
     </>
   );

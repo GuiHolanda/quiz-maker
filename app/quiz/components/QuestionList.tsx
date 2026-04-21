@@ -7,6 +7,7 @@ import { AnsweredQuestionCard } from './AnswredQuestionCard';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
 import { PaginationControls } from '../../../sharedComponents/ui/PaginationControls';
 import { ItemsPerPageSelect } from '../../../sharedComponents/ui/ItemsPerPageSelect';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 export function QuestionList({
   questions,
@@ -16,6 +17,7 @@ export function QuestionList({
   const [currentPage, setCurrentPage] = React.useState(1);
   const [questionsPerPage, setQuestionsPerPage] = React.useState<number>(5);
   const { state: quiz, setAnswers, setFinished } = useQuizContext();
+  const { t } = useTranslation();
   const answers: AnswersMap = quiz?.answers ?? {};
 
   const totalPages = Math.max(1, Math.ceil(questions.length / questionsPerPage));
@@ -55,10 +57,10 @@ export function QuestionList({
         <>
           <div className="flex items-end justify-between">
             <Progress
-              aria-label="Quiz Progress"
-              label="Questions answered"
+              aria-label={t('aria.quizProgress')}
+              label={t('quiz.questionsAnswered')}
               classNames={{ label: 'text-sm font-bold pl-2', value: 'text-sm font-bold' }}
-              valueLabel={`${Object.keys(answers).length} of ${questions.length}`}
+              valueLabel={t('quiz.progress', { answered: Object.keys(answers).length, total: questions.length })}
               formatOptions={undefined}
               color="primary"
               showValueLabel={true}
@@ -93,7 +95,7 @@ export function QuestionList({
               onPress={quiz?.isFinished ? onRestartQuiz : onFinishQuiz}
               hidden={Object.keys(answers).length !== questions.length}
             >
-              {quiz?.isFinished ? 'Restart Quiz' : 'Finish Quiz'}
+              {quiz?.isFinished ? t('quiz.restartQuiz') : t('quiz.finishQuiz')}
             </Button>
           </div>
         </>

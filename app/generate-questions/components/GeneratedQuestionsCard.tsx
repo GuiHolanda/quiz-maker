@@ -3,6 +3,7 @@ import { AIQuestion } from '@/types';
 import { Checkbox } from '@heroui/checkbox';
 import { Listbox, ListboxItem } from '@heroui/listbox';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface QuestionCardProps {
   readonly question: AIQuestion;
@@ -12,6 +13,7 @@ interface QuestionCardProps {
 export function GeneratedQuestionsCard({ question, index }: QuestionCardProps) {
   const { state, setSelectedAIquestions } = useQuizContext();
   const [isSelected, setIsSelected] = React.useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!state?.selectedAIQuestions) {
@@ -47,9 +49,9 @@ export function GeneratedQuestionsCard({ question, index }: QuestionCardProps) {
         </div>
       </div>
       <div>
-        <p className='text-white/30 text-xs font-semibold mb-2'>{`${question.correctCount} correct answer${question.correctCount > 1 ? 's' : ''}`}</p>
+        <p className='text-white/30 text-xs font-semibold mb-2'>{t('generate.correctAnswers', { count: question.correctCount })}</p>
         <Listbox
-          aria-label="Options"
+          aria-label={t('aria.options')}
           classNames={{
             base: 'p-0',
             list: 'gap-1',

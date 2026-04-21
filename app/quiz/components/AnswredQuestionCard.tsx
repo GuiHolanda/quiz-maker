@@ -2,6 +2,7 @@ import { StoredQuestion } from '@/types';
 import { Alert } from '@heroui/alert';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleCheck, faCircleXmark } from '@fortawesome/free-solid-svg-icons';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface QuestionCardProps {
   readonly question: StoredQuestion;
@@ -9,6 +10,7 @@ interface QuestionCardProps {
 }
 
 export function AnsweredQuestionCard({ question, answer }: QuestionCardProps) {
+  const { t } = useTranslation();
   const correct = new Set(question.answer?.correctOptions || []);
   const selected = new Set(answer || []);
   const isCorrectlyAnswered = Array.from(correct).every((opt) => selected.has(opt)) && correct.size === selected.size;
@@ -82,7 +84,7 @@ export function AnsweredQuestionCard({ question, answer }: QuestionCardProps) {
       </div>
 
       <div className="clay-question-card p-5">
-        <h4 className="font-semibold text-white/50 text-xs uppercase tracking-wider mb-3">Explanations</h4>
+        <h4 className="font-semibold text-white/50 text-xs uppercase tracking-wider mb-3">{t('quiz.explanations')}</h4>
         <div className="flex flex-col gap-1.5">{renderExplanations()}</div>
       </div>
     </>

@@ -21,14 +21,17 @@ import { useSession, signOut } from 'next-auth/react';
 
 import { siteConfig } from '@/config/site';
 import { ThemeSwitch } from '@/sharedComponents/ui/theme-switch';
+import { LanguageSwitch } from '@/sharedComponents/ui/language-switch';
 import { GithubIcon, SearchIcon } from '@/sharedComponents/icons';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 export const Navbar = () => {
   const { data: session, status } = useSession();
+  const { t } = useTranslation();
 
   const searchInput = (
     <Input
-      aria-label="Search"
+      aria-label={t('aria.search')}
       classNames={{
         inputWrapper: 'bg-default-100',
         input: 'text-sm',
@@ -39,7 +42,7 @@ export const Navbar = () => {
         </Kbd>
       }
       labelPlacement="outside"
-      placeholder="Search..."
+      placeholder={t('common.search')}
       startContent={<SearchIcon className="text-base text-default-400 pointer-events-none flex-shrink-0" />}
       type="search"
     />
@@ -77,7 +80,7 @@ export const Navbar = () => {
                   color="foreground"
                   href={item.href}
                 >
-                  {item.label}
+                  {t(item.label)}
                 </NextLink>
               </NavbarItem>
             ))}
@@ -86,10 +89,11 @@ export const Navbar = () => {
 
       <NavbarContent className="hidden sm:flex basis-1/5 sm:basis-full" justify="end">
         <NavbarItem className="hidden sm:flex gap-2 items-center">
-          <Link isExternal aria-label="Github" href={siteConfig.links.github}>
+          <Link isExternal aria-label={t('aria.github')} href={siteConfig.links.github}>
             <GithubIcon className="text-white/30 hover:text-white/60 transition-colors" />
           </Link>
           <ThemeSwitch />
+          <LanguageSwitch />
           {status === 'authenticated' && session?.user ? (
             <div className="flex items-center gap-2">
               <Avatar
@@ -104,7 +108,7 @@ export const Navbar = () => {
                 onPress={() => signOut({ callbackUrl: '/login' })}
                 className="bg-white/[0.06] border border-white/[0.08] text-white/60 hover:bg-white/[0.1] hover:text-white/80 rounded-xl transition-all duration-200"
               >
-                Sign Out
+                {t('common.signOut')}
               </Button>
             </div>
           ) : (
@@ -114,17 +118,18 @@ export const Navbar = () => {
               size="sm"
               className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold rounded-xl shadow-[0_3px_12px_rgba(139,92,246,0.4)] hover:shadow-[0_4px_16px_rgba(139,92,246,0.55)] transition-all duration-200 px-4"
             >
-              Sign In
+              {t('common.signIn')}
             </Button>
           )}
         </NavbarItem>
       </NavbarContent>
 
       <NavbarContent className="sm:hidden basis-1 pl-4" justify="end">
-        <Link isExternal aria-label="Github" href={siteConfig.links.github}>
+        <Link isExternal aria-label={t('aria.github')} href={siteConfig.links.github}>
           <GithubIcon className="text-white/30" />
         </Link>
         <ThemeSwitch />
+        <LanguageSwitch />
         {status === 'authenticated' ? (
           <Button
             size="sm"
@@ -132,7 +137,7 @@ export const Navbar = () => {
             onPress={() => signOut({ callbackUrl: '/login' })}
             className="bg-white/[0.06] border border-white/[0.08] text-white/60 rounded-xl"
           >
-            Sign Out
+            {t('common.signOut')}
           </Button>
         ) : (
           <Button
@@ -141,7 +146,7 @@ export const Navbar = () => {
             size="sm"
             className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold rounded-xl"
           >
-            Sign In
+            {t('common.signIn')}
           </Button>
         )}
         <NavbarMenuToggle className="text-white/50" />

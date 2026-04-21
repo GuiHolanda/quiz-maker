@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
 import { Divider } from '@heroui/divider';
@@ -23,6 +24,7 @@ const clayInput = {
 
 export function LoginForm() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +37,7 @@ export function LoginForm() {
     const result = await signIn('credentials', { email, password, redirect: false });
     setLoading(false);
     if (result?.error) {
-      setError('Invalid email or password');
+      setError(t('login.invalidCredentials'));
       return;
     }
     router.push('/');
@@ -59,15 +61,15 @@ export function LoginForm() {
       {/* Heading */}
       <div className="mb-7">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-300 via-violet-400 to-indigo-400 bg-clip-text text-transparent leading-tight">
-          Welcome back
+          {t('login.welcomeBack')}
         </h1>
-        <p className="text-white/35 text-sm mt-1.5">Sign in to continue your prep journey</p>
+        <p className="text-white/35 text-sm mt-1.5">{t('login.subtitle')}</p>
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
         <Input
-          label="Email address"
+          label={t('login.emailLabel')}
           type="email"
           value={email}
           onValueChange={setEmail}
@@ -76,7 +78,7 @@ export function LoginForm() {
           classNames={clayInput}
         />
         <Input
-          label="Password"
+          label={t('login.passwordLabel')}
           type="password"
           value={password}
           onValueChange={setPassword}
@@ -99,7 +101,7 @@ export function LoginForm() {
             size="sm"
             className="text-violet-400/70 hover:text-violet-400 text-xs transition-colors"
           >
-            Forgot password?
+            {t('login.forgotPassword')}
           </Link>
         </div>
 
@@ -109,14 +111,14 @@ export function LoginForm() {
           fullWidth
           className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold rounded-2xl shadow-[0_6px_20px_rgba(139,92,246,0.45),inset_0_1px_0_rgba(255,255,255,0.2)] hover:shadow-[0_8px_28px_rgba(139,92,246,0.6)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 h-12 mt-1"
         >
-          Sign In
+          {t('common.signIn')}
         </Button>
       </form>
 
       {/* Divider */}
       <div className="flex items-center gap-3 my-5">
         <Divider className="clay-divider flex-1" />
-        <span className="text-white/25 text-[11px] font-semibold tracking-[0.15em]">OR</span>
+        <span className="text-white/25 text-[11px] font-semibold tracking-[0.15em]">{t('common.or')}</span>
         <Divider className="clay-divider flex-1" />
       </div>
 
@@ -135,13 +137,13 @@ export function LoginForm() {
           </svg>
         }
       >
-        Continue with Google
+        {t('login.continueWithGoogle')}
       </Button>
 
       <p className="text-center text-sm text-white/25 mt-6">
-        Don&apos;t have an account?{' '}
+        {t('login.noAccount')}{' '}
         <Link as={NextLink} href="/register" size="sm" className="text-violet-400 hover:text-violet-300 font-semibold transition-colors">
-          Sign up
+          {t('login.signUp')}
         </Link>
       </p>
     </div>

@@ -11,12 +11,14 @@ import { CertificationManager } from '../../../sharedComponents/CertificationMan
 import { SectionsTable } from '../../../sharedComponents/SectionsTable';
 import { NumberInput } from '@heroui/number-input';
 import { Button } from '@heroui/button';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface QuizFormProps {
   onGenerated: (questions: StoredQuestion[]) => void;
 }
 
 export function QuizForm({ onGenerated }: Readonly<QuizFormProps>) {
+  const { t } = useTranslation();
   const { selectedCertification } = useCertificationsContext();
   const { loading, error, setError, request } = useRequest(getQuizQuestions);
 
@@ -28,8 +30,8 @@ export function QuizForm({ onGenerated }: Readonly<QuizFormProps>) {
     const num_questions = formData.get('num_questions')?.toString().trim() ?? '';
 
     const newErrors: QuizFormErrors = {};
-    if (!selectedCertification) newErrors.certificationTitle = 'Certification is required';
-    if (!num_questions) newErrors.num_questions = 'Number of questions is required';
+    if (!selectedCertification) newErrors.certificationTitle = t('error.certificationRequired');
+    if (!num_questions) newErrors.num_questions = t('error.numQuestionsRequired');
     if (Object.keys(newErrors).length > 0) {
       setError(newErrors);
       return;
@@ -55,7 +57,7 @@ export function QuizForm({ onGenerated }: Readonly<QuizFormProps>) {
           indicator: 'text-white/30',
         }}
       >
-        <AccordionItem title="Configure the quiz" key="quizForm">
+        <AccordionItem title={t('quiz.configureQuiz')} key="quizForm">
           <Form onSubmit={handleSubmit} validationErrors={error}>
             <Divider className="clay-divider" />
             <div className="w-full flex flex-col gap-6 pt-4">
@@ -64,8 +66,8 @@ export function QuizForm({ onGenerated }: Readonly<QuizFormProps>) {
                 <NumberInput
                   className="w-1/4"
                   name="num_questions"
-                  label="Number of Questions"
-                  placeholder="e.g. 20"
+                  label={t('common.numberOfQuestions')}
+                  placeholder={t('quiz.placeholder')}
                   minValue={1}
                 />
               </div>
@@ -77,7 +79,7 @@ export function QuizForm({ onGenerated }: Readonly<QuizFormProps>) {
                 isLoading={loading}
                 className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold rounded-xl shadow-[0_4px_14px_rgba(139,92,246,0.4)] hover:shadow-[0_6px_20px_rgba(139,92,246,0.55)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
               >
-                Generate Quiz
+                {t('quiz.generateQuiz')}
               </Button>
             </div>
           </Form>

@@ -10,6 +10,7 @@ import { Chip } from '@heroui/chip';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { saveQuestions } from '@/features/connectors';
 import { BusyDialog } from '../../../sharedComponents/ui/BusyDialog';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 export function GeneratedQuestionsList({
   questions,
@@ -20,6 +21,7 @@ export function GeneratedQuestionsList({
   const [currentPage, setCurrentPage] = React.useState(1);
   const [questionsPerPage, setQuestionsPerPage] = React.useState<number>(5);
   const { loading, error, setError, request } = useRequest(saveQuestions);
+  const { t } = useTranslation();
 
   const selectedCount = state?.selectedAIQuestions?.length ?? 0;
   const selectedCountLabel = String(selectedCount).padStart(2, '0');
@@ -69,9 +71,9 @@ export function GeneratedQuestionsList({
       <div className="flex items-end justify-between">
         <div className="flex items-center space-x-4 font-bold text-sm">
           <Checkbox isSelected={allSelected} onChange={(e) => onToggleSelectAll(e.target.checked)} className='ml-auto'>
-            Select all
+            {t('common.selectAll')}
           </Checkbox>
-          {selectedCount > 0 && <Chip color="primary"><strong>Selected questions: {selectedCountLabel}</strong></Chip>}
+          {selectedCount > 0 && <Chip color="primary"><strong>{t('common.selectedQuestions', { count: selectedCountLabel })}</strong></Chip>}
         </div>
         <ItemsPerPageSelect value={questionsPerPage} onChange={onItemsPerPageChange} />
       </div>
@@ -100,7 +102,7 @@ export function GeneratedQuestionsList({
           size="sm"
           onPress={onDiscardQuestions}
         >
-          {selectedCount > 0 ? 'Discard Selected' : 'Discard All'}
+          {selectedCount > 0 ? t('common.discardSelected') : t('common.discardAll')}
         </Button>
 
         <Button
@@ -110,7 +112,7 @@ export function GeneratedQuestionsList({
           onPress={onSaveSelectedQuestions}
           hidden={selectedCount === 0}
         >
-          Save Selected questions
+          {t('common.saveSelected')}
         </Button>
       </div>
 

@@ -2,27 +2,29 @@
 import { Tabs, Tab } from '@heroui/tabs';
 
 import CertificationsProvider from '@/features/providers/certifications.provider';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { CertificationsListTab } from './components/CertificationsListTab';
 import { EditCertificationTab } from './components/EditCertificationTab';
 import { NewCertificationTab } from './components/NewCertificationTab';
 
 
 export default function ConfigureCertificationPage() {
+  const { t } = useTranslation();
 
   return (
     <CertificationsProvider>
     <div className="app-bg">
       <div className="container mx-auto max-w-7xl pt-8 px-6 pb-12">
         <div className="flex flex-col mb-8 gap-1.5">
-          <h1 className="page-header-title">Your certifications</h1>
+          <h1 className="page-header-title">{t('certification.pageTitle')}</h1>
           <p className="page-header-subtitle">
-            Define the certifications you&apos;re preparing for, configure their topic weights, and AIQuiz will generate quizzes that mirror the real exam distribution.
+            {t('certification.pageSubtitle')}
           </p>
         </div>
 
         <div className="flex w-full flex-col">
           <Tabs
-            aria-label="Options"
+            aria-label={t('aria.tabOptions')}
             classNames={{
               tabList: 'bg-white/[0.04] border border-white/[0.07] rounded-2xl p-1 gap-1',
               tab: 'rounded-xl text-white/40 data-[selected=true]:text-white/90 data-[selected=true]:font-semibold transition-all duration-200',
@@ -31,13 +33,13 @@ export default function ConfigureCertificationPage() {
               panel: 'pt-4',
             }}
           >
-            <Tab key="new" title="Add new Certification">
+            <Tab key="new" title={t('certification.tabNew')}>
               <NewCertificationTab />
             </Tab>
-            <Tab key="certificationsList" title="My certifications">
+            <Tab key="certificationsList" title={t('certification.tabList')}>
               <CertificationsListTab />
             </Tab>
-            <Tab key="edit" title="Edit Certification">
+            <Tab key="edit" title={t('certification.tabEdit')}>
               <EditCertificationTab />
             </Tab>
           </Tabs>

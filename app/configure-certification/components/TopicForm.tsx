@@ -1,9 +1,12 @@
+'use client';
 import { faCirclePlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button } from '@heroui/button';
 import { Form } from '@heroui/form';
 import { Input } from '@heroui/input';
 import { Slider } from '@heroui/slider';
+
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface TopicFormProps {
   topicName: string;
@@ -24,6 +27,8 @@ function getFormString(formData: FormData, key: string, fallback = ''): string {
 }
 
 export function TopicForm({ topicName, onTopicNameChange, onSubmit }: Readonly<TopicFormProps>) {
+  const { t } = useTranslation();
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -38,10 +43,10 @@ export function TopicForm({ topicName, onTopicNameChange, onSubmit }: Readonly<T
 
   return (
     <>
-      <h4 className="font-bold">Topics</h4>
+      <h4 className="font-bold">{t('certification.topics')}</h4>
       <Form className="flex flex-row items-center gap-6 mb-4" onSubmit={handleSubmit}>
         <Input
-          label="Topic Name"
+          label={t('certification.topicName')}
           type="text"
           name="topicName"
           value={topicName}
@@ -53,7 +58,7 @@ export function TopicForm({ topicName, onTopicNameChange, onSubmit }: Readonly<T
           classNames={SLIDER_CLASS_NAMES}
           name="minQuestions"
           formatOptions={{ style: 'percent' }}
-          label="Min Questions"
+          label={t('certification.minQuestions')}
           size="sm"
           defaultValue={0.15}
           maxValue={1}
@@ -66,7 +71,7 @@ export function TopicForm({ topicName, onTopicNameChange, onSubmit }: Readonly<T
           classNames={SLIDER_CLASS_NAMES}
           name="maxQuestions"
           formatOptions={{ style: 'percent' }}
-          label="Max Questions"
+          label={t('certification.maxQuestions')}
           size="sm"
           defaultValue={0.3}
           maxValue={1}
@@ -75,7 +80,7 @@ export function TopicForm({ topicName, onTopicNameChange, onSubmit }: Readonly<T
           step={0.01}
         />
         <Button size="sm" variant="solid" color="primary" type="submit" className="ml-auto mt-auto">
-          Add topic
+          {t('certification.addTopic')}
           <FontAwesomeIcon icon={faCirclePlus} className="text-lg" />
         </Button>
       </Form>

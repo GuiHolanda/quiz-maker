@@ -4,6 +4,7 @@ import { StoredQuestion } from '@/types';
 import { CheckboxGroup, Checkbox } from '@heroui/checkbox';
 import { RadioGroup, Radio } from '@heroui/radio';
 import { Form } from '@heroui/form';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface QuestionCardProps {
   readonly question: StoredQuestion;
@@ -12,6 +13,7 @@ interface QuestionCardProps {
 }
 
 export function QuestionCard({ question, onAnswerChange, initialValue }: QuestionCardProps) {
+  const { t } = useTranslation();
   const [currentSelection, setCurrentSelection] = useState<string[]>([]);
 
   useEffect(() => {
@@ -68,7 +70,7 @@ export function QuestionCard({ question, onAnswerChange, initialValue }: Questio
       <Form onSubmit={handleSubmit} className="flex flex-row items-end">
         {question.correctCount && question.correctCount > 1 ? (
           <CheckboxGroup
-            label={`${question.correctCount} correct answers`}
+            label={t('quiz.correctAnswers', { count: question.correctCount })}
             value={currentSelection}
             onValueChange={onCheckboxChange}
             className="w-4/5"
@@ -96,7 +98,7 @@ export function QuestionCard({ question, onAnswerChange, initialValue }: Questio
             className="ml-auto bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-semibold rounded-xl shadow-[0_3px_10px_rgba(139,92,246,0.35)] hover:shadow-[0_4px_14px_rgba(139,92,246,0.5)] transition-all duration-200 py-0 h-8 px-4"
             type="submit"
           >
-            Submit
+            {t('common.submit')}
           </Button>
         ) : (
           <input type="hidden" />

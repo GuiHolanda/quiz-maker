@@ -6,6 +6,7 @@ import { QuizProvider } from '@/features/providers/quiz.provider';
 import { CertificationsProvider } from '@/features/providers/certifications.provider';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
 import { QuizForm } from '@/app/quiz/components/QuizForm';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 export default function QuizPage() {
   const [questions, setQuestions] = useState<StoredQuestion[] | null>(null);
@@ -25,6 +26,7 @@ interface QuizPageContentProps {
 }
 
 function QuizPageContent({ questions, setQuestions }: Readonly<QuizPageContentProps>) {
+  const { t } = useTranslation();
   const { state: quiz, replaceQuiz } = useQuizContext();
 
   const onQuestionsGenerated = (questionsArr: StoredQuestion[] | undefined) => {
@@ -47,9 +49,9 @@ function QuizPageContent({ questions, setQuestions }: Readonly<QuizPageContentPr
     <div className="app-bg">
       <div className="container mx-auto max-w-7xl pt-8 px-6 pb-12">
         <div className="flex flex-col mb-8 gap-1.5">
-          <h1 className="page-header-title">Take a quiz</h1>
+          <h1 className="page-header-title">{t('quiz.pageTitle')}</h1>
           <p className="page-header-subtitle">
-            Select a certification, set how many questions you want, and start a timed practice session. Answers are explained right after you submit.
+            {t('quiz.pageSubtitle')}
           </p>
         </div>
 
