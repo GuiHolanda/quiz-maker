@@ -1,3 +1,5 @@
+'use client';
+
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/table';
 import React, { Key, useCallback, useRef } from 'react';
 import { Certification, CertificationTopic } from '@/types';

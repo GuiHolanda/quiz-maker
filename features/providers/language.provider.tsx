@@ -35,8 +35,12 @@ export function LanguageProvider({ children }: Readonly<{ children: React.ReactN
     );
   }, []);
 
+  const initialized = React.useRef(false);
   useEffect(() => {
-    if (!state.language) return;
+    if (!initialized.current) {
+      initialized.current = true;
+      return;
+    }
     try {
       localStorage.setItem(LANGUAGE_LOCAL_STORAGE_KEY, state.language);
     } catch {}

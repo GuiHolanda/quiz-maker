@@ -49,7 +49,7 @@ export function GeneratedQuestionsCard({ question, index }: QuestionCardProps) {
         </div>
       </div>
       <div>
-        <p className='text-white/30 text-xs font-semibold mb-2'>{t('generate.correctAnswers', { count: question.correctCount })}</p>
+        <p className='text-white/30 text-xs font-semibold mb-2'>{t(question.correctCount === 1 ? 'generate.correctAnswer' : 'generate.correctAnswers', { count: question.correctCount })}</p>
         <Listbox
           aria-label={t('aria.options')}
           classNames={{

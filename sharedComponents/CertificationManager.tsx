@@ -1,3 +1,5 @@
+'use client';
+
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { Select, SelectItem } from '@heroui/select';
