@@ -1,6 +1,5 @@
 'use client';
 import { useState } from 'react';
-import { title } from '@/sharedComponents/primitives';
 import { StoredQuestion } from '@/types';
 import { QuestionList } from '@/app/quiz/components/QuestionList';
 import { QuizProvider } from '@/features/providers/quiz.provider';
@@ -45,17 +44,19 @@ function QuizPageContent({ questions, setQuestions }: Readonly<QuizPageContentPr
   };
 
   return (
-    <div className="container mx-auto max-w-7xl pt-6 px-6">
-      <div className="flex flex-col mb-8 gap-2">
-        <h1 className={title()}>Generate your Quiz</h1>
-        <h3 className="text-lg font-bold text-zinc-400 pl-2">
-          Create personalized quizzes for your certifications practice
-        </h3>
+    <div className="app-bg">
+      <div className="container mx-auto max-w-7xl pt-8 px-6 pb-12">
+        <div className="flex flex-col mb-8 gap-1.5">
+          <h1 className="page-header-title">Generate your Quiz</h1>
+          <p className="page-header-subtitle">
+            Create personalized quizzes for your certifications practice
+          </p>
+        </div>
+
+        <QuizForm onGenerated={onQuestionsGenerated} />
+
+        {(quiz?.questions ?? questions) && <QuestionList questions={quiz?.questions ?? questions ?? []} />}
       </div>
-
-      <QuizForm onGenerated={onQuestionsGenerated} />
-
-      {(quiz?.questions ?? questions) && <QuestionList questions={quiz?.questions ?? questions ?? []} />}
     </div>
   );
 }

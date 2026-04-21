@@ -1,5 +1,4 @@
 'use client';
-import { title } from '@/sharedComponents/primitives';
 import { Tabs, Tab } from '@heroui/tabs';
 
 import CertificationsProvider from '@/features/providers/certifications.provider';
@@ -12,26 +11,37 @@ export default function ConfigureCertificationPage() {
 
   return (
     <CertificationsProvider>
-    <div className="container mx-auto max-w-7xl pt-6 px-6">
-      <div className="flex flex-col mb-8 gap-2">
-        <h1 className={title()}>Manage your Certifications</h1>
-        <h3 className="text-lg font-bold text-zinc-400 pl-2">
-          Create, edit, and delete your certifications and their associated topics.
-        </h3>
-      </div>
+    <div className="app-bg">
+      <div className="container mx-auto max-w-7xl pt-8 px-6 pb-12">
+        <div className="flex flex-col mb-8 gap-1.5">
+          <h1 className="page-header-title">Manage your Certifications</h1>
+          <p className="page-header-subtitle">
+            Create, edit, and delete your certifications and their associated topics.
+          </p>
+        </div>
 
-      <div className="flex w-full flex-col">
-        <Tabs aria-label="Options">
-          <Tab key="new" title="Add new Certification">
-            <NewCertificationTab />
-          </Tab>
-          <Tab key="certificationsList" title="My certifications">
-            <CertificationsListTab />
-          </Tab>
-          <Tab key="edit" title="Edit Certification">
-            <EditCertificationTab />
-          </Tab>
-        </Tabs>
+        <div className="flex w-full flex-col">
+          <Tabs
+            aria-label="Options"
+            classNames={{
+              tabList: 'bg-white/[0.04] border border-white/[0.07] rounded-2xl p-1 gap-1',
+              tab: 'rounded-xl text-white/40 data-[selected=true]:text-white/90 data-[selected=true]:font-semibold transition-all duration-200',
+              tabContent: 'group-data-[selected=true]:text-white/90',
+              cursor: 'bg-gradient-to-r from-violet-600/80 to-indigo-600/80 shadow-[0_2px_8px_rgba(139,92,246,0.4)] rounded-xl',
+              panel: 'pt-4',
+            }}
+          >
+            <Tab key="new" title="Add new Certification">
+              <NewCertificationTab />
+            </Tab>
+            <Tab key="certificationsList" title="My certifications">
+              <CertificationsListTab />
+            </Tab>
+            <Tab key="edit" title="Edit Certification">
+              <EditCertificationTab />
+            </Tab>
+          </Tabs>
+        </div>
       </div>
     </div>
     </CertificationsProvider>

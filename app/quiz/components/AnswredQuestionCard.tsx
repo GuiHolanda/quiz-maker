@@ -1,4 +1,3 @@
-import { Card, CardHeader, CardBody } from '@heroui/card';
 import { StoredQuestion } from '@/types';
 import { Alert } from '@heroui/alert';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -65,31 +64,27 @@ export function AnsweredQuestionCard({ question, answer }: QuestionCardProps) {
 
   return (
     <>
-      <Card className="p-4">
-        <CardHeader className="flex items-start justify-between gap-4">
+      <div className="clay-question-card p-5">
+        <div className="flex items-start justify-between gap-4 pb-3 mb-3 border-b border-white/[0.06]">
           <div className="flex items-center justify-between flex-1">
-            <h4 className="font-semibold text-foreground">
-              <span className="inline-block mr-2">{String(question.id).padStart(2, '0')}.</span>
+            <h4 className="font-semibold text-white/80 text-sm leading-relaxed">
+              <span className="inline-block mr-2 text-white/35">{String(question.id).padStart(2, '0')}.</span>
               {question.text}
             </h4>
             {isCorrectlyAnswered ? (
-              <FontAwesomeIcon icon={faCircleCheck} className="text-success text-2xl" />
+              <FontAwesomeIcon icon={faCircleCheck} className="text-success text-xl flex-shrink-0 ml-3" />
             ) : (
-              <FontAwesomeIcon icon={faCircleXmark} className="text-danger text-2xl" />
+              <FontAwesomeIcon icon={faCircleXmark} className="text-danger text-xl flex-shrink-0 ml-3" />
             )}
           </div>
-        </CardHeader>
-        <CardBody className="flex flex-col gap-2">{renderOptionAlerts()}</CardBody>
-      </Card>
+        </div>
+        <div className="flex flex-col gap-1.5">{renderOptionAlerts()}</div>
+      </div>
 
-      <Card className="p-4">
-        <CardHeader className="flex items-start justify-between gap-4">
-          <div className="flex-1">
-            <h4 className="font-semibold text-foreground">Explanations</h4>
-          </div>
-        </CardHeader>
-        <CardBody className="flex flex-col gap-2">{renderExplanations()}</CardBody>
-      </Card>
+      <div className="clay-question-card p-5">
+        <h4 className="font-semibold text-white/50 text-xs uppercase tracking-wider mb-3">Explanations</h4>
+        <div className="flex flex-col gap-1.5">{renderExplanations()}</div>
+      </div>
     </>
   );
 }

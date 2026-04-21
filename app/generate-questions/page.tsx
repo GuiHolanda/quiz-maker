@@ -1,6 +1,5 @@
 'use client';
 import { useState } from 'react';
-import { title } from '@/sharedComponents/primitives';
 import { AIQuestion } from '@/types';
 import { QuizProvider } from '@/features/providers/quiz.provider';
 import { CertificationsProvider } from '@/features/providers/certifications.provider';
@@ -39,17 +38,19 @@ function AIQuestionPageContent() {
   };
 
   return (
-    <div className="container mx-auto max-w-7xl pt-6 px-6">
-      <div className="flex flex-col mb-8 gap-2">
-        <h1 className={title()}>Generate your Questions</h1>
-        <h3 className="text-lg font-bold text-zinc-400 pl-2">
-          Create personalized questions for your certifications practice
-        </h3>
+    <div className="app-bg">
+      <div className="container mx-auto max-w-7xl pt-8 px-6 pb-12">
+        <div className="flex flex-col mb-8 gap-1.5">
+          <h1 className="page-header-title">Generate your Questions</h1>
+          <p className="page-header-subtitle">
+            Create personalized questions for your certifications practice
+          </p>
+        </div>
+
+        <QuestionGeneratorForm onGenerated={onQuestionsGenerated} />
+
+        {(state?.aiQuestions?.length ?? 0) > 0 && <GeneratedQuestionsList questions={state?.aiQuestions ?? []} />}
       </div>
-
-      <QuestionGeneratorForm onGenerated={onQuestionsGenerated} />
-
-      {(state?.aiQuestions?.length ?? 0) > 0 && <GeneratedQuestionsList questions={state?.aiQuestions ?? []} />}
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import { Button } from '@heroui/button';
-import { Card, CardBody, CardFooter } from '@heroui/card';
 import { Divider } from '@heroui/divider';
 import { addToast } from '@heroui/toast';
 
@@ -50,40 +49,40 @@ export function NewCertificationTab() {
   const hasTopics = draft.topics.length > 0;
 
   return (
-    <Card className="p-2 mt-4">
-      <CardBody className="w-full">
-        <CertificationHeader
-          title={draft.title}
-          code={draft.code}
-          onTitleChange={draft.setTitle}
-          onCodeChange={draft.setCode}
-        />
+    <div className="clay-section p-6 mt-2">
+      <CertificationHeader
+        title={draft.title}
+        code={draft.code}
+        onTitleChange={draft.setTitle}
+        onCodeChange={draft.setCode}
+      />
 
-        <TopicForm
-          topicName={draft.topicName}
-          onTopicNameChange={draft.setTopicName}
-          onSubmit={handleAddTopic}
-        />
-
-        {hasTopics && (
-          <>
-            <Divider />
-            <div className="flex flex-wrap gap-2 mt-4">
-              <SectionsTable selectedCertification={selectedCertification} topicsList={draft.topics} />
-            </div>
-          </>
-        )}
-      </CardBody>
+      <TopicForm
+        topicName={draft.topicName}
+        onTopicNameChange={draft.setTopicName}
+        onSubmit={handleAddTopic}
+      />
 
       {hasTopics && (
-        <CardFooter>
-          <Button color="primary" className="ml-auto" onPress={handleSave} isDisabled={loading}>
-            Save
-          </Button>
-        </CardFooter>
+        <>
+          <Divider className="clay-divider" />
+          <div className="flex flex-wrap gap-2 mt-4">
+            <SectionsTable selectedCertification={selectedCertification} topicsList={draft.topics} />
+          </div>
+          <div className="flex justify-end mt-4">
+            <Button
+              color="primary"
+              onPress={handleSave}
+              isDisabled={loading}
+              className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold rounded-xl shadow-[0_4px_14px_rgba(139,92,246,0.4)] hover:shadow-[0_6px_20px_rgba(139,92,246,0.55)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+            >
+              Save
+            </Button>
+          </div>
+        </>
       )}
 
       <BusyDialog isOpen={loading} />
-    </Card>
+    </div>
   );
 }

@@ -3,7 +3,6 @@ import { getQuestions } from '@/features/connectors';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { QuizFormErrors, AIQuestion, QuestionParams } from '@/types';
 import { Button } from '@heroui/button';
-import { Card } from '@heroui/card';
 import { Form } from '@heroui/form';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
 import { Accordion, AccordionItem } from '@heroui/accordion';
@@ -49,16 +48,24 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
     }
   };
   return (
-    <Card className="p-2">
-      <Accordion defaultExpandedKeys={['configure questionaire']}>
+    <div className="clay-section">
+      <Accordion
+        defaultExpandedKeys={['configure questionaire']}
+        itemClasses={{
+          base: 'border-0',
+          title: 'text-sm font-bold text-white/80',
+          trigger: 'px-6 py-4 hover:bg-white/[0.02] transition-colors duration-200',
+          content: 'px-6 pb-6',
+          indicator: 'text-white/30',
+        }}
+      >
         <AccordionItem
-          title="Configure the questionaire"
-          classNames={{ title: 'text-md font-bold' }}
+          title="Configure the questionnaire"
           key="configure questionaire"
         >
           <Form onSubmit={handleSubmit} validationErrors={error}>
-            <Divider />
-            <div className="w-full flex flex-col gap-6 p-4">
+            <Divider className="clay-divider" />
+            <div className="w-full flex flex-col gap-6 pt-4">
               <div className="flex w-full gap-4 items-center">
                 <CertificationManager className="flex w-full gap-4 items-center" />
               </div>
@@ -72,16 +79,19 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
                   maxValue={20}
                   minValue={1}
                 />
-                <Button className="ml-auto mt-auto bg-primary" variant="flat" type="submit" disabled={loading}>
+                <Button
+                  className="ml-auto mt-auto bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold rounded-xl shadow-[0_4px_14px_rgba(139,92,246,0.4)] hover:shadow-[0_6px_20px_rgba(139,92,246,0.55)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+                  type="submit"
+                  disabled={loading}
+                >
                   Generate
                 </Button>
               </div>
             </div>
-            <div className="flex flex-col gap-6 md:gap-0 md:flex-row md:items-end"></div>
           </Form>
           <BusyDialog isOpen={loading} />
         </AccordionItem>
       </Accordion>
-    </Card>
+    </div>
   );
 }

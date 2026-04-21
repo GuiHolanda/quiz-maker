@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import { Card, CardHeader, CardBody } from '@heroui/card';
 import { AIQuestion } from '@/types';
 import { Checkbox } from '@heroui/checkbox';
 import { Listbox, ListboxItem } from '@heroui/listbox';
@@ -37,26 +36,38 @@ export function GeneratedQuestionsCard({ question, index }: QuestionCardProps) {
   };
 
   return (
-    <Card className="p-4">
-      <CardHeader className="flex items-start justify-between gap-4">
+    <div className="clay-question-card p-4">
+      <div className="flex items-start justify-between gap-4 pb-3">
         <div className="flex items-center justify-between w-full">
-          <h4 className="font-semibold text-foreground">
-            <span>
-              <span className="inline-block mr-2">{index + 1}.</span>
-            </span>
+          <h4 className="font-semibold text-white/80 text-sm leading-relaxed">
+            <span className="inline-block mr-2 text-white/40">{index + 1}.</span>
             {question.text}
           </h4>
-          <Checkbox isSelected={isSelected} onChange={onCheckboxChange} className='ml-auto'></Checkbox>
+          <Checkbox isSelected={isSelected} onChange={onCheckboxChange} className='ml-auto flex-shrink-0' />
         </div>
-      </CardHeader>
-      <CardBody>
-        <h4 className='text-neutral-500 text-sm font-bold'>{`${question.correctCount} correct answers`}</h4>
-        <Listbox aria-label="Actions">
+      </div>
+      <div>
+        <p className='text-white/30 text-xs font-semibold mb-2'>{`${question.correctCount} correct answer${question.correctCount > 1 ? 's' : ''}`}</p>
+        <Listbox
+          aria-label="Options"
+          classNames={{
+            base: 'p-0',
+            list: 'gap-1',
+          }}
+        >
           {Object.entries(question.options).map(([key, val]) => (
-            <ListboxItem key={key}><strong className='mr-2'>{key}.</strong> {val}</ListboxItem>
+            <ListboxItem
+              key={key}
+              classNames={{
+                base: 'rounded-lg px-3 py-2 text-white/60 hover:text-white/80 hover:bg-white/[0.04] data-[hover=true]:bg-white/[0.04] transition-colors',
+                title: 'text-sm',
+              }}
+            >
+              <strong className='mr-2 text-violet-400/70'>{key}.</strong> {val}
+            </ListboxItem>
           ))}
         </Listbox>
-      </CardBody>
-    </Card>
+      </div>
+    </div>
   );
 }

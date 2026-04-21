@@ -22,10 +22,10 @@ export function EditCertificationTab() {
   };
 
   return (
-    <>
+    <div className="clay-section p-6 mt-2">
       <Autocomplete
-        label="Select an Certification"
-        className='w-3/4 mt-4'
+        label="Select a Certification"
+        className='w-3/4'
         name="certificationTitle"
         onSelectionChange={onCertificationChange}
         selectedKey={selectedCertification?.key ?? ''}
@@ -37,7 +37,7 @@ export function EditCertificationTab() {
         ))}
       </Autocomplete>
       {selectedCertification && (
-        <div className='mt-4'>
+        <div className='mt-6'>
           <SectionsTable
             selectedCertification={selectedCertification}
             editable
@@ -45,6 +45,6 @@ export function EditCertificationTab() {
           />
         </div>
       )}
-    </>
+    </div>
   );
 }
