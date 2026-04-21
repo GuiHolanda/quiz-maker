@@ -41,9 +41,9 @@ function AIQuestionPageContent() {
     <div className="app-bg">
       <div className="container mx-auto max-w-7xl pt-8 px-6 pb-12">
         <div className="flex flex-col mb-8 gap-1.5">
-          <h1 className="page-header-title">Generate your Questions</h1>
+          <h1 className="page-header-title">Generate questions</h1>
           <p className="page-header-subtitle">
-            Create personalized questions for your certifications practice
+            Pick a certification and topic, choose how many questions you want, and let the AI build a fresh question set. Review, select, and save the ones you want to keep.
           </p>
         </div>
 

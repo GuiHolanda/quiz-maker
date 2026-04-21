@@ -47,9 +47,9 @@ function QuizPageContent({ questions, setQuestions }: Readonly<QuizPageContentPr
     <div className="app-bg">
       <div className="container mx-auto max-w-7xl pt-8 px-6 pb-12">
         <div className="flex flex-col mb-8 gap-1.5">
-          <h1 className="page-header-title">Generate your Quiz</h1>
+          <h1 className="page-header-title">Take a quiz</h1>
           <p className="page-header-subtitle">
-            Create personalized quizzes for your certifications practice
+            Select a certification, set how many questions you want, and start a timed practice session. Answers are explained right after you submit.
           </p>
         </div>
 

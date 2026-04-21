@@ -14,9 +14,9 @@ export default function ConfigureCertificationPage() {
     <div className="app-bg">
       <div className="container mx-auto max-w-7xl pt-8 px-6 pb-12">
         <div className="flex flex-col mb-8 gap-1.5">
-          <h1 className="page-header-title">Manage your Certifications</h1>
+          <h1 className="page-header-title">Your certifications</h1>
           <p className="page-header-subtitle">
-            Create, edit, and delete your certifications and their associated topics.
+            Define the certifications you&apos;re preparing for, configure their topic weights, and AIQuiz will generate quizzes that mirror the real exam distribution.
           </p>
         </div>
 
