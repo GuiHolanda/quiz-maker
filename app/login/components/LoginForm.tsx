@@ -10,16 +10,15 @@ import { Divider } from '@heroui/divider';
 import { Link } from '@heroui/link';
 import NextLink from 'next/link';
 
-const clayInput = {
+const flatInput = {
   inputWrapper: [
-    'bg-white/5 border border-white/10 rounded-2xl',
-    'shadow-[inset_0_2px_6px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.05)]',
-    'data-[hover=true]:bg-white/[0.08] data-[hover=true]:border-violet-500/40',
-    'data-[focus=true]:border-violet-500/60 data-[focus=true]:bg-white/[0.08]',
-    'transition-all duration-200',
+    'bg-default-100 border border-default-200 rounded-lg',
+    'data-[hover=true]:border-default-300',
+    'data-[focus=true]:border-primary',
+    'transition-colors duration-200',
   ].join(' '),
-  input: 'text-white/90 placeholder:text-white/30 text-sm',
-  label: 'text-white/50 text-xs font-medium',
+  input: 'text-foreground placeholder:text-default-400 text-sm',
+  label: 'text-default-500 text-xs font-medium',
 };
 
 export function LoginForm() {
@@ -49,21 +48,21 @@ export function LoginForm() {
   }
 
   return (
-    <div className="clay-card w-full max-w-md px-8 py-10 relative z-10">
+    <div className="bg-content1 border border-default-200 rounded-2xl w-full max-w-md px-8 py-10 relative z-10">
       {/* Brand */}
       <div className="flex items-center gap-2.5 mb-8">
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-[0_4px_14px_rgba(139,92,246,0.6)]">
+        <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
           <span className="text-white text-xs font-bold tracking-tight">AI</span>
         </div>
-        <span className="text-white/70 font-semibold text-sm tracking-wide">AIQuiz</span>
+        <span className="text-default-600 font-semibold text-sm tracking-wide">AIQuiz</span>
       </div>
 
       {/* Heading */}
       <div className="mb-7">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-300 via-violet-400 to-indigo-400 bg-clip-text text-transparent leading-tight">
+        <h1 className="text-3xl font-bold text-foreground leading-tight">
           {t('login.welcomeBack')}
         </h1>
-        <p className="text-white/35 text-sm mt-1.5">{t('login.subtitle')}</p>
+        <p className="text-default-400 text-sm mt-1.5">{t('login.subtitle')}</p>
       </div>
 
       {/* Form */}
@@ -75,7 +74,7 @@ export function LoginForm() {
           onValueChange={setEmail}
           isRequired
           autoComplete="email"
-          classNames={clayInput}
+          classNames={flatInput}
         />
         <Input
           label={t('login.passwordLabel')}
@@ -84,13 +83,13 @@ export function LoginForm() {
           onValueChange={setPassword}
           isRequired
           autoComplete="current-password"
-          classNames={clayInput}
+          classNames={flatInput}
         />
 
         {error && (
-          <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 flex-shrink-0" />
-            <p className="text-rose-400 text-xs">{error}</p>
+          <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-danger flex-shrink-0" />
+            <p className="text-danger text-xs">{error}</p>
           </div>
         )}
 
@@ -99,7 +98,7 @@ export function LoginForm() {
             as={NextLink}
             href="/forgot-password"
             size="sm"
-            className="text-violet-400/70 hover:text-violet-400 text-xs transition-colors"
+            className="text-primary hover:opacity-80 text-xs transition-opacity"
           >
             {t('login.forgotPassword')}
           </Link>
@@ -109,7 +108,7 @@ export function LoginForm() {
           type="submit"
           isLoading={loading}
           fullWidth
-          className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold rounded-2xl shadow-[0_6px_20px_rgba(139,92,246,0.45),inset_0_1px_0_rgba(255,255,255,0.2)] hover:shadow-[0_8px_28px_rgba(139,92,246,0.6)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 h-12 mt-1"
+          className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200 h-12 mt-1"
         >
           {t('common.signIn')}
         </Button>
@@ -117,9 +116,9 @@ export function LoginForm() {
 
       {/* Divider */}
       <div className="flex items-center gap-3 my-5">
-        <Divider className="clay-divider flex-1" />
-        <span className="text-white/25 text-[11px] font-semibold tracking-[0.15em]">{t('common.or')}</span>
-        <Divider className="clay-divider flex-1" />
+        <Divider className="flex-1" />
+        <span className="text-default-400 text-[11px] font-semibold tracking-[0.15em]">{t('common.or')}</span>
+        <Divider className="flex-1" />
       </div>
 
       {/* Google */}
@@ -127,7 +126,7 @@ export function LoginForm() {
         variant="bordered"
         fullWidth
         onPress={handleGoogle}
-        className="border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:border-white/20 hover:text-white/80 rounded-2xl h-12 transition-all duration-200 font-medium gap-3"
+        className="border-default-200 bg-default-100 text-foreground hover:bg-default-200 rounded-lg h-12 transition-colors duration-200 font-medium gap-3"
         startContent={
           <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -140,9 +139,9 @@ export function LoginForm() {
         {t('login.continueWithGoogle')}
       </Button>
 
-      <p className="text-center text-sm text-white/25 mt-6">
+      <p className="text-center text-sm text-default-400 mt-6">
         {t('login.noAccount')}{' '}
-        <Link as={NextLink} href="/register" size="sm" className="text-violet-400 hover:text-violet-300 font-semibold transition-colors">
+        <Link as={NextLink} href="/register" size="sm" className="text-primary font-semibold transition-opacity hover:opacity-80">
           {t('login.signUp')}
         </Link>
       </p>
