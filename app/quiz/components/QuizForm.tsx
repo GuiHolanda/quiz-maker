@@ -47,48 +47,47 @@ export function QuizForm({ onGenerated }: Readonly<QuizFormProps>) {
   };
 
   return (
-    <div className="bg-content1 border border-default-200 rounded-xl overflow-hidden">
-      <Accordion
-        defaultExpandedKeys={['quizForm']}
-        itemClasses={{
-          base: 'border-0',
-          title: 'text-sm font-bold text-foreground',
-          trigger: 'px-6 py-4 rounded-t-xl aria-[expanded=false]:rounded-b-xl hover:bg-content2 transition-colors duration-200',
-          content: 'px-6 pb-6',
-          indicator: 'text-default-400',
-        }}
-      >
-        <AccordionItem title={t('quiz.configureQuiz')} key="quizForm">
-          <Form onSubmit={handleSubmit} validationErrors={error}>
-            <Divider />
-            <div className="w-full flex flex-col gap-6 pt-4">
-              <div className="flex gap-4 items-center">
-                <CertificationManager isMultiple noTopics className="flex w-3/4 gap-4 items-center" />
-                <NumberInput
-                  className="w-1/4"
-                  name="num_questions"
-                  label={t('common.numberOfQuestions')}
-                  placeholder={t('quiz.placeholder')}
-                  minValue={1}
-                  variant="bordered"
-                  classNames={borderedInputClassNames}
-                />
-              </div>
-              <SectionsTable selectedCertification={selectedCertification} />
+    <Accordion
+      defaultExpandedKeys={['quizForm']}
+      className="bg-content1 border border-default-200 rounded-xl overflow-hidden p-0"
+      itemClasses={{
+        base: 'border-0',
+        title: 'text-sm font-bold text-foreground',
+        trigger: 'px-6 py-4 hover:bg-content2 transition-colors duration-200',
+        content: 'px-6 pb-6',
+        indicator: 'text-default-400',
+      }}
+    >
+      <AccordionItem title={t('quiz.configureQuiz')} key="quizForm">
+        <Form onSubmit={handleSubmit} validationErrors={error}>
+          <Divider />
+          <div className="w-full flex flex-col gap-6 pt-4">
+            <div className="flex gap-4 items-center">
+              <CertificationManager isMultiple noTopics className="flex w-3/4 gap-4 items-center" />
+              <NumberInput
+                className="w-1/4"
+                name="num_questions"
+                label={t('common.numberOfQuestions')}
+                placeholder={t('quiz.placeholder')}
+                minValue={1}
+                variant="bordered"
+                classNames={borderedInputClassNames}
+              />
             </div>
-            <div className="flex w-full justify-end pt-4">
-              <Button
-                type="submit"
-                isLoading={loading}
-                className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
-              >
-                {t('quiz.generateQuiz')}
-              </Button>
-            </div>
-          </Form>
-          <BusyDialog isOpen={loading} />
-        </AccordionItem>
-      </Accordion>
-    </div>
+            <SectionsTable selectedCertification={selectedCertification} />
+          </div>
+          <div className="flex w-full justify-end pt-4">
+            <Button
+              type="submit"
+              isLoading={loading}
+              className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
+            >
+              {t('quiz.generateQuiz')}
+            </Button>
+          </div>
+        </Form>
+        <BusyDialog isOpen={loading} />
+      </AccordionItem>
+    </Accordion>
   );
 }

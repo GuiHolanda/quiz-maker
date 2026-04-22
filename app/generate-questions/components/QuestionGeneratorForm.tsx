@@ -51,52 +51,51 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
     }
   };
   return (
-    <div className="bg-content1 border border-default-200 rounded-xl overflow-hidden">
-      <Accordion
-        defaultExpandedKeys={['configure questionaire']}
-        itemClasses={{
-          base: 'border-0',
-          title: 'text-sm font-bold text-foreground',
-          trigger: 'px-6 py-4 rounded-t-xl aria-[expanded=false]:rounded-b-xl hover:bg-content2 transition-colors duration-200',
-          content: 'px-6 pb-6',
-          indicator: 'text-default-400',
-        }}
+    <Accordion
+      defaultExpandedKeys={['configure questionaire']}
+      className="bg-content1 border border-default-200 rounded-xl overflow-hidden p-0"
+      itemClasses={{
+        base: 'border-0',
+        title: 'text-sm font-bold text-foreground',
+        trigger: 'px-6 py-4 hover:bg-content2 transition-colors duration-200',
+        content: 'px-6 pb-6',
+        indicator: 'text-default-400',
+      }}
+    >
+      <AccordionItem
+        title={t('generate.configureQuestionnaire')}
+        key="configure questionaire"
       >
-        <AccordionItem
-          title={t('generate.configureQuestionnaire')}
-          key="configure questionaire"
-        >
-          <Form onSubmit={handleSubmit} validationErrors={error}>
-            <Divider />
-            <div className="w-full flex flex-col gap-6 pt-4">
-              <div className="flex w-full gap-4 items-center">
-                <CertificationManager className="flex w-full gap-4 items-center" />
-              </div>
-              <div className="flex w-full items-baseline gap-4">
-                <NumberInput
-                  id="num_questions"
-                  name="num_questions"
-                  className="w-1/4"
-                  placeholder={t('common.numberOfQuestions')}
-                  aria-label={t('common.numberOfQuestions')}
-                  maxValue={20}
-                  minValue={1}
-                  variant="bordered"
-                  classNames={borderedInputClassNames}
-                />
-                <Button
-                  className="ml-auto mt-auto bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
-                  type="submit"
-                  disabled={loading}
-                >
-                  {t('common.generate')}
-                </Button>
-              </div>
+        <Form onSubmit={handleSubmit} validationErrors={error}>
+          <Divider />
+          <div className="w-full flex flex-col gap-6 pt-4">
+            <div className="flex w-full gap-4 items-center">
+              <CertificationManager className="flex w-full gap-4 items-center" />
             </div>
-          </Form>
-          <BusyDialog isOpen={loading} />
-        </AccordionItem>
-      </Accordion>
-    </div>
+            <div className="flex w-full items-baseline gap-4">
+              <NumberInput
+                id="num_questions"
+                name="num_questions"
+                className="w-1/4"
+                placeholder={t('common.numberOfQuestions')}
+                aria-label={t('common.numberOfQuestions')}
+                maxValue={20}
+                minValue={1}
+                variant="bordered"
+                classNames={borderedInputClassNames}
+              />
+              <Button
+                className="ml-auto mt-auto bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
+                type="submit"
+                disabled={loading}
+              >
+                {t('common.generate')}
+              </Button>
+            </div>
+          </div>
+        </Form>
+        <BusyDialog isOpen={loading} />
+      </AccordionItem>
+    </Accordion>
   );
 }
