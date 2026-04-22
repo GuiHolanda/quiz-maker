@@ -1,7 +1,10 @@
 // Shared classNames for HeroUI input-like components using variant="bordered".
-// Resting: white/14 · Focus: white/70
+// Resting: white/14 · Focus: white/70 · Label: xs, normal weight, muted
+
+export const inputLabelClass = 'text-xs font-normal text-default-400';
 
 export const borderedInputClassNames = {
+  label: inputLabelClass,
   inputWrapper: [
     'border-white/[0.14]',
     'group-data-[focus=true]:border-white/70',
@@ -10,6 +13,7 @@ export const borderedInputClassNames = {
 };
 
 export const borderedSelectClassNames = {
+  label: inputLabelClass,
   trigger: [
     'border-white/[0.14]',
     'data-[focus=true]:border-white/70',
