@@ -63,7 +63,6 @@ sharedComponents/             # Components reused across multiple pages
   ui/                         # Generic UI primitives
     BusyDialog.tsx
     ItemsPerPageSelect.tsx
-    NumberInput.tsx
     PaginationControls.tsx
     navbar.tsx
     theme-switch.tsx

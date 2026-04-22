@@ -147,20 +147,24 @@ Corpo secundário  → text-xs text-default-400
 
 ---
 
-## Padrão de inputs (auth forms)
+## Padrão de inputs (todos os componentes)
+
+Todos os inputs usam `variant="bordered"` com override de foco primário via constantes compartilhadas em `config/constants/inputStyles.ts`.
 
 ```tsx
-const flatInput = {
-  inputWrapper: [
-    'bg-default-100 border border-default-200 rounded-lg',
-    'data-[hover=true]:border-default-300',
-    'data-[focus=true]:border-primary',
-    'transition-colors duration-200',
-  ].join(' '),
-  input: 'text-foreground placeholder:text-default-400 text-sm',
-  label: 'text-default-500 text-xs font-medium',
-};
+import { borderedInputClassNames, borderedSelectClassNames } from '@/config/constants/inputStyles';
+
+// Input, NumberInput
+<Input variant="bordered" classNames={borderedInputClassNames} />
+
+// Select
+<Select variant="bordered" classNames={borderedSelectClassNames} />
+
+// Autocomplete (classNames do autocomplete controla o popover; o input wrapper fica em inputProps)
+<Autocomplete variant="bordered" inputProps={{ classNames: borderedInputClassNames }} />
 ```
+
+O `bordered` usa fundo transparente + borda `border-default-200`, com foco mudando para `border-primary` (Indigo). Funciona em qualquer superfície (dark e light).
 
 ---
 
