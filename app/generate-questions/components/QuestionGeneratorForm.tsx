@@ -77,8 +77,8 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
                 id="num_questions"
                 name="num_questions"
                 className="w-1/4"
-                placeholder={t('common.numberOfQuestions')}
-                aria-label={t('common.numberOfQuestions')}
+                label={t('common.numberOfQuestions')}
+                labelPlacement="outside"
                 maxValue={20}
                 minValue={1}
                 variant="bordered"

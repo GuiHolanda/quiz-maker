@@ -68,6 +68,7 @@ export function QuizForm({ onGenerated }: Readonly<QuizFormProps>) {
                 className="w-1/4"
                 name="num_questions"
                 label={t('common.numberOfQuestions')}
+                labelPlacement="outside"
                 placeholder={t('quiz.placeholder')}
                 minValue={1}
                 variant="bordered"
