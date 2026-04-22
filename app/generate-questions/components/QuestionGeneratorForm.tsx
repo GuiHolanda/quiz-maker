@@ -51,7 +51,7 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
     }
   };
   return (
-    <div className="bg-content1 border border-default-200 rounded-xl">
+    <div className="bg-content1 border border-default-200 rounded-xl overflow-hidden">
       <Accordion
         defaultExpandedKeys={['configure questionaire']}
         itemClasses={{
