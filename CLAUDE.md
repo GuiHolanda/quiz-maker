@@ -233,6 +233,31 @@ npm run db:clear:dev          # Wipe dev database
 
 ---
 
+## Git Workflow
+
+### Branch creation
+
+Before starting any non-trivial task (new feature, refactor, bug fix), ask the user whether to create a new branch. If yes, create it following the naming convention `feature/<kebab-case>` (or `fix/<kebab-case>` for bug fixes) and switch to it before writing any code.
+
+```bash
+git checkout -b feature/<kebab-case-description>
+```
+
+Do **not** commit directly to `main` or the current branch unless the user explicitly says so.
+
+### Commits
+
+Group related changes into logical, cohesive commits — never one giant commit for an entire task and never micro-commits per file. A good grouping might be:
+
+- Foundation / configuration changes
+- Shared/reusable components
+- Page-specific components
+- Documentation
+
+Each commit message follows the convention below. Keep the diff reviewable: if a commit touches more than ~10 files, look for a natural split.
+
+---
+
 ## Commit Convention
 
 ```
