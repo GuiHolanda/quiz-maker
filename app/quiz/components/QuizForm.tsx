@@ -53,7 +53,7 @@ export function QuizForm({ onGenerated }: Readonly<QuizFormProps>) {
         itemClasses={{
           base: 'border-0',
           title: 'text-sm font-bold text-foreground',
-          trigger: 'px-6 py-4 hover:bg-content2 transition-colors duration-200',
+          trigger: 'px-6 py-4 rounded-t-xl aria-[expanded=false]:rounded-b-xl hover:bg-content2 transition-colors duration-200',
           content: 'px-6 pb-6',
           indicator: 'text-default-400',
         }}
