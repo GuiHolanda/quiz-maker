@@ -14,7 +14,7 @@ export function LanguageSwitch() {
       size="sm"
       onPress={toggle}
       aria-label={`Switch language to ${language === 'pt' ? 'English' : 'Português'}`}
-      className="min-w-0 px-2 text-white/50 hover:text-white/80 transition-colors"
+      className="min-w-0 px-2 text-default-500 hover:text-foreground transition-colors"
     >
       {language === 'pt' ? '🇧🇷 PT' : '🇺🇸 EN'}
     </Button>

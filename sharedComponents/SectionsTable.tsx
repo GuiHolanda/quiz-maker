@@ -17,7 +17,7 @@ interface SectionsTableProps {
 }
 
 const SLIDER_CLASS_NAMES = {
-  label: 'text-xs text-stone-400 font-bold',
+  label: 'text-xs text-default-500 font-bold',
   value: 'text-xs font-bold',
   labelWrapper: 'flex flex-col items-start',
   thumb: 'h-3 w-4',
