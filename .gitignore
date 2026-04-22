@@ -19,6 +19,11 @@
 .DS_Store
 *.pem
 
+# mocks / prototypes (never commit)
+*-mock.*
+*.mock.*
+tmp-*
+
 # debug
 npm-debug.log*
 yarn-debug.log*
