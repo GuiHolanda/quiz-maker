@@ -2,6 +2,7 @@
 import { Input } from '@heroui/input';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { borderedInputClassNames } from '@/config/constants/inputStyles';
 
 interface CertificationHeaderProps {
   title: string;
@@ -21,6 +22,8 @@ export function CertificationHeader({ title, code, onTitleChange, onCodeChange }
         className="w-2/3"
         value={title}
         onChange={(e) => onTitleChange(e.target.value)}
+        variant="bordered"
+        classNames={borderedInputClassNames}
       />
       <Input
         label={t('certification.certificationCode')}
@@ -28,6 +31,8 @@ export function CertificationHeader({ title, code, onTitleChange, onCodeChange }
         className="w-1/3"
         value={code}
         onChange={(e) => onCodeChange(e.target.value)}
+        variant="bordered"
+        classNames={borderedInputClassNames}
       />
     </div>
   );

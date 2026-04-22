@@ -12,6 +12,7 @@ import { SectionsTable } from '../../../sharedComponents/SectionsTable';
 import { NumberInput } from '@heroui/number-input';
 import { Button } from '@heroui/button';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { borderedInputClassNames } from '@/config/constants/inputStyles';
 
 interface QuizFormProps {
   onGenerated: (questions: StoredQuestion[]) => void;
@@ -69,6 +70,8 @@ export function QuizForm({ onGenerated }: Readonly<QuizFormProps>) {
                   label={t('common.numberOfQuestions')}
                   placeholder={t('quiz.placeholder')}
                   minValue={1}
+                  variant="bordered"
+                  classNames={borderedInputClassNames}
                 />
               </div>
               <SectionsTable selectedCertification={selectedCertification} />

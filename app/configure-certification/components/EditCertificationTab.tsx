@@ -2,6 +2,7 @@ import { SectionsTable } from '@/sharedComponents/SectionsTable';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
+import { borderedInputClassNames } from '@/config/constants/inputStyles';
 
 
 export function EditCertificationTab() {
@@ -31,6 +32,8 @@ export function EditCertificationTab() {
         name="certificationTitle"
         onSelectionChange={onCertificationChange}
         selectedKey={selectedCertification?.key ?? ''}
+        variant="bordered"
+        inputProps={{ classNames: borderedInputClassNames }}
       >
         {certifications.map((certification) => (
           <AutocompleteItem key={certification.key} textValue={certification.label}>
