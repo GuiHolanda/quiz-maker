@@ -9,11 +9,11 @@ export function CertificationsListTab() {
       variant="splitted"
       className="mt-2 gap-2"
       itemClasses={{
-        base: 'clay-section border-0',
-        title: 'text-sm text-white/80 font-semibold',
-        trigger: 'px-4 py-3 hover:bg-white/[0.03] rounded-xl transition-colors duration-200',
+        base: 'bg-content1 border border-default-200 rounded-xl',
+        title: 'text-sm text-foreground font-semibold',
+        trigger: 'px-4 py-3 hover:bg-default-100 rounded-xl transition-colors duration-200',
         content: 'px-4 pb-4',
-        indicator: 'text-white/30',
+        indicator: 'text-default-400',
       }}
     >
       {certifications.map((certification) => (

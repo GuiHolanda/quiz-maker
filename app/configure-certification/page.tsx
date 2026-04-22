@@ -26,10 +26,10 @@ export default function ConfigureCertificationPage() {
           <Tabs
             aria-label={t('aria.tabOptions')}
             classNames={{
-              tabList: 'bg-white/[0.04] border border-white/[0.07] rounded-2xl p-1 gap-1',
-              tab: 'rounded-xl text-white/40 data-[selected=true]:text-white/90 data-[selected=true]:font-semibold transition-all duration-200',
-              tabContent: 'group-data-[selected=true]:text-white/90',
-              cursor: 'bg-gradient-to-r from-violet-600/80 to-indigo-600/80 shadow-[0_2px_8px_rgba(139,92,246,0.4)] rounded-xl',
+              tabList: 'bg-default-100 border border-default-200 rounded-xl p-1 gap-1',
+              tab: 'rounded-xl text-default-400 data-[selected=true]:text-foreground data-[selected=true]:font-semibold transition-colors duration-200',
+              tabContent: 'group-data-[selected=true]:text-foreground',
+              cursor: 'bg-primary rounded-xl',
               panel: 'pt-4',
             }}
           >

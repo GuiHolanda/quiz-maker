@@ -49,7 +49,7 @@ export function QuestionCard({ question, onAnswerChange, initialValue }: Questio
           value={key}
           size="sm"
           disabled={disableIfLimitReached}
-          classNames={{ label: 'text-sm font-light text-white/70' }}
+          classNames={{ label: 'text-sm font-light text-default-600' }}
         >
           {String(val)}
         </Checkbox>
@@ -60,10 +60,10 @@ export function QuestionCard({ question, onAnswerChange, initialValue }: Questio
   const minSelectionCount = question.correctCount && question.correctCount > 0 ? question.correctCount : 1;
 
   return (
-    <div className="clay-question-card p-5">
-      <div className="pb-3 mb-3 border-b border-white/[0.06]">
-        <h4 className="font-semibold text-white/80 text-sm leading-relaxed">
-          <span className="inline-block mr-2 text-white/35">{String(question.id).padStart(2, '0')}.</span>
+    <div className="bg-content1 border border-default-200 rounded-xl p-5">
+      <div className="pb-3 mb-3 border-b border-divider">
+        <h4 className="font-semibold text-foreground text-sm leading-relaxed">
+          <span className="inline-block mr-2 text-default-400">{String(question.id).padStart(2, '0')}.</span>
           {question.text}
         </h4>
       </div>
@@ -74,7 +74,7 @@ export function QuestionCard({ question, onAnswerChange, initialValue }: Questio
             value={currentSelection}
             onValueChange={onCheckboxChange}
             className="w-4/5"
-            classNames={{ label: 'text-xs text-white/30 font-semibold mb-1' }}
+            classNames={{ label: 'text-xs text-default-400 font-semibold mb-1' }}
           >
             {renderCheckboxes()}
           </CheckboxGroup>
@@ -86,7 +86,7 @@ export function QuestionCard({ question, onAnswerChange, initialValue }: Questio
           >
             {Object.entries(question.options).map(([key, val]) => {
               return (
-                <Radio key={key} value={key} size="sm" classNames={{ label: 'text-sm ml-2 text-white/70' }}>
+                <Radio key={key} value={key} size="sm" classNames={{ label: 'text-sm ml-2 text-default-600' }}>
                   {String(val)}
                 </Radio>
               );
@@ -95,7 +95,7 @@ export function QuestionCard({ question, onAnswerChange, initialValue }: Questio
         )}
         {currentSelection.length >= minSelectionCount ? (
           <Button
-            className="ml-auto bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-semibold rounded-xl shadow-[0_3px_10px_rgba(139,92,246,0.35)] hover:shadow-[0_4px_14px_rgba(139,92,246,0.5)] transition-all duration-200 py-0 h-8 px-4"
+            className="ml-auto bg-primary text-primary-foreground text-xs font-semibold rounded-lg transition-opacity duration-200 hover:opacity-90 py-0 h-8 px-4"
             type="submit"
           >
             {t('common.submit')}

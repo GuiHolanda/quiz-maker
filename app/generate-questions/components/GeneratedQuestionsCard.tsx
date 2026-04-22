@@ -38,18 +38,18 @@ export function GeneratedQuestionsCard({ question, index }: QuestionCardProps) {
   };
 
   return (
-    <div className="clay-question-card p-4">
+    <div className="bg-content1 border border-default-200 rounded-xl p-4">
       <div className="flex items-start justify-between gap-4 pb-3">
         <div className="flex items-center justify-between w-full">
-          <h4 className="font-semibold text-white/80 text-sm leading-relaxed">
-            <span className="inline-block mr-2 text-white/40">{index + 1}.</span>
+          <h4 className="font-semibold text-foreground text-sm leading-relaxed">
+            <span className="inline-block mr-2 text-default-400">{index + 1}.</span>
             {question.text}
           </h4>
           <Checkbox isSelected={isSelected} onChange={onCheckboxChange} className='ml-auto flex-shrink-0' />
         </div>
       </div>
       <div>
-        <p className='text-white/30 text-xs font-semibold mb-2'>{t(question.correctCount === 1 ? 'generate.correctAnswer' : 'generate.correctAnswers', { count: question.correctCount })}</p>
+        <p className='text-default-400 text-xs font-semibold mb-2'>{t(question.correctCount === 1 ? 'generate.correctAnswer' : 'generate.correctAnswers', { count: question.correctCount })}</p>
         <Listbox
           aria-label={t('aria.options')}
           classNames={{
@@ -61,11 +61,11 @@ export function GeneratedQuestionsCard({ question, index }: QuestionCardProps) {
             <ListboxItem
               key={key}
               classNames={{
-                base: 'rounded-lg px-3 py-2 text-white/60 hover:text-white/80 hover:bg-white/[0.04] data-[hover=true]:bg-white/[0.04] transition-colors',
+                base: 'rounded-lg px-3 py-2 text-default-600 hover:text-foreground hover:bg-default-100 data-[hover=true]:bg-default-100 transition-colors',
                 title: 'text-sm',
               }}
             >
-              <strong className='mr-2 text-violet-400/70'>{key}.</strong> {val}
+              <strong className='mr-2 text-primary'>{key}.</strong> {val}
             </ListboxItem>
           ))}
         </Listbox>

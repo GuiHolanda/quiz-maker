@@ -51,7 +51,7 @@ export function NewCertificationTab() {
   const hasTopics = draft.topics.length > 0;
 
   return (
-    <div className="clay-section p-6 mt-2">
+    <div className="bg-content1 border border-default-200 rounded-xl p-6 mt-2">
       <CertificationHeader
         title={draft.title}
         code={draft.code}
@@ -67,7 +67,7 @@ export function NewCertificationTab() {
 
       {hasTopics && (
         <>
-          <Divider className="clay-divider" />
+          <Divider />
           <div className="flex flex-wrap gap-2 mt-4">
             <SectionsTable selectedCertification={selectedCertification} topicsList={draft.topics} />
           </div>
@@ -76,7 +76,7 @@ export function NewCertificationTab() {
               color="primary"
               onPress={handleSave}
               isDisabled={loading}
-              className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold rounded-xl shadow-[0_4px_14px_rgba(139,92,246,0.4)] hover:shadow-[0_6px_20px_rgba(139,92,246,0.55)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+              className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
             >
               {t('common.save')}
             </Button>

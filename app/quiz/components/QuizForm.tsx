@@ -46,20 +46,20 @@ export function QuizForm({ onGenerated }: Readonly<QuizFormProps>) {
   };
 
   return (
-    <div className="clay-section">
+    <div className="bg-content1 border border-default-200 rounded-xl">
       <Accordion
         defaultExpandedKeys={['quizForm']}
         itemClasses={{
           base: 'border-0',
-          title: 'text-sm font-bold text-white/80',
-          trigger: 'px-6 py-4 hover:bg-white/[0.02] transition-colors duration-200',
+          title: 'text-sm font-bold text-foreground',
+          trigger: 'px-6 py-4 hover:bg-default-100 transition-colors duration-200',
           content: 'px-6 pb-6',
-          indicator: 'text-white/30',
+          indicator: 'text-default-400',
         }}
       >
         <AccordionItem title={t('quiz.configureQuiz')} key="quizForm">
           <Form onSubmit={handleSubmit} validationErrors={error}>
-            <Divider className="clay-divider" />
+            <Divider />
             <div className="w-full flex flex-col gap-6 pt-4">
               <div className="flex gap-4 items-center">
                 <CertificationManager isMultiple noTopics className="flex w-3/4 gap-4 items-center" />
@@ -77,7 +77,7 @@ export function QuizForm({ onGenerated }: Readonly<QuizFormProps>) {
               <Button
                 type="submit"
                 isLoading={loading}
-                className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold rounded-xl shadow-[0_4px_14px_rgba(139,92,246,0.4)] hover:shadow-[0_6px_20px_rgba(139,92,246,0.55)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+                className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
               >
                 {t('quiz.generateQuiz')}
               </Button>

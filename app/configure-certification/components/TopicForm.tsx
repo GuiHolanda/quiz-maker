@@ -15,7 +15,7 @@ interface TopicFormProps {
 }
 
 const SLIDER_CLASS_NAMES = {
-  label: 'text-xs text-stone-400 font-bold mb-4',
+  label: 'text-xs text-default-500 font-bold mb-4',
   value: 'text-xs font-bold',
   labelWrapper: 'flex flex-col items-start',
   thumb: 'h-3 w-4',

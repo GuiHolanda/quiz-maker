@@ -66,11 +66,11 @@ export function AnsweredQuestionCard({ question, answer }: QuestionCardProps) {
 
   return (
     <>
-      <div className="clay-question-card p-5">
-        <div className="flex items-start justify-between gap-4 pb-3 mb-3 border-b border-white/[0.06]">
+      <div className="bg-content1 border border-default-200 rounded-xl p-5">
+        <div className="flex items-start justify-between gap-4 pb-3 mb-3 border-b border-divider">
           <div className="flex items-center justify-between flex-1">
-            <h4 className="font-semibold text-white/80 text-sm leading-relaxed">
-              <span className="inline-block mr-2 text-white/35">{String(question.id).padStart(2, '0')}.</span>
+            <h4 className="font-semibold text-foreground text-sm leading-relaxed">
+              <span className="inline-block mr-2 text-default-400">{String(question.id).padStart(2, '0')}.</span>
               {question.text}
             </h4>
             {isCorrectlyAnswered ? (
@@ -83,8 +83,8 @@ export function AnsweredQuestionCard({ question, answer }: QuestionCardProps) {
         <div className="flex flex-col gap-1.5">{renderOptionAlerts()}</div>
       </div>
 
-      <div className="clay-question-card p-5">
-        <h4 className="font-semibold text-white/50 text-xs uppercase tracking-wider mb-3">{t('quiz.explanations')}</h4>
+      <div className="bg-content1 border border-default-200 rounded-xl p-5">
+        <h4 className="font-semibold text-default-500 text-xs uppercase tracking-wider mb-3">{t('quiz.explanations')}</h4>
         <div className="flex flex-col gap-1.5">{renderExplanations()}</div>
       </div>
     </>

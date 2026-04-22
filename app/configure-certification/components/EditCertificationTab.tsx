@@ -24,7 +24,7 @@ export function EditCertificationTab() {
   };
 
   return (
-    <div className="clay-section p-6 mt-2">
+    <div className="bg-content1 border border-default-200 rounded-xl p-6 mt-2">
       <Autocomplete
         label={t('certification.selectCertification')}
         className='w-3/4'
