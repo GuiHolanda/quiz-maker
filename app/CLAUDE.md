@@ -4,13 +4,36 @@ Guia de referência para padronização de páginas e componentes. Todas as deci
 
 ---
 
-## Design System — Claymorphism
+## Design System — Flat Indigo + Amber
 
-O estilo da aplicação é **claymorphism**: superfícies translúcidas com múltiplas camadas de sombra, bordas sutis e blur de fundo. Fundo escuro com hierarquia visual por opacidade de branco.
+O estilo da aplicação é **flat design**: superfícies sólidas, bordas simples, sem gradientes, sem blur, sem glassmorphism. Usa tokens semânticos do HeroUI para suporte automático a dark/light mode.
+
+### Paleta de cores (configurada em `tailwind.config.js`)
+
+| Token | Dark | Light |
+|---|---|---|
+| `background` | `#0f172a` (Slate-900) | `#f8fafc` (Slate-50) |
+| `foreground` | `#f8fafc` | `#0f172a` |
+| `content1` (surface) | `#1e293b` (Slate-800) | `#ffffff` |
+| `content2` | `#334155` (Slate-700) | `#f1f5f9` (Slate-100) |
+| `primary` (accent) | `#4f46e5` (Indigo-600) | `#4f46e5` |
+| `secondary` | `#f59e0b` (Amber-500) | `#f59e0b` |
+
+### Tokens semânticos (use estes, nunca cores hard-coded)
+
+```
+bg-background       → fundo da página
+bg-content1         → superfícies (cards, seções)
+text-foreground      → texto principal
+text-default-500     → texto secundário
+text-default-400     → texto terciário / muted
+text-primary         → texto de acento (links, labels de seção)
+border-divider       → separadores
+border-default-200   → bordas de cards/inputs
+bg-default-100       → backgrounds sutis (hover, tabs inativos)
+```
 
 ### Fundos de página
-
-Nunca use `bg-white` ou `bg-gray-*`. Dois fundos existem:
 
 | Classe CSS | Onde usar |
 |---|---|
@@ -27,7 +50,7 @@ Nunca use `bg-white` ou `bg-gray-*`. Dois fundos existem:
 
 // Página de auth
 <div className="auth-bg">
-  <div className="clay-card p-8 w-full max-w-md">
+  <div className="bg-content1 border border-default-200 rounded-2xl p-8 w-full max-w-md">
     ...
   </div>
 </div>
@@ -35,99 +58,41 @@ Nunca use `bg-white` ou `bg-gray-*`. Dois fundos existem:
 
 ### Classes CSS custom (`styles/globals.css`)
 
-| Classe | Uso | Característica visual |
-|---|---|---|
-| `.clay-card` | Container principal de conteúdo | `border-radius: 28px`, blur 24px, sombra profunda (64px) |
-| `.clay-section` | Seção dentro de um card | `border-radius: 20px`, blur 16px, sombra média (40px) |
-| `.clay-question-card` | Card individual de questão | `border-radius: 16px`, sombra leve (20px) |
-| `.clay-divider` | Divisor entre seções | `border-color: rgba(255,255,255,0.1)` |
-| `.page-header-title` | Título das páginas internas | Gradiente `violet → indigo → blue`, font-extrabold |
-| `.page-header-subtitle` | Subtítulo das páginas internas | `rgba(255,255,255,0.35)`, 0.9rem |
+| Classe | Uso |
+|---|---|
+| `.app-bg` | min-height para páginas autenticadas |
+| `.auth-bg` | Flex centering para páginas de auth |
+| `.page-header-title` | font-size: 2rem, font-weight: 800 |
+| `.page-header-subtitle` | font-size: 0.9rem |
 
 ---
 
 ## Tipografia
 
-- **Fonte principal:** `Plus Jakarta Sans` (variável `--font-sans`) — todos os textos
-- **Fonte mono:** `Fira Code` (variável `--font-mono`) — blocos de código
+- **Fonte principal:** `Plus Jakarta Sans` (variável `--font-sans`)
+- **Fonte mono:** `Fira Code` (variável `--font-mono`)
 
 ### Hierarquia de texto
 
 ```
-Título de página  → .page-header-title  (gradiente, extrabold, ~2rem)
-H2 de seção       → text-3xl font-extrabold text-white
-H3 de card        → text-xl font-bold text-white
-Label             → text-xs uppercase tracking-[0.2em] text-violet-400 font-semibold
-Corpo principal   → text-sm text-white/70 ou text-zinc-400
-Corpo secundário  → text-xs text-white/40 ou text-zinc-500
-```
-
----
-
-## Paleta de cores
-
-### Cores principais
-
-| Papel | Valor |
-|---|---|
-| Fundo app | `#0a0a1a → #110a2e → #0a1628` (gradiente radial) |
-| Fundo auth | `#0f0a1e → #1a0a3d → #0d1b3e` (gradiente radial) |
-| Navbar | `#0a0a1a/80` |
-| Homepage static | `#0a1628` |
-
-### Escala de branco (opacidade)
-
-```
-text-white          → títulos principais
-text-white/90       → texto de input
-text-white/80       → texto relevante
-text-white/70       → texto de corpo
-text-white/60       → texto secundário
-text-white/50       → nav items, labels
-text-white/40       → texto desabilitado, numeração
-text-white/35       → números de questão
-text-white/30       → metadata de questão
-```
-
-### Acento — Violet/Indigo (CTA, gradientes)
-
-```
-from-violet-600 to-indigo-600   → botão primário, cursor de tab ativo
-violet-500/10, violet-400/30    → backgrounds sutis, bordas
-violet-400                      → section labels, active nav
-violet-300 → cyan-300           → gradientes de stat
-```
-
-### Bordas
-
-```
-border-white/[0.06]   → separadores sutis (navbar bottom, section borders)
-border-white/[0.07]   → clay-question-card
-border-white/[0.08]   → cards gerais
-border-white/[0.1]    → clay-card, clay-divider
-border-white/20       → botão bordered
-```
-
-### Alertas e estados
-
-```
-rose-500 / rose-400   → erros
-amber-500 / orange-500 → warning (testimonials accent)
+Título de página  → .page-header-title (text-foreground, extrabold, ~2rem)
+H2 de seção       → text-3xl font-extrabold text-foreground
+H3 de card        → text-xl font-bold text-foreground
+Label             → text-xs uppercase tracking-[0.2em] text-primary font-semibold
+Corpo principal   → text-sm text-default-500
+Corpo secundário  → text-xs text-default-400
 ```
 
 ---
 
 ## Padrão de botões
 
-### Primário (CTA gradient)
+### Primário
 
 ```tsx
 <Button
-  radius="full"
-  className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold px-8
-             shadow-[0_6px_24px_rgba(139,92,246,0.5)]
-             hover:shadow-[0_8px_32px_rgba(139,92,246,0.65)] hover:-translate-y-0.5
-             transition-all duration-200"
+  className="bg-primary text-primary-foreground font-semibold rounded-lg
+             hover:opacity-90 transition-opacity duration-200"
 >
   {t('common.save')}
 </Button>
@@ -138,9 +103,8 @@ amber-500 / orange-500 → warning (testimonials accent)
 ```tsx
 <Button
   variant="bordered"
-  radius="full"
-  className="border-white/20 text-white/70 hover:text-white hover:border-white/40
-             font-semibold px-8 transition-all duration-200"
+  className="border-default-300 text-default-600 hover:text-foreground
+             hover:border-default-400 font-semibold transition-colors duration-200"
 >
   {t('common.cancel')}
 </Button>
@@ -151,8 +115,8 @@ amber-500 / orange-500 → warning (testimonials accent)
 ```tsx
 <Button
   variant="flat"
-  className="bg-white/[0.06] border border-white/[0.08] text-white/60
-             hover:bg-white/[0.1] hover:text-white/80 rounded-xl transition-all"
+  className="bg-default-100 border border-default-200 text-default-600
+             hover:bg-default-200 rounded-lg transition-colors"
 >
   {t('common.signOut')}
 </Button>
@@ -163,9 +127,8 @@ amber-500 / orange-500 → warning (testimonials accent)
 ```tsx
 <Button
   size="sm"
-  className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs
-             font-semibold rounded-xl shadow-[0_3px_10px_rgba(139,92,246,0.35)]
-             hover:shadow-[0_4px_14px_rgba(139,92,246,0.5)] h-8 px-4 transition-all duration-200"
+  className="bg-primary text-primary-foreground text-xs font-semibold
+             rounded-lg hover:opacity-90 h-8 px-4 transition-opacity duration-200"
 >
   {t('common.submit')}
 </Button>
@@ -173,17 +136,41 @@ amber-500 / orange-500 → warning (testimonials accent)
 
 ---
 
-## Layout padrão das páginas internas
+## Padrão de cards e seções
 
-Todas as páginas autenticadas seguem este template:
+```tsx
+// Card / seção
+<div className="bg-content1 border border-default-200 rounded-xl p-6">
+  ...
+</div>
+```
+
+---
+
+## Padrão de inputs (auth forms)
+
+```tsx
+const flatInput = {
+  inputWrapper: [
+    'bg-default-100 border border-default-200 rounded-lg',
+    'data-[hover=true]:border-default-300',
+    'data-[focus=true]:border-primary',
+    'transition-colors duration-200',
+  ].join(' '),
+  input: 'text-foreground placeholder:text-default-400 text-sm',
+  label: 'text-default-500 text-xs font-medium',
+};
+```
+
+---
+
+## Layout padrão das páginas internas
 
 ```tsx
 export default function MyPage() {
   return (
-    <CertificationsProvider>   {/* se usar certifications */}
-      <MyDomainProvider>       {/* se tiver estado de domínio */}
-        <PageContent />
-      </MyDomainProvider>
+    <CertificationsProvider>
+      <PageContent />
     </CertificationsProvider>
   );
 }
@@ -194,14 +181,11 @@ function PageContent() {
   return (
     <div className="app-bg">
       <div className="container mx-auto max-w-7xl pt-8 px-6 pb-12">
-        {/* Cabeçalho */}
         <div className="mb-8">
           <h1 className="page-header-title">{t('page.title')}</h1>
           <p className="page-header-subtitle mt-2">{t('page.subtitle')}</p>
         </div>
-
-        {/* Conteúdo */}
-        <div className="clay-card p-6">
+        <div className="bg-content1 border border-default-200 rounded-xl p-6">
           ...
         </div>
       </div>
@@ -212,21 +196,51 @@ function PageContent() {
 
 ---
 
+## Padrão de Tabs
+
+```tsx
+<Tabs
+  classNames={{
+    tabList: 'bg-default-100 border border-default-200 rounded-xl p-1 gap-1',
+    tab: 'text-default-400 data-[selected=true]:text-foreground data-[selected=true]:font-semibold',
+    cursor: 'bg-primary rounded-xl',
+  }}
+>
+```
+
+---
+
+## Padrão de Accordion
+
+```tsx
+<Accordion
+  itemClasses={{
+    base: 'bg-content1 border border-default-200 rounded-xl',
+    title: 'text-sm font-bold text-foreground',
+    trigger: 'px-6 py-4 hover:bg-default-100 transition-colors duration-200',
+    content: 'px-6 pb-6',
+    indicator: 'text-default-400',
+  }}
+>
+```
+
+---
+
 ## Estrutura de páginas e componentes
 
 ### Homepage (`app/page.tsx`)
 
-Página pública, fundo `bg-[#0a1628]`, `'use client'`.
+Página pública, fundo `bg-background`, `'use client'`.
 
 | Seção | Componente | Descrição |
 |---|---|---|
-| Hero | `HeroSection` | min-h-[90vh], blobs de gradiente animados, CTA duplo |
-| Stats | `StatsSection` | Grid 2→4 colunas, valores com gradiente violet→cyan |
-| Features | `FeaturesSection` | Grid 3 colunas, cards com `tailwind-variants` (blue/cyan/violet) |
+| Hero | `HeroSection` | min-h-[90vh], CTA duplo, texto primary + foreground |
+| Stats | `StatsSection` | Grid 2→4 colunas, valores `text-primary` |
+| Features | `FeaturesSection` | Grid 3 colunas, cards `bg-content1 border-default-200` |
 | Certifications | `CertificationsSection` | Badges flex-wrap com logo colorido |
-| Testimonials | `TestimonialsSection` | Grid 3 colunas, cards com avatar gradient |
-| Companies | `CompaniesSection` | Logos texto com cor da marca, opacity-30 → hover:opacity-60 |
-| CTA | `CtaSection` | Box gradient violet-900→indigo-900, blobs decorativos |
+| Testimonials | `TestimonialsSection` | Grid 3 colunas, cards `bg-content1` |
+| Companies | `CompaniesSection` | Logos texto com cor da marca |
+| CTA | `CtaSection` | Box `bg-primary/5 border-primary/20` |
 
 ### Generate Questions (`app/generate-questions/`)
 
@@ -235,7 +249,7 @@ Página pública, fundo `bg-[#0a1628]`, `'use client'`.
 | `page.tsx` | Providers + layout `.app-bg` |
 | `components/QuestionGeneratorForm.tsx` | Form de configuração (certification, topic, count) |
 | `components/GeneratedQuestionsList.tsx` | Lista com select-all, botões de salvar/descartar |
-| `components/GeneratedQuestionsCard.tsx` | Card individual: texto + opções (Listbox) + checkbox de seleção |
+| `components/GeneratedQuestionsCard.tsx` | Card individual: texto + opções (Listbox) + checkbox |
 
 ### Quiz (`app/quiz/`)
 
@@ -258,38 +272,12 @@ Página pública, fundo `bg-[#0a1628]`, `'use client'`.
 | `components/EditCertificationTab.tsx` | Select para escolher qual editar |
 | `components/TopicForm.tsx` | Form de adição de tópico com Slider de percentual |
 
-**Padrão de Tabs:**
-```tsx
-<Tabs
-  classNames={{
-    tabList: 'bg-white/[0.04] border border-white/[0.07] rounded-2xl p-1 gap-1',
-    tab: 'text-white/40 data-[selected=true]:text-white/90 data-[selected=true]:font-semibold',
-    cursor: 'bg-gradient-to-r from-violet-600/80 to-indigo-600/80 shadow-[0_2px_8px_rgba(139,92,246,0.4)] rounded-xl',
-  }}
->
-```
-
 ### Login / Auth (`app/login/`)
 
 | Arquivo | Papel |
 |---|---|
-| `page.tsx` | Layout `.auth-bg` + `.clay-card` |
+| `page.tsx` | Layout `.auth-bg` |
 | `components/LoginForm.tsx` | Email + senha + Google OAuth + links |
-
-**Padrão de input em auth:**
-```tsx
-classNames={{
-  inputWrapper: [
-    'bg-white/5 border-white/10 rounded-2xl',
-    'shadow-[inset_0_2px_6px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.05)]',
-    'data-[hover=true]:bg-white/[0.08] data-[hover=true]:border-violet-500/40',
-    'data-[focus=true]:border-violet-500/60 data-[focus=true]:bg-white/[0.08]',
-    'transition-all duration-200',
-  ],
-  input: 'text-white/90 placeholder:text-white/30 text-sm',
-  label: 'text-white/50 text-xs font-medium',
-}}
-```
 
 ---
 
@@ -297,8 +285,8 @@ classNames={{
 
 | Componente | Uso |
 |---|---|
-| `ui/navbar.tsx` | Shell de navegação global (sticky, backdrop-blur) |
-| `ui/footer.tsx` | Rodapé global, client component (usa `useTranslation`) |
+| `ui/navbar.tsx` | Shell de navegação global (sticky, `bg-background border-divider`) |
+| `ui/footer.tsx` | Rodapé global |
 | `ui/theme-switch.tsx` | Toggle light/dark via next-themes |
 | `ui/language-switch.tsx` | Toggle PT/EN via `useTranslation` |
 | `ui/BusyDialog.tsx` | Modal de loading durante geração de questões |
@@ -327,12 +315,22 @@ Container:   max-w-7xl mx-auto px-6
 ## Padrões de animação e transição
 
 ```
-Hover lift:    hover:-translate-y-0.5 (botões CTA)
-Hover lift 2:  hover:-translate-y-1 (feature cards)
-Transição:     transition-all duration-200 (padrão)
-Transição:     transition-colors duration-300 (cards)
-Blobs:         blur-3xl, pointer-events-none (decorativos, posição absoluta)
+Hover:       hover:opacity-90 (botões primários)
+Hover:       hover:bg-default-100 (cards, items)
+Transição:   transition-opacity duration-200 (botões)
+Transição:   transition-colors duration-200 (cards, inputs)
 ```
+
+---
+
+## Regras visuais
+
+- **Sem gradientes** — nunca usar `bg-gradient-to-*`, `from-*`, `via-*`, `to-*`
+- **Sem glassmorphism** — nunca usar `backdrop-blur-*`, `backdrop-filter`
+- **Sem gradient text** — nunca usar `bg-clip-text text-transparent`
+- **Sem colored shadows** — nunca usar `shadow-[...]` com rgba colors
+- **Sem hover lifts** — nunca usar `hover:-translate-y-*`
+- **Sempre usar tokens semânticos** — `text-foreground` ao invés de `text-white`, `border-divider` ao invés de `border-white/[0.06]`
 
 ---
 
@@ -341,7 +339,10 @@ Blobs:         blur-3xl, pointer-events-none (decorativos, posição absoluta)
 - [ ] Usar `.app-bg` (autenticada) ou `.auth-bg` (pública de auth) como wrapper
 - [ ] Container `container mx-auto max-w-7xl pt-8 px-6 pb-12`
 - [ ] Título com `.page-header-title`, subtítulo com `.page-header-subtitle`
+- [ ] Cards com `bg-content1 border border-default-200 rounded-xl`
 - [ ] Todo texto de UI via `t('chave')` — sem strings hardcoded
 - [ ] Componente marcado com `'use client'` se usar hooks
 - [ ] Componentes page-specific em `app/<pagina>/components/`, nunca em `sharedComponents/`
-- [ ] Usar HeroUI para todos os elementos de UI — não criar custom inputs, modais ou selects do zero
+- [ ] Usar HeroUI para todos os elementos de UI
+- [ ] Usar tokens semânticos, nunca cores hard-coded
+- [ ] Verificar em dark e light mode
