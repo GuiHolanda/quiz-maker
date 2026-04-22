@@ -1,18 +1,18 @@
 // Shared classNames for HeroUI input-like components using variant="bordered".
-// Resting border: white/14 (soft white on dark surfaces). Focus border: solid primary (Indigo).
+// Resting: white/14 · Focus: white/70
 
 export const borderedInputClassNames = {
   inputWrapper: [
     'border-white/[0.14]',
-    'group-data-[focus=true]:border-primary',
-    'group-data-[focus=true]:data-[hover=true]:border-primary',
+    'group-data-[focus=true]:border-white/70',
+    'group-data-[focus=true]:data-[hover=true]:border-white/70',
   ].join(' '),
 };
 
 export const borderedSelectClassNames = {
   trigger: [
     'border-white/[0.14]',
-    'data-[focus=true]:border-primary',
-    'data-[open=true]:border-primary',
+    'data-[focus=true]:border-white/70',
+    'data-[open=true]:border-white/70',
   ].join(' '),
 };
