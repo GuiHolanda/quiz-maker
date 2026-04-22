@@ -9,18 +9,7 @@ import { Link } from '@heroui/link';
 import NextLink from 'next/link';
 import api from '@/lib/bff.api';
 import { REGISTER_URL } from '@/config/constants';
-
-const flatInput = {
-  inputWrapper: [
-    'bg-default-100 border border-default-200 rounded-lg',
-    'data-[hover=true]:border-default-300',
-    'data-[focus=true]:border-primary',
-    'transition-colors duration-200',
-  ].join(' '),
-  input: 'text-foreground placeholder:text-default-400 text-sm',
-  label: 'text-default-500 text-xs font-medium',
-  description: 'text-default-400 text-xs',
-};
+import { borderedInputClassNames } from '@/config/constants/inputStyles';
 
 export function RegisterForm() {
   const router = useRouter();
@@ -76,7 +65,8 @@ export function RegisterForm() {
           value={name}
           onValueChange={setName}
           autoComplete="name"
-          classNames={flatInput}
+          variant="bordered"
+          classNames={borderedInputClassNames}
         />
         <Input
           label="Email address"
@@ -85,7 +75,8 @@ export function RegisterForm() {
           onValueChange={setEmail}
           isRequired
           autoComplete="email"
-          classNames={flatInput}
+          variant="bordered"
+          classNames={borderedInputClassNames}
         />
         <Input
           label="Password"
@@ -95,7 +86,8 @@ export function RegisterForm() {
           isRequired
           autoComplete="new-password"
           description="At least 8 characters"
-          classNames={flatInput}
+          variant="bordered"
+          classNames={borderedInputClassNames}
         />
 
         {error && (

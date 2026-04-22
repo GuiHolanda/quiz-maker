@@ -9,17 +9,7 @@ import { Button } from '@heroui/button';
 import { Divider } from '@heroui/divider';
 import { Link } from '@heroui/link';
 import NextLink from 'next/link';
-
-const flatInput = {
-  inputWrapper: [
-    'bg-default-100 border border-default-200 rounded-lg',
-    'data-[hover=true]:border-default-300',
-    'data-[focus=true]:border-primary',
-    'transition-colors duration-200',
-  ].join(' '),
-  input: 'text-foreground placeholder:text-default-400 text-sm',
-  label: 'text-default-500 text-xs font-medium',
-};
+import { borderedInputClassNames } from '@/config/constants/inputStyles';
 
 export function LoginForm() {
   const router = useRouter();
@@ -74,7 +64,8 @@ export function LoginForm() {
           onValueChange={setEmail}
           isRequired
           autoComplete="email"
-          classNames={flatInput}
+          variant="bordered"
+          classNames={borderedInputClassNames}
         />
         <Input
           label={t('login.passwordLabel')}
@@ -83,7 +74,8 @@ export function LoginForm() {
           onValueChange={setPassword}
           isRequired
           autoComplete="current-password"
-          classNames={flatInput}
+          variant="bordered"
+          classNames={borderedInputClassNames}
         />
 
         {error && (
