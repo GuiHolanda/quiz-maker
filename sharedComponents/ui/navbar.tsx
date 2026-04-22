@@ -24,6 +24,7 @@ import { ThemeSwitch } from '@/sharedComponents/ui/theme-switch';
 import { LanguageSwitch } from '@/sharedComponents/ui/language-switch';
 import { GithubIcon, SearchIcon } from '@/sharedComponents/icons';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { borderedInputClassNames } from '@/config/constants/inputStyles';
 
 export const Navbar = () => {
   const { data: session, status } = useSession();
@@ -32,10 +33,8 @@ export const Navbar = () => {
   const searchInput = (
     <Input
       aria-label={t('aria.search')}
-      classNames={{
-        inputWrapper: 'bg-default-100',
-        input: 'text-sm',
-      }}
+      classNames={{ ...borderedInputClassNames, input: 'text-sm' }}
+      variant="bordered"
       endContent={
         <Kbd className="hidden lg:inline-block" keys={['command']}>
           K

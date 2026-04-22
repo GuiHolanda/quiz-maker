@@ -4,6 +4,7 @@ import React from 'react';
 import { Select, SelectItem } from '@heroui/select';
 import { QUESTIONS_PER_PAGE_OPTIONS } from '@/config/constants';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { borderedSelectClassNames } from '@/config/constants/inputStyles';
 
 interface ItemsPerPageSelectProps {
   readonly value: number;
@@ -25,6 +26,8 @@ export function ItemsPerPageSelect({ value, onChange }: ItemsPerPageSelectProps)
         value={String(value)}
         onChange={onChange}
         className="w-24 ml-auto"
+        variant="bordered"
+        classNames={borderedSelectClassNames}
       >
         {(item) => <SelectItem key={item.key}>{item.label}</SelectItem>}
       </Select>
