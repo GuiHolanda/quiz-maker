@@ -138,6 +138,71 @@ Page-specific components live in `app/<page>/components/`. Components used by mo
 
 ---
 
+## Internacionalização (i18n)
+
+### Arquitetura
+
+i18n implementado sem dependências externas: arquivos `.properties` + Context + Reducer custom.
+
+| Arquivo | Papel |
+|---|---|
+| `public/messages/en.properties` | Strings em inglês |
+| `public/messages/pt.properties` | Strings em português (unicode escapes `\uXXXX`) |
+| `lib/properties-parser.ts` | Parser `.properties` → `Record<string, string>` (decodifica `\uXXXX`) |
+| `features/reducers/language.reducer.ts` | Reducer: `language`, `messages`, actions `setLanguage` / `setMessages` |
+| `features/providers/language.provider.tsx` | Provider central — lê localStorage no mount, faz fetch do `.properties`, expõe `LanguageContext` |
+| `features/hooks/useTranslation.hook.ts` | Hook `useTranslation()` → `{ t, language, setLanguage }` |
+| `sharedComponents/ui/language-switch.tsx` | Toggle 🇧🇷 PT / 🇺🇸 EN no navbar |
+
+### Como usar em componentes
+
+```tsx
+'use client';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
+
+const { t } = useTranslation();
+// chave simples
+t('common.save')
+// com interpolação de variáveis
+t('quiz.progress', { answered: 5, total: 20 })  // → "5 of 20"
+```
+
+### Convenções de chaves
+
+Namespaces por domínio: `common.*`, `homepage.*`, `login.*`, `certification.*`, `generate.*`, `quiz.*`, `error.*`, `toast.*`, `busy.*`, `aria.*`, `nav.*`
+
+Para plural, use chaves separadas:
+```properties
+generate.correctAnswer={count} correct answer
+generate.correctAnswers={count} correct answers
+```
+```tsx
+t(count === 1 ? 'generate.correctAnswer' : 'generate.correctAnswers', { count })
+```
+
+### Adicionar nova string
+
+1. Adicionar a chave em `public/messages/en.properties`
+2. Adicionar a chave em `public/messages/pt.properties` (caracteres especiais como unicode escapes: `ã` → `\u00E3`)
+3. Usar `t('chave')` no componente
+
+### Formato `.properties`
+
+```properties
+# comentário
+chave.simples=Valor aqui
+chave.com.variavel=Olá {nome}, você tem {count} mensagens
+```
+
+### Observações
+
+- `public/messages/` é seguro e intencional — strings de UI não são dados sensíveis e precisam de acesso público para o `fetch` do cliente
+- O `middleware.ts` exclui `/messages/*.properties` do guard de autenticação
+- O idioma padrão é `pt`; preferência persiste em `localStorage` via `LANGUAGE_LOCAL_STORAGE_KEY`
+- Componentes que usam `useTranslation` precisam obrigatoriamente de `'use client'`
+
+---
+
 ## Important Constraints
 
 - **Do not modify the Prisma schema** (`prisma/dev/schema.prisma` or `prisma/prod/schema.prisma`) without explicit approval. Schema changes require migrations.
