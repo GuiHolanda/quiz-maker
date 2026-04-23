@@ -62,7 +62,7 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
   const isBuildingCertification = isStreaming && currentStreamContent.includes('```certification-data');
 
   return (
-    <Drawer isOpen={isOpen} onClose={onClose} placement="right" size="sm" hideCloseButton>
+    <Drawer isOpen={isOpen} onClose={onClose} placement="right" size="lg" hideCloseButton>
       <DrawerContent>
         <DrawerHeader className="flex items-center justify-between border-b border-divider px-4 py-3">
           <span className="text-base font-semibold">{t('chat.title')}</span>

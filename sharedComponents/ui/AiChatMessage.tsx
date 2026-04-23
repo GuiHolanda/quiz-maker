@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { ChatMessageRole } from '@/types';
 
 interface AiChatMessageProps {
@@ -14,6 +15,35 @@ const PARTIAL_CERT_BLOCK_REGEX = /```certification-data[\s\S]*/;
 
 function stripCertificationDataBlocks(text: string): string {
   return text.replace(CERTIFICATION_DATA_BLOCK_REGEX, '').trim();
+}
+
+function parseMarkdownInline(text: string): ReactNode[] {
+  const INLINE_REGEX = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|\*\*(.+?)\*\*|\*(.+?)\*/g;
+  const result: ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = INLINE_REGEX.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      result.push(text.slice(lastIndex, match.index));
+    }
+    if (match[1] !== undefined && match[2] !== undefined) {
+      result.push(
+        <a key={match.index} href={match[2]} target="_blank" rel="noopener noreferrer"
+           className="text-primary underline hover:opacity-80 transition-opacity">
+          {match[1]}
+        </a>
+      );
+    } else if (match[3] !== undefined) {
+      result.push(<strong key={match.index}>{match[3]}</strong>);
+    } else if (match[4] !== undefined) {
+      result.push(<em key={match.index}>{match[4]}</em>);
+    }
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) result.push(text.slice(lastIndex));
+  return result;
 }
 
 export function AiChatMessage({ role, content, isStreaming, isError }: AiChatMessageProps) {
@@ -53,7 +83,7 @@ export function AiChatMessage({ role, content, isStreaming, isError }: AiChatMes
             ))}
           </div>
         ) : (
-          displayContent
+          parseMarkdownInline(displayContent)
         )}
       </div>
     </div>
