@@ -1,5 +1,9 @@
 import OpenAI from 'openai';
 
+const ALLOWED_ROLES = new Set(['user', 'assistant']);
+const MAX_MESSAGES = 50;
+const MAX_CONTENT_LENGTH = 10_000;
+
 const SYSTEM_PROMPT = `You are a certification creation assistant for AIQuiz, a certification exam prep platform.
 
 YOUR ONLY PURPOSE: Help users create new certifications with their topics and question percentage distributions.
@@ -38,7 +42,7 @@ export class AiChatService {
     this.openai = new OpenAI();
   }
 
-  validate(body: unknown): { role: string; content: string }[] {
+  validate(body: unknown): { role: 'user' | 'assistant'; content: string }[] {
     if (!body || typeof body !== 'object') {
       throw Object.assign(new Error('Invalid request body'), { status: 400 });
     }
@@ -49,20 +53,32 @@ export class AiChatService {
       throw Object.assign(new Error('Messages array is required'), { status: 400 });
     }
 
+    if (messages.length > MAX_MESSAGES) {
+      throw Object.assign(new Error(`Maximum ${MAX_MESSAGES} messages allowed`), { status: 400 });
+    }
+
     for (const msg of messages) {
       if (!msg.role || !msg.content || typeof msg.content !== 'string') {
         throw Object.assign(new Error('Each message must have role and content'), { status: 400 });
       }
+
+      if (!ALLOWED_ROLES.has(msg.role as string)) {
+        throw Object.assign(new Error('Role must be either "user" or "assistant"'), { status: 400 });
+      }
+
+      if (msg.content.length > MAX_CONTENT_LENGTH) {
+        throw Object.assign(new Error(`Message content cannot exceed ${MAX_CONTENT_LENGTH} characters`), { status: 400 });
+      }
     }
 
-    return messages as { role: string; content: string }[];
+    return messages as { role: 'user' | 'assistant'; content: string }[];
   }
 
-  async streamChat(messages: { role: string; content: string }[]): Promise<ReadableStream> {
+  async streamChat(messages: { role: 'user' | 'assistant'; content: string }[]): Promise<ReadableStream> {
     const openaiMessages: OpenAI.ChatCompletionMessageParam[] = [
       { role: 'developer', content: SYSTEM_PROMPT },
       ...messages.map((m) => ({
-        role: m.role as 'user' | 'assistant',
+        role: m.role,
         content: m.content,
       })),
     ];
