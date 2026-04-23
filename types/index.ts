@@ -134,3 +134,12 @@ export interface AuthUser {
   email: string;
   image: string | null;
 }
+
+export type ChatMessageRole = 'user' | 'assistant';
+
+export interface ChatMessage {
+  readonly role: ChatMessageRole;
+  readonly content: string;
+  readonly certificationData?: Certification;
+  readonly isError?: boolean;
+}
