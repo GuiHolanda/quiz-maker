@@ -35,6 +35,7 @@ export const Navbar = () => {
       aria-label={t('aria.search')}
       classNames={{ ...inputProperties.input.classNames, input: 'text-sm' }}
       variant="bordered"
+      endContent={
         <Kbd className="hidden lg:inline-block" keys={['command']}>
           K
         </Kbd>
