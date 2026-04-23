@@ -4,6 +4,7 @@
 export const inputLabelClass = 'text-xs font-normal text-default-400';
 
 export const borderedInputClassNames = {
+  base: 'mt-0',
   label: inputLabelClass,
   inputWrapper: [
     'border-white/[0.14]',
