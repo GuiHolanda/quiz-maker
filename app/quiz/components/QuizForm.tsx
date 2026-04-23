@@ -62,14 +62,13 @@ export function QuizForm({ onGenerated }: Readonly<QuizFormProps>) {
         <Form onSubmit={handleSubmit} validationErrors={error}>
           <Divider />
           <div className="w-full flex flex-col gap-6 pt-4">
-            <div className="flex gap-4 items-center">
+            <div className="flex gap-4 items-center pt-4">
               <CertificationManager isMultiple noTopics className="flex w-3/4 gap-4 items-center" />
               <div className="no-number-spinners w-1/4">
                 <Input
                   type="number"
                   name="num_questions"
                   label={t('common.numberOfQuestions')}
-                  placeholder={t('quiz.placeholder')}
                   min={1}
                   {...inputProperties.input}
                 />
