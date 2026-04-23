@@ -1,6 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { saveCertification } from '@/features/connectors';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { ChatMessage, Certification } from '@/types';
 
 interface UseAiChatReturn {
@@ -14,13 +15,40 @@ interface UseAiChatReturn {
   readonly saveCertificationFromChat: (certification: Certification) => Promise<'success' | 'duplicate' | 'error'>;
 }
 
+function parseCertificationData(text: string): Certification | null {
+  const match = /```certification-data\s*\n([\s\S]*?)```/.exec(text);
+  if (!match) return null;
+  try {
+    const parsed = JSON.parse(match[1]);
+    if (!parsed.label || !parsed.key || !Array.isArray(parsed.topics)) return null;
+    if (!parsed.topics.every((t: unknown) =>
+      typeof (t as Record<string, unknown>).name === 'string' &&
+      typeof (t as Record<string, unknown>).minQuestions === 'number' &&
+      typeof (t as Record<string, unknown>).maxQuestions === 'number'
+    )) return null;
+    return parsed as Certification;
+  } catch {
+    return null;
+  }
+}
+
 export function useAiChat(): UseAiChatReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [currentStreamContent, setCurrentStreamContent] = useState('');
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const { t } = useTranslation();
 
-  const sendMessage = async () => {
+  const reset = useCallback(() => {
+    abortControllerRef.current?.abort();
+    setMessages([]);
+    setInput('');
+    setIsStreaming(false);
+    setCurrentStreamContent('');
+  }, []);
+
+  const sendMessage = useCallback(async () => {
     if (input.trim() === '' || isStreaming) return;
 
     const userMsg: ChatMessage = { role: 'user', content: input.trim() };
@@ -31,11 +59,14 @@ export function useAiChat(): UseAiChatReturn {
     setIsStreaming(true);
     setCurrentStreamContent('');
 
+    abortControllerRef.current = new AbortController();
+
     try {
       const response = await fetch('/api/ai-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: messagesWithUser }),
+        signal: abortControllerRef.current.signal,
       });
 
       if (!response.ok) {
@@ -67,41 +98,23 @@ export function useAiChat(): UseAiChatReturn {
         }
       }
 
-      let assistantMsg: ChatMessage;
-      try {
-        const certMatch = accumulated.match(/```certification-data\s*\n([\s\S]*?)```/);
-        if (certMatch) {
-          const parsedCert = JSON.parse(certMatch[1]);
-          if (parsedCert.label && parsedCert.key && parsedCert.topics) {
-            assistantMsg = { role: 'assistant', content: accumulated, certificationData: parsedCert };
-          } else {
-            assistantMsg = { role: 'assistant', content: accumulated };
-          }
-        } else {
-          assistantMsg = { role: 'assistant', content: accumulated };
-        }
-      } catch {
-        assistantMsg = { role: 'assistant', content: accumulated };
-      }
+      const certificationData = parseCertificationData(accumulated);
+      const assistantMsg: ChatMessage = certificationData
+        ? { role: 'assistant', content: accumulated, certificationData }
+        : { role: 'assistant', content: accumulated };
 
       setMessages(prev => [...prev, assistantMsg]);
-    } catch {
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
       setMessages(prev => [
         ...prev,
-        { role: 'assistant', content: 'Something went wrong. Please try again.', isError: true },
+        { role: 'assistant', content: t('chat.errorGeneric'), isError: true },
       ]);
     } finally {
       setIsStreaming(false);
       setCurrentStreamContent('');
     }
-  };
-
-  const reset = () => {
-    setMessages([]);
-    setInput('');
-    setIsStreaming(false);
-    setCurrentStreamContent('');
-  };
+  }, [input, isStreaming, messages, t]);
 
   const saveCertificationFromChat = async (certification: Certification): Promise<'success' | 'duplicate' | 'error'> => {
     try {
