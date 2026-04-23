@@ -44,6 +44,15 @@ export function CertificationsProvider({ children }: Readonly<{ children: React.
     }
   }, [state.selectedCertification, state.selectedTopics]);
 
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const cert = (e as CustomEvent<Certification>).detail;
+      if (cert) dispatch({ type: 'addCertification', payload: { certification: cert } });
+    };
+    window.addEventListener('certification-created', handler);
+    return () => window.removeEventListener('certification-created', handler);
+  }, []);
+
   const setCertifications = useCallback(
     (certs: Certification[]) => dispatch({ type: 'setCertifications', payload: { certifications: certs } }),
     []

@@ -8,6 +8,7 @@ import { siteConfig } from '@/config/site';
 import { fontSans } from '@/config/fonts';
 import { Navbar } from '@/sharedComponents/ui/navbar';
 import { Footer } from '@/sharedComponents/ui/footer';
+import { AiChatWrapper } from '@/sharedComponents/ui/AiChatWrapper';
 
 export const metadata: Metadata = {
   title: {
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Navbar />
             <main className="flex-grow">{children}</main>
             <Footer />
+            <AiChatWrapper />
           </div>
         </Providers>
       </body>
