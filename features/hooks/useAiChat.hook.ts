@@ -74,7 +74,8 @@ export function useAiChat(): UseAiChatReturn {
         throw new Error(err.message || `HTTP ${response.status}`);
       }
 
-      const reader = response.body!.getReader();
+      if (!response.body) throw new Error('No response body');
+      const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let accumulated = '';
       let streamDone = false;
