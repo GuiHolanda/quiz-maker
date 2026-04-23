@@ -9,7 +9,7 @@ import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Divider } from '@heroui/divider';
 import { CertificationManager } from '../../../sharedComponents/CertificationManager';
 import { SectionsTable } from '../../../sharedComponents/SectionsTable';
-import { NumberInput } from '@heroui/number-input';
+import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { borderedInputClassNames } from '@/config/constants/inputStyles';
@@ -64,16 +64,18 @@ export function QuizForm({ onGenerated }: Readonly<QuizFormProps>) {
           <div className="w-full flex flex-col gap-6 pt-4">
             <div className="flex gap-4 items-center">
               <CertificationManager isMultiple noTopics className="flex w-3/4 gap-4 items-center" />
-              <NumberInput
-                className="w-1/4"
-                name="num_questions"
-                label={t('common.numberOfQuestions')}
-                labelPlacement="outside"
-                placeholder={t('quiz.placeholder')}
-                minValue={1}
-                variant="bordered"
-                classNames={borderedInputClassNames}
-              />
+              <div className="no-number-spinners w-1/4">
+                <Input
+                  type="number"
+                  name="num_questions"
+                  label={t('common.numberOfQuestions')}
+                  labelPlacement="outside"
+                  placeholder={t('quiz.placeholder')}
+                  min={1}
+                  variant="bordered"
+                  classNames={borderedInputClassNames}
+                />
+              </div>
             </div>
             <SectionsTable selectedCertification={selectedCertification} />
           </div>

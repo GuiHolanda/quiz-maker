@@ -7,7 +7,7 @@ import { Form } from '@heroui/form';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
 import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Divider } from '@heroui/divider';
-import { NumberInput } from '@heroui/number-input';
+import { Input } from '@heroui/input';
 import { CertificationManager } from '@/sharedComponents/CertificationManager';
 import { BusyDialog } from '@/sharedComponents/ui/BusyDialog';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -73,17 +73,19 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
               <CertificationManager className="flex w-full gap-4 items-center" />
             </div>
             <div className="flex w-full items-baseline gap-4">
-              <NumberInput
-                id="num_questions"
-                name="num_questions"
-                className="w-1/4"
-                label={t('common.numberOfQuestions')}
-                labelPlacement="outside"
-                maxValue={20}
-                minValue={1}
-                variant="bordered"
-                classNames={borderedInputClassNames}
-              />
+              <div className="no-number-spinners w-1/4">
+                <Input
+                  id="num_questions"
+                  name="num_questions"
+                  type="number"
+                  label={t('common.numberOfQuestions')}
+                  labelPlacement="outside"
+                  max={20}
+                  min={1}
+                  variant="bordered"
+                  classNames={borderedInputClassNames}
+                />
+              </div>
               <Button
                 className="ml-auto mt-auto bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
                 type="submit"
