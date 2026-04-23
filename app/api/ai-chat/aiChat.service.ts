@@ -82,19 +82,11 @@ export class AiChatService {
   }
 
   async streamChat(messages: { role: 'user' | 'assistant'; content: string }[]): Promise<ReadableStream> {
-    const openaiMessages: OpenAI.ChatCompletionMessageParam[] = [
-      { role: 'system', content: SYSTEM_PROMPT },
-      ...messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      })),
-    ];
-
-    const stream = await this.openai.chat.completions.create({
+    const stream = await this.openai.responses.create({
       model: process.env.AI_CHAT_MODEL || 'gpt-4o-mini',
-      messages: openaiMessages,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tools: [{ type: 'web_search_preview' } as any],
+      instructions: SYSTEM_PROMPT,
+      input: messages,
+      tools: [{ type: 'web_search_preview' }],
       stream: true,
     });
 
@@ -103,19 +95,9 @@ export class AiChatService {
     return new ReadableStream({
       async start(controller) {
         try {
-          for await (const chunk of stream) {
-            const delta = chunk.choices[0]?.delta;
-            if (!delta) continue;
-
-            if (typeof delta.content === 'string' && delta.content) {
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: delta.content })}\n\n`));
-            } else if (Array.isArray(delta.content)) {
-              for (const part of delta.content) {
-                const textPart = part as { type: string; text?: string };
-                if (textPart.type === 'text' && textPart.text) {
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: textPart.text })}\n\n`));
-                }
-              }
+          for await (const event of stream) {
+            if (event.type === 'response.output_text.delta' && event.delta) {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: event.delta })}\n\n`));
             }
           }
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`));
