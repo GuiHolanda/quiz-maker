@@ -149,22 +149,27 @@ Corpo secundário  → text-xs text-default-400
 
 ## Padrão de inputs (todos os componentes)
 
-Todos os inputs usam `variant="bordered"` com override de foco primário via constantes compartilhadas em `config/constants/inputStyles.ts`.
+Todos os inputs usam `variant="bordered"` via `inputProperties` de `config/constants/inputStyles.ts`. Sempre use spread — nunca repita `variant` e `classNames` manualmente.
 
 ```tsx
-import { borderedInputClassNames, borderedSelectClassNames } from '@/config/constants/inputStyles';
+import { inputProperties } from '@/config/constants/inputStyles';
 
-// Input, NumberInput
-<Input variant="bordered" classNames={borderedInputClassNames} />
+// Input / Input type="number"
+<Input {...inputProperties.input} />
 
 // Select
-<Select variant="bordered" classNames={borderedSelectClassNames} />
+<Select {...inputProperties.select} />
 
-// Autocomplete (classNames do autocomplete controla o popover; o input wrapper fica em inputProps)
-<Autocomplete variant="bordered" inputProps={{ classNames: borderedInputClassNames }} />
+// Autocomplete (inputProps aponta para o wrapper interno; classNames do topo controla o popover)
+<Autocomplete {...inputProperties.autocomplete} />
+
+// Navbar search (classNames extra via spread do objeto interno)
+<Input {...inputProperties.input} classNames={{ ...inputProperties.input.classNames, input: 'text-sm' }} />
 ```
 
-O `bordered` usa fundo transparente + borda `border-default-200`, com foco mudando para `border-primary` (Indigo). Funciona em qualquer superfície (dark e light).
+`labelPlacement="outside"` **não** está incluso em `inputProperties` — defina explicitamente nos componentes que precisam.
+
+O `bordered` usa fundo transparente + borda `white/14`, com foco mudando para `white/70`. Funciona em qualquer superfície (dark e light).
 
 ---
 
