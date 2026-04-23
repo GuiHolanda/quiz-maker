@@ -79,6 +79,7 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
                   name="num_questions"
                   type="number"
                   label={t('common.numberOfQuestions')}
+                  placeholder={t('generate.numQuestionsPlaceholder')}
                   max={20}
                   min={1}
                   {...inputProperties.input}

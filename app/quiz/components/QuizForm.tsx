@@ -69,6 +69,7 @@ export function QuizForm({ onGenerated }: Readonly<QuizFormProps>) {
                   type="number"
                   name="num_questions"
                   label={t('common.numberOfQuestions')}
+                  placeholder={t('quiz.placeholder')}
                   min={1}
                   {...inputProperties.input}
                 />

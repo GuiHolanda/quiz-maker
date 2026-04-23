@@ -22,6 +22,7 @@ export function CertificationHeader({ title, code, onTitleChange, onCodeChange }
         className="w-2/3"
         value={title}
         onChange={(e) => onTitleChange(e.target.value)}
+        placeholder={t('certification.certificationTitlePlaceholder')}
         {...inputProperties.input}
       />
       <Input
@@ -30,6 +31,7 @@ export function CertificationHeader({ title, code, onTitleChange, onCodeChange }
         className="w-1/3"
         value={code}
         onChange={(e) => onCodeChange(e.target.value)}
+        placeholder={t('certification.certificationCodePlaceholder')}
         {...inputProperties.input}
       />
     </div>

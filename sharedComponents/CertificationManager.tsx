@@ -47,6 +47,7 @@ export const CertificationManager = ({ isMultiple, noTopics, ...props }: Certifi
         name="certificationTitle"
         onSelectionChange={onCertificationChange}
         selectedKey={selectedCertification?.key ?? ''}
+        placeholder={t('certification.selectCertificationPlaceholder')}
         {...inputProperties.autocomplete}
       >
         {certifications.map((certification) => (

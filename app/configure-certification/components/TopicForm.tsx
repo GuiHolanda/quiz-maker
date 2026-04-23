@@ -53,6 +53,7 @@ export function TopicForm({ topicName, onTopicNameChange, onSubmit }: Readonly<T
           value={topicName}
           onChange={(e) => onTopicNameChange(e.target.value)}
           className="max-w-md"
+          placeholder={t('certification.topicNamePlaceholder')}
           {...inputProperties.input}
         />
         <Slider
