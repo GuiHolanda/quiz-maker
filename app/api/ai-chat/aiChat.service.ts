@@ -76,7 +76,7 @@ export class AiChatService {
 
   async streamChat(messages: { role: 'user' | 'assistant'; content: string }[]): Promise<ReadableStream> {
     const openaiMessages: OpenAI.ChatCompletionMessageParam[] = [
-      { role: 'developer', content: SYSTEM_PROMPT },
+      { role: 'system', content: SYSTEM_PROMPT },
       ...messages.map((m) => ({
         role: m.role,
         content: m.content,
