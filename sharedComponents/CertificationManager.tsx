@@ -7,7 +7,7 @@ import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
 import { useDisclosure } from '@heroui/modal';
 import { useState } from 'react';
 import { Certification } from '@/types';
-import { borderedInputClassNames, borderedSelectClassNames } from '@/config/constants/inputStyles';
+import { inputProperties } from '@/config/constants/inputStyles';
 
 interface CertificationManagerProps extends React.HTMLAttributes<HTMLDivElement> {
   isMultiple?: boolean;
@@ -47,8 +47,7 @@ export const CertificationManager = ({ isMultiple, noTopics, ...props }: Certifi
         name="certificationTitle"
         onSelectionChange={onCertificationChange}
         selectedKey={selectedCertification?.key ?? ''}
-        variant="bordered"
-        inputProps={{ classNames: borderedInputClassNames }}
+        {...inputProperties.autocomplete}
       >
         {certifications.map((certification) => (
           <AutocompleteItem key={certification.key} textValue={certification.label}>
@@ -64,8 +63,7 @@ export const CertificationManager = ({ isMultiple, noTopics, ...props }: Certifi
           onChange={onTopicsChange}
           selectionMode={isMultiple ? 'multiple' : 'single'}
           selectedKeys={selectedTopics}
-          variant="bordered"
-          classNames={borderedSelectClassNames}
+          {...inputProperties.select}
         >
           {selectedCertification
             ? selectedCertification.topics.map((topic) => <SelectItem key={topic.name}>{topic.name}</SelectItem>)

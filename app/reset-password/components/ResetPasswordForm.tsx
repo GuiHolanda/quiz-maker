@@ -8,7 +8,7 @@ import { Link } from '@heroui/link';
 import NextLink from 'next/link';
 import api from '@/lib/bff.api';
 import { RESET_PASSWORD_URL } from '@/config/constants';
-import { borderedInputClassNames } from '@/config/constants/inputStyles';
+import { inputProperties } from '@/config/constants/inputStyles';
 
 export function ResetPasswordForm() {
   const router = useRouter();
@@ -94,8 +94,7 @@ export function ResetPasswordForm() {
           isRequired
           autoComplete="new-password"
           description="At least 8 characters"
-          variant="bordered"
-          classNames={borderedInputClassNames}
+          {...inputProperties.input}
         />
         <Input
           label="Confirm password"
@@ -104,8 +103,7 @@ export function ResetPasswordForm() {
           onValueChange={setConfirm}
           isRequired
           autoComplete="new-password"
-          variant="bordered"
-          classNames={borderedInputClassNames}
+          {...inputProperties.input}
         />
 
         {error && (

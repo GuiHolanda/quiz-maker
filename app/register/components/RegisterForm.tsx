@@ -9,7 +9,7 @@ import { Link } from '@heroui/link';
 import NextLink from 'next/link';
 import api from '@/lib/bff.api';
 import { REGISTER_URL } from '@/config/constants';
-import { borderedInputClassNames } from '@/config/constants/inputStyles';
+import { inputProperties } from '@/config/constants/inputStyles';
 
 export function RegisterForm() {
   const router = useRouter();
@@ -65,8 +65,7 @@ export function RegisterForm() {
           value={name}
           onValueChange={setName}
           autoComplete="name"
-          variant="bordered"
-          classNames={borderedInputClassNames}
+          {...inputProperties.input}
         />
         <Input
           label="Email address"
@@ -75,8 +74,7 @@ export function RegisterForm() {
           onValueChange={setEmail}
           isRequired
           autoComplete="email"
-          variant="bordered"
-          classNames={borderedInputClassNames}
+          {...inputProperties.input}
         />
         <Input
           label="Password"
@@ -86,8 +84,7 @@ export function RegisterForm() {
           isRequired
           autoComplete="new-password"
           description="At least 8 characters"
-          variant="bordered"
-          classNames={borderedInputClassNames}
+          {...inputProperties.input}
         />
 
         {error && (

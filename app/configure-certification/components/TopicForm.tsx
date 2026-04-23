@@ -7,7 +7,7 @@ import { Input } from '@heroui/input';
 import { Slider } from '@heroui/slider';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { borderedInputClassNames } from '@/config/constants/inputStyles';
+import { inputProperties } from '@/config/constants/inputStyles';
 
 interface TopicFormProps {
   topicName: string;
@@ -53,8 +53,7 @@ export function TopicForm({ topicName, onTopicNameChange, onSubmit }: Readonly<T
           value={topicName}
           onChange={(e) => onTopicNameChange(e.target.value)}
           className="max-w-md"
-          variant="bordered"
-          classNames={borderedInputClassNames}
+          {...inputProperties.input}
         />
         <Slider
           className="w-48"

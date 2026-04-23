@@ -11,7 +11,7 @@ import { Input } from '@heroui/input';
 import { CertificationManager } from '@/sharedComponents/CertificationManager';
 import { BusyDialog } from '@/sharedComponents/ui/BusyDialog';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { borderedInputClassNames } from '@/config/constants/inputStyles';
+import { inputProperties } from '@/config/constants/inputStyles';
 
 interface QuestionareFormProps {
   onGenerated: (questions: AIQuestion[]) => void;
@@ -82,8 +82,8 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
                   labelPlacement="outside"
                   max={20}
                   min={1}
-                  variant="bordered"
-                  classNames={borderedInputClassNames}
+                  variant={inputProperties.input.variant}
+                  classNames={inputProperties.input.classNames}
                 />
               </div>
               <Button

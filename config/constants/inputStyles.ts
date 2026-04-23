@@ -3,7 +3,7 @@
 
 export const inputLabelClass = 'text-xs font-normal text-default-400';
 
-export const borderedInputClassNames = {
+const borderedInputClassNames = {
   base: '!mt-0',
   label: inputLabelClass,
   inputWrapper: [
@@ -13,11 +13,26 @@ export const borderedInputClassNames = {
   ].join(' '),
 };
 
-export const borderedSelectClassNames = {
+const borderedSelectClassNames = {
   label: inputLabelClass,
   trigger: [
     'border-white/[0.14]',
     'data-[focus=true]:border-white/70',
     'data-[open=true]:border-white/70',
   ].join(' '),
+};
+
+export const inputProperties = {
+  input: {
+    variant: 'bordered' as const,
+    classNames: borderedInputClassNames,
+  },
+  select: {
+    variant: 'bordered' as const,
+    classNames: borderedSelectClassNames,
+  },
+  autocomplete: {
+    variant: 'bordered' as const,
+    inputProps: { classNames: borderedInputClassNames },
+  },
 };

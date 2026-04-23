@@ -12,7 +12,7 @@ import { SectionsTable } from '../../../sharedComponents/SectionsTable';
 import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { borderedInputClassNames } from '@/config/constants/inputStyles';
+import { inputProperties } from '@/config/constants/inputStyles';
 
 interface QuizFormProps {
   onGenerated: (questions: StoredQuestion[]) => void;
@@ -72,8 +72,7 @@ export function QuizForm({ onGenerated }: Readonly<QuizFormProps>) {
                   labelPlacement="outside"
                   placeholder={t('quiz.placeholder')}
                   min={1}
-                  variant="bordered"
-                  classNames={borderedInputClassNames}
+                  {...inputProperties.input}
                 />
               </div>
             </div>

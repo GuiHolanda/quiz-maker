@@ -7,7 +7,7 @@ import { Link } from '@heroui/link';
 import NextLink from 'next/link';
 import api from '@/lib/bff.api';
 import { FORGOT_PASSWORD_URL } from '@/config/constants';
-import { borderedInputClassNames } from '@/config/constants/inputStyles';
+import { inputProperties } from '@/config/constants/inputStyles';
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState('');
@@ -87,8 +87,7 @@ export function ForgotPasswordForm() {
           onValueChange={setEmail}
           isRequired
           autoComplete="email"
-          variant="bordered"
-          classNames={borderedInputClassNames}
+          {...inputProperties.input}
         />
         <Button
           type="submit"
