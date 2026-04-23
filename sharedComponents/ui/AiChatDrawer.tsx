@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter } from '@heroui/drawer';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
@@ -24,16 +24,18 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [saveState, setSaveState] = useState<{
+  type SaveState = {
     isSaving: boolean;
     result?: 'success' | 'error';
     errorMessage?: string;
-  }>({ isSaving: false });
+  };
+
+  const [saveStates, setSaveStates] = useState<Record<number, SaveState>>({});
 
   useEffect(() => {
     if (isOpen) {
       reset();
-      setSaveState({ isSaving: false });
+      setSaveStates({});
     }
   }, [isOpen, reset]);
 
@@ -41,17 +43,17 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, currentStreamContent]);
 
-  const handleConfirm = async (certification: Certification) => {
-    setSaveState({ isSaving: true });
+  const handleConfirm = useCallback(async (index: number, certification: Certification) => {
+    setSaveStates(prev => ({ ...prev, [index]: { isSaving: true } }));
     const result = await saveCertificationFromChat(certification);
     if (result === 'success') {
-      setSaveState({ isSaving: false, result: 'success' });
+      setSaveStates(prev => ({ ...prev, [index]: { isSaving: false, result: 'success' } }));
     } else if (result === 'duplicate') {
-      setSaveState({ isSaving: false, result: 'error', errorMessage: t('chat.errorDuplicate', { key: certification.key }) });
+      setSaveStates(prev => ({ ...prev, [index]: { isSaving: false, result: 'error', errorMessage: t('chat.errorDuplicate', { key: certification.key }) } }));
     } else {
-      setSaveState({ isSaving: false, result: 'error', errorMessage: t('chat.errorGeneric') });
+      setSaveStates(prev => ({ ...prev, [index]: { isSaving: false, result: 'error', errorMessage: t('chat.errorGeneric') } }));
     }
-  };
+  }, [saveCertificationFromChat, t]);
 
   const handleAdjust = () => {
     inputRef.current?.focus();
@@ -88,11 +90,11 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
                   <AiChatMessage role={message.role} content={message.content} />
                   <AiChatPreviewCard
                     certification={message.certificationData}
-                    onConfirm={() => handleConfirm(message.certificationData!)}
+                    onConfirm={() => handleConfirm(index, message.certificationData!)}
                     onAdjust={handleAdjust}
-                    isSaving={saveState.isSaving}
-                    saveResult={saveState.result}
-                    errorMessage={saveState.errorMessage}
+                    isSaving={saveStates[index]?.isSaving}
+                    saveResult={saveStates[index]?.result}
+                    errorMessage={saveStates[index]?.errorMessage}
                   />
                 </>
               ) : (
