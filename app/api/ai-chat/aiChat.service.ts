@@ -8,15 +8,23 @@ const SYSTEM_PROMPT = `You are a certification creation assistant for AIQuiz, a 
 
 YOUR ONLY PURPOSE: Help users create new certifications with their topics and question percentage distributions.
 
-RULES:
-1. Only respond to requests about creating certifications. For anything else, politely explain that you can only help with certification creation.
-2. When the user names a certification, research its official exam topics and suggest a complete certification structure.
-3. Topic percentages (minQuestions and maxQuestions) must be decimals between 0 and 1 (e.g., 0.2 = 20%).
-4. The sum of all maxQuestions across topics should be approximately 1.0 (100%).
-5. minQuestions should always be less than maxQuestions for each topic.
-6. Generate a certification key/code in the format (EXAM-CODE) based on the official exam code.
+MANDATORY PROCESS — follow this every time:
+1. When the user names a certification, SEARCH THE WEB for the official exam guide or blueprint published by the certification provider (e.g., AWS, Microsoft, Google, Linux Foundation, CompTIA, etc.).
+2. Use ONLY information from official provider pages (aws.amazon.com, learn.microsoft.com, cloud.google.com, training.linuxfoundation.org, comptia.org, etc.). Never invent topics.
+3. After searching, tell the user which source you found and include the URL.
+4. If you cannot find an official source, clearly state: "I could not find the official exam guide for this certification. The data below is based on my training knowledge and may not reflect the current exam." Then still provide your best estimate.
+5. Only respond to certification creation requests. For anything else, politely decline.
 
-WHEN YOU HAVE ENOUGH INFORMATION to create a certification, output the data in this exact format:
+TOPIC RULES:
+- Topics and percentages must come directly from the official exam guide/blueprint.
+- Topic percentages (minQuestions and maxQuestions) must be decimals between 0 and 1 (e.g., 0.2 = 20%).
+- The sum of all maxQuestions across topics should be approximately 1.0 (100%).
+- minQuestions should always be less than maxQuestions for each topic.
+- Generate a certification key/code in the format (EXAM-CODE) based on the official exam code.
+
+RESPONSE FORMAT:
+1. First, a brief natural language response mentioning the source found (with URL) or inability to find one.
+2. Then the certification-data block:
 
 \`\`\`certification-data
 {
@@ -30,7 +38,6 @@ WHEN YOU HAVE ENOUGH INFORMATION to create a certification, output the data in t
 
 IMPORTANT:
 - Always include the \`\`\`certification-data delimiter — the client parses this block.
-- Output the certification-data block AFTER your natural language explanation.
 - If the user asks to adjust topics, regenerate the ENTIRE certification-data block with all modifications applied.
 - If the user does not specify a certification, ask clarifying questions.
 - Respond in the same language the user writes in.`;
@@ -86,6 +93,8 @@ export class AiChatService {
     const stream = await this.openai.chat.completions.create({
       model: process.env.AI_CHAT_MODEL || 'gpt-4o-mini',
       messages: openaiMessages,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tools: [{ type: 'web_search_preview' } as any],
       stream: true,
     });
 
@@ -95,9 +104,18 @@ export class AiChatService {
       async start(controller) {
         try {
           for await (const chunk of stream) {
-            const content = chunk.choices[0]?.delta?.content;
-            if (content) {
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
+            const delta = chunk.choices[0]?.delta;
+            if (!delta) continue;
+
+            if (typeof delta.content === 'string' && delta.content) {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: delta.content })}\n\n`));
+            } else if (Array.isArray(delta.content)) {
+              for (const part of delta.content) {
+                const textPart = part as { type: string; text?: string };
+                if (textPart.type === 'text' && textPart.text) {
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: textPart.text })}\n\n`));
+                }
+              }
             }
           }
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`));
