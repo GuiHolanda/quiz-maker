@@ -3,6 +3,8 @@
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { Spinner } from '@heroui/spinner';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCheck } from '@fortawesome/free-solid-svg-icons';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { Certification } from '@/types';
 
@@ -34,7 +36,7 @@ export function AiChatPreviewCard({
         <span className="text-xs uppercase tracking-[0.2em] text-primary font-semibold">
           {t('chat.certificationPreview')}
         </span>
-        <Chip variant="flat" size="sm">
+        <Chip variant="flat" size="sm" color="primary">
           {certification.key}
         </Chip>
       </div>
@@ -55,8 +57,8 @@ export function AiChatPreviewCard({
           return (
             <div key={topic.name} className="grid grid-cols-[1fr_auto_auto] gap-x-4 py-0.5">
               <span className="text-sm text-default-500">{topic.name}</span>
-              <span className="text-sm text-default-500 text-right">{minPct}</span>
-              <span className="text-sm text-default-500 text-right">{maxPct}</span>
+              <span className="text-sm text-default-500 text-right">{minPct}%</span>
+              <span className="text-sm text-default-500 text-right">{maxPct}%</span>
             </div>
           );
         })}
@@ -66,7 +68,7 @@ export function AiChatPreviewCard({
       <div className="mt-4">
         {saveResult === 'success' ? (
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-success/10 text-success border border-success/20 text-sm font-semibold">
-            ✓ {t('chat.created')}
+            <FontAwesomeIcon icon={faCheck} className="w-3 h-3" /> {t('chat.created')}
           </span>
         ) : (
           <>
