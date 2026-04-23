@@ -167,8 +167,6 @@ import { inputProperties } from '@/config/constants/inputStyles';
 <Input {...inputProperties.input} classNames={{ ...inputProperties.input.classNames, input: 'text-sm' }} />
 ```
 
-`labelPlacement="outside"` **não** está incluso em `inputProperties` — defina explicitamente nos componentes que precisam.
-
 O `bordered` usa fundo transparente + borda `white/14`, com foco mudando para `white/70`. Funciona em qualquer superfície (dark e light).
 
 ---

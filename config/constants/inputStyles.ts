@@ -24,14 +24,17 @@ const borderedSelectClassNames = {
 
 export const inputProperties = {
   input: {
+    labelPlacement: 'outside' as const,
     variant: 'bordered' as const,
     classNames: borderedInputClassNames,
   },
   select: {
+    labelPlacement: 'outside' as const,
     variant: 'bordered' as const,
     classNames: borderedSelectClassNames,
   },
   autocomplete: {
+    labelPlacement: 'outside' as const,
     variant: 'bordered' as const,
     inputProps: { classNames: borderedInputClassNames },
   },

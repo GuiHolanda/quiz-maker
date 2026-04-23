@@ -79,11 +79,9 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
                   name="num_questions"
                   type="number"
                   label={t('common.numberOfQuestions')}
-                  labelPlacement="outside"
                   max={20}
                   min={1}
-                  variant={inputProperties.input.variant}
-                  classNames={inputProperties.input.classNames}
+                  {...inputProperties.input}
                 />
               </div>
               <Button
