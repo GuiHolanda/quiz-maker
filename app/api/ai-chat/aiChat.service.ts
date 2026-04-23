@@ -8,28 +8,26 @@ const SYSTEM_PROMPT = `You are a certification creation assistant for AIQuiz, a 
 
 YOUR ONLY PURPOSE: Help users create new certifications with their topics and question percentage distributions.
 
-LANGUAGE RULE: You MUST respond entirely in the same language the user writes in. Never mix languages. If the user writes in Portuguese, respond 100% in Portuguese. If in English, respond 100% in English.
-
 MANDATORY TWO-STEP PROCESS — follow this every time:
 
 STEP 1 — IDENTIFY THE CERTIFICATION (ALWAYS DO THIS FIRST):
 When the user names or describes a certification:
 1. Search the web for real certifications matching their description.
-2. If MULTIPLE certifications match, present a numbered list:
-   "1. **[Official Name]** — [Certifying Body] (exam code: [CODE])
-   2. **[Official Name]** — [Certifying Body] (exam code: [CODE])
+2. If MULTIPLE certifications match, present ONLY a numbered list:
+   "1. **[Official Name]** — [Certifying Body]
+   2. **[Official Name]** — [Certifying Body]
    Which one?"
-3. If exactly ONE certification matches, present it for confirmation:
-   "**[Official Name]** by [Certifying Body] (exam code: [CODE]). Proceed?"
-4. STOP HERE. Do NOT generate the certification-data block. Do NOT search for topics yet. Your response in Step 1 must ONLY contain the certification name, certifying body, and exam code, then ask for confirmation. Nothing else.
+3. If exactly ONE certification matches, ask for confirmation in ONE sentence:
+   "**[Official Name]** by [Certifying Body]. Proceed?"
+4. STOP. Do NOT include descriptions, explanations, sources, or any extra text. Only the name, certifying body, and the confirmation question.
 5. Wait for the user to explicitly confirm before moving to Step 2.
 
 STEP 2 — RETRIEVE TOPICS AND GENERATE DATA (ONLY after user confirms Step 1):
 This step can ONLY happen after the user has responded to Step 1 with a confirmation.
 1. Search the web specifically for the official exam guide or blueprint from the certification provider's site.
 2. Use ONLY information from official provider pages. Never invent topics.
-3. Keep your response SHORT: 1-2 sentences about the certification and the certifying institution, then immediately the certification-data block.
-4. Place source links ONLY at the very end, after the certification-data block. Maximum 2 links. No repeated links to the same domain.
+3. Keep your response SHORT: 1-2 sentences of context about the certification (what it validates) and the certifying institution, then immediately the certification-data block.
+4. Place source links ONLY at the very end, after the certification-data block. Maximum 2 links, no duplicates.
 5. If you cannot find an official source, say so in one sentence.
 
 BREVITY RULES:
@@ -72,12 +70,12 @@ export class AiChatService {
     this.openai = new OpenAI();
   }
 
-  validate(body: unknown): { role: 'user' | 'assistant'; content: string }[] {
+  validate(body: unknown): { messages: { role: 'user' | 'assistant'; content: string }[]; language: string } {
     if (!body || typeof body !== 'object') {
       throw Object.assign(new Error('Invalid request body'), { status: 400 });
     }
 
-    const { messages } = body as Record<string, unknown>;
+    const { messages, language } = body as Record<string, unknown>;
 
     if (!Array.isArray(messages) || messages.length === 0) {
       throw Object.assign(new Error('Messages array is required'), { status: 400 });
@@ -101,13 +99,17 @@ export class AiChatService {
       }
     }
 
-    return messages as { role: 'user' | 'assistant'; content: string }[];
+    return { messages: messages as { role: 'user' | 'assistant'; content: string }[], language: language === 'pt' ? 'pt' : 'en' };
   }
 
-  async streamChat(messages: { role: 'user' | 'assistant'; content: string }[]): Promise<ReadableStream> {
+  async streamChat(messages: { role: 'user' | 'assistant'; content: string }[], language: string): Promise<ReadableStream> {
+    const languageInstruction = language === 'pt'
+      ? 'You MUST respond entirely in Brazilian Portuguese (pt-BR). Every word must be in Portuguese.'
+      : 'You MUST respond entirely in English.';
+
     const stream = await this.openai.responses.create({
       model: process.env.AI_CHAT_MODEL || 'gpt-4o-mini',
-      instructions: SYSTEM_PROMPT,
+      instructions: `${languageInstruction}\n\n${SYSTEM_PROMPT}`,
       input: messages,
       tools: [{ type: 'web_search_preview' }],
       stream: true,

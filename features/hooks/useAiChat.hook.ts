@@ -38,7 +38,7 @@ export function useAiChat(): UseAiChatReturn {
   const [isStreaming, setIsStreaming] = useState(false);
   const [currentStreamContent, setCurrentStreamContent] = useState('');
   const abortControllerRef = useRef<AbortController | null>(null);
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   const reset = useCallback(() => {
     abortControllerRef.current?.abort();
@@ -65,7 +65,7 @@ export function useAiChat(): UseAiChatReturn {
       const response = await fetch('/api/ai-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: messagesWithUser }),
+        body: JSON.stringify({ messages: messagesWithUser, language }),
         signal: abortControllerRef.current.signal,
       });
 
@@ -115,7 +115,7 @@ export function useAiChat(): UseAiChatReturn {
       setIsStreaming(false);
       setCurrentStreamContent('');
     }
-  }, [input, isStreaming, messages, t]);
+  }, [input, isStreaming, messages, t, language]);
 
   const saveCertificationFromChat = async (certification: Certification): Promise<'success' | 'duplicate' | 'error'> => {
     try {
