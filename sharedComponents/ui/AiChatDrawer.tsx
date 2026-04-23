@@ -59,6 +59,8 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
     inputRef.current?.focus();
   };
 
+  const isBuildingCertification = isStreaming && currentStreamContent.includes('```certification-data');
+
   return (
     <Drawer isOpen={isOpen} onClose={onClose} placement="right" size="sm" hideCloseButton>
       <DrawerContent>
@@ -104,7 +106,31 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
           ))}
 
           {isStreaming && (
-            <AiChatMessage role="assistant" content={currentStreamContent} isStreaming={true} />
+            <>
+              <AiChatMessage role="assistant" content={currentStreamContent} isStreaming={true} />
+              {isBuildingCertification && (
+                <div className="bg-content1 border-2 border-primary/30 rounded-xl p-4 mt-2 animate-pulse">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="h-3 bg-default-200 rounded w-36" />
+                    <div className="h-5 bg-default-200 rounded-full w-20" />
+                  </div>
+                  <div className="h-4 bg-default-200 rounded w-48 mb-4" />
+                  <div className="space-y-2 mb-4">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="flex gap-3">
+                        <div className="h-3 bg-default-200 rounded flex-1" />
+                        <div className="h-3 bg-default-200 rounded w-8" />
+                        <div className="h-3 bg-default-200 rounded w-8" />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="h-8 bg-default-200 rounded-lg flex-1" />
+                    <div className="h-8 bg-default-200 rounded-lg flex-1" />
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           <div ref={messagesEndRef} />

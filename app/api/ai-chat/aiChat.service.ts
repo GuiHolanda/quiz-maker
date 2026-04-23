@@ -11,7 +11,7 @@ YOUR ONLY PURPOSE: Help users create new certifications with their topics and qu
 MANDATORY PROCESS — follow this every time:
 1. When the user names a certification, SEARCH THE WEB for the official exam guide or blueprint published by the certification provider (e.g., AWS, Microsoft, Google, Linux Foundation, CompTIA, etc.).
 2. Use ONLY information from official provider pages (aws.amazon.com, learn.microsoft.com, cloud.google.com, training.linuxfoundation.org, comptia.org, etc.). Never invent topics.
-3. After searching, tell the user which source you found and include the URL.
+3. After searching, include the source as a markdown link in your response: [Official Exam Guide](https://url). Example: "Based on the [AWS SAA-C03 Exam Guide](https://aws.amazon.com/certification/...)..."
 4. If you cannot find an official source, clearly state: "I could not find the official exam guide for this certification. The data below is based on my training knowledge and may not reflect the current exam." Then still provide your best estimate.
 5. Only respond to certification creation requests. For anything else, politely decline.
 
@@ -95,11 +95,27 @@ export class AiChatService {
     return new ReadableStream({
       async start(controller) {
         try {
+          const citations: Array<{ url: string; title: string }> = [];
+
           for await (const event of stream) {
             if (event.type === 'response.output_text.delta' && event.delta) {
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: event.delta })}\n\n`));
             }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const anyEvent = event as any;
+            if (anyEvent.type === 'response.output_text.annotation.added') {
+              const ann = anyEvent.annotation;
+              if (ann?.type === 'url_citation' && ann.url && !citations.find((c) => c.url === ann.url)) {
+                citations.push({ url: ann.url, title: ann.title || ann.url });
+              }
+            }
           }
+
+          if (citations.length > 0) {
+            const sourcesText = '\n\n**Sources:**\n' + citations.map((c, i) => `${i + 1}. [${c.title}](${c.url})`).join('\n');
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: sourcesText })}\n\n`));
+          }
+
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`));
           controller.close();
         } catch {

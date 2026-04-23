@@ -10,6 +10,7 @@ interface AiChatMessageProps {
 }
 
 const CERTIFICATION_DATA_BLOCK_REGEX = /```certification-data\n([\s\S]*?)```/g;
+const PARTIAL_CERT_BLOCK_REGEX = /```certification-data[\s\S]*/;
 
 function stripCertificationDataBlocks(text: string): string {
   return text.replace(CERTIFICATION_DATA_BLOCK_REGEX, '').trim();
@@ -18,7 +19,9 @@ function stripCertificationDataBlocks(text: string): string {
 export function AiChatMessage({ role, content, isStreaming, isError }: AiChatMessageProps) {
   const isUser = role === 'user';
   const displayContent = role === 'assistant'
-    ? stripCertificationDataBlocks(content)
+    ? isStreaming
+      ? content.replace(PARTIAL_CERT_BLOCK_REGEX, '').trim()
+      : stripCertificationDataBlocks(content)
     : content;
   const showPulsingDots = !isUser && !displayContent && isStreaming;
 
