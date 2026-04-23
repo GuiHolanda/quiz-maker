@@ -15,6 +15,7 @@ import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
 import { link as linkStyles } from '@heroui/theme';
 import { Avatar } from '@heroui/avatar';
+import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSection } from '@heroui/dropdown';
 import NextLink from 'next/link';
 import clsx from 'clsx';
 import { useSession, signOut } from 'next-auth/react';
@@ -22,13 +23,61 @@ import { useSession, signOut } from 'next-auth/react';
 import { siteConfig } from '@/config/site';
 import { ThemeSwitch } from '@/sharedComponents/ui/theme-switch';
 import { LanguageSwitch } from '@/sharedComponents/ui/language-switch';
-import { GithubIcon, SearchIcon } from '@/sharedComponents/icons';
+import { SearchIcon } from '@/sharedComponents/icons';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 
 export const Navbar = () => {
   const { data: session, status } = useSession();
   const { t } = useTranslation();
+
+  const userDropdown = (
+    <Dropdown placement="bottom-end">
+      <DropdownTrigger>
+        <Avatar
+          as="button"
+          size="sm"
+          src={session?.user?.image ?? undefined}
+          name={session?.user?.name ?? session?.user?.email ?? undefined}
+          classNames={{ base: 'ring-2 ring-primary/40 ring-offset-1 ring-offset-transparent cursor-pointer' }}
+        />
+      </DropdownTrigger>
+      <DropdownMenu
+        aria-label={t('aria.userMenu')}
+        closeOnSelect={false}
+        className="min-w-[200px]"
+      >
+        <DropdownSection showDivider>
+          <DropdownItem key="user-info" isReadOnly className="opacity-100 cursor-default">
+            <p className="text-sm font-semibold text-foreground">{session?.user?.name}</p>
+            <p className="text-xs text-default-400">{session?.user?.email}</p>
+          </DropdownItem>
+        </DropdownSection>
+        <DropdownSection showDivider>
+          <DropdownItem key="theme" isReadOnly className="cursor-default">
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-sm text-default-600">{t('nav.theme')}</span>
+              <ThemeSwitch />
+            </div>
+          </DropdownItem>
+          <DropdownItem key="language" isReadOnly className="cursor-default">
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-sm text-default-600">{t('nav.language')}</span>
+              <LanguageSwitch />
+            </div>
+          </DropdownItem>
+        </DropdownSection>
+        <DropdownItem
+          key="sign-out"
+          color="danger"
+          className="text-danger"
+          onPress={() => signOut({ callbackUrl: '/login' })}
+        >
+          {t('common.signOut')}
+        </DropdownItem>
+      </DropdownMenu>
+    </Dropdown>
+  );
 
   const searchInput = (
     <Input
@@ -88,28 +137,8 @@ export const Navbar = () => {
 
       <NavbarContent className="hidden sm:flex basis-1/5 sm:basis-full" justify="end">
         <NavbarItem className="hidden sm:flex gap-2 items-center">
-          <Link isExternal aria-label={t('aria.github')} href={siteConfig.links.github}>
-            <GithubIcon className="text-default-400 hover:text-default-600 transition-colors" />
-          </Link>
-          <ThemeSwitch />
-          <LanguageSwitch />
           {status === 'authenticated' && session?.user ? (
-            <div className="flex items-center gap-2">
-              <Avatar
-                size="sm"
-                src={session.user.image ?? undefined}
-                name={session.user.name ?? session.user.email ?? undefined}
-                classNames={{ base: 'ring-2 ring-primary/40 ring-offset-1 ring-offset-transparent' }}
-              />
-              <Button
-                size="sm"
-                variant="flat"
-                onPress={() => signOut({ callbackUrl: '/login' })}
-                className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 rounded-lg transition-colors duration-200"
-              >
-                {t('common.signOut')}
-              </Button>
-            </div>
+            userDropdown
           ) : (
             <Button
               as={NextLink}
@@ -124,20 +153,8 @@ export const Navbar = () => {
       </NavbarContent>
 
       <NavbarContent className="sm:hidden basis-1 pl-4" justify="end">
-        <Link isExternal aria-label={t('aria.github')} href={siteConfig.links.github}>
-          <GithubIcon className="text-default-400" />
-        </Link>
-        <ThemeSwitch />
-        <LanguageSwitch />
-        {status === 'authenticated' ? (
-          <Button
-            size="sm"
-            variant="flat"
-            onPress={() => signOut({ callbackUrl: '/login' })}
-            className="bg-default-100 border border-default-200 text-default-600 rounded-lg"
-          >
-            {t('common.signOut')}
-          </Button>
+        {status === 'authenticated' && session?.user ? (
+          userDropdown
         ) : (
           <Button
             as={NextLink}
