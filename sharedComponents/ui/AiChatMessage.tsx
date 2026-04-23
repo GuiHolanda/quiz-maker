@@ -17,11 +17,13 @@ function stripCertificationDataBlocks(text: string): string {
 
 export function AiChatMessage({ role, content, isStreaming, isError }: AiChatMessageProps) {
   const isUser = role === 'user';
-  const displayContent = stripCertificationDataBlocks(content);
+  const displayContent = role === 'assistant'
+    ? stripCertificationDataBlocks(content)
+    : content;
   const showPulsingDots = !isUser && !displayContent && isStreaming;
 
   const bubbleClasses = [
-    'text-sm rounded-2xl px-4 py-3 max-w-[80%]',
+    'text-sm rounded-2xl px-4 py-3 max-w-[80%] whitespace-pre-wrap',
     isError
       ? 'bg-danger/10 border border-danger/20 text-foreground'
       : isUser
