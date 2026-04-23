@@ -1,67 +1,10 @@
 import OpenAI from 'openai';
+import { AI_CHAT_IDENTIFY_PROMPT } from '@/config/promptSchemas/aiChatIdentify';
+import { AI_CHAT_TOPICS_PROMPT } from '@/config/promptSchemas/aiChatTopics';
 
 const ALLOWED_ROLES = new Set(['user', 'assistant']);
 const MAX_MESSAGES = 50;
 const MAX_CONTENT_LENGTH = 10_000;
-
-const SYSTEM_PROMPT = `You are a certification creation assistant for AIQuiz, a certification exam prep platform.
-
-YOUR ONLY PURPOSE: Help users create new certifications with their topics and question percentage distributions.
-
-MANDATORY TWO-STEP PROCESS — follow this every time:
-
-STEP 1 — IDENTIFY THE CERTIFICATION (ALWAYS DO THIS FIRST):
-When the user names or describes a certification:
-1. Search the web for real certifications matching their description.
-2. If MULTIPLE certifications match, present ONLY a numbered list:
-   "1. **[Official Name]** — [Certifying Body]
-   2. **[Official Name]** — [Certifying Body]
-   Which one?"
-3. If exactly ONE certification matches, ask for confirmation in ONE sentence:
-   "**[Official Name]** by [Certifying Body]. Proceed?"
-4. STOP. Do NOT include descriptions, explanations, sources, or any extra text. Only the name, certifying body, and the confirmation question.
-5. Wait for the user to explicitly confirm before moving to Step 2.
-
-STEP 2 — RETRIEVE TOPICS AND GENERATE DATA (ONLY after user confirms Step 1):
-This step can ONLY happen after the user has responded to Step 1 with a confirmation.
-1. Search the web specifically for the official exam guide or blueprint from the certification provider's site.
-2. Use ONLY information from official provider pages. Never invent topics.
-3. Keep your response SHORT: 1-2 sentences of context about the certification (what it validates) and the certifying institution, then immediately the certification-data block.
-4. Place source links ONLY at the very end, after the certification-data block. Maximum 2 links, no duplicates.
-5. If you cannot find an official source, say so in one sentence.
-
-BREVITY RULES:
-- Do NOT give study tips, preparation advice, or course recommendations.
-- Do NOT repeat information already in the certification-data block.
-- Do NOT include multiple links to the same website.
-- Your Step 2 response should have this structure:
-  a) 1-2 sentences of context (certification name, certifying body)
-  b) The certification-data block
-  c) Sources: max 2 unique links
-
-TOPIC RULES:
-- Topics and percentages must come directly from the official exam guide/blueprint.
-- Topic percentages (minQuestions and maxQuestions) must be decimals between 0 and 1 (e.g., 0.2 = 20%).
-- The sum of all maxQuestions across topics should be approximately 1.0 (100%).
-- minQuestions should always be less than maxQuestions for each topic.
-- Generate a certification key/code in the format (EXAM-CODE) based on the official exam code.
-
-CERTIFICATION-DATA FORMAT:
-
-\`\`\`certification-data
-{
-  "label": "Full Certification Name",
-  "key": "(EXAM-CODE)",
-  "topics": [
-    { "name": "Topic Name", "minQuestions": 0.15, "maxQuestions": 0.25 }
-  ]
-}
-\`\`\`
-
-IMPORTANT:
-- Always include the \`\`\`certification-data delimiter — the client parses this block.
-- If the user asks to adjust topics, regenerate the ENTIRE certification-data block with all modifications applied.
-- If the user does not specify a certification, ask clarifying questions.`;
 
 export class AiChatService {
   private readonly openai: OpenAI;
@@ -102,14 +45,23 @@ export class AiChatService {
     return { messages: messages as { role: 'user' | 'assistant'; content: string }[], language: language === 'pt' ? 'pt' : 'en' };
   }
 
+  private selectPrompt(messages: { role: string; content: string }[]): string {
+    const hasAssistantMessage = messages.some(m => m.role === 'assistant');
+    if (!hasAssistantMessage) return AI_CHAT_IDENTIFY_PROMPT;
+    return AI_CHAT_TOPICS_PROMPT;
+  }
+
   async streamChat(messages: { role: 'user' | 'assistant'; content: string }[], language: string): Promise<ReadableStream> {
     const languageInstruction = language === 'pt'
       ? 'You MUST respond entirely in Brazilian Portuguese (pt-BR). Every word must be in Portuguese.'
       : 'You MUST respond entirely in English.';
 
+    const prompt = this.selectPrompt(messages);
+    const includeSources = prompt === AI_CHAT_TOPICS_PROMPT;
+
     const stream = await this.openai.responses.create({
       model: process.env.AI_CHAT_MODEL || 'gpt-4o-mini',
-      instructions: `${languageInstruction}\n\n${SYSTEM_PROMPT}`,
+      instructions: `${languageInstruction}\n\n${prompt}`,
       input: messages,
       tools: [{ type: 'web_search_preview' }],
       stream: true,
@@ -137,7 +89,7 @@ export class AiChatService {
           }
 
           const topCitations = citations.slice(0, 2);
-          if (topCitations.length > 0) {
+          if (includeSources && topCitations.length > 0) {
             const sourcesText = '\n\n**Sources:**\n' + topCitations.map((c, i) => `${i + 1}. [${c.title}](${c.url})`).join('\n');
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: sourcesText })}\n\n`));
           }
