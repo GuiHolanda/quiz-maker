@@ -3,7 +3,7 @@ import useCertificationsContext from '@/features/hooks/useCertificationsContext.
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
 import { inputProperties } from '@/config/constants/inputStyles';
-
+import { FormAccordion } from '@/sharedComponents/ui/FormAccordion';
 
 export function EditCertificationTab() {
   const { certifications, setSelectedCertification, selectedCertification, updateCertification } = useCertificationsContext();
@@ -25,10 +25,13 @@ export function EditCertificationTab() {
   };
 
   return (
-    <div className="bg-content1 border border-default-200 rounded-xl p-6 mt-2">
+    <FormAccordion
+      title={t('certification.tabEdit')}
+      accordionKey="edit-certification"
+    >
       <Autocomplete
         label={t('certification.selectCertification')}
-        className='w-3/4'
+        className="w-3/4"
         name="certificationTitle"
         onSelectionChange={onCertificationChange}
         selectedKey={selectedCertification?.key ?? ''}
@@ -42,14 +45,12 @@ export function EditCertificationTab() {
         ))}
       </Autocomplete>
       {selectedCertification && (
-        <div className='mt-6'>
-          <SectionsTable
-            selectedCertification={selectedCertification}
-            editable
-            onTopicChanged={handleTopicChanged}
-          />
-        </div>
+        <SectionsTable
+          selectedCertification={selectedCertification}
+          editable
+          onTopicChanged={handleTopicChanged}
+        />
       )}
-    </div>
+    </FormAccordion>
   );
 }

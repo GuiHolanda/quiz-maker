@@ -1,5 +1,4 @@
 import { Button } from '@heroui/button';
-import { Divider } from '@heroui/divider';
 import { addToast } from '@heroui/toast';
 
 import { saveCertification } from '@/features/connectors';
@@ -11,7 +10,7 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { CertificationHeader } from './CertificationHeader';
 import { TopicForm } from './TopicForm';
 import { SectionsTable } from '@/sharedComponents/SectionsTable';
-import { BusyDialog } from '@/sharedComponents/ui/BusyDialog';
+import { FormAccordion } from '@/sharedComponents/ui/FormAccordion';
 
 export function NewCertificationTab() {
   const { addCertification, selectedCertification, certifications } = useCertificationsContext();
@@ -51,27 +50,13 @@ export function NewCertificationTab() {
   const hasTopics = draft.topics.length > 0;
 
   return (
-    <div className="bg-content1 border border-default-200 rounded-xl p-6 mt-2">
-      <CertificationHeader
-        title={draft.title}
-        code={draft.code}
-        onTitleChange={draft.setTitle}
-        onCodeChange={draft.setCode}
-      />
-
-      <TopicForm
-        topicName={draft.topicName}
-        onTopicNameChange={draft.setTopicName}
-        onSubmit={handleAddTopic}
-      />
-
-      {hasTopics && (
-        <>
-          <Divider />
-          <div className="flex flex-wrap gap-2 mt-4">
-            <SectionsTable selectedCertification={selectedCertification} topicsList={draft.topics} />
-          </div>
-          <div className="flex justify-end mt-4">
+    <FormAccordion
+      title={t('certification.tabNew')}
+      accordionKey="new-certification"
+      isLoading={loading}
+      footer={
+        hasTopics ? (
+          <div className="flex justify-end pt-4">
             <Button
               color="primary"
               onPress={handleSave}
@@ -81,10 +66,23 @@ export function NewCertificationTab() {
               {t('common.save')}
             </Button>
           </div>
-        </>
+        ) : null
+      }
+    >
+      <CertificationHeader
+        title={draft.title}
+        code={draft.code}
+        onTitleChange={draft.setTitle}
+        onCodeChange={draft.setCode}
+      />
+      <TopicForm
+        topicName={draft.topicName}
+        onTopicNameChange={draft.setTopicName}
+        onSubmit={handleAddTopic}
+      />
+      {hasTopics && (
+        <SectionsTable selectedCertification={selectedCertification} topicsList={draft.topics} />
       )}
-
-      <BusyDialog isOpen={loading} />
-    </div>
+    </FormAccordion>
   );
 }

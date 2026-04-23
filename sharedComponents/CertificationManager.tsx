@@ -64,6 +64,7 @@ export const CertificationManager = ({ isMultiple, noTopics, ...props }: Certifi
           onChange={onTopicsChange}
           selectionMode={isMultiple ? 'multiple' : 'single'}
           selectedKeys={selectedTopics}
+          placeholder={t('certification.selectTopicPlaceholder')}
           {...inputProperties.select}
         >
           {selectedCertification

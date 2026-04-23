@@ -3,13 +3,10 @@ import { getQuestions } from '@/features/connectors';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { QuizFormErrors, AIQuestion, QuestionParams } from '@/types';
 import { Button } from '@heroui/button';
-import { Form } from '@heroui/form';
-import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
-import { Accordion, AccordionItem } from '@heroui/accordion';
-import { Divider } from '@heroui/divider';
 import { Input } from '@heroui/input';
+import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
 import { CertificationManager } from '@/sharedComponents/CertificationManager';
-import { BusyDialog } from '@/sharedComponents/ui/BusyDialog';
+import { FormAccordion } from '@/sharedComponents/ui/FormAccordion';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 
@@ -50,53 +47,37 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
       onGenerated(questions);
     }
   };
+
   return (
-    <Accordion
-      defaultExpandedKeys={['configure questionaire']}
-      className="bg-content1 border border-default-200 rounded-xl overflow-hidden p-0"
-      itemClasses={{
-        base: 'border-0',
-        title: 'text-sm font-bold text-foreground',
-        trigger: 'px-6 py-4 hover:bg-content2 transition-colors duration-200',
-        content: 'px-6 pb-6',
-        indicator: 'text-default-400',
-      }}
+    <FormAccordion
+      title={t('generate.configureQuestionnaire')}
+      accordionKey="configure questionaire"
+      onSubmit={handleSubmit}
+      validationErrors={error}
+      isLoading={loading}
     >
-      <AccordionItem
-        title={t('generate.configureQuestionnaire')}
-        key="configure questionaire"
-      >
-        <Form onSubmit={handleSubmit} validationErrors={error}>
-          <Divider />
-          <div className="w-full flex flex-col gap-6 pt-4">
-            <div className="flex w-full gap-4 items-center">
-              <CertificationManager className="flex w-full gap-4 items-center" />
-            </div>
-            <div className="flex w-full items-baseline gap-4">
-              <div className="no-number-spinners w-1/4">
-                <Input
-                  id="num_questions"
-                  name="num_questions"
-                  type="number"
-                  label={t('common.numberOfQuestions')}
-                  placeholder={t('generate.numQuestionsPlaceholder')}
-                  max={20}
-                  min={1}
-                  {...inputProperties.input}
-                />
-              </div>
-              <Button
-                className="ml-auto mt-auto bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
-                type="submit"
-                disabled={loading}
-              >
-                {t('common.generate')}
-              </Button>
-            </div>
-          </div>
-        </Form>
-        <BusyDialog isOpen={loading} />
-      </AccordionItem>
-    </Accordion>
+      <CertificationManager className="flex w-full gap-4 items-end" />
+      <div className="flex w-full items-end gap-4">
+        <div className="no-number-spinners w-1/4">
+          <Input
+            id="num_questions"
+            name="num_questions"
+            type="number"
+            label={t('common.numberOfQuestions')}
+            placeholder={t('generate.numQuestionsPlaceholder')}
+            max={20}
+            min={1}
+            {...inputProperties.input}
+          />
+        </div>
+        <Button
+          className="ml-auto bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
+          type="submit"
+          disabled={loading}
+        >
+          {t('common.generate')}
+        </Button>
+      </div>
+    </FormAccordion>
   );
 }

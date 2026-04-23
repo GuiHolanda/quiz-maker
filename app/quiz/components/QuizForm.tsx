@@ -2,15 +2,12 @@
 import { getQuizQuestions } from '@/features/connectors';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { QuizFormErrors, StoredQuestion } from '@/types';
-import { Form } from '@heroui/form';
-import { BusyDialog } from '../../../sharedComponents/ui/BusyDialog';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
-import { Accordion, AccordionItem } from '@heroui/accordion';
-import { Divider } from '@heroui/divider';
-import { CertificationManager } from '../../../sharedComponents/CertificationManager';
-import { SectionsTable } from '../../../sharedComponents/SectionsTable';
+import { CertificationManager } from '@/sharedComponents/CertificationManager';
+import { SectionsTable } from '@/sharedComponents/SectionsTable';
 import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
+import { FormAccordion } from '@/sharedComponents/ui/FormAccordion';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 
@@ -47,48 +44,38 @@ export function QuizForm({ onGenerated }: Readonly<QuizFormProps>) {
   };
 
   return (
-    <Accordion
-      defaultExpandedKeys={['quizForm']}
-      className="bg-content1 border border-default-200 rounded-xl overflow-hidden p-0"
-      itemClasses={{
-        base: 'border-0',
-        title: 'text-sm font-bold text-foreground',
-        trigger: 'px-6 py-4 hover:bg-content2 transition-colors duration-200',
-        content: 'px-6 pb-6',
-        indicator: 'text-default-400',
-      }}
+    <FormAccordion
+      title={t('quiz.configureQuiz')}
+      accordionKey="quizForm"
+      onSubmit={handleSubmit}
+      validationErrors={error}
+      isLoading={loading}
+      footer={
+        <div className="flex w-full justify-end pt-4">
+          <Button
+            type="submit"
+            isLoading={loading}
+            className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
+          >
+            {t('quiz.generateQuiz')}
+          </Button>
+        </div>
+      }
     >
-      <AccordionItem title={t('quiz.configureQuiz')} key="quizForm">
-        <Form onSubmit={handleSubmit} validationErrors={error}>
-          <Divider />
-          <div className="w-full flex flex-col gap-6 pt-4">
-            <div className="flex gap-4 items-center pt-4">
-              <CertificationManager isMultiple noTopics className="flex w-3/4 gap-4 items-center" />
-              <div className="no-number-spinners w-1/4">
-                <Input
-                  type="number"
-                  name="num_questions"
-                  label={t('common.numberOfQuestions')}
-                  placeholder={t('quiz.placeholder')}
-                  min={1}
-                  {...inputProperties.input}
-                />
-              </div>
-            </div>
-            <SectionsTable selectedCertification={selectedCertification} />
-          </div>
-          <div className="flex w-full justify-end pt-4">
-            <Button
-              type="submit"
-              isLoading={loading}
-              className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
-            >
-              {t('quiz.generateQuiz')}
-            </Button>
-          </div>
-        </Form>
-        <BusyDialog isOpen={loading} />
-      </AccordionItem>
-    </Accordion>
+      <div className="flex gap-4 items-end">
+        <CertificationManager isMultiple noTopics className="flex w-3/4 gap-4 items-end" />
+        <div className="no-number-spinners w-1/4">
+          <Input
+            type="number"
+            name="num_questions"
+            label={t('common.numberOfQuestions')}
+            placeholder={t('quiz.placeholder')}
+            min={1}
+            {...inputProperties.input}
+          />
+        </div>
+      </div>
+      <SectionsTable selectedCertification={selectedCertification} />
+    </FormAccordion>
   );
 }

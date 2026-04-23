@@ -6,7 +6,6 @@ import { InputLabelPlacement, InputVariant } from "@/types";
 export const inputLabelClass = 'text-xs font-normal text-default-400';
 
 const borderedInputClassNames = {
-  base: '!mt-0',
   label: inputLabelClass,
   inputWrapper: [
     'border-white/[0.14]',
@@ -16,7 +15,6 @@ const borderedInputClassNames = {
 };
 
 const borderedSelectClassNames = {
-  base: '!mt-0',
   label: inputLabelClass,
   trigger: [
     'border-white/[0.14]',

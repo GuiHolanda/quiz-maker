@@ -45,7 +45,7 @@ export function TopicForm({ topicName, onTopicNameChange, onSubmit }: Readonly<T
   return (
     <>
       <h4 className="font-bold">{t('certification.topics')}</h4>
-      <Form className="flex flex-row items-center gap-6 mb-4" onSubmit={handleSubmit}>
+      <Form className="flex flex-row items-end gap-6 mb-4" onSubmit={handleSubmit}>
         <Input
           label={t('certification.topicName')}
           type="text"
@@ -82,7 +82,7 @@ export function TopicForm({ topicName, onTopicNameChange, onSubmit }: Readonly<T
           showTooltip
           step={0.01}
         />
-        <Button size="sm" variant="solid" color="primary" type="submit" className="ml-auto mt-auto">
+        <Button size="sm" variant="solid" color="primary" type="submit" className="ml-auto">
           {t('certification.addTopic')}
           <FontAwesomeIcon icon={faCirclePlus} className="text-lg" />
         </Button>
