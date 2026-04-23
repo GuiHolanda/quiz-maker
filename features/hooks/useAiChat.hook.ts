@@ -38,13 +38,19 @@ export function useAiChat(): UseAiChatReturn {
         body: JSON.stringify({ messages: messagesWithUser }),
       });
 
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || `HTTP ${response.status}`);
+      }
+
       const reader = response.body!.getReader();
       const decoder = new TextDecoder();
       let accumulated = '';
+      let streamDone = false;
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done || streamDone) break;
 
         const chunk = decoder.decode(value, { stream: true });
         for (const line of chunk.split('\n')) {
@@ -52,7 +58,7 @@ export function useAiChat(): UseAiChatReturn {
           const jsonStr = line.slice(6);
           try {
             const parsed = JSON.parse(jsonStr);
-            if (parsed.done) break;
+            if (parsed.done) { streamDone = true; break; }
             if (parsed.content) {
               accumulated += parsed.content;
               setCurrentStreamContent(accumulated);
