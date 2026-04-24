@@ -5,7 +5,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter } from '@
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faXmark, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
+import { faXmark, faPaperPlane, faRotateRight } from '@fortawesome/free-solid-svg-icons';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useAiChat } from '@/features/hooks/useAiChat.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
@@ -33,13 +33,6 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
   const [saveStates, setSaveStates] = useState<Record<number, SaveState>>({});
 
   useEffect(() => {
-    if (isOpen) {
-      reset();
-      setSaveStates({});
-    }
-  }, [isOpen, reset]);
-
-  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, currentStreamContent]);
 
@@ -55,6 +48,11 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
     }
   }, [saveCertificationFromChat, t]);
 
+  const handleNewChat = useCallback(() => {
+    reset();
+    setSaveStates({});
+  }, [reset]);
+
   const handleAdjust = () => {
     inputRef.current?.focus();
   };
@@ -66,9 +64,23 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
       <DrawerContent>
         <DrawerHeader className="flex items-center justify-between border-b border-divider px-4 py-3">
           <span className="text-base font-semibold">{t('chat.title')}</span>
-          <Button isIconOnly size="sm" variant="light" onPress={onClose} aria-label="Close">
-            <FontAwesomeIcon icon={faXmark} />
-          </Button>
+          <div className="flex items-center gap-1">
+            {messages.length > 0 && (
+              <Button
+                size="sm"
+                variant="flat"
+                onPress={handleNewChat}
+                isDisabled={isStreaming}
+                className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 rounded-lg transition-colors text-xs font-semibold"
+                startContent={<FontAwesomeIcon icon={faRotateRight} className="w-3 h-3" />}
+              >
+                {t('chat.newChat')}
+              </Button>
+            )}
+            <Button isIconOnly size="sm" variant="light" onPress={onClose} aria-label="Close">
+              <FontAwesomeIcon icon={faXmark} />
+            </Button>
+          </div>
         </DrawerHeader>
 
         <DrawerBody className="flex flex-col gap-3 px-4 py-4 overflow-y-auto">

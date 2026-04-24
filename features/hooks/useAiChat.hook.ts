@@ -1,7 +1,8 @@
 'use client';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { saveCertification } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { AI_CHAT_LOCAL_STORAGE_KEY } from '@/config/constants';
 import { ChatMessage, Certification } from '@/types';
 
 interface UseAiChatReturn {
@@ -43,13 +44,27 @@ function parseCertificationData(text: string): ParsedCertResponse | null {
   }
 }
 
+function loadMessages(): ChatMessage[] {
+  try {
+    const stored = localStorage.getItem(AI_CHAT_LOCAL_STORAGE_KEY);
+    if (!stored) return [];
+    return JSON.parse(stored) as ChatMessage[];
+  } catch {
+    return [];
+  }
+}
+
 export function useAiChat(): UseAiChatReturn {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(loadMessages);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [currentStreamContent, setCurrentStreamContent] = useState('');
   const abortControllerRef = useRef<AbortController | null>(null);
   const { t, language } = useTranslation();
+
+  useEffect(() => {
+    localStorage.setItem(AI_CHAT_LOCAL_STORAGE_KEY, JSON.stringify(messages));
+  }, [messages]);
 
   const reset = useCallback(() => {
     abortControllerRef.current?.abort();
@@ -57,6 +72,7 @@ export function useAiChat(): UseAiChatReturn {
     setInput('');
     setIsStreaming(false);
     setCurrentStreamContent('');
+    localStorage.removeItem(AI_CHAT_LOCAL_STORAGE_KEY);
   }, []);
 
   const sendMessage = useCallback(async () => {
