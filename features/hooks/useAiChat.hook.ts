@@ -15,18 +15,29 @@ interface UseAiChatReturn {
   readonly saveCertificationFromChat: (certification: Certification) => Promise<'success' | 'duplicate' | 'error'>;
 }
 
-function parseCertificationData(text: string): Certification | null {
+interface ParsedCertResponse {
+  context: string;
+  sources: string[];
+  certificationData: Certification;
+}
+
+function parseCertificationData(text: string): ParsedCertResponse | null {
   const match = /```certification-data\s*\n([\s\S]*?)```/.exec(text);
   if (!match) return null;
   try {
     const parsed = JSON.parse(match[1]);
-    if (!parsed.label || !parsed.key || !Array.isArray(parsed.topics)) return null;
-    if (!parsed.topics.every((t: unknown) =>
+    const cert = parsed.certificationData;
+    if (!cert?.label || !cert?.key || !Array.isArray(cert?.topics)) return null;
+    if (!cert.topics.every((t: unknown) =>
       typeof (t as Record<string, unknown>).name === 'string' &&
       typeof (t as Record<string, unknown>).minQuestions === 'number' &&
       typeof (t as Record<string, unknown>).maxQuestions === 'number'
     )) return null;
-    return parsed as Certification;
+    return {
+      context: typeof parsed.context === 'string' ? parsed.context : '',
+      sources: Array.isArray(parsed.sources) ? parsed.sources : [],
+      certificationData: cert as Certification,
+    };
   } catch {
     return null;
   }
@@ -49,6 +60,7 @@ export function useAiChat(): UseAiChatReturn {
   }, []);
 
   const sendMessage = useCallback(async () => {
+    debugger
     if (input.trim() === '' || isStreaming) return;
 
     const userMsg: ChatMessage = { role: 'user', content: input.trim() };
@@ -99,9 +111,9 @@ export function useAiChat(): UseAiChatReturn {
         }
       }
 
-      const certificationData = parseCertificationData(accumulated);
-      const assistantMsg: ChatMessage = certificationData
-        ? { role: 'assistant', content: accumulated, certificationData }
+      const parsed = parseCertificationData(accumulated);
+      const assistantMsg: ChatMessage = parsed
+        ? { role: 'assistant', content: parsed.context, certificationData: parsed.certificationData, sources: parsed.sources }
         : { role: 'assistant', content: accumulated };
 
       setMessages(prev => [...prev, assistantMsg]);

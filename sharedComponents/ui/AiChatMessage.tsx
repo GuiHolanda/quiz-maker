@@ -8,6 +8,7 @@ interface AiChatMessageProps {
   readonly content: string;
   readonly isStreaming?: boolean;
   readonly isError?: boolean;
+  readonly sources?: string[];
 }
 
 const CERTIFICATION_DATA_BLOCK_REGEX = /```certification-data\n([\s\S]*?)```/g;
@@ -46,7 +47,7 @@ function parseMarkdownInline(text: string): ReactNode[] {
   return result;
 }
 
-export function AiChatMessage({ role, content, isStreaming, isError }: AiChatMessageProps) {
+export function AiChatMessage({ role, content, isStreaming, isError, sources }: AiChatMessageProps) {
   const isUser = role === 'user';
   const displayContent = role === 'assistant'
     ? isStreaming
@@ -83,7 +84,17 @@ export function AiChatMessage({ role, content, isStreaming, isError }: AiChatMes
             ))}
           </div>
         ) : (
-          parseMarkdownInline(displayContent)
+          <>
+            {parseMarkdownInline(displayContent)}
+            {sources && sources.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-default-200">
+                <p className="text-xs text-default-400 mb-1">Sources:</p>
+                {sources.map((source, i) => (
+                  <div key={i} className="text-xs">{parseMarkdownInline(source)}</div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

@@ -62,7 +62,7 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
   const isBuildingCertification = isStreaming && currentStreamContent.includes('```certification-data');
 
   return (
-    <Drawer isOpen={isOpen} onClose={onClose} placement="right" size="lg" hideCloseButton>
+    <Drawer isOpen={isOpen} onClose={onClose} placement="right" size="xl" hideCloseButton>
       <DrawerContent>
         <DrawerHeader className="flex items-center justify-between border-b border-divider px-4 py-3">
           <span className="text-base font-semibold">{t('chat.title')}</span>
@@ -89,7 +89,7 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
                 <AiChatMessage role={message.role} content={message.content} isError={true} />
               ) : message.certificationData ? (
                 <>
-                  <AiChatMessage role={message.role} content={message.content} />
+                  <AiChatMessage role={message.role} content={message.content} sources={message.sources} />
                   <AiChatPreviewCard
                     certification={message.certificationData}
                     onConfirm={() => handleConfirm(index, message.certificationData!)}

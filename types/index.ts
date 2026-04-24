@@ -141,5 +141,6 @@ export interface ChatMessage {
   readonly role: ChatMessageRole;
   readonly content: string;
   readonly certificationData?: Certification;
+  readonly sources?: string[];
   readonly isError?: boolean;
 }

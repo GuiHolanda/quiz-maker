@@ -57,7 +57,6 @@ export class AiChatService {
       : 'You MUST respond entirely in English.';
 
     const prompt = this.selectPrompt(messages);
-    const includeSources = prompt === AI_CHAT_TOPICS_PROMPT;
 
     const stream = await this.openai.responses.create({
       model: process.env.AI_CHAT_MODEL || 'gpt-5.4-mini',
@@ -72,26 +71,10 @@ export class AiChatService {
     return new ReadableStream({
       async start(controller) {
         try {
-          const citations: Array<{ url: string; title: string }> = [];
-
           for await (const event of stream) {
             if (event.type === 'response.output_text.delta' && event.delta) {
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: event.delta })}\n\n`));
             }
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const anyEvent = event as any;
-            if (anyEvent.type === 'response.output_text.annotation.added') {
-              const ann = anyEvent.annotation;
-              if (ann?.type === 'url_citation' && ann.url && !citations.find((c) => c.url === ann.url)) {
-                citations.push({ url: ann.url, title: ann.title || ann.url });
-              }
-            }
-          }
-
-          const topCitations = citations.slice(0, 2);
-          if (includeSources && topCitations.length > 0) {
-            const sourcesText = '\n\n**Sources:**\n' + topCitations.map((c, i) => `${i + 1}. [${c.title}](${c.url})`).join('\n');
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: sourcesText })}\n\n`));
           }
 
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`));
