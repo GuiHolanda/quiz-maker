@@ -60,7 +60,7 @@ export class AiChatService {
     const includeSources = prompt === AI_CHAT_TOPICS_PROMPT;
 
     const stream = await this.openai.responses.create({
-      model: process.env.AI_CHAT_MODEL || 'gpt-4o-mini',
+      model: process.env.AI_CHAT_MODEL || 'gpt-5.4-mini',
       instructions: `${languageInstruction}\n\n${prompt}`,
       input: messages,
       tools: [{ type: 'web_search_preview' }],
