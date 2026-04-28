@@ -18,7 +18,6 @@ model User {
   sessions      Session[]
   questions     Question[]
   certifications Certification[]
-  usageLogs     UsageLog[]
   createdAt     DateTime   @default(now())
 }
 
@@ -114,15 +113,4 @@ model Explanation {
   label     String
   text      String
   createdAt DateTime @default(now())
-}
-
-model UsageLog {
-  id        String   @id @default(cuid())
-  userId    String
-  action    String
-  count     Int      @default(1)
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
 }
