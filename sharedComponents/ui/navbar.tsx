@@ -150,7 +150,7 @@ export const Navbar = () => {
               </Dropdown>
             </NavbarItem>
             {NAV_LINKS.map((item) => (
-              <NavbarItem key={item.label}>
+              <NavbarItem key={item.href}>
                 <NextLink
                   href={item.href}
                   className="text-default-500 hover:text-foreground text-sm px-3 py-1.5 rounded-lg hover:bg-default-100 transition-colors duration-200"
