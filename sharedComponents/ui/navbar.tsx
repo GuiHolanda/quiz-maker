@@ -18,9 +18,14 @@ import { Avatar } from '@heroui/avatar';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSection } from '@heroui/dropdown';
 import NextLink from 'next/link';
 import clsx from 'clsx';
+import { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 
 import { siteConfig } from '@/config/site';
+import { PlanBadge } from '@/sharedComponents/ui/PlanBadge';
+import { UsageBadge } from '@/sharedComponents/ui/UsageBadge';
+import { getBillingUsage } from '@/features/connectors';
+import type { UsageStats } from '@/types';
 import { ThemeSwitch } from '@/sharedComponents/ui/theme-switch';
 import { LanguageSwitch } from '@/sharedComponents/ui/language-switch';
 import { SearchIcon } from '@/sharedComponents/icons';
@@ -30,6 +35,13 @@ import { inputProperties } from '@/config/constants/inputStyles';
 export const Navbar = () => {
   const { data: session, status } = useSession();
   const { t } = useTranslation();
+  const [usage, setUsage] = useState<UsageStats | null>(null);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      getBillingUsage().then(setUsage).catch(() => {});
+    }
+  }, [status]);
 
   const userDropdown = (
     <Dropdown placement="bottom-end">
@@ -136,6 +148,16 @@ export const Navbar = () => {
       </NavbarContent>
 
       <NavbarContent className="hidden sm:flex basis-1/5 sm:basis-full" justify="end">
+        {status === 'authenticated' && usage && (
+          <>
+            <NavbarItem>
+              <UsageBadge usage={usage} />
+            </NavbarItem>
+            <NavbarItem>
+              <PlanBadge plan={usage.plan} />
+            </NavbarItem>
+          </>
+        )}
         <NavbarItem className="hidden sm:flex gap-2 items-center">
           {status === 'authenticated' && session?.user ? (
             userDropdown
