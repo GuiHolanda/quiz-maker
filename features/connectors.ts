@@ -1,5 +1,5 @@
-import { OPENAI_POST_URL, SAVE_QUESTIONS_URL, SAVE_CERTIFICATION_URL, QUIZ_GENERATOR_URL } from '@/config/constants';
-import { AIQuestion, Certification, QuestionParams, StoredQuestion, TopicUpdatePayload } from '@/types';
+import { OPENAI_POST_URL, SAVE_QUESTIONS_URL, SAVE_CERTIFICATION_URL, QUIZ_GENERATOR_URL, BILLING_USAGE_URL, BILLING_CHECKOUT_URL, BILLING_PORTAL_URL } from '@/config/constants';
+import { AIQuestion, Certification, QuestionParams, StoredQuestion, TopicUpdatePayload, UsageStats } from '@/types';
 import api from '@/lib/bff.api';
 
 export async function getCertifications(): Promise<Certification[]> {
@@ -39,4 +39,19 @@ export async function getQuizQuestions(params: { certificationTitle: string; num
     params: { certificationTitle: params.certificationTitle, numQuestions: params.numQuestions },
   });
   return data;
+}
+
+export async function getBillingUsage(): Promise<UsageStats> {
+  const { data } = await api.get<UsageStats>(BILLING_USAGE_URL);
+  return data;
+}
+
+export async function getCheckoutUrl(period: 'monthly' | 'yearly'): Promise<string> {
+  const { data } = await api.get<{ url: string }>(BILLING_CHECKOUT_URL, { params: { period } });
+  return data.url;
+}
+
+export async function getPortalUrl(): Promise<string> {
+  const { data } = await api.get<{ url: string }>(BILLING_PORTAL_URL);
+  return data.url;
 }
