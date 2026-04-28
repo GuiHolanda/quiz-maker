@@ -40,6 +40,8 @@ export const Navbar = () => {
   useEffect(() => {
     if (status === 'authenticated') {
       getBillingUsage().then(setUsage).catch(() => {});
+    } else {
+      setUsage(null);
     }
   }, [status]);
 
