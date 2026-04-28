@@ -137,3 +137,12 @@ export const INITIAL_CERTIFICATIONS_STATE: CertificationsState = {
 export const REGISTER_URL = '/auth/register';
 export const FORGOT_PASSWORD_URL = '/auth/forgot-password';
 export const RESET_PASSWORD_URL = '/auth/reset-password';
+
+export const BILLING_USAGE_URL = '/billing/usage';
+export const BILLING_CHECKOUT_URL = '/billing/checkout';
+export const BILLING_PORTAL_URL = '/billing/portal';
+
+export const PLAN_LIMITS = {
+  free: { questionsPerPeriod: 50, maxCertifications: 2 },
+  pro:  { questionsPerPeriod: 500, maxCertifications: Infinity },
+} as const;

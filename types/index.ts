@@ -144,3 +144,24 @@ export interface ChatMessage {
   readonly sources?: string[];
   readonly isError?: boolean;
 }
+
+export type UserPlan = 'free' | 'pro';
+
+export type QuotaAction = 'generate_questions' | 'create_certification';
+
+export interface UsageStats {
+  plan: UserPlan;
+  questionsUsed: number;
+  questionsLimit: number;
+  certificationsUsed: number;
+  certificationsLimit: number;
+  periodStartDate: string;
+}
+
+export interface QuotaError {
+  error: 'quota_exceeded';
+  message: string;
+  limit: number;
+  used: number;
+  plan: UserPlan;
+}
