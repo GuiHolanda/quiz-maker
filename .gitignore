@@ -46,3 +46,4 @@ yarn.lock
 package-lock.json
 bun.lockb.env
 prisma/dev.db
+.worktrees/
