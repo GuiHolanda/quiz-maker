@@ -1,15 +1,19 @@
+'use client';
+
 import { BillingOverview } from '@/app/(products)/billing/components/BillingOverview';
+import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 export default function BillingPage() {
   return <BillingPageContent />;
 }
 
 function BillingPageContent() {
+  const { t } = useTranslation();
+
   return (
-    <div className="app-bg">
-      <div className="container mx-auto max-w-7xl pt-8 px-6 pb-12">
-        <BillingOverview />
-      </div>
-    </div>
+    <PageHeader title={t('billing.title')} subtitle={t('billing.subtitle')}>
+      <BillingOverview />
+    </PageHeader>
   );
 }

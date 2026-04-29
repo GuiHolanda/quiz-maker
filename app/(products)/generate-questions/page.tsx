@@ -6,6 +6,7 @@ import { CertificationsProvider } from '@/features/providers/certifications.prov
 import { GeneratedQuestionsList } from '@/app/(products)/generate-questions/components/GeneratedQuestionsList';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { QuestionGeneratorForm } from './components/QuestionGeneratorForm';
 
 export default function QuizPage() {
@@ -40,19 +41,10 @@ function AIQuestionPageContent() {
   };
 
   return (
-    <div className="app-bg">
-      <div className="container mx-auto max-w-7xl pt-8 px-6 pb-12">
-        <div className="flex flex-col mb-8 gap-1.5">
-          <h1 className="page-header-title">{t('generate.pageTitle')}</h1>
-          <p className="page-header-subtitle">
-            {t('generate.pageSubtitle')}
-          </p>
-        </div>
+    <PageHeader title={t('generate.pageTitle')} subtitle={t('generate.pageSubtitle')}>
+      <QuestionGeneratorForm onGenerated={onQuestionsGenerated} />
 
-        <QuestionGeneratorForm onGenerated={onQuestionsGenerated} />
-
-        {(state?.aiQuestions?.length ?? 0) > 0 && <GeneratedQuestionsList questions={state?.aiQuestions ?? []} />}
-      </div>
-    </div>
+      {(state?.aiQuestions?.length ?? 0) > 0 && <GeneratedQuestionsList questions={state?.aiQuestions ?? []} />}
+    </PageHeader>
   );
 }

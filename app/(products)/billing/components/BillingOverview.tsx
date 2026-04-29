@@ -50,10 +50,6 @@ export function BillingOverview() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="mb-8">
-        <h1 className="page-header-title">{t('billing.title')}</h1>
-        <p className="page-header-subtitle mt-2">{t('billing.subtitle')}</p>
-      </div>
       <div className="bg-content1 border border-default-200 rounded-xl p-6 flex items-center justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-1">

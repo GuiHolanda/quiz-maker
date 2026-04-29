@@ -1,30 +1,27 @@
 'use client';
+import { useState } from 'react';
+import type { Key } from '@react-types/shared';
 import { Tabs, Tab } from '@heroui/tabs';
 
 import CertificationsProvider from '@/features/providers/certifications.provider';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { CertificationsListTab } from './components/CertificationsListTab';
-import { EditCertificationTab } from './components/EditCertificationTab';
 import { NewCertificationTab } from './components/NewCertificationTab';
 
 
 export default function ConfigureCertificationPage() {
   const { t } = useTranslation();
+  const [selectedTab, setSelectedTab] = useState<Key>('new');
 
   return (
     <CertificationsProvider>
-    <div className="app-bg">
-      <div className="container mx-auto max-w-7xl pt-8 px-6 pb-12">
-        <div className="flex flex-col mb-8 gap-1.5">
-          <h1 className="page-header-title">{t('certification.pageTitle')}</h1>
-          <p className="page-header-subtitle">
-            {t('certification.pageSubtitle')}
-          </p>
-        </div>
-
+    <PageHeader title={t('certification.pageTitle')} subtitle={t('certification.pageSubtitle')} maxWidth="4xl">
         <div className="flex w-full flex-col">
           <Tabs
             aria-label={t('aria.tabOptions')}
+            selectedKey={selectedTab as string}
+            onSelectionChange={setSelectedTab}
             classNames={{
               tabList: 'bg-content1 border border-default-200 rounded-xl p-1 gap-1',
               tab: 'rounded-xl text-default-400 data-[selected=true]:text-foreground data-[selected=true]:font-semibold transition-colors duration-200',
@@ -34,18 +31,14 @@ export default function ConfigureCertificationPage() {
             }}
           >
             <Tab key="new" title={t('certification.tabNew')}>
-              <NewCertificationTab />
+              <NewCertificationTab onBackToLibrary={() => setSelectedTab('certificationsList')} />
             </Tab>
             <Tab key="certificationsList" title={t('certification.tabList')}>
               <CertificationsListTab />
             </Tab>
-            <Tab key="edit" title={t('certification.tabEdit')}>
-              <EditCertificationTab />
-            </Tab>
           </Tabs>
         </div>
-      </div>
-    </div>
+      </PageHeader>
     </CertificationsProvider>
   );
 }

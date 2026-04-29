@@ -7,6 +7,7 @@ import { CertificationsProvider } from '@/features/providers/certifications.prov
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
 import { QuizForm } from '@/app/(products)/quiz/components/QuizForm';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { PageHeader } from '@/shared/components/ui/PageHeader';
 
 export default function QuizPage() {
   const [questions, setQuestions] = useState<StoredQuestion[] | null>(null);
@@ -46,19 +47,10 @@ function QuizPageContent({ questions, setQuestions }: Readonly<QuizPageContentPr
   };
 
   return (
-    <div className="app-bg">
-      <div className="container mx-auto max-w-7xl pt-8 px-6 pb-12">
-        <div className="flex flex-col mb-8 gap-1.5">
-          <h1 className="page-header-title">{t('quiz.pageTitle')}</h1>
-          <p className="page-header-subtitle">
-            {t('quiz.pageSubtitle')}
-          </p>
-        </div>
+    <PageHeader title={t('quiz.pageTitle')} subtitle={t('quiz.pageSubtitle')}>
+      <QuizForm onGenerated={onQuestionsGenerated} />
 
-        <QuizForm onGenerated={onQuestionsGenerated} />
-
-        {(quiz?.questions ?? questions) && <QuestionList questions={quiz?.questions ?? questions ?? []} />}
-      </div>
-    </div>
+      {(quiz?.questions ?? questions) && <QuestionList questions={quiz?.questions ?? questions ?? []} />}
+    </PageHeader>
   );
 }
