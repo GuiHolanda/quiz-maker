@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { QuestionService } from '@/app/api/question-generator/question.service';
+import { QuestionService } from '@/app/api/generator/question-generator/question.service';
 import { AIQuestion } from '@/types';
+import { OpenAIService } from '@/features/services/openAI.service';
+import { Templates } from '@/config/constants/templates';
 import { auth } from '@/auth';
 
 const questionService = new QuestionService();
+const openAIService = new OpenAIService();
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -15,11 +18,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => null);
     const payload = Array.isArray(body) ? { questions: body } : body;
     const questions: AIQuestion[] = questionService.getValidatedQuestions(payload);
-
-    await questionService.createFromPayload(questions, session.user.id);
+    const { certificationTitle: certification_name, topic } = questions[0];
+    const llmResponse = await openAIService.getLLMResponse(Templates.GET_ANSWER, { certification_name, topic, questions: JSON.stringify(questions) });
+  
+    const formattedAnswers = JSON.parse(llmResponse);
+    await questionService.saveAnswers(formattedAnswers.answers);
 
     return NextResponse.json(
-      { message: 'Questions saved successfully', count: questions.length },
+      {
+        message: 'Answers saved successfully',
+        count: formattedAnswers.answers.length,
+      },
       { status: 200 }
     );
   } catch (err: any) {

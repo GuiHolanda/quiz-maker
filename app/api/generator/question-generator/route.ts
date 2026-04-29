@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { QuestionService } from '@/app/api/question-generator/question.service';
+import { QuestionService } from '@/app/api/generator/question-generator/question.service';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { Templates } from '@/config/constants/templates';
 import { QuotaService } from '@/app/api/billing/quota.service';

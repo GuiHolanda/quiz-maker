@@ -3,7 +3,7 @@ import { AIQuestion, Certification, QuestionParams, StoredQuestion, TopicUpdateP
 import api from '@/lib/bff.api';
 
 export async function getCertifications(): Promise<Certification[]> {
-  const { data } = await api.get<{ certifications: Certification[] }>('/certifications');
+  const { data } = await api.get<{ certifications: Certification[] }>('/certification/certifications');
   return data.certifications;
 }
 
