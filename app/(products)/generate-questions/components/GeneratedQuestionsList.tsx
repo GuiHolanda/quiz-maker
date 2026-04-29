@@ -3,13 +3,13 @@ import { AIQuestion } from '@/types';
 import { Button } from '@heroui/button';
 import { GeneratedQuestionsCard } from './GeneratedQuestionsCard';
 import { Checkbox } from '@heroui/checkbox';
-import { PaginationControls } from '../../../sharedComponents/ui/PaginationControls';
-import { ItemsPerPageSelect } from '../../../sharedComponents/ui/ItemsPerPageSelect';
+import { PaginationControls } from '@/sharedComponents/ui/PaginationControls';
+import { ItemsPerPageSelect } from '@/sharedComponents/ui/ItemsPerPageSelect';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
 import { Chip } from '@heroui/chip';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { saveQuestions } from '@/features/connectors';
-import { BusyDialog } from '../../../sharedComponents/ui/BusyDialog';
+import { BusyDialog } from '@/sharedComponents/ui/BusyDialog';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 export function GeneratedQuestionsList({

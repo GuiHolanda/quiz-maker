@@ -1,4 +1,4 @@
-import { BillingOverview } from '@/app/billing/components/BillingOverview';
+import { BillingOverview } from '@/app/(products)/billing/components/BillingOverview';
 
 export default function BillingPage() {
   return <BillingPageContent />;
