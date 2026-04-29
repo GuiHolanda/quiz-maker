@@ -47,3 +47,6 @@ package-lock.json
 bun.lockb.env
 prisma/dev.db
 .worktrees/
+
+# MCP local config (contains API keys)
+.mcp.json
