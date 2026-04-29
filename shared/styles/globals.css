@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@config "../tailwind.config.js";
+@config "../../tailwind.config.js";
 
 /* Hide number input spinners (Chrome, Safari, Edge) */
 .no-number-spinners input[type='number']::-webkit-outer-spin-button,
