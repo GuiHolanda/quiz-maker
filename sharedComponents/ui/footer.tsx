@@ -1,22 +1,33 @@
 'use client';
 
-import { Link } from '@heroui/link';
+import NextLink from 'next/link';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 export function Footer() {
   const { t } = useTranslation();
 
   return (
-    <footer className="w-full flex items-center justify-center py-3">
-      <Link
-        isExternal
-        className="flex items-center gap-1 text-current"
-        href="https://heroui.com?utm_source=next-app-template"
-        title="heroui.com homepage"
-      >
-        <span className="text-default-600">{t('common.poweredBy')}</span>
-        <p className="text-primary">HeroUI</p>
-      </Link>
+    <footer className="border-t border-divider bg-background py-10 px-6">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+        <span className="font-bold uppercase tracking-widest text-sm text-foreground">
+          {t('footer.brand')}
+        </span>
+        <div className="flex flex-wrap justify-center gap-6">
+          <NextLink href="#" className="text-xs text-default-400 hover:text-default-600 transition-colors duration-200">
+            {t('footer.privacy')}
+          </NextLink>
+          <NextLink href="#" className="text-xs text-default-400 hover:text-default-600 transition-colors duration-200">
+            {t('footer.terms')}
+          </NextLink>
+          <NextLink href="#" className="text-xs text-default-400 hover:text-default-600 transition-colors duration-200">
+            {t('footer.security')}
+          </NextLink>
+          <NextLink href="#" className="text-xs text-default-400 hover:text-default-600 transition-colors duration-200">
+            {t('footer.status')}
+          </NextLink>
+        </div>
+        <span className="text-xs text-default-400">{t('footer.copyright')}</span>
+      </div>
     </footer>
   );
 }

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CertificationService } from './certification.service';
+import { QuotaService } from '@/app/api/billing/quota.service';
 import { auth } from '@/auth';
 
 const certificationService = new CertificationService();
+const quotaService = new QuotaService();
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -11,9 +13,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    await quotaService.check(session.user.id, 'create_certification', 1);
+
     const body = await request.json().catch(() => null);
     const certification = certificationService.validate(body);
     const created = await certificationService.save(certification, session.user.id);
+
+    await quotaService.record(session.user.id, 'create_certification', 1);
 
     return NextResponse.json(
       { message: 'Certification saved successfully', certification: created },
@@ -21,7 +27,8 @@ export async function POST(request: NextRequest) {
     );
   } catch (err: any) {
     console.error('Failed to save certification:', err);
-    return NextResponse.json({ error: err, message: err.message || 'Failed to save certification' }, { status: err.status || 500 });
+    const body = err.body ?? { error: err, message: err.message || 'Failed to save certification' };
+    return NextResponse.json(body, { status: err.status || 500 });
   }
 }
 

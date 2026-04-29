@@ -63,6 +63,7 @@
     "@heroui/toast": "2.0.16",
     "@heroui/tooltip": "2.2.23",
     "@heroui/user": "2.2.21",
+    "@lemonsqueezy/lemonsqueezy.js": "^4.0.0",
     "@libsql/client": "^0.17.0",
     "@prisma/adapter-libsql": "^7.4.2",
     "@prisma/client": "^6.16.2",

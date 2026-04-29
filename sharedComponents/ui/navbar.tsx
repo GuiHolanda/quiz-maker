@@ -9,27 +9,49 @@ import {
   NavbarItem,
   NavbarMenuItem,
 } from '@heroui/navbar';
-import { Kbd } from '@heroui/kbd';
 import { Link } from '@heroui/link';
-import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
-import { link as linkStyles } from '@heroui/theme';
 import { Avatar } from '@heroui/avatar';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSection } from '@heroui/dropdown';
 import NextLink from 'next/link';
-import clsx from 'clsx';
+import { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowUp, faBrain, faChevronDown } from '@fortawesome/free-solid-svg-icons';
 
-import { siteConfig } from '@/config/site';
+import { UpgradeModal } from '@/sharedComponents/ui/UpgradeModal';
+import { UsageBadge } from '@/sharedComponents/ui/UsageBadge';
+import { getBillingUsage } from '@/features/connectors';
+import type { UsageStats } from '@/types';
 import { ThemeSwitch } from '@/sharedComponents/ui/theme-switch';
 import { LanguageSwitch } from '@/sharedComponents/ui/language-switch';
-import { SearchIcon } from '@/sharedComponents/icons';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { inputProperties } from '@/config/constants/inputStyles';
+
+const PRODUCT_ITEMS = [
+  { label: 'nav.quiz', href: '/quiz' },
+  { label: 'nav.generateQuestions', href: '/generate-questions' },
+  { label: 'nav.configureCertification', href: '/configure-certification' },
+] as const;
+
+const NAV_LINKS = [
+  { label: 'nav.solutions', href: '#' },
+  { label: 'nav.pricing', href: '#' },
+  { label: 'nav.docs', href: '#' },
+] as const;
 
 export const Navbar = () => {
   const { data: session, status } = useSession();
   const { t } = useTranslation();
+  const [usage, setUsage] = useState<UsageStats | null>(null);
+  const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      getBillingUsage().then(setUsage).catch(() => {});
+    } else {
+      setUsage(null);
+    }
+  }, [status]);
 
   const userDropdown = (
     <Dropdown placement="bottom-end">
@@ -53,6 +75,18 @@ export const Navbar = () => {
             <p className="text-xs text-default-400">{session?.user?.email}</p>
           </DropdownItem>
         </DropdownSection>
+        {usage?.plan === 'free' ? (
+          <DropdownSection showDivider>
+            <DropdownItem
+              key="upgrade"
+              className="text-primary font-semibold"
+              startContent={<FontAwesomeIcon icon={faArrowUp} className="w-3 h-3" />}
+              onPress={() => setIsUpgradeOpen(true)}
+            >
+              {t('billing.upgradeButton')}
+            </DropdownItem>
+          </DropdownSection>
+        ) : null}
         <DropdownSection showDivider>
           <DropdownItem key="theme" isReadOnly className="cursor-default">
             <div className="flex items-center justify-between gap-4">
@@ -79,64 +113,86 @@ export const Navbar = () => {
     </Dropdown>
   );
 
-  const searchInput = (
-    <Input
-      aria-label={t('aria.search')}
-      classNames={{ ...inputProperties.input.classNames, input: 'text-sm' }}
-      variant="bordered"
-      endContent={
-        <Kbd className="hidden lg:inline-block" keys={['command']}>
-          K
-        </Kbd>
-      }
-      labelPlacement="outside"
-      placeholder={t('common.search')}
-      startContent={<SearchIcon className="text-base text-default-400 pointer-events-none flex-shrink-0" />}
-      type="search"
-    />
-  );
-
   return (
-    <HeroUINavbar
-      maxWidth="xl"
-      position="sticky"
-      classNames={{
-        base: 'bg-background border-b border-divider',
-        wrapper: 'px-4 sm:px-6',
-      }}
-    >
-      <NavbarContent className="basis-1/5 sm:basis-full" justify="start">
-        <NavbarBrand as="li" className="gap-3 max-w-fit">
-          <NextLink className="flex justify-start items-center gap-2.5" href="/">
-            <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-white text-[10px] font-bold tracking-tight">AI</span>
-            </div>
-            <p className="font-bold text-foreground tracking-wide text-sm">AIQuiz</p>
-          </NextLink>
-        </NavbarBrand>
-        <ul className="hidden lg:flex gap-1 justify-start ml-2">
-          {siteConfig.navItems &&
-            siteConfig.navItems.length > 0 &&
-            siteConfig.navItems.map((item: any) => (
-              <NavbarItem key={item.href}>
+    <>
+      <HeroUINavbar
+        maxWidth="xl"
+        position="sticky"
+        classNames={{
+          base: 'bg-background border-b border-divider',
+          wrapper: 'px-4 sm:px-6',
+        }}
+      >
+        <NavbarContent className="basis-1/5 sm:basis-full" justify="start">
+          <NavbarBrand as="li" className="gap-3 max-w-fit">
+            <NextLink className="flex justify-start items-center gap-2.5" href="/">
+              <FontAwesomeIcon icon={faBrain} className="text-primary text-lg" />
+              <p className="font-bold text-foreground tracking-wide text-sm">MyQuiz</p>
+            </NextLink>
+          </NavbarBrand>
+
+          <ul className="hidden lg:flex gap-1 justify-start ml-2 items-center">
+            <NavbarItem>
+              <Dropdown>
+                <DropdownTrigger>
+                  <button className="flex items-center gap-1.5 text-default-500 hover:text-foreground text-sm px-3 py-1.5 rounded-lg hover:bg-default-100 transition-colors duration-200">
+                    {t('nav.product')}
+                    <FontAwesomeIcon icon={faChevronDown} className="w-2.5 h-2.5" />
+                  </button>
+                </DropdownTrigger>
+                <DropdownMenu aria-label={t('nav.product')}>
+                  {PRODUCT_ITEMS.map((item) => (
+                    <DropdownItem key={item.href} as={NextLink} href={item.href}>
+                      {t(item.label)}
+                    </DropdownItem>
+                  ))}
+                </DropdownMenu>
+              </Dropdown>
+            </NavbarItem>
+            {NAV_LINKS.map((item) => (
+              <NavbarItem key={item.label}>
                 <NextLink
-                  className={clsx(
-                    linkStyles({ color: 'foreground' }),
-                    'text-default-500 hover:text-foreground text-sm px-3 py-1.5 rounded-lg hover:bg-default-100 transition-colors duration-200',
-                    'data-[active=true]:text-primary data-[active=true]:font-medium data-[active=true]:bg-primary/10'
-                  )}
-                  color="foreground"
                   href={item.href}
+                  className="text-default-500 hover:text-foreground text-sm px-3 py-1.5 rounded-lg hover:bg-default-100 transition-colors duration-200"
                 >
                   {t(item.label)}
                 </NextLink>
               </NavbarItem>
             ))}
-        </ul>
-      </NavbarContent>
+          </ul>
+        </NavbarContent>
 
-      <NavbarContent className="hidden sm:flex basis-1/5 sm:basis-full" justify="end">
-        <NavbarItem className="hidden sm:flex gap-2 items-center">
+        <NavbarContent className="hidden sm:flex basis-1/5 sm:basis-full" justify="end">
+          {status === 'authenticated' && usage && (
+            <NavbarItem>
+              <UsageBadge usage={usage} />
+            </NavbarItem>
+          )}
+          <NavbarItem className="hidden sm:flex gap-2 items-center">
+            {status === 'authenticated' && session?.user ? (
+              userDropdown
+            ) : (
+              <div className="flex items-center gap-3">
+                <NextLink
+                  href="/login"
+                  className="text-sm text-default-500 hover:text-foreground transition-colors duration-200"
+                >
+                  {t('nav.logIn')}
+                </NextLink>
+                <Button
+                  as={NextLink}
+                  href="/login"
+                  size="sm"
+                  className="bg-primary text-primary-foreground font-semibold rounded-lg transition-colors duration-200 px-4"
+                >
+                  {t('nav.startFreeTrial')}
+                </Button>
+              </div>
+            )}
+          </NavbarItem>
+        </NavbarContent>
+
+        <NavbarContent className="sm:hidden basis-1 pl-4" justify="end">
           {status === 'authenticated' && session?.user ? (
             userDropdown
           ) : (
@@ -144,47 +200,37 @@ export const Navbar = () => {
               as={NextLink}
               href="/login"
               size="sm"
-              className="bg-primary text-primary-foreground font-semibold rounded-lg transition-colors duration-200 px-4"
+              className="bg-primary text-primary-foreground font-semibold rounded-lg"
             >
-              {t('common.signIn')}
+              {t('nav.logIn')}
             </Button>
           )}
-        </NavbarItem>
-      </NavbarContent>
+          <NavbarMenuToggle className="text-default-500" />
+        </NavbarContent>
 
-      <NavbarContent className="sm:hidden basis-1 pl-4" justify="end">
-        {status === 'authenticated' && session?.user ? (
-          userDropdown
-        ) : (
-          <Button
-            as={NextLink}
-            href="/login"
-            size="sm"
-            className="bg-primary text-primary-foreground font-semibold rounded-lg"
-          >
-            {t('common.signIn')}
-          </Button>
-        )}
-        <NavbarMenuToggle className="text-default-500" />
-      </NavbarContent>
-
-      <NavbarMenu className="bg-background border-t border-divider pt-4">
-        {searchInput}
-        <div className="mx-4 mt-2 flex flex-col gap-1">
-          {siteConfig.navMenuItems.map((item, index) => (
-            <NavbarMenuItem key={`${item}-${index}`}>
-              <Link
-                color={index === 2 ? 'primary' : index === siteConfig.navMenuItems.length - 1 ? 'danger' : 'foreground'}
-                href={item.href}
-                size="lg"
-                className="text-default-500 hover:text-foreground"
-              >
-                {item.label}
-              </Link>
-            </NavbarMenuItem>
-          ))}
-        </div>
-      </NavbarMenu>
-    </HeroUINavbar>
+        <NavbarMenu className="bg-background border-t border-divider pt-4">
+          <div className="mx-4 mt-2 flex flex-col gap-1">
+            <p className="text-xs uppercase tracking-widest text-default-400 font-semibold px-2 pt-2 pb-1">
+              {t('nav.product')}
+            </p>
+            {PRODUCT_ITEMS.map((item) => (
+              <NavbarMenuItem key={item.href}>
+                <Link href={item.href} size="lg" className="text-default-500 hover:text-foreground pl-2">
+                  {t(item.label)}
+                </Link>
+              </NavbarMenuItem>
+            ))}
+            {NAV_LINKS.map((item) => (
+              <NavbarMenuItem key={item.label}>
+                <Link href={item.href} size="lg" className="text-default-500 hover:text-foreground">
+                  {t(item.label)}
+                </Link>
+              </NavbarMenuItem>
+            ))}
+          </div>
+        </NavbarMenu>
+      </HeroUINavbar>
+      <UpgradeModal isOpen={isUpgradeOpen} onClose={() => setIsUpgradeOpen(false)} />
+    </>
   );
 };
