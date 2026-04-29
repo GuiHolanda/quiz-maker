@@ -102,6 +102,7 @@ function HeroSection() {
 /* ── App Mockup ─────────────────────────────────────────── */
 
 function AppMockup() {
+  const { t } = useTranslation();
   return (
     <div className="relative bg-content1 border border-divider rounded-xl overflow-hidden aspect-[4/3] shadow-lg">
       <div className="absolute top-0 left-0 w-full h-8 bg-content2 border-b border-divider flex items-center px-4 gap-2 z-10">
@@ -162,8 +163,8 @@ function AppMockup() {
         <div><span className="text-default-500">{'}'}</span></div>
       </div>
       <div className="absolute bottom-4 right-4 bg-content2 border border-divider rounded-lg p-3 flex flex-col gap-0.5">
-        <span className="text-xs text-primary font-medium">Analysis Complete</span>
-        <span className="text-xs font-mono text-foreground">Confidence: 94.2%</span>
+        <span className="text-xs text-primary font-medium">{t('homepage.mockup.analysisComplete')}</span>
+        <span className="text-xs font-mono text-foreground">{t('homepage.mockup.confidence')}</span>
       </div>
     </div>
   );

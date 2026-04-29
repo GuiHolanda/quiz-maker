@@ -221,7 +221,7 @@ export const Navbar = () => {
               </NavbarMenuItem>
             ))}
             {NAV_LINKS.map((item) => (
-              <NavbarMenuItem key={item.label}>
+              <NavbarMenuItem key={item.href}>
                 <Link href={item.href} size="lg" className="text-default-500 hover:text-foreground">
                   {t(item.label)}
                 </Link>
