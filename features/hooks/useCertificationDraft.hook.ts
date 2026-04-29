@@ -37,15 +37,27 @@ function removeFromStorage() {
 }
 
 export function useCertificationDraft() {
-  const [title, setTitle] = useState(() => readFromStorage().title);
-  const [code, setCode] = useState(() => readFromStorage().code);
-  const [provider, setProvider] = useState(() => readFromStorage().provider);
-  const [topics, setTopics] = useState<CertificationTopic[]>(() => readFromStorage().topics);
-  const [topicName, setTopicName] = useState(() => readFromStorage().topicName);
+  const [hydrated, setHydrated] = useState(false);
+  const [title, setTitle] = useState('');
+  const [code, setCode] = useState('');
+  const [provider, setProvider] = useState('');
+  const [topics, setTopics] = useState<CertificationTopic[]>([]);
+  const [topicName, setTopicName] = useState('');
 
   useEffect(() => {
+    const draft = readFromStorage();
+    setTitle(draft.title);
+    setCode(draft.code);
+    setProvider(draft.provider);
+    setTopics(draft.topics);
+    setTopicName(draft.topicName);
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
     writeToStorage({ title, code, provider, topics, topicName });
-  }, [title, code, provider, topics, topicName]);
+  }, [hydrated, title, code, provider, topics, topicName]);
 
   const addTopic = (topic: CertificationTopic) => {
     setTopics((prev) => [...prev, topic]);
