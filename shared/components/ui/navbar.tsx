@@ -119,7 +119,7 @@ export const Navbar = () => {
         maxWidth="xl"
         position="sticky"
         classNames={{
-          base: 'bg-background border-b border-divider',
+          base: 'bg-background2 border-b border-divider',
           wrapper: 'px-4 sm:px-6',
         }}
       >

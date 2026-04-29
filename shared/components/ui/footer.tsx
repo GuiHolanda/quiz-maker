@@ -7,7 +7,7 @@ export function Footer() {
   const { t } = useTranslation();
 
   return (
-    <footer className="border-t border-divider bg-background py-10 px-6">
+    <footer className="border-t border-divider bg-background2 py-10 px-6">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
         <span className="font-bold uppercase tracking-widest text-sm text-foreground">
           {t('footer.brand')}

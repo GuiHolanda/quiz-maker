@@ -167,7 +167,18 @@ import { inputProperties } from '@/config/constants/inputStyles';
 <Input {...inputProperties.input} classNames={{ ...inputProperties.input.classNames, input: 'text-sm' }} />
 ```
 
-O `bordered` usa fundo transparente + borda `white/14`, com foco mudando para `white/70`. Funciona em qualquer superfície (dark e light).
+### Padrão visual dos inputs
+
+| Propriedade | Valor |
+|---|---|
+| Raio | `rounded-lg` (8px) — via `inputWrapper` / `trigger` |
+| Altura | 40px — HeroUI `size="md"` padrão |
+| Borda resting | `border-default-300` |
+| Borda focus | `border-primary` (Indigo 600) |
+| Label | `text-xs font-normal text-default-400` |
+| Transição | `transition-colors duration-200` |
+
+O `bordered` usa fundo transparente + borda semântica, com foco mudando para indigo. Funciona em dark e light mode automaticamente.
 
 ---
 

@@ -1,0 +1,190 @@
+<h2>Como editar uma certificação na lista?</h2>
+<p class="subtitle">Escolha como o modo de edição aparece ao clicar em uma certificação</p>
+
+<div class="cards">
+
+  <!-- Option A: Accordion expand -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#0f172a;border-radius:8px">
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">My certifications</div>
+
+      <!-- cert item collapsed -->
+      <div style="background:#1e293b;border:1px solid #334155;border-radius:10px;margin-bottom:6px;overflow:hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px">
+          <div>
+            <div style="font-size:12px;color:#f1f5f9;font-weight:600">AWS Solutions Architect</div>
+            <div style="font-size:10px;color:#64748b">SAA-C03 · 4 topics</div>
+          </div>
+          <div style="color:#64748b;font-size:10px">▼</div>
+        </div>
+      </div>
+
+      <!-- cert item EXPANDED (editing) -->
+      <div style="background:#1e293b;border:1px solid #4f46e5;border-radius:10px;margin-bottom:6px;overflow:hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#1e293b">
+          <div>
+            <div style="font-size:12px;color:#f1f5f9;font-weight:600">SAP Certified Associate</div>
+            <div style="font-size:10px;color:#64748b">C_HANATEC · 3 topics</div>
+          </div>
+          <div style="color:#4f46e5;font-size:10px">▲</div>
+        </div>
+        <div style="padding:12px 14px;border-top:1px solid #334155">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+            <div style="background:#0f172a;border:1px solid #334155;border-radius:6px;padding:8px">
+              <div style="font-size:9px;color:#64748b;margin-bottom:3px">Topic</div>
+              <div style="font-size:11px;color:#f1f5f9">Database</div>
+            </div>
+            <div style="background:#0f172a;border:1px solid #334155;border-radius:6px;padding:8px">
+              <div style="font-size:9px;color:#64748b;margin-bottom:3px">Min %</div>
+              <div style="font-size:11px;color:#f1f5f9">15%</div>
+            </div>
+            <div style="background:#0f172a;border:1px solid #334155;border-radius:6px;padding:8px">
+              <div style="font-size:9px;color:#64748b;margin-bottom:3px">Max %</div>
+              <div style="font-size:11px;color:#f1f5f9">30%</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;opacity:.6">
+            <div style="background:#0f172a;border:1px solid #334155;border-radius:6px;padding:8px">
+              <div style="font-size:11px;color:#f1f5f9">Security</div>
+            </div>
+            <div style="background:#0f172a;border:1px solid #334155;border-radius:6px;padding:8px">
+              <div style="font-size:11px;color:#f1f5f9">20%</div>
+            </div>
+            <div style="background:#0f172a;border:1px solid #334155;border-radius:6px;padding:8px">
+              <div style="font-size:11px;color:#f1f5f9">40%</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;justify-content:flex-end">
+            <div style="background:#334155;border-radius:6px;padding:4px 10px;font-size:10px;color:#94a3b8">+ Add topic</div>
+            <div style="background:#4f46e5;border-radius:6px;padding:4px 10px;font-size:10px;color:#fff">Save</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- cert item collapsed -->
+      <div style="background:#1e293b;border:1px solid #334155;border-radius:10px;overflow:hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px">
+          <div>
+            <div style="font-size:12px;color:#f1f5f9;font-weight:600">Google Cloud Professional</div>
+            <div style="font-size:10px;color:#64748b">GCP-PDE · 5 topics</div>
+          </div>
+          <div style="color:#64748b;font-size:10px">▼</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Accordion expand</h3>
+      <p>Clica na cert → expande inline com os tópicos editáveis. Consistente com o padrão já usado na página.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Split panel -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#0f172a;border-radius:8px">
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">My certifications</div>
+      <div style="display:grid;grid-template-columns:1fr 1.5fr;gap:10px;height:180px">
+        <!-- List side -->
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:8px 10px">
+            <div style="font-size:11px;color:#94a3b8;font-weight:500">AWS Solutions Architect</div>
+            <div style="font-size:9px;color:#475569">SAA-C03</div>
+          </div>
+          <div style="background:#1e293b;border:2px solid #4f46e5;border-radius:8px;padding:8px 10px">
+            <div style="font-size:11px;color:#f1f5f9;font-weight:600">SAP Certified Associate</div>
+            <div style="font-size:9px;color:#64748b">C_HANATEC</div>
+          </div>
+          <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:8px 10px">
+            <div style="font-size:11px;color:#94a3b8;font-weight:500">Google Cloud Pro</div>
+            <div style="font-size:9px;color:#475569">GCP-PDE</div>
+          </div>
+        </div>
+        <!-- Edit panel -->
+        <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:10px;overflow:hidden">
+          <div style="font-size:11px;color:#f1f5f9;font-weight:600;margin-bottom:8px">SAP Certified Associate</div>
+          <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">
+            <div style="display:grid;grid-template-columns:1fr 50px 50px;gap:5px;align-items:center">
+              <div style="font-size:10px;color:#94a3b8">Database</div>
+              <div style="background:#0f172a;border:1px solid #334155;border-radius:4px;padding:3px 5px;font-size:9px;color:#f1f5f9;text-align:center">15%</div>
+              <div style="background:#0f172a;border:1px solid #334155;border-radius:4px;padding:3px 5px;font-size:9px;color:#f1f5f9;text-align:center">30%</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 50px 50px;gap:5px;align-items:center">
+              <div style="font-size:10px;color:#94a3b8">Security</div>
+              <div style="background:#0f172a;border:1px solid #334155;border-radius:4px;padding:3px 5px;font-size:9px;color:#f1f5f9;text-align:center">20%</div>
+              <div style="background:#0f172a;border:1px solid #334155;border-radius:4px;padding:3px 5px;font-size:9px;color:#f1f5f9;text-align:center">40%</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 50px 50px;gap:5px;align-items:center">
+              <div style="font-size:10px;color:#94a3b8;opacity:.5">+ Add topic</div>
+              <div style="opacity:.3;font-size:9px;color:#64748b;text-align:center">min</div>
+              <div style="opacity:.3;font-size:9px;color:#64748b;text-align:center">max</div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end">
+            <div style="background:#4f46e5;border-radius:5px;padding:4px 10px;font-size:9px;color:#fff">Save</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Split panel</h3>
+      <p>Lista à esquerda, painel de edição à direita. Seleção destaque com borda primária. Mais desktop-first.</p>
+    </div>
+  </div>
+
+  <!-- Option C: Card flip to edit -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#0f172a;border-radius:8px">
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">My certifications</div>
+
+      <!-- card normal -->
+      <div style="background:#1e293b;border:1px solid #334155;border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:12px;color:#f1f5f9;font-weight:600">AWS Solutions Architect</div>
+          <div style="font-size:10px;color:#64748b">SAA-C03 · 4 topics</div>
+        </div>
+        <div style="background:#1e293b;border:1px solid #334155;border-radius:6px;padding:3px 8px;font-size:9px;color:#94a3b8">Edit</div>
+      </div>
+
+      <!-- card in edit mode -->
+      <div style="background:#1e293b;border:1px solid #4f46e5;border-radius:10px;overflow:hidden;margin-bottom:8px">
+        <div style="background:#4f46e5;padding:8px 14px;display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:11px;color:#fff;font-weight:600">SAP Certified Associate <span style="font-weight:400;opacity:.7">· C_HANATEC</span></div>
+          <div style="font-size:9px;color:#c7d2fe;cursor:pointer">✕ cancel</div>
+        </div>
+        <div style="padding:10px 14px">
+          <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">
+            <div style="display:grid;grid-template-columns:1fr 60px 60px 50px;gap:6px;align-items:center">
+              <div style="font-size:10px;color:#94a3b8">Database</div>
+              <div style="background:#0f172a;border:1px solid #334155;border-radius:4px;padding:4px 6px;font-size:10px;color:#f1f5f9;text-align:center">15%</div>
+              <div style="background:#0f172a;border:1px solid #334155;border-radius:4px;padding:4px 6px;font-size:10px;color:#f1f5f9;text-align:center">30%</div>
+              <div style="background:#ef444420;border:1px solid #ef4444;border-radius:4px;padding:4px 6px;font-size:9px;color:#ef4444;text-align:center">✕</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 60px 60px 50px;gap:6px;align-items:center">
+              <div style="font-size:10px;color:#94a3b8">Security</div>
+              <div style="background:#0f172a;border:1px solid #334155;border-radius:4px;padding:4px 6px;font-size:10px;color:#f1f5f9;text-align:center">20%</div>
+              <div style="background:#0f172a;border:1px solid #334155;border-radius:4px;padding:4px 6px;font-size:10px;color:#f1f5f9;text-align:center">40%</div>
+              <div style="background:#ef444420;border:1px solid #ef4444;border-radius:4px;padding:4px 6px;font-size:9px;color:#ef4444;text-align:center">✕</div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:9px;color:#4f46e5">+ Add topic</div>
+            <div style="background:#4f46e5;border-radius:5px;padding:4px 10px;font-size:9px;color:#fff">Save changes</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- card normal -->
+      <div style="background:#1e293b;border:1px solid #334155;border-radius:10px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:12px;color:#f1f5f9;font-weight:600">Google Cloud Pro</div>
+          <div style="font-size:10px;color:#64748b">GCP-PDE · 5 topics</div>
+        </div>
+        <div style="background:#1e293b;border:1px solid #334155;border-radius:6px;padding:3px 8px;font-size:9px;color:#94a3b8">Edit</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Card com modo edit</h3>
+      <p>Cada cert é um card com botão "Edit". Ao clicar, o card se transforma: header fica primário e exibe os campos editáveis com botão de remover tópico.</p>
+    </div>
+  </div>
+
+</div>

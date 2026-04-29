@@ -147,38 +147,53 @@ Interactive elements like buttons use a subtle "inner shadow" or a bottom-weight
 
 ## Shapes
 
-The design system uses **Soft** roundedness (4px - 6px) to maintain a modern, professional appearance that feels precise but not aggressive.
+The design system uses **Soft** roundedness to maintain a modern, professional appearance that feels precise but not aggressive.
 
-- **Standard Elements:** Buttons, inputs, and checkboxes use a 4px radius (rounded-sm).
-- **Containers:** Cards and larger modules use an 8px radius (rounded-md) to frame content clearly.
-- **Form Controls:** Checkboxes and radio buttons maintain sharp/slightly rounded corners to align with the technical SaaS aesthetic, avoiding the "bubbly" look of consumer apps.
+- **Inputs & Selects:** `rounded-lg` (8px) — applied via `inputWrapper`/`trigger` in `inputStyles.ts`
+- **Buttons:** `rounded-lg` (8px)
+- **Cards & containers:** `rounded-xl` (12px) — `bg-content1 border border-default-200 rounded-xl`
+- **Tags & badges:** `rounded-full`
+- **Checkboxes / radio:** default HeroUI radius (slight rounding, not circular)
 
 ## Components
 
 ### Buttons
-- **Primary:** Solid Indigo 600 fill, White text. Tactile effect: 1px bottom border in a darker shade for a "raised" look.
-- **Secondary:** Transparent fill, 1px Gray 700 border. Subtle hover fill change to Gray 800.
-- **Ghost:** No border, Indigo text. Used for secondary navigation or "Cancel" actions.
+- **Primary:** Solid Indigo 600 fill, White text. `bg-primary text-primary-foreground hover:opacity-90 transition-opacity duration-200 rounded-lg`
+- **Secondary (bordered):** Transparent fill, `border-default-300` border. Hover: `border-default-400 text-foreground`. `rounded-lg`
+- **Ghost/flat:** No border, Indigo text. Used for secondary navigation or "Cancel" actions.
 
 ### Cards
-- Background: Surface Gray (#18181B).
-- Border: 1px solid (#27272A).
-- No shadow. Content padding: 24px.
+- `bg-content1 border border-default-200 rounded-xl p-6`
+- No shadow. Background adapts to dark/light mode via HeroUI `content1` token.
 
 ### Badges (Usage/Plans)
 - Small, uppercase labels.
-- **Pro/Active:** Indigo background (10% opacity) with Indigo text.
-- **Free/Standard:** Gray background (10% opacity) with Gray text.
-- **Warning/Urgent:** Red background (10% opacity) with Red text.
+- **Pro/Active:** `bg-primary/10 text-primary`
+- **Free/Standard:** `bg-default-100 text-default-500`
+- **Warning/Urgent:** `bg-danger/10 text-danger`
 
 ### Form Inputs
-- Background: Background Black (#09090B).
-- Border: 1px solid Gray 700.
-- Focus State: 1px Indigo 600 border with a subtle 2px Indigo glow (no blur).
-- Text: FAFAFA for input, A1A1AA for placeholders.
+Standardized via `inputProperties` in `config/constants/inputStyles.ts`. Always use spread — never repeat manually.
+
+| Property | Value | Token |
+|---|---|---|
+| Variant | `bordered` | HeroUI |
+| Border radius | 8px | `rounded-lg` on `inputWrapper` |
+| Height | 40px | HeroUI `size="md"` default |
+| Resting border | `border-default-300` | HeroUI semantic |
+| Focus border | `border-primary` (Indigo 600) | HeroUI semantic |
+| Label | `text-xs font-normal text-default-400` | semantic |
+| Transition | `transition-colors duration-200` | — |
+
+```tsx
+import { inputProperties } from '@/config/constants/inputStyles';
+
+<Input {...inputProperties.input} />          // Input / number
+<Select {...inputProperties.select} />        // Select
+<Autocomplete {...inputProperties.autocomplete} /> // Autocomplete
+```
 
 ### Progress Indicators
 - Linear bars only. No circular loaders.
-- Background track: Gray 800.
-- Fill: Indigo 600.
-- Use height of 4px for subtle tracking and 8px for major milestones.
+- Track: `bg-default-100` · Fill: `bg-primary` (Indigo 600)
+- Height: `h-1.5` (6px) for step progress · `h-1` (4px) for subtle tracking

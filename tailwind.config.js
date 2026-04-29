@@ -61,7 +61,8 @@ const config = {
         },
         dark: {
           colors: {
-            background: "#0f172a",
+            background: "#13121B",
+            background2: "#09090B",
             foreground: "#f8fafc",
             primary: {
               50: "#eef2ff",
