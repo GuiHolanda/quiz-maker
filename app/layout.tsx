@@ -1,4 +1,4 @@
-import '@/styles/globals.css';
+import '@/shared/styles/globals.css';
 import { Metadata, Viewport } from 'next';
 import clsx from 'clsx';
 
@@ -6,9 +6,9 @@ import { Providers } from './providers';
 
 import { siteConfig } from '@/config/site';
 import { fontSans } from '@/config/fonts';
-import { Navbar } from '@/sharedComponents/ui/navbar';
-import { Footer } from '@/sharedComponents/ui/footer';
-import { AiChatWrapper } from '@/sharedComponents/ui/AiChatWrapper';
+import { Navbar } from '@/shared/components/ui/navbar';
+import { Footer } from '@/shared/components/ui/footer';
+import { AiChatWrapper } from '@/shared/components/ui/AiChatWrapper';
 
 export const metadata: Metadata = {
   title: {

@@ -1,12 +1,12 @@
 import React from 'react';
-import { AnswersMap, StoredQuestion } from '@/types';
+import { AnswersMap, StoredQuestion } from '@/shared/types';
 import { QuestionCard } from './QuestionCard';
 import { Button } from '@heroui/button';
 import { Progress } from '@heroui/progress';
 import { AnsweredQuestionCard } from './AnswredQuestionCard';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
-import { PaginationControls } from '@/sharedComponents/ui/PaginationControls';
-import { ItemsPerPageSelect } from '@/sharedComponents/ui/ItemsPerPageSelect';
+import { PaginationControls } from '@/shared/components/ui/PaginationControls';
+import { ItemsPerPageSelect } from '@/shared/components/ui/ItemsPerPageSelect';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 export function QuestionList({

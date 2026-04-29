@@ -1,5 +1,5 @@
 import React, { useReducer, useEffect, useCallback, useMemo } from 'react';
-import type { Certification, CertificationsStoreApi } from '@/types';
+import type { Certification, CertificationsStoreApi } from '@/shared/types';
 import { CERTIFICATIONS_LOCAL_STORAGE_KEY, INITIAL_CERTIFICATIONS_STATE } from '@/config/constants';
 import { certificationsReducer } from '../reducers/certifications.reducer';
 import { getCertifications } from '../connectors';

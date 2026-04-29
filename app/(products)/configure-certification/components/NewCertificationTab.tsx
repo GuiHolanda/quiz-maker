@@ -9,8 +9,8 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 import { CertificationHeader } from './CertificationHeader';
 import { TopicForm } from './TopicForm';
-import { SectionsTable } from '@/sharedComponents/SectionsTable';
-import { FormAccordion } from '@/sharedComponents/ui/FormAccordion';
+import { SectionsTable } from '@/shared/components/SectionsTable';
+import { FormAccordion } from '@/shared/components/ui/FormAccordion';
 
 export function NewCertificationTab() {
   const { addCertification, selectedCertification, certifications } = useCertificationsContext();

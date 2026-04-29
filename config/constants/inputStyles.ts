@@ -1,7 +1,7 @@
 // Shared classNames for HeroUI input-like components using variant="bordered".
 // Resting: white/14 · Focus: white/70 · Label: xs, normal weight, muted
 
-import { InputLabelPlacement, InputVariant } from "@/types";
+import { InputLabelPlacement, InputVariant } from "@/shared/types";
 
 export const inputLabelClass = 'text-xs font-normal text-default-400';
 

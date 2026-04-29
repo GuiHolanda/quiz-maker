@@ -3,7 +3,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { saveCertification } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { AI_CHAT_LOCAL_STORAGE_KEY } from '@/config/constants';
-import { ChatMessage, Certification } from '@/types';
+import { ChatMessage, Certification } from '@/shared/types';
 
 interface UseAiChatReturn {
   readonly messages: ChatMessage[];

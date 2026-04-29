@@ -1,4 +1,4 @@
-import type { AIQuestion, AnswersMap, QuizLocalStoragePayload } from '@/types';
+import type { AIQuestion, AnswersMap, QuizLocalStoragePayload } from '@/shared/types';
 
 export type QuizState = Readonly<QuizLocalStoragePayload> | null;
 

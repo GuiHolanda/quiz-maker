@@ -1,12 +1,12 @@
 'use client';
 import { getQuestions } from '@/features/connectors';
 import { useRequest } from '@/features/hooks/useRequest.hook';
-import { QuizFormErrors, AIQuestion, QuestionParams } from '@/types';
+import { QuizFormErrors, AIQuestion, QuestionParams } from '@/shared/types';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
-import { CertificationManager } from '@/sharedComponents/CertificationManager';
-import { FormAccordion } from '@/sharedComponents/ui/FormAccordion';
+import { CertificationManager } from '@/shared/components/CertificationManager';
+import { FormAccordion } from '@/shared/components/ui/FormAccordion';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 

@@ -1,4 +1,4 @@
-import { CertificationTopic } from '@/types';
+import { CertificationTopic } from '@/shared/types';
 import { useEffect, useState } from 'react';
 
 const STORAGE_KEY = 'NEW_CERTIFICATION_DRAFT';

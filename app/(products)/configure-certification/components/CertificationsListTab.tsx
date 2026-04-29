@@ -1,4 +1,4 @@
-import { SectionsTable } from "@/sharedComponents/SectionsTable";
+import { SectionsTable } from "@/shared/components/SectionsTable";
 import useCertificationsContext from "@/features/hooks/useCertificationsContext.hook";
 import { Accordion, AccordionItem } from "@heroui/accordion";
 

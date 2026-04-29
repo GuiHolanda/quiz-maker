@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useReducer, useEffect, useCallback, useMemo } from 'react';
-import type { LanguageStoreApi, Language } from '@/types';
+import type { LanguageStoreApi, Language } from '@/shared/types';
 import { LANGUAGE_LOCAL_STORAGE_KEY } from '@/config/constants';
 import { languageReducer, LanguageState } from '@/features/reducers/language.reducer';
 import { parseProperties } from '@/lib/properties-parser';

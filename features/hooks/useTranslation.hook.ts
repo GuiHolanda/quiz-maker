@@ -1,6 +1,6 @@
 import { useContext, useCallback } from 'react';
 import { LanguageContext } from '@/features/providers/language.provider';
-import type { Language } from '@/types';
+import type { Language } from '@/shared/types';
 
 export function useTranslation() {
   const ctx = useContext(LanguageContext);

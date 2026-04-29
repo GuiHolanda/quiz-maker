@@ -1,5 +1,5 @@
 import { prisma, PrismaService } from '@/lib/prisma';
-import { Certification, TopicUpdatePayload } from '@/types';
+import { Certification, TopicUpdatePayload } from '@/shared/types';
 
 export class CertificationService {
   constructor(private readonly prismaService: PrismaService = prisma) {}

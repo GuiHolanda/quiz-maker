@@ -3,7 +3,7 @@
 import NextLink from 'next/link';
 import { Chip } from '@heroui/chip';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import type { UserPlan } from '@/types';
+import type { UserPlan } from '@/shared/types';
 
 interface PlanBadgeProps {
   readonly plan: UserPlan;

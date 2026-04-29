@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { ChatMessageRole } from '@/types';
+import { ChatMessageRole } from '@/shared/types';
 
 interface AiChatMessageProps {
   readonly role: ChatMessageRole;

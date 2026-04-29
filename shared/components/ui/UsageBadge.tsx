@@ -1,7 +1,7 @@
 'use client';
 
 import NextLink from 'next/link';
-import type { UsageStats } from '@/types';
+import type { UsageStats } from '@/shared/types';
 
 interface UsageBadgeProps {
   readonly usage: UsageStats;

@@ -2,7 +2,7 @@
 
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/table';
 import React, { Key, useCallback, useRef } from 'react';
-import { Certification, CertificationTopic } from '@/types';
+import { Certification, CertificationTopic } from '@/shared/types';
 import { Button } from '@heroui/button';
 import { Slider } from '@heroui/slider';
 import { updateCertificationTopic } from '@/features/connectors';

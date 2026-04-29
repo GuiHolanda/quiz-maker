@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { QuizFormErrors, QuizParams } from "@/types";
+import { QuizFormErrors, QuizParams } from "@/shared/types";
 import { addToast } from "@heroui/toast";
 import { useTranslation } from "@/features/hooks/useTranslation.hook";
 

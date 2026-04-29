@@ -1,5 +1,5 @@
 import { OPENAI_POST_URL, SAVE_QUESTIONS_URL, SAVE_CERTIFICATION_URL, QUIZ_GENERATOR_URL, BILLING_USAGE_URL, BILLING_CHECKOUT_URL, BILLING_PORTAL_URL } from '@/config/constants';
-import { AIQuestion, Certification, QuestionParams, StoredQuestion, TopicUpdatePayload, UsageStats } from '@/types';
+import { AIQuestion, Certification, QuestionParams, StoredQuestion, TopicUpdatePayload, UsageStats } from '@/shared/types';
 import api from '@/lib/bff.api';
 
 export async function getCertifications(): Promise<Certification[]> {

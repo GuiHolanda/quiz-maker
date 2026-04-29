@@ -1,9 +1,9 @@
-import { SectionsTable } from '@/sharedComponents/SectionsTable';
+import { SectionsTable } from '@/shared/components/SectionsTable';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
 import { inputProperties } from '@/config/constants/inputStyles';
-import { FormAccordion } from '@/sharedComponents/ui/FormAccordion';
+import { FormAccordion } from '@/shared/components/ui/FormAccordion';
 
 export function EditCertificationTab() {
   const { certifications, setSelectedCertification, selectedCertification, updateCertification } = useCertificationsContext();

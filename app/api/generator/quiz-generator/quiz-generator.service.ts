@@ -1,6 +1,6 @@
 import { prisma, PrismaService } from '@/lib/prisma';
-import { CertificationTopic } from '@/types';
-import { parseNumber } from '@/utils';
+import { CertificationTopic } from '@/shared/types';
+import { parseNumber } from '@/shared/utils';
 
 export class QuizGeneratorService {
   constructor(private readonly prismaService: PrismaService = prisma) {}

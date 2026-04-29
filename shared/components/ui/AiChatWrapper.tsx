@@ -1,8 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { AiChatDrawer } from '@/sharedComponents/ui/AiChatDrawer';
-import { AiChatFab } from '@/sharedComponents/ui/AiChatFab';
+import { AiChatDrawer } from '@/shared/components/ui/AiChatDrawer';
+import { AiChatFab } from '@/shared/components/ui/AiChatFab';
 
 export function AiChatWrapper() {
   const { status } = useSession();

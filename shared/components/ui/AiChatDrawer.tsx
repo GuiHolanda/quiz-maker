@@ -9,9 +9,9 @@ import { faXmark, faPaperPlane, faRotateRight } from '@fortawesome/free-solid-sv
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useAiChat } from '@/features/hooks/useAiChat.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
-import { AiChatMessage } from '@/sharedComponents/ui/AiChatMessage';
-import { AiChatPreviewCard } from '@/sharedComponents/ui/AiChatPreviewCard';
-import { Certification } from '@/types';
+import { AiChatMessage } from '@/shared/components/ui/AiChatMessage';
+import { AiChatPreviewCard } from '@/shared/components/ui/AiChatPreviewCard';
+import { Certification } from '@/shared/types';
 
 interface AiChatDrawerProps {
   readonly isOpen: boolean;

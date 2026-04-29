@@ -6,7 +6,7 @@ import { Select, SelectItem } from '@heroui/select';
 import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
 import { useDisclosure } from '@heroui/modal';
 import { useState } from 'react';
-import { Certification } from '@/types';
+import { Certification } from '@/shared/types';
 import { inputProperties } from '@/config/constants/inputStyles';
 
 interface CertificationManagerProps extends React.HTMLAttributes<HTMLDivElement> {

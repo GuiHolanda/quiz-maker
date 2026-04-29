@@ -1,4 +1,4 @@
-import type { Certification } from '@/types';
+import type { Certification } from '@/shared/types';
 
 export interface CertificationsState {
   certifications: Certification[];

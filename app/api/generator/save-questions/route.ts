@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { QuestionService } from '@/app/api/generator/question-generator/question.service';
-import { AIQuestion } from '@/types';
+import { AIQuestion } from '@/shared/types';
 import { auth } from '@/auth';
 
 const questionService = new QuestionService();

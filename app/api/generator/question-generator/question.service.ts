@@ -1,6 +1,6 @@
 import { prisma, PrismaService } from '@/lib/prisma';
-import { AIQuestion, Answer, QuestionParams } from '@/types';
-import { toSafeString } from '@/utils';
+import { AIQuestion, Answer, QuestionParams } from '@/shared/types';
+import { toSafeString } from '@/shared/utils';
 
 export class QuestionService {
   constructor(private readonly prismaService: PrismaService = prisma) {}

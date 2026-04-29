@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { StoredQuestion } from '@/types';
+import { StoredQuestion } from '@/shared/types';
 import { QuestionList } from '@/app/(products)/quiz/components/QuestionList';
 import { QuizProvider } from '@/features/providers/quiz.provider';
 import { CertificationsProvider } from '@/features/providers/certifications.provider';

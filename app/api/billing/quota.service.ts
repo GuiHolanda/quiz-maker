@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { PLAN_LIMITS } from '@/config/constants';
-import type { UserPlan, QuotaAction, UsageStats } from '@/types';
+import type { UserPlan, QuotaAction, UsageStats } from '@/shared/types';
 
 const PERIOD_DAYS = 30;
 

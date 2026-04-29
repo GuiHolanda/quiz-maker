@@ -19,12 +19,12 @@ import { useSession, signOut } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowUp, faBrain, faChevronDown } from '@fortawesome/free-solid-svg-icons';
 
-import { UpgradeModal } from '@/sharedComponents/ui/UpgradeModal';
-import { UsageBadge } from '@/sharedComponents/ui/UsageBadge';
+import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
+import { UsageBadge } from '@/shared/components/ui/UsageBadge';
 import { getBillingUsage } from '@/features/connectors';
-import type { UsageStats } from '@/types';
-import { ThemeSwitch } from '@/sharedComponents/ui/theme-switch';
-import { LanguageSwitch } from '@/sharedComponents/ui/language-switch';
+import type { UsageStats } from '@/shared/types';
+import { ThemeSwitch } from '@/shared/components/ui/theme-switch';
+import { LanguageSwitch } from '@/shared/components/ui/language-switch';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 const PRODUCT_ITEMS = [

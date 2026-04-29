@@ -6,7 +6,7 @@ import { Spinner } from '@heroui/spinner';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck } from '@fortawesome/free-solid-svg-icons';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { Certification } from '@/types';
+import { Certification } from '@/shared/types';
 
 interface AiChatPreviewCardProps {
   readonly certification: Certification;

@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { AIQuestion } from '@/types';
+import { AIQuestion } from '@/shared/types';
 import { QuizProvider } from '@/features/providers/quiz.provider';
 import { CertificationsProvider } from '@/features/providers/certifications.provider';
 import { GeneratedQuestionsList } from '@/app/(products)/generate-questions/components/GeneratedQuestionsList';

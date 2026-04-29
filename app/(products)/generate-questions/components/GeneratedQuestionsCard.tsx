@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { AIQuestion } from '@/types';
+import { AIQuestion } from '@/shared/types';
 import { Checkbox } from '@heroui/checkbox';
 import { Listbox, ListboxItem } from '@heroui/listbox';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';

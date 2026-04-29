@@ -1,4 +1,4 @@
-import { StoredQuestion } from '@/types';
+import { StoredQuestion } from '@/shared/types';
 import { Alert } from '@heroui/alert';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleCheck, faCircleXmark } from '@fortawesome/free-solid-svg-icons';

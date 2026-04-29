@@ -1,5 +1,5 @@
 import React, { useReducer, useEffect, useCallback, useMemo } from 'react';
-import type { AIQuestion, AnswersMap, QuizLocalStoragePayload, QuizStoreApi } from '@/types';
+import type { AIQuestion, AnswersMap, QuizLocalStoragePayload, QuizStoreApi } from '@/shared/types';
 import { QUIZ_LOCAL_STORAGE_KEY } from '@/config/constants';
 import { quizReducer } from '../reducers/quiz.reducer';
 

@@ -1,6 +1,6 @@
 import { FormEvent, useState, useEffect } from 'react';
 import { Button } from '@heroui/button';
-import { StoredQuestion } from '@/types';
+import { StoredQuestion } from '@/shared/types';
 import { CheckboxGroup, Checkbox } from '@heroui/checkbox';
 import { RadioGroup, Radio } from '@heroui/radio';
 import { Form } from '@heroui/form';
