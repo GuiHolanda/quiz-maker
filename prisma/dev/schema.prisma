@@ -63,12 +63,13 @@ model VerificationToken {
 }
 
 model Certification {
-  id     String               @id @default(cuid())
-  label  String
-  key    String               @unique
-  topics CertificationTopic[]
-  userId String?
-  user   User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       String               @id @default(cuid())
+  label    String
+  key      String               @unique
+  provider String?
+  topics   CertificationTopic[]
+  userId   String?
+  user     User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model CertificationTopic {

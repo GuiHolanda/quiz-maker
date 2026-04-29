@@ -9,7 +9,7 @@ export class CertificationService {
       throw new Error('Invalid request body');
     }
 
-    const { label, key, topics } = body as Record<string, unknown>;
+    const { label, key, provider, topics } = body as Record<string, unknown>;
 
     if (!label || typeof label !== 'string') {
       throw new Error('Certification label is required');
@@ -32,11 +32,16 @@ export class CertificationService {
       }
     }
 
-    return { label: label.trim(), key: key.trim(), topics };
+    return {
+      label: label.trim(),
+      key: key.trim(),
+      provider: typeof provider === 'string' && provider.trim() ? provider.trim() : undefined,
+      topics,
+    };
   }
 
   public async save(certification: Certification, userId: string) {
-    const { label, key, topics } = certification;
+    const { label, key, provider, topics } = certification;
 
     return this.prismaService.$transaction(async (tx) => {
       const existing = await tx.certification.findUnique({ where: { key } });
@@ -49,6 +54,7 @@ export class CertificationService {
         data: {
           label,
           key,
+          provider: provider ?? null,
           userId,
           topics: {
             create: topics.map((topic) => ({

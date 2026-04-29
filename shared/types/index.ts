@@ -76,6 +76,7 @@ export interface AIQuestionsStoragePayload {
 export interface Certification {
   label: string;
   key: string;
+  provider?: string;
   topics: CertificationTopic[];
 }
 
