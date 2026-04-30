@@ -16,7 +16,7 @@ export default function ConfigureCertificationPage() {
 
   return (
     <CertificationsProvider>
-    <PageHeader title={t('certification.pageTitle')} subtitle={t('certification.pageSubtitle')} maxWidth="4xl">
+    <PageHeader title={t('certification.pageTitle')} subtitle={t('certification.pageSubtitle')} maxWidth="7xl">
         <div className="flex w-full flex-col">
           <Tabs
             aria-label={t('aria.tabOptions')}

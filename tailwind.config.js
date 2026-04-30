@@ -6,6 +6,7 @@ const config = {
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     './shared/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './config/**/*.{js,ts,jsx,tsx}',
     "./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}"
   ],
   theme: {
@@ -92,7 +93,7 @@ const config = {
               DEFAULT: "#f59e0b",
               foreground: "#000000",
             },
-            content1: "#1e293b",
+            content1: "#1F1F28",
             content2: "#334155",
             focus: "#4f46e5",
           },

@@ -8,6 +8,7 @@ export const inputLabelClass = 'text-xs font-normal text-default-400';
 
 const borderedInputClassNames = {
   label: inputLabelClass,
+  input: 'placeholder:text-xs',
   inputWrapper: [
     'rounded-sm',
     'border-default-300',
@@ -19,6 +20,7 @@ const borderedInputClassNames = {
 
 const borderedSelectClassNames = {
   label: inputLabelClass,
+  value: 'placeholder:text-lg',
   trigger: [
     'rounded-sm',
     'border-default-300',

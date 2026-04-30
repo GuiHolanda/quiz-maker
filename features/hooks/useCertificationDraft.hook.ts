@@ -64,6 +64,18 @@ export function useCertificationDraft() {
     setTopicName('');
   };
 
+  const addEmptyTopic = () => {
+    setTopics((prev) => [...prev, { name: '', minQuestions: 0, maxQuestions: 0 }]);
+  };
+
+  const updateTopic = (index: number, name: string, weightage: number) => {
+    setTopics((prev) => prev.map((t, i) => i === index ? { ...t, name, minQuestions: weightage, maxQuestions: weightage } : t));
+  };
+
+  const removeTopic = (index: number) => {
+    setTopics((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const hasTopic = (name: string) => topics.some((t) => t.name === name);
 
   const reset = () => {
@@ -82,6 +94,9 @@ export function useCertificationDraft() {
     topics,
     topicName, setTopicName,
     addTopic,
+    addEmptyTopic,
+    updateTopic,
+    removeTopic,
     hasTopic,
     reset,
   };

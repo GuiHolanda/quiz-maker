@@ -9,7 +9,7 @@ export function parseProperties(raw: string): Record<string, string> {
     if (eqIndex === -1) continue;
 
     const key = trimmed.slice(0, eqIndex).trim();
-    const raw_value = trimmed.slice(eqIndex + 1).trim();
+    const raw_value = trimmed.slice(eqIndex + 1).trim().replace(/^'(.*)'$/, '$1').replace(/^"(.*)"$/, '$1');
     const value = raw_value.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
     if (key) messages[key] = value;
   }

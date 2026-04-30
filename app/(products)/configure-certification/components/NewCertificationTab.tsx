@@ -67,13 +67,16 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
   if (step === 2) {
     return (
       <Step2DefineTopics
+        title={draft.title}
+        code={draft.code}
+        provider={draft.provider}
         topics={draft.topics}
-        topicName={draft.topicName}
-        onTopicNameChange={draft.setTopicName}
-        onAddTopic={(name, min, max) => draft.addTopic({ name, minQuestions: min, maxQuestions: max })}
-        hasTopic={draft.hasTopic}
+        onAddEmptyTopic={draft.addEmptyTopic}
+        onUpdateTopic={draft.updateTopic}
+        onRemoveTopic={draft.removeTopic}
         onBack={() => setStep(1)}
         onNext={() => setStep(3)}
+        onSaveDraft={onBackToLibrary}
       />
     );
   }

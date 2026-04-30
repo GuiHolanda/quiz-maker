@@ -1,5 +1,6 @@
 'use client';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { Chip } from '@heroui/chip';
 
 interface StepProgressProps {
   readonly currentStep: 1 | 2 | 3;
@@ -22,9 +23,11 @@ export function StepProgress({ currentStep }: StepProgressProps) {
         <span className="text-sm font-semibold text-foreground">
           {t('certification.stepProgress', { current: String(currentStep), total: '3', title })}
         </span>
-        <span className="text-xs font-medium text-default-400 uppercase tracking-widest">
+        <Chip color='primary'>
+        <span className="text-xs font-extrabold">
           {t('certification.percentComplete', { percent: String(percent) })}
         </span>
+        </Chip>
       </div>
       <div className="w-full h-1.5 bg-default-100 rounded-full overflow-hidden">
         <div
