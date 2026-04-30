@@ -1,64 +1,170 @@
 'use client';
-import { faArrowLeft, faArrowRight } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faCircleInfo, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button } from '@heroui/button';
+import { Input } from '@heroui/input';
 
+import { inputProperties } from '@/config/constants/inputStyles';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import type { CertificationTopic } from '@/shared/types';
-import { SectionsTable } from '@/shared/components/SectionsTable';
-import { TopicForm } from './TopicForm';
+
 import { StepProgress } from './StepProgress';
 
 interface Step2DefineTopicsProps {
+  readonly title: string;
+  readonly code: string;
+  readonly provider: string;
   readonly topics: CertificationTopic[];
-  readonly topicName: string;
-  readonly onTopicNameChange: (v: string) => void;
-  readonly onAddTopic: (name: string, min: number, max: number) => void;
-  readonly hasTopic: (name: string) => boolean;
+  readonly onAddEmptyTopic: () => void;
+  readonly onUpdateTopic: (index: number, name: string, weightage: number) => void;
+  readonly onRemoveTopic: (index: number) => void;
   readonly onBack: () => void;
   readonly onNext: () => void;
+  readonly onSaveDraft: () => void;
 }
 
 export function Step2DefineTopics({
-  topics, topicName, onTopicNameChange, onAddTopic, hasTopic, onBack, onNext,
+  title,
+  code,
+  provider,
+  topics,
+  onAddEmptyTopic,
+  onUpdateTopic,
+  onRemoveTopic,
+  onBack,
+  onNext,
+  onSaveDraft,
 }: Step2DefineTopicsProps) {
   const { t } = useTranslation();
-  const hasTopics = topics.length > 0;
+  const totalWeightage = topics.reduce((sum, topic) => sum + topic.minQuestions, 0);
+  const isWeightageValid = totalWeightage === 100;
 
   return (
     <div className="flex flex-col gap-6">
+      <button
+        onClick={onBack}
+        className="flex items-center gap-2 text-xs font-semibold text-default-500 hover:text-foreground transition-colors duration-200 w-fit"
+      >
+        <FontAwesomeIcon icon={faArrowLeft} className="text-[10px]" />
+        {t('certification.backToStep1')}
+      </button>
+
+      <div className="flex flex-col">
+        <h1 className="page-header-title">{t('certification.createNewTitle')}</h1>
+        <p className="page-header-subtitle mt-1">{t('certification.step2Description')}</p>
+      </div>
       <StepProgress currentStep={2} />
 
-      <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4">
-        <TopicForm
-          topicName={topicName}
-          onTopicNameChange={onTopicNameChange}
-          onSubmit={(name, min, max) => {
-            if (!hasTopic(name)) onAddTopic(name, min, max);
-          }}
-        />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="lg:col-span-4 flex flex-col gap-4">
+          <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4">
+            <h3 className="text-lg font-bold text-foreground">{t('certification.certificationSummary')}</h3>
+            <div className="grid grid-cols-4 gap-3 items-end">
+              <div className="col-span-2 lg:col-span-4">
+                <p className="text-xs font-bold text-primary-300">{t('certification.certNameLabel')}</p>
+                <p className="text-base text-foreground mt-1">{title || '—'}</p>
+              </div>
+              <div className='col-span-1 lg:col-span-2'>
+                <p className="text-xs font-bold text-primary-300">{t('certification.providerLabel')}</p>
+                <p className="text-sm text-foreground mt-1">{provider || '—'}</p>
+              </div>
+              <div className='col-span-1 lg:col-span-2'>
+                <p className="text-xs font-bold text-primary-300">{t('certification.examCodeLabel')}</p>
+                <p className="text-sm text-foreground mt-1">{code || '—'}</p>
+              </div>
+            </div>
+          </div>
 
-        {hasTopics && (
-          <SectionsTable selectedCertification={null} topicsList={topics} />
-        )}
+          <div className="bg-primary/10 border border-primary/30 rounded-xl p-4 flex gap-3">
+            <FontAwesomeIcon icon={faCircleInfo} className="text-primary mt-0.5 shrink-0 text-base" />
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-extrabold text-primary">{t('certification.systemLogic')}</p>
+              <p className="text-sm text-default-500">
+                {t('certification.weightageInfoBase')}{' '}
+                <span className={`font-bold ${isWeightageValid ? 'text-success' : 'text-warning'}`}>
+                  {totalWeightage}%
+                </span>
+                .
+              </p>
+            </div>
+          </div>
+        </div>
 
-        <div className="flex items-center justify-between pt-4 border-t border-default-200">
-          <Button
-            variant="bordered"
-            className="border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold transition-colors duration-200 flex items-center gap-2"
-            onPress={onBack}
-          >
-            <FontAwesomeIcon icon={faArrowLeft} />
-            {t('common.back')}
-          </Button>
-          <Button
-            className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200 flex items-center gap-2"
-            isDisabled={!hasTopics}
-            onPress={onNext}
-          >
-            {t('certification.nextReview')}
-            <FontAwesomeIcon icon={faArrowRight} />
-          </Button>
+        <div className="lg:col-span-8 bg-content1 border border-default-200 rounded-xl overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-default-200">
+            <h3 className="text-lg font-bold text-foreground">{t('certification.studyDomains')}</h3>
+            <Button
+              size="sm"
+              className="bg-primary text-primary-foreground text-xs font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200 h-8 px-4"
+              onPress={onAddEmptyTopic}
+              startContent={<FontAwesomeIcon icon={faPlus} className="text-[10px]" />}
+            >
+              {t('certification.addDomain')}
+            </Button>
+          </div>
+
+          <div className="flex flex-col gap-4 p-6 min-h-[200px]">
+            {topics.length === 0 && (
+              <p className="text-sm text-default-400 text-center py-10">{t('certification.noTopics')}</p>
+            )}
+            {topics.map((topic, index) => (
+              <div key={index} className="bg-content1 rounded-lg flex flex-col sm:flex-row gap-4 sm:items-end">
+                <div className="flex-1 flex flex-col gap-1">
+                  <p className="text-sm font-semibold text-primary-400">{t('certification.domainName')}</p>
+                  <Input
+                    {...inputProperties.input}
+                    value={topic.name}
+                    placeholder={t('certification.topicNamePlaceholder')}
+                    onChange={(e) => onUpdateTopic(index, e.target.value, topic.minQuestions)}
+                  />
+                </div>
+                <div className="flex gap-4 items-end">
+                  <div className="w-36 flex flex-col gap-1">
+                    <p className="text-sm font-semibold text-primary-400">{t('certification.weightage')}</p>
+                    <Input
+                      {...inputProperties.input}
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={String(topic.minQuestions)}
+                      onChange={(e) =>
+                        onUpdateTopic(index, topic.name, Math.min(100, Math.max(0, Number(e.target.value) || 0)))
+                      }
+                      endContent={<span className="text-default-400 text-sm">%</span>}
+                    />
+                  </div>
+                  <div className="shrink-0 pb-1">
+                    <Button
+                      isIconOnly
+                      size="sm"
+                      variant="flat"
+                      className="bg-default-100 border border-default-200 text-default-500 hover:text-danger hover:bg-danger/10 transition-colors duration-200 rounded-lg"
+                      onPress={() => onRemoveTopic(index)}
+                    >
+                      <FontAwesomeIcon icon={faTrash} className="text-xs" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 px-6 py-5 border-t border-default-200">
+            <Button
+              variant="flat"
+              className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 rounded-lg transition-colors duration-200 text-sm font-semibold"
+              onPress={onSaveDraft}
+            >
+              {t('certification.saveAsDraft')}
+            </Button>
+            <Button
+              className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
+              isDisabled={topics.length === 0}
+              onPress={onNext}
+            >
+              {t('certification.finalizeCertification')}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
