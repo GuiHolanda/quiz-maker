@@ -33,7 +33,7 @@ export function AiChatPreviewCard({
     <div className="bg-content1 border-2 border-primary rounded-xl p-4 mt-2">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <span className="text-xs uppercase tracking-[0.2em] text-primary font-semibold">
+        <span className="text-xs font-semibold text-primary">
           {t('chat.certificationPreview')}
         </span>
         <Chip variant="flat" size="sm" color="primary">

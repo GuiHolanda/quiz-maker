@@ -60,7 +60,7 @@ function HeroSection() {
         <div className="w-full md:w-5/12 flex flex-col gap-6">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-content1 border border-divider w-fit">
             <span className="w-2 h-2 rounded-full bg-primary" />
-            <span className="text-xs uppercase tracking-widest text-default-500 font-medium">
+            <span className="text-xs font-medium text-default-500">
               {t('homepage.hero.badge')}
             </span>
           </div>
@@ -178,7 +178,7 @@ function TrustedBySection() {
   return (
     <section className="border-y border-divider bg-content1/50 py-10 px-6">
       <div className="max-w-5xl mx-auto flex flex-col items-center gap-6">
-        <span className="text-xs uppercase tracking-widest text-default-400 font-semibold">
+        <span className="text-xs font-semibold text-default-400">
           {t('homepage.trustedBy')}
         </span>
         <div className="flex flex-wrap justify-center gap-8 md:gap-12">

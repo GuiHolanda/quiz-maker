@@ -34,7 +34,7 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
         </ModalHeader>
         <ModalBody>
           <div className="bg-content1 border border-default-200 rounded-xl p-4 flex flex-col gap-2 mb-2">
-            <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold">{t('billing.planPro')}</p>
+            <p className="text-xs font-semibold text-primary">{t('billing.planPro')}</p>
             <ul className="flex flex-col gap-1">
               <li className="text-sm text-default-500">✓ {t('billing.upgradeModal.benefit1')}</li>
               <li className="text-sm text-default-500">✓ {t('billing.upgradeModal.benefit2')}</li>

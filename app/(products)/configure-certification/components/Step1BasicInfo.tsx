@@ -53,7 +53,7 @@ export function Step1BasicInfo({
       {/* Back link */}
       <button
         onClick={onBack}
-        className="flex items-center gap-2 text-xs font-semibold text-primary uppercase tracking-widest w-fit hover:opacity-80 transition-opacity"
+        className="flex items-center gap-2 text-xs font-semibold text-primary w-fit hover:opacity-80 transition-opacity"
       >
         <FontAwesomeIcon icon={faArrowLeft} className="text-sm" />
         {t('certification.backToLibrary')}
@@ -117,7 +117,7 @@ export function Step1BasicInfo({
         <div className="flex items-center justify-between pt-4 border-t border-default-200">
           <Button
             variant="flat"
-            className="bg-transparent text-default-400 hover:text-foreground text-xs font-semibold uppercase tracking-widest transition-colors"
+            className="bg-transparent text-default-400 hover:text-foreground text-xs font-semibold transition-colors"
             onPress={handleSaveDraft}
           >
             {t('certification.saveAsDraft')}

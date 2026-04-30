@@ -78,10 +78,13 @@ bg-default-100       → backgrounds sutis (hover, tabs inativos)
 Título de página  → .page-header-title (text-foreground, extrabold, ~2rem)
 H2 de seção       → text-3xl font-extrabold text-foreground
 H3 de card        → text-xl font-bold text-foreground
-Label             → text-xs uppercase tracking-[0.2em] text-primary font-semibold
+Label de seção    → text-xs font-semibold text-primary
+Label de campo    → text-xs font-medium text-default-400
 Corpo principal   → text-sm text-default-500
 Corpo secundário  → text-xs text-default-400
 ```
+
+> **Regra:** Não usar `uppercase`, `tracking-widest`, `tracking-[0.2em]` nem `tracking-[0.05em]` em nenhum label ou texto de UI.
 
 ---
 

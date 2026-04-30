@@ -13,7 +13,7 @@ export function UsageCard({ label, used, limit, limitLabel }: UsageCardProps) {
 
   return (
     <div className="bg-content1 border border-default-200 rounded-xl p-6">
-      <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">{label}</p>
+      <p className="text-xs font-semibold text-primary mb-3">{label}</p>
       <div className="flex items-end justify-between mb-3">
         <span className="text-3xl font-extrabold text-foreground">{used}</span>
         <span className="text-sm text-default-400">/ {limitLabel}</span>

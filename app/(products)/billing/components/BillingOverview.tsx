@@ -52,7 +52,7 @@ export function BillingOverview() {
     <div className="flex flex-col gap-6">
       <div className="bg-content1 border border-default-200 rounded-xl p-6 flex items-center justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-1">
+          <p className="text-xs font-semibold text-primary mb-1">
             {t('billing.currentPlan')}
           </p>
           <p className="text-xl font-bold text-foreground">
@@ -82,7 +82,7 @@ export function BillingOverview() {
       </div>
 
       <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-3">
+        <p className="text-xs font-semibold text-primary mb-3">
           {t('billing.usageTitle')}
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -210,7 +210,7 @@ export const Navbar = () => {
 
         <NavbarMenu className="bg-background border-t border-divider pt-4">
           <div className="mx-4 mt-2 flex flex-col gap-1">
-            <p className="text-xs uppercase tracking-widest text-default-400 font-semibold px-2 pt-2 pb-1">
+            <p className="text-xs font-semibold text-default-400 px-2 pt-2 pb-1">
               {t('nav.product')}
             </p>
             {PRODUCT_ITEMS.map((item) => (
