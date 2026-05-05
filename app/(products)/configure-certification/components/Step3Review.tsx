@@ -1,12 +1,12 @@
 'use client';
-import { faArrowLeft, faCircleInfo, faLayerGroup, faRocket } from '@fortawesome/free-solid-svg-icons';
+import { faCircleInfo, faLayerGroup, faRocket } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button } from '@heroui/button';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import type { CertificationTopic } from '@/shared/types';
 
-import { StepProgress } from './StepProgress';
+import { StepHeader } from './StepHeader';
 
 interface Step3ReviewProps {
   readonly title: string;
@@ -23,11 +23,7 @@ export function Step3Review({ title, code, provider, topics, isLoading, onBack, 
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col">
-        <h1 className="page-header-title">{t('certification.createNewTitle')}</h1>
-        <p className="page-header-subtitle mt-1">{t('certification.step3Description')}</p>
-      </div>
-      <StepProgress currentStep={3} />
+      <StepHeader currentStep={3} onBack={onBack} />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         <div className="lg:col-span-5 bg-content1 border border-default-200 rounded-xl overflow-hidden">
@@ -66,14 +62,14 @@ export function Step3Review({ title, code, provider, topics, isLoading, onBack, 
               <h3 className="text-lg font-semibold text-foreground">{t('certification.studyDomains')}</h3>
             </div>
             <span className="text-xs font-medium text-default-400 ">
-              {t('certification.domainsCount', { count: String(topics.length) })}
+              {t('certification.domainsCount', { count: String(topics.filter(topic => topic.name && topic.minQuestions).length) })}
             </span>
           </div>
           <div className="flex flex-col p-6 gap-6">
-            {topics.length === 0 && (
+            {topics.filter(topic => topic.name && topic.minQuestions).length === 0 && (
               <p className="text-sm text-default-400 text-center py-4">{t('certification.noTopics')}</p>
             )}
-            {topics.map((topic, index) => (
+            {topics.filter(topic => topic.name && topic.minQuestions).map((topic, index) => (
               <div key={index} className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-foreground">{topic.name}</p>
@@ -95,15 +91,7 @@ export function Step3Review({ title, code, provider, topics, isLoading, onBack, 
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-6 border-t border-default-200">
-        <button
-          onClick={onBack}
-          disabled={isLoading}
-          className="flex items-center gap-2 text-sm text-default-500 hover:text-foreground transition-colors duration-200 w-fit"
-        >
-          <FontAwesomeIcon icon={faArrowLeft} className="text-xs" />
-          {t('certification.backToStep2')}
-        </button>
+      <div className="flex items-center justify-end gap-4 pt-6 border-t border-default-200">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <p className="text-xs text-default-400 text-center sm:text-left">
             {t('certification.readyToDeploy')}

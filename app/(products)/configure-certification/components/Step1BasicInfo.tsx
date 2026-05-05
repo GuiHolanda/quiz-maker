@@ -1,5 +1,5 @@
 'use client';
-import { faArrowLeft, faArrowRight, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
+import { faArrowRight, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
@@ -8,7 +8,7 @@ import { addToast } from '@heroui/toast';
 
 import { inputProperties } from '@/config/constants/inputStyles';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { StepProgress } from './StepProgress';
+import { StepHeader } from './StepHeader';
 
 interface Step1BasicInfoProps {
   readonly title: string;
@@ -50,20 +50,7 @@ export function Step1BasicInfo({
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Back link */}
-      <button
-        onClick={onBack}
-        className="flex items-center gap-2 text-xs font-semibold text-primary w-fit hover:opacity-80 transition-opacity"
-      >
-        <FontAwesomeIcon icon={faArrowLeft} className="text-sm" />
-        {t('certification.backToLibrary')}
-      </button>
-
-      {/* Title */}
-      <h2 className="text-3xl font-extrabold text-foreground">{t('certification.createNewTitle')}</h2>
-
-      {/* Progress */}
-      <StepProgress currentStep={1} />
+      <StepHeader currentStep={1} onBack={onBack} />
 
       {/* Form card */}
       <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6">

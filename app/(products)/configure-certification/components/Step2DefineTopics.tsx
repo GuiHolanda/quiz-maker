@@ -1,5 +1,5 @@
 'use client';
-import { faArrowLeft, faCircleInfo, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faCircleInfo, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
@@ -8,7 +8,7 @@ import { inputProperties } from '@/config/constants/inputStyles';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import type { CertificationTopic } from '@/shared/types';
 
-import { StepProgress } from './StepProgress';
+import { StepHeader } from './StepHeader';
 
 interface Step2DefineTopicsProps {
   readonly title: string;
@@ -41,19 +41,7 @@ export function Step2DefineTopics({
 
   return (
     <div className="flex flex-col gap-6">
-      <button
-        onClick={onBack}
-        className="flex items-center gap-2 text-xs font-semibold text-default-500 hover:text-foreground transition-colors duration-200 w-fit"
-      >
-        <FontAwesomeIcon icon={faArrowLeft} className="text-[10px]" />
-        {t('certification.backToStep1')}
-      </button>
-
-      <div className="flex flex-col">
-        <h1 className="page-header-title">{t('certification.createNewTitle')}</h1>
-        <p className="page-header-subtitle mt-1">{t('certification.step2Description')}</p>
-      </div>
-      <StepProgress currentStep={2} />
+      <StepHeader currentStep={2} onBack={onBack} />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         <div className="lg:col-span-4 flex flex-col gap-4">
