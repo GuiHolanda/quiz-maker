@@ -167,3 +167,33 @@ export interface QuotaError {
   used: number;
   plan: UserPlan;
 }
+
+export interface BrowseTopicSummary {
+  name: string;
+  questionCount: number;
+}
+
+export interface BrowseCertificationSummary {
+  label: string;
+  key: string;
+  totalCount: number;
+  topics: BrowseTopicSummary[];
+}
+
+export interface BrowseSummary {
+  certifications: BrowseCertificationSummary[];
+}
+
+export interface BrowseQuestionsParams {
+  certificationTitle: string;
+  topic: string;
+  page: number;
+  pageSize: number;
+}
+
+export interface BrowseQuestionsResponse {
+  questions: StoredQuestion[];
+  total: number;
+  page: number;
+  pageSize: number;
+}

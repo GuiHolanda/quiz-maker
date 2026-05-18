@@ -146,3 +146,6 @@ export const PLAN_LIMITS = {
   free: { questionsPerPeriod: 50, maxCertifications: 2 },
   pro:  { questionsPerPeriod: 500, maxCertifications: Infinity },
 } as const;
+
+export const BROWSE_SUMMARY_URL = '/generator/browse-questions/summary';
+export const BROWSE_QUESTIONS_URL = '/generator/browse-questions/questions';
