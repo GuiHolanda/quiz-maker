@@ -1,5 +1,5 @@
 import { OPENAI_POST_URL, SAVE_QUESTIONS_URL, SAVE_CERTIFICATION_URL, QUIZ_GENERATOR_URL, BILLING_USAGE_URL, BILLING_CHECKOUT_URL, BILLING_PORTAL_URL } from '@/config/constants';
-import { AIQuestion, Certification, QuestionParams, StoredQuestion, TopicUpdatePayload, UsageStats } from '@/shared/types';
+import { AIQuestion, Certification, CertificationTopic, QuestionParams, StoredQuestion, TopicUpdatePayload, UsageStats } from '@/shared/types';
 import api from '@/lib/bff.api';
 
 export async function getCertifications(): Promise<Certification[]> {
@@ -32,6 +32,36 @@ export async function saveCertification(certification: Certification): Promise<C
 
 export async function updateCertificationTopic(payload: TopicUpdatePayload): Promise<void> {
   await api.patch(SAVE_CERTIFICATION_URL, payload);
+}
+
+export async function updateCertificationMeta(
+  certKey: string,
+  updates: { newLabel?: string; newKey?: string; newProvider?: string | null },
+): Promise<Certification> {
+  const { data } = await api.patch<{ certification: Certification }>(SAVE_CERTIFICATION_URL, {
+    certificationKey: certKey,
+    ...updates,
+  });
+  return data.certification;
+}
+
+export async function deleteCertificationTopic(topicId: string): Promise<void> {
+  await api.delete(`${SAVE_CERTIFICATION_URL}?topicId=${encodeURIComponent(topicId)}`);
+}
+
+export async function addCertificationTopic(
+  certificationKey: string,
+  name: string,
+  minQuestions: number,
+  maxQuestions: number,
+): Promise<CertificationTopic> {
+  const { data } = await api.put<{ topic: CertificationTopic }>(SAVE_CERTIFICATION_URL, {
+    certificationKey,
+    name,
+    minQuestions,
+    maxQuestions,
+  });
+  return data.topic;
 }
 
 export async function getQuizQuestions(params: { certificationTitle: string; numQuestions: number }): Promise<StoredQuestion[]> {

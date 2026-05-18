@@ -76,24 +76,71 @@ export class CertificationService {
       throw new Error('Invalid request body');
     }
 
-    const { certificationKey, topicName, minQuestions, maxQuestions } = body as Record<string, unknown>;
+    const { topicId, newName, minQuestions, maxQuestions } = body as Record<string, unknown>;
 
-    if (!certificationKey || typeof certificationKey !== 'string') {
-      throw new Error('certificationKey is required');
+    if (!topicId || typeof topicId !== 'string') {
+      throw new Error('topicId is required');
     }
-    if (!topicName || typeof topicName !== 'string') {
-      throw new Error('topicName is required');
+    if (newName !== undefined && typeof newName !== 'string') {
+      throw new TypeError('newName must be a string');
     }
     if (typeof minQuestions !== 'number' || typeof maxQuestions !== 'number') {
       throw new TypeError('minQuestions and maxQuestions must be numbers');
     }
 
-    return { certificationKey, topicName, minQuestions, maxQuestions };
+    return { topicId, newName: typeof newName === 'string' ? newName : undefined, minQuestions, maxQuestions };
   }
 
   public async updateTopic(payload: TopicUpdatePayload, userId: string) {
-    const { certificationKey, topicName, minQuestions, maxQuestions } = payload;
+    const { topicId, newName, minQuestions, maxQuestions } = payload;
 
+    const topic = await this.prismaService.certificationTopic.findUnique({
+      where: { id: topicId },
+      include: { certification: true },
+    });
+
+    if (!topic) {
+      throw Object.assign(new Error(`Topic not found`), { status: 404 });
+    }
+
+    if (topic.certification.userId !== userId) {
+      throw Object.assign(new Error('Forbidden'), { status: 403 });
+    }
+
+    return this.prismaService.certificationTopic.update({
+      where: { id: topicId },
+      data: {
+        ...(newName !== undefined && { name: newName }),
+        minQuestions,
+        maxQuestions,
+      },
+    });
+  }
+
+  public async deleteTopic(topicId: string, userId: string) {
+    const topic = await this.prismaService.certificationTopic.findUnique({
+      where: { id: topicId },
+      include: { certification: true },
+    });
+
+    if (!topic) {
+      throw Object.assign(new Error('Topic not found'), { status: 404 });
+    }
+
+    if (topic.certification.userId !== userId) {
+      throw Object.assign(new Error('Forbidden'), { status: 403 });
+    }
+
+    await this.prismaService.certificationTopic.delete({ where: { id: topicId } });
+  }
+
+  public async addTopic(
+    certificationKey: string,
+    name: string,
+    minQuestions: number,
+    maxQuestions: number,
+    userId: string,
+  ) {
     const certification = await this.prismaService.certification.findUnique({
       where: { key: certificationKey },
     });
@@ -106,17 +153,49 @@ export class CertificationService {
       throw Object.assign(new Error('Forbidden'), { status: 403 });
     }
 
-    const topic = await this.prismaService.certificationTopic.findUnique({
-      where: { certificationId_name: { certificationId: certification.id, name: topicName } },
+    const existing = await this.prismaService.certificationTopic.findUnique({
+      where: { certificationId_name: { certificationId: certification.id, name } },
     });
 
-    if (!topic) {
-      throw Object.assign(new Error(`Topic "${topicName}" not found`), { status: 404 });
+    if (existing) {
+      throw Object.assign(new Error(`Topic "${name}" already exists`), { status: 409 });
     }
 
-    return this.prismaService.certificationTopic.update({
-      where: { id: topic.id },
-      data: { minQuestions, maxQuestions },
+    return this.prismaService.certificationTopic.create({
+      data: { name, minQuestions, maxQuestions, certificationId: certification.id },
+    });
+  }
+
+  public async updateCertificationMeta(
+    certKey: string,
+    updates: { newLabel?: string; newKey?: string; newProvider?: string | null },
+    userId: string,
+  ) {
+    const cert = await this.prismaService.certification.findUnique({ where: { key: certKey } });
+
+    if (!cert) {
+      throw Object.assign(new Error('Certification not found'), { status: 404 });
+    }
+
+    if (cert.userId !== userId) {
+      throw Object.assign(new Error('Forbidden'), { status: 403 });
+    }
+
+    if (updates.newKey && updates.newKey !== certKey) {
+      const conflict = await this.prismaService.certification.findUnique({ where: { key: updates.newKey } });
+      if (conflict) {
+        throw Object.assign(new Error(`Certification with key "${updates.newKey}" already exists`), { status: 409 });
+      }
+    }
+
+    return this.prismaService.certification.update({
+      where: { key: certKey },
+      data: {
+        ...(updates.newLabel !== undefined && { label: updates.newLabel }),
+        ...(updates.newKey !== undefined && { key: updates.newKey }),
+        ...(updates.newProvider !== undefined && { provider: updates.newProvider }),
+      },
+      include: { topics: true },
     });
   }
 }
