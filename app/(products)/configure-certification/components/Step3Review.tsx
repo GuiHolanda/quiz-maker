@@ -66,14 +66,14 @@ export function Step3Review({ title, code, provider, topics, isLoading, onBack, 
             </span>
           </div>
           <div className="flex flex-col p-6 gap-6">
-            {topics.filter(topic => topic.name && topic.minQuestions).length === 0 && (
+            {topics.filter(topic => topic.name && topic.maxQuestions).length === 0 && (
               <p className="text-sm text-default-400 text-center py-4">{t('certification.noTopics')}</p>
             )}
-            {topics.filter(topic => topic.name && topic.minQuestions).map((topic, index) => (
+            {topics.filter(topic => topic.name && topic.maxQuestions).map((topic, index) => (
               <div key={index} className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-foreground">{topic.name}</p>
-                  <p className="text-sm font-bold font-mono text-primary">{topic.minQuestions}%</p>
+                  <p className="text-sm font-bold font-mono text-primary">{topic.maxQuestions}%</p>
                 </div>
                 <div className="w-full h-2 bg-default-100 rounded-full overflow-hidden">
                   <div

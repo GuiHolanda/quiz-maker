@@ -23,7 +23,7 @@ export default function ConfigureCertificationPage() {
             selectedKey={selectedTab as string}
             onSelectionChange={setSelectedTab}
             classNames={{
-              tabList: 'bg-content1 border border-default-200 rounded-xl p-1 gap-1',
+              tabList: 'bg-content1 border border-default-200 rounded-xl gap-1',
               tab: 'rounded-xl text-default-400 data-[selected=true]:text-foreground data-[selected=true]:font-semibold transition-colors duration-200',
               tabContent: 'group-data-[selected=true]:text-foreground',
               cursor: 'bg-primary rounded-xl',

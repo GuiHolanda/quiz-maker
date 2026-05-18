@@ -16,7 +16,7 @@ interface Step2DefineTopicsProps {
   readonly provider: string;
   readonly topics: CertificationTopic[];
   readonly onAddEmptyTopic: () => void;
-  readonly onUpdateTopic: (index: number, name: string, weightage: number) => void;
+  readonly onUpdateTopic: (index: number, name: string, minWeightage: number, maxWeightage: number) => void;
   readonly onRemoveTopic: (index: number) => void;
   readonly onBack: () => void;
   readonly onNext: () => void;
@@ -36,8 +36,9 @@ export function Step2DefineTopics({
   onSaveDraft,
 }: Step2DefineTopicsProps) {
   const { t } = useTranslation();
-  const totalWeightage = topics.reduce((sum, topic) => sum + topic.minQuestions, 0);
+  const totalWeightage = topics.reduce((sum, topic) => sum + Number(topic.maxQuestions), 0);
   const isWeightageValid = totalWeightage === 100;
+  const allTopicsNamed = topics.length > 0 && topics.every((t) => t.name.trim().length > 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -52,11 +53,11 @@ export function Step2DefineTopics({
                 <p className="text-xs font-bold text-primary-300">{t('certification.certNameLabel')}</p>
                 <p className="text-base text-foreground mt-1">{title || '—'}</p>
               </div>
-              <div className='col-span-1 lg:col-span-2'>
+              <div className="col-span-1 lg:col-span-2">
                 <p className="text-xs font-bold text-primary-300">{t('certification.providerLabel')}</p>
                 <p className="text-sm text-foreground mt-1">{provider || '—'}</p>
               </div>
-              <div className='col-span-1 lg:col-span-2'>
+              <div className="col-span-1 lg:col-span-2">
                 <p className="text-xs font-bold text-primary-300">{t('certification.examCodeLabel')}</p>
                 <p className="text-sm text-foreground mt-1">{code || '—'}</p>
               </div>
@@ -97,41 +98,63 @@ export function Step2DefineTopics({
             )}
             {topics.map((topic, index) => (
               <div key={index} className="bg-content1 rounded-lg flex flex-col sm:flex-row gap-4 sm:items-end">
-                <div className="flex-1 flex flex-col gap-1">
-                  <p className="text-sm font-semibold text-primary-400">{t('certification.domainName')}</p>
+                <div className="w-1/2">
                   <Input
                     {...inputProperties.input}
+                    label={t('certification.domainName')}
                     value={topic.name}
                     placeholder={t('certification.topicNamePlaceholder')}
-                    onChange={(e) => onUpdateTopic(index, e.target.value, topic.minQuestions)}
+                    onChange={(e) => onUpdateTopic(index, e.target.value, topic.minQuestions, topic.maxQuestions)}
                   />
                 </div>
-                <div className="flex gap-4 items-end">
-                  <div className="w-36 flex flex-col gap-1">
-                    <p className="text-sm font-semibold text-primary-400">{t('certification.weightage')}</p>
-                    <Input
-                      {...inputProperties.input}
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={String(topic.minQuestions)}
-                      onChange={(e) =>
-                        onUpdateTopic(index, topic.name, Math.min(100, Math.max(0, Number(e.target.value) || 0)))
-                      }
-                      endContent={<span className="text-default-400 text-sm">%</span>}
-                    />
-                  </div>
-                  <div className="shrink-0 pb-1">
-                    <Button
-                      isIconOnly
-                      size="sm"
-                      variant="flat"
-                      className="bg-default-100 border border-default-200 text-default-500 hover:text-danger hover:bg-danger/10 transition-colors duration-200 rounded-lg"
-                      onPress={() => onRemoveTopic(index)}
-                    >
-                      <FontAwesomeIcon icon={faTrash} className="text-xs" />
-                    </Button>
-                  </div>
+                <div className="w-1/4 flex flex-col gap-1">
+                  <Input
+                    {...inputProperties.input}
+                    label={t('certification.minQuestions')}
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={String(topic.minQuestions)}
+                    onChange={(e) =>
+                      onUpdateTopic(
+                        index,
+                        topic.name,
+                        Math.min(100, Math.max(0, Number(e.target.value) || 0)),
+                        topic.maxQuestions
+                      )
+                    }
+                    endContent={<span className="text-default-400 text-sm">%</span>}
+                  />
+                </div>
+                <div className="w-1/4 flex flex-col gap-1">
+                  <Input
+                    {...inputProperties.input}
+                    label={t('certification.maxQuestions')}
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={String(topic.maxQuestions)}
+                    onChange={(e) =>
+                      onUpdateTopic(
+                        index,
+                        topic.name,
+                        topic.minQuestions,
+                        Math.min(100, Math.max(0, Number(e.target.value) || 0))
+                      )
+                    }
+                    endContent={<span className="text-default-400 text-sm">%</span>}
+                  />
+                </div>
+                <div className="shrink-0 pb-1">
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="flat"
+                    className="bg-default-100 border border-default-200 text-default-500 hover:text-danger hover:bg-danger/10 transition-colors duration-200 rounded-lg"
+                    onPress={() => onRemoveTopic(index)}
+                  >
+                    <FontAwesomeIcon icon={faTrash} className="text-xs" />
+                  </Button>
                 </div>
               </div>
             ))}
@@ -147,7 +170,7 @@ export function Step2DefineTopics({
             </Button>
             <Button
               className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
-              isDisabled={topics.length === 0}
+              isDisabled={!allTopicsNamed || !isWeightageValid}
               onPress={onNext}
             >
               {t('certification.finalizeCertification')}
