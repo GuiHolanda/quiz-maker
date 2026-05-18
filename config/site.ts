@@ -19,7 +19,7 @@ export const siteConfig = {
     {
       label: "nav.browseQuestions",
       href: "/browse-questions",
-    }
+    },
   ],
   navMenuItems: [
     {
