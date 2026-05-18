@@ -68,8 +68,8 @@ export function useCertificationDraft() {
     setTopics((prev) => [...prev, { name: '', minQuestions: 0, maxQuestions: 0 }]);
   };
 
-  const updateTopic = (index: number, name: string, weightage: number) => {
-    setTopics((prev) => prev.map((t, i) => i === index ? { ...t, name, minQuestions: weightage, maxQuestions: weightage } : t));
+  const updateTopic = (index: number, name: string, minWeightage: number, maxWeightage: number) => {
+    setTopics((prev) => prev.map((t, i) => i === index ? { ...t, name, minQuestions: minWeightage, maxQuestions: maxWeightage } : t));
   };
 
   const removeTopic = (index: number) => {

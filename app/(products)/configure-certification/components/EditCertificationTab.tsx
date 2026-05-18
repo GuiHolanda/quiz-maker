@@ -14,11 +14,11 @@ export function EditCertificationTab() {
     setSelectedCertification(certification || null);
   };
 
-  const handleTopicChanged = (topicName: string, field: 'minQuestions' | 'maxQuestions', value: number) => {
+  const handleTopicChanged = (topicId: string, field: 'minQuestions' | 'maxQuestions', value: number) => {
     if (!selectedCertification) return;
 
     const updatedTopics = selectedCertification.topics.map((t) =>
-      t.name === topicName ? { ...t, [field]: value } : t
+      t.id === topicId ? { ...t, [field]: value } : t
     );
 
     updateCertification(selectedCertification.key, { topics: updatedTopics });

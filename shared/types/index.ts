@@ -81,6 +81,7 @@ export interface Certification {
 }
 
 export interface CertificationTopic {
+id?: string;
 name: string;
 maxQuestions: number;
 minQuestions: number;
@@ -88,8 +89,8 @@ questions?: number;
 }
 
 export interface TopicUpdatePayload {
-  certificationKey: string;
-  topicName: string;
+  topicId: string;
+  newName?: string;
   minQuestions: number;
   maxQuestions: number;
 }

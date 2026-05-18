@@ -17,7 +17,7 @@ export async function GET() {
     const certifications = records.map(({ label, key, topics }) => ({
       label,
       key,
-      topics: topics.map(({ name, minQuestions, maxQuestions }) => ({ name, minQuestions, maxQuestions })),
+      topics: topics.map(({ id, name, minQuestions, maxQuestions }) => ({ id, name, minQuestions, maxQuestions })),
     }));
 
     return NextResponse.json({ certifications });
