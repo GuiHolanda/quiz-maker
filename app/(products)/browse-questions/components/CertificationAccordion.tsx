@@ -1,45 +1,59 @@
 'use client';
+import { useState } from 'react';
+import type { Selection } from '@react-types/shared';
 import { Accordion, AccordionItem } from '@heroui/accordion';
 import { BrowseCertificationSummary } from '@/shared/types';
 import { TopicAccordion } from './TopicAccordion';
 
 interface CertificationAccordionProps {
   readonly certification: BrowseCertificationSummary;
+  readonly isOpen: boolean;
 }
 
-export function CertificationAccordion({ certification }: CertificationAccordionProps) {
+export function CertificationAccordion({ certification, isOpen }: CertificationAccordionProps) {
+  const [openTopicKey, setOpenTopicKey] = useState<string | null>(null);
+
+  function handleTopicSelectionChange(keys: Selection) {
+    if (keys === 'all') return;
+    const key = keys instanceof Set && keys.size > 0 ? String(Array.from(keys)[0]) : null;
+    setOpenTopicKey(key);
+  }
+
+  if (!isOpen) return null;
+
   return (
     <Accordion
-      className="bg-content1 border border-default-200 rounded-xl overflow-hidden p-0"
+      selectionMode="single"
+      onSelectionChange={handleTopicSelectionChange}
+      selectedKeys={openTopicKey ? [openTopicKey] : []}
+      className="flex flex-col gap-2 p-0 shadow-none"
       itemClasses={{
-        base: 'border-0',
-        title: 'font-semibold text-foreground',
-        trigger: 'px-4 py-3 hover:bg-default-100 transition-colors duration-200',
-        content: 'px-3 pb-3',
+        base: 'bg-content1 border border-default-100 rounded-lg overflow-hidden',
+        title: 'font-medium text-foreground text-sm',
+        trigger: 'px-4 py-2.5 hover:bg-default-100 transition-colors duration-200',
+        content: 'p-0',
         indicator: 'text-default-400',
       }}
     >
-      <AccordionItem
-        key={certification.key}
-        title={
-          <div className="flex items-center gap-3">
-            <span>{certification.label}</span>
-            <span className="bg-secondary-100 text-secondary-700 text-xs font-semibold rounded-full px-2 py-0.5">
-              {certification.totalCount}
-            </span>
-          </div>
-        }
-      >
-        <div className="flex flex-col gap-2">
-          {certification.topics.map((topic) => (
-            <TopicAccordion
-              key={topic.name}
-              topic={topic}
-              certificationTitle={certification.label}
-            />
-          ))}
-        </div>
-      </AccordionItem>
+      {certification.topics.map((topic) => (
+        <AccordionItem
+          key={topic.name}
+          title={
+            <div className="flex items-center gap-3">
+              <span>{topic.name}</span>
+              <span className="bg-primary-100 text-primary-700 text-xs font-semibold rounded-full px-2 py-0.5">
+                {topic.questionCount}
+              </span>
+            </div>
+          }
+        >
+          <TopicAccordion
+            topic={topic}
+            certificationTitle={certification.label}
+            isOpen={openTopicKey === topic.name}
+          />
+        </AccordionItem>
+      ))}
     </Accordion>
   );
 }
