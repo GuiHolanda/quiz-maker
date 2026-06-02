@@ -1,76 +1,100 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Skeleton } from '@heroui/skeleton';
 import { StoredQuestion } from '@/shared/types';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
 import { ItemsPerPageSelect } from '@/shared/components/ui/ItemsPerPageSelect';
+import { QuestionDetailPanel } from './QuestionDetailPanel';
 
 interface QuestionListProps {
   readonly questions: StoredQuestion[];
-  readonly selectedQuestion: StoredQuestion | null;
-  readonly onSelectQuestion: (q: StoredQuestion) => void;
   readonly page: number;
   readonly pageSize: number;
   readonly total: number;
   readonly isLoading: boolean;
   readonly onPageChange: (page: number) => void;
   readonly onPageSizeChange: (pageSize: number) => void;
+  readonly onDelete: (id: number) => Promise<void>;
 }
 
 export function QuestionList({
   questions,
-  selectedQuestion,
-  onSelectQuestion,
   page,
   pageSize,
   total,
   isLoading,
   onPageChange,
   onPageSizeChange,
+  onDelete,
 }: QuestionListProps) {
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   function handleItemsPerPageChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const v = Number(e.target.value) || 1;
-    onPageSizeChange(v);
+    onPageSizeChange(Number(e.target.value) || 1);
+  }
+
+  async function handleDelete(id: number) {
+    await onDelete(id);
+    setSelectedId(null);
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1.5">
+    <div className="flex flex-col">
+      <div className="flex flex-col">
         {isLoading ? (
           <>
-            <Skeleton className="h-14 w-full rounded-lg" />
-            <Skeleton className="h-14 w-full rounded-lg" />
-            <Skeleton className="h-14 w-full rounded-lg" />
+            <Skeleton className="h-14 w-full rounded-lg mb-1.5" />
+            <Skeleton className="h-14 w-full rounded-lg mb-1.5" />
+            <Skeleton className="h-14 w-full rounded-lg mb-1.5" />
             <Skeleton className="h-14 w-full rounded-lg" />
           </>
         ) : (
           questions.map((q) => {
-            const isSelected = selectedQuestion?.id === q.id;
+            const isSelected = selectedId === q.id;
             return (
-              <button
-                key={q.id}
-                onClick={() => onSelectQuestion(q)}
-                className={`w-full text-left rounded-lg p-2.5 border transition-colors duration-150 ${
-                  isSelected
-                    ? 'bg-primary-50 border-primary-200 text-primary'
-                    : 'bg-content1 border-default-100 text-foreground hover:bg-content2'
-                }`}
-              >
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-xs rounded px-1.5 py-0.5 bg-default-100 text-default-500 capitalize">
-                    {q.difficulty}
-                  </span>
-                </div>
-                <p className="text-xs leading-snug line-clamp-2">{q.text}</p>
-              </button>
+              <React.Fragment key={q.id}>
+                <button
+                  onClick={() => setSelectedId(isSelected ? null : q.id)}
+                  className={`w-full text-left p-4 border-b-2 border-default-100 text-foreground transition-colors duration-150 ${
+                    isSelected
+                      ? 'bg-content2'
+                      : 'bg-content1 hover:bg-content2'
+                  }`}
+                >
+                  <div className="flex items-center mb-2">
+                    <span className="text-xs rounded px-1.5 py-0.5 bg-default-100 text-default-500 capitalize">
+                      {q.difficulty}
+                    </span>
+                  </div>
+                  <p className="text-xs leading-snug font-extrabold">{q.text}</p>
+                </button>
+                <AnimatePresence>
+                  {isSelected && (
+                    <motion.div
+                      key={`detail-${q.id}`}
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: 'easeInOut' }}
+                      className="overflow-hidden"
+                    >
+                      <QuestionDetailPanel
+                        question={q}
+                        onDelete={handleDelete}
+                        onClose={() => setSelectedId(null)}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </React.Fragment>
             );
           })
         )}
       </div>
       {!isLoading && total > 0 && (
-        <div className="border-t border-default-100 p-2 flex items-center gap-2 flex-wrap">
+        <div className="p-4 flex items-center gap-2 flex-wrap">
           <PaginationControls
             currentPage={page}
             totalPages={totalPages}

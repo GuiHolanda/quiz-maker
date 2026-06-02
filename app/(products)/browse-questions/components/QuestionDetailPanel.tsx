@@ -5,27 +5,20 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 interface QuestionDetailPanelProps {
   readonly question: StoredQuestion | null;
   readonly onDelete: (id: number) => void;
+  readonly onClose: () => void;
 }
 
-export function QuestionDetailPanel({ question, onDelete }: QuestionDetailPanelProps) {
+export function QuestionDetailPanel({ question, onDelete, onClose }: QuestionDetailPanelProps) {
   const { t } = useTranslation();
 
-  if (!question) {
-    return (
-      <div className="flex items-center justify-center h-full p-4">
-        <p className="text-default-400 text-sm text-center">{t('browse.selectQuestion')}</p>
-      </div>
-    );
-  }
+  if (!question) return null;
 
   const options = Object.entries(question.options);
   const correctOptions = question.answer?.correctOptions ?? [];
   const explanations = question.answer?.explanations ?? {};
 
   return (
-    <div className="flex flex-col h-full p-4 overflow-y-auto">
-      <p className="text-sm font-medium text-foreground mb-3 leading-snug">{question.text}</p>
-
+    <div className="flex flex-col h-full p-4 overflow-y-auto border-b border-default-100">
       <div className="flex flex-col gap-1.5 mb-3">
         {options.map(([label, text]) => {
           const isCorrect = correctOptions.includes(label);
@@ -40,7 +33,7 @@ export function QuestionDetailPanel({ question, onDelete }: QuestionDetailPanelP
               >
                 {label} {isCorrect ? '✓' : ''}
               </span>
-              <span className="text-foreground leading-snug">{text}</span>
+              <span className="text-foreground leading-snug font-semibold">{text}</span>
             </div>
           );
         })}
@@ -68,3 +61,4 @@ export function QuestionDetailPanel({ question, onDelete }: QuestionDetailPanelP
     </div>
   );
 }
+
