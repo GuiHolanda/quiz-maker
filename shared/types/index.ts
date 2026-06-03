@@ -147,7 +147,7 @@ export interface ChatMessage {
   readonly isError?: boolean;
 }
 
-export type UserPlan = 'free' | 'pro';
+export type UserPlan = 'free' | 'pro' | 'admin';
 
 export type QuotaAction = 'generate_questions' | 'create_certification';
 

@@ -145,8 +145,9 @@ export const BILLING_CHECKOUT_URL = '/billing/checkout';
 export const BILLING_PORTAL_URL = '/billing/portal';
 
 export const PLAN_LIMITS = {
-  free: { questionsPerPeriod: 50, maxCertifications: 2 },
-  pro:  { questionsPerPeriod: 500, maxCertifications: Infinity },
+  free:  { questionsPerPeriod: 50,       maxCertifications: 2 },
+  pro:   { questionsPerPeriod: 500,      maxCertifications: Infinity },
+  admin: { questionsPerPeriod: Infinity, maxCertifications: Infinity },
 } as const;
 
 export const BROWSE_SUMMARY_URL = '/generator/browse-questions/summary';
