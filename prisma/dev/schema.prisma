@@ -18,6 +18,8 @@ model User {
   sessions       Session[]
   certifications Certification[]
   questions      Question[]
+  publicExams         PublicExam[]
+  publicExamQuestions PublicExamQuestion[]
   usageLogs      UsageLog[]
   plan                         String   @default("free")
   questionsGeneratedThisPeriod Int      @default(0)
@@ -132,4 +134,87 @@ model UsageLog {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model ExamBoard {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  fullName    String?
+  publicExams PublicExam[]
+}
+
+model PublicExam {
+  id          String              @id @default(cuid())
+  name        String
+  role        String?
+  year        Int?
+  examBoardId String
+  examBoard   ExamBoard           @relation(fields: [examBoardId], references: [id])
+  subjects    PublicExamSubject[]
+  userId      String?
+  user        User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name, year])
+}
+
+model PublicExamSubject {
+  id           String            @id @default(cuid())
+  name         String
+  minQuestions Float
+  maxQuestions Float
+  publicExamId String
+  publicExam   PublicExam        @relation(fields: [publicExamId], references: [id], onDelete: Cascade)
+  topics       PublicExamTopic[]
+
+  @@unique([publicExamId, name])
+}
+
+model PublicExamTopic {
+  id        String            @id @default(cuid())
+  name      String
+  subjectId String
+  subject   PublicExamSubject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([subjectId, name])
+}
+
+model PublicExamQuestion {
+  id             Int                @id @default(autoincrement())
+  text           String
+  correctCount   Int
+  options        PublicExamOption[]
+  publicExamName String
+  examBoardName  String
+  subject        String
+  topic          String?
+  difficulty     String
+  answer         PublicExamAnswer?
+  createdAt      DateTime           @default(now())
+  userId         String?
+  user           User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PublicExamOption {
+  id         Int                @id @default(autoincrement())
+  questionId Int
+  question   PublicExamQuestion @relation(fields: [questionId], references: [id])
+  label      String
+  text       String
+}
+
+model PublicExamAnswer {
+  id             Int                     @id @default(autoincrement())
+  questionId     Int                     @unique
+  question       PublicExamQuestion      @relation(fields: [questionId], references: [id])
+  correctOptions Json
+  explanations   PublicExamExplanation[]
+}
+
+model PublicExamExplanation {
+  id        Int              @id @default(autoincrement())
+  answerId  Int
+  answer    PublicExamAnswer @relation(fields: [answerId], references: [id])
+  label     String
+  text      String
+  createdAt DateTime         @default(now())
 }
