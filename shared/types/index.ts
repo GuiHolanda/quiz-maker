@@ -197,3 +197,128 @@ export interface BrowseQuestionsResponse {
   page: number;
   pageSize: number;
 }
+
+export interface ExamBoard {
+  id?: string;
+  name: string;
+  fullName?: string;
+}
+
+export interface PublicExamTopic {
+  id?: string;
+  name: string;
+}
+
+export interface PublicExamSubject {
+  id?: string;
+  name: string;
+  minQuestions: number;
+  maxQuestions: number;
+  topics?: PublicExamTopic[];
+  questions?: number;
+}
+
+export interface PublicExam {
+  id?: string;
+  name: string;
+  role?: string;
+  year?: number;
+  examBoard: ExamBoard;
+  subjects: PublicExamSubject[];
+}
+
+export interface AIPublicExamQuestion {
+  id: number;
+  publicExamName: string;
+  examBoardName: string;
+  subject: string;
+  topic?: string;
+  text: string;
+  correctCount: number;
+  difficulty: string;
+  options: Option;
+}
+
+export interface StoredPublicExamQuestion {
+  id: number;
+  publicExamName: string;
+  examBoardName: string;
+  subject: string;
+  topic?: string;
+  text: string;
+  correctCount: number;
+  difficulty: string;
+  options: Option;
+  answer: Answer;
+}
+
+export interface PublicExamQuestionParams {
+  public_exam_name: string;
+  exam_board_name: string;
+  subject_name: string;
+  topic_name?: string;
+  num_questions: string;
+}
+
+export interface PublicExamSubjectUpdatePayload {
+  subjectId: string;
+  newName?: string;
+  minQuestions: number;
+  maxQuestions: number;
+}
+
+export interface PublicExamPayload {
+  publicExams: PublicExam[];
+  selectedPublicExam: PublicExam | null;
+}
+
+export interface PublicExamsStoreApi {
+  publicExams: PublicExam[];
+  selectedPublicExam: PublicExam | null;
+  selectedSubjects: string[];
+  selectedTopic: string | null;
+  setPublicExams: (publicExams: PublicExam[]) => void;
+  setSelectedPublicExam: (publicExam: PublicExam | null) => void;
+  setSelectedSubjects: (subjects: string[]) => void;
+  setSelectedTopic: (topic: string | null) => void;
+  addPublicExam: (publicExam: PublicExam) => void;
+  removePublicExam: (id: string) => void;
+  updatePublicExam: (id: string, patch: Partial<PublicExam>) => void;
+}
+
+export interface BrowsePublicExamSubjectSummary {
+  name: string;
+  questionCount: number;
+}
+
+export interface BrowsePublicExamSummary {
+  id: string;
+  name: string;
+  examBoardName: string;
+  totalCount: number;
+  subjects: BrowsePublicExamSubjectSummary[];
+}
+
+export interface PublicExamBrowseSummary {
+  publicExams: BrowsePublicExamSummary[];
+}
+
+export interface PublicExamBrowseQuestionsParams {
+  publicExamName: string;
+  subject: string;
+  page: number;
+  pageSize: number;
+}
+
+export interface PublicExamBrowseQuestionsResponse {
+  questions: StoredPublicExamQuestion[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export type PublicExamFormErrors = {
+  publicExamName?: string;
+  subject?: string;
+  num_questions?: string;
+};
