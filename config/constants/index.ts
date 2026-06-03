@@ -1,10 +1,10 @@
 import { CertificationsState } from "@/features/reducers/certifications.reducer";
 import { PublicExamsState } from "@/features/reducers/publicExams.reducer";
 
-export const OPENAI_POST_URL = "/generator/question-generator";
-export const SAVE_QUESTIONS_URL = "/generator/save-questions";
+export const OPENAI_POST_URL = "/certification/question-generator";
+export const SAVE_QUESTIONS_URL = "/certification/save-questions";
 export const SAVE_CERTIFICATION_URL = "/certification/save-certification";
-export const QUIZ_GENERATOR_URL = "/generator/quiz-generator";
+export const QUIZ_GENERATOR_URL = "/certification/quiz-generator";
 export const QUIZ_LOCAL_STORAGE_KEY = "QUIZ";
 export const CERTIFICATIONS_LOCAL_STORAGE_KEY = 'CERTIFICATIONS';
 export const PUBLIC_EXAMS_LOCAL_STORAGE_KEY = 'PUBLIC_EXAMS';
@@ -150,17 +150,17 @@ export const PLAN_LIMITS = {
   admin: { questionsPerPeriod: Infinity, maxCertifications: Infinity },
 } as const;
 
-export const BROWSE_SUMMARY_URL = '/generator/browse-questions/summary';
-export const BROWSE_QUESTIONS_URL = '/generator/browse-questions/questions';
+export const BROWSE_SUMMARY_URL = '/certification/browse-questions/summary';
+export const BROWSE_QUESTIONS_URL = '/certification/browse-questions/questions';
 
-export const PUBLIC_EXAM_GENERATOR_URL = '/generator/public-exam-question-generator';
-export const SAVE_PUBLIC_EXAM_QUESTIONS_URL = '/generator/save-public-exam-questions';
-export const GET_PUBLIC_EXAM_ANSWERS_URL = '/generator/get-public-exam-answers';
+export const PUBLIC_EXAM_GENERATOR_URL = '/public-exam/question-generator';
+export const SAVE_PUBLIC_EXAM_QUESTIONS_URL = '/public-exam/save-questions';
+export const GET_PUBLIC_EXAM_ANSWERS_URL = '/public-exam/get-answers';
 export const SAVE_PUBLIC_EXAM_URL = '/public-exam/save-public-exam';
 export const PUBLIC_EXAMS_URL = '/public-exam/public-exams';
 export const EXAM_BOARDS_URL = '/public-exam/exam-boards';
-export const BROWSE_PUBLIC_EXAM_SUMMARY_URL = '/generator/browse-public-exam-questions/summary';
-export const BROWSE_PUBLIC_EXAM_QUESTIONS_URL = '/generator/browse-public-exam-questions/questions';
+export const BROWSE_PUBLIC_EXAM_SUMMARY_URL = '/public-exam/browse-questions/summary';
+export const BROWSE_PUBLIC_EXAM_QUESTIONS_URL = '/public-exam/browse-questions/questions';
 
 export const INITIAL_PUBLIC_EXAMS_STATE: PublicExamsState = {
   publicExams: [],
