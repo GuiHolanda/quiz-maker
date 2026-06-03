@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { QuotaService } from '@/app/api/billing/quota.service';
+import { QuotaService } from '@/features/services/quota.service';
 import { auth } from '@/auth';
 
 const quotaService = new QuotaService();

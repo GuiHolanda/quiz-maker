@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PublicExamService } from './public-exam.service';
-import { QuotaService } from '@/app/api/billing/quota.service';
+import { PublicExamService } from '@/features/services/public-exam.service';
+import { QuotaService } from '@/features/services/quota.service';
 import { auth } from '@/auth';
 
 const publicExamService = new PublicExamService();

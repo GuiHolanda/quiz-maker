@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { AiChatService } from './aiChat.service';
+import { AiChatService } from '@/features/services/aiChat.service';
 
 const aiChatService = new AiChatService();
 
