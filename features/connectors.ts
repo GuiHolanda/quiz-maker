@@ -1,5 +1,5 @@
-import { OPENAI_POST_URL, SAVE_QUESTIONS_URL, SAVE_CERTIFICATION_URL, QUIZ_GENERATOR_URL, BILLING_USAGE_URL, BILLING_CHECKOUT_URL, BILLING_PORTAL_URL } from '@/config/constants';
-import { AIQuestion, Certification, CertificationTopic, QuestionParams, StoredQuestion, TopicUpdatePayload, UsageStats } from '@/shared/types';
+import { OPENAI_POST_URL, SAVE_QUESTIONS_URL, SAVE_CERTIFICATION_URL, QUIZ_GENERATOR_URL, BILLING_USAGE_URL, BILLING_CHECKOUT_URL, BILLING_PORTAL_URL, BROWSE_SUMMARY_URL, BROWSE_QUESTIONS_URL } from '@/config/constants';
+import { AIQuestion, Certification, CertificationTopic, QuestionParams, StoredQuestion, TopicUpdatePayload, UsageStats, BrowseSummary, BrowseQuestionsParams, BrowseQuestionsResponse } from '@/shared/types';
 import api from '@/lib/bff.api';
 
 export async function getCertifications(): Promise<Certification[]> {
@@ -84,4 +84,18 @@ export async function getCheckoutUrl(period: 'monthly' | 'yearly'): Promise<stri
 export async function getPortalUrl(): Promise<string> {
   const { data } = await api.get<{ url: string }>(BILLING_PORTAL_URL);
   return data.url;
+}
+
+export async function getBrowseSummary(): Promise<BrowseSummary> {
+  const { data } = await api.get<BrowseSummary>(BROWSE_SUMMARY_URL);
+  return data;
+}
+
+export async function getBrowseQuestions(params: BrowseQuestionsParams): Promise<BrowseQuestionsResponse> {
+  const { data } = await api.get<BrowseQuestionsResponse>(BROWSE_QUESTIONS_URL, { params });
+  return data;
+}
+
+export async function deleteBrowseQuestion(id: number): Promise<void> {
+  await api.delete(`${BROWSE_QUESTIONS_URL}?id=${id}`);
 }

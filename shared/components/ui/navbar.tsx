@@ -31,6 +31,7 @@ const PRODUCT_ITEMS = [
   { label: 'nav.quiz', href: '/quiz' },
   { label: 'nav.generateQuestions', href: '/generate-questions' },
   { label: 'nav.configureCertification', href: '/configure-certification' },
+  { label: 'nav.browseQuestions', href: '/browse-questions' },
 ] as const;
 
 const NAV_LINKS = [

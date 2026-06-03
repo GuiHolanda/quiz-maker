@@ -16,14 +16,13 @@ export function ItemsPerPageSelect({ value, onChange }: ItemsPerPageSelectProps)
 
   return (
     <div className="flex flex-col items-center gap-2 ml-auto">
-      <label htmlFor="questionsPerPage" className="text-sm font-bold">
+      <label htmlFor="questionsPerPage" className="text-xs font-bold">
         {t('common.questionsPerPage')}
       </label>
       <Select
         id="questionsPerPage"
-        defaultSelectedKeys={QUESTIONS_PER_PAGE_OPTIONS[1].key}
+        selectedKeys={[String(value)]}
         items={QUESTIONS_PER_PAGE_OPTIONS}
-        value={String(value)}
         onChange={onChange}
         className="w-24 ml-auto"
         {...inputProperties.select}

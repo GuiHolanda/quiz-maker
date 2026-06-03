@@ -15,7 +15,11 @@ export const siteConfig = {
     {
       label: "nav.makeYourOwnQuiz",
       href: "/quiz",
-    }
+    },
+    {
+      label: "nav.browseQuestions",
+      href: "/browse-questions",
+    },
   ],
   navMenuItems: [
     {
@@ -29,6 +33,10 @@ export const siteConfig = {
     {
       label: "nav.configureCertification",
       href: "/configure-certification",
+    },
+    {
+      label: "nav.browseQuestions",
+      href: "/browse-questions",
     },
   ],
   links: {
