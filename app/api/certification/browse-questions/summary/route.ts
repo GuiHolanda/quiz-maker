@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { BrowseSummaryService } from './browse-summary.service';
+import { BrowseSummaryService } from '@/features/services/browse.service';
 
 const service = new BrowseSummaryService();
 

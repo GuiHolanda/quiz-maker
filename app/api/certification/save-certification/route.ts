@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { CertificationService } from './certification.service';
-import { QuotaService } from '@/app/api/billing/quota.service';
+import { CertificationService } from '@/features/services/certification.service';
+import { QuotaService } from '@/features/services/quota.service';
 import { auth } from '@/auth';
 
 const certificationService = new CertificationService();

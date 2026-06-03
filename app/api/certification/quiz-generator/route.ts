@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { QuizGeneratorService } from './quiz-generator.service';
+import { QuizGeneratorService } from '@/features/services/quiz-generator.service';
 import { prisma } from '@/lib/prisma';
 import { INITIAL_CERTIFICATIONS_STATE } from '@/config/constants';
 import { auth } from '@/auth';

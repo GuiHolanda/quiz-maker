@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { PublicExamBrowseSummaryService } from './public-exam-browse-summary.service';
+import { PublicExamBrowseSummaryService } from '@/features/services/browse.service';
 
 const service = new PublicExamBrowseSummaryService();
 

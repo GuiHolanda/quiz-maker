@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { PublicExamBrowseQuestionsService } from './public-exam-browse-questions.service';
+import { PublicExamBrowseQuestionsService } from '@/features/services/browse.service';
 
 const service = new PublicExamBrowseQuestionsService();
 

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { QuestionService } from '@/app/api/generator/question-generator/question.service';
+import { CertificationQuestionService, validateAiQuestions } from '@/features/services/question.service';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { Templates } from '@/config/constants/templates';
-import { QuotaService } from '@/app/api/billing/quota.service';
+import { QuotaService } from '@/features/services/quota.service';
 import { auth } from '@/auth';
 
-const questionService = new QuestionService();
+const questionService = new CertificationQuestionService();
 const openAIService = new OpenAIService();
 const quotaService = new QuotaService();
 
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     await quotaService.check(session.user.id, 'generate_questions', count);
 
     const response = await openAIService.getLLMResponse(Templates.GENERATE_QUESTIONS, questionParams);
-    const questionsFromAi = questionService.getValidatedQuestions(JSON.parse(response));
+    const questionsFromAi = validateAiQuestions(JSON.parse(response));
 
     await quotaService.record(session.user.id, 'generate_questions', count);
 

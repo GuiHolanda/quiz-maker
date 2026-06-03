@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { QuestionService } from '@/app/api/generator/question-generator/question.service';
+import { CertificationQuestionService, validateAiQuestions } from '@/features/services/question.service';
 import { AIQuestion } from '@/shared/types';
 import { auth } from '@/auth';
 
-const questionService = new QuestionService();
+const questionService = new CertificationQuestionService();
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null);
     const payload = Array.isArray(body) ? { questions: body } : body;
-    const questions: AIQuestion[] = questionService.getValidatedQuestions(payload);
+    const questions: AIQuestion[] = validateAiQuestions(payload) as AIQuestion[];
 
     await questionService.createFromPayload(questions, session.user.id);
 

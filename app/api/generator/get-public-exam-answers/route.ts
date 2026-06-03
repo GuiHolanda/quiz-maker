@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PublicExamQuestionService } from '@/app/api/generator/public-exam-question-generator/public-exam-question.service';
+import { PublicExamQuestionService, validateAiQuestions } from '@/features/services/question.service';
 import { AIPublicExamQuestion } from '@/shared/types';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { buildGetPublicExamAnswersPrompt } from '@/config/promptSchemas/getPublicExamAnswers';
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null);
     const payload = Array.isArray(body) ? { questions: body } : body;
-    const questions: AIPublicExamQuestion[] = questionService.getValidatedQuestions(payload);
+    const questions: AIPublicExamQuestion[] = validateAiQuestions(payload) as AIPublicExamQuestion[];
     const { publicExamName, examBoardName, subject, topic } = questions[0];
 
     const prompt = buildGetPublicExamAnswersPrompt({
