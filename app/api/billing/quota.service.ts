@@ -24,7 +24,7 @@ export class QuotaService {
 
   async check(userId: string, action: QuotaAction, count: number): Promise<void> {
     const user = await this.getUserWithPeriodReset(userId);
-    const plan = (user.plan === 'pro' ? 'pro' : 'free') as UserPlan;
+    const plan = (user.plan === 'pro' ? 'pro' : user.plan === 'admin' ? 'admin' : 'free') as UserPlan;
     const limits = PLAN_LIMITS[plan];
 
     if (action === 'generate_questions') {
@@ -66,7 +66,7 @@ export class QuotaService {
 
   async getUsage(userId: string): Promise<UsageStats> {
     const user = await this.getUserWithPeriodReset(userId);
-    const plan = (user.plan === 'pro' ? 'pro' : 'free') as UserPlan;
+    const plan = (user.plan === 'pro' ? 'pro' : user.plan === 'admin' ? 'admin' : 'free') as UserPlan;
     const limits = PLAN_LIMITS[plan];
     const certCount = await prisma.certification.count({ where: { userId } });
 
