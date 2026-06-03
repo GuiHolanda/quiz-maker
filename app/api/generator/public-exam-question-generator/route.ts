@@ -9,6 +9,14 @@ const questionService = new PublicExamQuestionService();
 const openAIService = new OpenAIService();
 const quotaService = new QuotaService();
 
+function extractJson(raw: string): string {
+  // Strip markdown code fences if present.
+  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenced) return fenced[1].trim();
+  // Otherwise return trimmed raw text.
+  return raw.trim();
+}
+
 export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -22,8 +30,8 @@ export async function GET(request: NextRequest) {
     await quotaService.check(session.user.id, 'generate_questions', count);
 
     const prompt = buildGeneratePublicExamQuestionsPrompt(questionParams);
-    const response = await openAIService.getLLMResponseWithWebSearch(prompt);
-    const questionsFromAi = questionService.getValidatedQuestions(JSON.parse(response));
+    const rawResponse = await openAIService.getLLMResponseWithWebSearch(prompt);
+    const questionsFromAi = questionService.getValidatedQuestions(JSON.parse(extractJson(rawResponse)));
 
     await quotaService.record(session.user.id, 'generate_questions', count);
 

@@ -8,67 +8,41 @@ export function buildGeneratePublicExamQuestionsPrompt(params: PublicExamQuestio
 
   return `Você é um especialista em concursos públicos brasileiros e vai gerar questões de alta fidelidade.
 
-## ETAPA 1 — PESQUISA (faça antes de gerar)
+## ETAPA 1 — PESQUISA (execute antes de gerar)
 
-Pesquise na web por questões reais da banca "${exam_board_name}" sobre a matéria "${subject_name}"${topic_name ? `, especificamente sobre "${topic_name}",` : ''} em concursos anteriores. Use queries como:
-- "${exam_board_name} questões ${subject_name}${topic_name ? ` ${topic_name}` : ''} concurso gabarito"
-- "questões ${exam_board_name} ${subject_name} provas anteriores"
-- site:qconcursos.com OR site:questoeseconcursos.com.br OR site:pciconcursos.com.br "${exam_board_name}" "${subject_name}"
+Pesquise na web por questões reais da banca "${exam_board_name}" sobre "${subject_name}"${topic_name ? ` (tópico: "${topic_name}")` : ''} em concursos anteriores. Use queries como:
+- "${exam_board_name} questões ${subject_name}${topic_name ? ` ${topic_name}` : ''} gabarito prova"
+- site:qconcursos.com OR site:questoeseconcursos.com.br "${exam_board_name}" "${subject_name}"
 
-Analise as questões encontradas para entender:
-- O estilo de enunciado (tamanho, tom, vocabulário jurídico/técnico)
-- As pegadinhas e distractores típicos da banca
-- O nível de dificuldade habitual
-- Quais dispositivos legais, artigos ou conceitos doutrinários essa banca costuma cobrar nessa matéria
+Analise as questões encontradas para identificar: estilo de enunciado, pegadinhas típicas, dispositivos legais frequentes e nível de dificuldade habitual da banca.
 
 ## ETAPA 2 — GERAÇÃO
 
-Com base na pesquisa acima, gere exatamente ${num_questions} questões inéditas (não copie as encontradas) para:
-- **Concurso:** ${public_exam_name}
-- **Banca:** ${exam_board_name}
-- **Matéria:** ${subject_name}
-- **Foco:** ${topicoLine}
+Com base na pesquisa, crie exatamente ${num_questions} questões **inéditas** (não copie as encontradas) para:
+- Concurso: ${public_exam_name}
+- Banca: ${exam_board_name}
+- Matéria: ${subject_name}
+- Foco: ${topicoLine}
 
-### Regras de geração:
-1. Escreva em português brasileiro formal, no estilo de prova oficial.
-2. Reflita fielmente o padrão da banca pesquisada (vocabulário, pegadinhas, nível de exigência).
-3. Use apenas conteúdo factualmente correto (leis, artigos, súmulas, jurisprudência vigente).
-4. Não indique qual alternativa é correta — isso é feito em etapa separada.
-5. Cada questão deve ser autocontida (enunciado completo, sem referências externas).
+Regras:
+1. Português brasileiro formal, no padrão de prova oficial.
+2. Reflita o estilo da banca pesquisada (vocabulário, pegadinhas, exigência).
+3. Apenas conteúdo factualmente correto (leis, artigos, súmulas vigentes).
+4. Não indique a resposta correta — isso ocorre em etapa separada.
+5. Cada questão deve ser autocontida.
 
-### Estilo por banca (use como guia complementar):
-- **Cebraspe/CESPE:** enunciados longos com afirmações a julgar; pegadinhas sutis com "exceto", "não", "apenas", troca de termos legais. Alta taxa de questões que exigem conhecimento literal de lei.
-- **FGV:** enunciados densos e conceituais; cobra interpretação fina de doutrina, jurisprudência e conflitos entre princípios.
-- **FCC:** linguagem direta e objetiva; foco na literalidade do texto de lei; alternativas muito parecidas exigem atenção ao detalhe.
-- **Vunesp:** enunciado moderado; combina interpretação de texto com conhecimento de lei; atenção a aspectos formais e procedimentais.
-- **IBFC/Quadrix/AOCP:** linguagem mais acessível; foco em conhecimento de base; menos pegadinhas, mais cobertura de conteúdo.
+Perfis de banca:
+- Cebraspe/CESPE: afirmações longas; "exceto/não/apenas"; troca sutil de termos legais.
+- FGV: denso; cobra conflitos doutrinários e jurisprudência.
+- FCC: literal; alternativas muito parecidas; letra da lei.
+- Vunesp: moderado; interpretação + aspectos formais.
+- IBFC/Quadrix/AOCP: direto; cobertura ampla de conteúdo.
 
-### Formato de saída — JSON puro, sem texto antes ou depois:
-{
-  "questions": [
-    {
-      "id": 1,
-      "text": "<enunciado completo da questão>",
-      "correctCount": 1,
-      "publicExamName": "${public_exam_name}",
-      "examBoardName": "${exam_board_name}",
-      "subject": "${subject_name}",
-      ${topic_name ? `"topic": "${topic_name}",` : ''}
-      "difficulty": "medium",
-      "options": {
-        "A": "<texto da alternativa A>",
-        "B": "<texto da alternativa B>",
-        "C": "<texto da alternativa C>",
-        "D": "<texto da alternativa D>",
-        "E": "<texto da alternativa E>"
-      }
-    }
-  ]
-}
+## SAÍDA
 
-Restrições do JSON:
-- "correctCount": inteiro de 1 a 3.
-- "difficulty": "easy", "medium" ou "hard".
-- Todas as alternativas A–E devem ter texto não vazio.
-- Nenhum campo de metadados fora do schema acima.`;
+Responda **apenas** com o JSON abaixo, sem nenhum texto antes ou depois, sem markdown fences:
+
+{"questions":[{"id":1,"text":"<enunciado>","correctCount":1,"publicExamName":"${public_exam_name}","examBoardName":"${exam_board_name}","subject":"${subject_name}",${topic_name ? `"topic":"${topic_name}",` : ''}"difficulty":"medium","options":{"A":"<texto>","B":"<texto>","C":"<texto>","D":"<texto>","E":"<texto>"}}]}
+
+Campos obrigatórios por questão: id, text (≥20 chars), correctCount (1–3), publicExamName, examBoardName, subject, difficulty (easy/medium/hard), options (A–E não vazias).`;
 }

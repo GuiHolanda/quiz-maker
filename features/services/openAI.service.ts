@@ -50,6 +50,8 @@ export class OpenAIService {
             model: process.env.OPENAI_WEB_SEARCH_MODEL ?? 'gpt-4o',
             tools: [{ type: 'web_search_preview' }],
             input: prompt,
+            max_output_tokens: 16000,
+            text: { format: { type: 'json_object' } },
         } as any);
 
         return response?.output_text ?? '';
