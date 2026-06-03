@@ -34,6 +34,12 @@ const PRODUCT_ITEMS = [
   { label: 'nav.browseQuestions', href: '/browse-questions' },
 ] as const;
 
+const CONCURSO_ITEMS = [
+  { label: 'nav.configureConcurso', href: '/configure-public-exam' },
+  { label: 'nav.generateConcursoQuestions', href: '/generate-public-exam-questions' },
+  { label: 'nav.browseConcursoQuestions', href: '/browse-public-exam-questions' },
+] as const;
+
 const NAV_LINKS = [
   { label: 'nav.solutions', href: '#' },
   { label: 'nav.pricing', href: '#' },
@@ -150,6 +156,23 @@ export const Navbar = () => {
                 </DropdownMenu>
               </Dropdown>
             </NavbarItem>
+            <NavbarItem>
+              <Dropdown>
+                <DropdownTrigger>
+                  <button className="flex items-center gap-1.5 text-default-500 hover:text-foreground text-sm px-3 py-1.5 rounded-lg hover:bg-default-100 transition-colors duration-200">
+                    {t('nav.concursos')}
+                    <FontAwesomeIcon icon={faChevronDown} className="w-2.5 h-2.5" />
+                  </button>
+                </DropdownTrigger>
+                <DropdownMenu aria-label={t('nav.concursos')}>
+                  {CONCURSO_ITEMS.map((item) => (
+                    <DropdownItem key={item.href} as={NextLink} href={item.href}>
+                      {t(item.label)}
+                    </DropdownItem>
+                  ))}
+                </DropdownMenu>
+              </Dropdown>
+            </NavbarItem>
             {NAV_LINKS.map((item) => (
               <NavbarItem key={item.label}>
                 <NextLink
@@ -215,6 +238,16 @@ export const Navbar = () => {
               {t('nav.product')}
             </p>
             {PRODUCT_ITEMS.map((item) => (
+              <NavbarMenuItem key={item.href}>
+                <Link href={item.href} size="lg" className="text-default-500 hover:text-foreground pl-2">
+                  {t(item.label)}
+                </Link>
+              </NavbarMenuItem>
+            ))}
+            <p className="text-xs font-semibold text-default-400 px-2 pt-3 pb-1">
+              {t('nav.concursos')}
+            </p>
+            {CONCURSO_ITEMS.map((item) => (
               <NavbarMenuItem key={item.href}>
                 <Link href={item.href} size="lg" className="text-default-500 hover:text-foreground pl-2">
                   {t(item.label)}
