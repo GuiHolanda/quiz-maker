@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PublicExamQuestionService } from '@/app/api/generator/public-exam-question-generator/public-exam-question.service';
 import { AIPublicExamQuestion } from '@/shared/types';
 import { OpenAIService } from '@/features/services/openAI.service';
-import { Templates } from '@/config/constants/templates';
+import { buildGetPublicExamAnswersPrompt } from '@/config/promptSchemas/getPublicExamAnswers';
 import { auth } from '@/auth';
 
 const questionService = new PublicExamQuestionService();
@@ -18,19 +18,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => null);
     const payload = Array.isArray(body) ? { questions: body } : body;
     const questions: AIPublicExamQuestion[] = questionService.getValidatedQuestions(payload);
-    const { publicExamName: public_exam_name, examBoardName: exam_board_name, subject, topic } = questions[0];
+    const { publicExamName, examBoardName, subject, topic } = questions[0];
 
-    const llmResponse = await openAIService.getLLMResponse(
-      Templates.GET_PUBLIC_EXAM_ANSWERS,
-      {
-        public_exam_name,
-        exam_board_name,
-        subject_name: subject,
-        topic_name: topic ?? '',
-        questions: JSON.stringify(questions),
-      },
-    );
+    const prompt = buildGetPublicExamAnswersPrompt({
+      public_exam_name: publicExamName,
+      exam_board_name: examBoardName,
+      subject_name: subject,
+      topic_name: topic,
+      questions,
+    });
 
+    const llmResponse = await openAIService.getLLMResponseInline(prompt);
     const formattedAnswers = JSON.parse(llmResponse);
     await questionService.saveAnswers(formattedAnswers.answers);
 

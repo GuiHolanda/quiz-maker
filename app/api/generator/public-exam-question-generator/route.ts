@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PublicExamQuestionService } from './public-exam-question.service';
 import { OpenAIService } from '@/features/services/openAI.service';
-import { Templates } from '@/config/constants/templates';
+import { buildGeneratePublicExamQuestionsPrompt } from '@/config/promptSchemas/generatePublicExamQuestions';
 import { QuotaService } from '@/app/api/billing/quota.service';
 import { auth } from '@/auth';
 
@@ -21,10 +21,8 @@ export async function GET(request: NextRequest) {
   try {
     await quotaService.check(session.user.id, 'generate_questions', count);
 
-    const response = await openAIService.getLLMResponse(
-      Templates.GENERATE_PUBLIC_EXAM_QUESTIONS,
-      questionParams,
-    );
+    const prompt = buildGeneratePublicExamQuestionsPrompt(questionParams);
+    const response = await openAIService.getLLMResponseInline(prompt);
     const questionsFromAi = questionService.getValidatedQuestions(JSON.parse(response));
 
     await quotaService.record(session.user.id, 'generate_questions', count);

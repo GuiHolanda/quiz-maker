@@ -24,4 +24,18 @@ export class OpenAIService {
 
         return response?.output_text;
     }
+
+    async getLLMResponseInline(systemPrompt: string): Promise<string> {
+        const apiKey = process.env.OPENAI_API_KEY;
+        if (!apiKey) throw new Error('API key not configured');
+        this.openAIClient.apiKey = apiKey;
+
+        const response = await this.openAIClient.chat.completions.create({
+            model: process.env.OPENAI_MODEL ?? 'gpt-4o',
+            messages: [{ role: 'system', content: systemPrompt }],
+            response_format: { type: 'json_object' },
+        });
+
+        return response.choices[0]?.message?.content ?? '';
+    }
 }
