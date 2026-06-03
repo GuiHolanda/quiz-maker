@@ -1,7 +1,8 @@
 import { CertificationsState } from "@/features/reducers/certifications.reducer";
 import { PublicExamsState } from "@/features/reducers/publicExams.reducer";
 
-export const OPENAI_POST_URL = "/certification/question-generator";
+export const CERTIFICATION_GENERATOR_URL = "/certification/question-generator";
+export const GET_CERTIFICATION_ANSWERS_URL = '/certification/get-answers';
 export const SAVE_QUESTIONS_URL = "/certification/save-questions";
 export const SAVE_CERTIFICATION_URL = "/certification/save-certification";
 export const QUIZ_GENERATOR_URL = "/certification/quiz-generator";

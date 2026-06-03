@@ -1,4 +1,4 @@
-import { OPENAI_POST_URL, SAVE_QUESTIONS_URL, SAVE_CERTIFICATION_URL, QUIZ_GENERATOR_URL, BILLING_USAGE_URL, BILLING_CHECKOUT_URL, BILLING_PORTAL_URL, BROWSE_SUMMARY_URL, BROWSE_QUESTIONS_URL, PUBLIC_EXAMS_URL, EXAM_BOARDS_URL, SAVE_PUBLIC_EXAM_URL, PUBLIC_EXAM_GENERATOR_URL, SAVE_PUBLIC_EXAM_QUESTIONS_URL, GET_PUBLIC_EXAM_ANSWERS_URL, BROWSE_PUBLIC_EXAM_SUMMARY_URL, BROWSE_PUBLIC_EXAM_QUESTIONS_URL } from '@/config/constants';
+import { CERTIFICATION_GENERATOR_URL, SAVE_QUESTIONS_URL, SAVE_CERTIFICATION_URL, QUIZ_GENERATOR_URL, BILLING_USAGE_URL, BILLING_CHECKOUT_URL, BILLING_PORTAL_URL, BROWSE_SUMMARY_URL, BROWSE_QUESTIONS_URL, PUBLIC_EXAMS_URL, EXAM_BOARDS_URL, SAVE_PUBLIC_EXAM_URL, PUBLIC_EXAM_GENERATOR_URL, SAVE_PUBLIC_EXAM_QUESTIONS_URL, GET_PUBLIC_EXAM_ANSWERS_URL, BROWSE_PUBLIC_EXAM_SUMMARY_URL, BROWSE_PUBLIC_EXAM_QUESTIONS_URL } from '@/config/constants';
 import { AIQuestion, Certification, CertificationTopic, QuestionParams, StoredQuestion, TopicUpdatePayload, UsageStats, BrowseSummary, BrowseQuestionsParams, BrowseQuestionsResponse, PublicExam, ExamBoard, PublicExamSubject, PublicExamTopic, PublicExamSubjectUpdatePayload, AIPublicExamQuestion, PublicExamQuestionParams, PublicExamBrowseSummary, PublicExamBrowseQuestionsParams, PublicExamBrowseQuestionsResponse } from '@/shared/types';
 import api from '@/lib/bff.api';
 
@@ -10,7 +10,7 @@ export async function getCertifications(): Promise<Certification[]> {
 export async function getQuestions(requestPayload: QuestionParams): Promise<AIQuestion[]> {
   const { num_questions, topic_name, certification_name } = requestPayload;
 
-  const { data } = await api.get<AIQuestion[]>(OPENAI_POST_URL, {
+  const { data } = await api.get<AIQuestion[]>(CERTIFICATION_GENERATOR_URL, {
     params: {
       certification_name,
       topic_name,
