@@ -3,50 +3,72 @@ import { PublicExamQuestionParams } from '@/shared/types';
 export function buildGeneratePublicExamQuestionsPrompt(params: PublicExamQuestionParams): string {
   const { public_exam_name, exam_board_name, subject_name, topic_name, num_questions } = params;
   const topicoLine = topic_name
-    ? `, focadas no tópico "${topic_name}"`
-    : ', cobrindo a matéria de forma ampla';
+    ? `focadas no tópico "${topic_name}"`
+    : 'cobrindo a matéria de forma ampla';
 
-  return `Você é um gerador de questões para concursos públicos brasileiros do AIQuiz.
+  return `Você é um especialista em concursos públicos brasileiros e vai gerar questões de alta fidelidade.
 
-OBJETIVO: Gere exatamente ${num_questions} questões de múltipla escolha para o concurso "${public_exam_name}", da banca "${exam_board_name}", da matéria "${subject_name}"${topicoLine}.
+## ETAPA 1 — PESQUISA (faça antes de gerar)
 
-REGRAS GERAIS:
-1. Todas as questões DEVEM ser escritas em português brasileiro formal, no estilo de provas oficiais.
-2. Alinhe o estilo, vocabulário, nível de formalidade e dificuldade ao padrão da banca informada (Cebraspe/CESPE, FGV, FCC, Vunesp, IBFC, Quadrix, AOCP, IDIB, Instituto Acesso, etc.).
-3. Use o vocabulário técnico/jurídico apropriado à matéria (Direito Constitucional, Português, Raciocínio Lógico, Direito Administrativo, Informática, etc.).
-4. NUNCA invente concursos, leis, súmulas, jurisprudências ou dispositivos. Use apenas conteúdo factualmente correto.
-5. NÃO marque a resposta correta nesta etapa — apenas formule a questão e as alternativas.
+Pesquise na web por questões reais da banca "${exam_board_name}" sobre a matéria "${subject_name}"${topic_name ? `, especificamente sobre "${topic_name}",` : ''} em concursos anteriores. Use queries como:
+- "${exam_board_name} questões ${subject_name}${topic_name ? ` ${topic_name}` : ''} concurso gabarito"
+- "questões ${exam_board_name} ${subject_name} provas anteriores"
+- site:qconcursos.com OR site:questoeseconcursos.com.br OR site:pciconcursos.com.br "${exam_board_name}" "${subject_name}"
 
-FORMATO DE CADA QUESTÃO:
-- Exatamente 5 alternativas: A, B, C, D, E. Nenhuma pode estar vazia.
-- "text": enunciado com no mínimo 20 caracteres, autocontido.
-- "correctCount": inteiro de 1 a 3, indicando quantas alternativas estarão corretas na etapa de gabarito.
-- "difficulty": "easy", "medium" ou "hard".
-- "publicExamName": "${public_exam_name}"
-- "examBoardName": "${exam_board_name}"
-- "subject": "${subject_name}"
-- "topic": ${topic_name ? `"${topic_name}"` : 'omitir este campo ou null'}
+Analise as questões encontradas para entender:
+- O estilo de enunciado (tamanho, tom, vocabulário jurídico/técnico)
+- As pegadinhas e distractores típicos da banca
+- O nível de dificuldade habitual
+- Quais dispositivos legais, artigos ou conceitos doutrinários essa banca costuma cobrar nessa matéria
 
-ESTILO POR BANCA (orientativo):
-- Cebraspe/CESPE: enunciados longos; pegadinhas em "exceto", "não" ou trocas sutis de termos legais.
-- FGV: denso e conceitual; cobra interpretação fina de doutrina e jurisprudência.
-- FCC: linguagem direta; foco em letra de lei e literalidade.
-- Vunesp: enunciado moderado; atenção a interpretação de texto e detalhes formais.
-- IBFC/Quadrix/AOCP: linguagem clara; foco em conhecimento de base.
+## ETAPA 2 — GERAÇÃO
 
-SAÍDA: responda APENAS com JSON válido no seguinte formato:
+Com base na pesquisa acima, gere exatamente ${num_questions} questões inéditas (não copie as encontradas) para:
+- **Concurso:** ${public_exam_name}
+- **Banca:** ${exam_board_name}
+- **Matéria:** ${subject_name}
+- **Foco:** ${topicoLine}
+
+### Regras de geração:
+1. Escreva em português brasileiro formal, no estilo de prova oficial.
+2. Reflita fielmente o padrão da banca pesquisada (vocabulário, pegadinhas, nível de exigência).
+3. Use apenas conteúdo factualmente correto (leis, artigos, súmulas, jurisprudência vigente).
+4. Não indique qual alternativa é correta — isso é feito em etapa separada.
+5. Cada questão deve ser autocontida (enunciado completo, sem referências externas).
+
+### Estilo por banca (use como guia complementar):
+- **Cebraspe/CESPE:** enunciados longos com afirmações a julgar; pegadinhas sutis com "exceto", "não", "apenas", troca de termos legais. Alta taxa de questões que exigem conhecimento literal de lei.
+- **FGV:** enunciados densos e conceituais; cobra interpretação fina de doutrina, jurisprudência e conflitos entre princípios.
+- **FCC:** linguagem direta e objetiva; foco na literalidade do texto de lei; alternativas muito parecidas exigem atenção ao detalhe.
+- **Vunesp:** enunciado moderado; combina interpretação de texto com conhecimento de lei; atenção a aspectos formais e procedimentais.
+- **IBFC/Quadrix/AOCP:** linguagem mais acessível; foco em conhecimento de base; menos pegadinhas, mais cobertura de conteúdo.
+
+### Formato de saída — JSON puro, sem texto antes ou depois:
 {
   "questions": [
     {
       "id": 1,
-      "text": "...",
+      "text": "<enunciado completo da questão>",
       "correctCount": 1,
       "publicExamName": "${public_exam_name}",
       "examBoardName": "${exam_board_name}",
       "subject": "${subject_name}",
+      ${topic_name ? `"topic": "${topic_name}",` : ''}
       "difficulty": "medium",
-      "options": { "A": "...", "B": "...", "C": "...", "D": "...", "E": "..." }
+      "options": {
+        "A": "<texto da alternativa A>",
+        "B": "<texto da alternativa B>",
+        "C": "<texto da alternativa C>",
+        "D": "<texto da alternativa D>",
+        "E": "<texto da alternativa E>"
+      }
     }
   ]
-}`;
+}
+
+Restrições do JSON:
+- "correctCount": inteiro de 1 a 3.
+- "difficulty": "easy", "medium" ou "hard".
+- Todas as alternativas A–E devem ter texto não vazio.
+- Nenhum campo de metadados fora do schema acima.`;
 }

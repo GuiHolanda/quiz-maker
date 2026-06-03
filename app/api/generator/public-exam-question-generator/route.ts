@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     await quotaService.check(session.user.id, 'generate_questions', count);
 
     const prompt = buildGeneratePublicExamQuestionsPrompt(questionParams);
-    const response = await openAIService.getLLMResponseInline(prompt);
+    const response = await openAIService.getLLMResponseWithWebSearch(prompt);
     const questionsFromAi = questionService.getValidatedQuestions(JSON.parse(response));
 
     await quotaService.record(session.user.id, 'generate_questions', count);
