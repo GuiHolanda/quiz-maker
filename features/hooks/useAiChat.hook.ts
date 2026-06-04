@@ -10,11 +10,13 @@ interface UseAiChatReturn {
   readonly input: string;
   readonly isStreaming: boolean;
   readonly currentStreamContent: string;
+  readonly pendingFile: File | null;
   readonly setInput: (value: string) => void;
   readonly sendMessage: () => void;
   readonly reset: () => void;
   readonly saveCertificationFromChat: (certification: Certification) => Promise<'success' | 'duplicate' | 'error'>;
   readonly handleEditalUpload: (file: File) => void;
+  readonly cancelPendingFile: () => void;
 }
 
 interface ParsedCertResponse {
@@ -60,6 +62,7 @@ export function useAiChat(): UseAiChatReturn {
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [currentStreamContent, setCurrentStreamContent] = useState('');
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const pendingEditalRef = useRef<File | null>(null);
   const { t, language } = useTranslation();
@@ -71,6 +74,7 @@ export function useAiChat(): UseAiChatReturn {
   const reset = useCallback(() => {
     abortControllerRef.current?.abort();
     pendingEditalRef.current = null;
+    setPendingFile(null);
     setMessages([]);
     setInput('');
     setIsStreaming(false);
@@ -79,15 +83,20 @@ export function useAiChat(): UseAiChatReturn {
   }, []);
 
   const sendMessage = useCallback(async () => {
-    if (input.trim() === '' || isStreaming) return;
+    if ((input.trim() === '' && !pendingEditalRef.current) || isStreaming) return;
 
-    // If there's a pending edital, the user's message is the cargo — extract now
+    // If there's a pending edital, extract now — role is what the user typed (may be empty)
     if (pendingEditalRef.current) {
       const file = pendingEditalRef.current;
       const role = input.trim();
       pendingEditalRef.current = null;
+      setPendingFile(null);
 
-      const userMsg: ChatMessage = { role: 'user', content: role };
+      const userMsg: ChatMessage = {
+        role: 'user',
+        content: role || t('chat.attachedEdital'),
+        attachmentName: file.name,
+      };
       setMessages(prev => [...prev, userMsg]);
       setInput('');
       setIsStreaming(true);
@@ -96,7 +105,7 @@ export function useAiChat(): UseAiChatReturn {
       setMessages(prev => [...prev, loadingMsg]);
 
       try {
-        const publicExam = await extractEdital(file, role);
+        const publicExam = await extractEdital(file, role || undefined);
         setMessages(prev => [
           ...prev.slice(0, -1),
           { role: 'assistant', content: '', examDraft: publicExam },
@@ -213,22 +222,25 @@ export function useAiChat(): UseAiChatReturn {
   const handleEditalUpload = useCallback((file: File) => {
     if (isStreaming) return;
     pendingEditalRef.current = file;
-    const askMsg: ChatMessage = {
-      role: 'assistant',
-      content: t('chat.askRole'),
-    };
-    setMessages(prev => [...prev, askMsg]);
-  }, [isStreaming, t]);
+    setPendingFile(file);
+  }, [isStreaming]);
+
+  const cancelPendingFile = useCallback(() => {
+    pendingEditalRef.current = null;
+    setPendingFile(null);
+  }, []);
 
   return {
     messages,
     input,
     isStreaming,
     currentStreamContent,
+    pendingFile,
     setInput,
     sendMessage,
     reset,
     saveCertificationFromChat,
     handleEditalUpload,
+    cancelPendingFile,
   };
 }

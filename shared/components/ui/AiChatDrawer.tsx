@@ -5,7 +5,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter } from '@
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faXmark, faPaperPlane, faRotateRight, faPaperclip } from '@fortawesome/free-solid-svg-icons';
+import { faXmark, faPaperPlane, faRotateRight, faPaperclip, faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useAiChat } from '@/features/hooks/useAiChat.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
@@ -21,7 +21,7 @@ interface AiChatDrawerProps {
 
 export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
   const { t } = useTranslation();
-  const { messages, input, isStreaming, currentStreamContent, setInput, sendMessage, reset, saveCertificationFromChat, handleEditalUpload } = useAiChat();
+  const { messages, input, isStreaming, currentStreamContent, pendingFile, setInput, sendMessage, reset, saveCertificationFromChat, handleEditalUpload, cancelPendingFile } = useAiChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -123,7 +123,7 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
                   />
                 </>
               ) : (
-                <AiChatMessage role={message.role} content={message.content} />
+                <AiChatMessage role={message.role} content={message.content} attachmentName={message.attachmentName} />
               )}
             </div>
           ))}
@@ -159,7 +159,25 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
           <div ref={messagesEndRef} />
         </DrawerBody>
 
-        <DrawerFooter className="border-t border-divider px-4 py-3">
+        <DrawerFooter className="border-t border-divider px-4 py-3 flex-col gap-0">
+          {pendingFile && (
+            <div className="flex items-center gap-2 px-1 py-2 w-full mb-1">
+              <FontAwesomeIcon icon={faFilePdf} className="text-danger text-sm shrink-0" />
+              <button
+                className="text-xs text-foreground truncate max-w-[200px] hover:underline text-left"
+                onClick={() => window.open(URL.createObjectURL(pendingFile), '_blank')}
+              >
+                {pendingFile.name}
+              </button>
+              <button
+                className="ml-auto text-default-400 hover:text-foreground"
+                onClick={cancelPendingFile}
+                aria-label={t('chat.removeAttachment')}
+              >
+                <FontAwesomeIcon icon={faXmark} className="text-xs" />
+              </button>
+            </div>
+          )}
           <div className="flex gap-2 w-full items-center">
             <input
               ref={fileInputRef}
@@ -183,7 +201,7 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
               {...inputProperties.input}
               value={input}
               onValueChange={setInput}
-              placeholder={t('chat.inputPlaceholder')}
+              placeholder={pendingFile ? t('chat.rolePlaceholder') : t('chat.inputPlaceholder')}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -194,7 +212,7 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
             />
             <Button
               isIconOnly
-              isDisabled={isStreaming || !input.trim()}
+              isDisabled={isStreaming || (!input.trim() && !pendingFile)}
               onPress={sendMessage}
               className="bg-primary text-primary-foreground rounded-lg shrink-0"
             >

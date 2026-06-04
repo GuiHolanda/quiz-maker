@@ -1,6 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import { ChatMessageRole } from '@/shared/types';
 
 interface AiChatMessageProps {
@@ -9,6 +11,7 @@ interface AiChatMessageProps {
   readonly isStreaming?: boolean;
   readonly isError?: boolean;
   readonly sources?: string[];
+  readonly attachmentName?: string;
 }
 
 const CERTIFICATION_DATA_BLOCK_REGEX = /```certification-data\n([\s\S]*?)```/g;
@@ -47,7 +50,7 @@ function parseMarkdownInline(text: string): ReactNode[] {
   return result;
 }
 
-export function AiChatMessage({ role, content, isStreaming, isError, sources }: AiChatMessageProps) {
+export function AiChatMessage({ role, content, isStreaming, isError, sources, attachmentName }: AiChatMessageProps) {
   const isUser = role === 'user';
   const displayContent = role === 'assistant'
     ? isStreaming
@@ -86,6 +89,12 @@ export function AiChatMessage({ role, content, isStreaming, isError, sources }: 
         ) : (
           <>
             {parseMarkdownInline(displayContent)}
+            {attachmentName && (
+              <div className="flex items-center gap-1 mt-2 text-xs text-default-400">
+                <FontAwesomeIcon icon={faFilePdf} className="text-danger text-xs shrink-0" />
+                <span>{attachmentName}</span>
+              </div>
+            )}
             {sources && sources.length > 0 && (
               <div className="mt-2 pt-2 border-t border-default-200">
                 <p className="text-xs text-default-400 mb-1">Sources:</p>
