@@ -18,7 +18,6 @@ interface TopicItemProps {
 export function TopicItem({ topic, onRemove, onUpdate }: TopicItemProps) {
   const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
-  const [displayName, setDisplayName] = useState(topic.name);
   const [editValue, setEditValue] = useState(topic.name);
   const [saving, setSaving] = useState(false);
 
@@ -37,7 +36,6 @@ export function TopicItem({ topic, onRemove, onUpdate }: TopicItemProps) {
     setSaving(true);
     try {
       await onUpdate(topic.id, editValue.trim());
-      setDisplayName(editValue.trim());
       setIsEditing(false);
     } finally {
       setSaving(false);
@@ -49,7 +47,7 @@ export function TopicItem({ topic, onRemove, onUpdate }: TopicItemProps) {
   function renderViewMode() {
     return (
       <div className="flex items-center justify-between gap-2 rounded-md px-3 py-2 bg-default-50 hover:bg-default-100 border border-transparent hover:border-default-200 transition-colors group">
-        <span className="text-xs text-default-700 leading-relaxed flex-1">{displayName}</span>
+        <span className="text-xs text-default-700 leading-relaxed flex-1">{topic.name}</span>
         <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
           {onUpdate && topic.id && (
             <button

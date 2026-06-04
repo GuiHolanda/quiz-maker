@@ -27,6 +27,7 @@ interface PublicExamSubjectsTableProps {
   readonly onSubjectAdded?: (subject: PublicExamSubject) => void;
   readonly onTopicAdded?: (subjectId: string, topic: PublicExamTopic) => void;
   readonly onTopicRemoved?: (subjectId: string, topicId: string) => void;
+  readonly onTopicUpdated?: (subjectId: string, topicId: string, newName: string) => void;
   readonly onEditPublicExam?: () => void;
 }
 
@@ -42,6 +43,7 @@ export function PublicExamSubjectsTable({
   onSubjectAdded,
   onTopicAdded,
   onTopicRemoved,
+  onTopicUpdated,
   onEditPublicExam,
 }: PublicExamSubjectsTableProps) {
   const { t } = useTranslation();
@@ -135,11 +137,12 @@ export function PublicExamSubjectsTable({
   );
 
   const handleUpdateTopic = useCallback(
-    async (topicId: string, newName: string) => {
+    async (subjectId: string, topicId: string, newName: string) => {
       await updatePublicExamTopic(topicId, newName);
+      onTopicUpdated?.(subjectId, topicId, newName);
       addToast({ title: t('toast.success'), description: t('toast.topicUpdated', { name: newName }), color: 'success' });
     },
-    [t],
+    [onTopicUpdated, t],
   );
 
   if (subjects.length === 0 && !isAddingSubject) {
@@ -236,7 +239,7 @@ export function PublicExamSubjectsTable({
             ? (topicId, name) => handleRemoveTopic(subject.id!, topicId, name)
             : undefined
         }
-        updateTopic={(topicId, newName) => handleUpdateTopic(topicId, newName)}
+        updateTopic={(topicId, newName) => handleUpdateTopic(subject.id!, topicId, newName)}
       />
     );
   }

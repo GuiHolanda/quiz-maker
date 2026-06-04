@@ -57,6 +57,18 @@ export function PublicExamsListTab() {
     [updatePublicExam],
   );
 
+  const handleTopicUpdated = useCallback(
+    (publicExam: PublicExam, subjectId: string, topicId: string, newName: string) => {
+      const updatedSubjects = publicExam.subjects.map((s) =>
+        s.id === subjectId
+          ? { ...s, topics: (s.topics ?? []).map((tp) => (tp.id === topicId ? { ...tp, name: newName } : tp)) }
+          : s,
+      );
+      if (publicExam.id) updatePublicExam(publicExam.id, { subjects: updatedSubjects });
+    },
+    [updatePublicExam],
+  );
+
   const handleExamSaved = useCallback(
     (id: string, updated: { name: string; role?: string; year?: number; examBoard: ExamBoard }) => {
       updatePublicExam(id, {
@@ -115,6 +127,7 @@ export function PublicExamsListTab() {
               onSubjectAdded={(subject) => handleSubjectAdded(publicExam, subject)}
               onTopicAdded={(subjectId, topic) => handleTopicAdded(publicExam, subjectId, topic)}
               onTopicRemoved={(subjectId, topicId) => handleTopicRemoved(publicExam, subjectId, topicId)}
+              onTopicUpdated={(subjectId, topicId, newName) => handleTopicUpdated(publicExam, subjectId, topicId, newName)}
               onEditPublicExam={() => setEditingExam(publicExam)}
             />
           </AccordionItem>
