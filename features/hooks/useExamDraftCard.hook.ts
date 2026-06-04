@@ -95,9 +95,10 @@ export function useExamDraftCard(initialDraft: PublicExam): UseExamDraftCardRetu
   const handleSave = useCallback(async () => {
     setStatus('saving');
     try {
-      await savePublicExam(draft);
+      const saved = await savePublicExam(draft);
       setStatus('saved');
       addToast({ title: t('chat.examSaved'), color: 'success' });
+      window.dispatchEvent(new CustomEvent('public-exam-created', { detail: saved }));
     } catch (err: any) {
       const message = err?.response?.status === 409
         ? t('chat.examDuplicate')

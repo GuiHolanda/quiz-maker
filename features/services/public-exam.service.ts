@@ -143,6 +143,13 @@ export class PublicExamService {
     });
   }
 
+  public async deletePublicExam(examId: string, userId: string) {
+    const exam = await this.prismaService.publicExam.findUnique({ where: { id: examId } });
+    if (!exam) throw Object.assign(new Error('Public exam not found'), { status: 404 });
+    if (exam.userId !== userId) throw Object.assign(new Error('Forbidden'), { status: 403 });
+    await this.prismaService.publicExam.delete({ where: { id: examId } });
+  }
+
   public async deleteSubject(subjectId: string, userId: string) {
     const subject = await this.prismaService.publicExamSubject.findUnique({
       where: { id: subjectId },

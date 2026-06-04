@@ -153,6 +153,10 @@ export async function deletePublicExamSubject(subjectId: string): Promise<void> 
   await api.delete(`${SAVE_PUBLIC_EXAM_URL}?subjectId=${encodeURIComponent(subjectId)}`);
 }
 
+export async function deletePublicExam(examId: string): Promise<void> {
+  await api.delete(`${SAVE_PUBLIC_EXAM_URL}?examId=${encodeURIComponent(examId)}`);
+}
+
 export async function deletePublicExamTopic(topicId: string): Promise<void> {
   await api.delete(`${SAVE_PUBLIC_EXAM_URL}?topicId=${encodeURIComponent(topicId)}`);
 }
