@@ -28,8 +28,10 @@ export class AiChatService {
       throw Object.assign(new Error(`Maximum ${MAX_MESSAGES} messages allowed`), { status: 400 });
     }
 
+    const valid: { role: 'user' | 'assistant'; content: string }[] = [];
+
     for (const msg of messages) {
-      if (!msg.role || !msg.content || typeof msg.content !== 'string') {
+      if (!msg.role || typeof msg.content !== 'string') {
         throw Object.assign(new Error('Each message must have role and content'), { status: 400 });
       }
 
@@ -40,9 +42,17 @@ export class AiChatService {
       if (msg.content.length > MAX_CONTENT_LENGTH) {
         throw Object.assign(new Error(`Message content cannot exceed ${MAX_CONTENT_LENGTH} characters`), { status: 400 });
       }
+
+      if (msg.content.trim() === '') continue;
+
+      valid.push({ role: msg.role as 'user' | 'assistant', content: msg.content });
     }
 
-    return { messages: messages as { role: 'user' | 'assistant'; content: string }[], language: language === 'pt' ? 'pt' : 'en' };
+    if (valid.length === 0) {
+      throw Object.assign(new Error('Messages array is required'), { status: 400 });
+    }
+
+    return { messages: valid, language: language === 'pt' ? 'pt' : 'en' };
   }
 
   private selectPrompt(messages: { role: string; content: string }[]): string {
