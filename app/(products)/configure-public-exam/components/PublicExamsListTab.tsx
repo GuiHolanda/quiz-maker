@@ -138,14 +138,16 @@ export function PublicExamsListTab() {
                     <span className="text-xs text-default-500 shrink-0">{publicExam.year}</span>
                   </>
                 )}
-                <button
-                  type="button"
-                  className="ml-auto shrink-0 p-1.5 rounded-lg text-default-400 hover:text-danger hover:bg-danger/10 transition-colors"
+                <span
+                  role="button"
+                  tabIndex={0}
+                  className="ml-auto shrink-0 p-1.5 rounded-lg text-default-400 hover:text-danger hover:bg-danger/10 transition-colors cursor-pointer"
                   onClick={(e) => { e.stopPropagation(); setDeletingExam(publicExam); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); setDeletingExam(publicExam); } }}
                   aria-label={t('common.remove')}
                 >
                   <FontAwesomeIcon icon={faTrash} className="w-3 h-3" />
-                </button>
+                </span>
               </div>
             }
           >
