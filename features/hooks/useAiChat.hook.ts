@@ -14,7 +14,7 @@ interface UseAiChatReturn {
   readonly sendMessage: () => void;
   readonly reset: () => void;
   readonly saveCertificationFromChat: (certification: Certification) => Promise<'success' | 'duplicate' | 'error'>;
-  readonly handleEditalUpload: (file: File, role?: string) => Promise<void>;
+  readonly handleEditalUpload: (file: File) => void;
 }
 
 interface ParsedCertResponse {
@@ -61,6 +61,7 @@ export function useAiChat(): UseAiChatReturn {
   const [isStreaming, setIsStreaming] = useState(false);
   const [currentStreamContent, setCurrentStreamContent] = useState('');
   const abortControllerRef = useRef<AbortController | null>(null);
+  const pendingEditalRef = useRef<File | null>(null);
   const { t, language } = useTranslation();
 
   useEffect(() => {
@@ -69,6 +70,7 @@ export function useAiChat(): UseAiChatReturn {
 
   const reset = useCallback(() => {
     abortControllerRef.current?.abort();
+    pendingEditalRef.current = null;
     setMessages([]);
     setInput('');
     setIsStreaming(false);
@@ -78,6 +80,42 @@ export function useAiChat(): UseAiChatReturn {
 
   const sendMessage = useCallback(async () => {
     if (input.trim() === '' || isStreaming) return;
+
+    // If there's a pending edital, the user's message is the cargo — extract now
+    if (pendingEditalRef.current) {
+      const file = pendingEditalRef.current;
+      const role = input.trim();
+      pendingEditalRef.current = null;
+
+      const userMsg: ChatMessage = { role: 'user', content: role };
+      setMessages(prev => [...prev, userMsg]);
+      setInput('');
+      setIsStreaming(true);
+
+      const loadingMsg: ChatMessage = { role: 'assistant', content: t('chat.analyzingEdital') };
+      setMessages(prev => [...prev, loadingMsg]);
+
+      try {
+        const publicExam = await extractEdital(file, role);
+        setMessages(prev => [
+          ...prev.slice(0, -1),
+          { role: 'assistant', content: '', examDraft: publicExam },
+        ]);
+      } catch (err: any) {
+        const errorContent = err?.response?.status === 413
+          ? t('chat.errorFileTooLarge')
+          : err?.response?.status === 400
+            ? t('chat.errorInvalidFile')
+            : t('chat.errorGeneric');
+        setMessages(prev => [
+          ...prev.slice(0, -1),
+          { role: 'assistant', content: errorContent, isError: true },
+        ]);
+      } finally {
+        setIsStreaming(false);
+      }
+      return;
+    }
 
     const userMsg: ChatMessage = { role: 'user', content: input.trim() };
     const messagesWithUser = [...messages, userMsg];
@@ -156,37 +194,14 @@ export function useAiChat(): UseAiChatReturn {
     }
   };
 
-  const handleEditalUpload = useCallback(async (file: File, role?: string) => {
+  const handleEditalUpload = useCallback((file: File) => {
     if (isStreaming) return;
-
-    const loadingMsg: ChatMessage = {
+    pendingEditalRef.current = file;
+    const askMsg: ChatMessage = {
       role: 'assistant',
-      content: t('chat.analyzingEdital'),
+      content: t('chat.askRole'),
     };
-    setMessages(prev => [...prev, loadingMsg]);
-    setIsStreaming(true);
-
-    try {
-      const publicExam = await extractEdital(file, role);
-      const draftMsg: ChatMessage = {
-        role: 'assistant',
-        content: '',
-        examDraft: publicExam,
-      };
-      setMessages(prev => [...prev.slice(0, -1), draftMsg]);
-    } catch (err: any) {
-      const errorContent = err?.response?.status === 413
-        ? t('chat.errorFileTooLarge')
-        : err?.response?.status === 400
-          ? t('chat.errorInvalidFile')
-          : t('chat.errorGeneric');
-      setMessages(prev => [
-        ...prev.slice(0, -1),
-        { role: 'assistant', content: errorContent, isError: true },
-      ]);
-    } finally {
-      setIsStreaming(false);
-    }
+    setMessages(prev => [...prev, askMsg]);
   }, [isStreaming, t]);
 
   return {
