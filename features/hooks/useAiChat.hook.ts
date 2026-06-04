@@ -1,6 +1,6 @@
 'use client';
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { saveCertification } from '@/features/connectors';
+import { saveCertification, extractEdital } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { AI_CHAT_LOCAL_STORAGE_KEY } from '@/config/constants';
 import { ChatMessage, Certification } from '@/shared/types';
@@ -14,6 +14,7 @@ interface UseAiChatReturn {
   readonly sendMessage: () => void;
   readonly reset: () => void;
   readonly saveCertificationFromChat: (certification: Certification) => Promise<'success' | 'duplicate' | 'error'>;
+  readonly handleEditalUpload: (file: File, role?: string) => Promise<void>;
 }
 
 interface ParsedCertResponse {
@@ -156,6 +157,39 @@ export function useAiChat(): UseAiChatReturn {
     }
   };
 
+  const handleEditalUpload = useCallback(async (file: File, role?: string) => {
+    if (isStreaming) return;
+
+    const loadingMsg: ChatMessage = {
+      role: 'assistant',
+      content: t('chat.analyzingEdital'),
+    };
+    setMessages(prev => [...prev, loadingMsg]);
+    setIsStreaming(true);
+
+    try {
+      const publicExam = await extractEdital(file, role);
+      const draftMsg: ChatMessage = {
+        role: 'assistant',
+        content: '',
+        examDraft: publicExam,
+      };
+      setMessages(prev => [...prev.slice(0, -1), draftMsg]);
+    } catch (err: any) {
+      const errorContent = err?.response?.status === 413
+        ? t('chat.errorFileTooLarge')
+        : err?.response?.status === 400
+          ? t('chat.errorInvalidFile')
+          : t('chat.errorGeneric');
+      setMessages(prev => [
+        ...prev.slice(0, -1),
+        { role: 'assistant', content: errorContent, isError: true },
+      ]);
+    } finally {
+      setIsStreaming(false);
+    }
+  }, [isStreaming, t]);
+
   return {
     messages,
     input,
@@ -165,5 +199,6 @@ export function useAiChat(): UseAiChatReturn {
     sendMessage,
     reset,
     saveCertificationFromChat,
+    handleEditalUpload,
   };
 }
