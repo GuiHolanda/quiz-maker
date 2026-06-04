@@ -130,7 +130,7 @@ export function useAiChat(): UseAiChatReturn {
     let accumulated = '';
 
     try {
-      const response = await fetch('/api/ai-chat', {
+      const response = await fetch('/api/ai/ai-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: messagesWithUser, language }),
