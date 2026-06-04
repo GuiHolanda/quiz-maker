@@ -94,7 +94,7 @@ export function useAiChat(): UseAiChatReturn {
 
       const userMsg: ChatMessage = {
         role: 'user',
-        content: role || t('chat.attachedEdital'),
+        content: role || '📎',
         attachmentName: file.name,
       };
       setMessages(prev => [...prev, userMsg]);

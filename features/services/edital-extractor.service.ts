@@ -113,7 +113,7 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
     if (typeof board.name !== 'string' || !board.name) {
       throw Object.assign(new Error('Extracted data missing required field: examBoard.name'), { status: 502 });
     }
-    if (!Array.isArray(d.subjects) || d.subjects.length === 0) {
+    if (!Array.isArray(d.subjects)) {
       throw Object.assign(new Error('Extracted data missing required field: subjects'), { status: 502 });
     }
     return data as PublicExam;
