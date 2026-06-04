@@ -17,6 +17,7 @@ interface UseAiChatReturn {
   readonly saveCertificationFromChat: (certification: Certification) => Promise<'success' | 'duplicate' | 'error'>;
   readonly handleEditalUpload: (file: File) => void;
   readonly cancelPendingFile: () => void;
+  readonly injectAssistantMessage: (content: string) => void;
 }
 
 interface ParsedCertResponse {
@@ -178,12 +179,17 @@ export function useAiChat(): UseAiChatReturn {
         }
       }
 
-      const parsed = parseCertificationData(accumulated);
+      const cleanContent = accumulated.replace('[ENCERRAR_SESSAO]', '').trim();
+      const parsed = parseCertificationData(cleanContent);
       const assistantMsg: ChatMessage = parsed
         ? { role: 'assistant', content: parsed.context, certificationData: parsed.certificationData, sources: parsed.sources }
-        : { role: 'assistant', content: accumulated };
+        : { role: 'assistant', content: cleanContent };
 
       setMessages(prev => [...prev, assistantMsg]);
+
+      if (accumulated.includes('[ENCERRAR_SESSAO]')) {
+        setTimeout(() => reset(), 1500);
+      }
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
 
@@ -233,6 +239,10 @@ export function useAiChat(): UseAiChatReturn {
     setPendingFile(null);
   }, []);
 
+  const injectAssistantMessage = useCallback((content: string) => {
+    setMessages(prev => [...prev, { role: 'assistant', content }]);
+  }, []);
+
   return {
     messages,
     input,
@@ -245,5 +255,6 @@ export function useAiChat(): UseAiChatReturn {
     saveCertificationFromChat,
     handleEditalUpload,
     cancelPendingFile,
+    injectAssistantMessage,
   };
 }

@@ -21,7 +21,7 @@ interface AiChatDrawerProps {
 
 export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
   const { t } = useTranslation();
-  const { messages, input, isStreaming, currentStreamContent, pendingFile, setInput, sendMessage, reset, saveCertificationFromChat, handleEditalUpload, cancelPendingFile } = useAiChat();
+  const { messages, input, isStreaming, currentStreamContent, pendingFile, setInput, sendMessage, reset, saveCertificationFromChat, handleEditalUpload, cancelPendingFile, injectAssistantMessage } = useAiChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -43,12 +43,13 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
     const result = await saveCertificationFromChat(certification);
     if (result === 'success') {
       setSaveStates(prev => ({ ...prev, [index]: { isSaving: false, result: 'success' } }));
+      injectAssistantMessage(t('chat.followUpQuestion'));
     } else if (result === 'duplicate') {
       setSaveStates(prev => ({ ...prev, [index]: { isSaving: false, result: 'error', errorMessage: t('chat.errorDuplicate', { key: certification.key }) } }));
     } else {
       setSaveStates(prev => ({ ...prev, [index]: { isSaving: false, result: 'error', errorMessage: t('chat.errorGeneric') } }));
     }
-  }, [saveCertificationFromChat, t]);
+  }, [saveCertificationFromChat, injectAssistantMessage, t]);
 
   const handleNewChat = useCallback(() => {
     reset();
@@ -109,7 +110,10 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
               {message.isError ? (
                 <AiChatMessage role={message.role} content={message.content} isError={true} />
               ) : message.examDraft ? (
-                <AiChatExamDraftCard publicExam={message.examDraft} />
+                <AiChatExamDraftCard
+                  publicExam={message.examDraft}
+                  onExamSaved={() => injectAssistantMessage(t('chat.followUpQuestion'))}
+                />
               ) : message.certificationData ? (
                 <>
                   <AiChatMessage role={message.role} content={message.content} sources={message.sources} />

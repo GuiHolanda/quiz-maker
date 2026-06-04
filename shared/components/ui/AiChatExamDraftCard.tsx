@@ -10,9 +10,10 @@ import { ExamDraftReviewModal } from '@/shared/components/ui/ExamDraftReviewModa
 
 interface AiChatExamDraftCardProps {
   readonly publicExam: PublicExam;
+  readonly onExamSaved?: () => void;
 }
 
-export function AiChatExamDraftCard({ publicExam }: AiChatExamDraftCardProps) {
+export function AiChatExamDraftCard({ publicExam, onExamSaved }: AiChatExamDraftCardProps) {
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [savedDraft, setSavedDraft] = useState<PublicExam | null>(null);
@@ -69,6 +70,7 @@ export function AiChatExamDraftCard({ publicExam }: AiChatExamDraftCardProps) {
         onSaved={(draft) => {
           setSavedDraft(draft);
           setIsModalOpen(false);
+          onExamSaved?.();
         }}
       />
     </div>

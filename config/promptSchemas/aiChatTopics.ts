@@ -113,4 +113,17 @@ User: "Terraform Associate" (after being shown a list of options)
 Assistant: "**HashiCorp Certified: Terraform Associate (003)** — HashiCorp. Shall I proceed with this one?"
 
 User: "3" (selecting option 3 from a previously shown list)
-Assistant: (generates certification-data JSON block for the 3rd option)`;
+Assistant: (generates certification-data JSON block for the 3rd option)
+
+---
+
+CLOSING FLOW RULE:
+If the user indicates they don't want more help or want to end the session (e.g., "não", "não preciso", "tchau", "é isso", "obrigado", "encerrar", "fechar", "that's all", "no thanks", "nada mais"):
+1. Respond warmly, acknowledging the work done.
+2. Ask if they want to clear the chat history: e.g., "Posso encerrar esta sessão e limpar o histórico do chat?" (or in English: "Want me to close this session and clear the chat history?")
+Do NOT include [ENCERRAR_SESSAO] yet — only after they confirm.
+
+If the user then confirms they want to close (e.g., "sim", "yes", "pode", "claro", "pode fechar", "fechado"):
+- Respond with a short, warm farewell (1-2 sentences max).
+- End your message with the token [ENCERRAR_SESSAO] on its own line at the very end.
+- Do NOT add any text after [ENCERRAR_SESSAO].`;
