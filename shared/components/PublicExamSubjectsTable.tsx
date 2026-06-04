@@ -5,6 +5,8 @@ import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
 import { Slider } from '@heroui/slider';
 import { addToast } from '@heroui/toast';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChevronDown, faChevronRight, faXmark } from '@fortawesome/free-solid-svg-icons';
 
 import { PublicExam, PublicExamSubject, PublicExamTopic } from '@/shared/types';
 import {
@@ -71,6 +73,15 @@ export function PublicExamSubjectsTable({
   const [addingTopicTo, setAddingTopicTo] = useState<string | null>(null);
   const [topicName, setTopicName] = useState('');
   const [topicSaving, setTopicSaving] = useState(false);
+  const [expandedSubjects, setExpandedSubjects] = useState<Set<string>>(new Set());
+
+  const toggleTopics = (subjectId: string) => {
+    setExpandedSubjects(prev => {
+      const next = new Set(prev);
+      next.has(subjectId) ? next.delete(subjectId) : next.add(subjectId);
+      return next;
+    });
+  };
 
   const subjects = selectedPublicExam?.subjects ?? subjectsList ?? [];
 
@@ -240,7 +251,8 @@ export function PublicExamSubjectsTable({
               const tdClass = isLast ? TD_LAST : TD;
 
               return (
-                <tr key={subject.id ?? subject.name} className={index % 2 === 0 ? 'bg-content1' : 'bg-default-50'}>
+                <React.Fragment key={subject.id ?? subject.name}>
+                  <tr className={index % 2 === 0 ? 'bg-content1' : 'bg-default-50'}>
                   <td className={tdClass}>
                     {isEditing ? (
                       <Input
@@ -321,53 +333,21 @@ export function PublicExamSubjectsTable({
                   </td>
 
                   <td className={tdClass}>
-                    <div className="flex flex-col gap-1">
-                      {(subject.topics ?? []).map((topic) => (
-                        <div key={topic.id ?? topic.name} className="flex items-center gap-2">
-                          <span className="text-xs">{topic.name}</span>
-                          {onTopicRemoved && topic.id && (
-                            <button
-                              type="button"
-                              className="text-xs text-danger hover:opacity-80"
-                              onClick={() => handleRemoveTopic(subject.id!, topic.id!, topic.name)}
-                            >
-                              ×
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                      {addingTopicTo === subject.id ? (
-                        <div className="flex gap-1 items-center">
-                          <Input
-                            {...inputProperties.input}
-                            size="sm"
-                            placeholder={t('concurso.topicNamePlaceholder')}
-                            value={topicName}
-                            onChange={(e) => setTopicName(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleAddTopic(subject.id!)}
-                            className="w-32"
-                          />
-                          <Button
-                            size="sm"
-                            className="bg-primary text-primary-foreground text-xs h-7 px-2"
-                            isLoading={topicSaving}
-                            onPress={() => handleAddTopic(subject.id!)}
-                          >
-                            {t('common.save')}
-                          </Button>
-                        </div>
-                      ) : (
-                        onTopicAdded && subject.id && (
-                          <button
-                            type="button"
-                            className="text-xs text-primary self-start hover:opacity-80"
-                            onClick={() => { setAddingTopicTo(subject.id!); setTopicName(''); }}
-                          >
-                            + {t('concurso.addTopic')}
-                          </button>
-                        )
-                      )}
-                    </div>
+                    {subject.id ? (
+                      <button
+                        type="button"
+                        onClick={() => toggleTopics(subject.id!)}
+                        className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-default-100 hover:bg-default-200 transition-colors text-xs text-default-600 font-medium"
+                      >
+                        <FontAwesomeIcon
+                          icon={expandedSubjects.has(subject.id) ? faChevronDown : faChevronRight}
+                          className="w-2.5 h-2.5 text-default-400"
+                        />
+                        {(subject.topics ?? []).length} {t('concurso.topics')}
+                      </button>
+                    ) : (
+                      <span className="text-xs text-default-400">—</span>
+                    )}
                   </td>
 
                   <td className={tdClass}>
@@ -418,6 +398,75 @@ export function PublicExamSubjectsTable({
                     )}
                   </td>
                 </tr>
+
+                {subject.id && expandedSubjects.has(subject.id) && (
+                  <tr className={index % 2 === 0 ? 'bg-content1' : 'bg-default-50'}>
+                    <td colSpan={5} className="px-4 pb-3 pt-0 border-b border-default-200">
+                      <div className="ml-2 border-l-2 border-primary/20 pl-3">
+                        <div className="flex flex-col gap-0.5 mb-2">
+                          {(subject.topics ?? []).map((topic) => (
+                            <div
+                              key={topic.id ?? topic.name}
+                              className="flex items-start justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-default-100 transition-colors group"
+                            >
+                              <span className="text-xs text-default-600 leading-relaxed">{topic.name}</span>
+                              {onTopicRemoved && topic.id && (
+                                <button
+                                  type="button"
+                                  className="shrink-0 text-default-300 hover:text-danger transition-colors mt-0.5 opacity-0 group-hover:opacity-100"
+                                  onClick={() => handleRemoveTopic(subject.id!, topic.id!, topic.name)}
+                                  aria-label={`Remove ${topic.name}`}
+                                >
+                                  <FontAwesomeIcon icon={faXmark} className="w-2.5 h-2.5" />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        {addingTopicTo === subject.id ? (
+                          <div className="flex gap-1 items-center mt-1">
+                            <Input
+                              {...inputProperties.input}
+                              size="sm"
+                              placeholder={t('concurso.topicNamePlaceholder')}
+                              value={topicName}
+                              onChange={(e) => setTopicName(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && handleAddTopic(subject.id!)}
+                              className="w-56"
+                            />
+                            <Button
+                              size="sm"
+                              className="bg-primary text-primary-foreground text-xs h-7 px-2"
+                              isLoading={topicSaving}
+                              onPress={() => handleAddTopic(subject.id!)}
+                            >
+                              {t('common.save')}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="light"
+                              className="text-xs h-7 px-2"
+                              onPress={() => { setAddingTopicTo(null); setTopicName(''); }}
+                            >
+                              {t('common.cancel')}
+                            </Button>
+                          </div>
+                        ) : (
+                          onTopicAdded && subject.id && (
+                            <button
+                              type="button"
+                              className="text-xs text-primary hover:opacity-80 mt-1"
+                              onClick={() => { setAddingTopicTo(subject.id!); setTopicName(''); }}
+                            >
+                              + {t('concurso.addTopic')}
+                            </button>
+                          )
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </React.Fragment>
               );
             })}
             {isAddingSubject && (
