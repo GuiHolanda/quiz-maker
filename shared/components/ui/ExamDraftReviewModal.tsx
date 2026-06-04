@@ -5,7 +5,7 @@ import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import { Spinner } from '@heroui/spinner';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faXmark, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faXmark, faChevronDown, faChevronRight, faPen, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { PublicExam, PublicExamSubject } from '@/shared/types';
 import { useExamDraftCard } from '@/features/hooks/useExamDraftCard.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -34,11 +34,14 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
     addSubject,
     addTopic,
     removeTopic,
+    updateTopic,
     handleSave,
   } = useExamDraftCard(publicExam);
 
   const [expandedSubjects, setExpandedSubjects] = useState<Record<number, boolean>>({});
   const [newTopicInputs, setNewTopicInputs] = useState<Record<number, string>>({});
+  // editing state: key is `${si}-${ti}`, value is current edit text or null (not editing)
+  const [editingTopics, setEditingTopics] = useState<Record<string, string | null>>({});
 
   const isSaving = status === 'saving';
 
@@ -241,26 +244,91 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
           className={`px-4 pb-3 pt-0 ${isLast ? '' : 'border-b border-default-200'}`}
         >
           <div className="flex flex-col gap-0.5 mb-2">
-            {topics.map((topic, ti) => (
-              <div
-                key={ti}
-                className="flex items-center justify-between gap-2 rounded-md px-3 py-2 bg-default-50 hover:bg-default-100 border border-transparent hover:border-default-200 transition-colors group"
-              >
-                <span className="text-xs text-default-700 leading-relaxed flex-1">
-                  {topic.name}
-                </span>
-                {!isSaving && (
-                  <button
-                    type="button"
-                    onClick={() => removeTopic(si, ti)}
-                    className="p-1 rounded text-default-400 hover:text-danger hover:bg-danger/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
-                    aria-label={`Remove ${topic.name}`}
-                  >
-                    <FontAwesomeIcon icon={faXmark} className="w-2.5 h-2.5" />
-                  </button>
-                )}
-              </div>
-            ))}
+            {topics.map((topic, ti) => {
+              const editKey = `${si}-${ti}`;
+              const isEditingTopic = editingTopics[editKey] != null;
+              const editValue = editingTopics[editKey] ?? '';
+
+              if (isEditingTopic) {
+                return (
+                  <div key={ti} className="flex items-center gap-1.5 rounded-md px-2 py-1.5 bg-content1 border border-primary/40 shadow-sm">
+                    <Input
+                      {...inputProperties.input}
+                      size="sm"
+                      value={editValue}
+                      onValueChange={(v) => setEditingTopics(prev => ({ ...prev, [editKey]: v }))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && editValue.trim()) {
+                          updateTopic(si, ti, editValue);
+                          setEditingTopics(prev => ({ ...prev, [editKey]: null }));
+                        }
+                        if (e.key === 'Escape') {
+                          setEditingTopics(prev => ({ ...prev, [editKey]: null }));
+                        }
+                      }}
+                      className="flex-1"
+                      autoFocus
+                    />
+                    <Button
+                      isIconOnly
+                      size="sm"
+                      className="bg-primary text-primary-foreground h-7 w-7 min-w-0 shrink-0"
+                      onPress={() => {
+                        if (editValue.trim()) {
+                          updateTopic(si, ti, editValue);
+                          setEditingTopics(prev => ({ ...prev, [editKey]: null }));
+                        }
+                      }}
+                      isDisabled={!editValue.trim()}
+                      aria-label={t('common.save')}
+                    >
+                      <FontAwesomeIcon icon={faCheck} className="w-3 h-3" />
+                    </Button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingTopics(prev => ({ ...prev, [editKey]: null }))}
+                      className="p-1 rounded text-default-400 hover:text-danger transition-colors shrink-0"
+                      aria-label={t('common.cancel')}
+                    >
+                      <FontAwesomeIcon icon={faXmark} className="w-3 h-3" />
+                    </button>
+                  </div>
+                );
+              }
+
+              return (
+                <div
+                  key={ti}
+                  className="flex items-center justify-between gap-2 rounded-md px-3 py-2 bg-default-50 hover:bg-default-100 border border-transparent hover:border-default-200 transition-colors group"
+                >
+                  <span className="text-xs text-default-700 leading-relaxed flex-1">
+                    {topic.name}
+                  </span>
+                  <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {!isSaving && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingTopics(prev => ({ ...prev, [editKey]: topic.name }))}
+                        className="p-1 rounded text-default-400 hover:text-primary hover:bg-default-200 transition-colors"
+                        aria-label={t('common.edit')}
+                      >
+                        <FontAwesomeIcon icon={faPen} className="w-2.5 h-2.5" />
+                      </button>
+                    )}
+                    {!isSaving && (
+                      <button
+                        type="button"
+                        onClick={() => removeTopic(si, ti)}
+                        className="p-1 rounded text-default-400 hover:text-danger hover:bg-danger/10 transition-colors"
+                        aria-label={`Remove ${topic.name}`}
+                      >
+                        <FontAwesomeIcon icon={faXmark} className="w-2.5 h-2.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
           <div className="flex gap-1 items-center mt-1">
             <Input

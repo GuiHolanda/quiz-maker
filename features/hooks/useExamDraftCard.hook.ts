@@ -17,6 +17,7 @@ interface UseExamDraftCardReturn {
   readonly addSubject: () => void;
   readonly addTopic: (subjectIndex: number, name: string) => void;
   readonly removeTopic: (subjectIndex: number, topicIndex: number) => void;
+  readonly updateTopic: (subjectIndex: number, topicIndex: number, newName: string) => void;
   readonly handleSave: () => Promise<void>;
 }
 
@@ -80,6 +81,17 @@ export function useExamDraftCard(initialDraft: PublicExam): UseExamDraftCardRetu
     });
   }, []);
 
+  const updateTopic = useCallback((subjectIndex: number, topicIndex: number, newName: string) => {
+    if (!newName.trim()) return;
+    setDraft(prev => {
+      const subjects = [...prev.subjects];
+      const topics = [...(subjects[subjectIndex].topics ?? [])];
+      topics[topicIndex] = { ...topics[topicIndex], name: newName.trim() };
+      subjects[subjectIndex] = { ...subjects[subjectIndex], topics };
+      return { ...prev, subjects };
+    });
+  }, []);
+
   const handleSave = useCallback(async () => {
     setStatus('saving');
     try {
@@ -105,6 +117,7 @@ export function useExamDraftCard(initialDraft: PublicExam): UseExamDraftCardRetu
     addSubject,
     addTopic,
     removeTopic,
+    updateTopic,
     handleSave,
   };
 }
