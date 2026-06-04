@@ -5,12 +5,13 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter } from '@
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faXmark, faPaperPlane, faRotateRight } from '@fortawesome/free-solid-svg-icons';
+import { faXmark, faPaperPlane, faRotateRight, faPaperclip } from '@fortawesome/free-solid-svg-icons';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useAiChat } from '@/features/hooks/useAiChat.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { AiChatMessage } from '@/shared/components/ui/AiChatMessage';
 import { AiChatPreviewCard } from '@/shared/components/ui/AiChatPreviewCard';
+import { AiChatExamDraftCard } from '@/shared/components/ui/AiChatExamDraftCard';
 import { Certification } from '@/shared/types';
 
 interface AiChatDrawerProps {
@@ -20,9 +21,10 @@ interface AiChatDrawerProps {
 
 export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
   const { t } = useTranslation();
-  const { messages, input, isStreaming, currentStreamContent, setInput, sendMessage, reset, saveCertificationFromChat } = useAiChat();
+  const { messages, input, isStreaming, currentStreamContent, setInput, sendMessage, reset, saveCertificationFromChat, handleEditalUpload } = useAiChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   type SaveState = {
     isSaving: boolean;
@@ -56,6 +58,13 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
   const handleAdjust = () => {
     inputRef.current?.focus();
   };
+
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    handleEditalUpload(file);
+  }, [handleEditalUpload]);
 
   const isBuildingCertification = isStreaming && currentStreamContent.includes('```certification-data');
 
@@ -99,6 +108,8 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
             <div key={index}>
               {message.isError ? (
                 <AiChatMessage role={message.role} content={message.content} isError={true} />
+              ) : message.examDraft ? (
+                <AiChatExamDraftCard publicExam={message.examDraft} />
               ) : message.certificationData ? (
                 <>
                   <AiChatMessage role={message.role} content={message.content} sources={message.sources} />
@@ -150,6 +161,24 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
 
         <DrawerFooter className="border-t border-divider px-4 py-3">
           <div className="flex gap-2 w-full items-center">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <Button
+              isIconOnly
+              size="sm"
+              variant="light"
+              isDisabled={isStreaming}
+              onPress={() => fileInputRef.current?.click()}
+              aria-label={t('chat.uploadEdital')}
+              className="shrink-0 text-default-400 hover:text-foreground"
+            >
+              <FontAwesomeIcon icon={faPaperclip} />
+            </Button>
             <Input
               {...inputProperties.input}
               value={input}

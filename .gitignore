@@ -50,3 +50,5 @@ prisma/dev.db
 
 # MCP local config (contains API keys)
 .mcp.json
+
+.superpowers/
