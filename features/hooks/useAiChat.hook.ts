@@ -77,7 +77,6 @@ export function useAiChat(): UseAiChatReturn {
   }, []);
 
   const sendMessage = useCallback(async () => {
-    debugger
     if (input.trim() === '' || isStreaming) return;
 
     const userMsg: ChatMessage = { role: 'user', content: input.trim() };
