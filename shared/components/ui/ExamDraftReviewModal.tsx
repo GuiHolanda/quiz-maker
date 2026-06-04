@@ -5,7 +5,7 @@ import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import { Spinner } from '@heroui/spinner';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faTrash, faXmark, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faXmark, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { PublicExam, PublicExamSubject } from '@/shared/types';
 import { useExamDraftCard } from '@/features/hooks/useExamDraftCard.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -49,7 +49,7 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="3xl" scrollBehavior="inside">
+    <Modal isOpen={isOpen} onClose={onClose} size="5xl" scrollBehavior="inside">
       <ModalContent>
         <ModalHeader className="flex flex-col gap-1">
           <p className="text-base font-bold text-foreground">{t('chat.examFound')}</p>
@@ -213,15 +213,16 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
             </button>
           </td>
           <td className={tdClass}>
-            <button
-              type="button"
-              onClick={() => removeSubject(si)}
-              disabled={isSaving}
-              className="text-default-300 hover:text-danger transition-colors disabled:opacity-40"
-              aria-label={t('chat.removeSubject')}
+            <Button
+              size="sm"
+              variant="flat"
+              color="danger"
+              className="text-xs font-semibold rounded-lg h-8 px-3"
+              onPress={() => removeSubject(si)}
+              isDisabled={isSaving}
             >
-              <FontAwesomeIcon icon={faTrash} className="w-3 h-3" />
-            </button>
+              {t('common.remove')}
+            </Button>
           </td>
         </tr>
         {isExpanded && renderTopicsRow(subject, si)}
@@ -243,16 +244,16 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
             {topics.map((topic, ti) => (
               <div
                 key={ti}
-                className="flex items-start justify-between gap-2 rounded-md px-2 py-1 bg-default-100 hover:bg-default-200 transition-colors group"
+                className="flex items-center justify-between gap-2 rounded-md px-3 py-2 bg-default-50 hover:bg-default-100 border border-transparent hover:border-default-200 transition-colors group"
               >
-                <span className="text-xs text-default-600 break-words min-w-0 leading-relaxed">
+                <span className="text-xs text-default-700 leading-relaxed flex-1">
                   {topic.name}
                 </span>
                 {!isSaving && (
                   <button
                     type="button"
                     onClick={() => removeTopic(si, ti)}
-                    className="shrink-0 text-default-300 hover:text-danger transition-colors mt-0.5 opacity-0 group-hover:opacity-100"
+                    className="p-1 rounded text-default-400 hover:text-danger hover:bg-danger/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
                     aria-label={`Remove ${topic.name}`}
                   >
                     <FontAwesomeIcon icon={faXmark} className="w-2.5 h-2.5" />
@@ -261,7 +262,7 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
               </div>
             ))}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1 items-center mt-1">
             <Input
               {...inputProperties.input}
               placeholder={t('chat.addTopic')}
@@ -269,7 +270,8 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
               onValueChange={(v) => setNewTopicInputs(prev => ({ ...prev, [si]: v }))}
               isDisabled={isSaving}
               size="sm"
-              className="flex-1"
+              className="w-56"
+              autoFocus={false}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && newTopicInputs[si]?.trim()) {
                   addTopic(si, newTopicInputs[si]);
@@ -278,9 +280,8 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
               }}
             />
             <Button
-              isIconOnly
               size="sm"
-              variant="flat"
+              className="bg-primary text-primary-foreground text-xs h-7 px-2"
               onPress={() => {
                 if (newTopicInputs[si]?.trim()) {
                   addTopic(si, newTopicInputs[si]);
@@ -288,9 +289,8 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
                 }
               }}
               isDisabled={isSaving || !newTopicInputs[si]?.trim()}
-              aria-label={t('chat.addTopic')}
             >
-              <FontAwesomeIcon icon={faPlus} className="w-3 h-3" />
+              {t('common.save')}
             </Button>
           </div>
         </td>
