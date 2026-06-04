@@ -127,6 +127,8 @@ export function useAiChat(): UseAiChatReturn {
 
     abortControllerRef.current = new AbortController();
 
+    let accumulated = '';
+
     try {
       const response = await fetch('/api/ai-chat', {
         method: 'POST',
@@ -143,7 +145,6 @@ export function useAiChat(): UseAiChatReturn {
       if (!response.body) throw new Error('No response body');
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let accumulated = '';
       let streamDone = false;
 
       while (true) {
@@ -173,9 +174,24 @@ export function useAiChat(): UseAiChatReturn {
       setMessages(prev => [...prev, assistantMsg]);
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
+
+      let errorKey = 'chat.errorGeneric';
+
+      if (err instanceof TypeError && err.message.toLowerCase().includes('fetch')) {
+        errorKey = 'chat.errorNetwork';
+      } else if (err instanceof Error) {
+        if (err.message.includes('HTTP 401')) {
+          errorKey = 'chat.errorSession';
+        } else if (/HTTP 5\d\d/.test(err.message)) {
+          errorKey = 'chat.errorServer';
+        } else if (err.message === 'No response body' || accumulated.length > 0) {
+          errorKey = 'chat.errorStreamInterrupted';
+        }
+      }
+
       setMessages(prev => [
         ...prev,
-        { role: 'assistant', content: t('chat.errorGeneric'), isError: true },
+        { role: 'assistant', content: t(errorKey), isError: true },
       ]);
     } finally {
       setIsStreaming(false);
