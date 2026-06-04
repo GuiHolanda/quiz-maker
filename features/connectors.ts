@@ -157,6 +157,11 @@ export async function deletePublicExamTopic(topicId: string): Promise<void> {
   await api.delete(`${SAVE_PUBLIC_EXAM_URL}?topicId=${encodeURIComponent(topicId)}`);
 }
 
+export async function updatePublicExamTopic(topicId: string, newName: string): Promise<PublicExamTopic> {
+  const { data } = await api.patch<{ topic: PublicExamTopic }>(SAVE_PUBLIC_EXAM_URL, { topicId, newName });
+  return data.topic;
+}
+
 export async function addPublicExamSubject(
   publicExamId: string,
   name: string,

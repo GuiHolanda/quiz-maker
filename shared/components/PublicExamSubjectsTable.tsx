@@ -10,6 +10,7 @@ import {
   addPublicExamSubject,
   addPublicExamTopic,
   deletePublicExamTopic,
+  updatePublicExamTopic,
 } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { SubjectRow } from './PublicExamSubjectsTable/SubjectRow';
@@ -133,6 +134,14 @@ export function PublicExamSubjectsTable({
     [onTopicRemoved, t],
   );
 
+  const handleUpdateTopic = useCallback(
+    async (topicId: string, newName: string) => {
+      await updatePublicExamTopic(topicId, newName);
+      addToast({ title: t('toast.success'), description: t('toast.topicUpdated', { name: newName }), color: 'success' });
+    },
+    [t],
+  );
+
   if (subjects.length === 0 && !isAddingSubject) {
     return renderEmpty();
   }
@@ -227,6 +236,7 @@ export function PublicExamSubjectsTable({
             ? (topicId, name) => handleRemoveTopic(subject.id!, topicId, name)
             : undefined
         }
+        updateTopic={(topicId, newName) => handleUpdateTopic(topicId, newName)}
       />
     );
   }

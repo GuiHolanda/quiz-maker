@@ -119,6 +119,18 @@ export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null);
 
+    if (body?.topicId) {
+      const { topicId, newName } = (body ?? {}) as Record<string, unknown>;
+      if (typeof topicId !== 'string') {
+        return NextResponse.json({ error: 'topicId must be a string' }, { status: 400 });
+      }
+      if (!newName || typeof newName !== 'string') {
+        return NextResponse.json({ error: 'newName is required' }, { status: 400 });
+      }
+      const updated = await publicExamService.updateTopic(topicId, newName.trim(), session.user.id);
+      return NextResponse.json({ message: 'Topic updated successfully', topic: updated }, { status: 200 });
+    }
+
     if (body?.subjectId) {
       const payload = publicExamService.validateSubjectUpdate(body);
       const updated = await publicExamService.updateSubject(payload, session.user.id);

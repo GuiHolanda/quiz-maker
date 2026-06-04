@@ -34,6 +34,7 @@ interface SubjectRowProps {
   readonly onTopicRemoved?: (topicId: string) => void;
   readonly addTopic?: (name: string) => Promise<PublicExamTopic>;
   readonly removeTopic?: (topicId: string, name: string) => Promise<void>;
+  readonly updateTopic?: (topicId: string, newName: string) => Promise<void>;
 }
 
 interface EditState {
@@ -55,6 +56,7 @@ export function SubjectRow({
   onTopicRemoved,
   addTopic,
   removeTopic,
+  updateTopic,
 }: SubjectRowProps) {
   const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
@@ -289,6 +291,7 @@ export function SubjectRow({
         subjectId={subject.id!}
         topics={subject.topics ?? []}
         onRemoveTopic={handleRemoveTopic}
+        onUpdateTopic={updateTopic}
         onAddTopic={handleAddTopic}
       />
     );

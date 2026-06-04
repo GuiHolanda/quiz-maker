@@ -11,11 +11,12 @@ import { TopicItem } from './TopicItem';
 interface TopicsExpandedRowProps {
   readonly subjectId: string;
   readonly topics: PublicExamTopic[];
-  readonly onRemoveTopic?: (topicId: string, name: string) => void;
+  readonly onRemoveTopic?: (topicId: string, name: string) => Promise<void>;
+  readonly onUpdateTopic?: (topicId: string, newName: string) => Promise<void>;
   readonly onAddTopic?: (name: string) => Promise<void>;
 }
 
-export function TopicsExpandedRow({ subjectId, topics, onRemoveTopic, onAddTopic }: TopicsExpandedRowProps) {
+export function TopicsExpandedRow({ subjectId, topics, onRemoveTopic, onUpdateTopic, onAddTopic }: TopicsExpandedRowProps) {
   const { t } = useTranslation();
   const [isAdding, setIsAdding] = useState(false);
   const [topicName, setTopicName] = useState('');
@@ -48,6 +49,7 @@ export function TopicsExpandedRow({ subjectId, topics, onRemoveTopic, onAddTopic
                 key={topic.id ?? topic.name}
                 topic={topic}
                 onRemove={onRemoveTopic}
+                onUpdate={onUpdateTopic}
               />
             ))}
           </div>
