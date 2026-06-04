@@ -27,8 +27,8 @@ export class EditalExtractorService {
 
     try {
       const roleInstruction = role
-        ? `The user is looking for the role/position: "${role}". Extract data specifically for this role if the edital covers multiple roles.`
-        : 'Extract the main role/position mentioned in the edital, if any.';
+        ? `O usuário busca o cargo: "${role}". Extraia dados EXCLUSIVAMENTE para este cargo. Ignore todos os outros cargos presentes no edital.`
+        : 'Extraia dados do cargo principal mencionado no edital, se houver apenas um.';
 
       const response = await this.openai.responses.create({
         model: process.env.OPENAI_MODEL || 'gpt-4o',
@@ -42,38 +42,39 @@ export class EditalExtractorService {
               },
               {
                 type: 'input_text',
-                text: `You are extracting structured data from a Brazilian public exam notice (edital de concurso público).
+                text: `Você é um especialista em extração de dados de editais de concursos públicos brasileiros.
 
 ${roleInstruction}
 
-Return ONLY a valid JSON object with this exact shape — no markdown, no extra text:
+TAREFA PRINCIPAL: Localize a seção de Conteúdo Programático (também chamada de Programa de Provas, Conteúdo das Provas, Anexo de Conteúdo ou similar) do edital. Esta seção contém as matérias (disciplinas) e os tópicos/assuntos que serão cobrados em cada prova para o cargo em questão.
+
+INSTRUÇÕES:
+1. Leia o edital completo e identifique a seção de conteúdo programático.
+2. Para o cargo especificado, extraia TODAS as matérias listadas e TODOS os tópicos de cada matéria exatamente como constam no edital — não resuma, não omita, não invente.
+3. Se o edital apresentar provas separadas (ex: Prova Objetiva, Prova Discursiva, Prova de Títulos), inclua apenas as matérias da prova objetiva. Se não houver distinção, inclua todas.
+4. Para minQuestions e maxQuestions: se o edital informar a quantidade de questões por matéria, converta para percentual do total (ex: 10 de 50 questões = 20%). Se não informar, distribua igualmente entre as matérias (100 / número de matérias, arredondado).
+5. A soma de todos os maxQuestions deve ser igual a 100.
+
+Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, sem texto extra, sem comentários:
 {
-  "name": "string (concurso name, e.g. 'Concurso Público TRF 2024')",
-  "role": "string or null (cargo/role, e.g. 'Analista Judiciário')",
-  "year": number or null,
+  "name": "string (nome completo do concurso, ex: 'Concurso Público TRF 1ª Região 2024')",
+  "role": "string ou null (nome exato do cargo conforme o edital, ex: 'Analista Judiciário — Área Judiciária')",
+  "year": number ou null,
   "examBoard": {
-    "name": "string (banca organizadora, e.g. 'CESPE', 'FCC', 'VUNESP')",
-    "fullName": "string or null (full banca name if available)"
+    "name": "string (sigla da banca, ex: 'CESPE', 'FCC', 'VUNESP', 'CESGRANRIO')",
+    "fullName": "string ou null (nome completo da banca se disponível)"
   },
   "subjects": [
     {
-      "name": "string (subject/discipline name)",
-      "minQuestions": number (percentage 0-100),
-      "maxQuestions": number (percentage 0-100),
+      "name": "string (nome da matéria/disciplina exatamente como no edital)",
+      "minQuestions": number (percentual 0-100),
+      "maxQuestions": number (percentual 0-100),
       "topics": [
-        { "name": "string (topic name)" }
+        { "name": "string (tópico exatamente como consta no edital)" }
       ]
     }
   ]
-}
-
-Rules for minQuestions/maxQuestions:
-- These are PERCENTAGES (0-100), not absolute question counts.
-- If the edital specifies question counts per subject, convert to percentage: (subjectQuestions / totalQuestions) * 100, rounded to nearest integer.
-- If the edital does not specify distribution, divide equally: 100 / numberOfSubjects for each subject (minQuestions = maxQuestions = equal share).
-- The sum of all maxQuestions values should equal 100.
-
-Extract all subjects and their topics. Be thorough with topics — include every topic listed for each subject.`,
+}`,
               },
             ],
           },
