@@ -100,165 +100,197 @@ export function SubjectRow({
   return (
     <React.Fragment>
       <tr className={rowBg}>
-        {/* Subject name cell */}
-        <td className={tdClass}>
-          {isEditing ? (
-            <Input
-              {...inputProperties.input}
-              size="sm"
-              value={editState.name}
-              onChange={(e) => setEditState((s) => ({ ...s, name: e.target.value }))}
-              onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
-              className="w-48"
-            />
-          ) : (
-            subject.name
-          )}
-        </td>
-
-        {/* Min questions cell */}
-        <td className={tdClass}>
-          {isEditing ? (
-            <Input
-              {...inputProperties.input}
-              size="sm"
-              type="number"
-              min={0}
-              max={100}
-              value={String(editState.min)}
-              onChange={(e) => setEditState((s) => ({ ...s, min: Math.min(100, Math.max(0, Number(e.target.value) || 0)) }))}
-              onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
-              className="w-24"
-              endContent={<span className="text-default-400 text-sm">%</span>}
-            />
-          ) : editable && subject.id ? (
-            <Slider
-              className="w-36"
-              classNames={SLIDER_CLASS_NAMES}
-              size="sm"
-              value={subject.minQuestions}
-              maxValue={100}
-              minValue={0}
-              showTooltip
-              step={1}
-              aria-label="minQuestions"
-              onChange={(val) => onSliderChange?.('minQuestions', val as number)}
-            />
-          ) : (
-            `${subject.minQuestions}%`
-          )}
-        </td>
-
-        {/* Max questions cell */}
-        <td className={tdClass}>
-          {isEditing ? (
-            <Input
-              {...inputProperties.input}
-              size="sm"
-              type="number"
-              min={0}
-              max={100}
-              value={String(editState.max)}
-              onChange={(e) => setEditState((s) => ({ ...s, max: Math.min(100, Math.max(0, Number(e.target.value) || 0)) }))}
-              onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
-              className="w-24"
-              endContent={<span className="text-default-400 text-sm">%</span>}
-            />
-          ) : editable && subject.id ? (
-            <Slider
-              className="w-36"
-              classNames={SLIDER_CLASS_NAMES}
-              size="sm"
-              value={subject.maxQuestions}
-              maxValue={100}
-              minValue={0}
-              showTooltip
-              step={1}
-              aria-label="maxQuestions"
-              onChange={(val) => onSliderChange?.('maxQuestions', val as number)}
-            />
-          ) : (
-            `${subject.maxQuestions}%`
-          )}
-        </td>
-
-        {/* Topics toggle cell */}
-        <td className={tdClass}>
-          {subject.id ? (
-            <button
-              type="button"
-              onClick={() => setExpanded((v) => !v)}
-              className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-default-100 hover:bg-default-200 transition-colors text-xs text-default-600 font-medium"
-            >
-              <FontAwesomeIcon
-                icon={expanded ? faChevronDown : faChevronRight}
-                className="w-2.5 h-2.5 text-default-400"
-              />
-              {(subject.topics ?? []).length} {t('concurso.topics')}
-            </button>
-          ) : (
-            <span className="text-xs text-default-400">—</span>
-          )}
-        </td>
-
-        {/* Actions cell */}
-        <td className={tdClass}>
-          {isEditing ? (
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                className="bg-primary text-primary-foreground text-xs font-semibold rounded-lg hover:opacity-90 h-8 px-3 transition-opacity duration-200"
-                isLoading={saving}
-                onPress={saveEdit}
-              >
-                {t('common.save')}
-              </Button>
-              <Button
-                size="sm"
-                variant="bordered"
-                className="border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold h-8 px-3 transition-colors duration-200"
-                onPress={cancelEdit}
-              >
-                {t('common.cancel')}
-              </Button>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              {onUpdate && subject.id && (
-                <Button
-                  size="sm"
-                  variant="flat"
-                  className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
-                  onPress={startEdit}
-                >
-                  {t('common.edit')}
-                </Button>
-              )}
-              {onRemove && subject.id && (
-                <Button
-                  size="sm"
-                  variant="flat"
-                  color="danger"
-                  className="text-xs font-semibold rounded-lg h-8 px-3"
-                  isLoading={isRemoving}
-                  onPress={onRemove}
-                >
-                  {t('common.remove')}
-                </Button>
-              )}
-            </div>
-          )}
-        </td>
+        {renderNameCell()}
+        {renderMinCell()}
+        {renderMaxCell()}
+        {renderTopicsToggleCell()}
+        {renderActionsCell()}
       </tr>
-
-      {subject.id && expanded && (
-        <TopicsExpandedRow
-          subjectId={subject.id}
-          topics={subject.topics ?? []}
-          onRemoveTopic={handleRemoveTopic}
-          onAddTopic={handleAddTopic}
-        />
-      )}
+      {subject.id && expanded && renderTopicsRow()}
     </React.Fragment>
   );
+
+  function renderNameCell() {
+    return (
+      <td className={tdClass}>
+        {isEditing ? (
+          <Input
+            {...inputProperties.input}
+            size="sm"
+            value={editState.name}
+            onChange={(e) => setEditState((s) => ({ ...s, name: e.target.value }))}
+            onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
+            className="w-48"
+          />
+        ) : (
+          subject.name
+        )}
+      </td>
+    );
+  }
+
+  function renderMinCell() {
+    return (
+      <td className={tdClass}>
+        {isEditing ? (
+          <Input
+            {...inputProperties.input}
+            size="sm"
+            type="number"
+            min={0}
+            max={100}
+            value={String(editState.min)}
+            onChange={(e) => setEditState((s) => ({ ...s, min: Math.min(100, Math.max(0, Number(e.target.value) || 0)) }))}
+            onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
+            className="w-24"
+            endContent={<span className="text-default-400 text-sm">%</span>}
+          />
+        ) : editable && subject.id ? (
+          <Slider
+            className="w-36"
+            classNames={SLIDER_CLASS_NAMES}
+            size="sm"
+            value={subject.minQuestions}
+            maxValue={100}
+            minValue={0}
+            showTooltip
+            step={1}
+            aria-label="minQuestions"
+            onChange={(val) => onSliderChange?.('minQuestions', val as number)}
+          />
+        ) : (
+          `${subject.minQuestions}%`
+        )}
+      </td>
+    );
+  }
+
+  function renderMaxCell() {
+    return (
+      <td className={tdClass}>
+        {isEditing ? (
+          <Input
+            {...inputProperties.input}
+            size="sm"
+            type="number"
+            min={0}
+            max={100}
+            value={String(editState.max)}
+            onChange={(e) => setEditState((s) => ({ ...s, max: Math.min(100, Math.max(0, Number(e.target.value) || 0)) }))}
+            onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
+            className="w-24"
+            endContent={<span className="text-default-400 text-sm">%</span>}
+          />
+        ) : editable && subject.id ? (
+          <Slider
+            className="w-36"
+            classNames={SLIDER_CLASS_NAMES}
+            size="sm"
+            value={subject.maxQuestions}
+            maxValue={100}
+            minValue={0}
+            showTooltip
+            step={1}
+            aria-label="maxQuestions"
+            onChange={(val) => onSliderChange?.('maxQuestions', val as number)}
+          />
+        ) : (
+          `${subject.maxQuestions}%`
+        )}
+      </td>
+    );
+  }
+
+  function renderTopicsToggleCell() {
+    return (
+      <td className={tdClass}>
+        {subject.id ? (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-default-100 hover:bg-default-200 transition-colors text-xs text-default-600 font-medium"
+          >
+            <FontAwesomeIcon
+              icon={expanded ? faChevronDown : faChevronRight}
+              className="w-2.5 h-2.5 text-default-400"
+            />
+            {(subject.topics ?? []).length} {t('concurso.topics')}
+          </button>
+        ) : (
+          <span className="text-xs text-default-400">—</span>
+        )}
+      </td>
+    );
+  }
+
+  function renderActionsCell() {
+    return (
+      <td className={tdClass}>
+        {isEditing ? renderEditingActions() : renderViewActions()}
+      </td>
+    );
+  }
+
+  function renderEditingActions() {
+    return (
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          className="bg-primary text-primary-foreground text-xs font-semibold rounded-lg hover:opacity-90 h-8 px-3 transition-opacity duration-200"
+          isLoading={saving}
+          onPress={saveEdit}
+        >
+          {t('common.save')}
+        </Button>
+        <Button
+          size="sm"
+          variant="bordered"
+          className="border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold h-8 px-3 transition-colors duration-200"
+          onPress={cancelEdit}
+        >
+          {t('common.cancel')}
+        </Button>
+      </div>
+    );
+  }
+
+  function renderViewActions() {
+    return (
+      <div className="flex gap-2">
+        {onUpdate && subject.id && (
+          <Button
+            size="sm"
+            variant="flat"
+            className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
+            onPress={startEdit}
+          >
+            {t('common.edit')}
+          </Button>
+        )}
+        {onRemove && subject.id && (
+          <Button
+            size="sm"
+            variant="flat"
+            color="danger"
+            className="text-xs font-semibold rounded-lg h-8 px-3"
+            isLoading={isRemoving}
+            onPress={onRemove}
+          >
+            {t('common.remove')}
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  function renderTopicsRow() {
+    return (
+      <TopicsExpandedRow
+        subjectId={subject.id!}
+        topics={subject.topics ?? []}
+        onRemoveTopic={handleRemoveTopic}
+        onAddTopic={handleAddTopic}
+      />
+    );
+  }
 }

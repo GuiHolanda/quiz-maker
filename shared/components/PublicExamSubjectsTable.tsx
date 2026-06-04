@@ -15,6 +15,7 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { SubjectRow } from './PublicExamSubjectsTable/SubjectRow';
 import { AddSubjectRow } from './PublicExamSubjectsTable/AddSubjectRow';
 
+
 interface PublicExamSubjectsTableProps {
   readonly selectedPublicExam: PublicExam | null;
   readonly subjectsList?: PublicExamSubject[];
@@ -133,130 +134,136 @@ export function PublicExamSubjectsTable({
   );
 
   if (subjects.length === 0 && !isAddingSubject) {
+    return renderEmpty();
+  }
+
+  return renderTable();
+
+  function renderEmpty() {
     return (
       <div className="flex flex-col items-center gap-3">
         <p className="text-sm text-default-400 text-center py-4">{t('concurso.noSubjects')}</p>
         {(onSubjectAdded || onEditPublicExam) && (
           <div className="flex gap-2">
-            {onEditPublicExam && (
-              <Button
-                size="sm"
-                variant="flat"
-                className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
-                onPress={onEditPublicExam}
-              >
-                {t('concurso.editPublicExam')}
-              </Button>
-            )}
-            {onSubjectAdded && (
-              <Button
-                size="sm"
-                variant="flat"
-                className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
-                onPress={() => setIsAddingSubject(true)}
-              >
-                {t('concurso.addSubject')}
-              </Button>
-            )}
+            {onEditPublicExam && renderEditExamButton()}
+            {onSubjectAdded && renderAddSubjectButton()}
           </div>
         )}
       </div>
     );
   }
 
-  return (
-    <>
-      <div className="w-full overflow-x-auto rounded-xl border border-default-200">
-        <table className="w-full border-collapse">
-          <thead className="bg-default-100">
-            <tr>
-              <th className={TH}>{t('concurso.subjectName')}</th>
-              <th className={TH}>{t('concurso.minQuestions')}</th>
-              <th className={TH}>{t('concurso.maxQuestions')}</th>
-              <th className={TH}>{t('concurso.topics')}</th>
-              <th className={TH}>{t('concurso.actions')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {subjects.map((subject, index) => (
-              <SubjectRow
-                key={subject.id ?? subject.name}
-                subject={subject}
-                index={index}
-                isLast={!isAddingSubject && index === subjects.length - 1}
-                editable={editable}
-                isRemoving={removingId === subject.id}
-                onSliderChange={
-                  editable
-                    ? (field, value) => handleSliderChange(subject, field, value)
-                    : undefined
-                }
-                onUpdate={
-                  onSubjectUpdated
-                    ? (newName, min, max) => handleUpdate(subject, newName, min, max)
-                    : undefined
-                }
-                onRemove={
-                  onSubjectRemoved && subject.id
-                    ? () => handleRemove(subject.id!, subject.name)
-                    : undefined
-                }
-                onTopicAdded={
-                  onTopicAdded && subject.id
-                    ? (topic) => onTopicAdded(subject.id!, topic)
-                    : undefined
-                }
-                onTopicRemoved={
-                  onTopicRemoved && subject.id
-                    ? (topicId) => onTopicRemoved(subject.id!, topicId)
-                    : undefined
-                }
-                addTopic={
-                  onTopicAdded && subject.id
-                    ? (name) => handleAddTopic(subject.id!, name)
-                    : undefined
-                }
-                removeTopic={
-                  onTopicRemoved && subject.id
-                    ? (topicId, name) => handleRemoveTopic(subject.id!, topicId, name)
-                    : undefined
-                }
-              />
-            ))}
-            {isAddingSubject && (
-              <AddSubjectRow
-                onAdd={handleAddSubject}
-                onCancel={() => setIsAddingSubject(false)}
-              />
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {(!isAddingSubject && onSubjectAdded) || onEditPublicExam ? (
-        <div className="mt-3 flex gap-2">
-          {onEditPublicExam && (
-            <Button
-              size="sm"
-              variant="flat"
-              className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
-              onPress={onEditPublicExam}
-            >
-              {t('concurso.editPublicExam')}
-            </Button>
-          )}
-          {!isAddingSubject && onSubjectAdded && (
-            <Button
-              size="sm"
-              variant="flat"
-              className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
-              onPress={() => setIsAddingSubject(true)}
-            >
-              {t('concurso.addSubject')}
-            </Button>
-          )}
+  function renderTable() {
+    return (
+      <>
+        <div className="w-full overflow-x-auto rounded-xl border border-default-200">
+          <table className="w-full border-collapse">
+            <thead className="bg-default-100">
+              <tr>
+                <th className={TH}>{t('concurso.subjectName')}</th>
+                <th className={TH}>{t('concurso.minQuestions')}</th>
+                <th className={TH}>{t('concurso.maxQuestions')}</th>
+                <th className={TH}>{t('concurso.topics')}</th>
+                <th className={TH}>{t('concurso.actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {subjects.map((subject, index) => renderSubjectRow(subject, index))}
+              {isAddingSubject && (
+                <AddSubjectRow
+                  onAdd={handleAddSubject}
+                  onCancel={() => setIsAddingSubject(false)}
+                />
+              )}
+            </tbody>
+          </table>
         </div>
-      ) : null}
-    </>
-  );
+        {renderTableFooter()}
+      </>
+    );
+  }
+
+  function renderSubjectRow(subject: PublicExamSubject, index: number) {
+    return (
+      <SubjectRow
+        key={subject.id ?? subject.name}
+        subject={subject}
+        index={index}
+        isLast={!isAddingSubject && index === subjects.length - 1}
+        editable={editable}
+        isRemoving={removingId === subject.id}
+        onSliderChange={
+          editable
+            ? (field, value) => handleSliderChange(subject, field, value)
+            : undefined
+        }
+        onUpdate={
+          onSubjectUpdated
+            ? (newName, min, max) => handleUpdate(subject, newName, min, max)
+            : undefined
+        }
+        onRemove={
+          onSubjectRemoved && subject.id
+            ? () => handleRemove(subject.id!, subject.name)
+            : undefined
+        }
+        onTopicAdded={
+          onTopicAdded && subject.id
+            ? (topic) => onTopicAdded(subject.id!, topic)
+            : undefined
+        }
+        onTopicRemoved={
+          onTopicRemoved && subject.id
+            ? (topicId) => onTopicRemoved(subject.id!, topicId)
+            : undefined
+        }
+        addTopic={
+          onTopicAdded && subject.id
+            ? (name) => handleAddTopic(subject.id!, name)
+            : undefined
+        }
+        removeTopic={
+          onTopicRemoved && subject.id
+            ? (topicId, name) => handleRemoveTopic(subject.id!, topicId, name)
+            : undefined
+        }
+      />
+    );
+  }
+
+  function renderTableFooter() {
+    if (isAddingSubject || (!onSubjectAdded && !onEditPublicExam)) return null;
+    return (
+      <div className="mt-3 flex gap-2">
+        {onEditPublicExam && renderEditExamButton()}
+        {!isAddingSubject && onSubjectAdded && renderAddSubjectButton()}
+      </div>
+    );
+  }
+
+  function renderEditExamButton() {
+    return (
+      <Button
+        size="sm"
+        variant="flat"
+        className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
+        onPress={onEditPublicExam}
+      >
+        {t('concurso.editPublicExam')}
+      </Button>
+    );
+  }
+
+  function renderAddSubjectButton() {
+    return (
+      <Button
+        size="sm"
+        variant="flat"
+        className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
+        onPress={() => setIsAddingSubject(true)}
+      >
+        {t('concurso.addSubject')}
+      </Button>
+    );
+  }
 }
