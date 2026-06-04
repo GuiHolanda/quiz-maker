@@ -145,6 +145,8 @@ export interface ChatMessage {
   readonly certificationData?: Certification;
   readonly sources?: string[];
   readonly isError?: boolean;
+  readonly examDraft?: PublicExam;
+  readonly attachmentName?: string;
 }
 
 export type UserPlan = 'free' | 'pro' | 'admin';

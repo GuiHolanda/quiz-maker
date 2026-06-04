@@ -2,15 +2,24 @@
 
 import { useState, useCallback } from 'react';
 import { Accordion, AccordionItem } from '@heroui/accordion';
-
+import { Button } from '@heroui/button';
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
+import { addToast } from '@heroui/toast';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import { PublicExamSubjectsTable } from '@/shared/components/PublicExamSubjectsTable';
 import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
+import { deletePublicExam } from '@/features/connectors';
 import { PublicExam, PublicExamSubject, PublicExamTopic, ExamBoard } from '@/shared/types';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { EditPublicExamModal } from './EditPublicExamModal';
 
 export function PublicExamsListTab() {
-  const { publicExams, updatePublicExam } = usePublicExamsContext();
+  const { t } = useTranslation();
+  const { publicExams, updatePublicExam, removePublicExam } = usePublicExamsContext();
   const [editingExam, setEditingExam] = useState<PublicExam | null>(null);
+  const [deletingExam, setDeletingExam] = useState<PublicExam | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleSubjectUpdated = useCallback(
     (publicExam: PublicExam, subjectId: string, newName: string, minQuestions: number, maxQuestions: number) => {
@@ -57,6 +66,18 @@ export function PublicExamsListTab() {
     [updatePublicExam],
   );
 
+  const handleTopicUpdated = useCallback(
+    (publicExam: PublicExam, subjectId: string, topicId: string, newName: string) => {
+      const updatedSubjects = publicExam.subjects.map((s) =>
+        s.id === subjectId
+          ? { ...s, topics: (s.topics ?? []).map((tp) => (tp.id === topicId ? { ...tp, name: newName } : tp)) }
+          : s,
+      );
+      if (publicExam.id) updatePublicExam(publicExam.id, { subjects: updatedSubjects });
+    },
+    [updatePublicExam],
+  );
+
   const handleExamSaved = useCallback(
     (id: string, updated: { name: string; role?: string; year?: number; examBoard: ExamBoard }) => {
       updatePublicExam(id, {
@@ -68,6 +89,21 @@ export function PublicExamsListTab() {
     },
     [updatePublicExam],
   );
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deletingExam?.id) return;
+    setIsDeleting(true);
+    try {
+      await deletePublicExam(deletingExam.id);
+      removePublicExam(deletingExam.id);
+      addToast({ title: t('toast.success'), description: t('concurso.examDeleted', { name: deletingExam.name }), color: 'success' });
+      setDeletingExam(null);
+    } catch {
+      addToast({ title: t('toast.error'), description: t('concurso.examDeleteError'), color: 'danger' });
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [deletingExam, removePublicExam, t]);
 
   return (
     <>
@@ -86,22 +122,32 @@ export function PublicExamsListTab() {
             key={publicExam.id ?? publicExam.name}
             aria-label={publicExam.name}
             title={
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-foreground">{publicExam.name}</span>
-                <span className="text-xs text-default-400">·</span>
-                <span className="text-xs text-default-500">{publicExam.examBoard?.name}</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-sm font-semibold text-foreground truncate">{publicExam.name}</span>
+                <span className="text-xs text-default-400 shrink-0">·</span>
+                <span className="text-xs text-default-500 shrink-0">{publicExam.examBoard?.name}</span>
                 {publicExam.role && (
                   <>
-                    <span className="text-xs text-default-400">·</span>
-                    <span className="text-xs text-default-500">{publicExam.role}</span>
+                    <span className="text-xs text-default-400 shrink-0">·</span>
+                    <span className="text-xs text-default-500 shrink-0">{publicExam.role}</span>
                   </>
                 )}
                 {publicExam.year != null && (
                   <>
-                    <span className="text-xs text-default-400">·</span>
-                    <span className="text-xs text-default-500">{publicExam.year}</span>
+                    <span className="text-xs text-default-400 shrink-0">·</span>
+                    <span className="text-xs text-default-500 shrink-0">{publicExam.year}</span>
                   </>
                 )}
+                <span
+                  role="button"
+                  tabIndex={0}
+                  className="ml-auto shrink-0 p-1.5 rounded-lg text-default-400 hover:text-danger hover:bg-danger/10 transition-colors cursor-pointer"
+                  onClick={(e) => { e.stopPropagation(); setDeletingExam(publicExam); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); setDeletingExam(publicExam); } }}
+                  aria-label={t('common.remove')}
+                >
+                  <FontAwesomeIcon icon={faTrash} className="w-3 h-3" />
+                </span>
               </div>
             }
           >
@@ -115,6 +161,7 @@ export function PublicExamsListTab() {
               onSubjectAdded={(subject) => handleSubjectAdded(publicExam, subject)}
               onTopicAdded={(subjectId, topic) => handleTopicAdded(publicExam, subjectId, topic)}
               onTopicRemoved={(subjectId, topicId) => handleTopicRemoved(publicExam, subjectId, topicId)}
+              onTopicUpdated={(subjectId, topicId, newName) => handleTopicUpdated(publicExam, subjectId, topicId, newName)}
               onEditPublicExam={() => setEditingExam(publicExam)}
             />
           </AccordionItem>
@@ -127,6 +174,34 @@ export function PublicExamsListTab() {
         onClose={() => setEditingExam(null)}
         onSaved={handleExamSaved}
       />
+
+      <Modal isOpen={deletingExam !== null} onClose={() => !isDeleting && setDeletingExam(null)} size="sm">
+        <ModalContent>
+          <ModalHeader>{t('concurso.deleteExamTitle')}</ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-default-600">
+              {t('concurso.deleteExamConfirm', { name: deletingExam?.name ?? '' })}
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="flat"
+              onPress={() => setDeletingExam(null)}
+              isDisabled={isDeleting}
+              className="border border-default-200 text-default-600"
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              color="danger"
+              onPress={handleDeleteConfirm}
+              isLoading={isDeleting}
+            >
+              {t('common.remove')}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </>
   );
 }

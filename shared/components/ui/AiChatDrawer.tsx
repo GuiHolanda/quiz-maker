@@ -5,12 +5,13 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter } from '@
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faXmark, faPaperPlane, faRotateRight } from '@fortawesome/free-solid-svg-icons';
+import { faXmark, faPaperPlane, faRotateRight, faPaperclip, faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useAiChat } from '@/features/hooks/useAiChat.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { AiChatMessage } from '@/shared/components/ui/AiChatMessage';
 import { AiChatPreviewCard } from '@/shared/components/ui/AiChatPreviewCard';
+import { AiChatExamDraftCard } from '@/shared/components/ui/AiChatExamDraftCard';
 import { Certification } from '@/shared/types';
 
 interface AiChatDrawerProps {
@@ -20,9 +21,10 @@ interface AiChatDrawerProps {
 
 export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
   const { t } = useTranslation();
-  const { messages, input, isStreaming, currentStreamContent, setInput, sendMessage, reset, saveCertificationFromChat } = useAiChat();
+  const { messages, input, isStreaming, currentStreamContent, pendingFile, setInput, sendMessage, reset, saveCertificationFromChat, handleEditalUpload, cancelPendingFile, injectAssistantMessage } = useAiChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   type SaveState = {
     isSaving: boolean;
@@ -41,12 +43,13 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
     const result = await saveCertificationFromChat(certification);
     if (result === 'success') {
       setSaveStates(prev => ({ ...prev, [index]: { isSaving: false, result: 'success' } }));
+      injectAssistantMessage(t('chat.followUpQuestion'));
     } else if (result === 'duplicate') {
       setSaveStates(prev => ({ ...prev, [index]: { isSaving: false, result: 'error', errorMessage: t('chat.errorDuplicate', { key: certification.key }) } }));
     } else {
       setSaveStates(prev => ({ ...prev, [index]: { isSaving: false, result: 'error', errorMessage: t('chat.errorGeneric') } }));
     }
-  }, [saveCertificationFromChat, t]);
+  }, [saveCertificationFromChat, injectAssistantMessage, t]);
 
   const handleNewChat = useCallback(() => {
     reset();
@@ -56,6 +59,13 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
   const handleAdjust = () => {
     inputRef.current?.focus();
   };
+
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    handleEditalUpload(file);
+  }, [handleEditalUpload]);
 
   const isBuildingCertification = isStreaming && currentStreamContent.includes('```certification-data');
 
@@ -99,6 +109,11 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
             <div key={index}>
               {message.isError ? (
                 <AiChatMessage role={message.role} content={message.content} isError={true} />
+              ) : message.examDraft ? (
+                <AiChatExamDraftCard
+                  publicExam={message.examDraft}
+                  onExamSaved={() => injectAssistantMessage(t('chat.followUpQuestion'))}
+                />
               ) : message.certificationData ? (
                 <>
                   <AiChatMessage role={message.role} content={message.content} sources={message.sources} />
@@ -112,7 +127,7 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
                   />
                 </>
               ) : (
-                <AiChatMessage role={message.role} content={message.content} />
+                <AiChatMessage role={message.role} content={message.content} attachmentName={message.attachmentName} />
               )}
             </div>
           ))}
@@ -148,13 +163,49 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
           <div ref={messagesEndRef} />
         </DrawerBody>
 
-        <DrawerFooter className="border-t border-divider px-4 py-3">
+        <DrawerFooter className="border-t border-divider px-4 py-3 flex-col gap-0">
+          {pendingFile && (
+            <div className="flex items-center gap-2 px-1 py-2 w-full mb-1">
+              <FontAwesomeIcon icon={faFilePdf} className="text-danger text-sm shrink-0" />
+              <button
+                className="text-xs text-foreground truncate max-w-[200px] hover:underline text-left"
+                onClick={() => window.open(URL.createObjectURL(pendingFile), '_blank')}
+              >
+                {pendingFile.name}
+              </button>
+              <button
+                className="ml-auto text-default-400 hover:text-foreground"
+                onClick={cancelPendingFile}
+                aria-label={t('chat.removeAttachment')}
+              >
+                <FontAwesomeIcon icon={faXmark} className="text-xs" />
+              </button>
+            </div>
+          )}
           <div className="flex gap-2 w-full items-center">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <Button
+              isIconOnly
+              size="sm"
+              variant="light"
+              isDisabled={isStreaming}
+              onPress={() => fileInputRef.current?.click()}
+              aria-label={t('chat.uploadEdital')}
+              className="shrink-0 text-default-400 hover:text-foreground"
+            >
+              <FontAwesomeIcon icon={faPaperclip} />
+            </Button>
             <Input
               {...inputProperties.input}
               value={input}
               onValueChange={setInput}
-              placeholder={t('chat.inputPlaceholder')}
+              placeholder={pendingFile ? t('chat.rolePlaceholder') : t('chat.inputPlaceholder')}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -165,7 +216,7 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
             />
             <Button
               isIconOnly
-              isDisabled={isStreaming || !input.trim()}
+              isDisabled={isStreaming || (!input.trim() && !pendingFile)}
               onPress={sendMessage}
               className="bg-primary text-primary-foreground rounded-lg shrink-0"
             >

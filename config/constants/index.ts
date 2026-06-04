@@ -158,6 +158,7 @@ export const PUBLIC_EXAM_GENERATOR_URL = '/public-exam/question-generator';
 export const SAVE_PUBLIC_EXAM_QUESTIONS_URL = '/public-exam/save-questions';
 export const GET_PUBLIC_EXAM_ANSWERS_URL = '/public-exam/get-answers';
 export const SAVE_PUBLIC_EXAM_URL = '/public-exam/save-public-exam';
+export const EXTRACT_EDITAL_URL = '/public-exam/extract-from-edital';
 export const PUBLIC_EXAMS_URL = '/public-exam/public-exams';
 export const EXAM_BOARDS_URL = '/public-exam/exam-boards';
 export const BROWSE_PUBLIC_EXAM_SUMMARY_URL = '/public-exam/browse-questions/summary';

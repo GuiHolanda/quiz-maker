@@ -42,6 +42,7 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const subjectId = searchParams.get('subjectId');
     const topicId = searchParams.get('topicId');
+    const examId = searchParams.get('examId');
 
     if (topicId) {
       await publicExamService.deleteTopic(topicId, session.user.id);
@@ -53,7 +54,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ message: 'Subject deleted successfully' }, { status: 200 });
     }
 
-    return NextResponse.json({ error: 'subjectId or topicId is required' }, { status: 400 });
+    if (examId) {
+      await publicExamService.deletePublicExam(examId, session.user.id);
+      return NextResponse.json({ message: 'Public exam deleted successfully' }, { status: 200 });
+    }
+
+    return NextResponse.json({ error: 'subjectId, topicId or examId is required' }, { status: 400 });
   } catch (err: any) {
     console.error('Failed to delete:', err);
     return NextResponse.json({ error: err.message || 'Failed to delete' }, { status: err.status || 500 });
@@ -118,6 +124,18 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json().catch(() => null);
+
+    if (body?.topicId) {
+      const { topicId, newName } = (body ?? {}) as Record<string, unknown>;
+      if (typeof topicId !== 'string') {
+        return NextResponse.json({ error: 'topicId must be a string' }, { status: 400 });
+      }
+      if (!newName || typeof newName !== 'string') {
+        return NextResponse.json({ error: 'newName is required' }, { status: 400 });
+      }
+      const updated = await publicExamService.updateTopic(topicId, newName.trim(), session.user.id);
+      return NextResponse.json({ message: 'Topic updated successfully', topic: updated }, { status: 200 });
+    }
 
     if (body?.subjectId) {
       const payload = publicExamService.validateSubjectUpdate(body);

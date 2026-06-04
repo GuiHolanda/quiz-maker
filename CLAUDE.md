@@ -116,6 +116,36 @@ Page-specific components live in `app/<page>/components/`. Components used by mo
 - No JSDoc or multi-line comment blocks
 - UI built exclusively with **[HeroUI](https://heroui.com/docs/react/components)** — always look up available components there before building custom ones
 
+### Renderer functions
+
+Use **renderer functions** (regular functions declared inside the component, after the `return`) to break large JSX into named, scannable pieces — without creating new files or lifting state.
+
+Rules:
+- Declare them **after the main `return`** statement, inside the component function body
+- Name them `render<What>` — e.g. `renderHeader()`, `renderActionsCell()`, `renderEditingActions()`
+- They capture component scope (state, props, handlers) directly — no need to pass anything unless the data only exists in a loop
+- Keep each renderer **single-purpose** — if a renderer needs an `if/else` with very different shapes, split it further
+- **When to use:** any time the `return` block grows beyond ~40 lines or contains repeated structural patterns (table cells, conditional UI blocks, button groups)
+- **When NOT to use:** trivial one-liners, or when the piece would benefit from its own props interface and lifecycle — extract a proper sub-component instead
+
+```tsx
+export function MyComponent({ items }: MyComponentProps) {
+  const [editing, setEditing] = useState(false);
+
+  return (
+    <div>
+      {renderHeader()}
+      {items.map((item, i) => renderItemRow(item, i))}
+      {renderFooter()}
+    </div>
+  );
+
+  function renderHeader() { ... }
+  function renderItemRow(item: Item, index: number) { ... }
+  function renderFooter() { ... }
+}
+```
+
 ### State Management
 - Context + Reducer pattern everywhere
 - One provider per domain: `CertificationsProvider`, `QuizProvider`

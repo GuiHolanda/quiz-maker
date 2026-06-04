@@ -1,6 +1,6 @@
 'use client';
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { saveCertification } from '@/features/connectors';
+import { saveCertification, extractEdital } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { AI_CHAT_LOCAL_STORAGE_KEY } from '@/config/constants';
 import { ChatMessage, Certification } from '@/shared/types';
@@ -10,10 +10,14 @@ interface UseAiChatReturn {
   readonly input: string;
   readonly isStreaming: boolean;
   readonly currentStreamContent: string;
+  readonly pendingFile: File | null;
   readonly setInput: (value: string) => void;
   readonly sendMessage: () => void;
   readonly reset: () => void;
   readonly saveCertificationFromChat: (certification: Certification) => Promise<'success' | 'duplicate' | 'error'>;
+  readonly handleEditalUpload: (file: File) => void;
+  readonly cancelPendingFile: () => void;
+  readonly injectAssistantMessage: (content: string) => void;
 }
 
 interface ParsedCertResponse {
@@ -59,7 +63,9 @@ export function useAiChat(): UseAiChatReturn {
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [currentStreamContent, setCurrentStreamContent] = useState('');
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const pendingEditalRef = useRef<File | null>(null);
   const { t, language } = useTranslation();
 
   useEffect(() => {
@@ -68,6 +74,8 @@ export function useAiChat(): UseAiChatReturn {
 
   const reset = useCallback(() => {
     abortControllerRef.current?.abort();
+    pendingEditalRef.current = null;
+    setPendingFile(null);
     setMessages([]);
     setInput('');
     setIsStreaming(false);
@@ -76,8 +84,51 @@ export function useAiChat(): UseAiChatReturn {
   }, []);
 
   const sendMessage = useCallback(async () => {
-    debugger
-    if (input.trim() === '' || isStreaming) return;
+    if ((input.trim() === '' && !pendingEditalRef.current) || isStreaming) return;
+
+    // If there's a pending edital, extract now — role is what the user typed,
+    // or the last user message in the conversation if input is empty
+    if (pendingEditalRef.current) {
+      const file = pendingEditalRef.current;
+      const typedRole = input.trim();
+      const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
+      const role = typedRole || lastUserMessage?.content || '';
+      pendingEditalRef.current = null;
+      setPendingFile(null);
+
+      const userMsg: ChatMessage = {
+        role: 'user',
+        content: role || '📎',
+        attachmentName: file.name,
+      };
+      setMessages(prev => [...prev, userMsg]);
+      setInput('');
+      setIsStreaming(true);
+
+      const loadingMsg: ChatMessage = { role: 'assistant', content: t('chat.analyzingEdital') };
+      setMessages(prev => [...prev, loadingMsg]);
+
+      try {
+        const publicExam = await extractEdital(file, role || undefined);
+        setMessages(prev => [
+          ...prev.slice(0, -1),
+          { role: 'assistant', content: '', examDraft: publicExam },
+        ]);
+      } catch (err: any) {
+        const errorContent = err?.response?.status === 413
+          ? t('chat.errorFileTooLarge')
+          : err?.response?.status === 400
+            ? t('chat.errorInvalidFile')
+            : t('chat.errorGeneric');
+        setMessages(prev => [
+          ...prev.slice(0, -1),
+          { role: 'assistant', content: errorContent, isError: true },
+        ]);
+      } finally {
+        setIsStreaming(false);
+      }
+      return;
+    }
 
     const userMsg: ChatMessage = { role: 'user', content: input.trim() };
     const messagesWithUser = [...messages, userMsg];
@@ -89,11 +140,16 @@ export function useAiChat(): UseAiChatReturn {
 
     abortControllerRef.current = new AbortController();
 
+    let accumulated = '';
+
     try {
-      const response = await fetch('/api/ai-chat', {
+      const response = await fetch('/api/ai/ai-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: messagesWithUser, language }),
+        body: JSON.stringify({
+          messages: messagesWithUser.filter(m => m.content.trim() !== ''),
+          language,
+        }),
         signal: abortControllerRef.current.signal,
       });
 
@@ -105,7 +161,6 @@ export function useAiChat(): UseAiChatReturn {
       if (!response.body) throw new Error('No response body');
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let accumulated = '';
       let streamDone = false;
 
       while (true) {
@@ -127,17 +182,37 @@ export function useAiChat(): UseAiChatReturn {
         }
       }
 
-      const parsed = parseCertificationData(accumulated);
+      const cleanContent = accumulated.replace('[ENCERRAR_SESSAO]', '').trim();
+      const parsed = parseCertificationData(cleanContent);
       const assistantMsg: ChatMessage = parsed
         ? { role: 'assistant', content: parsed.context, certificationData: parsed.certificationData, sources: parsed.sources }
-        : { role: 'assistant', content: accumulated };
+        : { role: 'assistant', content: cleanContent };
 
       setMessages(prev => [...prev, assistantMsg]);
+
+      if (accumulated.includes('[ENCERRAR_SESSAO]')) {
+        setTimeout(() => reset(), 1500);
+      }
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
+
+      let errorKey = 'chat.errorGeneric';
+
+      if (err instanceof TypeError && err.message.toLowerCase().includes('fetch')) {
+        errorKey = 'chat.errorNetwork';
+      } else if (err instanceof Error) {
+        if (err.message.includes('HTTP 401')) {
+          errorKey = 'chat.errorSession';
+        } else if (/HTTP 5\d\d/.test(err.message)) {
+          errorKey = 'chat.errorServer';
+        } else if (err.message === 'No response body' || accumulated.length > 0) {
+          errorKey = 'chat.errorStreamInterrupted';
+        }
+      }
+
       setMessages(prev => [
         ...prev,
-        { role: 'assistant', content: t('chat.errorGeneric'), isError: true },
+        { role: 'assistant', content: t(errorKey), isError: true },
       ]);
     } finally {
       setIsStreaming(false);
@@ -156,14 +231,33 @@ export function useAiChat(): UseAiChatReturn {
     }
   };
 
+  const handleEditalUpload = useCallback((file: File) => {
+    if (isStreaming) return;
+    pendingEditalRef.current = file;
+    setPendingFile(file);
+  }, [isStreaming]);
+
+  const cancelPendingFile = useCallback(() => {
+    pendingEditalRef.current = null;
+    setPendingFile(null);
+  }, []);
+
+  const injectAssistantMessage = useCallback((content: string) => {
+    setMessages(prev => [...prev, { role: 'assistant', content }]);
+  }, []);
+
   return {
     messages,
     input,
     isStreaming,
     currentStreamContent,
+    pendingFile,
     setInput,
     sendMessage,
     reset,
     saveCertificationFromChat,
+    handleEditalUpload,
+    cancelPendingFile,
+    injectAssistantMessage,
   };
 }

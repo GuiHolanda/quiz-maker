@@ -1,4 +1,4 @@
-import { CERTIFICATION_GENERATOR_URL, SAVE_QUESTIONS_URL, SAVE_CERTIFICATION_URL, QUIZ_GENERATOR_URL, BILLING_USAGE_URL, BILLING_CHECKOUT_URL, BILLING_PORTAL_URL, BROWSE_SUMMARY_URL, BROWSE_QUESTIONS_URL, PUBLIC_EXAMS_URL, EXAM_BOARDS_URL, SAVE_PUBLIC_EXAM_URL, PUBLIC_EXAM_GENERATOR_URL, SAVE_PUBLIC_EXAM_QUESTIONS_URL, GET_PUBLIC_EXAM_ANSWERS_URL, BROWSE_PUBLIC_EXAM_SUMMARY_URL, BROWSE_PUBLIC_EXAM_QUESTIONS_URL, GET_CERTIFICATION_ANSWERS_URL } from '@/config/constants';
+import { CERTIFICATION_GENERATOR_URL, SAVE_QUESTIONS_URL, SAVE_CERTIFICATION_URL, QUIZ_GENERATOR_URL, BILLING_USAGE_URL, BILLING_CHECKOUT_URL, BILLING_PORTAL_URL, BROWSE_SUMMARY_URL, BROWSE_QUESTIONS_URL, PUBLIC_EXAMS_URL, EXAM_BOARDS_URL, SAVE_PUBLIC_EXAM_URL, EXTRACT_EDITAL_URL, PUBLIC_EXAM_GENERATOR_URL, SAVE_PUBLIC_EXAM_QUESTIONS_URL, GET_PUBLIC_EXAM_ANSWERS_URL, BROWSE_PUBLIC_EXAM_SUMMARY_URL, BROWSE_PUBLIC_EXAM_QUESTIONS_URL, GET_CERTIFICATION_ANSWERS_URL } from '@/config/constants';
 import { AIQuestion, Certification, CertificationTopic, QuestionParams, StoredQuestion, TopicUpdatePayload, UsageStats, BrowseSummary, BrowseQuestionsParams, BrowseQuestionsResponse, PublicExam, ExamBoard, PublicExamSubject, PublicExamTopic, PublicExamSubjectUpdatePayload, AIPublicExamQuestion, PublicExamQuestionParams, PublicExamBrowseSummary, PublicExamBrowseQuestionsParams, PublicExamBrowseQuestionsResponse } from '@/shared/types';
 import api from '@/lib/bff.api';
 
@@ -124,6 +124,16 @@ export async function savePublicExam(publicExam: PublicExam): Promise<PublicExam
   return data.publicExam;
 }
 
+export async function extractEdital(file: File, role?: string): Promise<PublicExam> {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (role) formData.append('role', role);
+  const { data } = await api.post<{ publicExam: PublicExam }>(EXTRACT_EDITAL_URL, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data.publicExam;
+}
+
 export async function updatePublicExamSubject(payload: PublicExamSubjectUpdatePayload): Promise<void> {
   await api.patch(SAVE_PUBLIC_EXAM_URL, payload);
 }
@@ -143,8 +153,17 @@ export async function deletePublicExamSubject(subjectId: string): Promise<void> 
   await api.delete(`${SAVE_PUBLIC_EXAM_URL}?subjectId=${encodeURIComponent(subjectId)}`);
 }
 
+export async function deletePublicExam(examId: string): Promise<void> {
+  await api.delete(`${SAVE_PUBLIC_EXAM_URL}?examId=${encodeURIComponent(examId)}`);
+}
+
 export async function deletePublicExamTopic(topicId: string): Promise<void> {
   await api.delete(`${SAVE_PUBLIC_EXAM_URL}?topicId=${encodeURIComponent(topicId)}`);
+}
+
+export async function updatePublicExamTopic(topicId: string, newName: string): Promise<PublicExamTopic> {
+  const { data } = await api.patch<{ topic: PublicExamTopic }>(SAVE_PUBLIC_EXAM_URL, { topicId, newName });
+  return data.topic;
 }
 
 export async function addPublicExamSubject(

@@ -143,6 +143,13 @@ export class PublicExamService {
     });
   }
 
+  public async deletePublicExam(examId: string, userId: string) {
+    const exam = await this.prismaService.publicExam.findUnique({ where: { id: examId } });
+    if (!exam) throw Object.assign(new Error('Public exam not found'), { status: 404 });
+    if (exam.userId !== userId) throw Object.assign(new Error('Forbidden'), { status: 403 });
+    await this.prismaService.publicExam.delete({ where: { id: examId } });
+  }
+
   public async deleteSubject(subjectId: string, userId: string) {
     const subject = await this.prismaService.publicExamSubject.findUnique({
       where: { id: subjectId },
@@ -216,6 +223,34 @@ export class PublicExamService {
 
     return this.prismaService.publicExamTopic.create({
       data: { name, subjectId },
+    });
+  }
+
+  public async updateTopic(topicId: string, newName: string, userId: string) {
+    const topic = await this.prismaService.publicExamTopic.findUnique({
+      where: { id: topicId },
+      include: { subject: { include: { publicExam: true } } },
+    });
+
+    if (!topic) {
+      throw Object.assign(new Error('Topic not found'), { status: 404 });
+    }
+
+    if (topic.subject.publicExam.userId !== userId) {
+      throw Object.assign(new Error('Forbidden'), { status: 403 });
+    }
+
+    const duplicate = await this.prismaService.publicExamTopic.findUnique({
+      where: { subjectId_name: { subjectId: topic.subjectId, name: newName } },
+    });
+
+    if (duplicate && duplicate.id !== topicId) {
+      throw Object.assign(new Error(`Topic "${newName}" already exists`), { status: 409 });
+    }
+
+    return this.prismaService.publicExamTopic.update({
+      where: { id: topicId },
+      data: { name: newName },
     });
   }
 

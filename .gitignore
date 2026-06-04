@@ -4,6 +4,7 @@
 /node_modules
 /.pnp
 .pnp.js
+/docs
 
 # testing
 /coverage
@@ -50,3 +51,5 @@ prisma/dev.db
 
 # MCP local config (contains API keys)
 .mcp.json
+
+.superpowers/
