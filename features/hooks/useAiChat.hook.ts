@@ -85,10 +85,13 @@ export function useAiChat(): UseAiChatReturn {
   const sendMessage = useCallback(async () => {
     if ((input.trim() === '' && !pendingEditalRef.current) || isStreaming) return;
 
-    // If there's a pending edital, extract now — role is what the user typed (may be empty)
+    // If there's a pending edital, extract now — role is what the user typed,
+    // or the last user message in the conversation if input is empty
     if (pendingEditalRef.current) {
       const file = pendingEditalRef.current;
-      const role = input.trim();
+      const typedRole = input.trim();
+      const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
+      const role = typedRole || lastUserMessage?.content || '';
       pendingEditalRef.current = null;
       setPendingFile(null);
 
