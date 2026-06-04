@@ -42,7 +42,7 @@ export function TopicsExpandedRow({ subjectId, topics, onRemoveTopic, onUpdateTo
   return (
     <tr>
       <td colSpan={5} className="px-4 pb-3 pt-0 border-b border-default-200">
-        <div className="ml-2 border-l-2 border-primary/20 pl-3">
+        <div>
           <div className="flex flex-col gap-0.5 mb-2">
             {topics.map((topic) => (
               <TopicItem
