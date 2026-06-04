@@ -146,7 +146,10 @@ export function useAiChat(): UseAiChatReturn {
       const response = await fetch('/api/ai/ai-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: messagesWithUser, language }),
+        body: JSON.stringify({
+          messages: messagesWithUser.filter(m => m.content.trim() !== ''),
+          language,
+        }),
         signal: abortControllerRef.current.signal,
       });
 
