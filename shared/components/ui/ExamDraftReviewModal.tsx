@@ -1,0 +1,300 @@
+'use client';
+import React, { useState } from 'react';
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
+import { Button } from '@heroui/button';
+import { Input } from '@heroui/input';
+import { Spinner } from '@heroui/spinner';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus, faTrash, faXmark, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { PublicExam, PublicExamSubject } from '@/shared/types';
+import { useExamDraftCard } from '@/features/hooks/useExamDraftCard.hook';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { inputProperties } from '@/config/constants/inputStyles';
+
+interface ExamDraftReviewModalProps {
+  readonly publicExam: PublicExam;
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
+  readonly onSaved: (savedDraft: PublicExam) => void;
+}
+
+const TH = 'text-left text-xs font-semibold text-default-400 px-4 py-3 border-b border-default-200';
+const TD = 'px-4 py-3 text-sm text-foreground border-b border-default-200';
+const TD_LAST = 'px-4 py-3 text-sm text-foreground';
+
+export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: ExamDraftReviewModalProps) {
+  const { t } = useTranslation();
+  const {
+    draft,
+    status,
+    updateField,
+    updateExamBoardName,
+    updateSubject,
+    removeSubject,
+    addSubject,
+    addTopic,
+    removeTopic,
+    handleSave,
+  } = useExamDraftCard(publicExam);
+
+  const [expandedSubjects, setExpandedSubjects] = useState<Record<number, boolean>>({});
+  const [newTopicInputs, setNewTopicInputs] = useState<Record<number, string>>({});
+
+  const isSaving = status === 'saving';
+
+  const handleSaveAndClose = async () => {
+    await handleSave();
+    onSaved(draft);
+    onClose();
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} size="3xl" scrollBehavior="inside">
+      <ModalContent>
+        <ModalHeader className="flex flex-col gap-1">
+          <p className="text-base font-bold text-foreground">{t('chat.examFound')}</p>
+          <p className="text-xs text-default-400 font-normal">{draft.name}</p>
+        </ModalHeader>
+
+        <ModalBody className="gap-6">
+          {renderHeaderFields()}
+          {renderSubjectsSection()}
+        </ModalBody>
+
+        <ModalFooter>
+          <div className="flex gap-2 w-full">
+            <Button
+              size="sm"
+              variant="flat"
+              onPress={addSubject}
+              isDisabled={isSaving}
+              className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg"
+              startContent={<FontAwesomeIcon icon={faPlus} className="w-3 h-3" />}
+            >
+              {t('chat.addSubject')}
+            </Button>
+            <Button
+              size="sm"
+              onPress={handleSaveAndClose}
+              isDisabled={isSaving || !draft.name.trim() || !draft.examBoard.name.trim()}
+              className="bg-primary text-primary-foreground font-semibold rounded-lg"
+              startContent={isSaving ? <Spinner size="sm" color="current" /> : undefined}
+            >
+              {isSaving ? t('chat.saving') : t('chat.saveExam')}
+            </Button>
+          </div>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+
+  function renderHeaderFields() {
+    return (
+      <div className="flex flex-col gap-4">
+        <Input
+          {...inputProperties.input}
+          label={t('chat.examName')}
+          value={draft.name}
+          onValueChange={(v) => updateField('name', v)}
+          isDisabled={isSaving}
+        />
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            {...inputProperties.input}
+            label={t('chat.examBoard')}
+            value={draft.examBoard.name}
+            onValueChange={updateExamBoardName}
+            isDisabled={isSaving}
+          />
+          <Input
+            {...inputProperties.input}
+            label={t('chat.examRole')}
+            value={draft.role ?? ''}
+            onValueChange={(v) => updateField('role', v || null)}
+            isDisabled={isSaving}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            {...inputProperties.input}
+            label={t('chat.examYear')}
+            type="number"
+            value={draft.year?.toString() ?? ''}
+            onValueChange={(v) => updateField('year', v ? parseInt(v, 10) : null)}
+            isDisabled={isSaving}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  function renderSubjectsSection() {
+    if (draft.subjects.length === 0) return null;
+    return (
+      <div>
+        <p className="text-xs font-semibold text-default-500 uppercase tracking-wide mb-3">
+          {t('chat.subjects')}
+        </p>
+        <div className="w-full rounded-xl border border-default-200">
+          <table className="w-full border-collapse">
+            <thead className="bg-default-100">
+              <tr>
+                <th className={TH}>{t('chat.subjectName')}</th>
+                <th className={TH}>{t('chat.minQuestions')}</th>
+                <th className={TH}>{t('chat.maxQuestions')}</th>
+                <th className={TH}>{t('chat.topics')}</th>
+                <th className={TH}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {draft.subjects.map((subject, si) => renderSubjectRow(subject, si))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  function renderSubjectRow(subject: PublicExamSubject, si: number) {
+    const isExpanded = !!expandedSubjects[si];
+    const isLast = si === draft.subjects.length - 1 && !isExpanded;
+    const tdClass = isLast ? TD_LAST : TD;
+    const rowBg = si % 2 === 0 ? 'bg-content1' : 'bg-default-50';
+    const topicCount = (subject.topics ?? []).length;
+
+    return (
+      <React.Fragment key={si}>
+        <tr className={rowBg}>
+          <td className={tdClass}>
+            <Input
+              {...inputProperties.input}
+              size="sm"
+              value={subject.name}
+              onValueChange={(v) => updateSubject(si, { name: v })}
+              isDisabled={isSaving}
+              className="min-w-0"
+            />
+          </td>
+          <td className={tdClass}>
+            <Input
+              {...inputProperties.input}
+              size="sm"
+              type="number"
+              value={subject.minQuestions.toString()}
+              onValueChange={(v) => updateSubject(si, { minQuestions: parseFloat(v) || 0 })}
+              isDisabled={isSaving}
+              className="w-24"
+              endContent={<span className="text-xs text-default-400">%</span>}
+            />
+          </td>
+          <td className={tdClass}>
+            <Input
+              {...inputProperties.input}
+              size="sm"
+              type="number"
+              value={subject.maxQuestions.toString()}
+              onValueChange={(v) => updateSubject(si, { maxQuestions: parseFloat(v) || 0 })}
+              isDisabled={isSaving}
+              className="w-24"
+              endContent={<span className="text-xs text-default-400">%</span>}
+            />
+          </td>
+          <td className={tdClass}>
+            <button
+              type="button"
+              onClick={() => setExpandedSubjects(prev => ({ ...prev, [si]: !prev[si] }))}
+              className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-default-100 hover:bg-default-200 transition-colors text-xs text-default-600 font-medium"
+            >
+              <FontAwesomeIcon
+                icon={isExpanded ? faChevronDown : faChevronRight}
+                className="w-2.5 h-2.5 text-default-400"
+              />
+              {topicCount} {t('chat.topics')}
+            </button>
+          </td>
+          <td className={tdClass}>
+            <button
+              type="button"
+              onClick={() => removeSubject(si)}
+              disabled={isSaving}
+              className="text-default-300 hover:text-danger transition-colors disabled:opacity-40"
+              aria-label={t('chat.removeSubject')}
+            >
+              <FontAwesomeIcon icon={faTrash} className="w-3 h-3" />
+            </button>
+          </td>
+        </tr>
+        {isExpanded && renderTopicsRow(subject, si)}
+      </React.Fragment>
+    );
+  }
+
+  function renderTopicsRow(subject: PublicExamSubject, si: number) {
+    const topics = subject.topics ?? [];
+    const isLast = si === draft.subjects.length - 1;
+
+    return (
+      <tr key={`topics-${si}`}>
+        <td
+          colSpan={5}
+          className={`px-4 pb-3 pt-0 ${isLast ? '' : 'border-b border-default-200'}`}
+        >
+          <div className="flex flex-col gap-0.5 mb-2">
+            {topics.map((topic, ti) => (
+              <div
+                key={ti}
+                className="flex items-start justify-between gap-2 rounded-md px-2 py-1 bg-default-100 hover:bg-default-200 transition-colors group"
+              >
+                <span className="text-xs text-default-600 break-words min-w-0 leading-relaxed">
+                  {topic.name}
+                </span>
+                {!isSaving && (
+                  <button
+                    type="button"
+                    onClick={() => removeTopic(si, ti)}
+                    className="shrink-0 text-default-300 hover:text-danger transition-colors mt-0.5 opacity-0 group-hover:opacity-100"
+                    aria-label={`Remove ${topic.name}`}
+                  >
+                    <FontAwesomeIcon icon={faXmark} className="w-2.5 h-2.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <Input
+              {...inputProperties.input}
+              placeholder={t('chat.addTopic')}
+              value={newTopicInputs[si] ?? ''}
+              onValueChange={(v) => setNewTopicInputs(prev => ({ ...prev, [si]: v }))}
+              isDisabled={isSaving}
+              size="sm"
+              className="flex-1"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newTopicInputs[si]?.trim()) {
+                  addTopic(si, newTopicInputs[si]);
+                  setNewTopicInputs(prev => ({ ...prev, [si]: '' }));
+                }
+              }}
+            />
+            <Button
+              isIconOnly
+              size="sm"
+              variant="flat"
+              onPress={() => {
+                if (newTopicInputs[si]?.trim()) {
+                  addTopic(si, newTopicInputs[si]);
+                  setNewTopicInputs(prev => ({ ...prev, [si]: '' }));
+                }
+              }}
+              isDisabled={isSaving || !newTopicInputs[si]?.trim()}
+              aria-label={t('chat.addTopic')}
+            >
+              <FontAwesomeIcon icon={faPlus} className="w-3 h-3" />
+            </Button>
+          </div>
+        </td>
+      </tr>
+    );
+  }
+}
