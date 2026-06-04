@@ -5,7 +5,7 @@ import { Input } from '@heroui/input';
 import { Chip } from '@heroui/chip';
 import { Spinner } from '@heroui/spinner';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faPlus, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { PublicExam } from '@/shared/types';
 import { useExamDraftCard } from '@/features/hooks/useExamDraftCard.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -159,16 +159,26 @@ export function AiChatExamDraftCard({ publicExam }: AiChatExamDraftCardProps) {
                 </div>
 
                 {(subject.topics ?? []).length > 0 && (
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-col gap-0.5">
                     {(subject.topics ?? []).map((topic, ti) => (
-                      <Chip
+                      <div
                         key={ti}
-                        size="sm"
-                        variant="flat"
-                        onClose={isSaving ? undefined : () => removeTopic(si, ti)}
+                        className="flex items-start justify-between gap-2 rounded-md px-2 py-1 bg-default-100 hover:bg-default-200 transition-colors group"
                       >
-                        {topic.name}
-                      </Chip>
+                        <span className="text-xs text-default-600 break-words min-w-0 leading-relaxed">
+                          {topic.name}
+                        </span>
+                        {!isSaving && (
+                          <button
+                            type="button"
+                            onClick={() => removeTopic(si, ti)}
+                            className="shrink-0 text-default-300 hover:text-danger transition-colors mt-0.5 opacity-0 group-hover:opacity-100"
+                            aria-label={`Remove ${topic.name}`}
+                          >
+                            <FontAwesomeIcon icon={faXmark} className="w-2.5 h-2.5" />
+                          </button>
+                        )}
+                      </div>
                     ))}
                   </div>
                 )}
