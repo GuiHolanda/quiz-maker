@@ -81,7 +81,8 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
         ],
       });
 
-      const text = response.output_text?.trim() ?? '';
+      const raw = response.output_text?.trim() ?? '';
+      const text = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
       let parsed: unknown;
       try {
         parsed = JSON.parse(text);
