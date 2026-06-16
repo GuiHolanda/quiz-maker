@@ -11,12 +11,21 @@ import { useMockExamsContext } from '@/features/providers/mockExams.provider';
 import { deleteMockExam, startMockExamAttempt } from '@/features/connectors';
 import { MockExamListItem } from '@/shared/types';
 
+type AttemptSummary = MockExamListItem['attempts'][number];
+
+function scoreColor(percent: number): 'success' | 'warning' | 'danger' {
+  if (percent >= 70) return 'success';
+  if (percent >= 50) return 'warning';
+  return 'danger';
+}
+
 export function SimuladosListTab() {
   const { t } = useTranslation();
   const { mockExams, removeMockExam } = useMockExamsContext();
   const [deleteTarget, setDeleteTarget] = useState<MockExamListItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [startingId, setStartingId] = useState<number | null>(null);
+  const [historyTarget, setHistoryTarget] = useState<MockExamListItem | null>(null);
   const router = useRouter();
 
   async function handleStart(mockExam: MockExamListItem) {
@@ -79,6 +88,12 @@ export function SimuladosListTab() {
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      <Modal isOpen={!!historyTarget} onClose={() => setHistoryTarget(null)} size="lg">
+        <ModalContent>
+          {historyTarget && renderHistoryModal(historyTarget)}
+        </ModalContent>
+      </Modal>
     </>
   );
 
@@ -90,7 +105,7 @@ export function SimuladosListTab() {
         : t('simulado.attempts', { count: m.attemptCount });
 
     return (
-      <div key={m.id} className="border border-default-200 rounded-xl p-4 flex flex-col gap-3">
+      <div key={m.id} className="bg-content1 border border-default-200 rounded-xl p-4 flex flex-col gap-3">
         <div className="flex items-start justify-between gap-2">
           <div>
             <p className="font-semibold">{m.name ?? m.publicExam.name}</p>
@@ -114,19 +129,70 @@ export function SimuladosListTab() {
           >
             {isAnswered ? t('simulado.tryAgain') : t('simulado.respond')}
           </Button>
-          {isAnswered && m.lastAttemptId && (
-            <Button
-              size="sm"
-              variant="bordered"
-              onPress={() => router.push(`/simulados/${m.id}/resultado/${m.lastAttemptId}`)}
-            >
-              {t('simulado.viewLastResult')}
+          {isAnswered && (
+            <Button size="sm" variant="bordered" onPress={() => setHistoryTarget(m)}>
+              {t('simulado.viewResults')}
             </Button>
           )}
           <Button size="sm" variant="light" color="danger" onPress={() => setDeleteTarget(m)}>
             {t('common.delete')}
           </Button>
         </div>
+      </div>
+    );
+  }
+
+  function renderHistoryModal(m: MockExamListItem) {
+    return (
+      <>
+        <ModalHeader className="flex flex-col gap-1">
+          <p>{t('simulado.attemptHistory')}</p>
+          <p className="text-default-400 text-sm font-normal">{m.name ?? m.publicExam.name}</p>
+        </ModalHeader>
+        <ModalBody>
+          {m.attempts.length === 0 ? (
+            <p className="text-default-400 text-sm">{t('simulado.noSimulados')}</p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {m.attempts.map((attempt, i) => renderAttemptRow(m, attempt, i))}
+            </div>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="light" onPress={() => setHistoryTarget(null)}>{t('common.cancel')}</Button>
+        </ModalFooter>
+      </>
+    );
+  }
+
+  function renderAttemptRow(m: MockExamListItem, attempt: AttemptSummary, i: number) {
+    const score = attempt.score ?? 0;
+    const percent = m.totalQuestions > 0 ? Math.round((score / m.totalQuestions) * 100) : 0;
+    const date = attempt.finishedAt
+      ? new Date(attempt.finishedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+      : '—';
+
+    return (
+      <div key={attempt.id} className="flex items-center justify-between gap-3 py-3 border-b border-default-100 last:border-0">
+        <div className="flex flex-col gap-0.5">
+          <p className="text-sm font-semibold">
+            {t('simulado.attemptNumber', { n: m.attempts.length - i })}
+          </p>
+          <p className="text-xs text-default-400">{date}</p>
+        </div>
+        <Chip size="sm" color={scoreColor(percent)} variant="flat" className="font-semibold">
+          {t('simulado.attemptScore', { correct: score, total: m.totalQuestions, percent })}
+        </Chip>
+        <Button
+          size="sm"
+          variant="bordered"
+          onPress={() => {
+            setHistoryTarget(null);
+            router.push(`/simulados/${m.id}/resultado/${attempt.id}`);
+          }}
+        >
+          {t('simulado.viewAttempt')}
+        </Button>
       </div>
     );
   }

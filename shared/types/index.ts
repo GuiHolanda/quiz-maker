@@ -369,6 +369,7 @@ export interface MockExamListItem {
   attemptCount: number;
   bestScore: number | null;
   lastAttemptId: number | null;
+  attempts: Pick<MockExamAttempt, 'id' | 'score' | 'startedAt' | 'finishedAt'>[];
   createdAt: string;
 }
 

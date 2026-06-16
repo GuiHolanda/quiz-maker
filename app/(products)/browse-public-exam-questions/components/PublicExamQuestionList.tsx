@@ -2,10 +2,12 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Skeleton } from '@heroui/skeleton';
+import { Chip } from '@heroui/chip';
 import { StoredPublicExamQuestion } from '@/shared/types';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
 import { ItemsPerPageSelect } from '@/shared/components/ui/ItemsPerPageSelect';
 import { PublicExamQuestionDetailPanel } from './PublicExamQuestionDetailPanel';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface PublicExamQuestionListProps {
   readonly questions: StoredPublicExamQuestion[];
@@ -28,6 +30,7 @@ export function PublicExamQuestionList({
   onPageSizeChange,
   onDelete,
 }: PublicExamQuestionListProps) {
+  const { t } = useTranslation();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -71,6 +74,14 @@ export function PublicExamQuestionList({
                       </span>
                     )}
                     <span className="text-xs text-default-400">{q.examBoardName}</span>
+                    <Chip
+                      size="sm"
+                      variant="flat"
+                      color={q.answer ? 'success' : 'default'}
+                      className="ml-auto"
+                    >
+                      {q.answer ? t('browse.hasAnswer') : t('browse.noAnswer')}
+                    </Chip>
                   </div>
                   <p className="text-xs leading-snug font-extrabold">{q.text}</p>
                 </button>

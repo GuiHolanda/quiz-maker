@@ -27,6 +27,12 @@ export class MockExamService {
         attemptCount: finishedAttempts.length,
         bestScore,
         lastAttemptId,
+        attempts: finishedAttempts.map((a) => ({
+          id: a.id,
+          score: a.score,
+          startedAt: a.startedAt.toISOString(),
+          finishedAt: a.finishedAt?.toISOString() ?? null,
+        })),
         createdAt: m.createdAt.toISOString(),
       };
     });
