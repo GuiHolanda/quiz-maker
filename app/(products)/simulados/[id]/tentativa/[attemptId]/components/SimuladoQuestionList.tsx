@@ -39,15 +39,20 @@ export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFin
   const answeredCount = Object.keys(answers).length;
   const allAnswered = answeredCount === questions.length;
 
-  // A question has a pending change when its draft differs from its saved answer
-  const hasPending = questions.some((q) => {
-    const draft = draftAnswers[q.id];
-    const saved = answers[q.id];
-    if (!draft || draft.length === 0) return false;
-    if (!saved || saved.length === 0) return false;
-    return draft.length !== saved.length || draft.some((v, i) => v !== saved[i]);
-  });
+  // Questions with unsaved selection changes (draft differs from saved)
+  const pendingQuestions = questions
+    .map((q, i) => ({ q, globalIndex: i + 1 }))
+    .filter(({ q }) => {
+      const draft = draftAnswers[q.id];
+      const saved = answers[q.id];
+      if (!draft || draft.length === 0) return false;
+      if (!saved || saved.length === 0) return false;
+      return draft.length !== saved.length || draft.some((v, idx) => v !== saved[idx]);
+    });
 
+  const hasPending = pendingQuestions.length > 0;
+  // Confirmed = saved answers minus those with unsaved changes
+  const confirmedCount = answeredCount - pendingQuestions.length;
   const canFinish = allAnswered && !hasPending;
 
   const handleAnswerChange = useCallback((questionId: number, value: string | string[]) => {
@@ -74,19 +79,33 @@ export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFin
   return (
     <div className="flex flex-col gap-4 mt-8">
       <div className="flex items-end justify-between gap-4">
-        <Progress
-          aria-label={t('aria.quizProgress')}
-          label={t('quiz.questionsAnswered')}
-          classNames={{ label: 'text-sm font-bold pl-2', value: 'text-sm font-bold' }}
-          valueLabel={t('simulado.progress', { answered: answeredCount, total: questions.length })}
-          formatOptions={undefined}
-          color="primary"
-          showValueLabel
-          size="md"
-          value={answeredCount}
-          maxValue={questions.length}
+        <Tooltip
+          isDisabled={!hasPending}
+          content={
+            <div className="flex flex-col gap-1 py-1">
+              <p className="text-xs font-semibold text-warning">{t('simulado.finalizeBlocked')}</p>
+              <p className="text-xs text-default-400">
+                {pendingQuestions.map(({ globalIndex }) => `Q${globalIndex}`).join(', ')}
+              </p>
+            </div>
+          }
+          placement="bottom-start"
           className="flex-1"
-        />
+        >
+          <Progress
+            aria-label={t('aria.quizProgress')}
+            label={t('quiz.questionsAnswered')}
+            classNames={{ label: 'text-sm font-bold pl-2', value: 'text-sm font-bold' }}
+            valueLabel={t('simulado.progress', { answered: confirmedCount, total: questions.length })}
+            formatOptions={undefined}
+            color={hasPending ? 'warning' : 'primary'}
+            showValueLabel
+            size="md"
+            value={confirmedCount}
+            maxValue={questions.length}
+            className="flex-1"
+          />
+        </Tooltip>
         <ItemsPerPageSelect value={questionsPerPage} onChange={onItemsPerPageChange} />
       </div>
 
