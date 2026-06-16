@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Button, CheckboxGroup, Checkbox, RadioGroup, Radio } from '@heroui/react';
+import { Button } from '@heroui/button';
+import { CheckboxGroup, Checkbox } from '@heroui/checkbox';
+import { RadioGroup, Radio } from '@heroui/radio';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface SimuladoQuestion {
@@ -41,7 +43,7 @@ export function SimuladoQuestionCard({ question, selectedOptions, onAnswerChange
       <p className="text-sm">{question.text}</p>
 
       {isMultiple ? (
-        <CheckboxGroup value={localSelection} onChange={handleCheckboxChange}>
+        <CheckboxGroup value={localSelection} onValueChange={handleCheckboxChange}>
           {Object.entries(question.options).map(([label, text]) => (
             <Checkbox key={label} value={label}>
               {label}) {text}
@@ -49,7 +51,7 @@ export function SimuladoQuestionCard({ question, selectedOptions, onAnswerChange
           ))}
         </CheckboxGroup>
       ) : (
-        <RadioGroup value={localSelection[0] ?? ''} onChange={(v) => setLocalSelection([v])}>
+        <RadioGroup value={localSelection[0] ?? ''} onValueChange={(v) => setLocalSelection([v])}>
           {Object.entries(question.options).map(([label, text]) => (
             <Radio key={label} value={label}>
               {label}) {text}
