@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Button, Chip } from '@heroui/react';
+import { Button } from '@heroui/button';
+import { Chip } from '@heroui/chip';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { getMockExamAttemptResult, startMockExamAttempt } from '@/features/connectors';
 import { MockExamResult } from '@/shared/types';
