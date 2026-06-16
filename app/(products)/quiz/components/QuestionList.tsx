@@ -1,9 +1,9 @@
 import React from 'react';
 import { AnswersMap, StoredQuestion } from '@/shared/types';
-import { QuestionCard } from './QuestionCard';
+import { QuestionCard } from '@/shared/components/QuestionCard';
 import { Button } from '@heroui/button';
 import { Progress } from '@heroui/progress';
-import { AnsweredQuestionCard } from './AnswredQuestionCard';
+import { AnsweredQuestionCard } from '@/shared/components/AnsweredQuestionCard';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
 import { ItemsPerPageSelect } from '@/shared/components/ui/ItemsPerPageSelect';

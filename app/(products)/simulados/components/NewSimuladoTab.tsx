@@ -12,6 +12,7 @@ import { createMockExam } from '@/features/connectors';
 import { PublicExamManager } from '@/shared/components/PublicExamManager';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { MockExamSubjectConfig } from '@/shared/types';
+import { Divider } from '@heroui/divider';
 
 interface NewSimuladoTabProps {
   readonly onCreated: () => void;
@@ -52,7 +53,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
 
   function handleSubjectChange(subjectName: string, value: string) {
     setDistribution((prev) =>
-      prev.map((s) => (s.subjectName === subjectName ? { ...s, questionCount: Number(value) || 0 } : s)),
+      prev.map((s) => (s.subjectName === subjectName ? { ...s, questionCount: Number(value) || 0 } : s))
     );
   }
 
@@ -74,6 +75,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
 
   return (
     <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6">
+      <PublicExamManager noSubjects className="w-full" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Input
           label={t('simulado.nameLabel')}
@@ -98,8 +100,6 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
         />
       </div>
 
-      <PublicExamManager noSubjects className="w-full" />
-
       {distribution.length > 0 && renderDistribution()}
 
       <div className="flex justify-end pt-2">
@@ -118,13 +118,16 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
   function renderDistribution() {
     return (
       <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold text-primary uppercase tracking-wide">{t('simulado.distribution')}</p>
-          <span className={`text-xs font-medium ${isDistributionValid ? 'text-success' : 'text-danger'}`}>
-            {t('simulado.distributed', { distributed: distributedTotal, total })}
-          </span>
+        <div className="flex flex-col">
+          <Divider/>
+          <div className="flex items-center justify-between mt-4">
+            <p className="text-xs font-semibold">{t('simulado.distribution')}</p>
+            <span className={`text-xs font-medium ${isDistributionValid ? 'text-success' : 'text-danger'}`}>
+              {t('simulado.distributed', { distributed: distributedTotal, total })}
+            </span>
+          </div>
         </div>
-        <div className="bg-content2 border border-default-200 rounded-xl overflow-hidden">
+        <div className="bg-content1 border border-default-200 rounded-xl overflow-hidden">
           {distribution.map((s, i) => (
             <div
               key={s.subjectName}

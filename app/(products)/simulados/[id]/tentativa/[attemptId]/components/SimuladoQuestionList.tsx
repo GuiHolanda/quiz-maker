@@ -1,20 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import React from 'react';
 import { Button } from '@heroui/button';
+import { Progress } from '@heroui/progress';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { AnswersMap } from '@/shared/types';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
 import { ItemsPerPageSelect } from '@/shared/components/ui/ItemsPerPageSelect';
-import { SimuladoQuestionCard } from './SimuladoQuestionCard';
+import { QuestionCard } from '@/shared/components/QuestionCard';
 
 interface SimuladoQuestion {
-  id: number;
-  mockExamQuestionId: number;
-  text: string;
-  correctCount: number;
-  subject: string;
-  options: Record<string, string>;
+  readonly id: number;
+  readonly mockExamQuestionId: number;
+  readonly text: string;
+  readonly correctCount: number;
+  readonly options: Record<string, string>;
 }
 
 interface SimuladoQuestionListProps {
@@ -26,39 +26,67 @@ interface SimuladoQuestionListProps {
 
 export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFinish }: SimuladoQuestionListProps) {
   const { t } = useTranslation();
-  const [currentPage, setCurrentPage] = useState(1);
-  const [questionsPerPage, setQuestionsPerPage] = useState(5);
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [questionsPerPage, setQuestionsPerPage] = React.useState<number>(5);
 
-  const totalPages = Math.ceil(questions.length / questionsPerPage);
-  const start = (currentPage - 1) * questionsPerPage;
-  const pageQuestions = questions.slice(start, start + questionsPerPage);
+  const totalPages = Math.max(1, Math.ceil(questions.length / questionsPerPage));
+  const startIndex = (currentPage - 1) * questionsPerPage;
+  const visibleQuestions = questions.slice(startIndex, startIndex + questionsPerPage);
+
+  const handleAnswerChange = (questionId: number, value: string | string[]) => {
+    const arr = Array.isArray(value) ? value : [value];
+    onAnswerChange(questionId, arr);
+    if (questionsPerPage === 1 && currentPage < totalPages) setCurrentPage((p) => p + 1);
+  };
+
+  const onItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const v = Math.max(1, Math.min(questions.length, Number(e.target.value) || 1));
+    setQuestionsPerPage(v);
+    setCurrentPage(1);
+  };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex justify-end">
-        <ItemsPerPageSelect
-          value={questionsPerPage}
-          onChange={(e) => {
-            setQuestionsPerPage(Number(e.target.value));
-            setCurrentPage(1);
-          }}
+    <div className="flex flex-col gap-4 mt-8">
+      <div className="flex items-end justify-between">
+        <Progress
+          aria-label={t('aria.quizProgress')}
+          label={t('quiz.questionsAnswered')}
+          classNames={{ label: 'text-sm font-bold pl-2', value: 'text-sm font-bold' }}
+          valueLabel={t('simulado.progress', { answered: Object.keys(answers).length, total: questions.length })}
+          formatOptions={undefined}
+          color="primary"
+          showValueLabel
+          size="md"
+          value={Object.keys(answers).length}
+          maxValue={questions.length}
+          className="flex-1"
         />
       </div>
 
-      {pageQuestions.map((q) => (
-        <SimuladoQuestionCard
-          key={q.id}
-          question={q}
-          selectedOptions={answers[q.id] ?? []}
-          onAnswerChange={(selected) => onAnswerChange(q.id, selected)}
-        />
-      ))}
+      <div className="flex flex-col gap-3">
+        {visibleQuestions.map((question) => (
+          <QuestionCard
+            key={question.id}
+            question={question}
+            onAnswerChange={handleAnswerChange}
+            initialValue={answers[question.id]}
+          />
+        ))}
+      </div>
 
-      <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
-
-      <Button color="danger" variant="flat" onPress={onFinish} className="w-full">
-        {t('simulado.finalize')}
-      </Button>
+      <div className="flex gap-2 items-end">
+        <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
+        <ItemsPerPageSelect value={questionsPerPage} onChange={onItemsPerPageChange} />
+        <Button
+          className="ml-auto"
+          variant="flat"
+          color="danger"
+          size="sm"
+          onPress={onFinish}
+        >
+          {t('simulado.finalize')}
+        </Button>
+      </div>
     </div>
   );
 }

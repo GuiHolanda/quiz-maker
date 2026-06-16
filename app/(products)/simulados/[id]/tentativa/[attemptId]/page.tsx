@@ -6,6 +6,7 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { getMockExam, getMockExamAnswers, finishMockExamAttempt } from '@/features/connectors';
 import { MockExam, MockExamAttemptAnswer, AnswersMap } from '@/shared/types';
 import { BusyDialog } from '@/shared/components/ui/BusyDialog';
+import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SimuladoQuestionList } from './components/SimuladoQuestionList';
 
 export default function SimuladoTentativaPage() {
@@ -27,8 +28,7 @@ export default function SimuladoTentativaPage() {
     mockExamQuestionId: mq.id,
     text: mq.publicExamQuestion.text,
     correctCount: mq.publicExamQuestion.correctCount,
-    subject: mq.publicExamQuestion.subject,
-    options: mq.publicExamQuestion.options,
+    options: mq.publicExamQuestion.options as Record<string, string>,
   }));
 
   function handleAnswerChange(questionId: number, selected: string[]) {
@@ -70,37 +70,30 @@ export default function SimuladoTentativaPage() {
         return { mockExamQuestionId: mq.id, selectedOptions: selected };
       });
 
-      await finishMockExamAttempt(Number(params.id), Number(params.attemptId), {
-        answers: attemptAnswers,
-        score,
-      });
-
+      await finishMockExamAttempt(Number(params.id), Number(params.attemptId), { answers: attemptAnswers, score });
       router.push(`/simulados/${params.id}/resultado/${params.attemptId}`);
     } catch {
       setIsFinishing(false);
     }
   }
 
+  const title = mockExam.name ?? mockExam.publicExam.name;
+  const subtitle = t('simulado.progress', {
+    answered: Object.keys(answers).length,
+    total: questions.length,
+  });
+
   return (
     <>
       <BusyDialog isOpen={isFinishing} />
-      <div className="container mx-auto max-w-3xl px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">{mockExam.name ?? mockExam.publicExam.name}</h1>
-          <p className="text-default-500 text-sm mt-1">
-            {t('simulado.progress', {
-              answered: Object.keys(answers).length,
-              total: questions.length,
-            })}
-          </p>
-        </div>
+      <PageHeader title={title} subtitle={subtitle}>
         <SimuladoQuestionList
           questions={questions}
           answers={answers}
           onAnswerChange={handleAnswerChange}
           onFinish={handleFinish}
         />
-      </div>
+      </PageHeader>
     </>
   );
 }
