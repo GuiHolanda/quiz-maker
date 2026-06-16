@@ -38,6 +38,7 @@ const CONCURSO_ITEMS = [
   { label: 'nav.configureConcurso', href: '/configure-public-exam' },
   { label: 'nav.generateConcursoQuestions', href: '/generate-public-exam-questions' },
   { label: 'nav.browseConcursoQuestions', href: '/browse-public-exam-questions' },
+  { label: 'nav.simulados', href: '/simulados' },
 ] as const;
 
 const NAV_LINKS = [
