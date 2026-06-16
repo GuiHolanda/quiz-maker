@@ -144,14 +144,14 @@ export const Navbar = () => {
               <Dropdown>
                 <DropdownTrigger>
                   <button className="flex items-center gap-1.5 text-default-500 hover:text-foreground text-sm px-3 py-1.5 rounded-lg hover:bg-default-100 transition-colors duration-200">
-                    {t('nav.product')}
+                    {t('nav.certificates')}
                     <FontAwesomeIcon icon={faChevronDown} className="w-2.5 h-2.5" />
                   </button>
                 </DropdownTrigger>
-                <DropdownMenu aria-label={t('nav.product')}>
+                <DropdownMenu aria-label={t('nav.certificates')} className="font-sans">
                   {PRODUCT_ITEMS.map((item) => (
-                    <DropdownItem key={item.href} as={NextLink} href={item.href}>
-                      {t(item.label)}
+                    <DropdownItem key={item.href} as={NextLink} href={item.href} textValue={t(item.label)}>
+                      <span className="text-sm">{t(item.label)}</span>
                     </DropdownItem>
                   ))}
                 </DropdownMenu>
@@ -165,10 +165,10 @@ export const Navbar = () => {
                     <FontAwesomeIcon icon={faChevronDown} className="w-2.5 h-2.5" />
                   </button>
                 </DropdownTrigger>
-                <DropdownMenu aria-label={t('nav.concursos')}>
+                <DropdownMenu aria-label={t('nav.concursos')} className="font-sans">
                   {CONCURSO_ITEMS.map((item) => (
-                    <DropdownItem key={item.href} as={NextLink} href={item.href}>
-                      {t(item.label)}
+                    <DropdownItem key={item.href} as={NextLink} href={item.href} textValue={t(item.label)}>
+                      <span className="text-sm">{t(item.label)}</span>
                     </DropdownItem>
                   ))}
                 </DropdownMenu>
@@ -236,7 +236,7 @@ export const Navbar = () => {
         <NavbarMenu className="bg-background border-t border-divider pt-4">
           <div className="mx-4 mt-2 flex flex-col gap-1">
             <p className="text-xs font-semibold text-default-400 px-2 pt-2 pb-1">
-              {t('nav.product')}
+              {t('nav.certificates')}
             </p>
             {PRODUCT_ITEMS.map((item) => (
               <NavbarMenuItem key={item.href}>
