@@ -10,6 +10,7 @@ import { useMockExamsContext } from '@/features/providers/mockExams.provider';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { createMockExam } from '@/features/connectors';
 import { PublicExamManager } from '@/shared/components/PublicExamManager';
+import { inputProperties } from '@/config/constants/inputStyles';
 import { MockExamSubjectConfig } from '@/shared/types';
 
 interface NewSimuladoTabProps {
@@ -72,64 +73,78 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-2xl">
-      <Input
-        label={t('simulado.nameLabel')}
-        placeholder={
-          selectedPublicExam
-            ? t('simulado.namePlaceholder', { examName: selectedPublicExam.name, count: totalQuestions || '?' })
-            : ''
-        }
-        value={name}
-        onValueChange={setName}
-        variant="bordered"
-        labelPlacement="outside"
-        autoComplete="off"
-      />
+    <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Input
+          label={t('simulado.nameLabel')}
+          placeholder={
+            selectedPublicExam
+              ? t('simulado.namePlaceholder', { examName: selectedPublicExam.name, count: totalQuestions || '?' })
+              : ''
+          }
+          value={name}
+          onValueChange={setName}
+          autoComplete="off"
+          {...inputProperties.input}
+        />
 
-      <PublicExamManager noSubjects />
+        <Input
+          label={t('simulado.totalQuestions')}
+          type="number"
+          min={1}
+          value={totalQuestions}
+          onValueChange={setTotalQuestions}
+          {...inputProperties.input}
+        />
+      </div>
 
-      <Input
-        label={t('simulado.totalQuestions')}
-        type="number"
-        min={1}
-        value={totalQuestions}
-        onValueChange={setTotalQuestions}
-        variant="bordered"
-        labelPlacement="outside"
-      />
+      <PublicExamManager noSubjects className="w-full" />
 
-      {distribution.length > 0 && (
-        <div className="flex flex-col gap-3">
-          <p className="text-sm font-semibold">{t('simulado.distribution')}</p>
-          {distribution.map((s) => (
-            <div key={s.subjectName} className="flex items-center justify-between gap-4">
-              <span className="text-sm flex-1">{s.subjectName}</span>
+      {distribution.length > 0 && renderDistribution()}
+
+      <div className="flex justify-end pt-2">
+        <Button
+          className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
+          isLoading={loading}
+          isDisabled={!selectedPublicExam || !isDistributionValid}
+          onPress={handleCreate}
+        >
+          {t('simulado.createButton')}
+        </Button>
+      </div>
+    </div>
+  );
+
+  function renderDistribution() {
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold text-primary uppercase tracking-wide">{t('simulado.distribution')}</p>
+          <span className={`text-xs font-medium ${isDistributionValid ? 'text-success' : 'text-danger'}`}>
+            {t('simulado.distributed', { distributed: distributedTotal, total })}
+          </span>
+        </div>
+        <div className="bg-content2 border border-default-200 rounded-xl overflow-hidden">
+          {distribution.map((s, i) => (
+            <div
+              key={s.subjectName}
+              className={`flex items-center justify-between gap-4 px-4 py-3 ${i < distribution.length - 1 ? 'border-b border-default-200' : ''}`}
+            >
+              <span className="text-sm text-foreground flex-1">{s.subjectName}</span>
               <Input
                 type="number"
                 min={0}
                 value={String(s.questionCount)}
                 onValueChange={(v) => handleSubjectChange(s.subjectName, v)}
                 variant="bordered"
-                className="w-24"
                 size="sm"
+                className="w-24 shrink-0"
+                classNames={{ inputWrapper: 'h-8' }}
               />
             </div>
           ))}
-          <p className={`text-xs ${isDistributionValid ? 'text-success' : 'text-danger'}`}>
-            {t('simulado.distributed', { distributed: distributedTotal, total })}
-          </p>
         </div>
-      )}
-
-      <Button
-        color="primary"
-        isLoading={loading}
-        isDisabled={!selectedPublicExam || !isDistributionValid}
-        onPress={handleCreate}
-      >
-        {t('simulado.createButton')}
-      </Button>
-    </div>
-  );
+      </div>
+    );
+  }
 }

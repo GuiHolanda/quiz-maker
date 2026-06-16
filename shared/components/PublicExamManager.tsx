@@ -67,13 +67,14 @@ export const PublicExamManager = ({ isMultiple, noSubjects, showTopic, ...props 
         autoComplete="off"
         {...inputProperties.select}
       >
-        {publicExams.map((exam) => (
-          <SelectItem key={exam.id ?? exam.name} textValue={exam.name}>
-            {exam.name}
-            {exam.role ? ` · ${exam.role}` : ''}
-            {exam.examBoard?.name ? ` · ${exam.examBoard.name}` : ''}
-          </SelectItem>
-        ))}
+        {publicExams.map((exam) => {
+          const label = [exam.name, exam.role, exam.examBoard?.name].filter(Boolean).join(' · ');
+          return (
+            <SelectItem key={exam.id ?? exam.name} textValue={label}>
+              {label}
+            </SelectItem>
+          );
+        })}
       </Select>
       {!noSubjects && (
         <Select
