@@ -21,6 +21,8 @@ model User {
   publicExams         PublicExam[]
   publicExamQuestions PublicExamQuestion[]
   usageLogs      UsageLog[]
+  mockExams      MockExam[]
+  mockAttempts   MockExamAttempt[]
   plan                         String   @default("free")
   questionsGeneratedThisPeriod Int      @default(0)
   periodStartDate              DateTime @default(now())
@@ -152,6 +154,7 @@ model PublicExam {
   examBoard   ExamBoard           @relation(fields: [examBoardId], references: [id])
   subjects    PublicExamSubject[]
   userId      String?
+  mockExams   MockExam[]
   user        User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, name, year])
@@ -191,6 +194,7 @@ model PublicExamQuestion {
   answer         PublicExamAnswer?
   createdAt      DateTime           @default(now())
   userId         String?
+  mockExamQuestions MockExamQuestion[]
   user           User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -217,4 +221,56 @@ model PublicExamExplanation {
   label     String
   text      String
   createdAt DateTime         @default(now())
+}
+
+model MockExam {
+  id           Int                     @id @default(autoincrement())
+  name         String?
+  publicExamId String
+  userId       String?
+  createdAt    DateTime                @default(now())
+  publicExam   PublicExam              @relation(fields: [publicExamId], references: [id])
+  user         User?                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subjects     MockExamSubjectConfig[]
+  questions    MockExamQuestion[]
+  attempts     MockExamAttempt[]
+}
+
+model MockExamSubjectConfig {
+  id            Int      @id @default(autoincrement())
+  mockExamId    Int
+  subjectName   String
+  questionCount Int
+  mockExam      MockExam @relation(fields: [mockExamId], references: [id], onDelete: Cascade)
+}
+
+model MockExamQuestion {
+  id                   Int                     @id @default(autoincrement())
+  mockExamId           Int
+  publicExamQuestionId Int
+  order                Int
+  mockExam             MockExam                @relation(fields: [mockExamId], references: [id], onDelete: Cascade)
+  publicExamQuestion   PublicExamQuestion      @relation(fields: [publicExamQuestionId], references: [id])
+  attemptAnswers       MockExamAttemptAnswer[]
+}
+
+model MockExamAttempt {
+  id         Int                     @id @default(autoincrement())
+  mockExamId Int
+  userId     String?
+  startedAt  DateTime                @default(now())
+  finishedAt DateTime?
+  score      Int?
+  mockExam   MockExam                @relation(fields: [mockExamId], references: [id], onDelete: Cascade)
+  user       User?                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers    MockExamAttemptAnswer[]
+}
+
+model MockExamAttemptAnswer {
+  id                 Int              @id @default(autoincrement())
+  attemptId          Int
+  mockExamQuestionId Int
+  selectedOptions    String
+  attempt            MockExamAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  mockExamQuestion   MockExamQuestion @relation(fields: [mockExamQuestionId], references: [id])
 }
