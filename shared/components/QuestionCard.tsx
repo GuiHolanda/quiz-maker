@@ -20,14 +20,18 @@ interface QuestionCardProps {
   readonly onAnswerChange: (questionId: number, value: string | string[]) => void;
   readonly initialValue?: string[];
   readonly index?: number;
-  readonly onPendingChange?: (questionId: number, hasPending: boolean) => void;
+  readonly draftValue?: string[];
+  readonly onSelectionChange?: (questionId: number, selection: string[]) => void;
 }
 
-export function QuestionCard({ question, onAnswerChange, initialValue, index, onPendingChange }: QuestionCardProps) {
+export function QuestionCard({ question, onAnswerChange, initialValue, index, draftValue, onSelectionChange }: QuestionCardProps) {
   const { t } = useTranslation();
-  const [currentSelection, setCurrentSelection] = useState<string[]>(initialValue ?? []);
-  const onPendingChangeRef = useRef(onPendingChange);
-  onPendingChangeRef.current = onPendingChange;
+
+  // Keep draftValue in a ref so the reset effect can read latest without being a dependency
+  const draftValueRef = useRef(draftValue);
+  draftValueRef.current = draftValue;
+
+  const [currentSelection, setCurrentSelection] = useState<string[]>(draftValue ?? initialValue ?? []);
 
   const isSaved = initialValue !== undefined && initialValue.length > 0;
   const hasChanged =
@@ -35,13 +39,15 @@ export function QuestionCard({ question, onAnswerChange, initialValue, index, on
     (currentSelection.length !== initialValue.length ||
       currentSelection.some((v, i) => v !== initialValue[i]));
 
+  // On question change or after a save (initialValue changes), restore from draft or saved answer
   useEffect(() => {
-    setCurrentSelection(initialValue ?? []);
+    setCurrentSelection(draftValueRef.current ?? initialValue ?? []);
   }, [question.id, question.correctCount, initialValue]);
 
-  useEffect(() => {
-    onPendingChangeRef.current?.(question.id, hasChanged);
-  }, [hasChanged, question.id]);
+  const applySelection = (next: string[]) => {
+    setCurrentSelection(next);
+    onSelectionChange?.(question.id, next);
+  };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -52,7 +58,7 @@ export function QuestionCard({ question, onAnswerChange, initialValue, index, on
   const onCheckboxChange = (value: string | string[]) => {
     const next = Array.isArray(value) ? value : [value];
     if (question.correctCount && next.length > question.correctCount) return;
-    setCurrentSelection(next);
+    applySelection(next);
   };
 
   const renderCheckboxes = () =>
@@ -75,7 +81,6 @@ export function QuestionCard({ question, onAnswerChange, initialValue, index, on
 
   const minSelectionCount = question.correctCount && question.correctCount > 0 ? question.correctCount : 1;
   const canSubmit = currentSelection.length >= minSelectionCount;
-
   const borderClass = hasChanged ? 'border-warning' : 'border-default-200';
 
   return (
@@ -109,7 +114,7 @@ export function QuestionCard({ question, onAnswerChange, initialValue, index, on
           ) : (
             <RadioGroup
               value={currentSelection[0] ?? ''}
-              onValueChange={(value) => setCurrentSelection(value ? [value] : [])}
+              onValueChange={(value) => applySelection(value ? [value] : [])}
               className="w-4/5"
             >
               {Object.entries(question.options).map(([key, val]) => (

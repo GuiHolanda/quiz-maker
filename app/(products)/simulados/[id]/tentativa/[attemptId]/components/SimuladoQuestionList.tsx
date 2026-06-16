@@ -29,7 +29,8 @@ export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFin
   const { t } = useTranslation();
   const [currentPage, setCurrentPage] = React.useState(1);
   const [questionsPerPage, setQuestionsPerPage] = React.useState<number>(5);
-  const [pendingSet, setPendingSet] = React.useState<Set<number>>(new Set());
+  // draftAnswers keeps unsaved selections so they survive page changes
+  const [draftAnswers, setDraftAnswers] = React.useState<AnswersMap>({});
 
   const totalPages = Math.max(1, Math.ceil(questions.length / questionsPerPage));
   const startIndex = (currentPage - 1) * questionsPerPage;
@@ -37,22 +38,31 @@ export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFin
 
   const answeredCount = Object.keys(answers).length;
   const allAnswered = answeredCount === questions.length;
-  const hasPending = pendingSet.size > 0;
+
+  // A question has a pending change when its draft differs from its saved answer
+  const hasPending = questions.some((q) => {
+    const draft = draftAnswers[q.id];
+    const saved = answers[q.id];
+    if (!draft || draft.length === 0) return false;
+    if (!saved || saved.length === 0) return false;
+    return draft.length !== saved.length || draft.some((v, i) => v !== saved[i]);
+  });
+
   const canFinish = allAnswered && !hasPending;
 
-  const handleAnswerChange = (questionId: number, value: string | string[]) => {
+  const handleAnswerChange = useCallback((questionId: number, value: string | string[]) => {
     const arr = Array.isArray(value) ? value : [value];
     onAnswerChange(questionId, arr);
-    if (questionsPerPage === 1 && currentPage < totalPages) setCurrentPage((p) => p + 1);
-  };
-
-  const handlePendingChange = useCallback((questionId: number, hasPendingChange: boolean) => {
-    setPendingSet((prev) => {
-      const next = new Set(prev);
-      if (hasPendingChange) next.add(questionId);
-      else next.delete(questionId);
+    // Clear draft for this question — it is now saved
+    setDraftAnswers((prev) => {
+      const next = { ...prev };
+      delete next[questionId];
       return next;
     });
+  }, [onAnswerChange]);
+
+  const handleSelectionChange = useCallback((questionId: number, selection: string[]) => {
+    setDraftAnswers((prev) => ({ ...prev, [questionId]: selection }));
   }, []);
 
   const onItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -87,8 +97,9 @@ export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFin
             question={question}
             onAnswerChange={handleAnswerChange}
             initialValue={answers[question.id]}
+            draftValue={draftAnswers[question.id]}
             index={startIndex + i + 1}
-            onPendingChange={handlePendingChange}
+            onSelectionChange={handleSelectionChange}
           />
         ))}
       </div>
