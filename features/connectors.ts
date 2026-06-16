@@ -1,5 +1,5 @@
-import { CERTIFICATION_GENERATOR_URL, SAVE_QUESTIONS_URL, SAVE_CERTIFICATION_URL, QUIZ_GENERATOR_URL, BILLING_USAGE_URL, BILLING_CHECKOUT_URL, BILLING_PORTAL_URL, BROWSE_SUMMARY_URL, BROWSE_QUESTIONS_URL, PUBLIC_EXAMS_URL, EXAM_BOARDS_URL, SAVE_PUBLIC_EXAM_URL, EXTRACT_EDITAL_URL, PUBLIC_EXAM_GENERATOR_URL, SAVE_PUBLIC_EXAM_QUESTIONS_URL, GET_PUBLIC_EXAM_ANSWERS_URL, BROWSE_PUBLIC_EXAM_SUMMARY_URL, BROWSE_PUBLIC_EXAM_QUESTIONS_URL, GET_CERTIFICATION_ANSWERS_URL } from '@/config/constants';
-import { AIQuestion, Certification, CertificationTopic, QuestionParams, StoredQuestion, TopicUpdatePayload, UsageStats, BrowseSummary, BrowseQuestionsParams, BrowseQuestionsResponse, PublicExam, ExamBoard, PublicExamSubject, PublicExamTopic, PublicExamSubjectUpdatePayload, AIPublicExamQuestion, PublicExamQuestionParams, PublicExamBrowseSummary, PublicExamBrowseQuestionsParams, PublicExamBrowseQuestionsResponse } from '@/shared/types';
+import { CERTIFICATION_GENERATOR_URL, SAVE_QUESTIONS_URL, SAVE_CERTIFICATION_URL, QUIZ_GENERATOR_URL, BILLING_USAGE_URL, BILLING_CHECKOUT_URL, BILLING_PORTAL_URL, BROWSE_SUMMARY_URL, BROWSE_QUESTIONS_URL, PUBLIC_EXAMS_URL, EXAM_BOARDS_URL, SAVE_PUBLIC_EXAM_URL, EXTRACT_EDITAL_URL, PUBLIC_EXAM_GENERATOR_URL, SAVE_PUBLIC_EXAM_QUESTIONS_URL, GET_PUBLIC_EXAM_ANSWERS_URL, BROWSE_PUBLIC_EXAM_SUMMARY_URL, BROWSE_PUBLIC_EXAM_QUESTIONS_URL, GET_CERTIFICATION_ANSWERS_URL, MOCK_EXAMS_URL } from '@/config/constants';
+import { AIQuestion, Certification, CertificationTopic, QuestionParams, StoredQuestion, TopicUpdatePayload, UsageStats, BrowseSummary, BrowseQuestionsParams, BrowseQuestionsResponse, PublicExam, ExamBoard, PublicExamSubject, PublicExamTopic, PublicExamSubjectUpdatePayload, AIPublicExamQuestion, PublicExamQuestionParams, PublicExamBrowseSummary, PublicExamBrowseQuestionsParams, PublicExamBrowseQuestionsResponse, MockExamListItem, MockExam, CreateMockExamPayload, MockExamAttempt, FinishAttemptPayload, MockExamResult } from '@/shared/types';
 import api from '@/lib/bff.api';
 
 export async function getCertifications(): Promise<Certification[]> {
@@ -218,4 +218,45 @@ export async function getPublicExamBrowseQuestions(
 
 export async function deletePublicExamBrowseQuestion(id: number): Promise<void> {
   await api.delete(`${BROWSE_PUBLIC_EXAM_QUESTIONS_URL}?id=${id}`);
+}
+
+export async function getMockExams(): Promise<MockExamListItem[]> {
+  const { data } = await api.get<{ mockExams: MockExamListItem[] }>(MOCK_EXAMS_URL);
+  return data.mockExams;
+}
+
+export async function createMockExam(payload: CreateMockExamPayload): Promise<MockExamListItem> {
+  const { data } = await api.post<{ mockExam: MockExamListItem }>(MOCK_EXAMS_URL, payload);
+  return data.mockExam;
+}
+
+export async function deleteMockExam(id: number): Promise<void> {
+  await api.delete(`${MOCK_EXAMS_URL}?id=${id}`);
+}
+
+export async function getMockExam(id: number): Promise<MockExam> {
+  const { data } = await api.get<{ mockExam: MockExam }>(`${MOCK_EXAMS_URL}/${id}`);
+  return data.mockExam;
+}
+
+export async function startMockExamAttempt(mockExamId: number): Promise<MockExamAttempt> {
+  const { data } = await api.post<{ attempt: MockExamAttempt }>(`${MOCK_EXAMS_URL}/${mockExamId}/attempts`);
+  return data.attempt;
+}
+
+export async function finishMockExamAttempt(
+  mockExamId: number,
+  attemptId: number,
+  payload: FinishAttemptPayload,
+): Promise<void> {
+  await api.patch(`${MOCK_EXAMS_URL}/${mockExamId}/attempts/${attemptId}`, payload);
+}
+
+export async function getMockExamAttemptResult(mockExamId: number, attemptId: number): Promise<MockExamResult> {
+  const { data } = await api.get<MockExamResult>(`${MOCK_EXAMS_URL}/${mockExamId}/attempts/${attemptId}`);
+  return data;
+}
+
+export async function getMockExamAnswers(questions: AIPublicExamQuestion[]): Promise<void> {
+  await api.post(`${MOCK_EXAMS_URL}/answers`, questions);
 }
