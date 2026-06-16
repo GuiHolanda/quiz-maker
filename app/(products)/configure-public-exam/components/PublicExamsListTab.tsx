@@ -123,7 +123,7 @@ export function PublicExamsListTab() {
             aria-label={publicExam.name}
             title={
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-sm font-semibold text-foreground truncate">{publicExam.name}</span>
+                <span className="text-sm font-semibold text-foreground truncate flex-1 min-w-0">{publicExam.name}</span>
                 <span className="text-xs text-default-400 shrink-0">·</span>
                 <span className="text-xs text-default-500 shrink-0">{publicExam.examBoard?.name}</span>
                 {publicExam.role && (
