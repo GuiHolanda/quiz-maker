@@ -11,7 +11,7 @@ import { SimuladosListTab } from './components/SimuladosListTab';
 
 function SimuladosPageContent() {
   const { t } = useTranslation();
-  const [selectedTab, setSelectedTab] = useState<Key>('new');
+  const [selectedTab, setSelectedTab] = useState<Key>('list');
 
   return (
     <PageHeader title={t('simulado.pageTitle')} subtitle={t('simulado.pageSubtitle')}>
@@ -28,11 +28,11 @@ function SimuladosPageContent() {
             panel: 'pt-4',
           }}
         >
-          <Tab key="new" title={t('simulado.tabNew')}>
-            <NewSimuladoTab onCreated={() => setSelectedTab('list')} />
-          </Tab>
           <Tab key="list" title={t('simulado.tabList')}>
             <SimuladosListTab />
+          </Tab>
+          <Tab key="new" title={t('simulado.tabNew')}>
+            <NewSimuladoTab onCreated={() => setSelectedTab('list')} />
           </Tab>
         </Tabs>
       </div>

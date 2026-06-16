@@ -77,10 +77,10 @@ export function PublicExamQuestionList({
                     <Chip
                       size="sm"
                       variant="flat"
-                      color={q.answer ? 'success' : 'default'}
+                      color={q.answer?.correctOptions?.length > 0 ? 'success' : 'default'}
                       className="ml-auto"
                     >
-                      {q.answer ? t('browse.hasAnswer') : t('browse.noAnswer')}
+                      {q.answer?.correctOptions?.length > 0 ? t('browse.hasAnswer') : t('browse.noAnswer')}
                     </Chip>
                   </div>
                   <p className="text-xs leading-snug font-extrabold">{q.text}</p>
