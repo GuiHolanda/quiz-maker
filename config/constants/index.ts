@@ -170,3 +170,6 @@ export const INITIAL_PUBLIC_EXAMS_STATE: PublicExamsState = {
   selectedSubjects: [],
   selectedTopic: null,
 };
+
+export const MOCK_EXAMS_URL = '/mock-exams';
+export const MOCK_EXAMS_LOCAL_STORAGE_KEY = 'MOCK_EXAMS';

@@ -324,3 +324,69 @@ export type PublicExamFormErrors = {
   subject?: string;
   num_questions?: string;
 };
+
+export interface MockExamSubjectConfig {
+  subjectName: string;
+  questionCount: number;
+}
+
+export interface MockExamQuestion {
+  id: number;
+  order: number;
+  publicExamQuestion: StoredPublicExamQuestion;
+}
+
+export interface MockExam {
+  id: number;
+  name: string | null;
+  publicExamId: string;
+  publicExam: Pick<PublicExam, 'id' | 'name' | 'examBoard'>;
+  subjects: MockExamSubjectConfig[];
+  questions: MockExamQuestion[];
+  attempts: MockExamAttempt[];
+  createdAt: string;
+}
+
+export interface MockExamAttemptAnswer {
+  mockExamQuestionId: number;
+  selectedOptions: string[];
+}
+
+export interface MockExamAttempt {
+  id: number;
+  mockExamId: number;
+  startedAt: string;
+  finishedAt: string | null;
+  score: number | null;
+  answers: MockExamAttemptAnswer[];
+}
+
+export interface MockExamListItem {
+  id: number;
+  name: string | null;
+  publicExam: Pick<PublicExam, 'id' | 'name' | 'examBoard'>;
+  totalQuestions: number;
+  attemptCount: number;
+  bestScore: number | null;
+  lastAttemptId: number | null;
+  createdAt: string;
+}
+
+export interface CreateMockExamPayload {
+  publicExamId: string;
+  name?: string;
+  totalQuestions: number;
+  subjects: MockExamSubjectConfig[];
+}
+
+export interface FinishAttemptPayload {
+  answers: MockExamAttemptAnswer[];
+  score: number;
+}
+
+export interface MockExamResult {
+  attempt: MockExamAttempt;
+  mockExam: Pick<MockExam, 'id' | 'name' | 'publicExam'>;
+  questions: MockExamQuestion[];
+  subjectBreakdown: { subjectName: string; correct: number; total: number }[];
+}
