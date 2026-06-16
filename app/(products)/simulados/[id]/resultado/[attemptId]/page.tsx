@@ -4,9 +4,12 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
+import { Accordion, AccordionItem } from '@heroui/accordion';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { getMockExamAttemptResult, startMockExamAttempt } from '@/features/connectors';
-import { MockExamResult } from '@/shared/types';
+import { MockExamResult, MockExamQuestion } from '@/shared/types';
+import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { ResultQuestionCard } from './components/ResultQuestionCard';
 
 function scoreColor(percent: number): 'success' | 'warning' | 'danger' {
   if (percent >= 70) return 'success';
@@ -29,9 +32,28 @@ export default function SimuladoResultadoPage() {
 
   const total = result.questions.length;
   const correct = result.attempt.score ?? 0;
+  const errors = total - correct;
   const percent = total > 0 ? Math.round((correct / total) * 100) : 0;
   const color = scoreColor(percent);
+
   const answersMap = new Map(result.attempt.answers.map((a) => [a.mockExamQuestionId, a.selectedOptions]));
+
+  const questionsBySubject = result.questions.reduce<Record<string, MockExamQuestion[]>>((acc, mq) => {
+    const subject = mq.publicExamQuestion.subject ?? t('simulado.unknownSubject');
+    if (!acc[subject]) acc[subject] = [];
+    acc[subject].push(mq);
+    return acc;
+  }, {});
+
+  const finishedAt = result.attempt.finishedAt
+    ? new Date(result.attempt.finishedAt).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : '—';
 
   async function handleTryAgain() {
     setIsStarting(true);
@@ -43,116 +65,112 @@ export default function SimuladoResultadoPage() {
     }
   }
 
+  const examName = result.mockExam.name ?? result.mockExam.publicExam.name;
+
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-8 flex flex-col gap-8">
-      {renderScoreHeader()}
-      {renderSubjectBreakdown()}
-      {renderQuestionReview()}
-      {renderActions()}
-    </div>
+    <>
+      <PageHeader title={t('simulado.scoreTitle')} subtitle={examName}>
+        <div className="px-6 pb-8 flex flex-col gap-6">
+          {renderInfoCard()}
+          {renderSubjectAccordion()}
+        </div>
+      </PageHeader>
+    </>
   );
 
-  function renderScoreHeader() {
+  function renderInfoCard() {
     return (
-      <div className="text-center">
-        <h1 className="text-2xl font-bold mb-2">{t('simulado.scoreTitle')}</h1>
-        <p className="text-default-500 text-sm mb-4">{result!.mockExam.name ?? result!.mockExam.publicExam.name}</p>
-        <Chip color={color} variant="flat" size="lg" className="text-xl px-6 py-4 h-auto">
-          {t('simulado.scoreGeneral', { correct, total })} — {t('simulado.scorePercent', { percent })}
-        </Chip>
-      </div>
-    );
-  }
+      <div className="bg-content1 border border-default-200 rounded-xl p-6">
+        <p className="text-xs font-semibold text-primary mb-4">{t('simulado.resultInfo')}</p>
 
-  function renderSubjectBreakdown() {
-    return (
-      <div>
-        <h2 className="font-semibold mb-3">{t('simulado.bySubject')}</h2>
-        <div className="border border-default-200 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-default-100">
-              <tr>
-                <th className="text-left p-3">{t('simulado.subjectHeader')}</th>
-                <th className="text-center p-3">{t('simulado.correctHeader')}</th>
-                <th className="text-center p-3">{t('simulado.totalHeader')}</th>
-                <th className="text-center p-3">{t('simulado.percentHeader')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {result!.subjectBreakdown.map((s) => {
-                const pct = s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
-                return (
-                  <tr key={s.subjectName} className="border-t border-default-100">
-                    <td className="p-3">{s.subjectName}</td>
-                    <td className="text-center p-3">{s.correct}</td>
-                    <td className="text-center p-3">{s.total}</td>
-                    <td className="text-center p-3">
-                      <Chip size="sm" color={scoreColor(pct)} variant="flat">
-                        {pct}%
-                      </Chip>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="flex flex-col sm:flex-row gap-6 items-start">
+          <div className="flex flex-col items-center gap-1 shrink-0">
+            <Chip color={color} variant="flat" className="text-2xl px-6 py-4 h-auto font-bold">
+              {t('simulado.scoreGeneral', { correct, total })}
+            </Chip>
+            <p className="text-sm text-default-500">{t('simulado.scorePercent', { percent })}</p>
+          </div>
+
+          <div className="hidden sm:block self-stretch border-r border-default-200" />
+
+          <div className="grid grid-cols-2 gap-x-8 gap-y-3 flex-1">
+            {renderStat(t('simulado.totalQuestions'), String(total))}
+            {renderStat(t('simulado.dateLabel'), finishedAt)}
+            {renderStat(t('simulado.correct'), String(correct), 'text-success')}
+            {renderStat(t('simulado.errorsLabel'), String(errors), 'text-danger')}
+          </div>
+        </div>
+
+        <div className="border-t border-default-200 mt-6 pt-4 flex gap-3">
+          <Button color="primary" isLoading={isStarting} onPress={handleTryAgain}>
+            {t('simulado.tryAgain')}
+          </Button>
+          <Button variant="bordered" onPress={() => router.push('/simulados')}>
+            {t('simulado.backToList')}
+          </Button>
         </div>
       </div>
     );
   }
 
-  function renderQuestionReview() {
+  function renderStat(label: string, value: string, valueClass = 'text-foreground') {
+    return (
+      <div className="flex flex-col gap-0.5">
+        <p className="text-xs text-default-400">{label}</p>
+        <p className={`text-sm font-semibold ${valueClass}`}>{value}</p>
+      </div>
+    );
+  }
+
+  function renderSubjectAccordion() {
     return (
       <div>
-        <h2 className="font-semibold mb-3">{t('simulado.questionReview')}</h2>
-        <div className="flex flex-col gap-4">
-          {result!.questions.map((mq) => {
-            const selected = answersMap.get(mq.id) ?? [];
-            const correctOptions: string[] = (mq.publicExamQuestion.answer?.correctOptions as string[]) ?? [];
-            const isCorrect =
-              correctOptions.length > 0 &&
-              selected.length === correctOptions.length &&
-              selected.every((s) => correctOptions.includes(s));
-
+        <h2 className="font-semibold mb-3 text-foreground">{t('simulado.bySubject')}</h2>
+        <Accordion
+          showDivider={false}
+          className="flex flex-col gap-2 px-0"
+          itemClasses={{
+            base: 'bg-content1 border border-default-200 rounded-xl',
+            title: 'text-sm font-semibold text-foreground',
+            titleWrapper: 'flex-1 min-w-0',
+            trigger: 'px-4 py-3 hover:bg-default-100 rounded-xl transition-colors duration-200',
+            content: 'px-4 pb-4',
+            indicator: 'text-default-400',
+          }}
+        >
+          {result!.subjectBreakdown.map((s) => {
+            const pct = s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
+            const questions = questionsBySubject[s.subjectName] ?? [];
             return (
-              <div
-                key={mq.id}
-                className={`border-l-4 rounded-r-xl p-4 ${isCorrect ? 'border-success bg-success-50' : 'border-danger bg-danger-50'}`}
+              <AccordionItem
+                key={s.subjectName}
+                aria-label={s.subjectName}
+                title={
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="truncate flex-1 min-w-0">{s.subjectName}</span>
+                    <Chip size="sm" color={scoreColor(pct)} variant="flat" className="shrink-0 font-semibold">
+                      {s.correct}/{s.total} — {pct}%
+                    </Chip>
+                  </div>
+                }
               >
-                <p className="text-xs text-default-400 mb-1">{mq.publicExamQuestion.subject}</p>
-                <p className="text-sm mb-3">{mq.publicExamQuestion.text}</p>
-                <p className="text-xs mb-1">
-                  <span className="font-semibold">{t('simulado.yourAnswer')}:</span>{' '}
-                  {selected.length > 0 ? selected.join(', ') : '—'}
-                </p>
-                <p className="text-xs mb-1">
-                  <span className="font-semibold">{t('simulado.correctAnswer')}:</span>{' '}
-                  {correctOptions.join(', ')}
-                </p>
-                {mq.publicExamQuestion.answer?.explanations &&
-                  Object.entries(mq.publicExamQuestion.answer.explanations).map(([label, text]) => (
-                    <p key={label} className="text-xs text-default-500 mt-1">
-                      <span className="font-semibold">{label})</span> {text as string}
-                    </p>
+                <div className="flex flex-col gap-2 pt-1">
+                  {questions.map((mq, i) => (
+                    <ResultQuestionCard
+                      key={mq.id}
+                      mq={mq}
+                      selected={answersMap.get(mq.id) ?? []}
+                      localIndex={i}
+                      showDivider={i > 0}
+                    />
                   ))}
-              </div>
+                </div>
+              </AccordionItem>
             );
           })}
-        </div>
+        </Accordion>
       </div>
     );
   }
 
-  function renderActions() {
-    return (
-      <div className="flex gap-3">
-        <Button color="primary" isLoading={isStarting} onPress={handleTryAgain}>
-          {t('simulado.tryAgain')}
-        </Button>
-        <Button variant="bordered" onPress={() => router.push('/simulados')}>
-          {t('simulado.backToList')}
-        </Button>
-      </div>
-    );
-  }
 }
