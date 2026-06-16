@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState, useEffect } from 'react';
+import { FormEvent, useState, useEffect, useRef } from 'react';
 import { Button } from '@heroui/button';
 import { CheckboxGroup, Checkbox } from '@heroui/checkbox';
 import { RadioGroup, Radio } from '@heroui/radio';
@@ -26,6 +26,8 @@ interface QuestionCardProps {
 export function QuestionCard({ question, onAnswerChange, initialValue, index, onPendingChange }: QuestionCardProps) {
   const { t } = useTranslation();
   const [currentSelection, setCurrentSelection] = useState<string[]>(initialValue ?? []);
+  const onPendingChangeRef = useRef(onPendingChange);
+  onPendingChangeRef.current = onPendingChange;
 
   const isSaved = initialValue !== undefined && initialValue.length > 0;
   const hasChanged =
@@ -38,8 +40,8 @@ export function QuestionCard({ question, onAnswerChange, initialValue, index, on
   }, [question.id, question.correctCount, initialValue]);
 
   useEffect(() => {
-    onPendingChange?.(question.id, hasChanged);
-  }, [hasChanged, question.id, onPendingChange]);
+    onPendingChangeRef.current?.(question.id, hasChanged);
+  }, [hasChanged, question.id]);
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();

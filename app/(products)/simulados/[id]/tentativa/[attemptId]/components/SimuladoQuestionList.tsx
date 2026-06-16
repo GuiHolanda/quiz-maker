@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Button } from '@heroui/button';
 import { Progress } from '@heroui/progress';
 import { Tooltip } from '@heroui/tooltip';
@@ -46,14 +46,14 @@ export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFin
     if (questionsPerPage === 1 && currentPage < totalPages) setCurrentPage((p) => p + 1);
   };
 
-  const handlePendingChange = (questionId: number, hasPendingChange: boolean) => {
+  const handlePendingChange = useCallback((questionId: number, hasPendingChange: boolean) => {
     setPendingSet((prev) => {
       const next = new Set(prev);
       if (hasPendingChange) next.add(questionId);
       else next.delete(questionId);
       return next;
     });
-  };
+  }, []);
 
   const onItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const v = Math.max(1, Math.min(questions.length, Number(e.target.value) || 1));
