@@ -61,22 +61,23 @@ export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFin
           maxValue={questions.length}
           className="flex-1"
         />
+        <ItemsPerPageSelect value={questionsPerPage} onChange={onItemsPerPageChange} />
       </div>
 
       <div className="flex flex-col gap-3">
-        {visibleQuestions.map((question) => (
+        {visibleQuestions.map((question, i) => (
           <QuestionCard
             key={question.id}
             question={question}
             onAnswerChange={handleAnswerChange}
             initialValue={answers[question.id]}
+            index={startIndex + i + 1}
           />
         ))}
       </div>
 
-      <div className="flex gap-2 items-end">
+      <div className="flex gap-2">
         <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
-        <ItemsPerPageSelect value={questionsPerPage} onChange={onItemsPerPageChange} />
         <Button
           className="ml-auto"
           variant="flat"

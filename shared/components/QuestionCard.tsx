@@ -17,9 +17,10 @@ interface QuestionCardProps {
   readonly question: QuestionCardQuestion;
   readonly onAnswerChange: (questionId: number, value: string | string[]) => void;
   readonly initialValue?: string[];
+  readonly index?: number;
 }
 
-export function QuestionCard({ question, onAnswerChange, initialValue }: QuestionCardProps) {
+export function QuestionCard({ question, onAnswerChange, initialValue, index }: QuestionCardProps) {
   const { t } = useTranslation();
   const [currentSelection, setCurrentSelection] = useState<string[]>(initialValue ?? []);
 
@@ -63,7 +64,9 @@ export function QuestionCard({ question, onAnswerChange, initialValue }: Questio
     <div className="bg-content1 border border-default-200 rounded-xl p-5">
       <div className="pb-3 mb-3 border-b border-divider">
         <h4 className="font-semibold text-foreground text-sm leading-relaxed">
-          <span className="inline-block mr-2 text-default-400">{String(question.id).padStart(2, '0')}.</span>
+          <span className="inline-block mr-2 text-default-400">
+            {String(index ?? question.id).padStart(2, '0')}.
+          </span>
           {question.text}
         </h4>
       </div>

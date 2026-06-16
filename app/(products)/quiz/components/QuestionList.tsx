@@ -71,13 +71,14 @@ export function QuestionList({
             />
           </div>
           <div className="flex flex-col gap-3">
-            {visibleQuestions.map((question) =>
+            {visibleQuestions.map((question, i) =>
               !quiz?.isFinished ? (
                 <QuestionCard
                   key={question.id}
                   question={question}
                   onAnswerChange={handleAnswerChange}
                   initialValue={answers[question.id]}
+                  index={startIndex + i + 1}
                 />
               ) : (
                 <AnsweredQuestionCard key={question.id} question={question} answer={answers[question.id]} />
