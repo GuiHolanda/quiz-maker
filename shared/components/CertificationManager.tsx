@@ -3,10 +3,6 @@
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { Select, SelectItem } from '@heroui/select';
-import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
-import { useDisclosure } from '@heroui/modal';
-import { useState } from 'react';
-import { Certification } from '@/shared/types';
 import { inputProperties } from '@/config/constants/inputStyles';
 
 interface CertificationManagerProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -21,19 +17,18 @@ export const CertificationManager = ({ isMultiple, noTopics, ...props }: Certifi
     selectedCertification,
     selectedTopics,
     setSelectedCertification,
-    removeCertification,
     setSelectedTopics,
   } = useCertificationsContext();
-  const onCertificationChange = (key: any) => {
-    const certification = certifications.find((cert) => cert.key === key);
+
+  const onCertificationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const certification = certifications.find((cert) => cert.key === e.target.value);
     setSelectedCertification(certification || null);
   };
 
   const onTopicsChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedValues = e.target.value;
     if (selectedValues) {
-      const selectedTopics = selectedValues.split(',');
-      setSelectedTopics(selectedTopics);
+      setSelectedTopics(selectedValues.split(','));
     } else {
       setSelectedTopics([]);
     }
@@ -41,21 +36,19 @@ export const CertificationManager = ({ isMultiple, noTopics, ...props }: Certifi
 
   return (
     <div className={props.className} {...props}>
-      <Autocomplete
+      <Select
         className={noTopics ? 'w-full' : 'w-2/3'}
         label={t('certification.selectCertification')}
         name="certificationTitle"
-        onSelectionChange={onCertificationChange}
-        selectedKey={selectedCertification?.key ?? ''}
+        onChange={onCertificationChange}
+        selectedKeys={selectedCertification ? [selectedCertification.key] : []}
         placeholder={t('certification.selectCertificationPlaceholder')}
-        {...inputProperties.autocomplete}
+        {...inputProperties.select}
       >
         {certifications.map((certification) => (
-          <AutocompleteItem key={certification.key} textValue={certification.label}>
-            {certification.label}
-          </AutocompleteItem>
+          <SelectItem key={certification.key}>{certification.label}</SelectItem>
         ))}
-      </Autocomplete>
+      </Select>
       {!noTopics && (
         <Select
           className="w-1/3"

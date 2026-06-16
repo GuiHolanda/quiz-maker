@@ -3,7 +3,6 @@
 import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { Select, SelectItem } from '@heroui/select';
-import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
 import { inputProperties } from '@/config/constants/inputStyles';
 
 interface PublicExamManagerProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -24,8 +23,8 @@ export const PublicExamManager = ({ isMultiple, noSubjects, showTopic, ...props 
     setSelectedTopic,
   } = usePublicExamsContext();
 
-  const onPublicExamChange = (key: any) => {
-    const exam = publicExams.find((p) => p.id === key);
+  const onPublicExamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const exam = publicExams.find((p) => p.id === e.target.value);
     setSelectedPublicExam(exam || null);
     setSelectedSubjects([]);
     setSelectedTopic(null);
@@ -58,22 +57,21 @@ export const PublicExamManager = ({ isMultiple, noSubjects, showTopic, ...props 
 
   return (
     <div className={props.className} {...props}>
-      <Autocomplete
+      <Select
         className={baseColWidth}
         label={t('concurso.selectPublicExam')}
         name="publicExamName"
-        onSelectionChange={onPublicExamChange}
-        selectedKey={selectedPublicExam?.id ?? ''}
+        onChange={onPublicExamChange}
+        selectedKeys={selectedPublicExam ? [selectedPublicExam.id ?? selectedPublicExam.name] : []}
         placeholder={t('concurso.selectPublicExamPlaceholder')}
-        {...inputProperties.autocomplete}
+        {...inputProperties.select}
       >
         {publicExams.map((exam) => (
-          <AutocompleteItem key={exam.id ?? exam.name} textValue={exam.name}>
-            {exam.name}
-            {exam.examBoard?.name ? ` · ${exam.examBoard.name}` : ''}
-          </AutocompleteItem>
+          <SelectItem key={exam.id ?? exam.name}>
+            {exam.name}{exam.examBoard?.name ? ` · ${exam.examBoard.name}` : ''}
+          </SelectItem>
         ))}
-      </Autocomplete>
+      </Select>
       {!noSubjects && (
         <Select
           className={subjectColWidth}
