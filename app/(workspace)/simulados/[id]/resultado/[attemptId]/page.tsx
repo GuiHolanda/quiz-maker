@@ -70,7 +70,7 @@ export default function SimuladoResultadoPage() {
   return (
     <>
       <PageHeader title={t('simulado.scoreTitle')} subtitle={examName}>
-        <div className="px-6 pb-8 flex flex-col gap-6">
+        <div className="flex flex-col gap-6">
           {renderInfoCard()}
           {renderSubjectAccordion()}
         </div>
