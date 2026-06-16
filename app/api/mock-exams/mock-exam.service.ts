@@ -1,4 +1,4 @@
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { CreateMockExamPayload, MockExamSubjectConfig } from '@/shared/types';
 
 export class MockExamService {
