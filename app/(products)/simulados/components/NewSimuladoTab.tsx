@@ -84,6 +84,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
         onValueChange={setName}
         variant="bordered"
         labelPlacement="outside"
+        autoComplete="off"
       />
 
       <PublicExamManager noSubjects />

@@ -64,11 +64,14 @@ export const PublicExamManager = ({ isMultiple, noSubjects, showTopic, ...props 
         onChange={onPublicExamChange}
         selectedKeys={selectedPublicExam ? [selectedPublicExam.id ?? selectedPublicExam.name] : []}
         placeholder={t('concurso.selectPublicExamPlaceholder')}
+        autoComplete="off"
         {...inputProperties.select}
       >
         {publicExams.map((exam) => (
-          <SelectItem key={exam.id ?? exam.name}>
-            {exam.name}{exam.examBoard?.name ? ` · ${exam.examBoard.name}` : ''}
+          <SelectItem key={exam.id ?? exam.name} textValue={exam.name}>
+            {exam.name}
+            {exam.role ? ` · ${exam.role}` : ''}
+            {exam.examBoard?.name ? ` · ${exam.examBoard.name}` : ''}
           </SelectItem>
         ))}
       </Select>
