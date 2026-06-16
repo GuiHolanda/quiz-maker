@@ -150,7 +150,7 @@ export const Navbar = () => {
                 </DropdownTrigger>
                 <DropdownMenu aria-label={t('nav.certificates')} className="font-sans">
                   {PRODUCT_ITEMS.map((item) => (
-                    <DropdownItem key={item.href} as={NextLink} href={item.href} textValue={t(item.label)}>
+                    <DropdownItem key={item.href} as={NextLink} href={item.href}>
                       <span className="text-sm">{t(item.label)}</span>
                     </DropdownItem>
                   ))}
@@ -167,7 +167,7 @@ export const Navbar = () => {
                 </DropdownTrigger>
                 <DropdownMenu aria-label={t('nav.concursos')} className="font-sans">
                   {CONCURSO_ITEMS.map((item) => (
-                    <DropdownItem key={item.href} as={NextLink} href={item.href} textValue={t(item.label)}>
+                    <DropdownItem key={item.href} as={NextLink} href={item.href}>
                       <span className="text-sm">{t(item.label)}</span>
                     </DropdownItem>
                   ))}
