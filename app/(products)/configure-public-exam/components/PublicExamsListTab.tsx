@@ -112,6 +112,7 @@ export function PublicExamsListTab() {
         itemClasses={{
           base: 'bg-content1 border border-default-200 rounded-xl',
           title: 'text-sm text-foreground font-semibold',
+          titleWrapper: 'flex-1 flex flex-col text-start min-w-0 overflow-hidden',
           trigger: 'px-4 py-3 hover:bg-default-100 rounded-xl transition-colors duration-200',
           content: 'px-4 pb-4',
           indicator: 'text-default-400',
