@@ -1,5 +1,6 @@
 import { CertificationsState } from "@/features/reducers/certifications.reducer";
 import { PublicExamsState } from "@/features/reducers/publicExams.reducer";
+import { MockExamsState } from "@/features/reducers/mockExams.reducer";
 
 export const CERTIFICATION_GENERATOR_URL = "/certification/question-generator";
 export const GET_CERTIFICATION_ANSWERS_URL = '/certification/get-answers';
@@ -173,3 +174,7 @@ export const INITIAL_PUBLIC_EXAMS_STATE: PublicExamsState = {
 
 export const MOCK_EXAMS_URL = '/mock-exams';
 export const MOCK_EXAMS_LOCAL_STORAGE_KEY = 'MOCK_EXAMS';
+
+export const INITIAL_MOCK_EXAMS_STATE: MockExamsState = {
+  mockExams: [],
+};
