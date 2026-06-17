@@ -3,20 +3,22 @@ import { AIPublicExamQuestion } from '@/shared/types';
 interface GetAnswersParams {
   public_exam_name: string;
   exam_board_name: string;
+  role?: string;
   subject_name: string;
   topic_name?: string;
   questions: AIPublicExamQuestion[];
 }
 
 export function buildGetPublicExamAnswersPrompt(params: GetAnswersParams): string {
-  const { public_exam_name, exam_board_name, subject_name, topic_name, questions } = params;
+  const { public_exam_name, exam_board_name, role, subject_name, topic_name, questions } = params;
   const topicoLine = topic_name ? `\n- Tópico: ${topic_name}` : '';
+  const cargoLine = role ? `\n- Cargo pretendido: ${role}` : '';
 
   return `Você é um especialista em concursos públicos brasileiros validando o gabarito de questões.
 
 CONTEXTO:
 - Concurso: ${public_exam_name}
-- Banca: ${exam_board_name}
+- Banca: ${exam_board_name}${cargoLine}
 - Matéria: ${subject_name}${topicoLine}
 
 QUESTÕES:

@@ -4,6 +4,7 @@ import { AIPublicExamQuestion } from '@/shared/types';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { buildGetPublicExamAnswersPrompt } from '@/config/promptSchemas/getPublicExamAnswers';
 import { auth } from '@/auth';
+import { prisma } from '@/lib/prisma';
 
 const questionService = new PublicExamQuestionService();
 const openAIService = new OpenAIService();
@@ -20,9 +21,15 @@ export async function POST(request: NextRequest) {
     const questions: AIPublicExamQuestion[] = validateAiQuestions(payload) as AIPublicExamQuestion[];
     const { publicExamName, examBoardName, subject, topic } = questions[0];
 
+    const publicExam = await prisma.publicExam.findFirst({
+      where: { name: publicExamName, userId: session.user.id },
+      select: { role: true },
+    });
+
     const prompt = buildGetPublicExamAnswersPrompt({
       public_exam_name: publicExamName,
       exam_board_name: examBoardName,
+      role: publicExam?.role ?? undefined,
       subject_name: subject,
       topic_name: topic,
       questions,
