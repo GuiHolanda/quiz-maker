@@ -89,15 +89,31 @@ describe('QuizGeneratorService.distributeQuestions', () => {
   });
 
   it('topics that receive 0 questions are removed from the result map', () => {
-    // A topic with a very low max relative to total that might get 0 allocation
-    // min=0.0 and max=0.0 forces 0 count and should be removed
+    // B has a small weight that gets crowded out: A absorbs all remaining after minimums
+    // A: min=0.5→floor(1), max=1.0→ceil(3); B: min=0.0→0, max=0.1→ceil(1)
+    // remaining after minimums = 3-1 = 2; A can absorb 2 more (up to 3), so A=3, B=0
     const topics = [
-      makeTopic('Active', 0.5, 1.0),
-      makeTopic('Inactive', 0.0, 0.0),
+      makeTopic('A', 0.5, 1.0),
+      makeTopic('B', 0.0, 0.1),
     ];
-    const total = 4;
+    const total = 3;
     const result = service.distributeQuestions(topics, total);
-    expect(result.has('Inactive')).toBe(false);
-    expect(result.has('Active')).toBe(true);
+    expect(result.has('B')).toBe(false);
+    expect(result.get('A')).toBe(3);
+  });
+
+  it('overflow bucket fires when sum(max) < 1.0 — result still sums to total and top topic exceeds its ceiling', () => {
+    // A: min=0.2→2, max=0.4→4; B: min=0.2→2, max=0.4→4; sum(max)=0.8 < 1.0
+    // After normal pass: A=4, B=4, remaining=2 → overflow adds 2 to sorted[0]
+    const topics = [
+      makeTopic('A', 0.2, 0.4),
+      makeTopic('B', 0.2, 0.4),
+    ];
+    const total = 10;
+    const result = service.distributeQuestions(topics, total);
+    expect(sumAllocation(result)).toBe(10);
+    const ceiling = Math.ceil(0.4 * total); // 4
+    const overflowRecipient = [...topics].sort((a, b) => Math.ceil(b.maxQuestions * total) - Math.ceil(a.maxQuestions * total))[0].name;
+    expect(result.get(overflowRecipient)).toBeGreaterThan(ceiling);
   });
 });
