@@ -73,7 +73,7 @@ function HeroSection() {
           <div className="flex flex-col sm:flex-row gap-4 pt-2">
             <Button
               as={NextLink}
-              href="/quiz"
+              href="/certifications/quiz"
               size="lg"
               className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
             >
@@ -81,7 +81,7 @@ function HeroSection() {
             </Button>
             <Button
               as={NextLink}
-              href="/generate-questions"
+              href="/certifications/generate"
               variant="bordered"
               size="lg"
               className="border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold transition-colors duration-200 rounded-lg"

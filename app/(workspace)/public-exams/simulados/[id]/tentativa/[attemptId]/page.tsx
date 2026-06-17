@@ -71,7 +71,7 @@ export default function SimuladoTentativaPage() {
       });
 
       await finishMockExamAttempt(Number(params.id), Number(params.attemptId), { answers: attemptAnswers, score });
-      router.push(`/simulados/${params.id}/resultado/${params.attemptId}`);
+      router.push(`/public-exams/simulados/${params.id}/resultado/${params.attemptId}`);
     } catch {
       setIsFinishing(false);
     }

@@ -59,7 +59,7 @@ export default function SimuladoResultadoPage() {
     setIsStarting(true);
     try {
       const attempt = await startMockExamAttempt(Number(params.id));
-      router.push(`/simulados/${params.id}/tentativa/${attempt.id}`);
+      router.push(`/public-exams/simulados/${params.id}/tentativa/${attempt.id}`);
     } finally {
       setIsStarting(false);
     }
@@ -105,7 +105,7 @@ export default function SimuladoResultadoPage() {
           <Button color="primary" isLoading={isStarting} onPress={handleTryAgain}>
             {t('simulado.tryAgain')}
           </Button>
-          <Button variant="bordered" onPress={() => router.push('/simulados')}>
+          <Button variant="bordered" onPress={() => router.push('/public-exams/simulados')}>
             {t('simulado.backToList')}
           </Button>
         </div>

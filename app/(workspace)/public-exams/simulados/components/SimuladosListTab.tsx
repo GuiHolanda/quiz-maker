@@ -34,7 +34,7 @@ export function SimuladosListTab() {
     setStartingId(mockExam.id);
     try {
       const attempt = await startMockExamAttempt(mockExam.id);
-      router.push(`/simulados/${mockExam.id}/tentativa/${attempt.id}`);
+      router.push(`/public-exams/simulados/${mockExam.id}/tentativa/${attempt.id}`);
     } catch (e: unknown) {
       addToast({
         title: t('toast.error'),
@@ -203,7 +203,7 @@ export function SimuladosListTab() {
           variant="bordered"
           onPress={() => {
             setHistoryTarget(null);
-            router.push(`/simulados/${m.id}/resultado/${attempt.id}`);
+            router.push(`/public-exams/simulados/${m.id}/resultado/${attempt.id}`);
           }}
         >
           {t('simulado.viewAttempt')}
