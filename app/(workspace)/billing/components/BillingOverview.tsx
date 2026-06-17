@@ -4,7 +4,7 @@ import { Button } from '@heroui/button';
 import { addToast } from '@heroui/toast';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { UsageCard } from '@/app/(products)/billing/components/UsageCard';
+import { UsageCard } from '@/app/(workspace)/billing/components/UsageCard';
 import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
 import { getBillingUsage, getPortalUrl } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';

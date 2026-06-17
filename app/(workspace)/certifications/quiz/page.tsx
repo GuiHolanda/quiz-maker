@@ -1,11 +1,11 @@
 'use client';
 import { useState } from 'react';
 import { StoredQuestion } from '@/shared/types';
-import { QuestionList } from '@/app/(products)/quiz/components/QuestionList';
+import { QuestionList } from '@/app/(workspace)/certifications/quiz/components/QuestionList';
 import { QuizProvider } from '@/features/providers/quiz.provider';
 import { CertificationsProvider } from '@/features/providers/certifications.provider';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
-import { QuizForm } from '@/app/(products)/quiz/components/QuizForm';
+import { QuizForm } from '@/app/(workspace)/certifications/quiz/components/QuizForm';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 

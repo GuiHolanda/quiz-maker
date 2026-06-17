@@ -1,6 +1,6 @@
 'use client';
 
-import { BillingOverview } from '@/app/(products)/billing/components/BillingOverview';
+import { BillingOverview } from '@/app/(workspace)/billing/components/BillingOverview';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 

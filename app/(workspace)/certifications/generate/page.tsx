@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { AIQuestion } from '@/shared/types';
 import { QuizProvider } from '@/features/providers/quiz.provider';
 import { CertificationsProvider } from '@/features/providers/certifications.provider';
-import { GeneratedQuestionsList } from '@/app/(products)/generate-questions/components/GeneratedQuestionsList';
+import { GeneratedQuestionsList } from '@/app/(workspace)/certifications/generate/components/GeneratedQuestionsList';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
