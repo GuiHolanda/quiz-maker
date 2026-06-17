@@ -17,21 +17,21 @@ export function CertificationHeader({ title, code, onTitleChange, onCodeChange }
   return (
     <div className="flex gap-4 mb-4">
       <Input
-        label={t('certification.certificationTitle')}
-        type="text"
         className="w-2/3"
+        label={t('certification.certificationTitle')}
+        placeholder={t('certification.certificationTitlePlaceholder')}
+        type="text"
         value={title}
         onChange={(e) => onTitleChange(e.target.value)}
-        placeholder={t('certification.certificationTitlePlaceholder')}
         {...inputProperties.input}
       />
       <Input
-        label={t('certification.certificationCode')}
-        type="text"
         className="w-1/3"
+        label={t('certification.certificationCode')}
+        placeholder={t('certification.certificationCodePlaceholder')}
+        type="text"
         value={code}
         onChange={(e) => onCodeChange(e.target.value)}
-        placeholder={t('certification.certificationCodePlaceholder')}
         {...inputProperties.input}
       />
     </div>

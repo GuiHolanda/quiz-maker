@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { lemonSqueezySetup, getSubscription } from '@lemonsqueezy/lemonsqueezy.js';
+
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
@@ -7,6 +8,7 @@ lemonSqueezySetup({ apiKey: process.env.LEMONSQUEEZY_API_KEY! });
 
 export async function GET() {
   const session = await auth();
+
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -27,6 +29,7 @@ export async function GET() {
   }
 
   const portalUrl = data.data.attributes.urls?.customer_portal;
+
   if (!portalUrl) {
     return NextResponse.json({ error: 'Portal URL not available' }, { status: 500 });
   }

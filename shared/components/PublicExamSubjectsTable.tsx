@@ -3,6 +3,10 @@
 import { useCallback, useRef, useState } from 'react';
 import { Button } from '@heroui/button';
 import { addToast } from '@heroui/toast';
+
+import { SubjectRow } from './PublicExamSubjectsTable/SubjectRow';
+import { AddSubjectRow } from './PublicExamSubjectsTable/AddSubjectRow';
+
 import { PublicExam, PublicExamSubject, PublicExamTopic } from '@/shared/types';
 import {
   updatePublicExamSubject,
@@ -13,9 +17,6 @@ import {
   updatePublicExamTopic,
 } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { SubjectRow } from './PublicExamSubjectsTable/SubjectRow';
-import { AddSubjectRow } from './PublicExamSubjectsTable/AddSubjectRow';
-
 
 interface PublicExamSubjectsTableProps {
   readonly selectedPublicExam: PublicExam | null;
@@ -56,6 +57,7 @@ export function PublicExamSubjectsTable({
   const persistSliderChange = useCallback(
     (subjectId: string, subject: PublicExamSubject, field: 'minQuestions' | 'maxQuestions', value: number) => {
       const timerKey = `${subjectId}-${field}`;
+
       if (debounceTimers.current[timerKey]) clearTimeout(debounceTimers.current[timerKey]);
       debounceTimers.current[timerKey] = setTimeout(async () => {
         try {
@@ -65,11 +67,15 @@ export function PublicExamSubjectsTable({
             maxQuestions: field === 'maxQuestions' ? value : subject.maxQuestions,
           });
         } catch {
-          addToast({ title: t('toast.error'), description: t('toast.failedToUpdate', { name: subject.name }), color: 'danger' });
+          addToast({
+            title: t('toast.error'),
+            description: t('toast.failedToUpdate', { name: subject.name }),
+            color: 'danger',
+          });
         }
       }, 600);
     },
-    [t],
+    [t]
   );
 
   const handleSliderChange = useCallback(
@@ -78,7 +84,7 @@ export function PublicExamSubjectsTable({
       onSubjectChanged?.(subject.id, field, value);
       persistSliderChange(subject.id, subject, field, value);
     },
-    [onSubjectChanged, persistSliderChange],
+    [onSubjectChanged, persistSliderChange]
   );
 
   const handleUpdate = useCallback(
@@ -86,9 +92,13 @@ export function PublicExamSubjectsTable({
       if (!subject.id) return;
       await updatePublicExamSubject({ subjectId: subject.id, newName, minQuestions: min, maxQuestions: max });
       onSubjectUpdated?.(subject.id, newName, min, max);
-      addToast({ title: t('toast.success'), description: t('toast.subjectUpdated', { name: newName }), color: 'success' });
+      addToast({
+        title: t('toast.success'),
+        description: t('toast.subjectUpdated', { name: newName }),
+        color: 'success',
+      });
     },
-    [onSubjectUpdated, t],
+    [onSubjectUpdated, t]
   );
 
   const handleRemove = useCallback(
@@ -97,34 +107,45 @@ export function PublicExamSubjectsTable({
       try {
         await deletePublicExamSubject(subjectId);
         onSubjectRemoved?.(subjectId);
-        addToast({ title: t('toast.success'), description: t('toast.subjectRemoved', { name: subjectName }), color: 'success' });
+        addToast({
+          title: t('toast.success'),
+          description: t('toast.subjectRemoved', { name: subjectName }),
+          color: 'success',
+        });
       } catch {
-        addToast({ title: t('toast.error'), description: t('toast.failedToUpdate', { name: subjectName }), color: 'danger' });
+        addToast({
+          title: t('toast.error'),
+          description: t('toast.failedToUpdate', { name: subjectName }),
+          color: 'danger',
+        });
       } finally {
         setRemovingId(null);
       }
     },
-    [onSubjectRemoved, t],
+    [onSubjectRemoved, t]
   );
 
   const handleAddSubject = useCallback(
     async (name: string, min: number, max: number) => {
       if (!selectedPublicExam?.id) return;
       const subject = await addPublicExamSubject(selectedPublicExam.id, name, min, max);
+
       onSubjectAdded?.(subject);
       setIsAddingSubject(false);
       addToast({ title: t('toast.success'), description: t('toast.subjectAdded', { name }), color: 'success' });
     },
-    [selectedPublicExam, onSubjectAdded, t],
+    [selectedPublicExam, onSubjectAdded, t]
   );
 
   const handleAddTopic = useCallback(
     async (subjectId: string, name: string) => {
       const topic = await addPublicExamTopic(subjectId, name);
+
       addToast({ title: t('toast.success'), description: t('toast.topicAdded', { name }), color: 'success' });
+
       return topic;
     },
-    [t],
+    [t]
   );
 
   const handleRemoveTopic = useCallback(
@@ -133,16 +154,20 @@ export function PublicExamSubjectsTable({
       onTopicRemoved?.(subjectId, topicId);
       addToast({ title: t('toast.success'), description: t('toast.topicRemoved', { name }), color: 'success' });
     },
-    [onTopicRemoved, t],
+    [onTopicRemoved, t]
   );
 
   const handleUpdateTopic = useCallback(
     async (subjectId: string, topicId: string, newName: string) => {
       await updatePublicExamTopic(topicId, newName);
       onTopicUpdated?.(subjectId, topicId, newName);
-      addToast({ title: t('toast.success'), description: t('toast.topicUpdated', { name: newName }), color: 'success' });
+      addToast({
+        title: t('toast.success'),
+        description: t('toast.topicUpdated', { name: newName }),
+        color: 'success',
+      });
     },
-    [onTopicUpdated, t],
+    [onTopicUpdated, t]
   );
 
   if (subjects.length === 0 && !isAddingSubject) {
@@ -181,12 +206,7 @@ export function PublicExamSubjectsTable({
             </thead>
             <tbody>
               {subjects.map((subject, index) => renderSubjectRow(subject, index))}
-              {isAddingSubject && (
-                <AddSubjectRow
-                  onAdd={handleAddSubject}
-                  onCancel={() => setIsAddingSubject(false)}
-                />
-              )}
+              {isAddingSubject && <AddSubjectRow onAdd={handleAddSubject} onCancel={() => setIsAddingSubject(false)} />}
             </tbody>
           </table>
         </div>
@@ -199,53 +219,28 @@ export function PublicExamSubjectsTable({
     return (
       <SubjectRow
         key={subject.id ?? subject.name}
-        subject={subject}
+        addTopic={onTopicAdded && subject.id ? (name) => handleAddTopic(subject.id!, name) : undefined}
+        editable={editable}
         index={index}
         isLast={!isAddingSubject && index === subjects.length - 1}
-        editable={editable}
         isRemoving={removingId === subject.id}
-        onSliderChange={
-          editable
-            ? (field, value) => handleSliderChange(subject, field, value)
-            : undefined
-        }
-        onUpdate={
-          onSubjectUpdated
-            ? (newName, min, max) => handleUpdate(subject, newName, min, max)
-            : undefined
-        }
-        onRemove={
-          onSubjectRemoved && subject.id
-            ? () => handleRemove(subject.id!, subject.name)
-            : undefined
-        }
-        onTopicAdded={
-          onTopicAdded && subject.id
-            ? (topic) => onTopicAdded(subject.id!, topic)
-            : undefined
-        }
-        onTopicRemoved={
-          onTopicRemoved && subject.id
-            ? (topicId) => onTopicRemoved(subject.id!, topicId)
-            : undefined
-        }
-        addTopic={
-          onTopicAdded && subject.id
-            ? (name) => handleAddTopic(subject.id!, name)
-            : undefined
-        }
         removeTopic={
-          onTopicRemoved && subject.id
-            ? (topicId, name) => handleRemoveTopic(subject.id!, topicId, name)
-            : undefined
+          onTopicRemoved && subject.id ? (topicId, name) => handleRemoveTopic(subject.id!, topicId, name) : undefined
         }
+        subject={subject}
         updateTopic={(topicId, newName) => handleUpdateTopic(subject.id!, topicId, newName)}
+        onRemove={onSubjectRemoved && subject.id ? () => handleRemove(subject.id!, subject.name) : undefined}
+        onSliderChange={editable ? (field, value) => handleSliderChange(subject, field, value) : undefined}
+        onTopicAdded={onTopicAdded && subject.id ? (topic) => onTopicAdded(subject.id!, topic) : undefined}
+        onTopicRemoved={onTopicRemoved && subject.id ? (topicId) => onTopicRemoved(subject.id!, topicId) : undefined}
+        onUpdate={onSubjectUpdated ? (newName, min, max) => handleUpdate(subject, newName, min, max) : undefined}
       />
     );
   }
 
   function renderTableFooter() {
     if (isAddingSubject || (!onSubjectAdded && !onEditPublicExam)) return null;
+
     return (
       <div className="mt-3 flex gap-2">
         {onEditPublicExam && renderEditExamButton()}
@@ -257,9 +252,9 @@ export function PublicExamSubjectsTable({
   function renderEditExamButton() {
     return (
       <Button
+        className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
         size="sm"
         variant="flat"
-        className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
         onPress={onEditPublicExam}
       >
         {t('concurso.editPublicExam')}
@@ -270,9 +265,9 @@ export function PublicExamSubjectsTable({
   function renderAddSubjectButton() {
     return (
       <Button
+        className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
         size="sm"
         variant="flat"
-        className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
         onPress={() => setIsAddingSubject(true)}
       >
         {t('concurso.addSubject')}

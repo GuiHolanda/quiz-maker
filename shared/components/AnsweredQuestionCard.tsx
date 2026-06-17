@@ -3,9 +3,11 @@
 import { Alert } from '@heroui/alert';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleCheck, faCircleXmark } from '@fortawesome/free-solid-svg-icons';
+
+import { QuestionCardQuestion } from './QuestionCard';
+
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { Answer } from '@/shared/types';
-import { QuestionCardQuestion } from './QuestionCard';
 
 interface AnsweredQuestion extends QuestionCardQuestion {
   answer?: Answer | null;
@@ -27,15 +29,17 @@ export function AnsweredQuestionCard({ question, answer }: AnsweredQuestionCardP
       const isCorrect = correct.has(key);
       const isSelected = selected.has(key);
       let color: 'success' | 'danger' | undefined = undefined;
+
       if (isSelected && isCorrect) color = 'success';
       else if (isSelected && !isCorrect) color = 'danger';
+
       return (
         <Alert
-          hideIconWrapper
           key={key}
+          hideIconWrapper
+          classNames={{ title: 'text-xs', description: 'text-xs', base: 'py-1 px-2', alertIcon: 'w-6 h-6' }}
           color={color}
           title={typeof val === 'string' ? val : JSON.stringify(val)}
-          classNames={{ title: 'text-xs', description: 'text-xs', base: 'py-1 px-2', alertIcon: 'w-6 h-6' }}
         />
       );
     });
@@ -44,11 +48,11 @@ export function AnsweredQuestionCard({ question, answer }: AnsweredQuestionCardP
   function renderExplanations() {
     return Object.entries(question.answer?.explanations ?? {}).map(([key, val]) => (
       <Alert
-        hideIconWrapper
         key={key}
+        hideIconWrapper
+        classNames={{ title: 'text-xs', description: 'text-xs', base: 'py-1 px-2', alertIcon: 'w-6 h-6' }}
         color={correct.has(key) ? 'success' : 'danger'}
         title={typeof val === 'string' ? val : JSON.stringify(val)}
-        classNames={{ title: 'text-xs', description: 'text-xs', base: 'py-1 px-2', alertIcon: 'w-6 h-6' }}
       />
     ));
   }
@@ -63,9 +67,9 @@ export function AnsweredQuestionCard({ question, answer }: AnsweredQuestionCardP
               {question.text}
             </h4>
             {isCorrectlyAnswered ? (
-              <FontAwesomeIcon icon={faCircleCheck} className="text-success text-xl flex-shrink-0 ml-3" />
+              <FontAwesomeIcon className="text-success text-xl flex-shrink-0 ml-3" icon={faCircleCheck} />
             ) : (
-              <FontAwesomeIcon icon={faCircleXmark} className="text-danger text-xl flex-shrink-0 ml-3" />
+              <FontAwesomeIcon className="text-danger text-xl flex-shrink-0 ml-3" icon={faCircleXmark} />
             )}
           </div>
         </div>

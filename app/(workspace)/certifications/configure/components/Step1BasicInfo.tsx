@@ -6,9 +6,10 @@ import { Input } from '@heroui/input';
 import { Select, SelectItem } from '@heroui/select';
 import { addToast } from '@heroui/toast';
 
+import { StepHeader } from './StepHeader';
+
 import { inputProperties } from '@/config/constants/inputStyles';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { StepHeader } from './StepHeader';
 
 interface Step1BasicInfoProps {
   readonly title: string;
@@ -30,22 +31,32 @@ const PROVIDERS = [
 ] as const;
 
 export function Step1BasicInfo({
-  title, code, provider,
-  onTitleChange, onCodeChange, onProviderChange,
-  onBack, onNext,
+  title,
+  code,
+  provider,
+  onTitleChange,
+  onCodeChange,
+  onProviderChange,
+  onBack,
+  onNext,
 }: Step1BasicInfoProps) {
   const { t } = useTranslation();
 
   const handleNext = () => {
     if (!title.trim() || !code.trim()) {
       addToast({ title: t('toast.validationError'), description: t('error.titleCodeRequired'), color: 'danger' });
+
       return;
     }
     onNext();
   };
 
   const handleSaveDraft = () => {
-    addToast({ title: t('toast.success'), description: t('toast.savedSuccessfully', { title: title || t('certification.certificationTitlePlaceholder') }), color: 'success' });
+    addToast({
+      title: t('toast.success'),
+      description: t('toast.savedSuccessfully', { title: title || t('certification.certificationTitlePlaceholder') }),
+      color: 'success',
+    });
   };
 
   return (
@@ -71,7 +82,7 @@ export function Step1BasicInfo({
             label={t('certification.provider')}
             placeholder={t('certification.providerPlaceholder')}
             selectedKeys={provider ? [provider] : []}
-            onSelectionChange={(keys) => onProviderChange(Array.from(keys)[0] as string ?? '')}
+            onSelectionChange={(keys) => onProviderChange((Array.from(keys)[0] as string) ?? '')}
             {...inputProperties.select}
           >
             {PROVIDERS.map((p) => (
@@ -91,7 +102,7 @@ export function Step1BasicInfo({
           {/* Tip box — full width */}
           <div className="col-span-full flex items-start gap-4 p-4 bg-background border border-default-200 rounded-xl">
             <div className="flex-shrink-0 w-10 h-10 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-center">
-              <FontAwesomeIcon icon={faCircleInfo} className="text-primary text-base" />
+              <FontAwesomeIcon className="text-primary text-base" icon={faCircleInfo} />
             </div>
             <div className="flex flex-col gap-0.5">
               <span className="text-sm font-semibold text-foreground">{t('certification.tipTitle')}</span>
@@ -103,8 +114,8 @@ export function Step1BasicInfo({
         {/* Footer */}
         <div className="flex items-center justify-between pt-4 border-t border-default-200">
           <Button
-            variant="flat"
             className="bg-transparent text-default-400 hover:text-foreground text-xs font-semibold transition-colors"
+            variant="flat"
             onPress={handleSaveDraft}
           >
             {t('certification.saveAsDraft')}

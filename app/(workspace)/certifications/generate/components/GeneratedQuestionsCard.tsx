@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
-import { AIQuestion } from '@/shared/types';
 import { Checkbox } from '@heroui/checkbox';
 import { Listbox, ListboxItem } from '@heroui/listbox';
+
+import { AIQuestion } from '@/shared/types';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
@@ -18,6 +19,7 @@ export function GeneratedQuestionsCard({ question, index }: QuestionCardProps) {
   useEffect(() => {
     if (!state?.selectedAIQuestions) {
       setIsSelected(false);
+
       return;
     }
     setIsSelected(state.selectedAIQuestions.includes(question.id));
@@ -25,8 +27,10 @@ export function GeneratedQuestionsCard({ question, index }: QuestionCardProps) {
 
   const onCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { checked } = event.target;
+
     if (!state?.selectedAIQuestions) return;
     const selected = new Set(state.selectedAIQuestions);
+
     if (checked) {
       selected.add(index + 1);
       setIsSelected(true);
@@ -45,11 +49,15 @@ export function GeneratedQuestionsCard({ question, index }: QuestionCardProps) {
             <span className="inline-block mr-2 text-default-400">{index + 1}.</span>
             {question.text}
           </h4>
-          <Checkbox isSelected={isSelected} onChange={onCheckboxChange} className='ml-auto flex-shrink-0' />
+          <Checkbox className="ml-auto flex-shrink-0" isSelected={isSelected} onChange={onCheckboxChange} />
         </div>
       </div>
       <div>
-        <p className='text-default-400 text-xs font-semibold mb-2'>{t(question.correctCount === 1 ? 'generate.correctAnswer' : 'generate.correctAnswers', { count: question.correctCount })}</p>
+        <p className="text-default-400 text-xs font-semibold mb-2">
+          {t(question.correctCount === 1 ? 'generate.correctAnswer' : 'generate.correctAnswers', {
+            count: question.correctCount,
+          })}
+        </p>
         <Listbox
           aria-label={t('aria.options')}
           classNames={{
@@ -65,7 +73,7 @@ export function GeneratedQuestionsCard({ question, index }: QuestionCardProps) {
                 title: 'text-sm',
               }}
             >
-              <strong className='mr-2 text-primary'>{key}.</strong> {val}
+              <strong className="mr-2 text-primary">{key}.</strong> {val}
             </ListboxItem>
           ))}
         </Listbox>

@@ -1,6 +1,7 @@
+import type { UserPlan, QuotaAction, UsageStats } from '@/shared/types';
+
 import { prisma } from '@/lib/prisma';
 import { PLAN_LIMITS } from '@/config/constants';
-import type { UserPlan, QuotaAction, UsageStats } from '@/shared/types';
 
 const PERIOD_DAYS = 30;
 
@@ -30,11 +31,19 @@ export class QuotaService {
     if (action === 'generate_questions') {
       const used = user.questionsGeneratedThisPeriod;
       const limit = limits.questionsPerPeriod;
+
       if (used + count > limit) {
         const err = Object.assign(new Error(`Question generation limit reached (${limit}/period)`), {
           status: 403,
-          body: { error: 'quota_exceeded', message: `Question generation limit reached (${limit}/period)`, limit, used, plan },
+          body: {
+            error: 'quota_exceeded',
+            message: `Question generation limit reached (${limit}/period)`,
+            limit,
+            used,
+            plan,
+          },
         });
+
         throw err;
       }
     }
@@ -42,11 +51,19 @@ export class QuotaService {
     if (action === 'create_certification') {
       const certCount = await prisma.certification.count({ where: { userId } });
       const limit = limits.maxCertifications;
+
       if (limit !== Infinity && certCount >= limit) {
         const err = Object.assign(new Error(`Certification limit reached (${limit})`), {
           status: 403,
-          body: { error: 'quota_exceeded', message: `Certification limit reached (${limit})`, limit, used: certCount, plan },
+          body: {
+            error: 'quota_exceeded',
+            message: `Certification limit reached (${limit})`,
+            limit,
+            used: certCount,
+            plan,
+          },
         });
+
         throw err;
       }
     }

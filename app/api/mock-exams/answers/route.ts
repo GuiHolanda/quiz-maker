@@ -1,14 +1,17 @@
-import { auth } from '@/auth';
 import { NextRequest, NextResponse } from 'next/server';
+
+import { auth } from '@/auth';
 import { AIPublicExamQuestion } from '@/shared/types';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   const session = await auth();
+
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
     const questions: AIPublicExamQuestion[] = await request.json();
+
     if (!questions?.length) return NextResponse.json({ message: 'No questions', count: 0 });
 
     const questionIds = questions.map((q) => q.id) as number[];
@@ -34,6 +37,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'Answers generated', count: needsAnswer.length });
   } catch (e: unknown) {
     const status = (e as { status?: number }).status ?? 500;
+
     return NextResponse.json({ error: 'Internal Server Error', message: (e as Error).message }, { status });
   }
 }

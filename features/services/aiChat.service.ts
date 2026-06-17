@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+
 import { AI_CHAT_IDENTIFY_PROMPT } from '@/config/promptSchemas/aiChatIdentify';
 import { AI_CHAT_TOPICS_PROMPT } from '@/config/promptSchemas/aiChatTopics';
 
@@ -40,7 +41,9 @@ export class AiChatService {
       }
 
       if (msg.content.length > MAX_CONTENT_LENGTH) {
-        throw Object.assign(new Error(`Message content cannot exceed ${MAX_CONTENT_LENGTH} characters`), { status: 400 });
+        throw Object.assign(new Error(`Message content cannot exceed ${MAX_CONTENT_LENGTH} characters`), {
+          status: 400,
+        });
       }
 
       if (msg.content.trim() === '') continue;
@@ -56,15 +59,21 @@ export class AiChatService {
   }
 
   private selectPrompt(messages: { role: string; content: string }[]): string {
-    const hasAssistantMessage = messages.some(m => m.role === 'assistant');
+    const hasAssistantMessage = messages.some((m) => m.role === 'assistant');
+
     if (!hasAssistantMessage) return AI_CHAT_IDENTIFY_PROMPT;
+
     return AI_CHAT_TOPICS_PROMPT;
   }
 
-  async streamChat(messages: { role: 'user' | 'assistant'; content: string }[], language: string): Promise<ReadableStream> {
-    const languageInstruction = language === 'pt'
-      ? 'You MUST respond entirely in Brazilian Portuguese (pt-BR). Every word must be in Portuguese.'
-      : 'You MUST respond entirely in English.';
+  async streamChat(
+    messages: { role: 'user' | 'assistant'; content: string }[],
+    language: string
+  ): Promise<ReadableStream> {
+    const languageInstruction =
+      language === 'pt'
+        ? 'You MUST respond entirely in Brazilian Portuguese (pt-BR). Every word must be in Portuguese.'
+        : 'You MUST respond entirely in English.';
 
     const prompt = this.selectPrompt(messages);
 

@@ -1,4 +1,6 @@
 'use client';
+import type { ExamBoard } from '@/shared/types';
+
 import { useEffect, useState } from 'react';
 import { faArrowRight, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -7,12 +9,11 @@ import { Input } from '@heroui/input';
 import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
 import { addToast } from '@heroui/toast';
 
+import { StepHeader } from './StepHeader';
+
 import { inputProperties } from '@/config/constants/inputStyles';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { getExamBoards } from '@/features/connectors';
-import type { ExamBoard } from '@/shared/types';
-
-import { StepHeader } from './StepHeader';
 
 interface Step1BasicInfoProps {
   readonly name: string;
@@ -28,20 +29,30 @@ interface Step1BasicInfoProps {
 }
 
 export function Step1BasicInfo({
-  name, role, year, examBoardName,
-  onNameChange, onRoleChange, onYearChange, onExamBoardChange,
-  onBack, onNext,
+  name,
+  role,
+  year,
+  examBoardName,
+  onNameChange,
+  onRoleChange,
+  onYearChange,
+  onExamBoardChange,
+  onBack,
+  onNext,
 }: Step1BasicInfoProps) {
   const { t } = useTranslation();
   const [boards, setBoards] = useState<ExamBoard[]>([]);
 
   useEffect(() => {
-    getExamBoards().then(setBoards).catch(() => {});
+    getExamBoards()
+      .then(setBoards)
+      .catch(() => {});
   }, []);
 
   const handleNext = () => {
     if (!name.trim() || !examBoardName.trim()) {
       addToast({ title: t('toast.validationError'), description: t('error.nameAndBancaRequired'), color: 'danger' });
+
       return;
     }
     onNext();
@@ -72,10 +83,10 @@ export function Step1BasicInfo({
           </div>
 
           <Autocomplete
-            label={t('concurso.banca')}
-            placeholder={t('concurso.bancaPlaceholder')}
             allowsCustomValue
             inputValue={examBoardName}
+            label={t('concurso.banca')}
+            placeholder={t('concurso.bancaPlaceholder')}
             onInputChange={onExamBoardChange}
             {...inputProperties.autocomplete}
           >
@@ -103,7 +114,7 @@ export function Step1BasicInfo({
 
           <div className="col-span-full flex items-start gap-4 p-4 bg-background border border-default-200 rounded-xl">
             <div className="flex-shrink-0 w-10 h-10 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-center">
-              <FontAwesomeIcon icon={faCircleInfo} className="text-primary text-base" />
+              <FontAwesomeIcon className="text-primary text-base" icon={faCircleInfo} />
             </div>
             <div className="flex flex-col gap-0.5">
               <span className="text-sm font-semibold text-foreground">{t('concurso.tipTitle')}</span>
@@ -114,8 +125,8 @@ export function Step1BasicInfo({
 
         <div className="flex items-center justify-between pt-4 border-t border-default-200">
           <Button
-            variant="flat"
             className="bg-transparent text-default-400 hover:text-foreground text-xs font-semibold transition-colors"
+            variant="flat"
             onPress={handleSaveDraft}
           >
             {t('concurso.saveAsDraft')}

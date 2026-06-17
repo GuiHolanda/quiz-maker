@@ -1,5 +1,6 @@
-import { PublicExamSubject } from '@/shared/types';
 import { useEffect, useState } from 'react';
+
+import { PublicExamSubject } from '@/shared/types';
 
 const STORAGE_KEY = 'NEW_PUBLIC_EXAM_DRAFT';
 
@@ -24,24 +25,33 @@ const EMPTY_DRAFT: PublicExamDraft = {
 function readFromStorage(): PublicExamDraft {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
+
     if (raw) {
       const parsed = JSON.parse(raw);
+
       return { ...EMPTY_DRAFT, ...parsed };
     }
-  } catch { /* corrupted or unavailable storage */ }
+  } catch {
+    /* corrupted or unavailable storage */
+  }
+
   return EMPTY_DRAFT;
 }
 
 function writeToStorage(draft: PublicExamDraft) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
-  } catch { /* storage full or unavailable */ }
+  } catch {
+    /* storage full or unavailable */
+  }
 }
 
 function removeFromStorage() {
   try {
     localStorage.removeItem(STORAGE_KEY);
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 export function usePublicExamDraft() {
@@ -55,6 +65,7 @@ export function usePublicExamDraft() {
 
   useEffect(() => {
     const draft = readFromStorage();
+
     setName(draft.name);
     setRole(draft.role);
     setYear(draft.year);
@@ -79,9 +90,7 @@ export function usePublicExamDraft() {
   };
 
   const updateSubject = (index: number, name: string, minQuestions: number, maxQuestions: number) => {
-    setSubjects((prev) =>
-      prev.map((s, i) => (i === index ? { ...s, name, minQuestions, maxQuestions } : s)),
-    );
+    setSubjects((prev) => prev.map((s, i) => (i === index ? { ...s, name, minQuestions, maxQuestions } : s)));
   };
 
   const removeSubject = (index: number) => {
@@ -99,12 +108,17 @@ export function usePublicExamDraft() {
   };
 
   return {
-    name, setName,
-    role, setRole,
-    year, setYear,
-    examBoardName, setExamBoardName,
+    name,
+    setName,
+    role,
+    setRole,
+    year,
+    setYear,
+    examBoardName,
+    setExamBoardName,
     subjects,
-    subjectName, setSubjectName,
+    subjectName,
+    setSubjectName,
     addSubject,
     addEmptySubject,
     updateSubject,

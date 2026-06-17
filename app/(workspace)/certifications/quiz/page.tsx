@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+
 import { StoredQuestion } from '@/shared/types';
 import { QuestionList } from '@/app/(workspace)/certifications/quiz/components/QuestionList';
 import { QuizProvider } from '@/features/providers/quiz.provider';
@@ -47,7 +48,7 @@ function QuizPageContent({ questions, setQuestions }: Readonly<QuizPageContentPr
   };
 
   return (
-    <PageHeader title={t('quiz.pageTitle')} subtitle={t('quiz.pageSubtitle')}>
+    <PageHeader subtitle={t('quiz.pageSubtitle')} title={t('quiz.pageTitle')}>
       <QuizForm onGenerated={onQuestionsGenerated} />
 
       {(quiz?.questions ?? questions) && <QuestionList questions={quiz?.questions ?? questions ?? []} />}

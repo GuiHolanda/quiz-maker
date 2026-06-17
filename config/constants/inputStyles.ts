@@ -2,7 +2,7 @@
 // Resting: border-default-300 · Focus: border-primary · Label: xs, normal weight, muted
 // Height: md size = h-10 (40px) · Radius: rounded-lg (8px) · Transition: colors 200ms
 
-import { InputLabelPlacement, InputVariant } from "@/shared/types";
+import { InputLabelPlacement, InputVariant } from '@/shared/types';
 
 export const inputLabelClass = 'text-xs font-normal text-default-400';
 

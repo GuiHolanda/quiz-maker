@@ -1,5 +1,6 @@
-import { CertificationTopic } from '@/shared/types';
 import { useEffect, useState } from 'react';
+
+import { CertificationTopic } from '@/shared/types';
 
 const STORAGE_KEY = 'NEW_CERTIFICATION_DRAFT';
 
@@ -16,24 +17,33 @@ const EMPTY_DRAFT: CertificationDraft = { title: '', code: '', provider: '', top
 function readFromStorage(): CertificationDraft {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
+
     if (raw) {
       const parsed = JSON.parse(raw);
+
       return { ...EMPTY_DRAFT, ...parsed };
     }
-  } catch { /* corrupted or unavailable storage */ }
+  } catch {
+    /* corrupted or unavailable storage */
+  }
+
   return EMPTY_DRAFT;
 }
 
 function writeToStorage(draft: CertificationDraft) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
-  } catch { /* storage full or unavailable */ }
+  } catch {
+    /* storage full or unavailable */
+  }
 }
 
 function removeFromStorage() {
   try {
     localStorage.removeItem(STORAGE_KEY);
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 export function useCertificationDraft() {
@@ -46,6 +56,7 @@ export function useCertificationDraft() {
 
   useEffect(() => {
     const draft = readFromStorage();
+
     setTitle(draft.title);
     setCode(draft.code);
     setProvider(draft.provider);
@@ -69,7 +80,9 @@ export function useCertificationDraft() {
   };
 
   const updateTopic = (index: number, name: string, minWeightage: number, maxWeightage: number) => {
-    setTopics((prev) => prev.map((t, i) => i === index ? { ...t, name, minQuestions: minWeightage, maxQuestions: maxWeightage } : t));
+    setTopics((prev) =>
+      prev.map((t, i) => (i === index ? { ...t, name, minQuestions: minWeightage, maxQuestions: maxWeightage } : t))
+    );
   };
 
   const removeTopic = (index: number) => {
@@ -88,11 +101,15 @@ export function useCertificationDraft() {
   };
 
   return {
-    title, setTitle,
-    code, setCode,
-    provider, setProvider,
+    title,
+    setTitle,
+    code,
+    setCode,
+    provider,
+    setProvider,
     topics,
-    topicName, setTopicName,
+    topicName,
+    setTopicName,
     addTopic,
     addEmptyTopic,
     updateTopic,

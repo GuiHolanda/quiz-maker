@@ -64,6 +64,7 @@ export function SectionsTable({
   const persistTopicChange = useCallback(
     (topicId: string, topic: CertificationTopic, field: 'minQuestions' | 'maxQuestions', value: number) => {
       const timerKey = `${topicId}-${field}`;
+
       if (debounceTimers.current[timerKey]) clearTimeout(debounceTimers.current[timerKey]);
       debounceTimers.current[timerKey] = setTimeout(async () => {
         try {
@@ -73,7 +74,11 @@ export function SectionsTable({
             maxQuestions: field === 'maxQuestions' ? value : topic.maxQuestions,
           });
         } catch {
-          addToast({ title: t('toast.error'), description: t('toast.failedToUpdate', { name: topic.name }), color: 'danger' });
+          addToast({
+            title: t('toast.error'),
+            description: t('toast.failedToUpdate', { name: topic.name }),
+            color: 'danger',
+          });
         }
       }, 600);
     },
@@ -107,9 +112,17 @@ export function SectionsTable({
       });
       onTopicUpdated?.(topicId, editState.name, editState.min, editState.max);
       setEditingTopicId(null);
-      addToast({ title: t('toast.success'), description: t('toast.topicUpdated', { name: editState.name }), color: 'success' });
+      addToast({
+        title: t('toast.success'),
+        description: t('toast.topicUpdated', { name: editState.name }),
+        color: 'success',
+      });
     } catch {
-      addToast({ title: t('toast.error'), description: t('toast.failedToUpdate', { name: editState.name }), color: 'danger' });
+      addToast({
+        title: t('toast.error'),
+        description: t('toast.failedToUpdate', { name: editState.name }),
+        color: 'danger',
+      });
     } finally {
       setSaving(false);
     }
@@ -120,9 +133,17 @@ export function SectionsTable({
     try {
       await deleteCertificationTopic(topicId);
       onTopicRemoved?.(topicId);
-      addToast({ title: t('toast.success'), description: t('toast.topicRemoved', { name: topicName }), color: 'success' });
+      addToast({
+        title: t('toast.success'),
+        description: t('toast.topicRemoved', { name: topicName }),
+        color: 'success',
+      });
     } catch {
-      addToast({ title: t('toast.error'), description: t('toast.failedToUpdate', { name: topicName }), color: 'danger' });
+      addToast({
+        title: t('toast.error'),
+        description: t('toast.failedToUpdate', { name: topicName }),
+        color: 'danger',
+      });
     } finally {
       setRemovingId(null);
     }
@@ -132,13 +153,27 @@ export function SectionsTable({
     if (!selectedCertification?.key || !addState.name.trim()) return;
     setAdding(true);
     try {
-      const topic = await addCertificationTopic(selectedCertification.key, addState.name.trim(), addState.min, addState.max);
+      const topic = await addCertificationTopic(
+        selectedCertification.key,
+        addState.name.trim(),
+        addState.min,
+        addState.max
+      );
+
       onTopicAdded?.(topic);
       setIsAddingTopic(false);
       setAddState({ name: '', min: 0, max: 0 });
-      addToast({ title: t('toast.success'), description: t('toast.topicAdded', { name: addState.name }), color: 'success' });
+      addToast({
+        title: t('toast.success'),
+        description: t('toast.topicAdded', { name: addState.name }),
+        color: 'success',
+      });
     } catch {
-      addToast({ title: t('toast.error'), description: t('toast.failedToUpdate', { name: addState.name }), color: 'danger' });
+      addToast({
+        title: t('toast.error'),
+        description: t('toast.failedToUpdate', { name: addState.name }),
+        color: 'danger',
+      });
     } finally {
       setAdding(false);
     }
@@ -152,9 +187,9 @@ export function SectionsTable({
           <div className="flex gap-2">
             {onEditCertification && (
               <Button
+                className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
                 size="sm"
                 variant="flat"
-                className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
                 onPress={onEditCertification}
               >
                 {t('certification.editCertification')}
@@ -162,9 +197,9 @@ export function SectionsTable({
             )}
             {onTopicAdded && (
               <Button
+                className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
                 size="sm"
                 variant="flat"
-                className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
                 onPress={() => setIsAddingTopic(true)}
               >
                 {t('certification.addTopic')}
@@ -178,243 +213,254 @@ export function SectionsTable({
 
   return (
     <>
-    <div className="w-full overflow-x-auto rounded-xl border border-default-200">
-      <table className="w-full border-collapse">
-        <thead className="bg-default-100">
-          <tr>
-            <th className={TH}>{t('certification.topicName')}</th>
-            <th className={TH}>{t('certification.minQuestions')}</th>
-            <th className={TH}>{t('certification.maxQuestions')}</th>
-            <th className={TH}>{t('certification.actions')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {topics.map((topic, index) => {
-            const isEditing = editingTopicId !== null && editingTopicId === topic.id;
-            const isLast = !isAddingTopic && index === topics.length - 1;
-            const tdClass = isLast ? TD_LAST : TD;
+      <div className="w-full overflow-x-auto rounded-xl border border-default-200">
+        <table className="w-full border-collapse">
+          <thead className="bg-default-100">
+            <tr>
+              <th className={TH}>{t('certification.topicName')}</th>
+              <th className={TH}>{t('certification.minQuestions')}</th>
+              <th className={TH}>{t('certification.maxQuestions')}</th>
+              <th className={TH}>{t('certification.actions')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {topics.map((topic, index) => {
+              const isEditing = editingTopicId !== null && editingTopicId === topic.id;
+              const isLast = !isAddingTopic && index === topics.length - 1;
+              const tdClass = isLast ? TD_LAST : TD;
 
-            return (
-              <tr key={topic.id ?? topic.name} className={index % 2 === 0 ? 'bg-content1' : 'bg-default-50'}>
-                <td className={tdClass}>
-                  {isEditing ? (
-                    <Input
-                      {...inputProperties.input}
-                      size="sm"
-                      value={editState.name}
-                      onChange={(e) => setEditState((s) => ({ ...s, name: e.target.value }))}
-                      onKeyDown={(e) => e.key === 'Enter' && saveEdit(topic.id!)}
-                      className="w-48"
-                    />
-                  ) : (
-                    topic.name
-                  )}
-                </td>
-
-                <td className={tdClass}>
-                  {isEditing ? (
-                    <Input
-                      {...inputProperties.input}
-                      size="sm"
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={String(editState.min)}
-                      onChange={(e) => setEditState((s) => ({ ...s, min: Math.min(100, Math.max(0, Number(e.target.value) || 0)) }))}
-                      onKeyDown={(e) => e.key === 'Enter' && saveEdit(topic.id!)}
-                      className="w-24"
-                      endContent={<span className="text-default-400 text-sm">%</span>}
-                    />
-                  ) : editable && topic.id ? (
-                    <Slider
-                      className="w-36"
-                      classNames={SLIDER_CLASS_NAMES}
-                      size="sm"
-                      value={topic.minQuestions}
-                      maxValue={100}
-                      minValue={0}
-                      showTooltip
-                      step={1}
-                      aria-label="minQuestions"
-                      onChange={(val) => handleSliderChange(topic, 'minQuestions', val as number)}
-                    />
-                  ) : (
-                    `${topic.minQuestions}%`
-                  )}
-                </td>
-
-                <td className={tdClass}>
-                  {isEditing ? (
-                    <Input
-                      {...inputProperties.input}
-                      size="sm"
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={String(editState.max)}
-                      onChange={(e) => setEditState((s) => ({ ...s, max: Math.min(100, Math.max(0, Number(e.target.value) || 0)) }))}
-                      onKeyDown={(e) => e.key === 'Enter' && saveEdit(topic.id!)}
-                      className="w-24"
-                      endContent={<span className="text-default-400 text-sm">%</span>}
-                    />
-                  ) : editable && topic.id ? (
-                    <Slider
-                      className="w-36"
-                      classNames={SLIDER_CLASS_NAMES}
-                      size="sm"
-                      value={topic.maxQuestions}
-                      maxValue={100}
-                      minValue={0}
-                      showTooltip
-                      step={1}
-                      aria-label="maxQuestions"
-                      onChange={(val) => handleSliderChange(topic, 'maxQuestions', val as number)}
-                    />
-                  ) : (
-                    `${topic.maxQuestions}%`
-                  )}
-                </td>
-
-                <td className={tdClass}>
-                  {isEditing ? (
-                    <div className="flex gap-2">
-                      <Button
+              return (
+                <tr key={topic.id ?? topic.name} className={index % 2 === 0 ? 'bg-content1' : 'bg-default-50'}>
+                  <td className={tdClass}>
+                    {isEditing ? (
+                      <Input
+                        {...inputProperties.input}
+                        className="w-48"
                         size="sm"
-                        className="bg-primary text-primary-foreground text-xs font-semibold rounded-lg hover:opacity-90 h-8 px-3 transition-opacity duration-200"
-                        isLoading={saving}
-                        onPress={() => saveEdit(topic.id!)}
-                      >
-                        {t('common.save')}
-                      </Button>
-                      <Button
+                        value={editState.name}
+                        onChange={(e) => setEditState((s) => ({ ...s, name: e.target.value }))}
+                        onKeyDown={(e) => e.key === 'Enter' && saveEdit(topic.id!)}
+                      />
+                    ) : (
+                      topic.name
+                    )}
+                  </td>
+
+                  <td className={tdClass}>
+                    {isEditing ? (
+                      <Input
+                        {...inputProperties.input}
+                        className="w-24"
+                        endContent={<span className="text-default-400 text-sm">%</span>}
+                        max={100}
+                        min={0}
                         size="sm"
-                        variant="bordered"
-                        className="border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold h-8 px-3 transition-colors duration-200"
-                        onPress={cancelEdit}
-                      >
-                        {t('common.cancel')}
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex gap-2">
-                      {onTopicUpdated && topic.id && (
+                        type="number"
+                        value={String(editState.min)}
+                        onChange={(e) =>
+                          setEditState((s) => ({ ...s, min: Math.min(100, Math.max(0, Number(e.target.value) || 0)) }))
+                        }
+                        onKeyDown={(e) => e.key === 'Enter' && saveEdit(topic.id!)}
+                      />
+                    ) : editable && topic.id ? (
+                      <Slider
+                        showTooltip
+                        aria-label="minQuestions"
+                        className="w-36"
+                        classNames={SLIDER_CLASS_NAMES}
+                        maxValue={100}
+                        minValue={0}
+                        size="sm"
+                        step={1}
+                        value={topic.minQuestions}
+                        onChange={(val) => handleSliderChange(topic, 'minQuestions', val as number)}
+                      />
+                    ) : (
+                      `${topic.minQuestions}%`
+                    )}
+                  </td>
+
+                  <td className={tdClass}>
+                    {isEditing ? (
+                      <Input
+                        {...inputProperties.input}
+                        className="w-24"
+                        endContent={<span className="text-default-400 text-sm">%</span>}
+                        max={100}
+                        min={0}
+                        size="sm"
+                        type="number"
+                        value={String(editState.max)}
+                        onChange={(e) =>
+                          setEditState((s) => ({ ...s, max: Math.min(100, Math.max(0, Number(e.target.value) || 0)) }))
+                        }
+                        onKeyDown={(e) => e.key === 'Enter' && saveEdit(topic.id!)}
+                      />
+                    ) : editable && topic.id ? (
+                      <Slider
+                        showTooltip
+                        aria-label="maxQuestions"
+                        className="w-36"
+                        classNames={SLIDER_CLASS_NAMES}
+                        maxValue={100}
+                        minValue={0}
+                        size="sm"
+                        step={1}
+                        value={topic.maxQuestions}
+                        onChange={(val) => handleSliderChange(topic, 'maxQuestions', val as number)}
+                      />
+                    ) : (
+                      `${topic.maxQuestions}%`
+                    )}
+                  </td>
+
+                  <td className={tdClass}>
+                    {isEditing ? (
+                      <div className="flex gap-2">
                         <Button
+                          className="bg-primary text-primary-foreground text-xs font-semibold rounded-lg hover:opacity-90 h-8 px-3 transition-opacity duration-200"
+                          isLoading={saving}
                           size="sm"
-                          variant="flat"
-                          className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
-                          onPress={() => startEdit(topic)}
+                          onPress={() => saveEdit(topic.id!)}
                         >
-                          {t('common.edit')}
+                          {t('common.save')}
                         </Button>
-                      )}
-                      {onTopicRemoved && topic.id && (
                         <Button
+                          className="border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold h-8 px-3 transition-colors duration-200"
                           size="sm"
-                          variant="flat"
-                          color="danger"
-                          className="text-xs font-semibold rounded-lg h-8 px-3"
-                          isLoading={removingId === topic.id}
-                          onPress={() => handleRemove(topic.id!, topic.name)}
+                          variant="bordered"
+                          onPress={cancelEdit}
                         >
-                          {t('common.remove')}
+                          {t('common.cancel')}
                         </Button>
-                      )}
-                    </div>
-                  )}
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        {onTopicUpdated && topic.id && (
+                          <Button
+                            className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
+                            size="sm"
+                            variant="flat"
+                            onPress={() => startEdit(topic)}
+                          >
+                            {t('common.edit')}
+                          </Button>
+                        )}
+                        {onTopicRemoved && topic.id && (
+                          <Button
+                            className="text-xs font-semibold rounded-lg h-8 px-3"
+                            color="danger"
+                            isLoading={removingId === topic.id}
+                            size="sm"
+                            variant="flat"
+                            onPress={() => handleRemove(topic.id!, topic.name)}
+                          >
+                            {t('common.remove')}
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+            {isAddingTopic && (
+              <tr className="bg-content1">
+                <td className={TD_LAST}>
+                  <Input
+                    {...inputProperties.input}
+                    className="w-48"
+                    placeholder={t('certification.topicNamePlaceholder')}
+                    size="sm"
+                    value={addState.name}
+                    onChange={(e) => setAddState((s) => ({ ...s, name: e.target.value }))}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+                  />
+                </td>
+                <td className={TD_LAST}>
+                  <Input
+                    {...inputProperties.input}
+                    className="w-24"
+                    endContent={<span className="text-default-400 text-sm">%</span>}
+                    max={100}
+                    min={0}
+                    size="sm"
+                    type="number"
+                    value={String(addState.min)}
+                    onChange={(e) =>
+                      setAddState((s) => ({ ...s, min: Math.min(100, Math.max(0, Number(e.target.value) || 0)) }))
+                    }
+                    onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+                  />
+                </td>
+                <td className={TD_LAST}>
+                  <Input
+                    {...inputProperties.input}
+                    className="w-24"
+                    endContent={<span className="text-default-400 text-sm">%</span>}
+                    max={100}
+                    min={0}
+                    size="sm"
+                    type="number"
+                    value={String(addState.max)}
+                    onChange={(e) =>
+                      setAddState((s) => ({ ...s, max: Math.min(100, Math.max(0, Number(e.target.value) || 0)) }))
+                    }
+                    onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+                  />
+                </td>
+                <td className={TD_LAST}>
+                  <div className="flex gap-2">
+                    <Button
+                      className="bg-primary text-primary-foreground text-xs font-semibold rounded-lg hover:opacity-90 h-8 px-3 transition-opacity duration-200"
+                      isLoading={adding}
+                      size="sm"
+                      onPress={handleAdd}
+                    >
+                      {t('common.save')}
+                    </Button>
+                    <Button
+                      className="border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold h-8 px-3 transition-colors duration-200"
+                      size="sm"
+                      variant="bordered"
+                      onPress={() => {
+                        setIsAddingTopic(false);
+                        setAddState({ name: '', min: 0, max: 0 });
+                      }}
+                    >
+                      {t('common.cancel')}
+                    </Button>
+                  </div>
                 </td>
               </tr>
-            );
-          })}
-          {isAddingTopic && (
-            <tr className="bg-content1">
-              <td className={TD_LAST}>
-                <Input
-                  {...inputProperties.input}
-                  size="sm"
-                  placeholder={t('certification.topicNamePlaceholder')}
-                  value={addState.name}
-                  onChange={(e) => setAddState((s) => ({ ...s, name: e.target.value }))}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-                  className="w-48"
-                />
-              </td>
-              <td className={TD_LAST}>
-                <Input
-                  {...inputProperties.input}
-                  size="sm"
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={String(addState.min)}
-                  onChange={(e) => setAddState((s) => ({ ...s, min: Math.min(100, Math.max(0, Number(e.target.value) || 0)) }))}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-                  className="w-24"
-                  endContent={<span className="text-default-400 text-sm">%</span>}
-                />
-              </td>
-              <td className={TD_LAST}>
-                <Input
-                  {...inputProperties.input}
-                  size="sm"
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={String(addState.max)}
-                  onChange={(e) => setAddState((s) => ({ ...s, max: Math.min(100, Math.max(0, Number(e.target.value) || 0)) }))}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-                  className="w-24"
-                  endContent={<span className="text-default-400 text-sm">%</span>}
-                />
-              </td>
-              <td className={TD_LAST}>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    className="bg-primary text-primary-foreground text-xs font-semibold rounded-lg hover:opacity-90 h-8 px-3 transition-opacity duration-200"
-                    isLoading={adding}
-                    onPress={handleAdd}
-                  >
-                    {t('common.save')}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="bordered"
-                    className="border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold h-8 px-3 transition-colors duration-200"
-                    onPress={() => { setIsAddingTopic(false); setAddState({ name: '', min: 0, max: 0 }); }}
-                  >
-                    {t('common.cancel')}
-                  </Button>
-                </div>
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
-    {(!isAddingTopic && onTopicAdded) || onEditCertification ? (
-      <div className="mt-3 flex gap-2">
-        {onEditCertification && (
-          <Button
-            size="sm"
-            variant="flat"
-            className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
-            onPress={onEditCertification}
-          >
-            {t('certification.editCertification')}
-          </Button>
-        )}
-        {!isAddingTopic && onTopicAdded && (
-          <Button
-            size="sm"
-            variant="flat"
-            className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
-            onPress={() => setIsAddingTopic(true)}
-          >
-            {t('certification.addTopic')}
-          </Button>
-        )}
+            )}
+          </tbody>
+        </table>
       </div>
-    ) : null}
-  </>
+      {(!isAddingTopic && onTopicAdded) || onEditCertification ? (
+        <div className="mt-3 flex gap-2">
+          {onEditCertification && (
+            <Button
+              className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
+              size="sm"
+              variant="flat"
+              onPress={onEditCertification}
+            >
+              {t('certification.editCertification')}
+            </Button>
+          )}
+          {!isAddingTopic && onTopicAdded && (
+            <Button
+              className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
+              size="sm"
+              variant="flat"
+              onPress={() => setIsAddingTopic(true)}
+            >
+              {t('certification.addTopic')}
+            </Button>
+          )}
+        </div>
+      ) : null}
+    </>
   );
 }

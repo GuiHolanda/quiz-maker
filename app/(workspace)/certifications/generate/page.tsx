@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { QuestionGeneratorForm } from './components/QuestionGeneratorForm';
+
 import { AIQuestion } from '@/shared/types';
 import { QuizProvider } from '@/features/providers/quiz.provider';
 import { CertificationsProvider } from '@/features/providers/certifications.provider';
@@ -7,14 +8,12 @@ import { GeneratedQuestionsList } from '@/app/(workspace)/certifications/generat
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
-import { QuestionGeneratorForm } from './components/QuestionGeneratorForm';
 
 export default function QuizPage() {
-
   return (
     <CertificationsProvider>
       <QuizProvider>
-        <AIQuestionPageContent  />
+        <AIQuestionPageContent />
       </QuizProvider>
     </CertificationsProvider>
   );
@@ -41,7 +40,7 @@ function AIQuestionPageContent() {
   };
 
   return (
-    <PageHeader title={t('generate.pageTitle')} subtitle={t('generate.pageSubtitle')}>
+    <PageHeader subtitle={t('generate.pageSubtitle')} title={t('generate.pageTitle')}>
       <QuestionGeneratorForm onGenerated={onQuestionsGenerated} />
 
       {(state?.aiQuestions?.length ?? 0) > 0 && <GeneratedQuestionsList questions={state?.aiQuestions ?? []} />}

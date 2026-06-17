@@ -16,6 +16,7 @@ interface TopicFormProps {
 
 function getFormString(formData: FormData, key: string, fallback = ''): string {
   const value = formData.get(key);
+
   return typeof value === 'string' ? value.trim() : fallback;
 }
 
@@ -39,38 +40,38 @@ export function TopicForm({ topicName, onTopicNameChange, onSubmit }: TopicFormP
       <h4 className="font-bold text-sm text-foreground">{t('certification.topics')}</h4>
       <Form className="flex flex-row items-end gap-4 mb-2" onSubmit={handleSubmit}>
         <Input
+          className="flex-1"
           label={t('certification.topicName')}
-          type="text"
           name="topicName"
+          placeholder={t('certification.topicNamePlaceholder')}
+          type="text"
           value={topicName}
           onChange={(e) => onTopicNameChange(e.target.value)}
-          className="flex-1"
-          placeholder={t('certification.topicNamePlaceholder')}
           {...inputProperties.input}
         />
         <Input
+          className="w-28"
           label={t('certification.minQuestions')}
-          type="number"
-          name="minQuestions"
-          className="w-28"
-          placeholder={t('certification.minQuestionsPlaceholder')}
-          min={0}
           max={100}
+          min={0}
+          name="minQuestions"
+          placeholder={t('certification.minQuestionsPlaceholder')}
+          type="number"
           {...inputProperties.input}
         />
         <Input
-          label={t('certification.maxQuestions')}
-          type="number"
-          name="maxQuestions"
           className="w-28"
-          placeholder={t('certification.maxQuestionsPlaceholder')}
-          min={0}
+          label={t('certification.maxQuestions')}
           max={100}
+          min={0}
+          name="maxQuestions"
+          placeholder={t('certification.maxQuestionsPlaceholder')}
+          type="number"
           {...inputProperties.input}
         />
-        <Button size="sm" variant="solid" color="primary" type="submit" className="mb-0.5">
+        <Button className="mb-0.5" color="primary" size="sm" type="submit" variant="solid">
           {t('certification.addTopic')}
-          <FontAwesomeIcon icon={faCirclePlus} className="text-lg" />
+          <FontAwesomeIcon className="text-lg" icon={faCirclePlus} />
         </Button>
       </Form>
     </>

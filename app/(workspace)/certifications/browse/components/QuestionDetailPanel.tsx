@@ -22,13 +22,12 @@ export function QuestionDetailPanel({ question, onDelete, onClose }: QuestionDet
       <div className="flex flex-col gap-1.5 mb-3">
         {options.map(([label, text]) => {
           const isCorrect = correctOptions.includes(label);
+
           return (
             <div key={label} className="flex gap-2 items-start text-xs">
               <span
                 className={`flex-shrink-0 rounded px-1.5 py-0.5 font-semibold ${
-                  isCorrect
-                    ? 'bg-success-100 text-success-700'
-                    : 'bg-default-100 text-default-500'
+                  isCorrect ? 'bg-success-100 text-success-700' : 'bg-default-100 text-default-500'
                 }`}
               >
                 {label} {isCorrect ? '✓' : ''}
@@ -52,8 +51,8 @@ export function QuestionDetailPanel({ question, onDelete, onClose }: QuestionDet
 
       <div className="mt-auto flex justify-end pt-2">
         <button
-          onClick={() => onDelete(question.id)}
           className="text-xs bg-danger-50 text-danger border border-danger-200 rounded-lg px-3 py-1.5 hover:bg-danger-100 transition-colors"
+          onClick={() => onDelete(question.id)}
         >
           {t('browse.deleteQuestion')}
         </button>
@@ -61,4 +60,3 @@ export function QuestionDetailPanel({ question, onDelete, onClose }: QuestionDet
     </div>
   );
 }
-

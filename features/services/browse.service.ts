@@ -1,5 +1,10 @@
 import { prisma } from '@/lib/prisma';
-import { BrowseQuestionsResponse, PublicExamBrowseQuestionsResponse, BrowseSummary, PublicExamBrowseSummary } from '@/shared/types';
+import {
+  BrowseQuestionsResponse,
+  PublicExamBrowseQuestionsResponse,
+  BrowseSummary,
+  PublicExamBrowseSummary,
+} from '@/shared/types';
 
 // ---- Shared base for ownership-checked delete ----
 
@@ -13,6 +18,7 @@ abstract class BaseBrowseService {
 
   async deleteQuestion(id: number, userId: string): Promise<void> {
     const question = await this.getDelegate().findUnique({ where: { id } });
+
     if (!question) {
       throw Object.assign(new Error('Question not found'), { status: 404 });
     }
@@ -65,19 +71,18 @@ export class BrowseQuestionsService extends BaseBrowseService {
       topicSubarea: q.topicSubarea ?? undefined,
       options: q.options.reduce((acc: Record<string, string>, o) => {
         acc[o.label] = o.text;
+
         return acc;
       }, {}),
       answer: q.answer
         ? {
             questionId: q.id,
             correctOptions: q.answer.correctOptions as string[],
-            explanations: (q.answer.explanations || []).reduce(
-              (a: Record<string, string>, ex) => {
-                a[ex.label] = ex.text;
-                return a;
-              },
-              {},
-            ),
+            explanations: (q.answer.explanations || []).reduce((a: Record<string, string>, ex) => {
+              a[ex.label] = ex.text;
+
+              return a;
+            }, {}),
           }
         : { questionId: q.id, correctOptions: [], explanations: {} },
     }));
@@ -129,19 +134,18 @@ export class PublicExamBrowseQuestionsService extends BaseBrowseService {
       difficulty: q.difficulty,
       options: q.options.reduce((acc: Record<string, string>, o) => {
         acc[o.label] = o.text;
+
         return acc;
       }, {}),
       answer: q.answer
         ? {
             questionId: q.id,
             correctOptions: q.answer.correctOptions as string[],
-            explanations: (q.answer.explanations || []).reduce(
-              (a: Record<string, string>, ex) => {
-                a[ex.label] = ex.text;
-                return a;
-              },
-              {},
-            ),
+            explanations: (q.answer.explanations || []).reduce((a: Record<string, string>, ex) => {
+              a[ex.label] = ex.text;
+
+              return a;
+            }, {}),
           }
         : { questionId: q.id, correctOptions: [], explanations: {} },
     }));
@@ -162,9 +166,11 @@ export class BrowseSummaryService {
     });
 
     const certMap = new Map<string, { totalCount: number; topics: Map<string, number> }>();
+
     for (const row of rows) {
       const cert = certMap.get(row.certificationTitle) ?? { totalCount: 0, topics: new Map() };
       const count = row._count.id;
+
       cert.totalCount += count;
       cert.topics.set(row.topic, count);
       certMap.set(row.certificationTitle, cert);
@@ -201,6 +207,7 @@ export class PublicExamBrowseSummaryService {
 
     type ExamData = { id: string; examBoardName: string; totalCount: number; subjects: Map<string, number> };
     const examMap = new Map<string, ExamData>();
+
     for (const row of rows) {
       const exam = examMap.get(row.publicExamName) ?? {
         id: row.publicExamName,
@@ -209,6 +216,7 @@ export class PublicExamBrowseSummaryService {
         subjects: new Map(),
       };
       const count = row._count.id;
+
       exam.totalCount += count;
       exam.subjects.set(row.subject, count);
       examMap.set(row.publicExamName, exam);

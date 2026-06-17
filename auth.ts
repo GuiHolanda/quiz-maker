@@ -3,8 +3,10 @@ import { PrismaAdapter } from '@auth/prisma-adapter';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import bcrypt from 'bcryptjs';
-import { prisma } from '@/lib/prisma';
+
 import authConfig from './auth.config';
+
+import { prisma } from '@/lib/prisma';
 
 declare module 'next-auth' {
   interface Session {
@@ -27,9 +29,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const user = await prisma.user.findUnique({
           where: { email: credentials.email.toLowerCase() },
         });
+
         if (!user?.password) return null;
         const valid = await bcrypt.compare(credentials.password, user.password);
+
         if (!valid) return null;
+
         return { id: user.id, name: user.name, email: user.email, image: user.image };
       },
     }),
@@ -39,10 +44,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     ...authConfig.callbacks,
     jwt({ token, user }) {
       if (user) token.sub = user.id;
+
       return token;
     },
     session({ session, token }) {
       if (token.sub) session.user.id = token.sub;
+
       return session;
     },
   },

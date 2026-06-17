@@ -44,6 +44,7 @@ export class MockExamService {
     await this.validateSubjectAvailability(publicExamId, subjects, userId);
 
     const publicExam = await prisma.publicExam.findFirst({ where: { id: publicExamId } });
+
     if (!publicExam) throw Object.assign(new Error('Concurso não encontrado'), { status: 404 });
 
     const autoName = name?.trim() || `${publicExam.name} – ${totalQuestions} questões`;
@@ -72,7 +73,11 @@ export class MockExamService {
     return {
       id: mockExam.id,
       name: mockExam.name,
-      publicExam: { id: mockExam.publicExam.id, name: mockExam.publicExam.name, examBoard: mockExam.publicExam.examBoard },
+      publicExam: {
+        id: mockExam.publicExam.id,
+        name: mockExam.publicExam.name,
+        examBoard: mockExam.publicExam.examBoard,
+      },
       totalQuestions: mockExam._count.questions,
       attemptCount: 0,
       bestScore: null,
@@ -81,12 +86,9 @@ export class MockExamService {
     };
   }
 
-  private async validateSubjectAvailability(
-    publicExamId: string,
-    subjects: MockExamSubjectConfig[],
-    userId: string,
-  ) {
+  private async validateSubjectAvailability(publicExamId: string, subjects: MockExamSubjectConfig[], userId: string) {
     const publicExam = await prisma.publicExam.findFirst({ where: { id: publicExamId } });
+
     if (!publicExam) throw Object.assign(new Error('Concurso não encontrado'), { status: 404 });
 
     for (const s of subjects) {
@@ -97,9 +99,9 @@ export class MockExamService {
       if (count < s.questionCount) {
         throw Object.assign(
           new Error(
-            `Questões insuficientes para a matéria "${s.subjectName}": ${count} disponíveis, ${s.questionCount} necessárias`,
+            `Questões insuficientes para a matéria "${s.subjectName}": ${count} disponíveis, ${s.questionCount} necessárias`
           ),
-          { status: 422 },
+          { status: 422 }
         );
       }
     }
@@ -108,7 +110,7 @@ export class MockExamService {
   private async drawQuestions(
     publicExamId: string,
     subjects: MockExamSubjectConfig[],
-    userId: string,
+    userId: string
   ): Promise<number[]> {
     const publicExam = await prisma.publicExam.findFirstOrThrow({ where: { id: publicExamId } });
     const ids: number[] = [];
@@ -120,6 +122,7 @@ export class MockExamService {
       });
 
       const shuffled = questions.sort(() => Math.random() - 0.5).slice(0, s.questionCount);
+
       ids.push(...shuffled.map((q) => q.id));
     }
 
@@ -128,6 +131,7 @@ export class MockExamService {
 
   async delete(id: number, userId: string) {
     const exam = await prisma.mockExam.findFirst({ where: { id, userId } });
+
     if (!exam) throw Object.assign(new Error('Simulado não encontrado'), { status: 404 });
     await prisma.mockExam.delete({ where: { id } });
   }
@@ -154,11 +158,13 @@ export class MockExamService {
     });
 
     if (!mockExam) throw Object.assign(new Error('Simulado não encontrado'), { status: 404 });
+
     return mockExam;
   }
 
   async startAttempt(mockExamId: number, userId: string) {
     const exam = await prisma.mockExam.findFirst({ where: { id: mockExamId, userId } });
+
     if (!exam) throw Object.assign(new Error('Simulado não encontrado'), { status: 404 });
 
     const attempt = await prisma.mockExamAttempt.create({
@@ -173,11 +179,12 @@ export class MockExamService {
     attemptId: number,
     userId: string,
     answers: { mockExamQuestionId: number; selectedOptions: string[] }[],
-    score: number,
+    score: number
   ) {
     const attempt = await prisma.mockExamAttempt.findFirst({
       where: { id: attemptId, mockExamId, userId },
     });
+
     if (!attempt) throw Object.assign(new Error('Tentativa não encontrada'), { status: 404 });
 
     await prisma.$transaction([
@@ -223,7 +230,7 @@ export class MockExamService {
 
     const subjectMap = new Map<string, { correct: number; total: number }>();
     const answersMap = new Map(
-      attempt.answers.map((a) => [a.mockExamQuestionId, JSON.parse(a.selectedOptions) as string[]]),
+      attempt.answers.map((a) => [a.mockExamQuestionId, JSON.parse(a.selectedOptions) as string[]])
     );
 
     for (const mq of attempt.mockExam.questions) {
@@ -239,6 +246,7 @@ export class MockExamService {
 
       if (!subjectMap.has(subject)) subjectMap.set(subject, { correct: 0, total: 0 });
       const entry = subjectMap.get(subject)!;
+
       entry.total += 1;
       if (isCorrect) entry.correct += 1;
     }
@@ -280,7 +288,7 @@ export class MockExamService {
                 questionId: mq.publicExamQuestion.answer.questionId,
                 correctOptions: mq.publicExamQuestion.answer.correctOptions as unknown as string[],
                 explanations: Object.fromEntries(
-                  mq.publicExamQuestion.answer.explanations.map((e) => [e.label, e.text]),
+                  mq.publicExamQuestion.answer.explanations.map((e) => [e.label, e.text])
                 ),
               }
             : null,

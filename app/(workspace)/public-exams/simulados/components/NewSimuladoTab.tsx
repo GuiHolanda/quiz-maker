@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import { addToast } from '@heroui/toast';
+import { Divider } from '@heroui/divider';
+
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
 import { useMockExamsContext } from '@/features/providers/mockExams.provider';
@@ -12,7 +14,6 @@ import { createMockExam } from '@/features/connectors';
 import { PublicExamManager } from '@/shared/components/PublicExamManager';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { MockExamSubjectConfig } from '@/shared/types';
-import { Divider } from '@heroui/divider';
 
 interface NewSimuladoTabProps {
   readonly onCreated: () => void;
@@ -30,9 +31,11 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
   useEffect(() => {
     if (!selectedPublicExam || !totalQuestions) {
       setDistribution([]);
+
       return;
     }
     const total = Number(totalQuestions);
+
     if (isNaN(total) || total <= 0) return;
 
     const totalMax = selectedPublicExam.subjects.reduce((acc, s) => acc + s.maxQuestions, 0);
@@ -42,6 +45,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
     }));
 
     const sum = suggested.reduce((acc, s) => acc + s.questionCount, 0);
+
     if (suggested.length > 0) suggested[suggested.length - 1].questionCount += total - sum;
 
     setDistribution(suggested);
@@ -78,6 +82,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
       <PublicExamManager noSubjects className="w-full" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Input
+          autoComplete="off"
           label={t('simulado.nameLabel')}
           placeholder={
             selectedPublicExam
@@ -86,14 +91,13 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
           }
           value={name}
           onValueChange={setName}
-          autoComplete="off"
           {...inputProperties.input}
         />
 
         <Input
           label={t('simulado.totalQuestions')}
-          type="number"
           min={1}
+          type="number"
           value={totalQuestions}
           onValueChange={setTotalQuestions}
           {...inputProperties.input}
@@ -105,8 +109,8 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
       <div className="flex justify-end pt-2">
         <Button
           className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
-          isLoading={loading}
           isDisabled={!selectedPublicExam || !isDistributionValid}
+          isLoading={loading}
           onPress={handleCreate}
         >
           {t('simulado.createButton')}
@@ -119,7 +123,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
     return (
       <div className="flex flex-col gap-3">
         <div className="flex flex-col">
-          <Divider/>
+          <Divider />
           <div className="flex items-center justify-between mt-4">
             <p className="text-xs font-semibold">{t('simulado.distribution')}</p>
             <span className={`text-xs font-medium ${isDistributionValid ? 'text-success' : 'text-danger'}`}>
@@ -135,14 +139,14 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
             >
               <span className="text-sm text-foreground flex-1">{s.subjectName}</span>
               <Input
-                type="number"
-                min={0}
-                value={String(s.questionCount)}
-                onValueChange={(v) => handleSubjectChange(s.subjectName, v)}
-                variant="bordered"
-                size="sm"
                 className="w-24 shrink-0"
                 classNames={{ inputWrapper: 'h-8' }}
+                min={0}
+                size="sm"
+                type="number"
+                value={String(s.questionCount)}
+                variant="bordered"
+                onValueChange={(v) => handleSubjectChange(s.subjectName, v)}
               />
             </div>
           ))}

@@ -1,8 +1,9 @@
 import React from 'react';
-import { AnswersMap, StoredQuestion } from '@/shared/types';
-import { QuestionCard } from '@/shared/components/QuestionCard';
 import { Button } from '@heroui/button';
 import { Progress } from '@heroui/progress';
+
+import { AnswersMap, StoredQuestion } from '@/shared/types';
+import { QuestionCard } from '@/shared/components/QuestionCard';
 import { AnsweredQuestionCard } from '@/shared/components/AnsweredQuestionCard';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
@@ -36,6 +37,7 @@ export function QuestionList({
   const onItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const v = Number(e.target.value) || 1;
     const bounded = Math.max(1, Math.min(questions.length, v));
+
     setQuestionsPerPage(bounded);
     setCurrentPage(1);
   };
@@ -58,16 +60,16 @@ export function QuestionList({
           <div className="flex items-end justify-between">
             <Progress
               aria-label={t('aria.quizProgress')}
-              label={t('quiz.questionsAnswered')}
+              className="flex-1"
               classNames={{ label: 'text-sm font-bold pl-2', value: 'text-sm font-bold' }}
-              valueLabel={t('quiz.progress', { answered: Object.keys(answers).length, total: questions.length })}
-              formatOptions={undefined}
               color="primary"
+              formatOptions={undefined}
+              label={t('quiz.questionsAnswered')}
+              maxValue={questions.length}
               showValueLabel={true}
               size="md"
               value={Object.keys(answers).length}
-              maxValue={questions.length}
-              className="flex-1"
+              valueLabel={t('quiz.progress', { answered: Object.keys(answers).length, total: questions.length })}
             />
           </div>
           <div className="flex flex-col gap-3">
@@ -75,13 +77,13 @@ export function QuestionList({
               !quiz?.isFinished ? (
                 <QuestionCard
                   key={question.id}
+                  index={startIndex + i + 1}
+                  initialValue={answers[question.id]}
                   question={question}
                   onAnswerChange={handleAnswerChange}
-                  initialValue={answers[question.id]}
-                  index={startIndex + i + 1}
                 />
               ) : (
-                <AnsweredQuestionCard key={question.id} question={question} answer={answers[question.id]} />
+                <AnsweredQuestionCard key={question.id} answer={answers[question.id]} question={question} />
               )
             )}
           </div>
@@ -90,11 +92,11 @@ export function QuestionList({
             <ItemsPerPageSelect value={questionsPerPage} onChange={onItemsPerPageChange} />
             <Button
               className="ml-auto"
-              variant="flat"
               color="primary"
-              size="sm"
-              onPress={quiz?.isFinished ? onRestartQuiz : onFinishQuiz}
               hidden={Object.keys(answers).length !== questions.length}
+              size="sm"
+              variant="flat"
+              onPress={quiz?.isFinished ? onRestartQuiz : onFinishQuiz}
             >
               {quiz?.isFinished ? t('quiz.restartQuiz') : t('quiz.finishQuiz')}
             </Button>

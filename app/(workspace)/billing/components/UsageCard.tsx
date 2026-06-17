@@ -20,10 +20,7 @@ export function UsageCard({ label, used, limit, limitLabel }: UsageCardProps) {
       </div>
       {!isUnlimited && (
         <div className="w-full h-1.5 bg-default-200 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-primary rounded-full transition-all duration-300"
-            style={{ width: `${pct}%` }}
-          />
+          <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
         </div>
       )}
     </div>

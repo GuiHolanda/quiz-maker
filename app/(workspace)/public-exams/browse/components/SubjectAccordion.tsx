@@ -1,10 +1,12 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { addToast } from '@heroui/toast';
+
+import { PublicExamQuestionList } from './PublicExamQuestionList';
+
 import { StoredPublicExamQuestion, BrowsePublicExamSubjectSummary } from '@/shared/types';
 import { getPublicExamBrowseQuestions, deletePublicExamBrowseQuestion } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { PublicExamQuestionList } from './PublicExamQuestionList';
 
 interface SubjectAccordionProps {
   readonly subject: BrowsePublicExamSubjectSummary;
@@ -37,6 +39,7 @@ export function SubjectAccordion({ subject, publicExamName, isOpen }: SubjectAcc
         page: nextPage,
         pageSize: nextPageSize,
       });
+
       setQuestions(data.questions);
       setTotal(data.total);
       setPage(data.page);
@@ -61,14 +64,14 @@ export function SubjectAccordion({ subject, publicExamName, isOpen }: SubjectAcc
 
   return (
     <PublicExamQuestionList
-      questions={questions}
+      isLoading={isLoading}
       page={page}
       pageSize={pageSize}
+      questions={questions}
       total={total}
-      isLoading={isLoading}
+      onDelete={handleDelete}
       onPageChange={(p) => fetchQuestions(p, pageSize)}
       onPageSizeChange={(ps) => fetchQuestions(1, ps)}
-      onDelete={handleDelete}
     />
   );
 }

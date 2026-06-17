@@ -2,15 +2,15 @@
 import { useState } from 'react';
 import { addToast } from '@heroui/toast';
 
+import { Step1BasicInfo } from './Step1BasicInfo';
+import { Step2DefineSubjects } from './Step2DefineSubjects';
+import { Step3Review } from './Step3Review';
+
 import { savePublicExam } from '@/features/connectors';
 import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
 import { usePublicExamDraft } from '@/features/hooks/usePublicExamDraft.hook';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-
-import { Step1BasicInfo } from './Step1BasicInfo';
-import { Step2DefineSubjects } from './Step2DefineSubjects';
-import { Step3Review } from './Step3Review';
 
 interface NewPublicExamTabProps {
   readonly onBackToLibrary: () => void;
@@ -33,16 +33,19 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
         description: t('error.nameAndBancaRequired'),
         color: 'danger',
       });
+
       return;
     }
 
     const yearNum = draft.year ? Number(draft.year) : undefined;
+
     if (publicExams.some((p) => p.name === name && p.year === yearNum)) {
       addToast({
         title: t('toast.duplicatePublicExam'),
         description: t('error.duplicatePublicExam', { name }),
         color: 'danger',
       });
+
       return;
     }
 
@@ -72,16 +75,16 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
   if (step === 1) {
     return (
       <Step1BasicInfo
+        examBoardName={draft.examBoardName}
         name={draft.name}
         role={draft.role}
         year={draft.year}
-        examBoardName={draft.examBoardName}
+        onBack={onBackToLibrary}
+        onExamBoardChange={draft.setExamBoardName}
         onNameChange={draft.setName}
+        onNext={() => setStep(2)}
         onRoleChange={draft.setRole}
         onYearChange={draft.setYear}
-        onExamBoardChange={draft.setExamBoardName}
-        onBack={onBackToLibrary}
-        onNext={() => setStep(2)}
       />
     );
   }
@@ -89,29 +92,29 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
   if (step === 2) {
     return (
       <Step2DefineSubjects
+        examBoardName={draft.examBoardName}
         name={draft.name}
         role={draft.role}
-        year={draft.year}
-        examBoardName={draft.examBoardName}
         subjects={draft.subjects}
+        year={draft.year}
         onAddEmptySubject={draft.addEmptySubject}
-        onUpdateSubject={draft.updateSubject}
-        onRemoveSubject={draft.removeSubject}
         onBack={() => setStep(1)}
         onNext={() => setStep(3)}
+        onRemoveSubject={draft.removeSubject}
         onSaveDraft={onBackToLibrary}
+        onUpdateSubject={draft.updateSubject}
       />
     );
   }
 
   return (
     <Step3Review
+      examBoardName={draft.examBoardName}
+      isLoading={loading}
       name={draft.name}
       role={draft.role}
-      year={draft.year}
-      examBoardName={draft.examBoardName}
       subjects={draft.subjects}
-      isLoading={loading}
+      year={draft.year}
       onBack={() => setStep(2)}
       onSave={handleSave}
     />

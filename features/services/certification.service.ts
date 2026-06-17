@@ -139,7 +139,7 @@ export class CertificationService {
     name: string,
     minQuestions: number,
     maxQuestions: number,
-    userId: string,
+    userId: string
   ) {
     const certification = await this.prismaService.certification.findUnique({
       where: { key: certificationKey },
@@ -169,7 +169,7 @@ export class CertificationService {
   public async updateCertificationMeta(
     certKey: string,
     updates: { newLabel?: string; newKey?: string; newProvider?: string | null },
-    userId: string,
+    userId: string
   ) {
     const cert = await this.prismaService.certification.findUnique({ where: { key: certKey } });
 
@@ -183,6 +183,7 @@ export class CertificationService {
 
     if (updates.newKey && updates.newKey !== certKey) {
       const conflict = await this.prismaService.certification.findUnique({ where: { key: updates.newKey } });
+
       if (conflict) {
         throw Object.assign(new Error(`Certification with key "${updates.newKey}" already exists`), { status: 409 });
       }

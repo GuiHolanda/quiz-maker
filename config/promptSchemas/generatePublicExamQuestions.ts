@@ -2,9 +2,7 @@ import { PublicExamQuestionParams } from '@/shared/types';
 
 export function buildGeneratePublicExamQuestionsPrompt(params: PublicExamQuestionParams): string {
   const { public_exam_name, exam_board_name, subject_name, topic_name, num_questions } = params;
-  const topicoLine = topic_name
-    ? `focadas no tópico "${topic_name}"`
-    : 'cobrindo a matéria de forma ampla';
+  const topicoLine = topic_name ? `focadas no tópico "${topic_name}"` : 'cobrindo a matéria de forma ampla';
 
   return `Você é um especialista em concursos públicos brasileiros e vai gerar questões de alta fidelidade.
 

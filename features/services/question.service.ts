@@ -8,6 +8,7 @@ export function validateAiQuestions(obj: unknown): AIQuestion[] | AIPublicExamQu
     if (!q || typeof q.text !== 'string') throw new Error('Invalid format: question text is required');
     if (!q.options || typeof q.options !== 'object') throw new Error('Invalid format: question options are required');
   }
+
   return (obj as any).questions;
 }
 
@@ -28,6 +29,7 @@ export class CertificationQuestionService {
   public async createFromPayload(questions: AIQuestion[], userId: string) {
     return this.prismaService.$transaction(async (tx) => {
       const results: any[] = [];
+
       for (const question of questions) {
         const { certificationTitle, text, correctCount, options, topic, difficulty, topicSubarea } = question;
 
@@ -45,17 +47,20 @@ export class CertificationQuestionService {
 
         const optionMap: Record<string, number> = {};
         const optionsObj: Record<string, string> = {};
+
         for (const [label, txt] of Object.entries(options)) {
           const textVal = toSafeString(txt);
           const opt = await tx.option.create({
             data: { questionId: createdQuestion.id, label, text: textVal },
           });
+
           optionMap[label] = opt.id;
           optionsObj[label] = textVal;
         }
 
         results.push({ question: createdQuestion, options: optionsObj });
       }
+
       return results;
     });
   }
@@ -90,6 +95,7 @@ export class PublicExamQuestionService {
   public async createFromPayload(questions: AIPublicExamQuestion[], userId: string) {
     return this.prismaService.$transaction(async (tx) => {
       const results: any[] = [];
+
       for (const question of questions) {
         const { publicExamName, examBoardName, subject, topic, text, correctCount, options, difficulty } = question;
 
@@ -107,8 +113,10 @@ export class PublicExamQuestionService {
         });
 
         const optionsObj: Record<string, string> = {};
+
         for (const [label, txt] of Object.entries(options)) {
           const textVal = toSafeString(txt);
+
           await tx.publicExamOption.create({
             data: { questionId: createdQuestion.id, label, text: textVal },
           });
@@ -117,6 +125,7 @@ export class PublicExamQuestionService {
 
         results.push({ question: createdQuestion, options: optionsObj });
       }
+
       return results;
     });
   }

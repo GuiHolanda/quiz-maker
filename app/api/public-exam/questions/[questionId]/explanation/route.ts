@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { OpenAIService } from '@/features/services/openAI.service';
@@ -8,11 +9,9 @@ import { buildGetPublicExamExplanationsPrompt } from '@/config/promptSchemas/get
 const openAIService = new OpenAIService();
 const questionService = new PublicExamQuestionService();
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ questionId: string }> },
-) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ questionId: string }> }) {
   const session = await auth();
+
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
@@ -31,9 +30,8 @@ export async function GET(
     if (!question.answer) return NextResponse.json({ error: 'No answer for this question yet' }, { status: 404 });
 
     if (question.answer.explanations.length > 0) {
-      const explanations = Object.fromEntries(
-        question.answer.explanations.map((e) => [e.label, e.text]),
-      );
+      const explanations = Object.fromEntries(question.answer.explanations.map((e) => [e.label, e.text]));
+
       return NextResponse.json({ explanations });
     }
 
@@ -62,9 +60,7 @@ export async function GET(
     return NextResponse.json({ explanations });
   } catch (err: any) {
     console.error('Failed to get explanation:', err);
-    return NextResponse.json(
-      { error: 'Internal Server Error', message: err.message },
-      { status: err.status || 500 },
-    );
+
+    return NextResponse.json({ error: 'Internal Server Error', message: err.message }, { status: err.status || 500 });
   }
 }

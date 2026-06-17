@@ -47,18 +47,27 @@ export function EditCertificationModal({ certification, isOpen, onClose, onSaved
         newProvider: provider || null,
       });
       onSaved(certification.key, { label: label.trim(), key: certKey.trim(), provider: provider || undefined });
-      addToast({ title: t('toast.success'), description: t('toast.savedSuccessfully', { title: label.trim() }), color: 'success' });
+      addToast({
+        title: t('toast.success'),
+        description: t('toast.savedSuccessfully', { title: label.trim() }),
+        color: 'success',
+      });
       onClose();
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message;
-      addToast({ title: t('toast.error'), description: msg || t('toast.failedToUpdate', { name: label.trim() }), color: 'danger' });
+
+      addToast({
+        title: t('toast.error'),
+        description: msg || t('toast.failedToUpdate', { name: label.trim() }),
+        color: 'danger',
+      });
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="md">
+    <Modal isOpen={isOpen} size="md" onClose={onClose}>
       <ModalContent>
         <ModalHeader className="text-base font-semibold text-foreground">
           {t('certification.editCertification')}
@@ -83,7 +92,7 @@ export function EditCertificationModal({ certification, isOpen, onClose, onSaved
             label={t('certification.provider')}
             placeholder={t('certification.providerPlaceholder')}
             selectedKeys={provider ? new Set([provider]) : new Set()}
-            onSelectionChange={(keys) => setProvider(Array.from(keys)[0] as string ?? '')}
+            onSelectionChange={(keys) => setProvider((Array.from(keys)[0] as string) ?? '')}
           >
             {PROVIDER_VALUES.map((val, i) => (
               <SelectItem key={val}>{t(`certification.${PROVIDERS[i]}`)}</SelectItem>
@@ -92,8 +101,8 @@ export function EditCertificationModal({ certification, isOpen, onClose, onSaved
         </ModalBody>
         <ModalFooter>
           <Button
-            variant="bordered"
             className="border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold transition-colors duration-200"
+            variant="bordered"
             onPress={onClose}
           >
             {t('common.cancel')}

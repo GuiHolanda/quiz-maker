@@ -5,15 +5,18 @@ import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { Accordion, AccordionItem } from '@heroui/accordion';
+
+import { ResultQuestionCard } from './components/ResultQuestionCard';
+
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { getMockExamAttemptResult, startMockExamAttempt } from '@/features/connectors';
 import { MockExamResult, MockExamQuestion } from '@/shared/types';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
-import { ResultQuestionCard } from './components/ResultQuestionCard';
 
 function scoreColor(percent: number): 'success' | 'warning' | 'danger' {
   if (percent >= 70) return 'success';
   if (percent >= 50) return 'warning';
+
   return 'danger';
 }
 
@@ -40,8 +43,10 @@ export default function SimuladoResultadoPage() {
 
   const questionsBySubject = result.questions.reduce<Record<string, MockExamQuestion[]>>((acc, mq) => {
     const subject = mq.publicExamQuestion.subject ?? t('simulado.unknownSubject');
+
     if (!acc[subject]) acc[subject] = [];
     acc[subject].push(mq);
+
     return acc;
   }, {});
 
@@ -59,6 +64,7 @@ export default function SimuladoResultadoPage() {
     setIsStarting(true);
     try {
       const attempt = await startMockExamAttempt(Number(params.id));
+
       router.push(`/public-exams/simulados/${params.id}/tentativa/${attempt.id}`);
     } finally {
       setIsStarting(false);
@@ -69,7 +75,7 @@ export default function SimuladoResultadoPage() {
 
   return (
     <>
-      <PageHeader title={t('simulado.scoreTitle')} subtitle={examName}>
+      <PageHeader subtitle={examName} title={t('simulado.scoreTitle')}>
         <div className="flex flex-col gap-6">
           {renderInfoCard()}
           {renderSubjectAccordion()}
@@ -85,7 +91,7 @@ export default function SimuladoResultadoPage() {
 
         <div className="flex flex-col sm:flex-row gap-6 items-start">
           <div className="flex flex-col items-center gap-1 shrink-0">
-            <Chip color={color} variant="flat" className="text-2xl px-6 py-4 h-auto font-bold">
+            <Chip className="text-2xl px-6 py-4 h-auto font-bold" color={color} variant="flat">
               {t('simulado.scoreGeneral', { correct, total })}
             </Chip>
             <p className="text-sm text-default-500">{t('simulado.scorePercent', { percent })}</p>
@@ -127,7 +133,6 @@ export default function SimuladoResultadoPage() {
       <div>
         <h2 className="font-semibold mb-3 text-foreground">{t('simulado.bySubject')}</h2>
         <Accordion
-          showDivider={false}
           className="flex flex-col gap-2 px-0"
           itemClasses={{
             base: 'bg-content1 border border-default-200 rounded-xl',
@@ -137,10 +142,12 @@ export default function SimuladoResultadoPage() {
             content: 'px-4 pb-4',
             indicator: 'text-default-400',
           }}
+          showDivider={false}
         >
           {result!.subjectBreakdown.map((s) => {
             const pct = s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
             const questions = questionsBySubject[s.subjectName] ?? [];
+
             return (
               <AccordionItem
                 key={s.subjectName}
@@ -148,7 +155,7 @@ export default function SimuladoResultadoPage() {
                 title={
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="truncate flex-1 min-w-0">{s.subjectName}</span>
-                    <Chip size="sm" color={scoreColor(pct)} variant="flat" className="shrink-0 font-semibold">
+                    <Chip className="shrink-0 font-semibold" color={scoreColor(pct)} size="sm" variant="flat">
                       {s.correct}/{s.total} — {pct}%
                     </Chip>
                   </div>
@@ -158,9 +165,9 @@ export default function SimuladoResultadoPage() {
                   {questions.map((mq, i) => (
                     <ResultQuestionCard
                       key={mq.id}
+                      localIndex={i}
                       mq={mq}
                       selected={answersMap.get(mq.id) ?? []}
-                      localIndex={i}
                       showDivider={i > 0}
                     />
                   ))}
@@ -172,5 +179,4 @@ export default function SimuladoResultadoPage() {
       </div>
     );
   }
-
 }

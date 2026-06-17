@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { addToast } from '@heroui/toast';
+
+import { SimuladoQuestionList } from './components/SimuladoQuestionList';
+
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { getMockExam, getMockExamAnswers, finishMockExamAttempt } from '@/features/connectors';
 import { MockExam, MockExamAttemptAnswer, AnswersMap } from '@/shared/types';
 import { BusyDialog } from '@/shared/components/ui/BusyDialog';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
-import { SimuladoQuestionList } from './components/SimuladoQuestionList';
 
 export default function SimuladoTentativaPage() {
   const { t } = useTranslation();
@@ -67,7 +69,9 @@ export default function SimuladoTentativaPage() {
           correctOptions.length > 0 &&
           selected.length === correctOptions.length &&
           selected.every((s) => correctOptions.includes(s));
+
         if (isCorrect) score += 1;
+
         return { mockExamQuestionId: mq.id, selectedOptions: selected };
       });
 
@@ -77,8 +81,7 @@ export default function SimuladoTentativaPage() {
       addToast({
         title: t('toast.error'),
         description:
-          (e as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          t('toast.somethingWrong'),
+          (e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t('toast.somethingWrong'),
         color: 'danger',
       });
       setIsFinishing(false);
@@ -94,10 +97,10 @@ export default function SimuladoTentativaPage() {
   return (
     <>
       <BusyDialog isOpen={isFinishing} />
-      <PageHeader title={title} subtitle={subtitle}>
+      <PageHeader subtitle={subtitle} title={title}>
         <SimuladoQuestionList
-          questions={questions}
           answers={answers}
+          questions={questions}
           onAnswerChange={handleAnswerChange}
           onFinish={handleFinish}
         />

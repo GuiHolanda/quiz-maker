@@ -32,21 +32,21 @@ export function certificationsReducer(state: CertificationsState, action: Certif
       return { ...state, certifications: [...state.certifications, action.payload.certification] };
     case 'removeCertification':
       return { ...state, certifications: state.certifications.filter((c) => c.key !== action.payload.key) };
-    case 'updateCertification':
-      {
-        const newCerts = state.certifications.map((c) =>
-          c.key === action.payload.key ? { ...c, ...action.payload.certification } : c
-        );
-        const updatedSelected =
-          state.selectedCertification && state.selectedCertification.key === action.payload.key
-            ? { ...state.selectedCertification, ...action.payload.certification }
-            : state.selectedCertification;
-        return {
-          ...state,
-          certifications: newCerts,
-          selectedCertification: updatedSelected,
-        };
-      }
+    case 'updateCertification': {
+      const newCerts = state.certifications.map((c) =>
+        c.key === action.payload.key ? { ...c, ...action.payload.certification } : c
+      );
+      const updatedSelected =
+        state.selectedCertification && state.selectedCertification.key === action.payload.key
+          ? { ...state.selectedCertification, ...action.payload.certification }
+          : state.selectedCertification;
+
+      return {
+        ...state,
+        certifications: newCerts,
+        selectedCertification: updatedSelected,
+      };
+    }
     default:
       return state;
   }

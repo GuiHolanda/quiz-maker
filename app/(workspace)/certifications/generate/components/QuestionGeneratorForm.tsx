@@ -1,9 +1,10 @@
 'use client';
+import { Button } from '@heroui/button';
+import { Input } from '@heroui/input';
+
 import { getQuestions } from '@/features/connectors';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { QuizFormErrors, AIQuestion, QuestionParams } from '@/shared/types';
-import { Button } from '@heroui/button';
-import { Input } from '@heroui/input';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
 import { CertificationManager } from '@/shared/components/CertificationManager';
 import { FormAccordion } from '@/shared/components/ui/FormAccordion';
@@ -28,11 +29,13 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
     const selectedTopic = selectedTopics[0];
 
     const newErrors: QuizFormErrors = {};
+
     if (!selectedCertification) newErrors.certificationTitle = t('error.certificationTitleRequired');
     if (!selectedTopic) newErrors.topic = t('error.topicRequired');
     if (!num_questions) newErrors.num_questions = t('error.numQuestionsRequired');
     if (Object.keys(newErrors).length > 0) {
       queueMicrotask(() => setError(newErrors));
+
       return;
     }
 
@@ -43,6 +46,7 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
     };
 
     const questions = await request(requestPayload);
+
     if (questions) {
       onGenerated(questions);
     }
@@ -50,30 +54,30 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
 
   return (
     <FormAccordion
-      title={t('generate.configureQuestionnaire')}
       accordionKey="configure questionaire"
-      onSubmit={handleSubmit}
-      validationErrors={error}
       isLoading={loading}
+      title={t('generate.configureQuestionnaire')}
+      validationErrors={error}
+      onSubmit={handleSubmit}
     >
       <CertificationManager className="flex w-full gap-4 items-end" />
       <div className="flex w-full items-end gap-4">
         <div className="no-number-spinners w-1/4">
           <Input
             id="num_questions"
-            name="num_questions"
-            type="number"
             label={t('common.numberOfQuestions')}
-            placeholder={t('generate.numQuestionsPlaceholder')}
             max={20}
             min={1}
+            name="num_questions"
+            placeholder={t('generate.numQuestionsPlaceholder')}
+            type="number"
             {...inputProperties.input}
           />
         </div>
         <Button
           className="ml-auto bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
-          type="submit"
           disabled={loading}
+          type="submit"
         >
           {t('common.generate')}
         </Button>

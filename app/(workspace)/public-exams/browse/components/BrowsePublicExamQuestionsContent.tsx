@@ -1,14 +1,17 @@
 'use client';
-import { useEffect, useState } from 'react';
 import type { Selection } from '@react-types/shared';
+
+import { useEffect, useState } from 'react';
 import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Skeleton } from '@heroui/skeleton';
 import { addToast } from '@heroui/toast';
+
+import { PublicExamAccordion } from './PublicExamAccordion';
+
 import { BrowsePublicExamSummary } from '@/shared/types';
 import { getPublicExamBrowseSummary } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
-import { PublicExamAccordion } from './PublicExamAccordion';
 
 export function BrowsePublicExamQuestionsContent() {
   const { t } = useTranslation();
@@ -28,6 +31,7 @@ export function BrowsePublicExamQuestionsContent() {
   function handleSelectionChange(keys: Selection) {
     if (keys === 'all') return;
     const key = keys instanceof Set && keys.size > 0 ? String(Array.from(keys)[0]) : null;
+
     setOpenExamId(key);
   }
 
@@ -35,12 +39,8 @@ export function BrowsePublicExamQuestionsContent() {
 
   return (
     <PageHeader
+      subtitle={isLoading ? '' : t('concurso.browseSubtitle', { total: totalQuestions, count: publicExams.length })}
       title={t('concurso.browseTitle')}
-      subtitle={
-        isLoading
-          ? ''
-          : t('concurso.browseSubtitle', { total: totalQuestions, count: publicExams.length })
-      }
     >
       {isLoading ? (
         <div className="flex flex-col gap-3">
@@ -52,9 +52,6 @@ export function BrowsePublicExamQuestionsContent() {
         <p className="text-default-400 text-sm">{t('concurso.browseNoQuestions')}</p>
       ) : (
         <Accordion
-          selectionMode="single"
-          onSelectionChange={handleSelectionChange}
-          selectedKeys={openExamId ? [openExamId] : []}
           className="flex flex-col gap-3 p-0 shadow-none"
           itemClasses={{
             base: 'bg-content1 border border-default-200 rounded-xl overflow-hidden',
@@ -63,6 +60,9 @@ export function BrowsePublicExamQuestionsContent() {
             content: 'px-3 pb-3',
             indicator: 'text-default-400',
           }}
+          selectedKeys={openExamId ? [openExamId] : []}
+          selectionMode="single"
+          onSelectionChange={handleSelectionChange}
         >
           {publicExams.map((exam) => (
             <AccordionItem
@@ -77,7 +77,7 @@ export function BrowsePublicExamQuestionsContent() {
                 </div>
               }
             >
-              <PublicExamAccordion publicExam={exam} isOpen={openExamId === exam.id} />
+              <PublicExamAccordion isOpen={openExamId === exam.id} publicExam={exam} />
             </AccordionItem>
           ))}
         </Accordion>

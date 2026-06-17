@@ -3,10 +3,12 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Skeleton } from '@heroui/skeleton';
 import { Chip } from '@heroui/chip';
+
+import { PublicExamQuestionDetailPanel } from './PublicExamQuestionDetailPanel';
+
 import { StoredPublicExamQuestion } from '@/shared/types';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
 import { ItemsPerPageSelect } from '@/shared/components/ui/ItemsPerPageSelect';
-import { PublicExamQuestionDetailPanel } from './PublicExamQuestionDetailPanel';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface PublicExamQuestionListProps {
@@ -56,29 +58,28 @@ export function PublicExamQuestionList({
         ) : (
           questions.map((q) => {
             const isSelected = selectedId === q.id;
+
             return (
               <React.Fragment key={q.id}>
                 <button
-                  onClick={() => setSelectedId(isSelected ? null : q.id)}
                   className={`w-full text-left p-4 border-b-2 border-default-100 text-foreground transition-colors duration-150 ${
                     isSelected ? 'bg-content2' : 'bg-content1 hover:bg-content2'
                   }`}
+                  onClick={() => setSelectedId(isSelected ? null : q.id)}
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-xs rounded px-1.5 py-0.5 bg-default-100 text-default-500 capitalize">
                       {q.difficulty}
                     </span>
                     {q.topic && (
-                      <span className="text-xs rounded px-1.5 py-0.5 bg-primary-50 text-primary-700">
-                        {q.topic}
-                      </span>
+                      <span className="text-xs rounded px-1.5 py-0.5 bg-primary-50 text-primary-700">{q.topic}</span>
                     )}
                     <span className="text-xs text-default-400">{q.examBoardName}</span>
                     <Chip
+                      className="ml-auto"
+                      color={q.answer?.correctOptions?.length > 0 ? 'success' : 'default'}
                       size="sm"
                       variant="flat"
-                      color={q.answer?.correctOptions?.length > 0 ? 'success' : 'default'}
-                      className="ml-auto"
                     >
                       {q.answer?.correctOptions?.length > 0 ? t('browse.hasAnswer') : t('browse.noAnswer')}
                     </Chip>
@@ -89,16 +90,16 @@ export function PublicExamQuestionList({
                   {isSelected && (
                     <motion.div
                       key={`detail-${q.id}`}
-                      initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.25, ease: 'easeInOut' }}
                       className="overflow-hidden"
+                      exit={{ height: 0, opacity: 0 }}
+                      initial={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: 'easeInOut' }}
                     >
                       <PublicExamQuestionDetailPanel
                         question={q}
-                        onDelete={handleDelete}
                         onClose={() => setSelectedId(null)}
+                        onDelete={handleDelete}
                       />
                     </motion.div>
                   )}

@@ -1,11 +1,13 @@
 'use client';
 import { useState } from 'react';
+
+import { PublicExamQuestionGeneratorForm } from './components/PublicExamQuestionGeneratorForm';
+import { GeneratedPublicExamQuestionsList } from './components/GeneratedPublicExamQuestionsList';
+
 import { AIPublicExamQuestion } from '@/shared/types';
 import { PublicExamsProvider } from '@/features/providers/publicExams.provider';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
-import { PublicExamQuestionGeneratorForm } from './components/PublicExamQuestionGeneratorForm';
-import { GeneratedPublicExamQuestionsList } from './components/GeneratedPublicExamQuestionsList';
 
 export default function GeneratePublicExamQuestionsPage() {
   return (
@@ -25,12 +27,10 @@ function PageContent() {
   };
 
   return (
-    <PageHeader title={t('concurso.generatePageTitle')} subtitle={t('concurso.generatePageSubtitle')}>
+    <PageHeader subtitle={t('concurso.generatePageSubtitle')} title={t('concurso.generatePageTitle')}>
       <PublicExamQuestionGeneratorForm onGenerated={onQuestionsGenerated} />
 
-      {questions.length > 0 && (
-        <GeneratedPublicExamQuestionsList questions={questions} setQuestions={setQuestions} />
-      )}
+      {questions.length > 0 && <GeneratedPublicExamQuestionsList questions={questions} setQuestions={setQuestions} />}
     </PageHeader>
   );
 }

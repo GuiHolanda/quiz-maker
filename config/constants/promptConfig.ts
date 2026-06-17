@@ -123,6 +123,5 @@ export const PROMPT_CONFIG = {
         },
       ],
     },
-    
   ],
 };

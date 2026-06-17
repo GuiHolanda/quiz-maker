@@ -7,6 +7,7 @@ import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
 import { Link } from '@heroui/link';
 import NextLink from 'next/link';
+
 import api from '@/lib/bff.api';
 import { REGISTER_URL } from '@/config/constants';
 import { inputProperties } from '@/config/constants/inputStyles';
@@ -26,9 +27,11 @@ export function RegisterForm() {
     try {
       await api.post(REGISTER_URL, { name, email, password });
       const result = await signIn('credentials', { email, password, redirect: false });
+
       if (result?.error) {
         setError('Account created but sign-in failed. Please go to the login page.');
         setLoading(false);
+
         return;
       }
       router.push('/');
@@ -51,39 +54,37 @@ export function RegisterForm() {
 
       {/* Heading */}
       <div className="mb-7">
-        <h1 className="text-3xl font-bold text-foreground leading-tight">
-          Create account
-        </h1>
+        <h1 className="text-3xl font-bold text-foreground leading-tight">Create account</h1>
         <p className="text-default-400 text-sm mt-1.5">Start your certification prep journey</p>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+      <form className="flex flex-col gap-3.5" onSubmit={handleSubmit}>
         <Input
+          autoComplete="name"
           label="Full name"
           type="text"
           value={name}
           onValueChange={setName}
-          autoComplete="name"
           {...inputProperties.input}
         />
         <Input
+          isRequired
+          autoComplete="email"
           label="Email address"
           type="email"
           value={email}
           onValueChange={setEmail}
-          isRequired
-          autoComplete="email"
           {...inputProperties.input}
         />
         <Input
+          isRequired
+          autoComplete="new-password"
+          description="At least 8 characters"
           label="Password"
           type="password"
           value={password}
           onValueChange={setPassword}
-          isRequired
-          autoComplete="new-password"
-          description="At least 8 characters"
           {...inputProperties.input}
         />
 
@@ -95,10 +96,10 @@ export function RegisterForm() {
         )}
 
         <Button
-          type="submit"
-          isLoading={loading}
           fullWidth
           className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200 h-12 mt-1"
+          isLoading={loading}
+          type="submit"
         >
           Create Account
         </Button>
@@ -106,7 +107,12 @@ export function RegisterForm() {
 
       <p className="text-center text-sm text-default-400 mt-6">
         Already have an account?{' '}
-        <Link as={NextLink} href="/login" size="sm" className="text-primary font-semibold transition-opacity hover:opacity-80">
+        <Link
+          as={NextLink}
+          className="text-primary font-semibold transition-opacity hover:opacity-80"
+          href="/login"
+          size="sm"
+        >
           Sign in
         </Link>
       </p>

@@ -38,12 +38,13 @@ export function publicExamsReducer(state: PublicExamsState, action: PublicExamsA
       return { ...state, publicExams: state.publicExams.filter((p) => p.id !== action.payload.id) };
     case 'updatePublicExam': {
       const newExams = state.publicExams.map((p) =>
-        p.id === action.payload.id ? { ...p, ...action.payload.publicExam } : p,
+        p.id === action.payload.id ? { ...p, ...action.payload.publicExam } : p
       );
       const updatedSelected =
         state.selectedPublicExam && state.selectedPublicExam.id === action.payload.id
           ? { ...state.selectedPublicExam, ...action.payload.publicExam }
           : state.selectedPublicExam;
+
       return {
         ...state,
         publicExams: newExams,

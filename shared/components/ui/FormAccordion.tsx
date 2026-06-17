@@ -3,6 +3,7 @@
 import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Form } from '@heroui/form';
 import { Divider } from '@heroui/divider';
+
 import { BusyDialog } from './BusyDialog';
 
 interface FormAccordionProps {
@@ -24,16 +25,12 @@ export function FormAccordion({
   footer,
   children,
 }: Readonly<FormAccordionProps>) {
-  const body = (
-    <div className="w-full flex flex-col gap-8 pt-6">
-      {children}
-    </div>
-  );
+  const body = <div className="w-full flex flex-col gap-8 pt-6">{children}</div>;
 
   return (
     <Accordion
-      defaultExpandedKeys={[accordionKey]}
       className="bg-content1 border border-default-200 rounded-xl overflow-hidden p-0"
+      defaultExpandedKeys={[accordionKey]}
       itemClasses={{
         base: 'border-0',
         title: 'font-bold text-foreground',
@@ -42,10 +39,10 @@ export function FormAccordion({
         indicator: 'text-default-400',
       }}
     >
-      <AccordionItem title={title} key={accordionKey}>
+      <AccordionItem key={accordionKey} title={title}>
         <Divider />
         {onSubmit ? (
-          <Form onSubmit={onSubmit} validationErrors={validationErrors}>
+          <Form validationErrors={validationErrors} onSubmit={onSubmit}>
             {body}
             {footer}
           </Form>

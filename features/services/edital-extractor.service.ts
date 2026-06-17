@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+
 import { PublicExam } from '@/shared/types';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
@@ -82,8 +83,12 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
       });
 
       const raw = response.output_text?.trim() ?? '';
-      const text = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+      const text = raw
+        .replace(/^```(?:json)?\s*/i, '')
+        .replace(/\s*```$/, '')
+        .trim();
       let parsed: unknown;
+
       try {
         parsed = JSON.parse(text);
       } catch {
@@ -103,6 +108,7 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
       throw Object.assign(new Error('Extracted data is not an object'), { status: 502 });
     }
     const d = data as Record<string, unknown>;
+
     if (typeof d.name !== 'string' || !d.name) {
       throw Object.assign(new Error('Extracted data missing required field: name'), { status: 502 });
     }
@@ -110,12 +116,14 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
       throw Object.assign(new Error('Extracted data missing required field: examBoard'), { status: 502 });
     }
     const board = d.examBoard as Record<string, unknown>;
+
     if (typeof board.name !== 'string' || !board.name) {
       throw Object.assign(new Error('Extracted data missing required field: examBoard.name'), { status: 502 });
     }
     if (!Array.isArray(d.subjects)) {
       throw Object.assign(new Error('Extracted data missing required field: subjects'), { status: 502 });
     }
+
     return data as PublicExam;
   }
 }

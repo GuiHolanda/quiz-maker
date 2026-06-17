@@ -29,7 +29,7 @@ const SEED_DATA: SeedCertification[] = [
       {
         name: 'Product Content Management',
         minQuestions: 0.11,
-        maxQuestions: 0.20,
+        maxQuestions: 0.2,
         questions: [
           {
             text: 'What is the primary purpose of the Product Cockpit in SAP Commerce Cloud?',
@@ -236,7 +236,7 @@ const SEED_DATA: SeedCertification[] = [
       {
         name: 'Web Content Management',
         minQuestions: 0.11,
-        maxQuestions: 0.20,
+        maxQuestions: 0.2,
         questions: [
           {
             text: 'What is SmartEdit in SAP Commerce Cloud?',
@@ -443,7 +443,7 @@ const SEED_DATA: SeedCertification[] = [
       {
         name: 'Commerce Management',
         minQuestions: 0.11,
-        maxQuestions: 0.20,
+        maxQuestions: 0.2,
         questions: [
           {
             text: 'What is the purpose of price rows in SAP Commerce Cloud?',
@@ -511,7 +511,7 @@ const SEED_DATA: SeedCertification[] = [
             difficulty: 'easy',
             options: {
               A: 'A saved list of favorite products',
-              B: 'A transient order object representing the customer\'s current selection before checkout',
+              B: "A transient order object representing the customer's current selection before checkout",
               C: 'A permanent record of purchased items',
               D: 'A type of promotion applied at checkout',
             },
@@ -551,7 +551,7 @@ const SEED_DATA: SeedCertification[] = [
             difficulty: 'easy',
             options: {
               A: 'A discount code customers apply to get a price reduction on their cart',
-              B: 'A digital gift card stored in the customer\'s account',
+              B: "A digital gift card stored in the customer's account",
               C: 'A system alert notifying administrators of low stock',
               D: 'A media file attached to a promotional email',
             },
@@ -650,7 +650,7 @@ const SEED_DATA: SeedCertification[] = [
       {
         name: 'Order Management and Customer Support',
         minQuestions: 0.11,
-        maxQuestions: 0.20,
+        maxQuestions: 0.2,
         questions: [
           {
             text: 'What is the order lifecycle status "PAYMENT_CAPTURED" in SAP Commerce Cloud?',
@@ -758,7 +758,7 @@ const SEED_DATA: SeedCertification[] = [
             difficulty: 'easy',
             options: {
               A: 'A promotional return credit applied to an account',
-              B: 'A formal object representing a customer\'s request to return items from an order',
+              B: "A formal object representing a customer's request to return items from an order",
               C: 'A backend job that processes refunds automatically',
               D: 'An API call that reverses a payment transaction',
             },
@@ -786,7 +786,7 @@ const SEED_DATA: SeedCertification[] = [
               correctOptions: ['B'],
               explanations: {
                 A: 'Future discounts are promotions, not refunds.',
-                B: 'Correct. A refund returns money to the customer\'s original payment method.',
+                B: "Correct. A refund returns money to the customer's original payment method.",
                 C: 'Exchanges involve creating a new order, not a refund.',
                 D: 'Store credits are a separate concept.',
               },
@@ -797,7 +797,7 @@ const SEED_DATA: SeedCertification[] = [
             correctCount: 1,
             difficulty: 'easy',
             options: {
-              A: 'The address of the company\'s warehouse',
+              A: "The address of the company's warehouse",
               B: 'The address where the customer wants the order shipped',
               C: 'The address associated with the payment card',
               D: 'The registered address of the store',
@@ -833,7 +833,7 @@ const SEED_DATA: SeedCertification[] = [
             },
           },
           {
-            text: 'Which SAP Commerce Cloud feature allows agents to view a customer\'s 360-degree profile including orders, carts, and interactions?',
+            text: "Which SAP Commerce Cloud feature allows agents to view a customer's 360-degree profile including orders, carts, and interactions?",
             correctCount: 1,
             difficulty: 'medium',
             options: {
@@ -845,7 +845,7 @@ const SEED_DATA: SeedCertification[] = [
             answer: {
               correctOptions: ['A'],
               explanations: {
-                A: 'Correct. ASM\'s Customer 360 view provides agents with a comprehensive view of customer activity.',
+                A: "Correct. ASM's Customer 360 view provides agents with a comprehensive view of customer activity.",
                 B: 'Backoffice Customer Report is not a standard feature with that name.',
                 C: 'CMS Restrictions control content visibility, not customer profiles.',
                 D: 'Product Interest Tracker is not a standard ASM feature.',
@@ -857,7 +857,7 @@ const SEED_DATA: SeedCertification[] = [
       {
         name: 'Integrations',
         minQuestions: 0.01,
-        maxQuestions: 0.10,
+        maxQuestions: 0.1,
         questions: [
           {
             text: 'What protocol does SAP Commerce Cloud OCC (Omni Commerce Connect) API use?',
@@ -1064,7 +1064,7 @@ const SEED_DATA: SeedCertification[] = [
       {
         name: 'Essential Foundations',
         minQuestions: 0.21,
-        maxQuestions: 0.30,
+        maxQuestions: 0.3,
         questions: [
           {
             text: 'What is the SAP Commerce Cloud Type System?',
@@ -1280,6 +1280,7 @@ async function main() {
 
     // upsert certification + topics
     const existingCert = await prisma.certification.findUnique({ where: { key: cert.certificationKey } });
+
     if (existingCert) {
       await prisma.certificationTopic.deleteMany({ where: { certificationId: existingCert.id } });
       await prisma.certification.update({

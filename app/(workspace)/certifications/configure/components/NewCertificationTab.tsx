@@ -2,15 +2,15 @@
 import { useState } from 'react';
 import { addToast } from '@heroui/toast';
 
+import { Step1BasicInfo } from './Step1BasicInfo';
+import { Step2DefineTopics } from './Step2DefineTopics';
+import { Step3Review } from './Step3Review';
+
 import { saveCertification } from '@/features/connectors';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
 import { useCertificationDraft } from '@/features/hooks/useCertificationDraft.hook';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-
-import { Step1BasicInfo } from './Step1BasicInfo';
-import { Step2DefineTopics } from './Step2DefineTopics';
-import { Step3Review } from './Step3Review';
 
 interface NewCertificationTabProps {
   readonly onBackToLibrary: () => void;
@@ -29,11 +29,17 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
 
     if (!label || !key) {
       addToast({ title: t('toast.validationError'), description: t('error.titleCodeRequired'), color: 'danger' });
+
       return;
     }
 
     if (certifications.some((c) => c.key === key)) {
-      addToast({ title: t('toast.duplicateCertification'), description: t('error.duplicateCode', { code: key }), color: 'danger' });
+      addToast({
+        title: t('toast.duplicateCertification'),
+        description: t('error.duplicateCode', { code: key }),
+        color: 'danger',
+      });
+
       return;
     }
 
@@ -44,7 +50,11 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
       addCertification(certification);
       draft.reset();
       setStep(1);
-      addToast({ title: t('toast.success'), description: t('toast.savedSuccessfully', { title: label }), color: 'success' });
+      addToast({
+        title: t('toast.success'),
+        description: t('toast.savedSuccessfully', { title: label }),
+        color: 'success',
+      });
       onBackToLibrary();
     }
   };
@@ -52,14 +62,14 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
   if (step === 1) {
     return (
       <Step1BasicInfo
-        title={draft.title}
         code={draft.code}
         provider={draft.provider}
-        onTitleChange={draft.setTitle}
-        onCodeChange={draft.setCode}
-        onProviderChange={draft.setProvider}
+        title={draft.title}
         onBack={onBackToLibrary}
+        onCodeChange={draft.setCode}
         onNext={() => setStep(2)}
+        onProviderChange={draft.setProvider}
+        onTitleChange={draft.setTitle}
       />
     );
   }
@@ -67,27 +77,27 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
   if (step === 2) {
     return (
       <Step2DefineTopics
-        title={draft.title}
         code={draft.code}
         provider={draft.provider}
+        title={draft.title}
         topics={draft.topics}
         onAddEmptyTopic={draft.addEmptyTopic}
-        onUpdateTopic={draft.updateTopic}
-        onRemoveTopic={draft.removeTopic}
         onBack={() => setStep(1)}
         onNext={() => setStep(3)}
+        onRemoveTopic={draft.removeTopic}
         onSaveDraft={onBackToLibrary}
+        onUpdateTopic={draft.updateTopic}
       />
     );
   }
 
   return (
     <Step3Review
-      title={draft.title}
       code={draft.code}
-      provider={draft.provider}
-      topics={draft.topics}
       isLoading={loading}
+      provider={draft.provider}
+      title={draft.title}
+      topics={draft.topics}
       onBack={() => setStep(2)}
       onSave={handleSave}
     />

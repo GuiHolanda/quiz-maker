@@ -1,9 +1,12 @@
 'use client';
-import { useState } from 'react';
 import type { Selection } from '@react-types/shared';
+
+import { useState } from 'react';
 import { Accordion, AccordionItem } from '@heroui/accordion';
-import { BrowseCertificationSummary } from '@/shared/types';
+
 import { TopicAccordion } from './TopicAccordion';
+
+import { BrowseCertificationSummary } from '@/shared/types';
 
 interface CertificationAccordionProps {
   readonly certification: BrowseCertificationSummary;
@@ -16,6 +19,7 @@ export function CertificationAccordion({ certification, isOpen }: CertificationA
   function handleTopicSelectionChange(keys: Selection) {
     if (keys === 'all') return;
     const key = keys instanceof Set && keys.size > 0 ? String(Array.from(keys)[0]) : null;
+
     setOpenTopicKey(key);
   }
 
@@ -23,9 +27,6 @@ export function CertificationAccordion({ certification, isOpen }: CertificationA
 
   return (
     <Accordion
-      selectionMode="single"
-      onSelectionChange={handleTopicSelectionChange}
-      selectedKeys={openTopicKey ? [openTopicKey] : []}
       className="flex flex-col gap-2 p-0 shadow-none"
       itemClasses={{
         base: 'bg-content1 border border-default-100 rounded-lg overflow-hidden',
@@ -34,6 +35,9 @@ export function CertificationAccordion({ certification, isOpen }: CertificationA
         content: 'p-0',
         indicator: 'text-default-400',
       }}
+      selectedKeys={openTopicKey ? [openTopicKey] : []}
+      selectionMode="single"
+      onSelectionChange={handleTopicSelectionChange}
     >
       {certification.topics.map((topic) => (
         <AccordionItem
@@ -47,11 +51,7 @@ export function CertificationAccordion({ certification, isOpen }: CertificationA
             </div>
           }
         >
-          <TopicAccordion
-            topic={topic}
-            certificationTitle={certification.label}
-            isOpen={openTopicKey === topic.name}
-          />
+          <TopicAccordion certificationTitle={certification.label} isOpen={openTopicKey === topic.name} topic={topic} />
         </AccordionItem>
       ))}
     </Accordion>

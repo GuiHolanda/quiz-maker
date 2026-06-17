@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Accordion, AccordionItem } from "@heroui/accordion";
+import { Accordion, AccordionItem } from '@heroui/accordion';
 
-import { SectionsTable } from "@/shared/components/SectionsTable";
-import useCertificationsContext from "@/features/hooks/useCertificationsContext.hook";
-import { Certification, CertificationTopic } from "@/shared/types";
 import { EditCertificationModal } from './EditCertificationModal';
+
+import { SectionsTable } from '@/shared/components/SectionsTable';
+import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
+import { Certification, CertificationTopic } from '@/shared/types';
 
 export function CertificationsListTab() {
   const { certifications, updateCertification } = useCertificationsContext();
@@ -17,6 +18,7 @@ export function CertificationsListTab() {
       const updatedTopics = certification.topics.map((t) =>
         t.id === topicId ? { ...t, name: newName, minQuestions, maxQuestions } : t
       );
+
       updateCertification(certification.key, { topics: updatedTopics });
     },
     [updateCertification]
@@ -25,6 +27,7 @@ export function CertificationsListTab() {
   const handleTopicRemoved = useCallback(
     (certification: Certification, topicId: string) => {
       const updatedTopics = certification.topics.filter((t) => t.id !== topicId);
+
       updateCertification(certification.key, { topics: updatedTopics });
     },
     [updateCertification]
@@ -57,18 +60,16 @@ export function CertificationsListTab() {
         }}
       >
         {certifications.map((certification) => (
-          <AccordionItem
-            key={certification.key}
-            aria-label={certification.label}
-            title={certification.label}
-          >
+          <AccordionItem key={certification.key} aria-label={certification.label} title={certification.label}>
             <SectionsTable
               selectedCertification={certification}
               topicsList={certification.topics}
-              onTopicUpdated={(topicId, newName, min, max) => handleTopicUpdated(certification, topicId, newName, min, max)}
-              onTopicRemoved={(topicId) => handleTopicRemoved(certification, topicId)}
-              onTopicAdded={(topic) => handleTopicAdded(certification, topic)}
               onEditCertification={() => setEditingCert(certification)}
+              onTopicAdded={(topic) => handleTopicAdded(certification, topic)}
+              onTopicRemoved={(topicId) => handleTopicRemoved(certification, topicId)}
+              onTopicUpdated={(topicId, newName, min, max) =>
+                handleTopicUpdated(certification, topicId, newName, min, max)
+              }
             />
           </AccordionItem>
         ))}

@@ -1,8 +1,11 @@
-import React, { useReducer, useEffect, useCallback, useMemo } from 'react';
 import type { Certification, CertificationsStoreApi } from '@/shared/types';
-import { CERTIFICATIONS_LOCAL_STORAGE_KEY, INITIAL_CERTIFICATIONS_STATE } from '@/config/constants';
+
+import React, { useReducer, useEffect, useCallback, useMemo } from 'react';
+
 import { certificationsReducer } from '../reducers/certifications.reducer';
 import { getCertifications } from '../connectors';
+
+import { CERTIFICATIONS_LOCAL_STORAGE_KEY, INITIAL_CERTIFICATIONS_STATE } from '@/config/constants';
 
 export const CertificationsContext = React.createContext<CertificationsStoreApi | null>(null);
 
@@ -12,8 +15,10 @@ export function CertificationsProvider({ children }: Readonly<{ children: React.
   useEffect(() => {
     try {
       const raw = localStorage.getItem(CERTIFICATIONS_LOCAL_STORAGE_KEY);
+
       if (raw) {
         const parsed = JSON.parse(raw);
+
         dispatch({ type: 'setSelectedCertification', payload: { key: parsed?.selectedCertification?.key ?? null } });
         dispatch({ type: 'setSelectedTopics', payload: { topics: parsed?.selectedTopics ?? [] } });
       }
@@ -26,8 +31,10 @@ export function CertificationsProvider({ children }: Readonly<{ children: React.
       .catch(() => {
         try {
           const raw = localStorage.getItem(CERTIFICATIONS_LOCAL_STORAGE_KEY);
+
           if (!raw) return;
           const parsed = JSON.parse(raw);
+
           if (Array.isArray(parsed?.certifications)) {
             dispatch({ type: 'setCertifications', payload: { certifications: parsed.certifications } });
           }
@@ -38,6 +45,7 @@ export function CertificationsProvider({ children }: Readonly<{ children: React.
   useEffect(() => {
     try {
       const toStore = { selectedCertification: state.selectedCertification, selectedTopics: state.selectedTopics };
+
       localStorage.setItem(CERTIFICATIONS_LOCAL_STORAGE_KEY, JSON.stringify(toStore));
     } catch (err) {
       console.warn('Persist certifications failed', err);
@@ -47,9 +55,12 @@ export function CertificationsProvider({ children }: Readonly<{ children: React.
   useEffect(() => {
     const handler = (e: Event) => {
       const cert = (e as CustomEvent<Certification>).detail;
+
       if (cert) dispatch({ type: 'addCertification', payload: { certification: cert } });
     };
+
     window.addEventListener('certification-created', handler);
+
     return () => window.removeEventListener('certification-created', handler);
   }, []);
 

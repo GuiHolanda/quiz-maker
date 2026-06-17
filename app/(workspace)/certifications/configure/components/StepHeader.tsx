@@ -2,9 +2,9 @@
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
-import { useTranslation } from '@/features/hooks/useTranslation.hook';
-
 import { StepProgress } from './StepProgress';
+
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface StepHeaderProps {
   readonly currentStep: 1 | 2 | 3;
@@ -30,10 +30,10 @@ export function StepHeader({ currentStep, onBack }: StepHeaderProps) {
     <div className="flex flex-col gap-4">
       {onBack && (
         <button
-          onClick={onBack}
           className="flex items-center gap-2 text-xs font-semibold text-primary w-fit hover:opacity-80 transition-opacity"
+          onClick={onBack}
         >
-          <FontAwesomeIcon icon={faArrowLeft} className="text-sm" />
+          <FontAwesomeIcon className="text-sm" icon={faArrowLeft} />
           {t(BACK_LABEL_KEYS[currentStep])}
         </button>
       )}

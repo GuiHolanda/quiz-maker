@@ -11,10 +11,10 @@ export default {
     authorized({ auth, request }) {
       const { pathname } = request.nextUrl;
       const isLoggedIn = !!auth?.user;
-      const isPublicRoute =
-        publicRoutes.some((r) => pathname.startsWith(r)) ||
-        pathname.startsWith('/api/auth');
+      const isPublicRoute = publicRoutes.some((r) => pathname.startsWith(r)) || pathname.startsWith('/api/auth');
+
       if (isPublicRoute) return true;
+
       return isLoggedIn;
     },
   },

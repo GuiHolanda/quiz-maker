@@ -6,10 +6,12 @@ import { Input } from '@heroui/input';
 import { Slider } from '@heroui/slider';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+
+import { TopicsExpandedRow } from './TopicsExpandedRow';
+
 import { PublicExamSubject, PublicExamTopic } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
-import { TopicsExpandedRow } from './TopicsExpandedRow';
 
 const SLIDER_CLASS_NAMES = {
   label: 'text-xs text-default-500 font-bold',
@@ -60,7 +62,11 @@ export function SubjectRow({
 }: SubjectRowProps) {
   const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
-  const [editState, setEditState] = useState<EditState>({ name: subject.name, min: subject.minQuestions, max: subject.maxQuestions });
+  const [editState, setEditState] = useState<EditState>({
+    name: subject.name,
+    min: subject.minQuestions,
+    max: subject.maxQuestions,
+  });
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
@@ -85,19 +91,22 @@ export function SubjectRow({
     }
   };
 
-  const handleAddTopic = addTopic && onTopicAdded
-    ? async (name: string) => {
-        const topic = await addTopic(name);
-        onTopicAdded(topic);
-      }
-    : undefined;
+  const handleAddTopic =
+    addTopic && onTopicAdded
+      ? async (name: string) => {
+          const topic = await addTopic(name);
 
-  const handleRemoveTopic = removeTopic && onTopicRemoved
-    ? async (topicId: string, name: string) => {
-        await removeTopic(topicId, name);
-        onTopicRemoved(topicId);
-      }
-    : undefined;
+          onTopicAdded(topic);
+        }
+      : undefined;
+
+  const handleRemoveTopic =
+    removeTopic && onTopicRemoved
+      ? async (topicId: string, name: string) => {
+          await removeTopic(topicId, name);
+          onTopicRemoved(topicId);
+        }
+      : undefined;
 
   return (
     <React.Fragment>
@@ -118,11 +127,11 @@ export function SubjectRow({
         {isEditing ? (
           <Input
             {...inputProperties.input}
+            className="w-48"
             size="sm"
             value={editState.name}
             onChange={(e) => setEditState((s) => ({ ...s, name: e.target.value }))}
             onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
-            className="w-48"
           />
         ) : (
           subject.name
@@ -137,27 +146,29 @@ export function SubjectRow({
         {isEditing ? (
           <Input
             {...inputProperties.input}
-            size="sm"
-            type="number"
-            min={0}
-            max={100}
-            value={String(editState.min)}
-            onChange={(e) => setEditState((s) => ({ ...s, min: Math.min(100, Math.max(0, Number(e.target.value) || 0)) }))}
-            onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
             className="w-24"
             endContent={<span className="text-default-400 text-sm">%</span>}
+            max={100}
+            min={0}
+            size="sm"
+            type="number"
+            value={String(editState.min)}
+            onChange={(e) =>
+              setEditState((s) => ({ ...s, min: Math.min(100, Math.max(0, Number(e.target.value) || 0)) }))
+            }
+            onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
           />
         ) : editable && subject.id ? (
           <Slider
+            showTooltip
+            aria-label="minQuestions"
             className="w-36"
             classNames={SLIDER_CLASS_NAMES}
-            size="sm"
-            value={subject.minQuestions}
             maxValue={100}
             minValue={0}
-            showTooltip
+            size="sm"
             step={1}
-            aria-label="minQuestions"
+            value={subject.minQuestions}
             onChange={(val) => onSliderChange?.('minQuestions', val as number)}
           />
         ) : (
@@ -173,27 +184,29 @@ export function SubjectRow({
         {isEditing ? (
           <Input
             {...inputProperties.input}
-            size="sm"
-            type="number"
-            min={0}
-            max={100}
-            value={String(editState.max)}
-            onChange={(e) => setEditState((s) => ({ ...s, max: Math.min(100, Math.max(0, Number(e.target.value) || 0)) }))}
-            onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
             className="w-24"
             endContent={<span className="text-default-400 text-sm">%</span>}
+            max={100}
+            min={0}
+            size="sm"
+            type="number"
+            value={String(editState.max)}
+            onChange={(e) =>
+              setEditState((s) => ({ ...s, max: Math.min(100, Math.max(0, Number(e.target.value) || 0)) }))
+            }
+            onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
           />
         ) : editable && subject.id ? (
           <Slider
+            showTooltip
+            aria-label="maxQuestions"
             className="w-36"
             classNames={SLIDER_CLASS_NAMES}
-            size="sm"
-            value={subject.maxQuestions}
             maxValue={100}
             minValue={0}
-            showTooltip
+            size="sm"
             step={1}
-            aria-label="maxQuestions"
+            value={subject.maxQuestions}
             onChange={(val) => onSliderChange?.('maxQuestions', val as number)}
           />
         ) : (
@@ -208,13 +221,13 @@ export function SubjectRow({
       <td className={tdClass}>
         {subject.id ? (
           <button
+            className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-default-100 hover:bg-default-200 transition-colors text-xs text-default-600 font-medium"
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-default-100 hover:bg-default-200 transition-colors text-xs text-default-600 font-medium"
           >
             <FontAwesomeIcon
-              icon={expanded ? faChevronDown : faChevronRight}
               className="w-2.5 h-2.5 text-default-400"
+              icon={expanded ? faChevronDown : faChevronRight}
             />
             {(subject.topics ?? []).length} {t('concurso.topics')}
           </button>
@@ -226,28 +239,24 @@ export function SubjectRow({
   }
 
   function renderActionsCell() {
-    return (
-      <td className={tdClass}>
-        {isEditing ? renderEditingActions() : renderViewActions()}
-      </td>
-    );
+    return <td className={tdClass}>{isEditing ? renderEditingActions() : renderViewActions()}</td>;
   }
 
   function renderEditingActions() {
     return (
       <div className="flex gap-2">
         <Button
-          size="sm"
           className="bg-primary text-primary-foreground text-xs font-semibold rounded-lg hover:opacity-90 h-8 px-3 transition-opacity duration-200"
           isLoading={saving}
+          size="sm"
           onPress={saveEdit}
         >
           {t('common.save')}
         </Button>
         <Button
+          className="border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold h-8 px-3 transition-colors duration-200"
           size="sm"
           variant="bordered"
-          className="border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold h-8 px-3 transition-colors duration-200"
           onPress={cancelEdit}
         >
           {t('common.cancel')}
@@ -261,9 +270,9 @@ export function SubjectRow({
       <div className="flex gap-2">
         {onUpdate && subject.id && (
           <Button
+            className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
             size="sm"
             variant="flat"
-            className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
             onPress={startEdit}
           >
             {t('common.edit')}
@@ -271,11 +280,11 @@ export function SubjectRow({
         )}
         {onRemove && subject.id && (
           <Button
+            className="text-xs font-semibold rounded-lg h-8 px-3"
+            color="danger"
+            isLoading={isRemoving}
             size="sm"
             variant="flat"
-            color="danger"
-            className="text-xs font-semibold rounded-lg h-8 px-3"
-            isLoading={isRemoving}
             onPress={onRemove}
           >
             {t('common.remove')}
@@ -290,9 +299,9 @@ export function SubjectRow({
       <TopicsExpandedRow
         subjectId={subject.id!}
         topics={subject.topics ?? []}
+        onAddTopic={handleAddTopic}
         onRemoveTopic={handleRemoveTopic}
         onUpdateTopic={updateTopic}
-        onAddTopic={handleAddTopic}
       />
     );
   }

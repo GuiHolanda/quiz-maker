@@ -38,7 +38,10 @@ export function EditPublicExamModal({ publicExam, isOpen, onClose, onSaved }: Ed
   }, [publicExam]);
 
   useEffect(() => {
-    if (isOpen) getExamBoards().then(setBoards).catch(() => {});
+    if (isOpen)
+      getExamBoards()
+        .then(setBoards)
+        .catch(() => {});
   }, [isOpen]);
 
   const handleSave = async () => {
@@ -46,6 +49,7 @@ export function EditPublicExamModal({ publicExam, isOpen, onClose, onSaved }: Ed
     setSaving(true);
     try {
       const yearNum = year ? Number(year) : null;
+
       await updatePublicExamMeta(publicExam.id, {
         newName: name.trim(),
         newRole: role.trim() || null,
@@ -66,6 +70,7 @@ export function EditPublicExamModal({ publicExam, isOpen, onClose, onSaved }: Ed
       onClose();
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message;
+
       addToast({
         title: t('toast.error'),
         description: msg || t('toast.failedToUpdate', { name: name.trim() }),
@@ -77,11 +82,9 @@ export function EditPublicExamModal({ publicExam, isOpen, onClose, onSaved }: Ed
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="md">
+    <Modal isOpen={isOpen} size="md" onClose={onClose}>
       <ModalContent>
-        <ModalHeader className="text-base font-semibold text-foreground">
-          {t('concurso.editPublicExam')}
-        </ModalHeader>
+        <ModalHeader className="text-base font-semibold text-foreground">{t('concurso.editPublicExam')}</ModalHeader>
         <ModalBody className="flex flex-col gap-4 pb-2">
           <Input
             {...inputProperties.input}
@@ -91,10 +94,10 @@ export function EditPublicExamModal({ publicExam, isOpen, onClose, onSaved }: Ed
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
           />
           <Autocomplete
-            label={t('concurso.banca')}
-            placeholder={t('concurso.bancaPlaceholder')}
             allowsCustomValue
             inputValue={examBoardName}
+            label={t('concurso.banca')}
+            placeholder={t('concurso.bancaPlaceholder')}
             onInputChange={setExamBoardName}
             {...inputProperties.autocomplete}
           >
@@ -120,8 +123,8 @@ export function EditPublicExamModal({ publicExam, isOpen, onClose, onSaved }: Ed
         </ModalBody>
         <ModalFooter>
           <Button
-            variant="bordered"
             className="border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold transition-colors duration-200"
+            variant="bordered"
             onPress={onClose}
           >
             {t('common.cancel')}

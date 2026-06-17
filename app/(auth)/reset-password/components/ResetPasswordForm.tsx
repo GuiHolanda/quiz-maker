@@ -6,6 +6,7 @@ import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
 import { Link } from '@heroui/link';
 import NextLink from 'next/link';
+
 import api from '@/lib/bff.api';
 import { RESET_PASSWORD_URL } from '@/config/constants';
 import { inputProperties } from '@/config/constants/inputStyles';
@@ -24,8 +25,8 @@ export function ResetPasswordForm() {
     return (
       <div className="bg-content1 border border-default-200 rounded-2xl w-full max-w-md px-8 py-12 relative z-10 flex flex-col items-center text-center gap-5">
         <div className="w-16 h-16 rounded-2xl bg-danger/10 border border-danger/20 flex items-center justify-center">
-          <svg className="w-7 h-7 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg className="w-7 h-7 text-danger" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
         <div>
@@ -34,9 +35,9 @@ export function ResetPasswordForm() {
         </div>
         <Link
           as={NextLink}
+          className="text-primary font-medium transition-opacity hover:opacity-80"
           href="/forgot-password"
           size="sm"
-          className="text-primary font-medium transition-opacity hover:opacity-80"
         >
           Request a new reset link &rarr;
         </Link>
@@ -49,10 +50,12 @@ export function ResetPasswordForm() {
     setError(null);
     if (password !== confirm) {
       setError('Passwords do not match');
+
       return;
     }
     if (password.length < 8) {
       setError('Password must be at least 8 characters');
+
       return;
     }
     setLoading(true);
@@ -78,31 +81,29 @@ export function ResetPasswordForm() {
 
       {/* Heading */}
       <div className="mb-7">
-        <h1 className="text-3xl font-bold text-foreground leading-tight">
-          New password
-        </h1>
+        <h1 className="text-3xl font-bold text-foreground leading-tight">New password</h1>
         <p className="text-default-400 text-sm mt-1.5">Enter your new password below</p>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+      <form className="flex flex-col gap-3.5" onSubmit={handleSubmit}>
         <Input
+          isRequired
+          autoComplete="new-password"
+          description="At least 8 characters"
           label="New password"
           type="password"
           value={password}
           onValueChange={setPassword}
-          isRequired
-          autoComplete="new-password"
-          description="At least 8 characters"
           {...inputProperties.input}
         />
         <Input
+          isRequired
+          autoComplete="new-password"
           label="Confirm password"
           type="password"
           value={confirm}
           onValueChange={setConfirm}
-          isRequired
-          autoComplete="new-password"
           {...inputProperties.input}
         />
 
@@ -114,10 +115,10 @@ export function ResetPasswordForm() {
         )}
 
         <Button
-          type="submit"
-          isLoading={loading}
           fullWidth
           className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200 h-12 mt-1"
+          isLoading={loading}
+          type="submit"
         >
           Reset Password
         </Button>

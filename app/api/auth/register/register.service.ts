@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+
 import { prisma } from '@/lib/prisma';
 
 export class RegisterService {
@@ -17,6 +18,7 @@ export class RegisterService {
     }
 
     const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+
     if (existing) {
       throw Object.assign(new Error('An account with this email already exists'), { status: 409 });
     }

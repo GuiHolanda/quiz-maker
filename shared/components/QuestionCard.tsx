@@ -7,6 +7,7 @@ import { RadioGroup, Radio } from '@heroui/radio';
 import { Form } from '@heroui/form';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleCheck, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
+
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { StoredQuestion, StoredPublicExamQuestion } from '@/shared/types';
 
@@ -24,11 +25,19 @@ interface QuestionCardProps {
   readonly onSelectionChange?: (questionId: number, selection: string[]) => void;
 }
 
-export function QuestionCard({ question, onAnswerChange, initialValue, index, draftValue, onSelectionChange }: QuestionCardProps) {
+export function QuestionCard({
+  question,
+  onAnswerChange,
+  initialValue,
+  index,
+  draftValue,
+  onSelectionChange,
+}: QuestionCardProps) {
   const { t } = useTranslation();
 
   // Keep draftValue in a ref so the reset effect can read latest without being a dependency
   const draftValueRef = useRef(draftValue);
+
   draftValueRef.current = draftValue;
 
   const [currentSelection, setCurrentSelection] = useState<string[]>(draftValue ?? initialValue ?? []);
@@ -36,8 +45,7 @@ export function QuestionCard({ question, onAnswerChange, initialValue, index, dr
   const isSaved = initialValue !== undefined && initialValue.length > 0;
   const hasChanged =
     isSaved &&
-    (currentSelection.length !== initialValue.length ||
-      currentSelection.some((v, i) => v !== initialValue[i]));
+    (currentSelection.length !== initialValue.length || currentSelection.some((v, i) => v !== initialValue[i]));
 
   // On question change or after a save (initialValue changes), restore from draft or saved answer
   useEffect(() => {
@@ -57,6 +65,7 @@ export function QuestionCard({ question, onAnswerChange, initialValue, index, dr
 
   const onCheckboxChange = (value: string | string[]) => {
     const next = Array.isArray(value) ? value : [value];
+
     if (question.correctCount && next.length > question.correctCount) return;
     applySelection(next);
   };
@@ -66,13 +75,14 @@ export function QuestionCard({ question, onAnswerChange, initialValue, index, dr
       const isChecked = currentSelection.includes(key);
       const disableIfLimitReached =
         !!question.correctCount && currentSelection.length >= question.correctCount && !isChecked;
+
       return (
         <Checkbox
           key={key}
-          value={key}
-          size="sm"
-          disabled={disableIfLimitReached}
           classNames={{ label: 'text-sm font-light text-default-600' }}
+          disabled={disableIfLimitReached}
+          size="sm"
+          value={key}
         >
           {String(val)}
         </Checkbox>
@@ -87,38 +97,36 @@ export function QuestionCard({ question, onAnswerChange, initialValue, index, dr
     <div className={`bg-content1 border rounded-xl overflow-hidden ${borderClass}`}>
       {hasChanged && (
         <div className="flex items-center gap-2 px-5 py-2 bg-warning-50 border-b border-warning text-warning-700 text-xs font-medium">
-          <FontAwesomeIcon icon={faTriangleExclamation} className="text-warning text-sm" />
+          <FontAwesomeIcon className="text-warning text-sm" icon={faTriangleExclamation} />
           {t('simulado.answerChanged')}
         </div>
       )}
       <div className="p-5">
         <div className="pb-3 mb-3 border-b border-divider">
           <h4 className="font-semibold text-foreground text-sm leading-relaxed">
-            <span className="inline-block mr-2 text-default-400">
-              {String(index ?? question.id).padStart(2, '0')}.
-            </span>
+            <span className="inline-block mr-2 text-default-400">{String(index ?? question.id).padStart(2, '0')}.</span>
             {question.text}
           </h4>
         </div>
-        <Form onSubmit={handleSubmit} className="flex flex-row items-end">
+        <Form className="flex flex-row items-end" onSubmit={handleSubmit}>
           {question.correctCount && question.correctCount > 1 ? (
             <CheckboxGroup
+              className="w-4/5"
+              classNames={{ label: 'text-xs text-default-400 font-semibold mb-1' }}
               label={t('quiz.correctAnswers', { count: question.correctCount })}
               value={currentSelection}
               onValueChange={onCheckboxChange}
-              className="w-4/5"
-              classNames={{ label: 'text-xs text-default-400 font-semibold mb-1' }}
             >
               {renderCheckboxes()}
             </CheckboxGroup>
           ) : (
             <RadioGroup
+              className="w-4/5"
               value={currentSelection[0] ?? ''}
               onValueChange={(value) => applySelection(value ? [value] : [])}
-              className="w-4/5"
             >
               {Object.entries(question.options).map(([key, val]) => (
-                <Radio key={key} value={key} size="sm" classNames={{ label: 'text-sm ml-2 text-default-600' }}>
+                <Radio key={key} classNames={{ label: 'text-sm ml-2 text-default-600' }} size="sm" value={key}>
                   {String(val)}
                 </Radio>
               ))}
@@ -139,7 +147,7 @@ export function QuestionCard({ question, onAnswerChange, initialValue, index, dr
                 <>{t('simulado.answerPending')}</>
               ) : isSaved ? (
                 <>
-                  <FontAwesomeIcon icon={faCircleCheck} className="mr-1.5 text-xs" />
+                  <FontAwesomeIcon className="mr-1.5 text-xs" icon={faCircleCheck} />
                   {t('simulado.answerSaved')}
                 </>
               ) : (

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@heroui/button';
+
 import { MockExamQuestion } from '@/shared/types';
 import { getQuestionExplanation } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -23,8 +24,7 @@ export function ResultQuestionCard({ mq, selected, localIndex, showDivider }: Re
     selected.every((s) => correctOptions.includes(s));
 
   const initialExplanations =
-    mq.publicExamQuestion.answer?.explanations &&
-    Object.keys(mq.publicExamQuestion.answer.explanations).length > 0
+    mq.publicExamQuestion.answer?.explanations && Object.keys(mq.publicExamQuestion.answer.explanations).length > 0
       ? (mq.publicExamQuestion.answer.explanations as Record<string, string>)
       : null;
 
@@ -37,11 +37,13 @@ export function ResultQuestionCard({ mq, selected, localIndex, showDivider }: Re
   async function handleToggleExplanation() {
     if (explanations) {
       setShowExplanations((prev) => !prev);
+
       return;
     }
     setIsLoading(true);
     try {
       const data = await getQuestionExplanation(mq.publicExamQuestion.id);
+
       setExplanations(data);
       setShowExplanations(true);
     } catch {
@@ -66,6 +68,7 @@ export function ResultQuestionCard({ mq, selected, localIndex, showDivider }: Re
             const isCorrectOption = correctOptions.includes(key);
 
             let textClass = 'text-default-400';
+
             if (isSelected && isCorrect) textClass = 'text-success-500';
             else if (isSelected && !isCorrect) textClass = 'text-danger-500';
             else if (!isSelected && isCorrectOption && !isCorrect) textClass = 'text-success-500';
@@ -80,11 +83,11 @@ export function ResultQuestionCard({ mq, selected, localIndex, showDivider }: Re
           {hasAnswer && (
             <div className="mt-2">
               <Button
+                className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 rounded-lg transition-colors text-xs h-7 px-3"
+                isLoading={isLoading}
                 size="sm"
                 variant="flat"
-                isLoading={isLoading}
                 onPress={handleToggleExplanation}
-                className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 rounded-lg transition-colors text-xs h-7 px-3"
               >
                 {showExplanations ? t('simulado.hideExplanation') : t('simulado.viewExplanation')}
               </Button>

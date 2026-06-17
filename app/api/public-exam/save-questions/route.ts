@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { PublicExamQuestionService, validateAiQuestions } from '@/features/services/question.service';
 import { AIPublicExamQuestion } from '@/shared/types';
 import { auth } from '@/auth';
@@ -7,6 +8,7 @@ const questionService = new PublicExamQuestionService();
 
 export async function POST(request: NextRequest) {
   const session = await auth();
+
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -20,13 +22,14 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { message: 'Public exam questions saved successfully', count: questions.length },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (err: any) {
     console.error('Failed to process request:', err);
+
     return NextResponse.json(
       { error: err, message: err.message || 'Failed to process request' },
-      { status: err.status || 500 },
+      { status: err.status || 500 }
     );
   }
 }

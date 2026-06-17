@@ -18,7 +18,7 @@ export class PrismaService extends PrismaClient {
 
 declare global {
   // store global reference in dev to prevent exhausting connections
-  // eslint-disable-next-line no-var
+
   var __prismaService: PrismaService | undefined;
 }
 

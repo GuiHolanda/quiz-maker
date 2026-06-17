@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Select, SelectItem } from '@heroui/select';
+
 import { QUESTIONS_PER_PAGE_OPTIONS } from '@/config/constants';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
@@ -16,15 +17,15 @@ export function ItemsPerPageSelect({ value, onChange }: ItemsPerPageSelectProps)
 
   return (
     <div className="flex flex-col items-center gap-2 ml-auto">
-      <label htmlFor="questionsPerPage" className="text-xs font-bold">
+      <label className="text-xs font-bold" htmlFor="questionsPerPage">
         {t('common.questionsPerPage')}
       </label>
       <Select
-        id="questionsPerPage"
-        selectedKeys={[String(value)]}
-        items={QUESTIONS_PER_PAGE_OPTIONS}
-        onChange={onChange}
         className="w-24 ml-auto"
+        id="questionsPerPage"
+        items={QUESTIONS_PER_PAGE_OPTIONS}
+        selectedKeys={[String(value)]}
+        onChange={onChange}
         {...inputProperties.select}
       >
         {(item) => <SelectItem key={item.key}>{item.label}</SelectItem>}

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { PublicExamQuestionService, validateAiQuestions } from '@/features/services/question.service';
 import { AIPublicExamQuestion } from '@/shared/types';
 import { OpenAIService } from '@/features/services/openAI.service';
@@ -11,6 +12,7 @@ const openAIService = new OpenAIService();
 
 export async function POST(request: NextRequest) {
   const session = await auth();
+
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -37,6 +39,7 @@ export async function POST(request: NextRequest) {
 
     const llmResponse = await openAIService.getLLMResponseInline(prompt);
     const formattedAnswers = JSON.parse(llmResponse);
+
     await questionService.saveAnswers(formattedAnswers.answers);
 
     return NextResponse.json(
@@ -44,13 +47,14 @@ export async function POST(request: NextRequest) {
         message: 'Public exam answers saved successfully',
         count: formattedAnswers.answers.length,
       },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (err: any) {
     console.error('Failed to process request:', err);
+
     return NextResponse.json(
       { error: err, message: err.message || 'Failed to process request' },
-      { status: err.status || 500 },
+      { status: err.status || 500 }
     );
   }
 }

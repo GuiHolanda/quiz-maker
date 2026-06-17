@@ -20,6 +20,7 @@ export class PublicExamService {
     }
 
     const board = examBoard as Record<string, unknown>;
+
     if (!board.name || typeof board.name !== 'string') {
       throw new Error('Exam board name is required');
     }
@@ -55,6 +56,7 @@ export class PublicExamService {
     return this.prismaService.$transaction(async (tx) => {
       // Resolve or create exam board (by name).
       let board = await tx.examBoard.findUnique({ where: { name: examBoard.name } });
+
       if (!board) {
         board = await tx.examBoard.create({
           data: { name: examBoard.name, fullName: examBoard.fullName ?? null },
@@ -65,6 +67,7 @@ export class PublicExamService {
       const existing = await tx.publicExam.findFirst({
         where: { userId, name, year: year ?? null },
       });
+
       if (existing) {
         throw Object.assign(new Error(`Public exam "${name}" already exists for this user`), { status: 409 });
       }
@@ -81,9 +84,7 @@ export class PublicExamService {
               name: subject.name,
               minQuestions: subject.minQuestions,
               maxQuestions: subject.maxQuestions,
-              topics: subject.topics?.length
-                ? { create: subject.topics.map((t) => ({ name: t.name })) }
-                : undefined,
+              topics: subject.topics?.length ? { create: subject.topics.map((t) => ({ name: t.name })) } : undefined,
             })),
           },
         },
@@ -145,6 +146,7 @@ export class PublicExamService {
 
   public async deletePublicExam(examId: string, userId: string) {
     const exam = await this.prismaService.publicExam.findUnique({ where: { id: examId } });
+
     if (!exam) throw Object.assign(new Error('Public exam not found'), { status: 404 });
     if (exam.userId !== userId) throw Object.assign(new Error('Forbidden'), { status: 403 });
     await this.prismaService.publicExam.delete({ where: { id: examId } });
@@ -172,7 +174,7 @@ export class PublicExamService {
     name: string,
     minQuestions: number,
     maxQuestions: number,
-    userId: string,
+    userId: string
   ) {
     const exam = await this.prismaService.publicExam.findUnique({
       where: { id: publicExamId },
@@ -274,7 +276,7 @@ export class PublicExamService {
   public async updatePublicExamMeta(
     publicExamId: string,
     updates: { newName?: string; newRole?: string | null; newYear?: number | null; newExamBoardName?: string },
-    userId: string,
+    userId: string
   ) {
     const exam = await this.prismaService.publicExam.findUnique({ where: { id: publicExamId } });
 
@@ -287,12 +289,14 @@ export class PublicExamService {
     }
 
     let newExamBoardId: string | undefined;
+
     if (updates.newExamBoardName) {
       const board = await this.prismaService.examBoard.upsert({
         where: { name: updates.newExamBoardName },
         update: {},
         create: { name: updates.newExamBoardName },
       });
+
       newExamBoardId = board.id;
     }
 

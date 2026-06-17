@@ -1,7 +1,10 @@
-import React, { useReducer, useEffect, useCallback, useMemo } from 'react';
 import type { AIQuestion, AnswersMap, QuizLocalStoragePayload, QuizStoreApi } from '@/shared/types';
-import { QUIZ_LOCAL_STORAGE_KEY } from '@/config/constants';
+
+import React, { useReducer, useEffect, useCallback, useMemo } from 'react';
+
 import { quizReducer } from '../reducers/quiz.reducer';
+
+import { QUIZ_LOCAL_STORAGE_KEY } from '@/config/constants';
 
 export const QuizContext = React.createContext<QuizStoreApi | null>(null);
 
@@ -11,6 +14,7 @@ export function QuizProvider({ children }: Readonly<{ children: React.ReactNode 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(QUIZ_LOCAL_STORAGE_KEY);
+
       if (raw) dispatch({ type: 'init', payload: JSON.parse(raw) as QuizLocalStoragePayload });
     } catch (err) {
       console.warn('Failed to read quiz from storage', err);
@@ -26,19 +30,13 @@ export function QuizProvider({ children }: Readonly<{ children: React.ReactNode 
     }
   }, [state]);
 
-  const setAIquestions = useCallback(
-  (aiQuestions: AIQuestion[], selectedAIQuestions: number[] | null) => {
-      dispatch({ type: 'updateAIQuestions', payload: { aiQuestions, selectedAIQuestions } });
-    },
-    []
-  );
+  const setAIquestions = useCallback((aiQuestions: AIQuestion[], selectedAIQuestions: number[] | null) => {
+    dispatch({ type: 'updateAIQuestions', payload: { aiQuestions, selectedAIQuestions } });
+  }, []);
 
-  const setSelectedAIquestions = useCallback(
-    (selectedAIQuestions: number[] | null) => {
-      dispatch({ type: 'updateSelectedAIQuestions', payload: { selectedAIQuestions } });
-    },
-    []
-  );
+  const setSelectedAIquestions = useCallback((selectedAIQuestions: number[] | null) => {
+    dispatch({ type: 'updateSelectedAIQuestions', payload: { selectedAIQuestions } });
+  }, []);
 
   const setAnswers = useCallback((answers: AnswersMap) => {
     dispatch({ type: 'setAnswers', payload: { answers } });
@@ -60,7 +58,15 @@ export function QuizProvider({ children }: Readonly<{ children: React.ReactNode 
   }, []);
 
   const api = useMemo<QuizStoreApi>(
-    () => ({ state: state ?? null, setAIquestions, setSelectedAIquestions, setAnswers, replaceQuiz, setFinished, clear }),
+    () => ({
+      state: state ?? null,
+      setAIquestions,
+      setSelectedAIquestions,
+      setAnswers,
+      replaceQuiz,
+      setFinished,
+      clear,
+    }),
     [state, setAIquestions, setSelectedAIquestions, setAnswers, replaceQuiz, setFinished, clear]
   );
 

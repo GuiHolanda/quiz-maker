@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+
 import { prisma } from '@/lib/prisma';
 
 export class ResetPasswordService {

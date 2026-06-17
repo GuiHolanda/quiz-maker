@@ -1,14 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+
+import { NextRequest, NextResponse } from 'next/server';
+
 import { prisma } from '@/lib/prisma';
 
 function verifySignature(rawBody: string, signature: string): boolean {
   const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET!;
   const hmac = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
-  return crypto.timingSafeEqual(
-    new Uint8Array(Buffer.from(hmac)),
-    new Uint8Array(Buffer.from(signature)),
-  );
+
+  return crypto.timingSafeEqual(new Uint8Array(Buffer.from(hmac)), new Uint8Array(Buffer.from(signature)));
 }
 
 export async function POST(request: NextRequest) {
@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
     }
   } catch (err) {
     console.error('Webhook processing error:', err);
+
     return NextResponse.json({ error: 'Processing failed' }, { status: 500 });
   }
 

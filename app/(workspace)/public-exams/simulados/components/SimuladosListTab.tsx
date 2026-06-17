@@ -6,18 +6,20 @@ import { Chip } from '@heroui/chip';
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@heroui/modal';
 import { useRouter } from 'next/navigation';
 import { addToast } from '@heroui/toast';
+import { faTrash } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useMockExamsContext } from '@/features/providers/mockExams.provider';
 import { deleteMockExam, startMockExamAttempt } from '@/features/connectors';
 import { MockExamListItem } from '@/shared/types';
-import { faTrash } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 type AttemptSummary = MockExamListItem['attempts'][number];
 
 function scoreColor(percent: number): 'success' | 'warning' | 'danger' {
   if (percent >= 70) return 'success';
   if (percent >= 50) return 'warning';
+
   return 'danger';
 }
 
@@ -34,6 +36,7 @@ export function SimuladosListTab() {
     setStartingId(mockExam.id);
     try {
       const attempt = await startMockExamAttempt(mockExam.id);
+
       router.push(`/public-exams/simulados/${mockExam.id}/tentativa/${attempt.id}`);
     } catch (e: unknown) {
       addToast({
@@ -81,7 +84,7 @@ export function SimuladosListTab() {
             <p className="text-default-500">{deleteTarget?.name}</p>
           </ModalBody>
           <ModalFooter>
-            <Button variant="light" isDisabled={isDeleting} onPress={() => setDeleteTarget(null)}>
+            <Button isDisabled={isDeleting} variant="light" onPress={() => setDeleteTarget(null)}>
               {t('common.cancel')}
             </Button>
             <Button color="danger" isLoading={isDeleting} onPress={handleDelete}>
@@ -91,7 +94,7 @@ export function SimuladosListTab() {
         </ModalContent>
       </Modal>
 
-      <Modal isOpen={!!historyTarget} onClose={() => setHistoryTarget(null)} size="lg">
+      <Modal isOpen={!!historyTarget} size="lg" onClose={() => setHistoryTarget(null)}>
         <ModalContent>{historyTarget && renderHistoryModal(historyTarget)}</ModalContent>
       </Modal>
     </>
@@ -109,11 +112,11 @@ export function SimuladosListTab() {
         <div className="flex items-start justify-between gap-2">
           <p className="font-semibold">{m.name ?? m.publicExam.name}</p>
 
-          <Chip size="sm" color={isAnswered ? 'success' : 'warning'} variant="flat">
+          <Chip color={isAnswered ? 'success' : 'warning'} size="sm" variant="flat">
             {isAnswered ? t('simulado.statusAnswered') : t('simulado.statusPending')}
           </Chip>
         </div>
-        
+
         <div className="flex justify-between mt-1">
           <p className="text-default-400 text-sm">{m.publicExam.name}</p>
           <p className="text-default-400 text-sm">
@@ -124,10 +127,10 @@ export function SimuladosListTab() {
         <div className="flex flex-wrap justify-between mt-4">
           <div className="flex gap-2">
             <Button
-              size="sm"
               color="primary"
-              isLoading={startingId === m.id}
               isDisabled={startingId !== null}
+              isLoading={startingId === m.id}
+              size="sm"
               onPress={() => handleStart(m)}
             >
               {isAnswered ? t('simulado.tryAgain') : t('simulado.respond')}
@@ -139,11 +142,11 @@ export function SimuladosListTab() {
             )}
           </div>
           <Button
+            className="p-1.5 text-default-400 hover:text-danger hover:bg-danger/10 transition-colors"
             variant="light"
             onPress={() => setDeleteTarget(m)}
-            className="p-1.5 text-default-400 hover:text-danger hover:bg-danger/10 transition-colors"
           >
-            <FontAwesomeIcon icon={faTrash} className="w-5 h-5" />
+            <FontAwesomeIcon className="w-5 h-5" icon={faTrash} />
           </Button>
         </div>
       </div>
@@ -195,7 +198,7 @@ export function SimuladosListTab() {
           <p className="text-sm font-semibold">{t('simulado.attemptNumber', { n: m.attempts.length - i })}</p>
           <p className="text-xs text-default-400">{date}</p>
         </div>
-        <Chip size="sm" color={scoreColor(percent)} variant="flat" className="font-semibold">
+        <Chip className="font-semibold" color={scoreColor(percent)} size="sm" variant="flat">
           {t('simulado.attemptScore', { correct: score, total: m.totalQuestions, percent })}
         </Chip>
         <Button

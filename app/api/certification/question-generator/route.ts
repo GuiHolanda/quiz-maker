@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { CertificationQuestionService, validateAiQuestions } from '@/features/services/question.service';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { Templates } from '@/config/constants/templates';
@@ -11,6 +12,7 @@ const quotaService = new QuotaService();
 
 export async function GET(request: NextRequest) {
   const session = await auth();
+
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -30,6 +32,7 @@ export async function GET(request: NextRequest) {
   } catch (err: any) {
     console.error('Failed to process request:', err);
     const body = err.body ?? { error: err, message: err.message || 'Failed to process request' };
+
     return NextResponse.json(body, { status: err.status || 500 });
   }
 }

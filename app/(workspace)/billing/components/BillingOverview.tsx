@@ -1,14 +1,16 @@
 'use client';
 
+import type { UsageStats } from '@/shared/types';
+
 import { Button } from '@heroui/button';
 import { addToast } from '@heroui/toast';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+
 import { UsageCard } from '@/app/(workspace)/billing/components/UsageCard';
 import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
 import { getBillingUsage, getPortalUrl } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import type { UsageStats } from '@/shared/types';
 
 export function BillingOverview() {
   const { t } = useTranslation();
@@ -30,6 +32,7 @@ export function BillingOverview() {
   if (!usage) return null;
 
   const resetDate = new Date(usage.periodStartDate);
+
   resetDate.setDate(resetDate.getDate() + 30);
   const resetLabel = resetDate.toLocaleDateString();
 
@@ -37,30 +40,25 @@ export function BillingOverview() {
     setPortalLoading(true);
     try {
       const url = await getPortalUrl();
+
       window.location.href = url;
     } catch {
       setPortalLoading(false);
     }
   }
 
-  const certLimitLabel =
-    usage.certificationsLimit === -1 ? t('billing.unlimited') : String(usage.certificationsLimit);
-  const qLimitLabel =
-    usage.questionsLimit === -1 ? t('billing.unlimited') : String(usage.questionsLimit);
+  const certLimitLabel = usage.certificationsLimit === -1 ? t('billing.unlimited') : String(usage.certificationsLimit);
+  const qLimitLabel = usage.questionsLimit === -1 ? t('billing.unlimited') : String(usage.questionsLimit);
 
   return (
     <div className="flex flex-col gap-6">
       <div className="bg-content1 border border-default-200 rounded-xl p-6 flex items-center justify-between">
         <div>
-          <p className="text-xs font-semibold text-primary mb-1">
-            {t('billing.currentPlan')}
-          </p>
+          <p className="text-xs font-semibold text-primary mb-1">{t('billing.currentPlan')}</p>
           <p className="text-xl font-bold text-foreground">
             {usage.plan === 'pro' ? t('billing.planPro') : t('billing.planFree')}
           </p>
-          <p className="text-xs text-default-400 mt-1">
-            {t('billing.periodResetsOn', { date: resetLabel })}
-          </p>
+          <p className="text-xs text-default-400 mt-1">{t('billing.periodResetsOn', { date: resetLabel })}</p>
         </div>
         {usage.plan === 'free' ? (
           <Button
@@ -71,9 +69,9 @@ export function BillingOverview() {
           </Button>
         ) : (
           <Button
-            variant="bordered"
             className="border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold transition-colors duration-200"
             isLoading={portalLoading}
+            variant="bordered"
             onPress={handlePortal}
           >
             {t('billing.manageButton')}
@@ -82,21 +80,19 @@ export function BillingOverview() {
       </div>
 
       <div>
-        <p className="text-xs font-semibold text-primary mb-3">
-          {t('billing.usageTitle')}
-        </p>
+        <p className="text-xs font-semibold text-primary mb-3">{t('billing.usageTitle')}</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <UsageCard
             label={t('billing.questions')}
-            used={usage.questionsUsed}
             limit={usage.questionsLimit}
             limitLabel={qLimitLabel}
+            used={usage.questionsUsed}
           />
           <UsageCard
             label={t('billing.certifications')}
-            used={usage.certificationsUsed}
             limit={usage.certificationsLimit}
             limitLabel={certLimitLabel}
+            used={usage.certificationsUsed}
           />
         </div>
       </div>

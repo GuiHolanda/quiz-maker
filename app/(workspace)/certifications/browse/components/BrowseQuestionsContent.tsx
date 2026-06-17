@@ -1,14 +1,17 @@
 'use client';
-import { useEffect, useState } from 'react';
 import type { Selection } from '@react-types/shared';
+
+import { useEffect, useState } from 'react';
 import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Skeleton } from '@heroui/skeleton';
 import { addToast } from '@heroui/toast';
+
+import { CertificationAccordion } from './CertificationAccordion';
+
 import { BrowseCertificationSummary } from '@/shared/types';
 import { getBrowseSummary } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
-import { CertificationAccordion } from './CertificationAccordion';
 
 export function BrowseQuestionsContent() {
   const { t } = useTranslation();
@@ -28,6 +31,7 @@ export function BrowseQuestionsContent() {
   function handleCertSelectionChange(keys: Selection) {
     if (keys === 'all') return;
     const key = keys instanceof Set && keys.size > 0 ? String(Array.from(keys)[0]) : null;
+
     setOpenCertKey(key);
   }
 
@@ -35,12 +39,8 @@ export function BrowseQuestionsContent() {
 
   return (
     <PageHeader
+      subtitle={isLoading ? '' : t('browse.subtitle', { total: totalQuestions, count: certifications.length })}
       title={t('browse.title')}
-      subtitle={
-        isLoading
-          ? ''
-          : t('browse.subtitle', { total: totalQuestions, count: certifications.length })
-      }
     >
       {isLoading ? (
         <div className="flex flex-col gap-3">
@@ -52,9 +52,6 @@ export function BrowseQuestionsContent() {
         <p className="text-default-400 text-sm">{t('browse.noQuestions')}</p>
       ) : (
         <Accordion
-          selectionMode="single"
-          onSelectionChange={handleCertSelectionChange}
-          selectedKeys={openCertKey ? [openCertKey] : []}
           className="flex flex-col gap-3 p-0 shadow-none"
           itemClasses={{
             base: 'bg-content1 border border-default-200 rounded-xl overflow-hidden',
@@ -63,6 +60,9 @@ export function BrowseQuestionsContent() {
             content: 'px-3 pb-3',
             indicator: 'text-default-400',
           }}
+          selectedKeys={openCertKey ? [openCertKey] : []}
+          selectionMode="single"
+          onSelectionChange={handleCertSelectionChange}
         >
           {certifications.map((cert) => (
             <AccordionItem
@@ -76,10 +76,7 @@ export function BrowseQuestionsContent() {
                 </div>
               }
             >
-              <CertificationAccordion
-                certification={cert}
-                isOpen={openCertKey === cert.key}
-              />
+              <CertificationAccordion certification={cert} isOpen={openCertKey === cert.key} />
             </AccordionItem>
           ))}
         </Accordion>

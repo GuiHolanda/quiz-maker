@@ -7,12 +7,14 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@herou
 import { addToast } from '@heroui/toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
+
+import { EditPublicExamModal } from './EditPublicExamModal';
+
 import { PublicExamSubjectsTable } from '@/shared/components/PublicExamSubjectsTable';
 import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
 import { deletePublicExam } from '@/features/connectors';
 import { PublicExam, PublicExamSubject, PublicExamTopic, ExamBoard } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { EditPublicExamModal } from './EditPublicExamModal';
 
 export function PublicExamsListTab() {
   const { t } = useTranslation();
@@ -24,46 +26,50 @@ export function PublicExamsListTab() {
   const handleSubjectUpdated = useCallback(
     (publicExam: PublicExam, subjectId: string, newName: string, minQuestions: number, maxQuestions: number) => {
       const updatedSubjects = publicExam.subjects.map((s) =>
-        s.id === subjectId ? { ...s, name: newName, minQuestions, maxQuestions } : s,
+        s.id === subjectId ? { ...s, name: newName, minQuestions, maxQuestions } : s
       );
+
       if (publicExam.id) updatePublicExam(publicExam.id, { subjects: updatedSubjects });
     },
-    [updatePublicExam],
+    [updatePublicExam]
   );
 
   const handleSubjectRemoved = useCallback(
     (publicExam: PublicExam, subjectId: string) => {
       const updatedSubjects = publicExam.subjects.filter((s) => s.id !== subjectId);
+
       if (publicExam.id) updatePublicExam(publicExam.id, { subjects: updatedSubjects });
     },
-    [updatePublicExam],
+    [updatePublicExam]
   );
 
   const handleSubjectAdded = useCallback(
     (publicExam: PublicExam, subject: PublicExamSubject) => {
       if (publicExam.id) updatePublicExam(publicExam.id, { subjects: [...publicExam.subjects, subject] });
     },
-    [updatePublicExam],
+    [updatePublicExam]
   );
 
   const handleTopicAdded = useCallback(
     (publicExam: PublicExam, subjectId: string, topic: PublicExamTopic) => {
       const updatedSubjects = publicExam.subjects.map((s) =>
-        s.id === subjectId ? { ...s, topics: [...(s.topics ?? []), topic] } : s,
+        s.id === subjectId ? { ...s, topics: [...(s.topics ?? []), topic] } : s
       );
+
       if (publicExam.id) updatePublicExam(publicExam.id, { subjects: updatedSubjects });
     },
-    [updatePublicExam],
+    [updatePublicExam]
   );
 
   const handleTopicRemoved = useCallback(
     (publicExam: PublicExam, subjectId: string, topicId: string) => {
       const updatedSubjects = publicExam.subjects.map((s) =>
-        s.id === subjectId ? { ...s, topics: (s.topics ?? []).filter((tp) => tp.id !== topicId) } : s,
+        s.id === subjectId ? { ...s, topics: (s.topics ?? []).filter((tp) => tp.id !== topicId) } : s
       );
+
       if (publicExam.id) updatePublicExam(publicExam.id, { subjects: updatedSubjects });
     },
-    [updatePublicExam],
+    [updatePublicExam]
   );
 
   const handleTopicUpdated = useCallback(
@@ -71,11 +77,12 @@ export function PublicExamsListTab() {
       const updatedSubjects = publicExam.subjects.map((s) =>
         s.id === subjectId
           ? { ...s, topics: (s.topics ?? []).map((tp) => (tp.id === topicId ? { ...tp, name: newName } : tp)) }
-          : s,
+          : s
       );
+
       if (publicExam.id) updatePublicExam(publicExam.id, { subjects: updatedSubjects });
     },
-    [updatePublicExam],
+    [updatePublicExam]
   );
 
   const handleExamSaved = useCallback(
@@ -87,7 +94,7 @@ export function PublicExamsListTab() {
         examBoard: updated.examBoard,
       });
     },
-    [updatePublicExam],
+    [updatePublicExam]
   );
 
   const handleDeleteConfirm = useCallback(async () => {
@@ -96,7 +103,11 @@ export function PublicExamsListTab() {
     try {
       await deletePublicExam(deletingExam.id);
       removePublicExam(deletingExam.id);
-      addToast({ title: t('toast.success'), description: t('concurso.examDeleted', { name: deletingExam.name }), color: 'success' });
+      addToast({
+        title: t('toast.success'),
+        description: t('concurso.examDeleted', { name: deletingExam.name }),
+        color: 'success',
+      });
       setDeletingExam(null);
     } catch {
       addToast({ title: t('toast.error'), description: t('concurso.examDeleteError'), color: 'danger' });
@@ -140,14 +151,22 @@ export function PublicExamsListTab() {
                   </>
                 )}
                 <span
+                  aria-label={t('common.remove')}
+                  className="ml-auto shrink-0 p-1.5 rounded-lg text-default-400 hover:text-danger hover:bg-danger/10 transition-colors cursor-pointer"
                   role="button"
                   tabIndex={0}
-                  className="ml-auto shrink-0 p-1.5 rounded-lg text-default-400 hover:text-danger hover:bg-danger/10 transition-colors cursor-pointer"
-                  onClick={(e) => { e.stopPropagation(); setDeletingExam(publicExam); }}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); setDeletingExam(publicExam); } }}
-                  aria-label={t('common.remove')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeletingExam(publicExam);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation();
+                      setDeletingExam(publicExam);
+                    }
+                  }}
                 >
-                  <FontAwesomeIcon icon={faTrash} className="w-3 h-3" />
+                  <FontAwesomeIcon className="w-3 h-3" icon={faTrash} />
                 </span>
               </div>
             }
@@ -155,28 +174,30 @@ export function PublicExamsListTab() {
             <PublicExamSubjectsTable
               selectedPublicExam={publicExam}
               subjectsList={publicExam.subjects}
+              onEditPublicExam={() => setEditingExam(publicExam)}
+              onSubjectAdded={(subject) => handleSubjectAdded(publicExam, subject)}
+              onSubjectRemoved={(subjectId) => handleSubjectRemoved(publicExam, subjectId)}
               onSubjectUpdated={(subjectId, newName, min, max) =>
                 handleSubjectUpdated(publicExam, subjectId, newName, min, max)
               }
-              onSubjectRemoved={(subjectId) => handleSubjectRemoved(publicExam, subjectId)}
-              onSubjectAdded={(subject) => handleSubjectAdded(publicExam, subject)}
               onTopicAdded={(subjectId, topic) => handleTopicAdded(publicExam, subjectId, topic)}
               onTopicRemoved={(subjectId, topicId) => handleTopicRemoved(publicExam, subjectId, topicId)}
-              onTopicUpdated={(subjectId, topicId, newName) => handleTopicUpdated(publicExam, subjectId, topicId, newName)}
-              onEditPublicExam={() => setEditingExam(publicExam)}
+              onTopicUpdated={(subjectId, topicId, newName) =>
+                handleTopicUpdated(publicExam, subjectId, topicId, newName)
+              }
             />
           </AccordionItem>
         ))}
       </Accordion>
 
       <EditPublicExamModal
-        publicExam={editingExam}
         isOpen={editingExam !== null}
+        publicExam={editingExam}
         onClose={() => setEditingExam(null)}
         onSaved={handleExamSaved}
       />
 
-      <Modal isOpen={deletingExam !== null} onClose={() => !isDeleting && setDeletingExam(null)} size="sm">
+      <Modal isOpen={deletingExam !== null} size="sm" onClose={() => !isDeleting && setDeletingExam(null)}>
         <ModalContent>
           <ModalHeader>{t('concurso.deleteExamTitle')}</ModalHeader>
           <ModalBody>
@@ -186,18 +207,14 @@ export function PublicExamsListTab() {
           </ModalBody>
           <ModalFooter>
             <Button
+              className="border border-default-200 text-default-600"
+              isDisabled={isDeleting}
               variant="flat"
               onPress={() => setDeletingExam(null)}
-              isDisabled={isDeleting}
-              className="border border-default-200 text-default-600"
             >
               {t('common.cancel')}
             </Button>
-            <Button
-              color="danger"
-              onPress={handleDeleteConfirm}
-              isLoading={isDeleting}
-            >
+            <Button color="danger" isLoading={isDeleting} onPress={handleDeleteConfirm}>
               {t('common.remove')}
             </Button>
           </ModalFooter>

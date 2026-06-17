@@ -2,10 +2,12 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Skeleton } from '@heroui/skeleton';
+
+import { QuestionDetailPanel } from './QuestionDetailPanel';
+
 import { StoredQuestion } from '@/shared/types';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
 import { ItemsPerPageSelect } from '@/shared/components/ui/ItemsPerPageSelect';
-import { QuestionDetailPanel } from './QuestionDetailPanel';
 
 interface QuestionListProps {
   readonly questions: StoredQuestion[];
@@ -53,15 +55,14 @@ export function QuestionList({
         ) : (
           questions.map((q) => {
             const isSelected = selectedId === q.id;
+
             return (
               <React.Fragment key={q.id}>
                 <button
-                  onClick={() => setSelectedId(isSelected ? null : q.id)}
                   className={`w-full text-left p-4 border-b-2 border-default-100 text-foreground transition-colors duration-150 ${
-                    isSelected
-                      ? 'bg-content2'
-                      : 'bg-content1 hover:bg-content2'
+                    isSelected ? 'bg-content2' : 'bg-content1 hover:bg-content2'
                   }`}
+                  onClick={() => setSelectedId(isSelected ? null : q.id)}
                 >
                   <div className="flex items-center mb-2">
                     <span className="text-xs rounded px-1.5 py-0.5 bg-default-100 text-default-500 capitalize">
@@ -74,17 +75,13 @@ export function QuestionList({
                   {isSelected && (
                     <motion.div
                       key={`detail-${q.id}`}
-                      initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.25, ease: 'easeInOut' }}
                       className="overflow-hidden"
+                      exit={{ height: 0, opacity: 0 }}
+                      initial={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: 'easeInOut' }}
                     >
-                      <QuestionDetailPanel
-                        question={q}
-                        onDelete={handleDelete}
-                        onClose={() => setSelectedId(null)}
-                      />
+                      <QuestionDetailPanel question={q} onClose={() => setSelectedId(null)} onDelete={handleDelete} />
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -95,11 +92,7 @@ export function QuestionList({
       </div>
       {!isLoading && total > 0 && (
         <div className="p-4 flex items-center gap-2 flex-wrap">
-          <PaginationControls
-            currentPage={page}
-            totalPages={totalPages}
-            onChange={onPageChange}
-          />
+          <PaginationControls currentPage={page} totalPages={totalPages} onChange={onPageChange} />
           <div className="ml-auto">
             <ItemsPerPageSelect value={pageSize} onChange={handleItemsPerPageChange} />
           </div>

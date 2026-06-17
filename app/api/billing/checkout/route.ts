@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { lemonSqueezySetup, createCheckout } from '@lemonsqueezy/lemonsqueezy.js';
+
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
@@ -7,6 +8,7 @@ lemonSqueezySetup({ apiKey: process.env.LEMONSQUEEZY_API_KEY! });
 
 export async function GET(request: NextRequest) {
   const session = await auth();
+
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -24,22 +26,18 @@ export async function GET(request: NextRequest) {
     select: { email: true, name: true },
   });
 
-  const { data, error } = await createCheckout(
-    process.env.LEMONSQUEEZY_STORE_ID!,
-    variantId,
-    {
-      checkoutOptions: { embed: false },
-      checkoutData: {
-        email: user.email ?? undefined,
-        name: user.name ?? undefined,
-        custom: { user_id: session.user.id },
-      },
-      productOptions: {
-        redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/billing?upgraded=true`,
-        receiptButtonText: 'Go to Dashboard',
-      },
-    }
-  );
+  const { data, error } = await createCheckout(process.env.LEMONSQUEEZY_STORE_ID!, variantId, {
+    checkoutOptions: { embed: false },
+    checkoutData: {
+      email: user.email ?? undefined,
+      name: user.name ?? undefined,
+      custom: { user_id: session.user.id },
+    },
+    productOptions: {
+      redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/billing?upgraded=true`,
+      receiptButtonText: 'Go to Dashboard',
+    },
+  });
 
   if (error || !data) {
     return NextResponse.json({ error: 'Failed to create checkout' }, { status: 500 });

@@ -5,6 +5,7 @@ import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
 import { Link } from '@heroui/link';
 import NextLink from 'next/link';
+
 import api from '@/lib/bff.api';
 import { FORGOT_PASSWORD_URL } from '@/config/constants';
 import { inputProperties } from '@/config/constants/inputStyles';
@@ -32,27 +33,24 @@ export function ForgotPasswordForm() {
       <div className="bg-content1 border border-default-200 rounded-2xl w-full max-w-md px-8 py-12 relative z-10 flex flex-col items-center text-center gap-5">
         {/* Check icon */}
         <div className="w-16 h-16 rounded-2xl bg-success/10 border border-success/20 flex items-center justify-center">
-          <svg className="w-7 h-7 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          <svg className="w-7 h-7 text-success" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
 
         <div>
-          <h2 className="text-2xl font-bold text-success">
-            Check your inbox
-          </h2>
+          <h2 className="text-2xl font-bold text-success">Check your inbox</h2>
           <p className="text-default-400 text-sm mt-2 leading-relaxed">
-            If an account exists for{' '}
-            <span className="text-foreground font-medium">{email}</span>
-            , we&apos;ve sent a password reset link.
+            If an account exists for <span className="text-foreground font-medium">{email}</span>, we&apos;ve sent a
+            password reset link.
           </p>
         </div>
 
         <Link
           as={NextLink}
+          className="text-primary font-medium transition-opacity hover:opacity-80"
           href="/login"
           size="sm"
-          className="text-primary font-medium transition-opacity hover:opacity-80"
         >
           &larr; Back to sign in
         </Link>
@@ -72,28 +70,26 @@ export function ForgotPasswordForm() {
 
       {/* Heading */}
       <div className="mb-7">
-        <h1 className="text-3xl font-bold text-foreground leading-tight">
-          Reset password
-        </h1>
+        <h1 className="text-3xl font-bold text-foreground leading-tight">Reset password</h1>
         <p className="text-default-400 text-sm mt-1.5">Enter your email to receive a reset link</p>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <Input
+          isRequired
+          autoComplete="email"
           label="Email address"
           type="email"
           value={email}
           onValueChange={setEmail}
-          isRequired
-          autoComplete="email"
           {...inputProperties.input}
         />
         <Button
-          type="submit"
-          isLoading={loading}
           fullWidth
           className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200 h-12"
+          isLoading={loading}
+          type="submit"
         >
           Send Reset Link
         </Button>
@@ -101,7 +97,12 @@ export function ForgotPasswordForm() {
 
       <p className="text-center text-sm text-default-400 mt-6">
         Remembered it?{' '}
-        <Link as={NextLink} href="/login" size="sm" className="text-primary font-semibold transition-opacity hover:opacity-80">
+        <Link
+          as={NextLink}
+          className="text-primary font-semibold transition-opacity hover:opacity-80"
+          href="/login"
+          size="sm"
+        >
           Back to sign in
         </Link>
       </p>

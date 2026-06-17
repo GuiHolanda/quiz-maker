@@ -1,9 +1,9 @@
-import { SVGProps } from 'react';
 import type { QuizState } from '@/features/reducers/quiz.reducer';
 
+import { SVGProps } from 'react';
 
-export type InputVariant = "bordered" | "flat" | "faded" | "underlined" | undefined;
-export type InputLabelPlacement = "outside" | "outside-left" | "outside-top" | "inside" | undefined;
+export type InputVariant = 'bordered' | 'flat' | 'faded' | 'underlined' | undefined;
+export type InputLabelPlacement = 'outside' | 'outside-left' | 'outside-top' | 'inside' | undefined;
 export type AnswersMap = Record<number, string[]>;
 export type Option = Record<string, string>;
 export type IconSvgProps = SVGProps<SVGSVGElement> & {
@@ -81,11 +81,11 @@ export interface Certification {
 }
 
 export interface CertificationTopic {
-id?: string;
-name: string;
-maxQuestions: number;
-minQuestions: number;
-questions?: number;
+  id?: string;
+  name: string;
+  maxQuestions: number;
+  minQuestions: number;
+  questions?: number;
 }
 
 export interface TopicUpdatePayload {

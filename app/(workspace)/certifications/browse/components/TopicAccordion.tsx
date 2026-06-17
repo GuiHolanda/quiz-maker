@@ -1,10 +1,12 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { addToast } from '@heroui/toast';
+
+import { QuestionList } from './QuestionList';
+
 import { StoredQuestion, BrowseTopicSummary } from '@/shared/types';
 import { getBrowseQuestions, deleteBrowseQuestion } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { QuestionList } from './QuestionList';
 
 interface TopicAccordionProps {
   readonly topic: BrowseTopicSummary;
@@ -37,6 +39,7 @@ export function TopicAccordion({ topic, certificationTitle, isOpen }: TopicAccor
         page: nextPage,
         pageSize: nextPageSize,
       });
+
       setQuestions(data.questions);
       setTotal(data.total);
       setPage(data.page);
@@ -61,14 +64,14 @@ export function TopicAccordion({ topic, certificationTitle, isOpen }: TopicAccor
 
   return (
     <QuestionList
-      questions={questions}
+      isLoading={isLoading}
       page={page}
       pageSize={pageSize}
+      questions={questions}
       total={total}
-      isLoading={isLoading}
+      onDelete={handleDelete}
       onPageChange={(p) => fetchQuestions(p, pageSize)}
       onPageSizeChange={(ps) => fetchQuestions(1, ps)}
-      onDelete={handleDelete}
     />
   );
 }

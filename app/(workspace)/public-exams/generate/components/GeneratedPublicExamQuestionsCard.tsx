@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
-import { AIPublicExamQuestion } from '@/shared/types';
 import { Checkbox } from '@heroui/checkbox';
 import { Listbox, ListboxItem } from '@heroui/listbox';
+
+import { AIPublicExamQuestion } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface GeneratedPublicExamQuestionsCardProps {
@@ -27,6 +28,7 @@ export function GeneratedPublicExamQuestionsCard({
   const onCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { checked } = event.target;
     const selected = new Set(selectedIds);
+
     if (checked) selected.add(question.id);
     else selected.delete(question.id);
     setIsSelected(checked);
@@ -41,7 +43,7 @@ export function GeneratedPublicExamQuestionsCard({
             <span className="inline-block mr-2 text-default-400">{index + 1}.</span>
             {question.text}
           </h4>
-          <Checkbox isSelected={isSelected} onChange={onCheckboxChange} className="ml-auto flex-shrink-0" />
+          <Checkbox className="ml-auto flex-shrink-0" isSelected={isSelected} onChange={onCheckboxChange} />
         </div>
       </div>
       <div>
@@ -50,10 +52,7 @@ export function GeneratedPublicExamQuestionsCard({
             count: question.correctCount,
           })}
         </p>
-        <Listbox
-          aria-label={t('aria.options')}
-          classNames={{ base: 'p-0', list: 'gap-1' }}
-        >
+        <Listbox aria-label={t('aria.options')} classNames={{ base: 'p-0', list: 'gap-1' }}>
           {Object.entries(question.options).map(([key, val]) => (
             <ListboxItem
               key={key}

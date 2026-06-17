@@ -1,16 +1,13 @@
 'use client';
-import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { Chip } from '@heroui/chip';
+
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface StepProgressProps {
   readonly currentStep: 1 | 2 | 3;
 }
 
-const STEP_KEYS = [
-  'certification.step1Title',
-  'certification.step2Title',
-  'certification.step3Title',
-] as const;
+const STEP_KEYS = ['certification.step1Title', 'certification.step2Title', 'certification.step3Title'] as const;
 
 export function StepProgress({ currentStep }: StepProgressProps) {
   const { t } = useTranslation();
@@ -23,17 +20,14 @@ export function StepProgress({ currentStep }: StepProgressProps) {
         <span className="text-sm font-semibold text-foreground">
           {t('certification.stepProgress', { current: String(currentStep), total: '3', title })}
         </span>
-        <Chip color='primary'>
-        <span className="text-xs font-extrabold">
-          {t('certification.percentComplete', { percent: String(percent) })}
-        </span>
+        <Chip color="primary">
+          <span className="text-xs font-extrabold">
+            {t('certification.percentComplete', { percent: String(percent) })}
+          </span>
         </Chip>
       </div>
       <div className="w-full h-1.5 bg-default-100 rounded-full overflow-hidden">
-        <div
-          className="h-full bg-primary rounded-full transition-all duration-500"
-          style={{ width: `${percent}%` }}
-        />
+        <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${percent}%` }} />
       </div>
     </div>
   );

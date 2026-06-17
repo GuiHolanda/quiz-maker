@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useReducer } from 'react';
+
 import { MockExamListItem } from '@/shared/types';
 import { mockExamsReducer, MockExamsState } from '@/features/reducers/mockExams.reducer';
 import { INITIAL_MOCK_EXAMS_STATE, MOCK_EXAMS_LOCAL_STORAGE_KEY } from '@/config/constants';
@@ -22,6 +23,7 @@ export function MockExamsProvider({ children }: { readonly children: React.React
       .then((mockExams) => dispatch({ type: 'setMockExams', payload: mockExams }))
       .catch(() => {
         const stored = localStorage.getItem(MOCK_EXAMS_LOCAL_STORAGE_KEY);
+
         if (stored) {
           try {
             dispatch({ type: 'setMockExams', payload: JSON.parse(stored) });
@@ -48,6 +50,8 @@ export function MockExamsProvider({ children }: { readonly children: React.React
 
 export function useMockExamsContext(): MockExamsContextValue {
   const ctx = useContext(MockExamsContext);
+
   if (!ctx) throw new Error('useMockExamsContext must be used inside MockExamsProvider');
+
   return ctx;
 }

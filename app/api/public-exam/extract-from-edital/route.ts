@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { auth } from '@/auth';
 import { EditalExtractorService } from '@/features/services/edital-extractor.service';
 
@@ -6,12 +7,14 @@ const editalExtractorService = new EditalExtractorService();
 
 export async function POST(request: NextRequest) {
   const session = await auth();
+
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
     const formData = await request.formData().catch(() => null);
+
     if (!formData) {
       return NextResponse.json({ error: 'Invalid form data' }, { status: 400 });
     }
@@ -27,15 +30,16 @@ export async function POST(request: NextRequest) {
 
     const publicExam = await editalExtractorService.extract(
       file,
-      typeof role === 'string' && role.trim() ? role.trim() : undefined,
+      typeof role === 'string' && role.trim() ? role.trim() : undefined
     );
 
     return NextResponse.json({ publicExam }, { status: 200 });
   } catch (err: any) {
     console.error('Failed to extract edital:', err);
+
     return NextResponse.json(
       { error: err, message: err.message || 'Failed to extract edital' },
-      { status: err.status || 500 },
+      { status: err.status || 500 }
     );
   }
 }

@@ -1,8 +1,10 @@
 'use client';
 
 import type { ReactNode } from 'react';
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFilePdf } from '@fortawesome/free-solid-svg-icons';
+
 import { ChatMessageRole } from '@/shared/types';
 
 interface AiChatMessageProps {
@@ -33,8 +35,13 @@ function parseMarkdownInline(text: string): ReactNode[] {
     }
     if (match[1] !== undefined && match[2] !== undefined) {
       result.push(
-        <a key={match.index} href={match[2]} target="_blank" rel="noopener noreferrer"
-           className="text-primary underline hover:opacity-80 transition-opacity">
+        <a
+          key={match.index}
+          className="text-primary underline hover:opacity-80 transition-opacity"
+          href={match[2]}
+          rel="noopener noreferrer"
+          target="_blank"
+        >
           {match[1]}
         </a>
       );
@@ -47,16 +54,18 @@ function parseMarkdownInline(text: string): ReactNode[] {
   }
 
   if (lastIndex < text.length) result.push(text.slice(lastIndex));
+
   return result;
 }
 
 export function AiChatMessage({ role, content, isStreaming, isError, sources, attachmentName }: AiChatMessageProps) {
   const isUser = role === 'user';
-  const displayContent = role === 'assistant'
-    ? isStreaming
-      ? content.replace(PARTIAL_CERT_BLOCK_REGEX, '').trim()
-      : stripCertificationDataBlocks(content)
-    : content;
+  const displayContent =
+    role === 'assistant'
+      ? isStreaming
+        ? content.replace(PARTIAL_CERT_BLOCK_REGEX, '').trim()
+        : stripCertificationDataBlocks(content)
+      : content;
   const showPulsingDots = !isUser && !displayContent && isStreaming;
 
   const bubbleClasses = [
@@ -71,7 +80,7 @@ export function AiChatMessage({ role, content, isStreaming, isError, sources, at
   return (
     <div className={`flex items-end gap-2 ${isUser ? 'justify-end' : 'justify-start'}`}>
       {!isUser && (
-        <span className="text-base leading-none mb-1 shrink-0" aria-hidden="true">
+        <span aria-hidden="true" className="text-base leading-none mb-1 shrink-0">
           🤖
         </span>
       )}
@@ -91,7 +100,7 @@ export function AiChatMessage({ role, content, isStreaming, isError, sources, at
             {parseMarkdownInline(displayContent)}
             {attachmentName && (
               <div className="flex items-center gap-1 mt-2 text-xs text-default-400">
-                <FontAwesomeIcon icon={faFilePdf} className="text-danger text-xs shrink-0" />
+                <FontAwesomeIcon className="text-danger text-xs shrink-0" icon={faFilePdf} />
                 <span>{attachmentName}</span>
               </div>
             )}
@@ -99,7 +108,9 @@ export function AiChatMessage({ role, content, isStreaming, isError, sources, at
               <div className="mt-2 pt-2 border-t border-default-200">
                 <p className="text-xs text-default-400 mb-1">Sources:</p>
                 {sources.map((source, i) => (
-                  <div key={i} className="text-xs">{parseMarkdownInline(source)}</div>
+                  <div key={i} className="text-xs">
+                    {parseMarkdownInline(source)}
+                  </div>
                 ))}
               </div>
             )}

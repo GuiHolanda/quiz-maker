@@ -1,8 +1,9 @@
 'use client';
 
+import { Select, SelectItem } from '@heroui/select';
+
 import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { Select, SelectItem } from '@heroui/select';
 import { inputProperties } from '@/config/constants/inputStyles';
 
 interface PublicExamManagerProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -25,6 +26,7 @@ export const PublicExamManager = ({ isMultiple, noSubjects, showTopic, ...props 
 
   const onPublicExamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const exam = publicExams.find((p) => p.id === e.target.value);
+
     setSelectedPublicExam(exam || null);
     setSelectedSubjects([]);
     setSelectedTopic(null);
@@ -32,6 +34,7 @@ export const PublicExamManager = ({ isMultiple, noSubjects, showTopic, ...props 
 
   const onSubjectsChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedValues = e.target.value;
+
     if (selectedValues) {
       setSelectedSubjects(selectedValues.split(','));
       setSelectedTopic(null);
@@ -58,17 +61,18 @@ export const PublicExamManager = ({ isMultiple, noSubjects, showTopic, ...props 
   return (
     <div className={props.className} {...props}>
       <Select
+        autoComplete="off"
         className={baseColWidth}
         label={t('concurso.selectPublicExam')}
         name="publicExamName"
-        onChange={onPublicExamChange}
-        selectedKeys={selectedPublicExam ? [selectedPublicExam.id ?? selectedPublicExam.name] : []}
         placeholder={t('concurso.selectPublicExamPlaceholder')}
-        autoComplete="off"
+        selectedKeys={selectedPublicExam ? [selectedPublicExam.id ?? selectedPublicExam.name] : []}
+        onChange={onPublicExamChange}
         {...inputProperties.select}
       >
         {publicExams.map((exam) => {
           const label = [exam.name, exam.role, exam.examBoard?.name].filter(Boolean).join(' · ');
+
           return (
             <SelectItem key={exam.id ?? exam.name} textValue={label}>
               {label}
@@ -81,29 +85,27 @@ export const PublicExamManager = ({ isMultiple, noSubjects, showTopic, ...props 
           className={subjectColWidth}
           label={t('concurso.selectSubject')}
           name="subject"
-          onChange={onSubjectsChange}
-          selectionMode={isMultiple ? 'multiple' : 'single'}
-          selectedKeys={selectedSubjects}
           placeholder={t('concurso.selectSubjectPlaceholder')}
+          selectedKeys={selectedSubjects}
+          selectionMode={isMultiple ? 'multiple' : 'single'}
+          onChange={onSubjectsChange}
           {...inputProperties.select}
         >
           {selectedPublicExam
-            ? selectedPublicExam.subjects.map((subject) => (
-                <SelectItem key={subject.name}>{subject.name}</SelectItem>
-              ))
+            ? selectedPublicExam.subjects.map((subject) => <SelectItem key={subject.name}>{subject.name}</SelectItem>)
             : []}
         </Select>
       )}
       {showTopic && (
         <Select
           className="w-1/4"
+          isDisabled={topicsForCurrentSubject.length === 0}
           label={t('concurso.selectTopic')}
           name="topic"
-          onChange={onTopicChange}
-          selectionMode="single"
-          selectedKeys={selectedTopic ? [selectedTopic] : []}
           placeholder={t('concurso.selectTopicPlaceholder')}
-          isDisabled={topicsForCurrentSubject.length === 0}
+          selectedKeys={selectedTopic ? [selectedTopic] : []}
+          selectionMode="single"
+          onChange={onTopicChange}
           {...inputProperties.select}
         >
           {topicsForCurrentSubject.map((topic) => (

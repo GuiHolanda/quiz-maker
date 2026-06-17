@@ -1,12 +1,14 @@
 import React from 'react';
-import { AIQuestion } from '@/shared/types';
 import { Button } from '@heroui/button';
-import { GeneratedQuestionsCard } from './GeneratedQuestionsCard';
 import { Checkbox } from '@heroui/checkbox';
+import { Chip } from '@heroui/chip';
+
+import { GeneratedQuestionsCard } from './GeneratedQuestionsCard';
+
+import { AIQuestion } from '@/shared/types';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
 import { ItemsPerPageSelect } from '@/shared/components/ui/ItemsPerPageSelect';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
-import { Chip } from '@heroui/chip';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { saveQuestions } from '@/features/connectors';
 import { BusyDialog } from '@/shared/components/ui/BusyDialog';
@@ -28,7 +30,7 @@ export function GeneratedQuestionsList({
   const allSelected = questions.length > 0 && selectedCount === questions.length;
 
   const onToggleSelectAll = (checked: boolean) => {
-  setSelectedAIquestions(checked ? questions.map((question) => question.id) : []);
+    setSelectedAIquestions(checked ? questions.map((question) => question.id) : []);
   };
 
   const totalPages = Math.max(1, Math.ceil(questions.length / questionsPerPage));
@@ -39,6 +41,7 @@ export function GeneratedQuestionsList({
   const onItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const v = Number(e.target.value) || 1;
     const bounded = Math.max(1, Math.min(questions.length, v));
+
     setQuestionsPerPage(bounded);
     setCurrentPage(1);
   };
@@ -47,6 +50,7 @@ export function GeneratedQuestionsList({
     const requestPayload = {
       questions: state?.selectedAIQuestions?.map((id) => questions.find((q) => q.id === id)).filter(Boolean),
     };
+
     await request(requestPayload, onSaveSelectedQuestionsSuccess);
   };
 
@@ -58,6 +62,7 @@ export function GeneratedQuestionsList({
   const onDiscardQuestions = () => {
     if (selectedCount > 0) {
       const remaining = questions.filter((q) => !state?.selectedAIQuestions?.includes(q.id));
+
       setSelectedAIquestions([]);
       setAIquestions(remaining, null);
     } else {
@@ -70,10 +75,14 @@ export function GeneratedQuestionsList({
     <div className="flex flex-col gap-4 mt-8">
       <div className="flex items-end justify-between">
         <div className="flex items-center space-x-4 font-bold text-sm">
-          <Checkbox isSelected={allSelected} onChange={(e) => onToggleSelectAll(e.target.checked)} className='ml-auto'>
+          <Checkbox className="ml-auto" isSelected={allSelected} onChange={(e) => onToggleSelectAll(e.target.checked)}>
             {t('common.selectAll')}
           </Checkbox>
-          {selectedCount > 0 && <Chip color="primary"><strong>{t('common.selectedQuestions', { count: selectedCountLabel })}</strong></Chip>}
+          {selectedCount > 0 && (
+            <Chip color="primary">
+              <strong>{t('common.selectedQuestions', { count: selectedCountLabel })}</strong>
+            </Chip>
+          )}
         </div>
         <ItemsPerPageSelect value={questionsPerPage} onChange={onItemsPerPageChange} />
       </div>
@@ -82,11 +91,12 @@ export function GeneratedQuestionsList({
         {visibleQuestions.length > 0 &&
           visibleQuestions.map((question, idx) => {
             const globalIndex = startIndex + idx;
+
             return (
               <GeneratedQuestionsCard
                 key={`${question.topic}-${globalIndex}`}
-                question={question}
                 index={globalIndex}
+                question={question}
               />
             );
           })}
@@ -95,23 +105,11 @@ export function GeneratedQuestionsList({
       <div className="flex gap-2">
         <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
 
-        <Button
-          className="ml-auto"
-          variant="flat"
-          color="danger"
-          size="sm"
-          onPress={onDiscardQuestions}
-        >
+        <Button className="ml-auto" color="danger" size="sm" variant="flat" onPress={onDiscardQuestions}>
           {selectedCount > 0 ? t('common.discardSelected') : t('common.discardAll')}
         </Button>
 
-        <Button
-          variant="flat"
-          color="primary"
-          size="sm"
-          onPress={onSaveSelectedQuestions}
-          hidden={selectedCount === 0}
-        >
+        <Button color="primary" hidden={selectedCount === 0} size="sm" variant="flat" onPress={onSaveSelectedQuestions}>
           {t('common.saveSelected')}
         </Button>
       </div>

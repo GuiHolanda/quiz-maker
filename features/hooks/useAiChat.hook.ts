@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef, useCallback, useEffect } from 'react';
+
 import { saveCertification, extractEdital } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { AI_CHAT_LOCAL_STORAGE_KEY } from '@/config/constants';
@@ -28,16 +29,23 @@ interface ParsedCertResponse {
 
 function parseCertificationData(text: string): ParsedCertResponse | null {
   const match = /```certification-data\s*\n([\s\S]*?)```/.exec(text);
+
   if (!match) return null;
   try {
     const parsed = JSON.parse(match[1]);
     const cert = parsed.certificationData;
+
     if (!cert?.label || !cert?.key || !Array.isArray(cert?.topics)) return null;
-    if (!cert.topics.every((t: unknown) =>
-      typeof (t as Record<string, unknown>).name === 'string' &&
-      typeof (t as Record<string, unknown>).minQuestions === 'number' &&
-      typeof (t as Record<string, unknown>).maxQuestions === 'number'
-    )) return null;
+    if (
+      !cert.topics.every(
+        (t: unknown) =>
+          typeof (t as Record<string, unknown>).name === 'string' &&
+          typeof (t as Record<string, unknown>).minQuestions === 'number' &&
+          typeof (t as Record<string, unknown>).maxQuestions === 'number'
+      )
+    )
+      return null;
+
     return {
       context: typeof parsed.context === 'string' ? parsed.context : '',
       sources: Array.isArray(parsed.sources) ? parsed.sources : [],
@@ -51,7 +59,9 @@ function parseCertificationData(text: string): ParsedCertResponse | null {
 function loadMessages(): ChatMessage[] {
   try {
     const stored = localStorage.getItem(AI_CHAT_LOCAL_STORAGE_KEY);
+
     if (!stored) return [];
+
     return JSON.parse(stored) as ChatMessage[];
   } catch {
     return [];
@@ -91,8 +101,9 @@ export function useAiChat(): UseAiChatReturn {
     if (pendingEditalRef.current) {
       const file = pendingEditalRef.current;
       const typedRole = input.trim();
-      const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
+      const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user');
       const role = typedRole || lastUserMessage?.content || '';
+
       pendingEditalRef.current = null;
       setPendingFile(null);
 
@@ -101,32 +112,32 @@ export function useAiChat(): UseAiChatReturn {
         content: role || '📎',
         attachmentName: file.name,
       };
-      setMessages(prev => [...prev, userMsg]);
+
+      setMessages((prev) => [...prev, userMsg]);
       setInput('');
       setIsStreaming(true);
 
       const loadingMsg: ChatMessage = { role: 'assistant', content: t('chat.analyzingEdital') };
-      setMessages(prev => [...prev, loadingMsg]);
+
+      setMessages((prev) => [...prev, loadingMsg]);
 
       try {
         const publicExam = await extractEdital(file, role || undefined);
-        setMessages(prev => [
-          ...prev.slice(0, -1),
-          { role: 'assistant', content: '', examDraft: publicExam },
-        ]);
+
+        setMessages((prev) => [...prev.slice(0, -1), { role: 'assistant', content: '', examDraft: publicExam }]);
       } catch (err: any) {
-        const errorContent = err?.response?.status === 413
-          ? t('chat.errorFileTooLarge')
-          : err?.response?.status === 400
-            ? t('chat.errorInvalidFile')
-            : t('chat.errorGeneric');
-        setMessages(prev => [
-          ...prev.slice(0, -1),
-          { role: 'assistant', content: errorContent, isError: true },
-        ]);
+        const errorContent =
+          err?.response?.status === 413
+            ? t('chat.errorFileTooLarge')
+            : err?.response?.status === 400
+              ? t('chat.errorInvalidFile')
+              : t('chat.errorGeneric');
+
+        setMessages((prev) => [...prev.slice(0, -1), { role: 'assistant', content: errorContent, isError: true }]);
       } finally {
         setIsStreaming(false);
       }
+
       return;
     }
 
@@ -147,7 +158,7 @@ export function useAiChat(): UseAiChatReturn {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: messagesWithUser.filter(m => m.content.trim() !== ''),
+          messages: messagesWithUser.filter((m) => m.content.trim() !== ''),
           language,
         }),
         signal: abortControllerRef.current.signal,
@@ -155,6 +166,7 @@ export function useAiChat(): UseAiChatReturn {
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
+
         throw new Error(err.message || `HTTP ${response.status}`);
       }
 
@@ -165,30 +177,44 @@ export function useAiChat(): UseAiChatReturn {
 
       while (true) {
         const { done, value } = await reader.read();
+
         if (done || streamDone) break;
 
         const chunk = decoder.decode(value, { stream: true });
+
         for (const line of chunk.split('\n')) {
           if (!line.startsWith('data: ')) continue;
           const jsonStr = line.slice(6);
+
           try {
             const parsed = JSON.parse(jsonStr);
-            if (parsed.done) { streamDone = true; break; }
+
+            if (parsed.done) {
+              streamDone = true;
+              break;
+            }
             if (parsed.content) {
               accumulated += parsed.content;
               setCurrentStreamContent(accumulated);
             }
-          } catch { /* malformed chunk, skip */ }
+          } catch {
+            /* malformed chunk, skip */
+          }
         }
       }
 
       const cleanContent = accumulated.replace('[ENCERRAR_SESSAO]', '').trim();
       const parsed = parseCertificationData(cleanContent);
       const assistantMsg: ChatMessage = parsed
-        ? { role: 'assistant', content: parsed.context, certificationData: parsed.certificationData, sources: parsed.sources }
+        ? {
+            role: 'assistant',
+            content: parsed.context,
+            certificationData: parsed.certificationData,
+            sources: parsed.sources,
+          }
         : { role: 'assistant', content: cleanContent };
 
-      setMessages(prev => [...prev, assistantMsg]);
+      setMessages((prev) => [...prev, assistantMsg]);
 
       if (accumulated.includes('[ENCERRAR_SESSAO]')) {
         setTimeout(() => reset(), 1500);
@@ -210,32 +236,37 @@ export function useAiChat(): UseAiChatReturn {
         }
       }
 
-      setMessages(prev => [
-        ...prev,
-        { role: 'assistant', content: t(errorKey), isError: true },
-      ]);
+      setMessages((prev) => [...prev, { role: 'assistant', content: t(errorKey), isError: true }]);
     } finally {
       setIsStreaming(false);
       setCurrentStreamContent('');
     }
   }, [input, isStreaming, messages, t, language]);
 
-  const saveCertificationFromChat = async (certification: Certification): Promise<'success' | 'duplicate' | 'error'> => {
+  const saveCertificationFromChat = async (
+    certification: Certification
+  ): Promise<'success' | 'duplicate' | 'error'> => {
     try {
       const savedCertification = await saveCertification(certification);
+
       window.dispatchEvent(new CustomEvent('certification-created', { detail: savedCertification }));
+
       return 'success';
     } catch (err: any) {
       if (err?.response?.status === 409 || err?.status === 409) return 'duplicate';
+
       return 'error';
     }
   };
 
-  const handleEditalUpload = useCallback((file: File) => {
-    if (isStreaming) return;
-    pendingEditalRef.current = file;
-    setPendingFile(file);
-  }, [isStreaming]);
+  const handleEditalUpload = useCallback(
+    (file: File) => {
+      if (isStreaming) return;
+      pendingEditalRef.current = file;
+      setPendingFile(file);
+    },
+    [isStreaming]
+  );
 
   const cancelPendingFile = useCallback(() => {
     pendingEditalRef.current = null;
@@ -243,7 +274,7 @@ export function useAiChat(): UseAiChatReturn {
   }, []);
 
   const injectAssistantMessage = useCallback((content: string) => {
-    setMessages(prev => [...prev, { role: 'assistant', content }]);
+    setMessages((prev) => [...prev, { role: 'assistant', content }]);
   }, []);
 
   return {

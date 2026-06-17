@@ -2,9 +2,10 @@
 
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
 import { Button } from '@heroui/button';
+import { useState } from 'react';
+
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { getCheckoutUrl } from '@/features/connectors';
-import { useState } from 'react';
 
 interface UpgradeModalProps {
   readonly isOpen: boolean;
@@ -19,6 +20,7 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
     setLoading(period);
     try {
       const url = await getCheckoutUrl(period);
+
       window.location.href = url;
     } catch {
       setLoading(null);
@@ -26,7 +28,7 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="md">
+    <Modal isOpen={isOpen} size="md" onClose={onClose}>
       <ModalContent>
         <ModalHeader className="flex flex-col gap-1">
           <h2 className="text-xl font-bold text-foreground">{t('billing.upgradeModal.title')}</h2>
@@ -42,16 +44,16 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
           </div>
           <div className="flex gap-3">
             <button
-              onClick={() => handleUpgrade('monthly')}
-              disabled={loading !== null}
               className="flex-1 bg-content1 border border-default-200 rounded-xl p-4 text-left hover:bg-default-100 transition-colors duration-200 cursor-pointer"
+              disabled={loading !== null}
+              onClick={() => handleUpgrade('monthly')}
             >
               <p className="text-sm font-bold text-foreground">{t('billing.upgradeModal.monthly')}</p>
             </button>
             <button
-              onClick={() => handleUpgrade('yearly')}
-              disabled={loading !== null}
               className="flex-1 bg-primary/5 border border-primary/20 rounded-xl p-4 text-left hover:bg-primary/10 transition-colors duration-200 cursor-pointer"
+              disabled={loading !== null}
+              onClick={() => handleUpgrade('yearly')}
             >
               <p className="text-sm font-bold text-foreground">{t('billing.upgradeModal.yearly')}</p>
             </button>
@@ -59,8 +61,8 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
         </ModalBody>
         <ModalFooter>
           <Button
-            variant="bordered"
             className="border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold transition-colors duration-200"
+            variant="bordered"
             onPress={onClose}
           >
             {t('common.cancel')}

@@ -1,5 +1,7 @@
 import { randomBytes } from 'crypto';
+
 import { Resend } from 'resend';
+
 import { prisma } from '@/lib/prisma';
 
 export class ForgotPasswordService {
@@ -9,6 +11,7 @@ export class ForgotPasswordService {
     }
 
     const { email } = body as Record<string, unknown>;
+
     if (!email || typeof email !== 'string') {
       throw Object.assign(new Error('Email is required'), { status: 400 });
     }
@@ -37,6 +40,7 @@ export class ForgotPasswordService {
     const resetUrl = `${process.env.AUTH_URL}/reset-password?token=${token}`;
 
     const resend = new Resend(process.env.RESEND_API_KEY);
+
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL!,
       to: normalizedEmail,

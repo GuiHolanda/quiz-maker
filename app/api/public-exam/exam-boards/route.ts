@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 
 export async function GET() {
   const session = await auth();
+
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -15,15 +17,18 @@ export async function GET() {
       name,
       fullName: fullName ?? undefined,
     }));
+
     return NextResponse.json({ examBoards });
   } catch (err) {
     console.error('Failed to fetch exam boards:', err);
+
     return NextResponse.json({ error: 'Failed to fetch exam boards' }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   const session = await auth();
+
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -50,10 +55,11 @@ export async function POST(request: NextRequest) {
         message: 'Exam board saved successfully',
         examBoard: { id: examBoard.id, name: examBoard.name, fullName: examBoard.fullName ?? undefined },
       },
-      { status: 201 },
+      { status: 201 }
     );
   } catch (err: any) {
     console.error('Failed to save exam board:', err);
+
     return NextResponse.json({ error: err.message || 'Failed to save exam board' }, { status: err.status || 500 });
   }
 }

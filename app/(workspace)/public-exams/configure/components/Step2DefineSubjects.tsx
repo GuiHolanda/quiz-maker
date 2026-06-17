@@ -1,14 +1,15 @@
 'use client';
+import type { PublicExamSubject } from '@/shared/types';
+
 import { faCircleInfo, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 
+import { StepHeader } from './StepHeader';
+
 import { inputProperties } from '@/config/constants/inputStyles';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import type { PublicExamSubject } from '@/shared/types';
-
-import { StepHeader } from './StepHeader';
 
 interface Step2DefineSubjectsProps {
   readonly name: string;
@@ -71,7 +72,7 @@ export function Step2DefineSubjects({
           </div>
 
           <div className="bg-primary/10 border border-primary/30 rounded-xl p-4 flex gap-3">
-            <FontAwesomeIcon icon={faCircleInfo} className="text-primary mt-0.5 shrink-0 text-base" />
+            <FontAwesomeIcon className="text-primary mt-0.5 shrink-0 text-base" icon={faCircleInfo} />
             <div className="flex flex-col gap-1">
               <p className="text-sm font-extrabold text-primary">{t('concurso.systemLogic')}</p>
               <p className="text-sm text-default-500">
@@ -89,10 +90,10 @@ export function Step2DefineSubjects({
           <div className="flex items-center justify-between px-6 py-5 border-b border-default-200">
             <h3 className="text-lg font-bold text-foreground">{t('concurso.subjectsTitle')}</h3>
             <Button
-              size="sm"
               className="bg-primary text-primary-foreground text-xs font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200 h-8 px-4"
+              size="sm"
+              startContent={<FontAwesomeIcon className="text-[10px]" icon={faPlus} />}
               onPress={onAddEmptySubject}
-              startContent={<FontAwesomeIcon icon={faPlus} className="text-[10px]" />}
             >
               {t('concurso.addSubject')}
             </Button>
@@ -108,58 +109,58 @@ export function Step2DefineSubjects({
                   <Input
                     {...inputProperties.input}
                     label={t('concurso.subjectName')}
-                    value={subject.name}
                     placeholder={t('concurso.subjectNamePlaceholder')}
+                    value={subject.name}
                     onChange={(e) => onUpdateSubject(index, e.target.value, subject.minQuestions, subject.maxQuestions)}
                   />
                 </div>
                 <div className="w-1/4 flex flex-col gap-1">
                   <Input
                     {...inputProperties.input}
+                    endContent={<span className="text-default-400 text-sm">%</span>}
                     label={t('concurso.minQuestions')}
-                    type="number"
-                    min={0}
                     max={100}
+                    min={0}
+                    type="number"
                     value={String(subject.minQuestions)}
                     onChange={(e) =>
                       onUpdateSubject(
                         index,
                         subject.name,
                         Math.min(100, Math.max(0, Number(e.target.value) || 0)),
-                        subject.maxQuestions,
+                        subject.maxQuestions
                       )
                     }
-                    endContent={<span className="text-default-400 text-sm">%</span>}
                   />
                 </div>
                 <div className="w-1/4 flex flex-col gap-1">
                   <Input
                     {...inputProperties.input}
+                    endContent={<span className="text-default-400 text-sm">%</span>}
                     label={t('concurso.maxQuestions')}
-                    type="number"
-                    min={0}
                     max={100}
+                    min={0}
+                    type="number"
                     value={String(subject.maxQuestions)}
                     onChange={(e) =>
                       onUpdateSubject(
                         index,
                         subject.name,
                         subject.minQuestions,
-                        Math.min(100, Math.max(0, Number(e.target.value) || 0)),
+                        Math.min(100, Math.max(0, Number(e.target.value) || 0))
                       )
                     }
-                    endContent={<span className="text-default-400 text-sm">%</span>}
                   />
                 </div>
                 <div className="shrink-0 pb-1">
                   <Button
                     isIconOnly
+                    className="bg-default-100 border border-default-200 text-default-500 hover:text-danger hover:bg-danger/10 transition-colors duration-200 rounded-lg"
                     size="sm"
                     variant="flat"
-                    className="bg-default-100 border border-default-200 text-default-500 hover:text-danger hover:bg-danger/10 transition-colors duration-200 rounded-lg"
                     onPress={() => onRemoveSubject(index)}
                   >
-                    <FontAwesomeIcon icon={faTrash} className="text-xs" />
+                    <FontAwesomeIcon className="text-xs" icon={faTrash} />
                   </Button>
                 </div>
               </div>
@@ -168,8 +169,8 @@ export function Step2DefineSubjects({
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 px-6 py-5 border-t border-default-200">
             <Button
-              variant="flat"
               className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 rounded-lg transition-colors duration-200 text-sm font-semibold"
+              variant="flat"
               onPress={onSaveDraft}
             >
               {t('concurso.saveAsDraft')}

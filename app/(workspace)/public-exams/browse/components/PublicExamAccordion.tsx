@@ -1,9 +1,12 @@
 'use client';
-import { useState } from 'react';
 import type { Selection } from '@react-types/shared';
+
+import { useState } from 'react';
 import { Accordion, AccordionItem } from '@heroui/accordion';
-import { BrowsePublicExamSummary } from '@/shared/types';
+
 import { SubjectAccordion } from './SubjectAccordion';
+
+import { BrowsePublicExamSummary } from '@/shared/types';
 
 interface PublicExamAccordionProps {
   readonly publicExam: BrowsePublicExamSummary;
@@ -16,6 +19,7 @@ export function PublicExamAccordion({ publicExam, isOpen }: PublicExamAccordionP
   function handleSubjectSelectionChange(keys: Selection) {
     if (keys === 'all') return;
     const key = keys instanceof Set && keys.size > 0 ? String(Array.from(keys)[0]) : null;
+
     setOpenSubjectKey(key);
   }
 
@@ -23,9 +27,6 @@ export function PublicExamAccordion({ publicExam, isOpen }: PublicExamAccordionP
 
   return (
     <Accordion
-      selectionMode="single"
-      onSelectionChange={handleSubjectSelectionChange}
-      selectedKeys={openSubjectKey ? [openSubjectKey] : []}
       className="flex flex-col gap-2 p-0 shadow-none"
       itemClasses={{
         base: 'bg-content1 border border-default-100 rounded-lg overflow-hidden',
@@ -34,6 +35,9 @@ export function PublicExamAccordion({ publicExam, isOpen }: PublicExamAccordionP
         content: 'p-0',
         indicator: 'text-default-400',
       }}
+      selectedKeys={openSubjectKey ? [openSubjectKey] : []}
+      selectionMode="single"
+      onSelectionChange={handleSubjectSelectionChange}
     >
       {publicExam.subjects.map((subject) => (
         <AccordionItem
@@ -48,9 +52,9 @@ export function PublicExamAccordion({ publicExam, isOpen }: PublicExamAccordionP
           }
         >
           <SubjectAccordion
-            subject={subject}
-            publicExamName={publicExam.name}
             isOpen={openSubjectKey === subject.name}
+            publicExamName={publicExam.name}
+            subject={subject}
           />
         </AccordionItem>
       ))}
