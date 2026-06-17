@@ -203,5 +203,15 @@ describe('MockExamService', () => {
     ).resolves.not.toThrow();
 
     expect(prismaMock.mockExam.create).toHaveBeenCalledOnce();
+
+    expect(prismaMock.publicExamQuestion.count).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: expect.arrayContaining([
+            expect.objectContaining({ subjectId: 'sub-1' }),
+          ]),
+        }),
+      }),
+    );
   });
 });
