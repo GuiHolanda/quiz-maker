@@ -19,7 +19,7 @@ import NextLink from 'next/link';
 import { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowUp, faBrain, faChevronDown } from '@fortawesome/free-solid-svg-icons';
+import { faArrowUp, faBrain, faChevronDown, faGear } from '@fortawesome/free-solid-svg-icons';
 
 import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
 import { UsageBadge } from '@/shared/components/ui/UsageBadge';
@@ -183,6 +183,17 @@ export const Navbar = () => {
                 </NextLink>
               </NavbarItem>
             ))}
+            {status === 'authenticated' && session?.user?.plan === 'admin' && (
+              <NavbarItem>
+                <NextLink
+                  className="flex items-center gap-1.5 text-default-500 hover:text-foreground text-sm px-3 py-1.5 rounded-lg hover:bg-default-100 transition-colors duration-200"
+                  href="/admin"
+                >
+                  <FontAwesomeIcon className="w-3 h-3" icon={faGear} />
+                  Admin
+                </NextLink>
+              </NavbarItem>
+            )}
           </ul>
         </NavbarContent>
 
@@ -257,6 +268,14 @@ export const Navbar = () => {
                 </Link>
               </NavbarMenuItem>
             ))}
+            {status === 'authenticated' && session?.user?.plan === 'admin' && (
+              <NavbarMenuItem>
+                <Link className="text-default-500 hover:text-foreground flex items-center gap-1.5" href="/admin" size="lg">
+                  <FontAwesomeIcon className="w-3 h-3" icon={faGear} />
+                  Admin
+                </Link>
+              </NavbarMenuItem>
+            )}
           </div>
         </NavbarMenu>
       </HeroUINavbar>
