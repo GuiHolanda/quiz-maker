@@ -15,11 +15,21 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const billingPeriod = searchParams.get('period') === 'yearly' ? 'yearly' : 'monthly';
+  const product = searchParams.get('product') === 'pro_ai' ? 'pro_ai' : 'pro';
 
-  const variantId =
-    billingPeriod === 'yearly'
-      ? process.env.LEMONSQUEEZY_PRODUCT_VARIANT_ID_YEARLY!
-      : process.env.LEMONSQUEEZY_PRODUCT_VARIANT_ID_MONTHLY!;
+  let variantId: string;
+
+  if (product === 'pro_ai') {
+    variantId =
+      billingPeriod === 'yearly'
+        ? process.env.LEMONSQUEEZY_PRODUCT_VARIANT_ID_PRO_AI_YEARLY!
+        : process.env.LEMONSQUEEZY_PRODUCT_VARIANT_ID_PRO_AI_MONTHLY!;
+  } else {
+    variantId =
+      billingPeriod === 'yearly'
+        ? process.env.LEMONSQUEEZY_PRODUCT_VARIANT_ID_YEARLY!
+        : process.env.LEMONSQUEEZY_PRODUCT_VARIANT_ID_MONTHLY!;
+  }
 
   const user = await prisma.user.findUniqueOrThrow({
     where: { id: session.user.id },

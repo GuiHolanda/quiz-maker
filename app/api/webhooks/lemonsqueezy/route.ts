@@ -3,12 +3,22 @@ import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
+import type { UserPlan } from '@/shared/types';
 
 function verifySignature(rawBody: string, signature: string): boolean {
   const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET!;
   const hmac = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
 
   return crypto.timingSafeEqual(new Uint8Array(Buffer.from(hmac)), new Uint8Array(Buffer.from(signature)));
+}
+
+function resolvePlanFromVariant(variantId: string | undefined): UserPlan {
+  const proAiVariants = [
+    process.env.LEMONSQUEEZY_PRODUCT_VARIANT_ID_PRO_AI_MONTHLY,
+    process.env.LEMONSQUEEZY_PRODUCT_VARIANT_ID_PRO_AI_YEARLY,
+  ].filter(Boolean);
+
+  return proAiVariants.includes(variantId) ? 'pro_ai' : 'pro';
 }
 
 export async function POST(request: NextRequest) {
@@ -25,6 +35,7 @@ export async function POST(request: NextRequest) {
   const subscriptionId: string | undefined = String(payload.data?.id);
   const customerId: string | undefined = String(payload.data?.attributes?.customer_id);
   const status: string | undefined = payload.data?.attributes?.status;
+  const variantId: string | undefined = String(payload.data?.attributes?.variant_id);
 
   if (!userId) {
     return NextResponse.json({ received: true }, { status: 200 });
@@ -36,7 +47,7 @@ export async function POST(request: NextRequest) {
         await prisma.user.update({
           where: { id: userId },
           data: {
-            plan: 'pro',
+            plan: resolvePlanFromVariant(variantId),
             subscriptionStatus: 'active',
             lemonSqueezySubscriptionId: subscriptionId,
             lemonSqueezyCustomerId: customerId,
