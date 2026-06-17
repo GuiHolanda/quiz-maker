@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { addToast } from '@heroui/toast';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { getMockExam, getMockExamAnswers, finishMockExamAttempt } from '@/features/connectors';
 import { MockExam, MockExamAttemptAnswer, AnswersMap } from '@/shared/types';
@@ -72,7 +73,14 @@ export default function SimuladoTentativaPage() {
 
       await finishMockExamAttempt(Number(params.id), Number(params.attemptId), { answers: attemptAnswers, score });
       router.push(`/public-exams/simulados/${params.id}/resultado/${params.attemptId}`);
-    } catch {
+    } catch (e: unknown) {
+      addToast({
+        title: t('toast.error'),
+        description:
+          (e as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+          t('toast.somethingWrong'),
+        color: 'danger',
+      });
       setIsFinishing(false);
     }
   }
