@@ -146,6 +146,41 @@ export function MyComponent({ items }: MyComponentProps) {
 }
 ```
 
+### useRequest vs manual try/catch
+
+`useRequest` wraps **a single function HTTP call** — use it for simple mutations (save, update, delete) where there is one API call and an optional `onSuccess` callback.
+
+Do **not** use `useRequest` for multi-step orchestration flows that involve:
+- Multiple sequential API calls with dependencies between them
+- Intermediate business logic between calls (e.g. score calculation)
+- Conditional branching based on intermediate responses
+- `router.push()` mid-flow
+
+For those cases, use manual `try/catch` with `addToast` for error feedback:
+
+```ts
+async function handleComplexFlow() {
+  setIsBusy(true);
+  try {
+    const result1 = await step1();
+    if (needsStep2(result1)) await step2(result1);
+    const final = await step3();
+    router.push('/next-page');
+  } catch (e: unknown) {
+    addToast({
+      title: t('toast.error'),
+      description:
+        (e as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        t('toast.somethingWrong'),
+      color: 'danger',
+    });
+    setIsBusy(false);
+  }
+}
+```
+
+Note: `setIsBusy(false)` goes in the `catch` only — on success the user navigates away so there is no need to reset it.
+
 ### State Management
 - Context + Reducer pattern everywhere
 - One provider per domain: `CertificationsProvider`, `QuizProvider`
