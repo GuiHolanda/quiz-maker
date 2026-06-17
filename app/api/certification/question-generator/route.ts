@@ -6,6 +6,8 @@ import { Templates } from '@/config/constants/templates';
 import { QuotaService } from '@/features/services/quota.service';
 import { auth } from '@/auth';
 
+export const maxDuration = 300;
+
 const questionService = new CertificationQuestionService();
 const openAIService = new OpenAIService();
 const quotaService = new QuotaService();

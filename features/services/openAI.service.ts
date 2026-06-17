@@ -6,7 +6,16 @@ export interface TemplateReference {
 }
 
 export class OpenAIService {
-  constructor(private readonly openAIClient: OpenAI = new OpenAI()) {}
+  // Configure the SDK transport with an explicit per-request timeout and one
+  // retry. Without this, slow OpenAI responses surface as the bare
+  // "TypeError: fetch failed" undici error when Vercel kills the function or
+  // the underlying socket is reset, which is hard to diagnose downstream.
+  constructor(
+    private readonly openAIClient: OpenAI = new OpenAI({
+      timeout: 90_000,
+      maxRetries: 1,
+    })
+  ) {}
 
   async getLLMResponse(template: TemplateReference, variables: any): Promise<string> {
     const { promptId, version } = template;
