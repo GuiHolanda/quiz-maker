@@ -6,37 +6,37 @@ export const siteConfig = {
   navItems: [
     {
       label: "nav.generateQuestions",
-      href: "/generate-questions",
+      href: "/certifications/generate",
     },
     {
       label: "nav.configureCertification",
-      href: "/configure-certification",
+      href: "/certifications/configure",
     },
     {
       label: "nav.makeYourOwnQuiz",
-      href: "/quiz",
+      href: "/certifications/quiz",
     },
     {
       label: "nav.browseQuestions",
-      href: "/browse-questions",
+      href: "/certifications/browse",
     },
   ],
   navMenuItems: [
     {
       label: "nav.quiz",
-      href: "/quiz",
+      href: "/certifications/quiz",
     },
     {
       label: "nav.generateQuestions",
-      href: "/generate-questions",
+      href: "/certifications/generate",
     },
     {
       label: "nav.configureCertification",
-      href: "/configure-certification",
+      href: "/certifications/configure",
     },
     {
       label: "nav.browseQuestions",
-      href: "/browse-questions",
+      href: "/certifications/browse",
     },
   ],
   links: {

@@ -28,17 +28,17 @@ import { LanguageSwitch } from '@/shared/components/ui/language-switch';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 const PRODUCT_ITEMS = [
-  { label: 'nav.quiz', href: '/quiz' },
-  { label: 'nav.generateQuestions', href: '/generate-questions' },
-  { label: 'nav.configureCertification', href: '/configure-certification' },
-  { label: 'nav.browseQuestions', href: '/browse-questions' },
+  { label: 'nav.quiz', href: '/certifications/quiz' },
+  { label: 'nav.generateQuestions', href: '/certifications/generate' },
+  { label: 'nav.configureCertification', href: '/certifications/configure' },
+  { label: 'nav.browseQuestions', href: '/certifications/browse' },
 ] as const;
 
 const CONCURSO_ITEMS = [
-  { label: 'nav.configureConcurso', href: '/configure-public-exam' },
-  { label: 'nav.generateConcursoQuestions', href: '/generate-public-exam-questions' },
-  { label: 'nav.browseConcursoQuestions', href: '/browse-public-exam-questions' },
-  { label: 'nav.simulados', href: '/simulados' },
+  { label: 'nav.configureConcurso', href: '/public-exams/configure' },
+  { label: 'nav.generateConcursoQuestions', href: '/public-exams/generate' },
+  { label: 'nav.browseConcursoQuestions', href: '/public-exams/browse' },
+  { label: 'nav.simulados', href: '/public-exams/simulados' },
 ] as const;
 
 const NAV_LINKS = [
