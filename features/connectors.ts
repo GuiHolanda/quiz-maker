@@ -19,6 +19,9 @@ import {
   BROWSE_PUBLIC_EXAM_QUESTIONS_URL,
   GET_CERTIFICATION_ANSWERS_URL,
   MOCK_EXAMS_URL,
+  ADMIN_USERS_URL,
+  ADMIN_OVERVIEW_URL,
+  ADMIN_AUDIT_LOG_URL,
 } from '@/config/constants';
 import {
   AIQuestion,
@@ -47,6 +50,11 @@ import {
   MockExamAttempt,
   FinishAttemptPayload,
   MockExamResult,
+  AdminOverviewStats,
+  AdminUsersResponse,
+  AdminAuditLogResponse,
+  UserAdminRow,
+  UserPlan,
 } from '@/shared/types';
 import api from '@/lib/bff.api';
 
@@ -348,4 +356,42 @@ export async function getQuestionExplanation(questionId: number): Promise<Record
   );
 
   return data.explanations;
+}
+
+export async function getAdminOverview(): Promise<AdminOverviewStats> {
+  const { data } = await api.get<AdminOverviewStats>(ADMIN_OVERVIEW_URL);
+
+  return data;
+}
+
+export async function getAdminUsers(params: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  plan?: string;
+  subscriptionStatus?: string;
+}): Promise<AdminUsersResponse> {
+  const { data } = await api.get<AdminUsersResponse>(ADMIN_USERS_URL, { params });
+
+  return data;
+}
+
+export async function updateAdminUser(
+  id: string,
+  payload: { plan?: UserPlan; customQuotaOverride?: number | null }
+): Promise<UserAdminRow> {
+  const { data } = await api.patch<UserAdminRow>(`${ADMIN_USERS_URL}/${id}`, payload);
+
+  return data;
+}
+
+export async function getAdminAuditLog(params: {
+  page?: number;
+  limit?: number;
+  adminId?: string;
+  targetId?: string;
+}): Promise<AdminAuditLogResponse> {
+  const { data } = await api.get<AdminAuditLogResponse>(ADMIN_AUDIT_LOG_URL, { params });
+
+  return data;
 }
