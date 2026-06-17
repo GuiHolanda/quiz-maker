@@ -13,7 +13,7 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 
 export default function ConfigurePublicExamPage() {
   const { t } = useTranslation();
-  const [selectedTab, setSelectedTab] = useState<Key>('new');
+  const [selectedTab, setSelectedTab] = useState<Key>('publicExamsList');
 
   return (
     <PublicExamsProvider>
@@ -31,11 +31,11 @@ export default function ConfigurePublicExamPage() {
             selectedKey={selectedTab as string}
             onSelectionChange={setSelectedTab}
           >
+            <Tab key="publicExamsList" title={t('concurso.tabList')}>
+              <PublicExamsListTab onCreateNew={() => setSelectedTab('new')} />
+            </Tab>
             <Tab key="new" title={t('concurso.tabNew')}>
               <NewPublicExamTab onBackToLibrary={() => setSelectedTab('publicExamsList')} />
-            </Tab>
-            <Tab key="publicExamsList" title={t('concurso.tabList')}>
-              <PublicExamsListTab />
             </Tab>
           </Tabs>
         </div>

@@ -78,8 +78,8 @@ export function GeneratedPublicExamQuestionsList({ questions, setQuestions }: Ge
   return (
     <div className="flex flex-col gap-4 mt-8">
       <div className="flex items-end justify-between">
-        <div className="flex items-center space-x-4 font-bold text-sm">
-          <Checkbox className="ml-auto" isSelected={allSelected} onChange={(e) => onToggleSelectAll(e.target.checked)}>
+        <div className="flex items-center gap-4 font-bold text-sm">
+          <Checkbox className="ml-auto" classNames={{label: 'text-sm'}} isSelected={allSelected} onChange={(e) => onToggleSelectAll(e.target.checked)}>
             {t('common.selectAll')}
           </Checkbox>
           {selectedCount > 0 && (

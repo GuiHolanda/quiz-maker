@@ -6,7 +6,7 @@ import { Button } from '@heroui/button';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
 import { addToast } from '@heroui/toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faTrash, faPlus } from '@fortawesome/free-solid-svg-icons';
 
 import { EditPublicExamModal } from './EditPublicExamModal';
 
@@ -16,7 +16,11 @@ import { deletePublicExam } from '@/features/connectors';
 import { PublicExam, PublicExamSubject, PublicExamTopic, ExamBoard } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
-export function PublicExamsListTab() {
+interface PublicExamsListTabProps {
+  readonly onCreateNew: () => void;
+}
+
+export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
   const { t } = useTranslation();
   const { publicExams, updatePublicExam, removePublicExam } = usePublicExamsContext();
   const [editingExam, setEditingExam] = useState<PublicExam | null>(null);
@@ -118,7 +122,20 @@ export function PublicExamsListTab() {
 
   return (
     <>
-      <Accordion
+      {publicExams.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-4 py-16 bg-content1 border border-default-200 rounded-xl text-center">
+          <p className="text-base font-semibold text-foreground">{t('concurso.noExamsTitle')}</p>
+          <p className="text-sm text-default-500 max-w-sm">{t('concurso.noExamsDescription')}</p>
+          <Button
+            className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200 mt-2"
+            startContent={<FontAwesomeIcon className="w-3.5 h-3.5" icon={faPlus} />}
+            onPress={onCreateNew}
+          >
+            {t('concurso.tabNew')}
+          </Button>
+        </div>
+      ) : (
+        <Accordion
         className="mt-2 flex flex-col gap-2 px-0"
         itemClasses={{
           base: 'bg-content1 border border-default-200 rounded-xl',
@@ -189,6 +206,7 @@ export function PublicExamsListTab() {
           </AccordionItem>
         ))}
       </Accordion>
+      )}
 
       <EditPublicExamModal
         isOpen={editingExam !== null}
