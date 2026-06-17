@@ -108,14 +108,15 @@ export class PublicExamQuestionService {
           })
         : null;
 
-      const subjectCanonical = new Map<string, string>();
-      const topicCanonical = new Map<string, string>();
+      type Canonical = { id: string; name: string };
+      const subjectCanonical = new Map<string, Canonical>();
+      const topicCanonical = new Map<string, Canonical>();
 
       if (exam) {
         for (const s of exam.subjects) {
-          subjectCanonical.set(looseKey(s.name), s.name);
+          subjectCanonical.set(looseKey(s.name), { id: s.id, name: s.name });
           for (const t of s.topics) {
-            topicCanonical.set(`${looseKey(s.name)}::${looseKey(t.name)}`, t.name);
+            topicCanonical.set(`${looseKey(s.name)}::${looseKey(t.name)}`, { id: t.id, name: t.name });
           }
         }
       }
@@ -124,24 +125,31 @@ export class PublicExamQuestionService {
         const { publicExamName, examBoardName, subject, topic, text, correctCount, options, difficulty } = question;
 
         const incomingSubject = normalizeName(subject ?? '');
-        const canonicalSubject = subjectCanonical.get(looseKey(incomingSubject)) ?? incomingSubject;
+        const matchedSubject = subjectCanonical.get(looseKey(incomingSubject));
+        const canonicalSubjectName = matchedSubject?.name ?? incomingSubject;
+        const subjectId = matchedSubject?.id ?? null;
 
         const incomingTopic = topic ? normalizeName(topic) : null;
-        const canonicalTopic =
+        const matchedTopic =
           incomingTopic != null
-            ? (topicCanonical.get(`${looseKey(canonicalSubject)}::${looseKey(incomingTopic)}`) ?? incomingTopic)
-            : null;
+            ? topicCanonical.get(`${looseKey(canonicalSubjectName)}::${looseKey(incomingTopic)}`)
+            : undefined;
+        const canonicalTopicName = matchedTopic?.name ?? incomingTopic;
+        const topicId = matchedTopic?.id ?? null;
 
         const createdQuestion = await tx.publicExamQuestion.create({
           data: {
             publicExamName: normalizeName(publicExamName ?? ''),
             examBoardName: normalizeName(examBoardName ?? ''),
-            subject: canonicalSubject,
-            topic: canonicalTopic,
+            subject: canonicalSubjectName,
+            topic: canonicalTopicName,
             text,
             correctCount,
             difficulty,
             userId,
+            publicExamId: exam?.id ?? null,
+            subjectId,
+            topicId,
           },
         });
 

@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { CreateMockExamPayload, MockExamSubjectConfig } from '@/shared/types';
+import { normalizeName, looseKey } from '@/shared/utils';
 
 export class MockExamService {
   async list(userId: string) {
@@ -38,10 +39,37 @@ export class MockExamService {
     });
   }
 
+  /**
+   * Resolves each MockExamSubjectConfig.subjectName to the configured
+   * PublicExamSubject row for this exam. Uses NFC + lowercase matching so
+   * minor display drift (accents, whitespace, case) does not break the link.
+   * Returns null subjectId when the name cannot be matched at all (caller
+   * should treat as 0 questions available).
+   */
+  private async resolveSubjects(
+    publicExamId: string,
+    subjects: MockExamSubjectConfig[]
+  ): Promise<Array<MockExamSubjectConfig & { subjectId: string | null }>> {
+    const dbSubjects = await prisma.publicExamSubject.findMany({
+      where: { publicExamId },
+      select: { id: true, name: true },
+    });
+    const byKey = new Map<string, string>();
+
+    for (const s of dbSubjects) byKey.set(looseKey(s.name), s.id);
+
+    return subjects.map((s) => ({
+      ...s,
+      subjectId: byKey.get(looseKey(s.subjectName)) ?? null,
+    }));
+  }
+
   async create(payload: CreateMockExamPayload, userId: string) {
     const { publicExamId, name, totalQuestions, subjects } = payload;
 
-    await this.validateSubjectAvailability(publicExamId, subjects, userId);
+    const resolved = await this.resolveSubjects(publicExamId, subjects);
+
+    await this.validateSubjectAvailability(publicExamId, resolved, userId);
 
     const publicExam = await prisma.publicExam.findFirst({ where: { id: publicExamId } });
 
@@ -49,7 +77,7 @@ export class MockExamService {
 
     const autoName = name?.trim() || `${publicExam.name} – ${totalQuestions} questões`;
 
-    const selectedQuestionIds = await this.drawQuestions(publicExamId, subjects, userId);
+    const selectedQuestionIds = await this.drawQuestions(publicExamId, resolved, userId);
 
     const mockExam = await prisma.mockExam.create({
       data: {
@@ -86,15 +114,39 @@ export class MockExamService {
     };
   }
 
-  private async validateSubjectAvailability(publicExamId: string, subjects: MockExamSubjectConfig[], userId: string) {
+  private async validateSubjectAvailability(
+    publicExamId: string,
+    subjects: Array<MockExamSubjectConfig & { subjectId: string | null }>,
+    userId: string
+  ) {
     const publicExam = await prisma.publicExam.findFirst({ where: { id: publicExamId } });
 
     if (!publicExam) throw Object.assign(new Error('Concurso não encontrado'), { status: 404 });
 
     for (const s of subjects) {
-      const count = await prisma.publicExamQuestion.count({
-        where: { publicExamName: publicExam.name, subject: s.subjectName, userId },
-      });
+      // Prefer FK match when available (post Layer 5 schema). Fall back to
+      // the denormalized string match for any rows still without subjectId.
+      const count = s.subjectId
+        ? await prisma.publicExamQuestion.count({
+            where: {
+              userId,
+              OR: [
+                { subjectId: s.subjectId },
+                {
+                  subjectId: null,
+                  publicExamName: publicExam.name,
+                  subject: normalizeName(s.subjectName),
+                },
+              ],
+            },
+          })
+        : await prisma.publicExamQuestion.count({
+            where: {
+              publicExamName: publicExam.name,
+              subject: normalizeName(s.subjectName),
+              userId,
+            },
+          });
 
       if (count < s.questionCount) {
         throw Object.assign(
@@ -109,17 +161,32 @@ export class MockExamService {
 
   private async drawQuestions(
     publicExamId: string,
-    subjects: MockExamSubjectConfig[],
+    subjects: Array<MockExamSubjectConfig & { subjectId: string | null }>,
     userId: string
   ): Promise<number[]> {
     const publicExam = await prisma.publicExam.findFirstOrThrow({ where: { id: publicExamId } });
     const ids: number[] = [];
 
     for (const s of subjects) {
-      const questions = await prisma.publicExamQuestion.findMany({
-        where: { publicExamName: publicExam.name, subject: s.subjectName, userId },
-        select: { id: true },
-      });
+      const questions = s.subjectId
+        ? await prisma.publicExamQuestion.findMany({
+            where: {
+              userId,
+              OR: [
+                { subjectId: s.subjectId },
+                {
+                  subjectId: null,
+                  publicExamName: publicExam.name,
+                  subject: normalizeName(s.subjectName),
+                },
+              ],
+            },
+            select: { id: true },
+          })
+        : await prisma.publicExamQuestion.findMany({
+            where: { publicExamName: publicExam.name, subject: normalizeName(s.subjectName), userId },
+            select: { id: true },
+          });
 
       const shuffled = questions.sort(() => Math.random() - 0.5).slice(0, s.questionCount);
 

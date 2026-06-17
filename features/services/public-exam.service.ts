@@ -143,11 +143,18 @@ export class PublicExamService {
     // When renaming, also migrate the denormalized PublicExamQuestion.subject
     // string snapshots so historic questions stay linked to the configured
     // subject. Without this, questions silently orphan and the mock-exam
-    // count query returns 0.
+    // count query returns 0. Post Layer 5 we also have subjectId FKs, so
+    // questions are reachable both ways during rollout.
     return this.prismaService.$transaction(async (tx) => {
       if (normalizedNewName !== undefined && normalizedNewName !== subject.name) {
         await tx.publicExamQuestion.updateMany({
-          where: { publicExamName: subject.publicExam.name, subject: subject.name, userId },
+          where: {
+            userId,
+            OR: [
+              { subjectId: subject.id },
+              { subjectId: null, publicExamName: subject.publicExam.name, subject: subject.name },
+            ],
+          },
           data: { subject: normalizedNewName },
         });
       }
@@ -277,15 +284,22 @@ export class PublicExamService {
 
     // Mirror the rename onto historic PublicExamQuestion rows that snapshot
     // the topic string. Scoped by subject + publicExamName + userId to avoid
-    // touching same-named topics on other subjects.
+    // touching same-named topics on other subjects. Post Layer 5 also use
+    // topicId FK as the primary match.
     return this.prismaService.$transaction(async (tx) => {
       if (normalizedNewName !== topic.name) {
         await tx.publicExamQuestion.updateMany({
           where: {
-            publicExamName: topic.subject.publicExam.name,
-            subject: topic.subject.name,
-            topic: topic.name,
             userId,
+            OR: [
+              { topicId: topic.id },
+              {
+                topicId: null,
+                publicExamName: topic.subject.publicExam.name,
+                subject: topic.subject.name,
+                topic: topic.name,
+              },
+            ],
           },
           data: { topic: normalizedNewName },
         });
@@ -350,16 +364,27 @@ export class PublicExamService {
       }
 
       // Mirror exam-level renames onto historic PublicExamQuestion snapshots.
+      // Use publicExamId FK when present; fall back to name match for any
+      // legacy rows that haven't been backfilled yet.
       if (normalizedNewName !== undefined && normalizedNewName !== exam.name) {
         await tx.publicExamQuestion.updateMany({
-          where: { publicExamName: exam.name, userId },
+          where: {
+            userId,
+            OR: [{ publicExamId: exam.id }, { publicExamId: null, publicExamName: exam.name }],
+          },
           data: { publicExamName: normalizedNewName },
         });
       }
 
       if (normalizedNewBoardName !== undefined) {
         await tx.publicExamQuestion.updateMany({
-          where: { publicExamName: normalizedNewName ?? exam.name, userId },
+          where: {
+            userId,
+            OR: [
+              { publicExamId: exam.id },
+              { publicExamId: null, publicExamName: normalizedNewName ?? exam.name },
+            ],
+          },
           data: { examBoardName: normalizedNewBoardName },
         });
       }
