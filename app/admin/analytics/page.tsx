@@ -1,12 +1,14 @@
 import { Progress } from '@heroui/progress';
 
-import { getAdminOverview, getAdminUsers } from '@/features/connectors';
+import { AdminService } from '@/app/api/admin/admin.service';
 import type { UserPlan } from '@/shared/types';
+
+const adminService = new AdminService();
 
 export default async function AdminAnalyticsPage() {
   const [overview, usersData] = await Promise.all([
-    getAdminOverview().catch(() => null),
-    getAdminUsers({ page: 1, limit: 10, plan: undefined }).catch(() => null),
+    adminService.getOverview().catch(() => null),
+    adminService.listUsers({ page: 1, limit: 10 }).catch(() => null),
   ]);
 
   const planLabels: Record<UserPlan, string> = {

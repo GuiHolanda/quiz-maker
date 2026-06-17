@@ -1,11 +1,13 @@
-import { getAdminOverview } from '@/features/connectors';
+import { AdminService } from '@/app/api/admin/admin.service';
 import type { AdminOverviewStats, UserPlan } from '@/shared/types';
+
+const adminService = new AdminService();
 
 export default async function AdminOverviewPage() {
   let stats: AdminOverviewStats | null = null;
 
   try {
-    stats = await getAdminOverview();
+    stats = await adminService.getOverview();
   } catch {
     // render error state below
   }
