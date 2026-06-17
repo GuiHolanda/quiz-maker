@@ -263,7 +263,9 @@ Página pública, fundo `bg-background`, `'use client'`.
 | Companies | `CompaniesSection` | Logos texto com cor da marca |
 | CTA | `CtaSection` | Box `bg-primary/5 border-primary/20` |
 
-### Generate Questions (`app/generate-questions/`)
+### Domínio: Certifications (`app/(workspace)/certifications/`)
+
+#### Generate Questions (`certifications/generate/`)
 
 | Arquivo | Papel |
 |---|---|
@@ -272,7 +274,7 @@ Página pública, fundo `bg-background`, `'use client'`.
 | `components/GeneratedQuestionsList.tsx` | Lista com select-all, botões de salvar/descartar |
 | `components/GeneratedQuestionsCard.tsx` | Card individual: texto + opções (Listbox) + checkbox |
 
-### Quiz (`app/quiz/`)
+#### Quiz (`certifications/quiz/`)
 
 | Arquivo | Papel |
 |---|---|
@@ -282,7 +284,7 @@ Página pública, fundo `bg-background`, `'use client'`.
 | `components/QuestionCard.tsx` | Card interativo: Radio (1 resposta) ou Checkbox (N respostas) |
 | `components/AnswredQuestionCard.tsx` | Card respondido: gabarito + explicações |
 
-### Configure Certification (`app/configure-certification/`)
+#### Configure Certification (`certifications/configure/`)
 
 | Arquivo | Papel |
 |---|---|
@@ -292,6 +294,61 @@ Página pública, fundo `bg-background`, `'use client'`.
 | `components/CertificationsListTab.tsx` | Lista as certifications do usuário |
 | `components/EditCertificationTab.tsx` | Select para escolher qual editar |
 | `components/TopicForm.tsx` | Form de adição de tópico com Slider de percentual |
+
+#### Browse Questions (`certifications/browse/`)
+
+| Arquivo | Papel |
+|---|---|
+| `page.tsx` | Provider + layout `.app-bg` |
+| `components/BrowseQuestionsContent.tsx` | Layout wrapper principal |
+| `components/CertificationAccordion.tsx` | Accordion de seleção de certificação |
+| `components/TopicAccordion.tsx` | Accordion de seleção de tópico |
+| `components/QuestionList.tsx` | Lista de questões filtradas |
+| `components/QuestionDetailPanel.tsx` | Painel de detalhe da questão |
+
+---
+
+### Domínio: Public Exams (`app/(workspace)/public-exams/`)
+
+#### Configure Public Exam (`public-exams/configure/`)
+
+| Arquivo | Papel |
+|---|---|
+| `page.tsx` | Provider + layout + HeroUI Tabs |
+| `components/NewPublicExamTab.tsx` | Form de criação de concurso |
+| `components/PublicExamsListTab.tsx` | Lista os concursos do usuário |
+| `components/EditPublicExamModal.tsx` | Modal de edição de concurso |
+
+#### Generate Public Exam Questions (`public-exams/generate/`)
+
+| Arquivo | Papel |
+|---|---|
+| `page.tsx` | Providers + layout `.app-bg` |
+| `components/PublicExamQuestionGeneratorForm.tsx` | Form de configuração (concurso, assunto, count) |
+| `components/GeneratedPublicExamQuestionsList.tsx` | Lista com select-all, botões de salvar/descartar |
+| `components/GeneratedPublicExamQuestionsCard.tsx` | Card individual de questão de concurso |
+
+#### Browse Public Exam Questions (`public-exams/browse/`)
+
+| Arquivo | Papel |
+|---|---|
+| `page.tsx` | Provider + layout `.app-bg` |
+| `components/PublicExamAccordion.tsx` | Accordion de seleção de concurso |
+| `components/SubjectAccordion.tsx` | Accordion de seleção de assunto |
+| `components/PublicExamQuestionList.tsx` | Lista de questões filtradas |
+| `components/PublicExamQuestionDetailPanel.tsx` | Painel de detalhe da questão |
+
+#### Simulados (`public-exams/simulados/`)
+
+| Arquivo | Papel |
+|---|---|
+| `page.tsx` | Provider + layout `.app-bg` — tabs List/New |
+| `components/SimuladosListTab.tsx` | Lista de simulados com histórico de tentativas |
+| `components/NewSimuladoTab.tsx` | Form de criação de simulado |
+| `[id]/tentativa/[attemptId]/page.tsx` | Interface interativa de resposta |
+| `[id]/tentativa/[attemptId]/components/SimuladoQuestionList.tsx` | Lista paginada com tracking de respostas |
+| `[id]/resultado/[attemptId]/page.tsx` | Página de resultados com breakdown por assunto |
+| `[id]/resultado/[attemptId]/components/ResultQuestionCard.tsx` | Card com resposta do usuário vs gabarito |
 
 ### Login / Auth (`app/login/`)
 
@@ -363,7 +420,7 @@ Transição:   transition-colors duration-200 (cards, inputs)
 - [ ] Cards com `bg-content1 border border-default-200 rounded-xl`
 - [ ] Todo texto de UI via `t('chave')` — sem strings hardcoded
 - [ ] Componente marcado com `'use client'` se usar hooks
-- [ ] Componentes page-specific em `app/<pagina>/components/`, nunca em `sharedComponents/`
+- [ ] Componentes page-specific em `app/(workspace)/<dominio>/<pagina>/components/`, nunca em `sharedComponents/`
 - [ ] Usar HeroUI para todos os elementos de UI
 - [ ] Usar tokens semânticos, nunca cores hard-coded
 - [ ] Verificar em dark e light mode
