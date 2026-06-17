@@ -10,7 +10,7 @@ import { prisma } from '@/lib/prisma';
 
 declare module 'next-auth' {
   interface Session {
-    user: { id: string } & DefaultSession['user'];
+    user: { id: string; plan: string } & DefaultSession['user'];
   }
 }
 
@@ -47,8 +47,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       return token;
     },
-    session({ session, token }) {
-      if (token.sub) session.user.id = token.sub;
+    async session({ session, token }) {
+      if (token.sub) {
+        session.user.id = token.sub;
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.sub },
+          select: { plan: true },
+        });
+        session.user.plan = dbUser?.plan ?? 'free';
+      }
 
       return session;
     },
