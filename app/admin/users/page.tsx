@@ -58,7 +58,8 @@ export default function AdminUsersPage() {
     setPendingEdits((prev) => {
       const user = data?.users.find((u) => u.id === userId)!;
       const current = getEdit(user);
-      return { ...prev, [userId]: { ...current, ...patch } };
+      const merged = { ...current, ...patch };
+      return { ...prev, [userId]: merged as { plan?: UserPlan; overrideMode: 'none' | 'infinite' | 'value'; overrideValue: string } };
     });
   }
 

@@ -7,7 +7,8 @@ import { AdminService } from '@/app/api/admin/admin.service';
 
 const adminService = new AdminService();
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -41,7 +42,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: 'customQuotaOverride must be null, -1, or a positive integer' }, { status: 400 });
     }
 
-    const updated = await adminService.updateUser(session.user.id, params.id, {
+    const updated = await adminService.updateUser(session.user.id, id, {
       ...(plan !== undefined ? { plan } : {}),
       ...(customQuotaOverride !== undefined ? { customQuotaOverride } : {}),
     });

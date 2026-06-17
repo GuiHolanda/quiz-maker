@@ -91,6 +91,7 @@ export class AdminService {
     return {
       users: users.map((u) => ({
         ...u,
+        plan: u.plan as UserPlan,
         periodStartDate: u.periodStartDate.toISOString(),
         createdAt: u.createdAt.toISOString(),
       })),
@@ -138,6 +139,7 @@ export class AdminService {
 
     return {
       ...updated,
+      plan: updated.plan as UserPlan,
       periodStartDate: updated.periodStartDate.toISOString(),
       createdAt: updated.createdAt.toISOString(),
     };
@@ -166,7 +168,8 @@ export class AdminService {
       prisma.adminAuditLog.count({ where }),
     ]);
 
-    const userIds = [...new Set([...logs.map((l) => l.adminId), ...logs.map((l) => l.targetId)])];
+    const allIds = logs.map((l) => l.adminId).concat(logs.map((l) => l.targetId));
+    const userIds = Array.from(new Set(allIds));
     const users = await prisma.user.findMany({
       where: { id: { in: userIds } },
       select: { id: true, name: true, email: true },
