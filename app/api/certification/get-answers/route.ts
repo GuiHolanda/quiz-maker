@@ -6,6 +6,8 @@ import { OpenAIService } from '@/features/services/openAI.service';
 import { Templates } from '@/config/constants/templates';
 import { auth } from '@/auth';
 
+export const maxDuration = 300;
+
 const questionService = new CertificationQuestionService();
 const openAIService = new OpenAIService();
 

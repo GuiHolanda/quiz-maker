@@ -3,6 +3,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { AIPublicExamQuestion } from '@/shared/types';
 import { prisma } from '@/lib/prisma';
+import { OpenAIService } from '@/features/services/openAI.service';
+import { PublicExamQuestionService } from '@/features/services/question.service';
+import { buildGetPublicExamAnswersPrompt } from '@/config/promptSchemas/getPublicExamAnswers';
+
+// Vercel function timeout. Hobby caps at 60s; Pro allows up to 300s.
+// OpenAI completions for a batch of explanations can take 30-90s, so we set
+// the maximum supported by the deployment plan.
+export const maxDuration = 300;
+
+const openAIService = new OpenAIService();
+const questionService = new PublicExamQuestionService();
+
+// Process answers in chunks so a single OpenAI call stays well within the
+// function timeout even on slow responses or when the user finishes a long
+// simulado without any pre-generated explanations.
+const BATCH_SIZE = 10;
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -25,19 +41,46 @@ export async function POST(request: NextRequest) {
 
     if (!needsAnswer.length) return NextResponse.json({ message: 'All answers already exist', count: 0 });
 
-    const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
-    const cookieHeader = request.headers.get('cookie') ?? '';
+    const { publicExamName, examBoardName } = needsAnswer[0];
 
-    await fetch(`${baseUrl}/api/public-exam/get-answers`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', cookie: cookieHeader },
-      body: JSON.stringify(needsAnswer),
+    const publicExam = await prisma.publicExam.findFirst({
+      where: { name: publicExamName, userId: session.user.id },
+      select: { role: true },
     });
 
-    return NextResponse.json({ message: 'Answers generated', count: needsAnswer.length });
-  } catch (e: unknown) {
-    const status = (e as { status?: number }).status ?? 500;
+    let totalGenerated = 0;
 
-    return NextResponse.json({ error: 'Internal Server Error', message: (e as Error).message }, { status });
+    for (let i = 0; i < needsAnswer.length; i += BATCH_SIZE) {
+      const slice = needsAnswer.slice(i, i + BATCH_SIZE);
+      const { subject, topic } = slice[0];
+
+      const prompt = buildGetPublicExamAnswersPrompt({
+        public_exam_name: publicExamName,
+        exam_board_name: examBoardName,
+        role: publicExam?.role ?? undefined,
+        subject_name: subject,
+        topic_name: topic,
+        questions: slice,
+      });
+
+      const llmResponse = await openAIService.getLLMResponseInline(prompt);
+      const formatted = JSON.parse(llmResponse);
+
+      if (Array.isArray(formatted?.answers)) {
+        await questionService.saveAnswers(formatted.answers);
+        totalGenerated += formatted.answers.length;
+      }
+    }
+
+    return NextResponse.json({ message: 'Answers generated', count: totalGenerated });
+  } catch (e: unknown) {
+    const err = e as Error & { status?: number };
+
+    console.error('mock-exams/answers failed:', err);
+
+    return NextResponse.json(
+      { error: 'Internal Server Error', message: err.message ?? 'Failed to generate answers' },
+      { status: err.status ?? 500 }
+    );
   }
 }

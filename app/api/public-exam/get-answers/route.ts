@@ -7,6 +7,9 @@ import { buildGetPublicExamAnswersPrompt } from '@/config/promptSchemas/getPubli
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
+// OpenAI explanation generation can take 30-90s for a batch.
+export const maxDuration = 300;
+
 const questionService = new PublicExamQuestionService();
 const openAIService = new OpenAIService();
 
@@ -53,7 +56,7 @@ export async function POST(request: NextRequest) {
     console.error('Failed to process request:', err);
 
     return NextResponse.json(
-      { error: err, message: err.message || 'Failed to process request' },
+      { error: 'Internal Server Error', message: err.message || 'Failed to process request' },
       { status: err.status || 500 }
     );
   }

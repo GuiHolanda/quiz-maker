@@ -6,6 +6,8 @@ import { buildGeneratePublicExamQuestionsPrompt } from '@/config/promptSchemas/g
 import { QuotaService } from '@/features/services/quota.service';
 import { auth } from '@/auth';
 
+export const maxDuration = 300;
+
 const questionService = new PublicExamQuestionService();
 const openAIService = new OpenAIService();
 const quotaService = new QuotaService();

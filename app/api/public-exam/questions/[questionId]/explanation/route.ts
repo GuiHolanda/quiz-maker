@@ -6,6 +6,8 @@ import { OpenAIService } from '@/features/services/openAI.service';
 import { PublicExamQuestionService } from '@/features/services/question.service';
 import { buildGetPublicExamExplanationsPrompt } from '@/config/promptSchemas/getPublicExamExplanations';
 
+export const maxDuration = 300;
+
 const openAIService = new OpenAIService();
 const questionService = new PublicExamQuestionService();
 
