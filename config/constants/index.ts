@@ -151,10 +151,16 @@ export const BILLING_CHECKOUT_URL = '/billing/checkout';
 export const BILLING_PORTAL_URL = '/billing/portal';
 
 export const PLAN_LIMITS = {
-  free: { questionsPerPeriod: 50, maxCertifications: 2 },
-  pro: { questionsPerPeriod: 500, maxCertifications: Infinity },
-  admin: { questionsPerPeriod: Infinity, maxCertifications: Infinity },
+  free:   { questionsPerPeriod: 250,      maxCertifications: 2,        maxPublicExams: 0 },
+  pro:    { questionsPerPeriod: 1500,     maxCertifications: 5,        maxPublicExams: 2 },
+  pro_ai: { questionsPerPeriod: 2500,     maxCertifications: 5,        maxPublicExams: 5 },
+  tester: { questionsPerPeriod: Infinity, maxCertifications: Infinity, maxPublicExams: Infinity },
+  admin:  { questionsPerPeriod: Infinity, maxCertifications: Infinity, maxPublicExams: Infinity },
 } as const;
+
+export const ADMIN_USERS_URL = '/admin/users';
+export const ADMIN_OVERVIEW_URL = '/admin/overview';
+export const ADMIN_AUDIT_LOG_URL = '/admin/audit-log';
 
 export const BROWSE_SUMMARY_URL = '/certification/browse-questions/summary';
 export const BROWSE_QUESTIONS_URL = '/certification/browse-questions/questions';
