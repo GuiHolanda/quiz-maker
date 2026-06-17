@@ -86,11 +86,16 @@ describe('PublicExamService', () => {
       'user-1',
     );
 
-    expect(prismaMock.publicExamQuestion.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: { subject: 'Matemática e Lógica' },
-      }),
-    );
+    expect(prismaMock.publicExamQuestion.updateMany).toHaveBeenCalledWith({
+      where: {
+        userId: 'user-1',
+        OR: [
+          { subjectId: 'sub-1' },
+          { subjectId: null, publicExamName: 'Concurso ABC', subject: 'Matemática' },
+        ],
+      },
+      data: { subject: 'Matemática e Lógica' },
+    });
   });
 
   // Behaviour 5: updateSubject() does NOT call updateMany when name is unchanged
@@ -158,10 +163,15 @@ describe('PublicExamService', () => {
 
     await service.updatePublicExamMeta('exam-1', { newName: 'Concurso XYZ' }, 'user-1');
 
-    expect(prismaMock.publicExamQuestion.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: { publicExamName: 'Concurso XYZ' },
-      }),
-    );
+    expect(prismaMock.publicExamQuestion.updateMany).toHaveBeenCalledWith({
+      where: {
+        userId: 'user-1',
+        OR: [
+          { publicExamId: 'exam-1' },
+          { publicExamId: null, publicExamName: 'Concurso ABC' },
+        ],
+      },
+      data: { publicExamName: 'Concurso XYZ' },
+    });
   });
 });
