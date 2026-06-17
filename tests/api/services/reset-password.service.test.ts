@@ -4,6 +4,7 @@ vi.mock('bcryptjs', () => ({
   default: { hash: vi.fn().mockResolvedValue('hashed-password') },
 }));
 
+import bcrypt from 'bcryptjs';
 import { prismaMock } from '../__mocks__/prisma';
 import { ResetPasswordService } from '@/app/api/auth/reset-password/reset-password.service';
 
@@ -52,6 +53,8 @@ describe('ResetPasswordService', () => {
     prismaMock.verificationToken.delete.mockResolvedValue({} as any);
 
     await service.resetPassword({ token: 'reset-token-123', password: 'newpassword' });
+
+    expect(bcrypt.hash).toHaveBeenCalledWith('newpassword', 12);
 
     expect(prismaMock.user.update).toHaveBeenCalledWith({
       where: { email: 'user@example.com' },
