@@ -149,9 +149,9 @@ export interface ChatMessage {
   readonly attachmentName?: string;
 }
 
-export type UserPlan = 'free' | 'pro' | 'admin';
+export type UserPlan = 'free' | 'pro' | 'pro_ai' | 'tester' | 'admin';
 
-export type QuotaAction = 'generate_questions' | 'create_certification';
+export type QuotaAction = 'generate_questions' | 'create_certification' | 'create_public_exam';
 
 export interface UsageStats {
   plan: UserPlan;
@@ -159,6 +159,8 @@ export interface UsageStats {
   questionsLimit: number;
   certificationsUsed: number;
   certificationsLimit: number;
+  publicExamsUsed: number;
+  publicExamsLimit: number;
   periodStartDate: string;
 }
 
@@ -390,4 +392,52 @@ export interface MockExamResult {
   mockExam: Pick<MockExam, 'id' | 'name' | 'publicExam'>;
   questions: MockExamQuestion[];
   subjectBreakdown: { subjectName: string; correct: number; total: number }[];
+}
+
+export interface UserAdminRow {
+  id: string;
+  name: string | null;
+  email: string;
+  plan: UserPlan;
+  customQuotaOverride: number | null;
+  questionsGeneratedThisPeriod: number;
+  periodStartDate: string;
+  subscriptionStatus: string | null;
+  createdAt: string;
+}
+
+export interface AdminOverviewStats {
+  totalUsers: number;
+  byPlan: Record<UserPlan, number>;
+  activeSubscriptions: number;
+  totalQuestionsGenerated: number;
+  avgUsagePercent: number;
+}
+
+export interface AdminAuditEntry {
+  id: string;
+  adminId: string;
+  adminName: string | null;
+  adminEmail: string;
+  targetId: string;
+  targetName: string | null;
+  targetEmail: string;
+  action: string;
+  before: string;
+  after: string;
+  createdAt: string;
+}
+
+export interface AdminUsersResponse {
+  users: UserAdminRow[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface AdminAuditLogResponse {
+  entries: AdminAuditEntry[];
+  total: number;
+  page: number;
+  totalPages: number;
 }
