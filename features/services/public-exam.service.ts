@@ -1,5 +1,6 @@
 import { prisma, PrismaService } from '@/lib/prisma';
 import { PublicExam, PublicExamSubjectUpdatePayload } from '@/shared/types';
+import { normalizeName } from '@/shared/utils';
 
 export class PublicExamService {
   constructor(private readonly prismaService: PrismaService = prisma) {}
@@ -39,12 +40,13 @@ export class PublicExamService {
     }
 
     return {
-      name: name.trim(),
-      role: typeof role === 'string' && role.trim() ? role.trim() : undefined,
+      name: normalizeName(name),
+      role: typeof role === 'string' && role.trim() ? normalizeName(role) : undefined,
       year: typeof year === 'number' ? year : undefined,
       examBoard: {
-        name: (board.name as string).trim(),
-        fullName: typeof board.fullName === 'string' && board.fullName.trim() ? board.fullName.trim() : undefined,
+        name: normalizeName(board.name as string),
+        fullName:
+          typeof board.fullName === 'string' && board.fullName.trim() ? normalizeName(board.fullName) : undefined,
       },
       subjects: subjects as PublicExam['subjects'],
     };
@@ -81,10 +83,12 @@ export class PublicExamService {
           userId,
           subjects: {
             create: subjects.map((subject) => ({
-              name: subject.name,
+              name: normalizeName(subject.name),
               minQuestions: subject.minQuestions,
               maxQuestions: subject.maxQuestions,
-              topics: subject.topics?.length ? { create: subject.topics.map((t) => ({ name: t.name })) } : undefined,
+              topics: subject.topics?.length
+                ? { create: subject.topics.map((t) => ({ name: normalizeName(t.name) })) }
+                : undefined,
             })),
           },
         },
@@ -134,13 +138,35 @@ export class PublicExamService {
       throw Object.assign(new Error('Forbidden'), { status: 403 });
     }
 
-    return this.prismaService.publicExamSubject.update({
-      where: { id: subjectId },
-      data: {
-        ...(newName !== undefined && { name: newName }),
-        minQuestions,
-        maxQuestions,
-      },
+    const normalizedNewName = newName !== undefined ? normalizeName(newName) : undefined;
+
+    // When renaming, also migrate the denormalized PublicExamQuestion.subject
+    // string snapshots so historic questions stay linked to the configured
+    // subject. Without this, questions silently orphan and the mock-exam
+    // count query returns 0. Post Layer 5 we also have subjectId FKs, so
+    // questions are reachable both ways during rollout.
+    return this.prismaService.$transaction(async (tx) => {
+      if (normalizedNewName !== undefined && normalizedNewName !== subject.name) {
+        await tx.publicExamQuestion.updateMany({
+          where: {
+            userId,
+            OR: [
+              { subjectId: subject.id },
+              { subjectId: null, publicExamName: subject.publicExam.name, subject: subject.name },
+            ],
+          },
+          data: { subject: normalizedNewName },
+        });
+      }
+
+      return tx.publicExamSubject.update({
+        where: { id: subjectId },
+        data: {
+          ...(normalizedNewName !== undefined && { name: normalizedNewName }),
+          minQuestions,
+          maxQuestions,
+        },
+      });
     });
   }
 
@@ -188,16 +214,18 @@ export class PublicExamService {
       throw Object.assign(new Error('Forbidden'), { status: 403 });
     }
 
+    const normalizedName = normalizeName(name);
+
     const existing = await this.prismaService.publicExamSubject.findUnique({
-      where: { publicExamId_name: { publicExamId: exam.id, name } },
+      where: { publicExamId_name: { publicExamId: exam.id, name: normalizedName } },
     });
 
     if (existing) {
-      throw Object.assign(new Error(`Subject "${name}" already exists`), { status: 409 });
+      throw Object.assign(new Error(`Subject "${normalizedName}" already exists`), { status: 409 });
     }
 
     return this.prismaService.publicExamSubject.create({
-      data: { name, minQuestions, maxQuestions, publicExamId: exam.id },
+      data: { name: normalizedName, minQuestions, maxQuestions, publicExamId: exam.id },
     });
   }
 
@@ -215,16 +243,18 @@ export class PublicExamService {
       throw Object.assign(new Error('Forbidden'), { status: 403 });
     }
 
+    const normalizedName = normalizeName(name);
+
     const existing = await this.prismaService.publicExamTopic.findUnique({
-      where: { subjectId_name: { subjectId, name } },
+      where: { subjectId_name: { subjectId, name: normalizedName } },
     });
 
     if (existing) {
-      throw Object.assign(new Error(`Topic "${name}" already exists`), { status: 409 });
+      throw Object.assign(new Error(`Topic "${normalizedName}" already exists`), { status: 409 });
     }
 
     return this.prismaService.publicExamTopic.create({
-      data: { name, subjectId },
+      data: { name: normalizedName, subjectId },
     });
   }
 
@@ -242,17 +272,43 @@ export class PublicExamService {
       throw Object.assign(new Error('Forbidden'), { status: 403 });
     }
 
+    const normalizedNewName = normalizeName(newName);
+
     const duplicate = await this.prismaService.publicExamTopic.findUnique({
-      where: { subjectId_name: { subjectId: topic.subjectId, name: newName } },
+      where: { subjectId_name: { subjectId: topic.subjectId, name: normalizedNewName } },
     });
 
     if (duplicate && duplicate.id !== topicId) {
-      throw Object.assign(new Error(`Topic "${newName}" already exists`), { status: 409 });
+      throw Object.assign(new Error(`Topic "${normalizedNewName}" already exists`), { status: 409 });
     }
 
-    return this.prismaService.publicExamTopic.update({
-      where: { id: topicId },
-      data: { name: newName },
+    // Mirror the rename onto historic PublicExamQuestion rows that snapshot
+    // the topic string. Scoped by subject + publicExamName + userId to avoid
+    // touching same-named topics on other subjects. Post Layer 5 also use
+    // topicId FK as the primary match.
+    return this.prismaService.$transaction(async (tx) => {
+      if (normalizedNewName !== topic.name) {
+        await tx.publicExamQuestion.updateMany({
+          where: {
+            userId,
+            OR: [
+              { topicId: topic.id },
+              {
+                topicId: null,
+                publicExamName: topic.subject.publicExam.name,
+                subject: topic.subject.name,
+                topic: topic.name,
+              },
+            ],
+          },
+          data: { topic: normalizedNewName },
+        });
+      }
+
+      return tx.publicExamTopic.update({
+        where: { id: topicId },
+        data: { name: normalizedNewName },
+      });
     });
   }
 
@@ -288,30 +344,64 @@ export class PublicExamService {
       throw Object.assign(new Error('Forbidden'), { status: 403 });
     }
 
-    let newExamBoardId: string | undefined;
+    const normalizedNewName = updates.newName !== undefined ? normalizeName(updates.newName) : undefined;
+    const normalizedNewRole =
+      updates.newRole === null ? null : updates.newRole !== undefined ? normalizeName(updates.newRole) : undefined;
+    const normalizedNewBoardName =
+      updates.newExamBoardName !== undefined ? normalizeName(updates.newExamBoardName) : undefined;
 
-    if (updates.newExamBoardName) {
-      const board = await this.prismaService.examBoard.upsert({
-        where: { name: updates.newExamBoardName },
-        update: {},
-        create: { name: updates.newExamBoardName },
+    return this.prismaService.$transaction(async (tx) => {
+      let newExamBoardId: string | undefined;
+
+      if (normalizedNewBoardName) {
+        const board = await tx.examBoard.upsert({
+          where: { name: normalizedNewBoardName },
+          update: {},
+          create: { name: normalizedNewBoardName },
+        });
+
+        newExamBoardId = board.id;
+      }
+
+      // Mirror exam-level renames onto historic PublicExamQuestion snapshots.
+      // Use publicExamId FK when present; fall back to name match for any
+      // legacy rows that haven't been backfilled yet.
+      if (normalizedNewName !== undefined && normalizedNewName !== exam.name) {
+        await tx.publicExamQuestion.updateMany({
+          where: {
+            userId,
+            OR: [{ publicExamId: exam.id }, { publicExamId: null, publicExamName: exam.name }],
+          },
+          data: { publicExamName: normalizedNewName },
+        });
+      }
+
+      if (normalizedNewBoardName !== undefined) {
+        await tx.publicExamQuestion.updateMany({
+          where: {
+            userId,
+            OR: [
+              { publicExamId: exam.id },
+              { publicExamId: null, publicExamName: normalizedNewName ?? exam.name },
+            ],
+          },
+          data: { examBoardName: normalizedNewBoardName },
+        });
+      }
+
+      return tx.publicExam.update({
+        where: { id: publicExamId },
+        data: {
+          ...(normalizedNewName !== undefined && { name: normalizedNewName }),
+          ...(normalizedNewRole !== undefined && { role: normalizedNewRole }),
+          ...(updates.newYear !== undefined && { year: updates.newYear }),
+          ...(newExamBoardId && { examBoardId: newExamBoardId }),
+        },
+        include: {
+          examBoard: true,
+          subjects: { include: { topics: true } },
+        },
       });
-
-      newExamBoardId = board.id;
-    }
-
-    return this.prismaService.publicExam.update({
-      where: { id: publicExamId },
-      data: {
-        ...(updates.newName !== undefined && { name: updates.newName }),
-        ...(updates.newRole !== undefined && { role: updates.newRole }),
-        ...(updates.newYear !== undefined && { year: updates.newYear }),
-        ...(newExamBoardId && { examBoardId: newExamBoardId }),
-      },
-      include: {
-        examBoard: true,
-        subjects: { include: { topics: true } },
-      },
     });
   }
 }

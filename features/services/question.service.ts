@@ -1,6 +1,6 @@
 import { prisma, PrismaService } from '@/lib/prisma';
 import { AIQuestion, AIPublicExamQuestion, Answer, QuestionParams, PublicExamQuestionParams } from '@/shared/types';
-import { toSafeString } from '@/shared/utils';
+import { toSafeString, normalizeName, looseKey } from '@/shared/utils';
 
 export function validateAiQuestions(obj: unknown): AIQuestion[] | AIPublicExamQuestion[] {
   if (!Array.isArray((obj as any)?.questions)) throw new Error('Invalid format: questions array is required');
@@ -96,19 +96,60 @@ export class PublicExamQuestionService {
     return this.prismaService.$transaction(async (tx) => {
       const results: any[] = [];
 
+      // Resolve canonical subjects from PublicExam configuration so the LLM's
+      // echoed `subject` string never drifts from PublicExamSubject.name.
+      // Drift causes the mock-exam count query to return 0 — see
+      // docs note in CLAUDE.md "PublicExamQuestion.subject denormalization".
+      const examName = questions[0]?.publicExamName ?? '';
+      const exam = examName
+        ? await tx.publicExam.findFirst({
+            where: { name: examName, userId },
+            include: { subjects: { include: { topics: true } } },
+          })
+        : null;
+
+      type Canonical = { id: string; name: string };
+      const subjectCanonical = new Map<string, Canonical>();
+      const topicCanonical = new Map<string, Canonical>();
+
+      if (exam) {
+        for (const s of exam.subjects) {
+          subjectCanonical.set(looseKey(s.name), { id: s.id, name: s.name });
+          for (const t of s.topics) {
+            topicCanonical.set(`${looseKey(s.name)}::${looseKey(t.name)}`, { id: t.id, name: t.name });
+          }
+        }
+      }
+
       for (const question of questions) {
         const { publicExamName, examBoardName, subject, topic, text, correctCount, options, difficulty } = question;
 
+        const incomingSubject = normalizeName(subject ?? '');
+        const matchedSubject = subjectCanonical.get(looseKey(incomingSubject));
+        const canonicalSubjectName = matchedSubject?.name ?? incomingSubject;
+        const subjectId = matchedSubject?.id ?? null;
+
+        const incomingTopic = topic ? normalizeName(topic) : null;
+        const matchedTopic =
+          incomingTopic != null
+            ? topicCanonical.get(`${looseKey(canonicalSubjectName)}::${looseKey(incomingTopic)}`)
+            : undefined;
+        const canonicalTopicName = matchedTopic?.name ?? incomingTopic;
+        const topicId = matchedTopic?.id ?? null;
+
         const createdQuestion = await tx.publicExamQuestion.create({
           data: {
-            publicExamName,
-            examBoardName,
-            subject,
-            topic: topic ?? null,
+            publicExamName: normalizeName(publicExamName ?? ''),
+            examBoardName: normalizeName(examBoardName ?? ''),
+            subject: canonicalSubjectName,
+            topic: canonicalTopicName,
             text,
             correctCount,
             difficulty,
             userId,
+            publicExamId: exam?.id ?? null,
+            subjectId,
+            topicId,
           },
         });
 
