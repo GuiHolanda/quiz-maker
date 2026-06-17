@@ -23,14 +23,26 @@ export class QuotaService {
     return user;
   }
 
+  private resolvePlan(rawPlan: string): UserPlan {
+    const valid: UserPlan[] = ['free', 'pro', 'pro_ai', 'tester', 'admin'];
+    return valid.includes(rawPlan as UserPlan) ? (rawPlan as UserPlan) : 'free';
+  }
+
+  private resolveQuestionsLimit(user: { plan: string; customQuotaOverride: number | null }): number {
+    const override = user.customQuotaOverride;
+    if (override === -1) return Infinity;
+    if (override != null) return override;
+    return PLAN_LIMITS[this.resolvePlan(user.plan)].questionsPerPeriod;
+  }
+
   async check(userId: string, action: QuotaAction, count: number): Promise<void> {
     const user = await this.getUserWithPeriodReset(userId);
-    const plan = (user.plan === 'pro' ? 'pro' : user.plan === 'admin' ? 'admin' : 'free') as UserPlan;
+    const plan = this.resolvePlan(user.plan);
     const limits = PLAN_LIMITS[plan];
 
     if (action === 'generate_questions') {
       const used = user.questionsGeneratedThisPeriod;
-      const limit = limits.questionsPerPeriod;
+      const limit = this.resolveQuestionsLimit(user);
 
       if (used + count > limit) {
         const err = Object.assign(new Error(`Question generation limit reached (${limit}/period)`), {
@@ -43,7 +55,6 @@ export class QuotaService {
             plan,
           },
         });
-
         throw err;
       }
     }
@@ -63,7 +74,25 @@ export class QuotaService {
             plan,
           },
         });
+        throw err;
+      }
+    }
 
+    if (action === 'create_public_exam') {
+      const examCount = await prisma.publicExam.count({ where: { userId } });
+      const limit = limits.maxPublicExams;
+
+      if (limit !== Infinity && examCount >= limit) {
+        const err = Object.assign(new Error(`Public exam limit reached (${limit})`), {
+          status: 403,
+          body: {
+            error: 'quota_exceeded',
+            message: `Public exam limit reached (${limit})`,
+            limit,
+            used: examCount,
+            plan,
+          },
+        });
         throw err;
       }
     }
@@ -83,16 +112,20 @@ export class QuotaService {
 
   async getUsage(userId: string): Promise<UsageStats> {
     const user = await this.getUserWithPeriodReset(userId);
-    const plan = (user.plan === 'pro' ? 'pro' : user.plan === 'admin' ? 'admin' : 'free') as UserPlan;
+    const plan = this.resolvePlan(user.plan);
     const limits = PLAN_LIMITS[plan];
     const certCount = await prisma.certification.count({ where: { userId } });
+    const examCount = await prisma.publicExam.count({ where: { userId } });
+    const questionsLimit = this.resolveQuestionsLimit(user);
 
     return {
       plan,
       questionsUsed: user.questionsGeneratedThisPeriod,
-      questionsLimit: limits.questionsPerPeriod,
+      questionsLimit: questionsLimit === Infinity ? -1 : questionsLimit,
       certificationsUsed: certCount,
       certificationsLimit: limits.maxCertifications === Infinity ? -1 : limits.maxCertifications,
+      publicExamsUsed: examCount,
+      publicExamsLimit: limits.maxPublicExams === Infinity ? -1 : limits.maxPublicExams,
       periodStartDate: user.periodStartDate.toISOString(),
     };
   }

@@ -15,13 +15,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    await quotaService.check(session.user.id, 'create_certification', 1);
+    await quotaService.check(session.user.id, 'create_public_exam', 1);
 
     const body = await request.json().catch(() => null);
     const publicExam = publicExamService.validate(body);
     const created = await publicExamService.save(publicExam, session.user.id);
 
-    await quotaService.record(session.user.id, 'create_certification', 1);
+    await quotaService.record(session.user.id, 'create_public_exam', 1);
 
     return NextResponse.json({ message: 'Public exam saved successfully', publicExam: created }, { status: 201 });
   } catch (err: any) {
