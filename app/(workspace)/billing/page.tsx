@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { BillingOverview } from '@/app/(workspace)/billing/components/BillingOverview';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -13,7 +14,9 @@ function BillingPageContent() {
 
   return (
     <PageHeader title={t('billing.title')} subtitle={t('billing.subtitle')}>
-      <BillingOverview />
+      <Suspense>
+        <BillingOverview />
+      </Suspense>
     </PageHeader>
   );
 }
