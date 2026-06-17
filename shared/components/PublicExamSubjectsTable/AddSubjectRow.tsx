@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
-import { PublicExamSubject } from '@/shared/types';
+
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 
@@ -48,58 +48,59 @@ export function AddSubjectRow({ onAdd, onCancel }: AddSubjectRowProps) {
       <td className={TD_LAST}>
         <Input
           {...inputProperties.input}
-          size="sm"
+          // eslint-disable-next-line jsx-a11y/no-autofocus
+          autoFocus
+          className="w-48"
           placeholder={t('concurso.subjectNamePlaceholder')}
+          size="sm"
           value={state.name}
           onChange={(e) => setField('name', e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-          className="w-48"
-          autoFocus
         />
       </td>
       <td className={TD_LAST}>
         <Input
           {...inputProperties.input}
+          className="w-24"
+          endContent={<span className="text-default-400 text-sm">%</span>}
+          max={100}
+          min={0}
           size="sm"
           type="number"
-          min={0}
-          max={100}
           value={String(state.min)}
           onChange={(e) => setField('min', e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-          className="w-24"
-          endContent={<span className="text-default-400 text-sm">%</span>}
         />
       </td>
       <td className={TD_LAST}>
         <Input
           {...inputProperties.input}
+          className="w-24"
+          endContent={<span className="text-default-400 text-sm">%</span>}
+          max={100}
+          min={0}
           size="sm"
           type="number"
-          min={0}
-          max={100}
           value={String(state.max)}
           onChange={(e) => setField('max', e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-          className="w-24"
-          endContent={<span className="text-default-400 text-sm">%</span>}
         />
       </td>
       <td className={TD_LAST}>—</td>
       <td className={TD_LAST}>
         <div className="flex gap-2">
           <Button
-            size="sm"
             className="bg-primary text-primary-foreground text-xs font-semibold rounded-lg hover:opacity-90 h-8 px-3 transition-opacity duration-200"
             isLoading={saving}
+            size="sm"
             onPress={handleSave}
           >
             {t('common.save')}
           </Button>
           <Button
+            className="border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold h-8 px-3 transition-colors duration-200"
             size="sm"
             variant="bordered"
-            className="border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold h-8 px-3 transition-colors duration-200"
             onPress={onCancel}
           >
             {t('common.cancel')}

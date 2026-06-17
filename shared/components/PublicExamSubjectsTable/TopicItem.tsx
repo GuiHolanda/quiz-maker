@@ -5,6 +5,7 @@ import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark, faPen, faCheck } from '@fortawesome/free-solid-svg-icons';
+
 import { PublicExamTopic } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
@@ -51,22 +52,22 @@ export function TopicItem({ topic, onRemove, onUpdate }: TopicItemProps) {
         <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
           {onUpdate && topic.id && (
             <button
+              aria-label={t('common.edit')}
+              className="p-1 rounded text-default-400 hover:text-primary hover:bg-default-200 transition-colors"
               type="button"
               onClick={startEdit}
-              className="p-1 rounded text-default-400 hover:text-primary hover:bg-default-200 transition-colors"
-              aria-label={t('common.edit')}
             >
-              <FontAwesomeIcon icon={faPen} className="w-2.5 h-2.5" />
+              <FontAwesomeIcon className="w-2.5 h-2.5" icon={faPen} />
             </button>
           )}
           {onRemove && topic.id && (
             <button
+              aria-label={t('common.remove')}
+              className="p-1 rounded text-default-400 hover:text-danger hover:bg-danger/10 transition-colors"
               type="button"
               onClick={() => onRemove(topic.id!, topic.name)}
-              className="p-1 rounded text-default-400 hover:text-danger hover:bg-danger/10 transition-colors"
-              aria-label={t('common.remove')}
             >
-              <FontAwesomeIcon icon={faXmark} className="w-2.5 h-2.5" />
+              <FontAwesomeIcon className="w-2.5 h-2.5" icon={faXmark} />
             </button>
           )}
         </div>
@@ -79,33 +80,34 @@ export function TopicItem({ topic, onRemove, onUpdate }: TopicItemProps) {
       <div className="flex items-center gap-1.5 rounded-md px-2 py-1.5 bg-content1 border border-primary/40 shadow-sm">
         <Input
           {...inputProperties.input}
+          // eslint-disable-next-line jsx-a11y/no-autofocus
+          autoFocus
+          className="flex-1"
           size="sm"
           value={editValue}
-          onValueChange={setEditValue}
           onKeyDown={(e) => {
             if (e.key === 'Enter') saveEdit();
             if (e.key === 'Escape') cancelEdit();
           }}
-          className="flex-1"
-          autoFocus
+          onValueChange={setEditValue}
         />
         <Button
           isIconOnly
-          size="sm"
+          aria-label={t('common.save')}
           className="bg-primary text-primary-foreground h-7 w-7 min-w-0 shrink-0"
           isLoading={saving}
+          size="sm"
           onPress={saveEdit}
-          aria-label={t('common.save')}
         >
-          {!saving && <FontAwesomeIcon icon={faCheck} className="w-3 h-3" />}
+          {!saving && <FontAwesomeIcon className="w-3 h-3" icon={faCheck} />}
         </Button>
         <button
+          aria-label={t('common.cancel')}
+          className="p-1 rounded text-default-400 hover:text-danger transition-colors shrink-0"
           type="button"
           onClick={cancelEdit}
-          className="p-1 rounded text-default-400 hover:text-danger transition-colors shrink-0"
-          aria-label={t('common.cancel')}
         >
-          <FontAwesomeIcon icon={faXmark} className="w-3 h-3" />
+          <FontAwesomeIcon className="w-3 h-3" icon={faXmark} />
         </button>
       </div>
     );
