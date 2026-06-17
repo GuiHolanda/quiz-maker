@@ -2,8 +2,6 @@ import { randomBytes } from 'crypto';
 import { Resend } from 'resend';
 import { prisma } from '@/lib/prisma';
 
-const resend = new Resend(process.env.RESEND_API_KEY!);
-
 export class ForgotPasswordService {
   async requestReset(body: unknown): Promise<void> {
     if (!body || typeof body !== 'object') {
@@ -38,6 +36,7 @@ export class ForgotPasswordService {
 
     const resetUrl = `${process.env.AUTH_URL}/reset-password?token=${token}`;
 
+    const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL!,
       to: normalizedEmail,
