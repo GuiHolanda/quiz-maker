@@ -8,7 +8,7 @@ export const inputLabelClass = 'text-xs font-normal text-default-400';
 
 const borderedInputClassNames = {
   label: inputLabelClass,
-  input: 'placeholder:text-xs',
+  input: 'placeholder:text-xs text-foreground',
   inputWrapper: [
     'rounded-sm',
     'border-default-300',
