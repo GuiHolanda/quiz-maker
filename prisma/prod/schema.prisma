@@ -29,6 +29,7 @@ model User {
   lemonSqueezyCustomerId       String?
   lemonSqueezySubscriptionId   String?
   subscriptionStatus           String?
+  customQuotaOverride          Int?
   createdAt     DateTime   @default(now())
 }
 
@@ -273,4 +274,17 @@ model MockExamAttemptAnswer {
   selectedOptions    String
   attempt            MockExamAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
   mockExamQuestion   MockExamQuestion @relation(fields: [mockExamQuestionId], references: [id])
+}
+
+model AdminAuditLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  targetId  String
+  action    String
+  before    String
+  after     String
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+  @@index([targetId])
 }
