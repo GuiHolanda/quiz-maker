@@ -37,6 +37,8 @@ describe('CertificationService', () => {
     expect(result.provider).toBe('Amazon');
     expect(result.topics).toHaveLength(1);
     expect(result.topics[0].name).toBe('IAM');
+    expect(result.topics[0].minQuestions).toBe(5);
+    expect(result.topics[0].maxQuestions).toBe(20);
   });
 
   // Behaviour 4: save() calls $transaction and creates the cert
@@ -70,6 +72,7 @@ describe('CertificationService', () => {
           key: 'aws-saa',
           userId: 'user-1',
         }),
+        include: { topics: true },
       }),
     );
     expect(result).toEqual(fakeCert);
