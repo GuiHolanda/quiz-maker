@@ -187,7 +187,11 @@ O `bordered` usa fundo transparente + borda semântica, com foco mudando para in
 
 ## Layout padrão das páginas internas
 
+Use o componente `<PageHeader>` de `shared/components/ui/PageHeader.tsx` — não copie o markup manualmente.
+
 ```tsx
+import { PageHeader } from '@/shared/components/ui/PageHeader';
+
 export default function MyPage() {
   return (
     <CertificationsProvider>
@@ -200,20 +204,16 @@ function PageContent() {
   const { t } = useTranslation();
 
   return (
-    <div className="app-bg">
-      <div className="container mx-auto max-w-7xl pt-8 px-6 pb-12">
-        <div className="mb-8">
-          <h1 className="page-header-title">{t('page.title')}</h1>
-          <p className="page-header-subtitle mt-2">{t('page.subtitle')}</p>
-        </div>
-        <div className="bg-content1 border border-default-200 rounded-xl p-6">
-          ...
-        </div>
+    <PageHeader title={t('page.title')} subtitle={t('page.subtitle')}>
+      <div className="bg-content1 border border-default-200 rounded-xl p-6">
+        ...
       </div>
-    </div>
+    </PageHeader>
   );
 }
 ```
+
+`PageHeader` aceita `maxWidth?: '4xl' | '7xl'` (default `'7xl'`). Já inclui `.app-bg`, container e espaçamentos — não duplique.
 
 ---
 
@@ -359,20 +359,87 @@ Página pública, fundo `bg-background`, `'use client'`.
 
 ---
 
-## Componentes compartilhados (`sharedComponents/`)
+## Componentes compartilhados (`shared/components/`)
+
+### UI genéricos (`shared/components/ui/`)
 
 | Componente | Uso |
 |---|---|
-| `ui/navbar.tsx` | Shell de navegação global (sticky, `bg-background border-divider`) |
-| `ui/footer.tsx` | Rodapé global |
-| `ui/theme-switch.tsx` | Toggle light/dark via next-themes |
-| `ui/language-switch.tsx` | Toggle PT/EN via `useTranslation` |
-| `ui/BusyDialog.tsx` | Modal de loading durante geração de questões |
-| `ui/PaginationControls.tsx` | Botões prev/next reutilizáveis |
-| `ui/ItemsPerPageSelect.tsx` | Select de itens por página |
-| `ui/NumberInput.tsx` | Input numérico sem spinners (`.no-number-spinners`) |
+| `PageHeader.tsx` | Layout padrão de página autenticada — `.app-bg` + container + título/subtítulo |
+| `navbar.tsx` | Shell de navegação global (sticky, `bg-background border-divider`) |
+| `footer.tsx` | Rodapé global |
+| `theme-switch.tsx` | Toggle light/dark via next-themes |
+| `language-switch.tsx` | Toggle PT/EN via `useTranslation` |
+| `BusyDialog.tsx` | Modal de loading durante operações assíncronas |
+| `FormAccordion.tsx` | Accordion com `<Form>` integrado, BusyDialog e footer de ações |
+| `PaginationControls.tsx` | Botões prev/next reutilizáveis |
+| `ItemsPerPageSelect.tsx` | Select de itens por página |
+| `PlanBadge.tsx` | Chip de plano do usuário (Free/Pro) com link para billing |
+| `UsageBadge.tsx` | Badge de uso de créditos com link para billing |
+| `UpgradeModal.tsx` | Modal de upgrade de plano |
+
+### Domínio compartilhado (`shared/components/`)
+
+| Componente | Uso |
+|---|---|
 | `CertificationManager.tsx` | Autocomplete de certificação + Select de tópico |
-| `SectionsTable.tsx` | Tabela de tópicos com Slider de min/max |
+| `PublicExamManager.tsx` | Select de concurso + Select de assunto |
+| `SectionsTable.tsx` | Tabela de tópicos com Slider de min/max (certifications) |
+| `PublicExamSubjectsTable.tsx` | Tabela de assuntos com Slider de min/max (public exams) |
+| `QuestionCard.tsx` | Card interativo de questão: Radio (1 resposta) ou Checkbox (N respostas) |
+| `AnsweredQuestionCard.tsx` | Card de questão respondida: gabarito + explicações |
+| `icons.tsx` | Ícones FontAwesome reutilizáveis |
+
+---
+
+## Hooks (`features/hooks/`)
+
+| Hook | Uso |
+|---|---|
+| `useRequest.hook.ts` | Wrapper de chamadas HTTP: loading, error, toast automático de erro |
+| `useTranslation.hook.ts` | `{ t, language, setLanguage }` — acesso às strings i18n |
+| `useCertificationsContext.hook.ts` | Acesso ao estado de certificações do `CertificationsProvider` |
+| `usePublicExamsContext.hook.ts` | Acesso ao estado de concursos do `PublicExamsProvider` |
+| `useQuizContext.hook.ts` | Acesso ao estado do quiz do `QuizProvider` |
+| `useMockExamsContext` | Exportado direto de `features/providers/mockExams.provider.tsx` |
+
+### `useRequest` — padrão para chamadas HTTP
+
+Sempre use `useRequest` para operações assíncronas em componentes. Trata loading, erros de validação e toast de erro automaticamente.
+
+```tsx
+import { useRequest } from '@/features/hooks/useRequest.hook';
+import { saveCertification } from '@/features/connectors';
+
+const { loading, error, request } = useRequest(saveCertification);
+
+// Chamar:
+await request(payload, () => {
+  // onSuccess — executado após resposta bem-sucedida
+  addToast({ title: t('toast.success'), description: t('certification.saved'), color: 'success' });
+});
+```
+
+`useRequest` lança o toast de erro automaticamente em caso de falha — não duplique.
+
+---
+
+## Toasts (`@heroui/toast`)
+
+Sempre mostre feedback em mutations (save/update/delete), tanto em sucesso quanto em erro.
+
+```tsx
+import { addToast } from '@heroui/toast';
+
+// Sucesso
+addToast({ title: t('toast.success'), description: t('certification.saved'), color: 'success' });
+
+// Erro (manual, fora de useRequest)
+addToast({ title: t('toast.error'), description: t('toast.somethingWrong'), color: 'danger' });
+```
+
+- `color`: `'success'` | `'danger'` | `'warning'` | `'default'`
+- Erros HTTP via `useRequest` já chamam `addToast` — não adicione um segundo toast para esses casos.
 
 ---
 
@@ -414,13 +481,15 @@ Transição:   transition-colors duration-200 (cards, inputs)
 
 ## Checklist ao criar uma nova página
 
-- [ ] Usar `.app-bg` (autenticada) ou `.auth-bg` (pública de auth) como wrapper
-- [ ] Container `container mx-auto max-w-7xl pt-8 px-6 pb-12`
-- [ ] Título com `.page-header-title`, subtítulo com `.page-header-subtitle`
+- [ ] Usar `<PageHeader>` de `shared/components/ui/PageHeader.tsx` como wrapper
+- [ ] Container `container mx-auto max-w-7xl pt-8 px-6 pb-12` (já incluído no `PageHeader`)
+- [ ] Título com `.page-header-title`, subtítulo com `.page-header-subtitle` (já incluído no `PageHeader`)
 - [ ] Cards com `bg-content1 border border-default-200 rounded-xl`
 - [ ] Todo texto de UI via `t('chave')` — sem strings hardcoded
 - [ ] Componente marcado com `'use client'` se usar hooks
-- [ ] Componentes page-specific em `app/(workspace)/<dominio>/<pagina>/components/`, nunca em `sharedComponents/`
+- [ ] Componentes page-specific em `app/(workspace)/<dominio>/<pagina>/components/`, nunca em `shared/components/`
 - [ ] Usar HeroUI para todos os elementos de UI
 - [ ] Usar tokens semânticos, nunca cores hard-coded
 - [ ] Verificar em dark e light mode
+- [ ] Chamadas HTTP via `useRequest` — nunca `useState` + `try/catch` manual
+- [ ] Toast de sucesso em toda mutation; erro já coberto por `useRequest`
