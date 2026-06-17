@@ -12,7 +12,10 @@
     "prisma:generate:prod": "prisma generate --schema=./prisma/prod/schema.prisma",
     "prisma:migrate:prod": "prisma migrate deploy --schema=./prisma/prod/schema.prisma",
     "prisma:generate:dev": "prisma generate --schema=./prisma/dev/schema.prisma",
-    "prisma:migrate:dev": "prisma migrate dev --schema=./prisma/dev/schema.prisma"
+    "prisma:migrate:dev": "prisma migrate dev --schema=./prisma/dev/schema.prisma",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
@@ -94,6 +97,7 @@
     "@types/react-dom": "18.3.0",
     "@typescript-eslint/eslint-plugin": "8.34.1",
     "@typescript-eslint/parser": "8.34.1",
+    "@vitest/coverage-v8": "^4.1.9",
     "eslint": "^9.37.0",
     "eslint-config-next": "15.3.4",
     "eslint-config-prettier": "9.1.0",
@@ -110,6 +114,8 @@
     "tailwind-variants": "3.1.1",
     "tailwindcss": "4.1.11",
     "tsx": "^4.21.0",
-    "typescript": "5.6.3"
+    "typescript": "5.6.3",
+    "vitest": "^4.1.9",
+    "vitest-mock-extended": "^4.0.0"
   }
 }
