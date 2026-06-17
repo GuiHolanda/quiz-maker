@@ -80,11 +80,26 @@ Services: `features/services/public-exam.service.ts`, `features/services/questio
 
 ---
 
-### `ai/`
+### `admin/`
+
+Admin dashboard API. All routes verify `plan === 'admin'` via a direct DB lookup before executing. Business logic lives in the co-located `admin.service.ts`.
 
 | Route | Method | Description |
 |---|---|---|
-| `ai/ai-chat` | POST | Streaming SSE chat powered by OpenAI with web search. Returns `text/event-stream`. |
+| `admin/overview` | GET | Aggregate metrics: total users, by-plan breakdown, active subscriptions, total questions generated, avg usage % |
+| `admin/users` | GET | Paginated user list with search, plan filter, subscriptionStatus filter |
+| `admin/users/[id]` | PATCH | Update a user's `plan` and/or `customQuotaOverride` (-1 = ∞, null = remove override). Writes to `AdminAuditLog`. |
+| `admin/audit-log` | GET | Paginated history of admin actions with admin/target user details |
+
+Service: `app/api/admin/admin.service.ts` (`AdminService`).
+
+**Important:** The `AdminService` can also be called directly from server components (e.g. `app/admin/overview/page.tsx`). Do NOT use `features/connectors.ts` in server components — the axios client uses a relative `baseURL` and will fail server-side.
+
+---
+
+| Route | Method | Description |
+|---|---|---|
+| `ai/ai-chat` | POST | Streaming SSE chat powered by OpenAI with web search. Returns `text/event-stream`. Requires plan `pro_ai`, `tester`, or `admin` — returns 403 otherwise. |
 
 Service: `features/services/aiChat.service.ts`.
 
@@ -94,7 +109,7 @@ Service: `features/services/aiChat.service.ts`.
 
 | Route | Method | Description |
 |---|---|---|
-| `webhooks/lemonsqueezy` | POST | Handle LemonSqueezy subscription events (create / update / cancel / expire). Updates `user.plan` in DB. |
+| `webhooks/lemonsqueezy` | POST | Handle LemonSqueezy subscription events (create / update / cancel / expire). Updates `user.plan` in DB. Differentiates `pro` vs `pro_ai` by variant ID (`LEMONSQUEEZY_PRODUCT_VARIANT_ID_PRO_AI_MONTHLY/YEARLY`). |
 
 ---
 
@@ -105,13 +120,15 @@ Route handlers never contain business logic — they delegate to services.
 | File | Responsibility |
 |---|---|
 | `openAI.service.ts` | OpenAI client wrapper: template-based, inline, and web-search LLM calls |
-| `quota.service.ts` | Check and record usage quota per user per period |
+| `quota.service.ts` | Check and record usage quota per user per period. Supports `customQuotaOverride` (sentinel `-1` = ∞). Actions: `generate_questions`, `create_certification`, `create_public_exam`. |
 | `certification.service.ts` | CRUD for certifications and topics |
 | `public-exam.service.ts` | CRUD for public exams, subjects, and topics |
 | `question.service.ts` | `validateAiQuestions` (shared), `CertificationQuestionService`, `PublicExamQuestionService` |
 | `browse.service.ts` | `BrowseQuestionsService`, `PublicExamBrowseQuestionsService`, `BrowseSummaryService`, `PublicExamBrowseSummaryService` |
 | `quiz-generator.service.ts` | Parse params, distribute questions across topics, fetch stored questions |
 | `aiChat.service.ts` | Validate chat messages, select prompt, stream OpenAI response |
+
+Admin service is co-located in `app/api/admin/admin.service.ts` (not in `features/services/`) because it is not shared with client code.
 
 Auth services (`register.service.ts`, `forgot-password.service.ts`, `reset-password.service.ts`) remain co-located in `app/api/auth/` and are not shared.
 

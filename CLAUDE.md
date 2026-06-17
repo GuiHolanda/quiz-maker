@@ -28,46 +28,19 @@ MyQuiz is a **certification exam prep platform** being built as a product for pu
 ```
 app/                          # Next.js App Router (pages + API routes)
   api/                        # Route handlers — one folder per endpoint
-    certifications/route.ts
-    get-anwers/route.ts
-    question-generator/       # route.ts + question.service.ts
-    quiz-generator/           # route.ts + quiz-generator.service.ts
-    save-certification/       # route.ts + certification.service.ts
-    save-questions/route.ts
-  configure-certification/
-    page.tsx
-    components/               # Components used exclusively by this page
-      CertificationHeader.tsx
-      CertificationsListTab.tsx
-      EditCertificationTab.tsx
-      NewCertificationTab.tsx
-      TopicForm.tsx
-  generate-questions/
-    page.tsx
-    components/
-      GeneratedQuestionsCard.tsx
-      GeneratedQuestionsList.tsx
-      QuestionGeneratorForm.tsx
-  quiz/
-    page.tsx
-    components/
-      AnswredQuestionCard.tsx
-      QuestionCard.tsx
-      QuestionList.tsx
-      QuizForm.tsx
-sharedComponents/             # Components reused across multiple pages
-  CertificationManager.tsx
-  SectionsTable.tsx
-  icons.tsx
-  primitives.ts
-  ui/                         # Generic UI primitives
-    BusyDialog.tsx
-    ItemsPerPageSelect.tsx
-    PaginationControls.tsx
-    navbar.tsx
-    theme-switch.tsx
+  admin/                      # Admin dashboard (layout + 4 pages)
+  (auth)/                     # Public auth pages (login, register, etc.)
+  (workspace)/                # Authenticated workspace pages
+shared/
+  components/                 # Components reused across multiple pages
+    ui/                       # Generic UI primitives (navbar, PageHeader, etc.)
+  types/
+    index.ts                  # All shared TypeScript types
+  styles/
+    globals.css
 config/
-  constants/index.ts          # App-wide constants, API URLs, localStorage keys
+  constants/index.ts          # App-wide constants, API URLs, localStorage keys, PLAN_LIMITS
+  constants/inputStyles.ts    # Shared HeroUI input/select props (inputProperties)
   promptSchemas/              # LLM prompt templates (JSON schemas)
   site.ts                     # Site metadata and nav config
 features/
@@ -75,19 +48,22 @@ features/
   hooks/                      # Custom React hooks (*.hook.ts)
   providers/                  # Context providers (*.provider.tsx)
   reducers/                   # State reducers (*.reducer.ts)
-  services/                   # Client-side services (e.g. openAI.service.ts)
+  services/                   # Server-side services (quota.service.ts, etc.)
 lib/
   prisma.ts                   # Prisma client singleton
-  bff.api.ts                  # Axios instance (baseURL: "/api")
+  bff.api.ts                  # Axios instance (baseURL: "/api") — client-side only
 prisma/
-  dev/                        # SQLite dev schema + migrations + scripts
-  prod/                       # LibSQL prod schema + migrations
-types/index.ts                # All shared TypeScript types (AIQuestion, StoredQuestion, Certification, CertificationTopic, QuizParams, etc.)
+  dev/                        # SQLite dev schema + migrations
+  prod/                       # LibSQL (Turso) prod schema + migrations
 ```
 
 ### Component co-location rule
 
-Page-specific components live in `app/<page>/components/`. Components used by more than one page live in `sharedComponents/`. Never put page-specific components in `sharedComponents/`.
+Page-specific components live in `app/(workspace)/<domain>/<page>/components/`. Components used by more than one page live in `shared/components/`. Never put page-specific components in `shared/components/`.
+
+### `lib/bff.api.ts` — client-side only
+
+The Axios instance uses `baseURL: '/api'` (relative URL). **Never import it in server components or API routes.** Server components that need data must call services directly (e.g. `new AdminService().getOverview()`) or use `prisma` directly.
 
 ---
 
@@ -275,6 +251,124 @@ chave.com.variavel=Olá {nome}, você tem {count} mensagens
 - **Ask before implementing** when there are multiple valid approaches. Do not pick a direction silently.
 - **Prefer editing existing files** over creating new ones. Do not create abstraction layers or utility files unless the task clearly requires them.
 - **No speculative features** — implement only what is asked. No "while I'm here" refactors.
+
+---
+
+## Plans and Quotas
+
+### `UserPlan` type
+
+```ts
+type UserPlan = 'free' | 'pro' | 'pro_ai' | 'tester' | 'admin';
+```
+
+### Plan limits (`config/constants/index.ts` → `PLAN_LIMITS`)
+
+| Plan | Questions/period | Certifications | Public exams | AI Chat | Admin panel |
+|---|---|---|---|---|---|
+| `free` | 250 | 2 | 0 | ✗ | ✗ |
+| `pro` | 1500 | 5 | 2 | ✗ | ✗ |
+| `pro_ai` | 2500 | 5 | 5 | ✓ | ✗ |
+| `tester` | ∞ | ∞ | ∞ | ✓ | ✗ |
+| `admin` | ∞ | ∞ | ∞ | ✓ | ✓ |
+
+`tester` and `admin` are assigned manually (no LemonSqueezy product). `pro_ai` is a LemonSqueezy add-on with its own variant IDs (`LEMONSQUEEZY_PRODUCT_VARIANT_ID_PRO_AI_MONTHLY/YEARLY`).
+
+### `customQuotaOverride` (User field)
+
+Overrides `questionsPerPeriod` for a specific user, regardless of plan:
+- `null` → use plan default
+- `-1` → infinity (sentinel value, since DB can't store `Infinity`)
+- `N > 0` → custom numeric limit
+
+Logic is in `features/services/quota.service.ts` → `resolveQuestionsLimit()`.
+
+### `QuotaAction` type
+
+```ts
+type QuotaAction = 'generate_questions' | 'create_certification' | 'create_public_exam';
+```
+
+`quota.service.ts` enforces all three. `create_public_exam` uses `maxPublicExams` from `PLAN_LIMITS`. Free users have `maxPublicExams: 0` — they cannot create any concurso.
+
+### `UsageStats` shape
+
+```ts
+interface UsageStats {
+  plan: UserPlan;
+  questionsUsed: number;
+  questionsLimit: number;      // -1 means unlimited
+  certificationsUsed: number;
+  certificationsLimit: number; // -1 means unlimited
+  publicExamsUsed: number;
+  publicExamsLimit: number;    // -1 means unlimited, 0 means no access
+  periodStartDate: string;
+}
+```
+
+`-1` is the "unlimited" sentinel throughout the UI. The `UsageBadge` hides itself when `questionsLimit === -1`.
+
+---
+
+## Admin Dashboard
+
+### Route structure
+
+`app/admin/` — completely separate from `(workspace)`, uses its own layout with a sidebar. Does **not** use the workspace navbar.
+
+```
+app/admin/
+  layout.tsx           ← server component: auth guard (plan === 'admin') + sidebar
+  page.tsx             ← redirect → /admin/overview
+  overview/page.tsx    ← KPI cards + plan distribution
+  users/page.tsx       ← user table with inline plan/quota editing
+  analytics/page.tsx   ← plan distribution bars + top 10 users
+  audit-log/page.tsx   ← paginated history of admin actions
+```
+
+### Access guard
+
+`app/admin/layout.tsx` is a **server component** that reads the DB directly:
+```ts
+const dbUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { plan: true } });
+if (dbUser?.plan !== 'admin') redirect('/');
+```
+
+All `/api/admin/*` routes perform the same check independently (defense in depth).
+
+### Admin API routes
+
+```
+app/api/admin/
+  admin.service.ts          ← AdminService: getOverview, listUsers, updateUser, getAuditLog
+  overview/route.ts         ← GET → AdminOverviewStats
+  users/route.ts            ← GET → AdminUsersResponse (paginated, searchable, filterable)
+  users/[id]/route.ts       ← PATCH → update plan and/or customQuotaOverride
+  audit-log/route.ts        ← GET → AdminAuditLogResponse (paginated)
+```
+
+**Important:** Admin server components (`overview/page.tsx`, `analytics/page.tsx`) call `AdminService` **directly** — they do NOT use `features/connectors.ts` (which uses the relative-URL axios instance and would fail server-side).
+
+### Audit log
+
+Every `PATCH /api/admin/users/[id]` call writes a row to `AdminAuditLog` with `adminId`, `targetId`, `action`, `before` (JSON), `after` (JSON).
+
+### Session — `plan` field
+
+`auth.ts` `session` callback fetches the user's plan from DB on every session read and exposes it as `session.user.plan`. This makes `plan` available both server-side (via `auth()`) and client-side (via `useSession()`).
+
+---
+
+## Feature Gating (UI)
+
+Features that require specific plans are hidden at the UI layer as well as enforced at the API layer.
+
+| Feature | Plans | Where gated |
+|---|---|---|
+| Concursos nav menu | `pro`, `pro_ai`, `tester`, `admin` | `navbar.tsx` — hidden when `usage.publicExamsLimit === 0` |
+| AI Chat FAB + Drawer | `pro_ai`, `tester`, `admin` | `AiChatWrapper.tsx` — hidden unless `session.user.plan` is in allowed list |
+| Admin link in navbar | `admin` | `navbar.tsx` — hidden unless `session.user.plan === 'admin'` |
+| Usage badge | plans with finite limit | `UsageBadge.tsx` — hidden when `questionsLimit === -1` |
 
 ---
 

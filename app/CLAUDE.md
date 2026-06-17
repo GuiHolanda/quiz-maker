@@ -359,6 +359,23 @@ Página pública, fundo `bg-background`, `'use client'`.
 
 ---
 
+### Admin Dashboard (`app/admin/`)
+
+Layout completamente separado do `(workspace)` — usa sidebar própria, sem o navbar global. Acesso restrito a `plan === 'admin'`, verificado server-side no layout.
+
+| Arquivo | Papel |
+|---|---|
+| `layout.tsx` | Server component: auth guard + sidebar com links de navegação |
+| `page.tsx` | Redirect para `/admin/overview` |
+| `overview/page.tsx` | KPIs (total users, assinaturas, questões geradas, uso médio) + distribuição por plano |
+| `users/page.tsx` | Tabela de usuários com edição inline de plano e `customQuotaOverride` |
+| `analytics/page.tsx` | Barras de distribuição de planos + top 10 usuários por questões geradas |
+| `audit-log/page.tsx` | Histórico paginado de ações administrativas |
+
+**Padrão de dados nas páginas admin:** `overview/page.tsx` e `analytics/page.tsx` são server components que chamam `AdminService` diretamente (não usam `features/connectors.ts`). `users/page.tsx` e `audit-log/page.tsx` são client components que usam os connectors admin via axios normalmente.
+
+---
+
 ## Componentes compartilhados (`shared/components/`)
 
 ### UI genéricos (`shared/components/ui/`)
@@ -375,8 +392,11 @@ Página pública, fundo `bg-background`, `'use client'`.
 | `PaginationControls.tsx` | Botões prev/next reutilizáveis |
 | `ItemsPerPageSelect.tsx` | Select de itens por página |
 | `PlanBadge.tsx` | Chip de plano do usuário (Free/Pro) com link para billing |
-| `UsageBadge.tsx` | Badge de uso de créditos com link para billing |
+| `UsageBadge.tsx` | Badge de uso de questões com barra de progresso. Oculto quando `questionsLimit === -1` (planos ilimitados). |
 | `UpgradeModal.tsx` | Modal de upgrade de plano |
+| `AiChatWrapper.tsx` | Wrapper do AI chat — renderiza FAB + Drawer apenas para planos `pro_ai`, `tester`, `admin` |
+| `AiChatFab.tsx` | Botão flutuante para abrir o AI chat |
+| `AiChatDrawer.tsx` | Drawer lateral do AI chat |
 
 ### Domínio compartilhado (`shared/components/`)
 
@@ -493,3 +513,22 @@ Transição:   transition-colors duration-200 (cards, inputs)
 - [ ] Verificar em dark e light mode
 - [ ] Chamadas HTTP via `useRequest` — nunca `useState` + `try/catch` manual
 - [ ] Toast de sucesso em toda mutation; erro já coberto por `useRequest`
+
+---
+
+## Feature Gating — padrão de uso
+
+Quando uma feature depende de plano, gate em dois lugares:
+
+1. **API** — o route handler verifica o plano e retorna 403 se não autorizado
+2. **UI** — o componente/item não é renderizado para usuários sem acesso
+
+Para verificar plano no client, use `useSession()` → `session.user.plan` (o campo `plan` é populado pelo `session` callback do NextAuth e está disponível client-side via `useSession`).
+
+Para verificar plano no server component, leia direto do banco:
+```ts
+const dbUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { plan: true } });
+```
+
+Para verificar limites de quota no client, use `getBillingUsage()` → `UsageStats`. O campo `publicExamsLimit === 0` indica que o plano não tem acesso a concursos.
+
