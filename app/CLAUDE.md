@@ -69,7 +69,7 @@ bg-default-100       → backgrounds sutis (hover, tabs inativos)
 
 ## Tipografia
 
-- **Fonte principal:** `Plus Jakarta Sans` (variável `--font-sans`)
+- **Fonte principal:** `Inter` (variável `--font-sans`, definida em `config/fonts.ts`)
 - **Fonte mono:** `Fira Code` (variável `--font-mono`)
 
 ### Hierarquia de texto
