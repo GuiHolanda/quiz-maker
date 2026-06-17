@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { auth } from '@/auth';
+import { prisma } from '@/lib/prisma';
+import type { UserPlan } from '@/shared/types';
 import { AiChatService } from '@/features/services/aiChat.service';
 
 const aiChatService = new AiChatService();
@@ -10,6 +12,19 @@ export async function POST(request: NextRequest) {
 
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { plan: true },
+  });
+  const aiAllowedPlans: UserPlan[] = ['pro_ai', 'tester', 'admin'];
+
+  if (!dbUser || !aiAllowedPlans.includes(dbUser.plan as UserPlan)) {
+    return NextResponse.json(
+      { error: 'plan_required', message: 'AI chat requires pro_ai plan or higher' },
+      { status: 403 }
+    );
   }
 
   try {
