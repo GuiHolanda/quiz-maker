@@ -260,3 +260,10 @@ export async function getMockExamAttemptResult(mockExamId: number, attemptId: nu
 export async function getMockExamAnswers(questions: AIPublicExamQuestion[]): Promise<void> {
   await api.post(`${MOCK_EXAMS_URL}/answers`, questions);
 }
+
+export async function getQuestionExplanation(questionId: number): Promise<Record<string, string>> {
+  const { data } = await api.get<{ explanations: Record<string, string> }>(
+    `/public-exam/questions/${questionId}/explanation`,
+  );
+  return data.explanations;
+}

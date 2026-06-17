@@ -130,4 +130,10 @@ export class PublicExamQuestionService {
       }
     });
   }
+
+  public async saveExplanations(answerId: number, explanations: Record<string, string>) {
+    await this.prismaService.publicExamExplanation.createMany({
+      data: Object.entries(explanations).map(([label, text]) => ({ answerId, label, text })),
+    });
+  }
 }
