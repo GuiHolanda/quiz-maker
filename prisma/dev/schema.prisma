@@ -154,6 +154,7 @@ model PublicExam {
   examBoardId String
   examBoard   ExamBoard           @relation(fields: [examBoardId], references: [id])
   subjects    PublicExamSubject[]
+  questions   PublicExamQuestion[]
   userId      String?
   mockExams   MockExam[]
   user        User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -169,6 +170,7 @@ model PublicExamSubject {
   publicExamId String
   publicExam   PublicExam        @relation(fields: [publicExamId], references: [id], onDelete: Cascade)
   topics       PublicExamTopic[]
+  questions    PublicExamQuestion[]
 
   @@unique([publicExamId, name])
 }
@@ -178,6 +180,7 @@ model PublicExamTopic {
   name      String
   subjectId String
   subject   PublicExamSubject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  questions PublicExamQuestion[]
 
   @@unique([subjectId, name])
 }
@@ -195,8 +198,18 @@ model PublicExamQuestion {
   answer         PublicExamAnswer?
   createdAt      DateTime           @default(now())
   userId         String?
+  publicExamId   String?
+  subjectId      String?
+  topicId        String?
   mockExamQuestions MockExamQuestion[]
+  publicExam     PublicExam?        @relation(fields: [publicExamId], references: [id], onDelete: SetNull)
+  subjectRef     PublicExamSubject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  topicRef       PublicExamTopic?   @relation(fields: [topicId], references: [id], onDelete: SetNull)
   user           User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([publicExamId])
+  @@index([subjectId])
+  @@index([topicId])
 }
 
 model PublicExamOption {
