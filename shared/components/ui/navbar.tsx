@@ -29,14 +29,14 @@ import { LanguageSwitch } from '@/shared/components/ui/language-switch';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 const PRODUCT_ITEMS = [
-  { label: 'nav.quiz', href: '/certifications/quiz' },
-  { label: 'nav.questions', href: '/certifications/questions' },
   { label: 'nav.configureCertification', href: '/certifications/configure' },
+  { label: 'nav.questions', href: '/certifications/questions' },
+  { label: 'nav.simulados', href: '/certifications/quiz' },
 ] as const;
 
 const CONCURSO_ITEMS = [
   { label: 'nav.configureConcurso', href: '/public-exams/configure' },
-  { label: 'nav.concursoQuestions', href: '/public-exams/questions' },
+  { label: 'nav.questions', href: '/public-exams/questions' },
   { label: 'nav.simulados', href: '/public-exams/simulados' },
 ] as const;
 
