@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 
-import { AI_CHAT_IDENTIFY_PROMPT } from '@/config/promptSchemas/aiChatIdentify';
-import { AI_CHAT_TOPICS_PROMPT } from '@/config/promptSchemas/aiChatTopics';
+import { AI_CHAT_IDENTIFY_PROMPT } from '@/config/prompts/ai-chat-identify.prompt';
+import { AI_CHAT_TOPICS_PROMPT } from '@/config/prompts/ai-chat-topics.prompt';
 
 const ALLOWED_ROLES = new Set(['user', 'assistant']);
 const MAX_MESSAGES = 50;
