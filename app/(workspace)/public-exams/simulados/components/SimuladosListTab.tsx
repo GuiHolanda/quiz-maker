@@ -12,6 +12,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useMockExamsContext } from '@/features/providers/mockExams.provider';
 import { deleteMockExam, startMockExamAttempt } from '@/features/connectors';
+import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { MockExamListItem } from '@/shared/types';
 
 type AttemptSummary = MockExamListItem['attempts'][number];
@@ -25,7 +26,7 @@ function scoreColor(percent: number): 'success' | 'warning' | 'danger' {
 
 export function SimuladosListTab() {
   const { t } = useTranslation();
-  const { mockExams, removeMockExam } = useMockExamsContext();
+  const { mockExams, isLoading, removeMockExam } = useMockExamsContext();
   const [deleteTarget, setDeleteTarget] = useState<MockExamListItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [startingId, setStartingId] = useState<number | null>(null);
@@ -67,6 +68,10 @@ export function SimuladosListTab() {
     } finally {
       setIsDeleting(false);
     }
+  }
+
+  if (isLoading) {
+    return <SkeletonListLoader />;
   }
 
   if (!mockExams.length) {

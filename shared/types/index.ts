@@ -114,6 +114,7 @@ export interface CertificationsStoreApi {
   certifications: Certification[];
   selectedCertification: Certification | null;
   selectedTopics: string[];
+  isLoading: boolean;
   setCertifications: (certifications: Certification[]) => void;
   setSelectedCertification: (certification: Certification | null) => void;
   setSelectedTopics: (topics: string[]) => void;
@@ -281,6 +282,7 @@ export interface PublicExamsStoreApi {
   selectedPublicExam: PublicExam | null;
   selectedSubjects: string[];
   selectedTopic: string | null;
+  isLoading: boolean;
   setPublicExams: (publicExams: PublicExam[]) => void;
   setSelectedPublicExam: (publicExam: PublicExam | null) => void;
   setSelectedSubjects: (subjects: string[]) => void;
