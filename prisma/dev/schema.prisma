@@ -23,6 +23,8 @@ model User {
   usageLogs      UsageLog[]
   mockExams      MockExam[]
   mockAttempts   MockExamAttempt[]
+  certSimulados        CertificationSimulado[]
+  certSimuladoAttempts CertificationSimuladoAttempt[]
   plan                         String   @default("free")
   questionsGeneratedThisPeriod Int      @default(0)
   periodStartDate              DateTime @default(now())
@@ -101,6 +103,7 @@ model Question {
   createdAt          DateTime @default(now())
   userId             String?
   user               User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  certSimuladoQuestions CertificationSimuladoQuestion[]
 }
 
 model Option {
@@ -287,6 +290,57 @@ model MockExamAttemptAnswer {
   selectedOptions    String
   attempt            MockExamAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
   mockExamQuestion   MockExamQuestion @relation(fields: [mockExamQuestionId], references: [id])
+}
+
+model CertificationSimulado {
+  id        Int      @id @default(autoincrement())
+  name      String?
+  certKey   String
+  userId    String?
+  createdAt DateTime @default(now())
+  user      User?                              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topics    CertificationSimuladoTopicConfig[]
+  questions CertificationSimuladoQuestion[]
+  attempts  CertificationSimuladoAttempt[]
+}
+
+model CertificationSimuladoTopicConfig {
+  id            Int                   @id @default(autoincrement())
+  simuladoId    Int
+  topicName     String
+  questionCount Int
+  simulado      CertificationSimulado @relation(fields: [simuladoId], references: [id], onDelete: Cascade)
+}
+
+model CertificationSimuladoQuestion {
+  id         Int                                  @id @default(autoincrement())
+  simuladoId Int
+  questionId Int
+  order      Int
+  simulado   CertificationSimulado                @relation(fields: [simuladoId], references: [id], onDelete: Cascade)
+  question   Question                             @relation(fields: [questionId], references: [id])
+  answers    CertificationSimuladoAttemptAnswer[]
+}
+
+model CertificationSimuladoAttempt {
+  id         Int                                  @id @default(autoincrement())
+  simuladoId Int
+  userId     String?
+  startedAt  DateTime                             @default(now())
+  finishedAt DateTime?
+  score      Int?
+  simulado   CertificationSimulado                @relation(fields: [simuladoId], references: [id], onDelete: Cascade)
+  user       User?                                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers    CertificationSimuladoAttemptAnswer[]
+}
+
+model CertificationSimuladoAttemptAnswer {
+  id                 Int                           @id @default(autoincrement())
+  attemptId          Int
+  simuladoQuestionId Int
+  selectedOptions    String
+  attempt            CertificationSimuladoAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  simuladoQuestion   CertificationSimuladoQuestion @relation(fields: [simuladoQuestionId], references: [id])
 }
 
 model AdminAuditLog {
