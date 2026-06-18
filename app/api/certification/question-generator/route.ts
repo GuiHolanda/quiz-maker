@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { CertificationQuestionService, validateAiQuestions } from '@/features/services/question.service';
 import { OpenAIService } from '@/features/services/openAI.service';
-import { Templates } from '@/config/constants/templates';
+import { certificationQuestionsPrompt } from '@/config/prompts/certification-questions.prompt';
 import { QuotaService } from '@/features/services/quota.service';
 import { auth } from '@/auth';
 
@@ -11,6 +11,14 @@ export const maxDuration = 300;
 const questionService = new CertificationQuestionService();
 const openAIService = new OpenAIService();
 const quotaService = new QuotaService();
+
+function extractJson(raw: string): string {
+  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+
+  if (fenced) return fenced[1].trim();
+
+  return raw.trim();
+}
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -25,8 +33,12 @@ export async function GET(request: NextRequest) {
   try {
     await quotaService.check(session.user.id, 'generate_questions', count);
 
-    const response = await openAIService.getLLMResponse(Templates.GENERATE_QUESTIONS, questionParams);
-    const questionsFromAi = validateAiQuestions(JSON.parse(response));
+    const rawResponse = await openAIService.call(certificationQuestionsPrompt, {
+      certification_name: questionParams.certification_name,
+      topic_name: questionParams.topic_name,
+      num_questions: questionParams.num_questions,
+    });
+    const questionsFromAi = validateAiQuestions(JSON.parse(extractJson(rawResponse)));
 
     await quotaService.record(session.user.id, 'generate_questions', count);
 

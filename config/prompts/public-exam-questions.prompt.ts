@@ -1,10 +1,19 @@
-import { PublicExamQuestionParams } from '@/shared/types';
+import type { PromptDefinition } from './types';
 
-export function buildGeneratePublicExamQuestionsPrompt(params: PublicExamQuestionParams): string {
-  const { public_exam_name, exam_board_name, subject_name, topic_name, num_questions } = params;
-  const topicoLine = topic_name ? `focadas no tópico "${topic_name}"` : 'cobrindo a matéria de forma ampla';
+export interface PublicExamQuestionsInput {
+  readonly public_exam_name: string;
+  readonly exam_board_name: string;
+  readonly subject_name: string;
+  readonly topic_name?: string;
+  readonly num_questions: string;
+}
 
-  return `Você é um especialista em concursos públicos brasileiros e vai gerar questões de alta fidelidade.
+export const publicExamQuestionsPrompt = {
+  build: (input: PublicExamQuestionsInput): string => {
+    const { public_exam_name, exam_board_name, subject_name, topic_name, num_questions } = input;
+    const topicoLine = topic_name ? `focadas no tópico "${topic_name}"` : 'cobrindo a matéria de forma ampla';
+
+    return `Você é um especialista em concursos públicos brasileiros e vai gerar questões de alta fidelidade.
 
 ## ETAPA 1 — PESQUISA (execute antes de gerar)
 
@@ -43,4 +52,5 @@ Responda **apenas** com o JSON abaixo, sem nenhum texto antes ou depois, sem mar
 {"questions":[{"id":1,"text":"<enunciado>","correctCount":1,"publicExamName":"${public_exam_name}","examBoardName":"${exam_board_name}","subject":"${subject_name}",${topic_name ? `"topic":"${topic_name}",` : ''}"difficulty":"medium","options":{"A":"<texto>","B":"<texto>","C":"<texto>","D":"<texto>","E":"<texto>"}}]}
 
 Campos obrigatórios por questão: id, text (≥20 chars), correctCount (1–3), publicExamName, examBoardName, subject, difficulty (easy/medium/hard), options (A–E não vazias).`;
-}
+  },
+} satisfies PromptDefinition<PublicExamQuestionsInput>;

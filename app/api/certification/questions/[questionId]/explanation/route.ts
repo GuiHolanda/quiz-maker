@@ -3,13 +3,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { OpenAIService } from '@/features/services/openAI.service';
-import { PublicExamQuestionService } from '@/features/services/question.service';
-import { publicExamExplanationsPrompt } from '@/config/prompts/public-exam-explanations.prompt';
+import { CertificationQuestionService } from '@/features/services/question.service';
+import { certificationExplanationsPrompt } from '@/config/prompts/certification-explanations.prompt';
 
 export const maxDuration = 300;
 
 const openAIService = new OpenAIService();
-const questionService = new PublicExamQuestionService();
+const questionService = new CertificationQuestionService();
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ questionId: string }> }) {
   const session = await auth();
@@ -20,7 +20,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     const { questionId } = await params;
     const id = Number(questionId);
 
-    const question = await prisma.publicExamQuestion.findFirst({
+    const question = await prisma.question.findFirst({
       where: { id, userId: session.user.id },
       include: {
         options: true,
@@ -37,20 +37,12 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ explanations });
     }
 
-    const publicExam = await prisma.publicExam.findFirst({
-      where: { name: question.publicExamName, userId: session.user.id },
-      select: { role: true },
-    });
-
     const correctOptions = question.answer.correctOptions as string[];
     const options = Object.fromEntries(question.options.map((o) => [o.label, o.text]));
 
-    const llmResponse = await openAIService.call(publicExamExplanationsPrompt, {
-      public_exam_name: question.publicExamName,
-      exam_board_name: question.examBoardName,
-      role: publicExam?.role ?? undefined,
-      subject: question.subject,
-      topic: question.topic ?? undefined,
+    const llmResponse = await openAIService.call(certificationExplanationsPrompt, {
+      certification_name: question.certificationTitle,
+      topic: question.topic,
       question: { text: question.text, options, correctOptions },
     });
 

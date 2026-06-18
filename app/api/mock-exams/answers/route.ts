@@ -5,11 +5,8 @@ import { AIPublicExamQuestion } from '@/shared/types';
 import { prisma } from '@/lib/prisma';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { PublicExamQuestionService } from '@/features/services/question.service';
-import { buildGetPublicExamAnswersPrompt } from '@/config/promptSchemas/getPublicExamAnswers';
+import { publicExamAnswersPrompt } from '@/config/prompts/public-exam-answers.prompt';
 
-// Vercel function timeout. Hobby caps at 60s; Pro allows up to 300s.
-// OpenAI completions for a batch of explanations can take 30-90s, so we set
-// the maximum supported by the deployment plan.
 export const maxDuration = 300;
 
 const openAIService = new OpenAIService();
@@ -54,7 +51,7 @@ export async function POST(request: NextRequest) {
       const slice = needsAnswer.slice(i, i + BATCH_SIZE);
       const { subject, topic } = slice[0];
 
-      const prompt = buildGetPublicExamAnswersPrompt({
+      const llmResponse = await openAIService.call(publicExamAnswersPrompt, {
         public_exam_name: publicExamName,
         exam_board_name: examBoardName,
         role: publicExam?.role ?? undefined,
@@ -63,7 +60,6 @@ export async function POST(request: NextRequest) {
         questions: slice,
       });
 
-      const llmResponse = await openAIService.getLLMResponseInline(prompt);
       const formatted = JSON.parse(llmResponse);
 
       if (Array.isArray(formatted?.answers)) {

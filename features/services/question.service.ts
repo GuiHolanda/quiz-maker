@@ -74,6 +74,12 @@ export class CertificationQuestionService {
       }
     });
   }
+
+  public async saveExplanations(answerId: number, explanations: Record<string, string>) {
+    await this.prismaService.explanation.createMany({
+      data: Object.entries(explanations).map(([label, text]) => ({ answerId, label, text })),
+    });
+  }
 }
 
 // ---- Public exam questions ----

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { PublicExamQuestionService, validateAiQuestions } from '@/features/services/question.service';
 import { OpenAIService } from '@/features/services/openAI.service';
-import { buildGeneratePublicExamQuestionsPrompt } from '@/config/promptSchemas/generatePublicExamQuestions';
+import { publicExamQuestionsPrompt } from '@/config/prompts/public-exam-questions.prompt';
 import { QuotaService } from '@/features/services/quota.service';
 import { auth } from '@/auth';
 
@@ -13,12 +13,10 @@ const openAIService = new OpenAIService();
 const quotaService = new QuotaService();
 
 function extractJson(raw: string): string {
-  // Strip markdown code fences if present.
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
 
   if (fenced) return fenced[1].trim();
 
-  // Otherwise return trimmed raw text.
   return raw.trim();
 }
 
@@ -35,8 +33,7 @@ export async function GET(request: NextRequest) {
   try {
     await quotaService.check(session.user.id, 'generate_questions', count);
 
-    const prompt = buildGeneratePublicExamQuestionsPrompt(questionParams);
-    const rawResponse = await openAIService.getLLMResponseWithWebSearch(prompt);
+    const rawResponse = await openAIService.call(publicExamQuestionsPrompt, questionParams);
     const questionsFromAi = validateAiQuestions(JSON.parse(extractJson(rawResponse)));
 
     await quotaService.record(session.user.id, 'generate_questions', count);
