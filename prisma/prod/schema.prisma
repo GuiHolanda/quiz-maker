@@ -302,6 +302,8 @@ model CertificationSimulado {
   topics    CertificationSimuladoTopicConfig[]
   questions CertificationSimuladoQuestion[]
   attempts  CertificationSimuladoAttempt[]
+
+  @@index([userId])
 }
 
 model CertificationSimuladoTopicConfig {
@@ -310,6 +312,8 @@ model CertificationSimuladoTopicConfig {
   topicName     String
   questionCount Int
   simulado      CertificationSimulado @relation(fields: [simuladoId], references: [id], onDelete: Cascade)
+
+  @@index([simuladoId])
 }
 
 model CertificationSimuladoQuestion {
@@ -320,6 +324,8 @@ model CertificationSimuladoQuestion {
   simulado   CertificationSimulado                @relation(fields: [simuladoId], references: [id], onDelete: Cascade)
   question   Question                             @relation(fields: [questionId], references: [id])
   answers    CertificationSimuladoAttemptAnswer[]
+
+  @@index([simuladoId])
 }
 
 model CertificationSimuladoAttempt {
@@ -332,6 +338,9 @@ model CertificationSimuladoAttempt {
   simulado   CertificationSimulado                @relation(fields: [simuladoId], references: [id], onDelete: Cascade)
   user       User?                                @relation(fields: [userId], references: [id], onDelete: Cascade)
   answers    CertificationSimuladoAttemptAnswer[]
+
+  @@index([simuladoId])
+  @@index([userId])
 }
 
 model CertificationSimuladoAttemptAnswer {
@@ -341,6 +350,8 @@ model CertificationSimuladoAttemptAnswer {
   selectedOptions    String
   attempt            CertificationSimuladoAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
   simuladoQuestion   CertificationSimuladoQuestion @relation(fields: [simuladoQuestionId], references: [id])
+
+  @@index([attemptId])
 }
 
 model AdminAuditLog {
