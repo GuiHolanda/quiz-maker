@@ -246,11 +246,89 @@ chave.com.variavel=Olá {nome}, você tem {count} mensagens
 ## Important Constraints
 
 - **Do not modify the Prisma schema** (`prisma/dev/schema.prisma` or `prisma/prod/schema.prisma`) without explicit approval. Schema changes require migrations.
-- **Do not add tests** — no test infrastructure is configured and it is not a current priority.
 - **Do not introduce new state management libraries** (Redux, Zustand, Jotai). The Context + Reducer pattern is intentional.
 - **Ask before implementing** when there are multiple valid approaches. Do not pick a direction silently.
 - **Prefer editing existing files** over creating new ones. Do not create abstraction layers or utility files unless the task clearly requires them.
 - **No speculative features** — implement only what is asked. No "while I'm here" refactors.
+
+---
+
+## Testes Unitários
+
+### Infraestrutura
+
+| Ferramenta | Versão | Papel |
+|---|---|---|
+| Vitest | 4.x | Test runner (Node environment, globals: true) |
+| vitest-mock-extended | 4.x | Deep mock do PrismaService |
+| @vitest/coverage-v8 | 4.x | Cobertura de código |
+
+### Scripts
+
+```bash
+npm test              # roda todos os testes (CI-safe, passa com 0 arquivos)
+npm run test:watch    # modo watch
+npm run test:coverage # gera relatório de cobertura
+```
+
+### Estrutura de arquivos
+
+```
+tests/
+  api/
+    __mocks__/
+      prisma.ts         ← deep-mock global do prisma (setupFiles)
+    services/
+      *.service.test.ts ← um arquivo por service
+vitest.config.ts        ← raiz do projeto
+```
+
+### Padrões de teste
+
+**Mock do Prisma — services com constructor injection:**
+```ts
+import { prismaMock } from '../__mocks__/prisma';
+// ...
+const service = new MyService(prismaMock as any);
+```
+
+**Mock do Prisma — services com prisma no nível de módulo:**
+```ts
+import { prismaMock } from '../__mocks__/prisma';
+// prismaMock é injetado automaticamente via vi.mock no setupFiles
+const service = new MyService(); // usa prismaMock automaticamente
+```
+
+**Mock de `$transaction` callback (forma padrão):**
+```ts
+prismaMock.$transaction.mockImplementation(async (fn) => fn(prismaMock));
+```
+
+**Mock de `$transaction` array (batch form — ex: `finishAttempt`):**
+```ts
+prismaMock.$transaction.mockResolvedValue([undefined, undefined]);
+```
+
+**Mock de dependências externas (ex: bcryptjs):**
+```ts
+vi.mock('bcryptjs', () => ({
+  default: { hash: vi.fn().mockResolvedValue('hashed-password') },
+}));
+import bcrypt from 'bcryptjs';
+```
+
+### O que testar
+
+- Lógica de negócio em `.service.ts` — validações, guards de ownership, cálculos
+- Caminhos de erro com o `status` correto (`rejects.toMatchObject({ status: 403 })`)
+- Efeitos colaterais críticos — ex: campos desnormalizados em `updateSubject`/`updateTopic` devem incluir o `where` completo (cláusula `OR` com fallback legacy)
+
+### O que NÃO testar (fora de escopo atual)
+
+- Serviços externos com streaming (OpenAI, edital extractor)
+- Webhooks LemonSqueezy (requer assinatura real)
+- Route handlers (integração — próxima iteração)
+- Componentes React (sem infra de UI testing)
 
 ---
 
