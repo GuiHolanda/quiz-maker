@@ -30,15 +30,15 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 const PRODUCT_ITEMS = [
   { label: 'nav.quiz', href: '/certifications/quiz' },
-  { label: 'nav.generateQuestions', href: '/certifications/generate' },
+  { label: 'nav.generateQuestions', href: '/certifications/questions?tab=generate' },
   { label: 'nav.configureCertification', href: '/certifications/configure' },
-  { label: 'nav.browseQuestions', href: '/certifications/browse' },
+  { label: 'nav.browseQuestions', href: '/certifications/questions?tab=browse' },
 ] as const;
 
 const CONCURSO_ITEMS = [
   { label: 'nav.configureConcurso', href: '/public-exams/configure' },
-  { label: 'nav.generateConcursoQuestions', href: '/public-exams/generate' },
-  { label: 'nav.browseConcursoQuestions', href: '/public-exams/browse' },
+  { label: 'nav.generateConcursoQuestions', href: '/public-exams/questions?tab=generate' },
+  { label: 'nav.browseConcursoQuestions', href: '/public-exams/questions?tab=browse' },
   { label: 'nav.simulados', href: '/public-exams/simulados' },
 ] as const;
 

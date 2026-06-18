@@ -7,7 +7,7 @@ export const siteConfig = {
   navItems: [
     {
       label: 'nav.generateQuestions',
-      href: '/certifications/generate',
+      href: '/certifications/questions?tab=generate',
     },
     {
       label: 'nav.configureCertification',
@@ -19,7 +19,7 @@ export const siteConfig = {
     },
     {
       label: 'nav.browseQuestions',
-      href: '/certifications/browse',
+      href: '/certifications/questions?tab=browse',
     },
   ],
   navMenuItems: [
@@ -29,7 +29,7 @@ export const siteConfig = {
     },
     {
       label: 'nav.generateQuestions',
-      href: '/certifications/generate',
+      href: '/certifications/questions?tab=generate',
     },
     {
       label: 'nav.configureCertification',
@@ -37,7 +37,7 @@ export const siteConfig = {
     },
     {
       label: 'nav.browseQuestions',
-      href: '/certifications/browse',
+      href: '/certifications/questions?tab=browse',
     },
   ],
   links: {
