@@ -32,7 +32,7 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 const PRODUCT_ITEMS = [
   { label: 'nav.configureCertification', href: '/certifications/configure' },
   { label: 'nav.questions', href: '/certifications/questions' },
-  { label: 'nav.simulados', href: '/certifications/quiz' },
+  { label: 'nav.simulados', href: '/certifications/simulados' },
 ] as const;
 
 const CONCURSO_ITEMS = [
