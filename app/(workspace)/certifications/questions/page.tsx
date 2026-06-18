@@ -5,9 +5,9 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Tabs, Tab } from '@heroui/tabs';
 
-import { QuestionGeneratorForm } from '../generate/components/QuestionGeneratorForm';
-import { GeneratedQuestionsList } from '../generate/components/GeneratedQuestionsList';
-import { BrowseQuestionsContent } from '../browse/components/BrowseQuestionsContent';
+import { QuestionGeneratorForm } from './components/QuestionGeneratorForm';
+import { GeneratedQuestionsList } from './components/GeneratedQuestionsList';
+import { BrowseQuestionsContent } from './components/BrowseQuestionsContent';
 
 import { CertificationsProvider } from '@/features/providers/certifications.provider';
 import { QuizProvider } from '@/features/providers/quiz.provider';

@@ -5,9 +5,9 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Tabs, Tab } from '@heroui/tabs';
 
-import { PublicExamQuestionGeneratorForm } from '../generate/components/PublicExamQuestionGeneratorForm';
-import { GeneratedPublicExamQuestionsList } from '../generate/components/GeneratedPublicExamQuestionsList';
-import { BrowsePublicExamQuestionsContent } from '../browse/components/BrowsePublicExamQuestionsContent';
+import { PublicExamQuestionGeneratorForm } from './components/PublicExamQuestionGeneratorForm';
+import { GeneratedPublicExamQuestionsList } from './components/GeneratedPublicExamQuestionsList';
+import { BrowsePublicExamQuestionsContent } from './components/BrowsePublicExamQuestionsContent';
 
 import { PublicExamsProvider } from '@/features/providers/publicExams.provider';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
