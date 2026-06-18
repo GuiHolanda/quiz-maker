@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { CertificationQuestionService, validateAiQuestions } from '@/features/services/question.service';
 import { AIQuestion } from '@/shared/types';
 import { OpenAIService } from '@/features/services/openAI.service';
-import { Templates } from '@/config/constants/templates';
+import { certificationAnswersPrompt } from '@/config/prompts/certification-answers.prompt';
 import { auth } from '@/auth';
 
 export const maxDuration = 300;
@@ -23,7 +23,8 @@ export async function POST(request: NextRequest) {
     const payload = Array.isArray(body) ? { questions: body } : body;
     const questions: AIQuestion[] = validateAiQuestions(payload) as AIQuestion[];
     const { certificationTitle: certification_name, topic } = questions[0];
-    const llmResponse = await openAIService.getLLMResponse(Templates.GET_ANSWER, {
+
+    const llmResponse = await openAIService.call(certificationAnswersPrompt, {
       certification_name,
       topic,
       questions: JSON.stringify(questions),
