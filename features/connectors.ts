@@ -23,6 +23,7 @@ import {
   ADMIN_OVERVIEW_URL,
   ADMIN_AUDIT_LOG_URL,
   CERT_SIMULADOS_URL,
+  CERT_QUESTION_EXPLANATION_URL,
 } from '@/config/constants';
 import {
   AIQuestion,
@@ -371,7 +372,7 @@ export async function getQuestionExplanation(questionId: number): Promise<Record
 
 export async function getCertificationQuestionExplanation(questionId: number): Promise<Record<string, string>> {
   const { data } = await api.get<{ explanations: Record<string, string> }>(
-    `/certification/questions/${questionId}/explanation`
+    `${CERT_QUESTION_EXPLANATION_URL}/${questionId}/explanation`
   );
 
   return data.explanations;

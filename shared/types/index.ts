@@ -447,7 +447,7 @@ export interface AdminAuditLogResponse {
 // Generic interfaces for SimuladoQuestionList and ResultQuestionCard (both domains)
 export interface SimuladoQuestion {
   readonly id: number;
-  readonly mockExamQuestionId: number;
+  readonly simuladoQuestionId: number;
   readonly text: string;
   readonly correctCount: number;
   readonly options: Record<string, string>;
