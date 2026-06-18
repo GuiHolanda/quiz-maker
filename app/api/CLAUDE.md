@@ -43,7 +43,7 @@ Everything related to IT certification exam preparation.
 | `certification/save-certification` | POST | Create new certification |
 | `certification/save-certification` | PUT | Add topic to certification |
 | `certification/save-certification` | PATCH | Update certification or topic metadata |
-| `certification/save-certification` | DELETE | Delete topic |
+| `certification/save-certification` | DELETE | Delete certification or topic (`?certificationKey=` or `?topicId=`) |
 | `certification/question-generator` | GET | Generate questions via OpenAI for a topic |
 | `certification/save-questions` | POST | Persist generated questions to DB |
 | `certification/get-answers` | POST | Generate and save answers/explanations via OpenAI |
@@ -68,7 +68,7 @@ Everything related to Brazilian public-sector competitive exams (concursos públ
 | `public-exam/save-public-exam` | POST | Create new public exam |
 | `public-exam/save-public-exam` | PUT | Add subject or topic |
 | `public-exam/save-public-exam` | PATCH | Update exam, subject, or topic metadata |
-| `public-exam/save-public-exam` | DELETE | Delete subject or topic |
+| `public-exam/save-public-exam` | DELETE | Delete public exam, subject, or topic (`?examId=`, `?subjectId=`, or `?topicId=`) |
 | `public-exam/question-generator` | GET | Generate questions via OpenAI + web search for a subject/topic |
 | `public-exam/save-questions` | POST | Persist generated questions to DB |
 | `public-exam/get-answers` | POST | Generate and save answers/explanations via OpenAI |
