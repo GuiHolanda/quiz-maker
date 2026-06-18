@@ -12,6 +12,8 @@ export const CERTIFICATIONS_LOCAL_STORAGE_KEY = 'CERTIFICATIONS';
 export const PUBLIC_EXAMS_LOCAL_STORAGE_KEY = 'PUBLIC_EXAMS';
 export const LANGUAGE_LOCAL_STORAGE_KEY = 'app-language';
 export const AI_CHAT_LOCAL_STORAGE_KEY = 'AI_CHAT_MESSAGES';
+export const AI_CHAT_FOLLOWUP_TIMESTAMP_KEY = 'AI_CHAT_FOLLOWUP_TS';
+export const AI_CHAT_INACTIVITY_TIMEOUT_MS = 60 * 60 * 1000;
 export const QUESTIONS_PER_PAGE_OPTIONS = [
   { key: '1', label: '1' },
   { key: '5', label: '5' },
@@ -140,6 +142,7 @@ export const INITIAL_CERTIFICATIONS_STATE: CertificationsState = {
   ],
   selectedCertification: null,
   selectedTopics: [],
+  isLoading: true,
 };
 
 export const REGISTER_URL = '/auth/register';
@@ -180,6 +183,7 @@ export const INITIAL_PUBLIC_EXAMS_STATE: PublicExamsState = {
   selectedPublicExam: null,
   selectedSubjects: [],
   selectedTopic: null,
+  isLoading: true,
 };
 
 export const MOCK_EXAMS_URL = '/mock-exams';
@@ -187,4 +191,5 @@ export const MOCK_EXAMS_LOCAL_STORAGE_KEY = 'MOCK_EXAMS';
 
 export const INITIAL_MOCK_EXAMS_STATE: MockExamsState = {
   mockExams: [],
+  isLoading: true,
 };

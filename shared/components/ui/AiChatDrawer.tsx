@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter } from '@heroui/drawer';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
@@ -11,9 +11,8 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useAiChat } from '@/features/hooks/useAiChat.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { AiChatMessage } from '@/shared/components/ui/AiChatMessage';
-import { AiChatPreviewCard } from '@/shared/components/ui/AiChatPreviewCard';
+import { AiChatCertificationDraftCard } from '@/shared/components/ui/AiChatCertificationDraftCard';
 import { AiChatExamDraftCard } from '@/shared/components/ui/AiChatExamDraftCard';
-import { Certification } from '@/shared/types';
 
 interface AiChatDrawerProps {
   readonly isOpen: boolean;
@@ -31,62 +30,26 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
     setInput,
     sendMessage,
     reset,
-    saveCertificationFromChat,
     handleEditalUpload,
     cancelPendingFile,
     injectAssistantMessage,
+    markFollowUpInactivity,
   } = useAiChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  type SaveState = {
-    isSaving: boolean;
-    result?: 'success' | 'error';
-    errorMessage?: string;
-  };
-
-  const [saveStates, setSaveStates] = useState<Record<number, SaveState>>({});
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, currentStreamContent]);
 
-  const handleConfirm = useCallback(
-    async (index: number, certification: Certification) => {
-      setSaveStates((prev) => ({ ...prev, [index]: { isSaving: true } }));
-      const result = await saveCertificationFromChat(certification);
-
-      if (result === 'success') {
-        setSaveStates((prev) => ({ ...prev, [index]: { isSaving: false, result: 'success' } }));
-        injectAssistantMessage(t('chat.followUpQuestion'));
-      } else if (result === 'duplicate') {
-        setSaveStates((prev) => ({
-          ...prev,
-          [index]: {
-            isSaving: false,
-            result: 'error',
-            errorMessage: t('chat.errorDuplicate', { key: certification.key }),
-          },
-        }));
-      } else {
-        setSaveStates((prev) => ({
-          ...prev,
-          [index]: { isSaving: false, result: 'error', errorMessage: t('chat.errorGeneric') },
-        }));
-      }
-    },
-    [saveCertificationFromChat, injectAssistantMessage, t]
-  );
-
   const handleNewChat = useCallback(() => {
     reset();
-    setSaveStates({});
   }, [reset]);
 
-  const handleAdjust = () => {
-    inputRef.current?.focus();
-  };
+  const handleFollowUp = useCallback(() => {
+    injectAssistantMessage(t('chat.followUpQuestion'));
+    markFollowUpInactivity();
+  }, [injectAssistantMessage, markFollowUpInactivity, t]);
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -142,22 +105,12 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
               {message.isError ? (
                 <AiChatMessage content={message.content} isError={true} role={message.role} />
               ) : message.examDraft ? (
-                <AiChatExamDraftCard
-                  publicExam={message.examDraft}
-                  onExamSaved={() => injectAssistantMessage(t('chat.followUpQuestion'))}
-                />
+                <AiChatExamDraftCard publicExam={message.examDraft} onExamSaved={handleFollowUp} />
               ) : message.certificationData ? (
-                <>
-                  <AiChatMessage content={message.content} role={message.role} sources={message.sources} />
-                  <AiChatPreviewCard
-                    certification={message.certificationData}
-                    errorMessage={saveStates[index]?.errorMessage}
-                    isSaving={saveStates[index]?.isSaving}
-                    saveResult={saveStates[index]?.result}
-                    onAdjust={handleAdjust}
-                    onConfirm={() => handleConfirm(index, message.certificationData!)}
-                  />
-                </>
+                <AiChatCertificationDraftCard
+                  certification={message.certificationData}
+                  onCertificationSaved={handleFollowUp}
+                />
               ) : (
                 <AiChatMessage attachmentName={message.attachmentName} content={message.content} role={message.role} />
               )}
@@ -236,7 +189,6 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
             </Button>
             <Input
               {...inputProperties.input}
-              ref={inputRef}
               placeholder={pendingFile ? t('chat.rolePlaceholder') : t('chat.inputPlaceholder')}
               value={input}
               onKeyDown={(e) => {

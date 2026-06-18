@@ -134,6 +134,22 @@ export class CertificationService {
     await this.prismaService.certificationTopic.delete({ where: { id: topicId } });
   }
 
+  public async deleteCertification(certificationKey: string, userId: string) {
+    const certification = await this.prismaService.certification.findUnique({
+      where: { key: certificationKey },
+    });
+
+    if (!certification) {
+      throw Object.assign(new Error('Certification not found'), { status: 404 });
+    }
+
+    if (certification.userId !== userId) {
+      throw Object.assign(new Error('Forbidden'), { status: 403 });
+    }
+
+    await this.prismaService.certification.delete({ where: { key: certificationKey } });
+  }
+
   public async addTopic(
     certificationKey: string,
     name: string,

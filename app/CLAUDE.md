@@ -288,10 +288,11 @@ Página pública, fundo `bg-background`, `'use client'`.
 
 | Arquivo | Papel |
 |---|---|
-| `page.tsx` | Provider + layout + HeroUI Tabs |
+| `page.tsx` | Provider + layout + HeroUI Tabs (abre por padrão na aba **Minhas certificações**) |
 | `components/CertificationHeader.tsx` | Exibe nome/código da certificação selecionada |
 | `components/NewCertificationTab.tsx` | Form de criação com validação |
-| `components/CertificationsListTab.tsx` | Lista as certifications do usuário |
+| `components/CertificationsListTab.tsx` | Accordion das certificações do usuário com botão de excluir, modal de confirmação, empty state com CTA e `SkeletonListLoader` durante o carregamento |
+| `components/EditCertificationModal.tsx` | Modal de edição de metadados (label, key, provider) |
 | `components/EditCertificationTab.tsx` | Select para escolher qual editar |
 | `components/TopicForm.tsx` | Form de adição de tópico com Slider de percentual |
 
@@ -316,7 +317,7 @@ Página pública, fundo `bg-background`, `'use client'`.
 |---|---|
 | `page.tsx` | Provider + layout + HeroUI Tabs |
 | `components/NewPublicExamTab.tsx` | Form de criação de concurso |
-| `components/PublicExamsListTab.tsx` | Lista os concursos do usuário |
+| `components/PublicExamsListTab.tsx` | Accordion dos concursos do usuário com botão de excluir, modal de confirmação, empty state com CTA e `SkeletonListLoader` durante o carregamento |
 | `components/EditPublicExamModal.tsx` | Modal de edição de concurso |
 
 #### Generate Public Exam Questions (`public-exams/generate/`)
@@ -388,6 +389,7 @@ Layout completamente separado do `(workspace)` — usa sidebar própria, sem o n
 | `theme-switch.tsx` | Toggle light/dark via next-themes |
 | `language-switch.tsx` | Toggle PT/EN via `useTranslation` |
 | `BusyDialog.tsx` | Modal de loading durante operações assíncronas |
+| `SkeletonListLoader.tsx` | Skeleton placeholder para listas que dependem de fetch (HeroUI Skeleton, props `count`/`height`/`className`). Usado pelos list tabs de certificações, concursos e simulados durante o carregamento inicial do provider. |
 | `FormAccordion.tsx` | Accordion com `<Form>` integrado, BusyDialog e footer de ações |
 | `PaginationControls.tsx` | Botões prev/next reutilizáveis |
 | `ItemsPerPageSelect.tsx` | Select de itens por página |
@@ -513,6 +515,7 @@ Transição:   transition-colors duration-200 (cards, inputs)
 - [ ] Verificar em dark e light mode
 - [ ] Chamadas HTTP via `useRequest` — nunca `useState` + `try/catch` manual
 - [ ] Toast de sucesso em toda mutation; erro já coberto por `useRequest`
+- [ ] Para listas que dependem de fetch via provider (`CertificationsProvider`, `PublicExamsProvider`, `MockExamsProvider`), renderizar `<SkeletonListLoader />` enquanto `isLoading` for `true` — evita flash de estado vazio antes do fetch completar
 
 ---
 

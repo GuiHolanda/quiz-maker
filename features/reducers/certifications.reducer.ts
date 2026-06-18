@@ -4,6 +4,7 @@ export interface CertificationsState {
   certifications: Certification[];
   selectedCertification: Certification | null;
   selectedTopics: string[];
+  isLoading: boolean;
 }
 
 export type CertificationsAction =
@@ -13,14 +14,15 @@ export type CertificationsAction =
   | { type: 'setSelectedTopics'; payload: { topics: string[] } }
   | { type: 'addCertification'; payload: { certification: Certification } }
   | { type: 'removeCertification'; payload: { key: string } }
-  | { type: 'updateCertification'; payload: { key: string; certification: Partial<Certification> } };
+  | { type: 'updateCertification'; payload: { key: string; certification: Partial<Certification> } }
+  | { type: 'setLoading'; payload: { isLoading: boolean } };
 
 export function certificationsReducer(state: CertificationsState, action: CertificationsAction): CertificationsState {
   switch (action.type) {
     case 'setState':
       return action.payload.state;
     case 'setCertifications':
-      return { ...state, certifications: action.payload.certifications };
+      return { ...state, certifications: action.payload.certifications, isLoading: false };
     case 'setSelectedCertification':
       return {
         ...state,
@@ -47,6 +49,8 @@ export function certificationsReducer(state: CertificationsState, action: Certif
         selectedCertification: updatedSelected,
       };
     }
+    case 'setLoading':
+      return { ...state, isLoading: action.payload.isLoading };
     default:
       return state;
   }

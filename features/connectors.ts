@@ -112,6 +112,10 @@ export async function deleteCertificationTopic(topicId: string): Promise<void> {
   await api.delete(`${SAVE_CERTIFICATION_URL}?topicId=${encodeURIComponent(topicId)}`);
 }
 
+export async function deleteCertification(certificationKey: string): Promise<void> {
+  await api.delete(`${SAVE_CERTIFICATION_URL}?certificationKey=${encodeURIComponent(certificationKey)}`);
+}
+
 export async function addCertificationTopic(
   certificationKey: string,
   name: string,

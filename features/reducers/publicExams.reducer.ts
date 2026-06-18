@@ -5,6 +5,7 @@ export interface PublicExamsState {
   selectedPublicExam: PublicExam | null;
   selectedSubjects: string[];
   selectedTopic: string | null;
+  isLoading: boolean;
 }
 
 export type PublicExamsAction =
@@ -15,14 +16,15 @@ export type PublicExamsAction =
   | { type: 'setSelectedTopic'; payload: { topic: string | null } }
   | { type: 'addPublicExam'; payload: { publicExam: PublicExam } }
   | { type: 'removePublicExam'; payload: { id: string } }
-  | { type: 'updatePublicExam'; payload: { id: string; publicExam: Partial<PublicExam> } };
+  | { type: 'updatePublicExam'; payload: { id: string; publicExam: Partial<PublicExam> } }
+  | { type: 'setLoading'; payload: { isLoading: boolean } };
 
 export function publicExamsReducer(state: PublicExamsState, action: PublicExamsAction): PublicExamsState {
   switch (action.type) {
     case 'setState':
       return action.payload.state;
     case 'setPublicExams':
-      return { ...state, publicExams: action.payload.publicExams };
+      return { ...state, publicExams: action.payload.publicExams, isLoading: false };
     case 'setSelectedPublicExam':
       return {
         ...state,
@@ -51,6 +53,8 @@ export function publicExamsReducer(state: PublicExamsState, action: PublicExamsA
         selectedPublicExam: updatedSelected,
       };
     }
+    case 'setLoading':
+      return { ...state, isLoading: action.payload.isLoading };
     default:
       return state;
   }

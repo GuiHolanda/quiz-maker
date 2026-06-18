@@ -11,6 +11,7 @@ import { faTrash, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { EditPublicExamModal } from './EditPublicExamModal';
 
 import { PublicExamSubjectsTable } from '@/shared/components/PublicExamSubjectsTable';
+import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
 import { deletePublicExam } from '@/features/connectors';
 import { PublicExam, PublicExamSubject, PublicExamTopic, ExamBoard } from '@/shared/types';
@@ -22,7 +23,7 @@ interface PublicExamsListTabProps {
 
 export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
   const { t } = useTranslation();
-  const { publicExams, updatePublicExam, removePublicExam } = usePublicExamsContext();
+  const { publicExams, isLoading, updatePublicExam, removePublicExam } = usePublicExamsContext();
   const [editingExam, setEditingExam] = useState<PublicExam | null>(null);
   const [deletingExam, setDeletingExam] = useState<PublicExam | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -122,7 +123,9 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
 
   return (
     <>
-      {publicExams.length === 0 ? (
+      {isLoading ? (
+        <SkeletonListLoader />
+      ) : publicExams.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 py-16 bg-content1 border border-default-200 rounded-xl text-center">
           <p className="text-base font-semibold text-foreground">{t('concurso.noExamsTitle')}</p>
           <p className="text-sm text-default-500 max-w-sm">{t('concurso.noExamsDescription')}</p>
@@ -136,76 +139,78 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
         </div>
       ) : (
         <Accordion
-        className="mt-2 flex flex-col gap-2 px-0"
-        itemClasses={{
-          base: 'bg-content1 border border-default-200 rounded-xl',
-          title: 'text-sm text-foreground font-semibold',
-          titleWrapper: 'flex-1 flex flex-col text-start min-w-0 overflow-hidden',
-          trigger: 'px-4 py-3 hover:bg-default-100 rounded-xl transition-colors duration-200',
-          content: 'px-4 pb-4',
-          indicator: 'text-default-400',
-        }}
-      >
-        {publicExams.map((publicExam) => (
-          <AccordionItem
-            key={publicExam.id ?? publicExam.name}
-            aria-label={publicExam.name}
-            title={
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="text-sm font-semibold text-foreground truncate flex-1 min-w-0">{publicExam.name}</span>
-                <span className="text-xs text-default-400 shrink-0">·</span>
-                <span className="text-xs text-default-500 shrink-0">{publicExam.examBoard?.name}</span>
-                {publicExam.role && (
-                  <>
-                    <span className="text-xs text-default-400 shrink-0">·</span>
-                    <span className="text-xs text-default-500 shrink-0">{publicExam.role}</span>
-                  </>
-                )}
-                {publicExam.year != null && (
-                  <>
-                    <span className="text-xs text-default-400 shrink-0">·</span>
-                    <span className="text-xs text-default-500 shrink-0">{publicExam.year}</span>
-                  </>
-                )}
-                <span
-                  aria-label={t('common.remove')}
-                  className="ml-auto shrink-0 p-1.5 rounded-lg text-default-400 hover:text-danger hover:bg-danger/10 transition-colors cursor-pointer"
-                  role="button"
-                  tabIndex={0}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeletingExam(publicExam);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
+          className="mt-2 flex flex-col gap-2 px-0"
+          itemClasses={{
+            base: 'bg-content1 border border-default-200 rounded-xl',
+            title: 'text-sm text-foreground font-semibold',
+            titleWrapper: 'flex-1 flex flex-col text-start min-w-0 overflow-hidden',
+            trigger: 'px-4 py-3 hover:bg-default-100 rounded-xl transition-colors duration-200',
+            content: 'px-4 pb-4',
+            indicator: 'text-default-400',
+          }}
+        >
+          {publicExams.map((publicExam) => (
+            <AccordionItem
+              key={publicExam.id ?? publicExam.name}
+              aria-label={publicExam.name}
+              title={
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-sm font-semibold text-foreground truncate flex-1 min-w-0">
+                    {publicExam.name}
+                  </span>
+                  <span className="text-xs text-default-400 shrink-0">·</span>
+                  <span className="text-xs text-default-500 shrink-0">{publicExam.examBoard?.name}</span>
+                  {publicExam.role && (
+                    <>
+                      <span className="text-xs text-default-400 shrink-0">·</span>
+                      <span className="text-xs text-default-500 shrink-0">{publicExam.role}</span>
+                    </>
+                  )}
+                  {publicExam.year != null && (
+                    <>
+                      <span className="text-xs text-default-400 shrink-0">·</span>
+                      <span className="text-xs text-default-500 shrink-0">{publicExam.year}</span>
+                    </>
+                  )}
+                  <span
+                    aria-label={t('common.remove')}
+                    className="ml-auto shrink-0 p-1.5 rounded-lg text-default-400 hover:text-danger hover:bg-danger/10 transition-colors cursor-pointer"
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
                       e.stopPropagation();
                       setDeletingExam(publicExam);
-                    }
-                  }}
-                >
-                  <FontAwesomeIcon className="w-3 h-3" icon={faTrash} />
-                </span>
-              </div>
-            }
-          >
-            <PublicExamSubjectsTable
-              selectedPublicExam={publicExam}
-              subjectsList={publicExam.subjects}
-              onEditPublicExam={() => setEditingExam(publicExam)}
-              onSubjectAdded={(subject) => handleSubjectAdded(publicExam, subject)}
-              onSubjectRemoved={(subjectId) => handleSubjectRemoved(publicExam, subjectId)}
-              onSubjectUpdated={(subjectId, newName, min, max) =>
-                handleSubjectUpdated(publicExam, subjectId, newName, min, max)
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.stopPropagation();
+                        setDeletingExam(publicExam);
+                      }
+                    }}
+                  >
+                    <FontAwesomeIcon className="w-3 h-3" icon={faTrash} />
+                  </span>
+                </div>
               }
-              onTopicAdded={(subjectId, topic) => handleTopicAdded(publicExam, subjectId, topic)}
-              onTopicRemoved={(subjectId, topicId) => handleTopicRemoved(publicExam, subjectId, topicId)}
-              onTopicUpdated={(subjectId, topicId, newName) =>
-                handleTopicUpdated(publicExam, subjectId, topicId, newName)
-              }
-            />
-          </AccordionItem>
-        ))}
-      </Accordion>
+            >
+              <PublicExamSubjectsTable
+                selectedPublicExam={publicExam}
+                subjectsList={publicExam.subjects}
+                onEditPublicExam={() => setEditingExam(publicExam)}
+                onSubjectAdded={(subject) => handleSubjectAdded(publicExam, subject)}
+                onSubjectRemoved={(subjectId) => handleSubjectRemoved(publicExam, subjectId)}
+                onSubjectUpdated={(subjectId, newName, min, max) =>
+                  handleSubjectUpdated(publicExam, subjectId, newName, min, max)
+                }
+                onTopicAdded={(subjectId, topic) => handleTopicAdded(publicExam, subjectId, topic)}
+                onTopicRemoved={(subjectId, topicId) => handleTopicRemoved(publicExam, subjectId, topicId)}
+                onTopicUpdated={(subjectId, topicId, newName) =>
+                  handleTopicUpdated(publicExam, subjectId, topicId, newName)
+                }
+              />
+            </AccordionItem>
+          ))}
+        </Accordion>
       )}
 
       <EditPublicExamModal

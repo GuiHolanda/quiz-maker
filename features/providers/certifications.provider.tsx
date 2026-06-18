@@ -39,7 +39,8 @@ export function CertificationsProvider({ children }: Readonly<{ children: React.
             dispatch({ type: 'setCertifications', payload: { certifications: parsed.certifications } });
           }
         } catch {}
-      });
+      })
+      .finally(() => dispatch({ type: 'setLoading', payload: { isLoading: false } }));
   }, []);
 
   useEffect(() => {
@@ -100,6 +101,7 @@ export function CertificationsProvider({ children }: Readonly<{ children: React.
       certifications: state.certifications,
       selectedCertification: state.selectedCertification,
       selectedTopics: state.selectedTopics,
+      isLoading: state.isLoading,
       setCertifications,
       setSelectedCertification,
       setSelectedTopics,
@@ -111,6 +113,7 @@ export function CertificationsProvider({ children }: Readonly<{ children: React.
       state.certifications,
       state.selectedCertification,
       state.selectedTopics,
+      state.isLoading,
       setCertifications,
       setSelectedCertification,
       setSelectedTopics,

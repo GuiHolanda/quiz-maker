@@ -43,7 +43,8 @@ export function PublicExamsProvider({ children }: Readonly<{ children: React.Rea
             dispatch({ type: 'setPublicExams', payload: { publicExams: parsed.publicExams } });
           }
         } catch {}
-      });
+      })
+      .finally(() => dispatch({ type: 'setLoading', payload: { isLoading: false } }));
   }, []);
 
   useEffect(() => {
@@ -111,6 +112,7 @@ export function PublicExamsProvider({ children }: Readonly<{ children: React.Rea
       selectedPublicExam: state.selectedPublicExam,
       selectedSubjects: state.selectedSubjects,
       selectedTopic: state.selectedTopic,
+      isLoading: state.isLoading,
       setPublicExams,
       setSelectedPublicExam,
       setSelectedSubjects,
@@ -124,6 +126,7 @@ export function PublicExamsProvider({ children }: Readonly<{ children: React.Rea
       state.selectedPublicExam,
       state.selectedSubjects,
       state.selectedTopic,
+      state.isLoading,
       setPublicExams,
       setSelectedPublicExam,
       setSelectedSubjects,

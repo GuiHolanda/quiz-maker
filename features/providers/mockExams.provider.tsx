@@ -31,7 +31,8 @@ export function MockExamsProvider({ children }: { readonly children: React.React
             // ignore
           }
         }
-      });
+      })
+      .finally(() => dispatch({ type: 'setLoading', payload: false }));
   }, []);
 
   useEffect(() => {

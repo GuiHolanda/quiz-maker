@@ -13,7 +13,7 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 
 export default function ConfigureCertificationPage() {
   const { t } = useTranslation();
-  const [selectedTab, setSelectedTab] = useState<Key>('new');
+  const [selectedTab, setSelectedTab] = useState<Key>('certificationsList');
 
   return (
     <CertificationsProvider>
@@ -31,11 +31,11 @@ export default function ConfigureCertificationPage() {
             selectedKey={selectedTab as string}
             onSelectionChange={setSelectedTab}
           >
+            <Tab key="certificationsList" title={t('certification.tabList')}>
+              <CertificationsListTab onCreateNew={() => setSelectedTab('new')} />
+            </Tab>
             <Tab key="new" title={t('certification.tabNew')}>
               <NewCertificationTab onBackToLibrary={() => setSelectedTab('certificationsList')} />
-            </Tab>
-            <Tab key="certificationsList" title={t('certification.tabList')}>
-              <CertificationsListTab />
             </Tab>
           </Tabs>
         </div>

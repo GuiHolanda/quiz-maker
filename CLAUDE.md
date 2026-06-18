@@ -422,7 +422,9 @@ Each commit message follows the convention below. Keep the diff reviewable: if a
 <type>: <short description>
 ```
 
-Types: `feat`, `fix`, `refactor`, `chore`, `docs`
+Types: `feat`, `fix`, `refactor`, `chore`, `docs`, `test`
+
+**Mensagens curtas e objetivas — uma única linha, sem corpo.** Apenas a `<short description>` (≤ 72 caracteres). Não escreva bullets, não enumere arquivos, não justifique decisões já cobertas pelo plano. O diff e o título já dizem o que mudou.
 
 Examples from this repo:
 - `feat: sync certifications state with database as source of truth`

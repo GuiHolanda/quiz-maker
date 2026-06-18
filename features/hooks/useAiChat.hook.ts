@@ -1,9 +1,13 @@
 'use client';
 import { useState, useRef, useCallback, useEffect } from 'react';
 
-import { saveCertification, extractEdital } from '@/features/connectors';
+import { extractEdital } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { AI_CHAT_LOCAL_STORAGE_KEY } from '@/config/constants';
+import {
+  AI_CHAT_FOLLOWUP_TIMESTAMP_KEY,
+  AI_CHAT_INACTIVITY_TIMEOUT_MS,
+  AI_CHAT_LOCAL_STORAGE_KEY,
+} from '@/config/constants';
 import { ChatMessage, Certification } from '@/shared/types';
 
 interface UseAiChatReturn {
@@ -15,10 +19,10 @@ interface UseAiChatReturn {
   readonly setInput: (value: string) => void;
   readonly sendMessage: () => void;
   readonly reset: () => void;
-  readonly saveCertificationFromChat: (certification: Certification) => Promise<'success' | 'duplicate' | 'error'>;
   readonly handleEditalUpload: (file: File) => void;
   readonly cancelPendingFile: () => void;
   readonly injectAssistantMessage: (content: string) => void;
+  readonly markFollowUpInactivity: () => void;
 }
 
 interface ParsedCertResponse {
@@ -76,6 +80,7 @@ export function useAiChat(): UseAiChatReturn {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const pendingEditalRef = useRef<File | null>(null);
+  const followUpTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { t, language } = useTranslation();
 
   useEffect(() => {
@@ -91,10 +96,63 @@ export function useAiChat(): UseAiChatReturn {
     setIsStreaming(false);
     setCurrentStreamContent('');
     localStorage.removeItem(AI_CHAT_LOCAL_STORAGE_KEY);
+    if (followUpTimerRef.current) {
+      clearTimeout(followUpTimerRef.current);
+      followUpTimerRef.current = null;
+    }
+    localStorage.removeItem(AI_CHAT_FOLLOWUP_TIMESTAMP_KEY);
   }, []);
+
+  const scheduleFollowUpReset = useCallback(
+    (expiresAt: number) => {
+      if (followUpTimerRef.current) clearTimeout(followUpTimerRef.current);
+      const remaining = Math.max(0, expiresAt - Date.now());
+
+      followUpTimerRef.current = setTimeout(() => reset(), remaining);
+    },
+    [reset]
+  );
+
+  const clearFollowUpInactivity = useCallback(() => {
+    if (followUpTimerRef.current) {
+      clearTimeout(followUpTimerRef.current);
+      followUpTimerRef.current = null;
+    }
+    localStorage.removeItem(AI_CHAT_FOLLOWUP_TIMESTAMP_KEY);
+  }, []);
+
+  const markFollowUpInactivity = useCallback(() => {
+    const expiresAt = Date.now() + AI_CHAT_INACTIVITY_TIMEOUT_MS;
+
+    localStorage.setItem(AI_CHAT_FOLLOWUP_TIMESTAMP_KEY, String(expiresAt));
+    scheduleFollowUpReset(expiresAt);
+  }, [scheduleFollowUpReset]);
+
+  useEffect(() => {
+    const raw = localStorage.getItem(AI_CHAT_FOLLOWUP_TIMESTAMP_KEY);
+
+    if (!raw) return;
+    const expiresAt = parseInt(raw, 10);
+
+    if (!Number.isFinite(expiresAt)) {
+      localStorage.removeItem(AI_CHAT_FOLLOWUP_TIMESTAMP_KEY);
+
+      return;
+    }
+    scheduleFollowUpReset(expiresAt);
+
+    return () => {
+      if (followUpTimerRef.current) {
+        clearTimeout(followUpTimerRef.current);
+        followUpTimerRef.current = null;
+      }
+    };
+  }, [scheduleFollowUpReset]);
 
   const sendMessage = useCallback(async () => {
     if ((input.trim() === '' && !pendingEditalRef.current) || isStreaming) return;
+
+    clearFollowUpInactivity();
 
     // If there's a pending edital, extract now — role is what the user typed,
     // or the last user message in the conversation if input is empty
@@ -241,23 +299,7 @@ export function useAiChat(): UseAiChatReturn {
       setIsStreaming(false);
       setCurrentStreamContent('');
     }
-  }, [input, isStreaming, messages, t, language]);
-
-  const saveCertificationFromChat = async (
-    certification: Certification
-  ): Promise<'success' | 'duplicate' | 'error'> => {
-    try {
-      const savedCertification = await saveCertification(certification);
-
-      window.dispatchEvent(new CustomEvent('certification-created', { detail: savedCertification }));
-
-      return 'success';
-    } catch (err: any) {
-      if (err?.response?.status === 409 || err?.status === 409) return 'duplicate';
-
-      return 'error';
-    }
-  };
+  }, [input, isStreaming, messages, t, language, clearFollowUpInactivity]);
 
   const handleEditalUpload = useCallback(
     (file: File) => {
@@ -286,9 +328,9 @@ export function useAiChat(): UseAiChatReturn {
     setInput,
     sendMessage,
     reset,
-    saveCertificationFromChat,
     handleEditalUpload,
     cancelPendingFile,
     injectAssistantMessage,
+    markFollowUpInactivity,
   };
 }
