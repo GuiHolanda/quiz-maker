@@ -1,6 +1,5 @@
-'use client';
-import { BrowsePublicExamQuestionsContent } from './components/BrowsePublicExamQuestionsContent';
+import { redirect } from 'next/navigation';
 
-export default function BrowsePublicExamQuestionsPage() {
-  return <BrowsePublicExamQuestionsContent />;
+export default function BrowsePublicExamRedirect() {
+  redirect('/public-exams/questions?tab=browse');
 }

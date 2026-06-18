@@ -17,9 +17,14 @@ import { notify } from '@/shared/lib/notify';
 interface GeneratedPublicExamQuestionsListProps {
   readonly questions: AIPublicExamQuestion[];
   readonly setQuestions: React.Dispatch<React.SetStateAction<AIPublicExamQuestion[]>>;
+  readonly onSaved?: () => void;
 }
 
-export function GeneratedPublicExamQuestionsList({ questions, setQuestions }: GeneratedPublicExamQuestionsListProps) {
+export function GeneratedPublicExamQuestionsList({
+  questions,
+  setQuestions,
+  onSaved,
+}: GeneratedPublicExamQuestionsListProps) {
   const [selectedIds, setSelectedIds] = React.useState<number[]>([]);
   const [currentPage, setCurrentPage] = React.useState(1);
   const [questionsPerPage, setQuestionsPerPage] = React.useState<number>(5);
@@ -56,6 +61,7 @@ export function GeneratedPublicExamQuestionsList({ questions, setQuestions }: Ge
       notify.success(t('toast.success'), t('toast.publicExamQuestionsSaved', { count: payload.length }));
       setSelectedIds([]);
       setQuestions([]);
+      onSaved?.();
     });
   };
 
