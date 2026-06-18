@@ -5,11 +5,11 @@ import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@herou
 import { Input } from '@heroui/input';
 import { Select, SelectItem } from '@heroui/select';
 import { Button } from '@heroui/button';
-import { addToast } from '@heroui/toast';
 
 import { Certification } from '@/shared/types';
 import { updateCertificationMeta } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { notify } from '@/shared/lib/notify';
 import { inputProperties } from '@/config/constants/inputStyles';
 
 interface EditCertificationModalProps {
@@ -47,20 +47,12 @@ export function EditCertificationModal({ certification, isOpen, onClose, onSaved
         newProvider: provider || null,
       });
       onSaved(certification.key, { label: label.trim(), key: certKey.trim(), provider: provider || undefined });
-      addToast({
-        title: t('toast.success'),
-        description: t('toast.savedSuccessfully', { title: label.trim() }),
-        color: 'success',
-      });
+      notify.success(t('toast.success'), t('toast.savedSuccessfully', { title: label.trim() }));
       onClose();
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message;
 
-      addToast({
-        title: t('toast.error'),
-        description: msg || t('toast.failedToUpdate', { name: label.trim() }),
-        color: 'danger',
-      });
+      notify.error(t('toast.error'), msg || t('toast.failedToUpdate', { name: label.trim() }));
     } finally {
       setSaving(false);
     }

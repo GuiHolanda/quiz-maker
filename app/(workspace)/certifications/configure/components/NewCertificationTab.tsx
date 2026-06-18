@@ -1,6 +1,5 @@
 'use client';
 import { useState } from 'react';
-import { addToast } from '@heroui/toast';
 
 import { Step1BasicInfo } from './Step1BasicInfo';
 import { Step2DefineTopics } from './Step2DefineTopics';
@@ -11,6 +10,7 @@ import useCertificationsContext from '@/features/hooks/useCertificationsContext.
 import { useCertificationDraft } from '@/features/hooks/useCertificationDraft.hook';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { notify } from '@/shared/lib/notify';
 
 interface NewCertificationTabProps {
   readonly onBackToLibrary: () => void;
@@ -28,17 +28,13 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
     const key = draft.code.trim();
 
     if (!label || !key) {
-      addToast({ title: t('toast.validationError'), description: t('error.titleCodeRequired'), color: 'danger' });
+      notify.error(t('toast.validationError'), t('error.titleCodeRequired'));
 
       return;
     }
 
     if (certifications.some((c) => c.key === key)) {
-      addToast({
-        title: t('toast.duplicateCertification'),
-        description: t('error.duplicateCode', { code: key }),
-        color: 'danger',
-      });
+      notify.error(t('toast.duplicateCertification'), t('error.duplicateCode', { code: key }));
 
       return;
     }
@@ -50,11 +46,7 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
       addCertification(certification);
       draft.reset();
       setStep(1);
-      addToast({
-        title: t('toast.success'),
-        description: t('toast.savedSuccessfully', { title: label }),
-        color: 'success',
-      });
+      notify.success(t('toast.success'), t('toast.savedSuccessfully', { title: label }));
       onBackToLibrary();
     }
   };

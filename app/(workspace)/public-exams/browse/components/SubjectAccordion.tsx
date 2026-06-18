@@ -1,12 +1,12 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { addToast } from '@heroui/toast';
 
 import { PublicExamQuestionList } from './PublicExamQuestionList';
 
 import { StoredPublicExamQuestion, BrowsePublicExamSubjectSummary } from '@/shared/types';
 import { getPublicExamBrowseQuestions, deletePublicExamBrowseQuestion } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { notify } from '@/shared/lib/notify';
 
 interface SubjectAccordionProps {
   readonly subject: BrowsePublicExamSubjectSummary;
@@ -45,7 +45,7 @@ export function SubjectAccordion({ subject, publicExamName, isOpen }: SubjectAcc
       setPage(data.page);
       setPageSize(data.pageSize);
     } catch {
-      addToast({ title: t('toast.failedToLoad'), description: t('browse.loadError'), color: 'danger' });
+      notify.error(t('toast.failedToLoad'), t('browse.loadError'));
     } finally {
       setIsLoading(false);
     }
@@ -56,9 +56,9 @@ export function SubjectAccordion({ subject, publicExamName, isOpen }: SubjectAcc
       await deletePublicExamBrowseQuestion(id);
       setQuestions((prev) => prev.filter((q) => q.id !== id));
       setTotal((prev) => prev - 1);
-      addToast({ title: t('toast.success'), description: t('browse.deleteSuccess'), color: 'success' });
+      notify.success(t('toast.success'), t('browse.deleteSuccess'));
     } catch {
-      addToast({ title: t('toast.error'), description: t('browse.deleteError'), color: 'danger' });
+      notify.error(t('toast.error'), t('browse.deleteError'));
     }
   }
 

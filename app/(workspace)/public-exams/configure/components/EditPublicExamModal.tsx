@@ -5,11 +5,11 @@ import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@herou
 import { Input } from '@heroui/input';
 import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
 import { Button } from '@heroui/button';
-import { addToast } from '@heroui/toast';
 
 import { ExamBoard, PublicExam } from '@/shared/types';
 import { updatePublicExamMeta, getExamBoards } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { notify } from '@/shared/lib/notify';
 import { inputProperties } from '@/config/constants/inputStyles';
 
 interface EditPublicExamModalProps {
@@ -62,20 +62,12 @@ export function EditPublicExamModal({ publicExam, isOpen, onClose, onSaved }: Ed
         year: yearNum ?? undefined,
         examBoard: { name: examBoardName.trim() },
       });
-      addToast({
-        title: t('toast.success'),
-        description: t('toast.savedSuccessfully', { title: name.trim() }),
-        color: 'success',
-      });
+      notify.success(t('toast.success'), t('toast.savedSuccessfully', { title: name.trim() }));
       onClose();
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message;
 
-      addToast({
-        title: t('toast.error'),
-        description: msg || t('toast.failedToUpdate', { name: name.trim() }),
-        color: 'danger',
-      });
+      notify.error(t('toast.error'), msg || t('toast.failedToUpdate', { name: name.trim() }));
     } finally {
       setSaving(false);
     }

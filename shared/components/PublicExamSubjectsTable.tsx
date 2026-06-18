@@ -2,7 +2,6 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { Button } from '@heroui/button';
-import { addToast } from '@heroui/toast';
 
 import { SubjectRow } from './PublicExamSubjectsTable/SubjectRow';
 import { AddSubjectRow } from './PublicExamSubjectsTable/AddSubjectRow';
@@ -17,6 +16,7 @@ import {
   updatePublicExamTopic,
 } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { notify } from '@/shared/lib/notify';
 
 interface PublicExamSubjectsTableProps {
   readonly selectedPublicExam: PublicExam | null;
@@ -67,11 +67,7 @@ export function PublicExamSubjectsTable({
             maxQuestions: field === 'maxQuestions' ? value : subject.maxQuestions,
           });
         } catch {
-          addToast({
-            title: t('toast.error'),
-            description: t('toast.failedToUpdate', { name: subject.name }),
-            color: 'danger',
-          });
+          notify.error(t('toast.error'), t('toast.failedToUpdate', { name: subject.name }));
         }
       }, 600);
     },
@@ -92,11 +88,7 @@ export function PublicExamSubjectsTable({
       if (!subject.id) return;
       await updatePublicExamSubject({ subjectId: subject.id, newName, minQuestions: min, maxQuestions: max });
       onSubjectUpdated?.(subject.id, newName, min, max);
-      addToast({
-        title: t('toast.success'),
-        description: t('toast.subjectUpdated', { name: newName }),
-        color: 'success',
-      });
+      notify.success(t('toast.success'), t('toast.subjectUpdated', { name: newName }));
     },
     [onSubjectUpdated, t]
   );
@@ -107,17 +99,9 @@ export function PublicExamSubjectsTable({
       try {
         await deletePublicExamSubject(subjectId);
         onSubjectRemoved?.(subjectId);
-        addToast({
-          title: t('toast.success'),
-          description: t('toast.subjectRemoved', { name: subjectName }),
-          color: 'success',
-        });
+        notify.success(t('toast.success'), t('toast.subjectRemoved', { name: subjectName }));
       } catch {
-        addToast({
-          title: t('toast.error'),
-          description: t('toast.failedToUpdate', { name: subjectName }),
-          color: 'danger',
-        });
+        notify.error(t('toast.error'), t('toast.failedToUpdate', { name: subjectName }));
       } finally {
         setRemovingId(null);
       }
@@ -132,7 +116,7 @@ export function PublicExamSubjectsTable({
 
       onSubjectAdded?.(subject);
       setIsAddingSubject(false);
-      addToast({ title: t('toast.success'), description: t('toast.subjectAdded', { name }), color: 'success' });
+      notify.success(t('toast.success'), t('toast.subjectAdded', { name }));
     },
     [selectedPublicExam, onSubjectAdded, t]
   );
@@ -141,7 +125,7 @@ export function PublicExamSubjectsTable({
     async (subjectId: string, name: string) => {
       const topic = await addPublicExamTopic(subjectId, name);
 
-      addToast({ title: t('toast.success'), description: t('toast.topicAdded', { name }), color: 'success' });
+      notify.success(t('toast.success'), t('toast.topicAdded', { name }));
 
       return topic;
     },
@@ -152,7 +136,7 @@ export function PublicExamSubjectsTable({
     async (subjectId: string, topicId: string, name: string) => {
       await deletePublicExamTopic(topicId);
       onTopicRemoved?.(subjectId, topicId);
-      addToast({ title: t('toast.success'), description: t('toast.topicRemoved', { name }), color: 'success' });
+      notify.success(t('toast.success'), t('toast.topicRemoved', { name }));
     },
     [onTopicRemoved, t]
   );
@@ -161,11 +145,7 @@ export function PublicExamSubjectsTable({
     async (subjectId: string, topicId: string, newName: string) => {
       await updatePublicExamTopic(topicId, newName);
       onTopicUpdated?.(subjectId, topicId, newName);
-      addToast({
-        title: t('toast.success'),
-        description: t('toast.topicUpdated', { name: newName }),
-        color: 'success',
-      });
+      notify.success(t('toast.success'), t('toast.topicUpdated', { name: newName }));
     },
     [onTopicUpdated, t]
   );

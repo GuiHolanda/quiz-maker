@@ -2,7 +2,6 @@ import React from 'react';
 import { Button } from '@heroui/button';
 import { Checkbox } from '@heroui/checkbox';
 import { Chip } from '@heroui/chip';
-import { addToast } from '@heroui/toast';
 
 import { GeneratedPublicExamQuestionsCard } from './GeneratedPublicExamQuestionsCard';
 
@@ -13,6 +12,7 @@ import { BusyDialog } from '@/shared/components/ui/BusyDialog';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { savePublicExamQuestions } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { notify } from '@/shared/lib/notify';
 
 interface GeneratedPublicExamQuestionsListProps {
   readonly questions: AIPublicExamQuestion[];
@@ -53,11 +53,7 @@ export function GeneratedPublicExamQuestionsList({ questions, setQuestions }: Ge
       .filter(Boolean) as AIPublicExamQuestion[];
 
     await request(payload, () => {
-      addToast({
-        title: t('toast.success'),
-        description: t('toast.publicExamQuestionsSaved', { count: payload.length }),
-        color: 'success',
-      });
+      notify.success(t('toast.success'), t('toast.publicExamQuestionsSaved', { count: payload.length }));
       setSelectedIds([]);
       setQuestions([]);
     });

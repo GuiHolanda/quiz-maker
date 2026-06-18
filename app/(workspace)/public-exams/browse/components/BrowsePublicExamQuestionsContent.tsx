@@ -4,7 +4,6 @@ import type { Selection } from '@react-types/shared';
 import { useEffect, useState } from 'react';
 import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Skeleton } from '@heroui/skeleton';
-import { addToast } from '@heroui/toast';
 
 import { PublicExamAccordion } from './PublicExamAccordion';
 
@@ -12,6 +11,7 @@ import { BrowsePublicExamSummary } from '@/shared/types';
 import { getPublicExamBrowseSummary } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { notify } from '@/shared/lib/notify';
 
 export function BrowsePublicExamQuestionsContent() {
   const { t } = useTranslation();
@@ -23,7 +23,7 @@ export function BrowsePublicExamQuestionsContent() {
     getPublicExamBrowseSummary()
       .then((data) => setPublicExams(data.publicExams))
       .catch(() => {
-        addToast({ title: t('toast.failedToLoad'), description: t('browse.loadError'), color: 'danger' });
+        notify.error(t('toast.failedToLoad'), t('browse.loadError'));
       })
       .finally(() => setIsLoading(false));
   }, []);

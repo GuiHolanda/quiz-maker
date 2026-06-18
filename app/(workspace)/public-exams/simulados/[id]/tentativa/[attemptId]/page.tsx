@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { addToast } from '@heroui/toast';
 
 import { SimuladoQuestionList } from './components/SimuladoQuestionList';
 
@@ -11,6 +10,7 @@ import { getMockExam, getMockExamAnswers, finishMockExamAttempt } from '@/featur
 import { MockExam, MockExamAttemptAnswer, AnswersMap } from '@/shared/types';
 import { BusyDialog } from '@/shared/components/ui/BusyDialog';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { notify } from '@/shared/lib/notify';
 
 export default function SimuladoTentativaPage() {
   const { t } = useTranslation();
@@ -78,12 +78,10 @@ export default function SimuladoTentativaPage() {
       await finishMockExamAttempt(Number(params.id), Number(params.attemptId), { answers: attemptAnswers, score });
       router.push(`/public-exams/simulados/${params.id}/resultado/${params.attemptId}`);
     } catch (e: unknown) {
-      addToast({
-        title: t('toast.error'),
-        description:
-          (e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t('toast.somethingWrong'),
-        color: 'danger',
-      });
+      notify.error(
+        t('toast.error'),
+        (e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t('toast.somethingWrong')
+      );
       setIsFinishing(false);
     }
   }

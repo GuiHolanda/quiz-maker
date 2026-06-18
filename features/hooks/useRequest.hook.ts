@@ -1,9 +1,9 @@
 'use client';
 import { useState } from 'react';
-import { addToast } from '@heroui/toast';
 
 import { QuizFormErrors } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { notify } from '@/shared/lib/notify';
 
 export function useRequest(requestMethod: (args: any) => Promise<any>) {
   const [loading, setLoading] = useState(false);
@@ -25,13 +25,10 @@ export function useRequest(requestMethod: (args: any) => Promise<any>) {
       const isTimeout =
         error?.code === 'ECONNABORTED' || (typeof error?.message === 'string' && error.message.includes('timeout'));
 
-      addToast({
-        title: t('toast.failedToLoad'),
-        description: isTimeout
-          ? t('toast.requestTimeout')
-          : error?.response?.data?.message || t('toast.somethingWrong'),
-        color: 'danger',
-      });
+      notify.error(
+        t('toast.failedToLoad'),
+        isTimeout ? t('toast.requestTimeout') : error?.response?.data?.message || t('toast.somethingWrong')
+      );
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,5 @@
 'use client';
 import { useState } from 'react';
-import { addToast } from '@heroui/toast';
 
 import { Step1BasicInfo } from './Step1BasicInfo';
 import { Step2DefineSubjects } from './Step2DefineSubjects';
@@ -11,6 +10,7 @@ import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
 import { usePublicExamDraft } from '@/features/hooks/usePublicExamDraft.hook';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { notify } from '@/shared/lib/notify';
 
 interface NewPublicExamTabProps {
   readonly onBackToLibrary: () => void;
@@ -28,11 +28,7 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
     const examBoardName = draft.examBoardName.trim();
 
     if (!name || !examBoardName) {
-      addToast({
-        title: t('toast.validationError'),
-        description: t('error.nameAndBancaRequired'),
-        color: 'danger',
-      });
+      notify.error(t('toast.validationError'), t('error.nameAndBancaRequired'));
 
       return;
     }
@@ -40,11 +36,7 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
     const yearNum = draft.year ? Number(draft.year) : undefined;
 
     if (publicExams.some((p) => p.name === name && p.year === yearNum)) {
-      addToast({
-        title: t('toast.duplicatePublicExam'),
-        description: t('error.duplicatePublicExam', { name }),
-        color: 'danger',
-      });
+      notify.error(t('toast.duplicatePublicExam'), t('error.duplicatePublicExam', { name }));
 
       return;
     }
@@ -63,11 +55,7 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
       addPublicExam(saved);
       draft.reset();
       setStep(1);
-      addToast({
-        title: t('toast.success'),
-        description: t('toast.savedSuccessfully', { title: name }),
-        color: 'success',
-      });
+      notify.success(t('toast.success'), t('toast.savedSuccessfully', { title: name }));
       onBackToLibrary();
     }
   };

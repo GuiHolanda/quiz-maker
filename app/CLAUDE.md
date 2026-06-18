@@ -446,22 +446,27 @@ await request(payload, () => {
 
 ---
 
-## Toasts (`@heroui/toast`)
+## Toasts (User Feedback)
 
-Sempre mostre feedback em mutations (save/update/delete), tanto em sucesso quanto em erro.
+**Sempre usar `notify` de `shared/lib/notify.ts`. Não importar `addToast` direto.**
 
 ```tsx
-import { addToast } from '@heroui/toast';
+import { notify } from '@/shared/lib/notify';
 
-// Sucesso
-addToast({ title: t('toast.success'), description: t('certification.saved'), color: 'success' });
-
-// Erro (manual, fora de useRequest)
-addToast({ title: t('toast.error'), description: t('toast.somethingWrong'), color: 'danger' });
+notify.success(t('toast.success'), t('certification.savedDescription'));
+notify.error(t('toast.error'), t('toast.somethingWrong'));
+notify.warning(t('toast.validationError'), t('error.titleCodeRequired'));
+notify.info(t('info.title'), t('info.description'));
 ```
 
-- `color`: `'success'` | `'danger'` | `'warning'` | `'default'`
-- Erros HTTP via `useRequest` já chamam `addToast` — não adicione um segundo toast para esses casos.
+Title e description sempre via `t()` — nunca strings hardcoded. Description é
+opcional na assinatura mas **fortemente recomendada**: um toast só com "Sucesso"
+sem detalhe é antipattern. A assinatura `(title, description?)` torna a falta
+de detalhe visível no call site durante revisão de código.
+
+`useRequest` já mostra toast em erro HTTP — **não duplicar** no `catch` do componente.
+
+Sempre mostre feedback em mutations (save/update/delete), tanto em sucesso quanto em erro.
 
 ---
 

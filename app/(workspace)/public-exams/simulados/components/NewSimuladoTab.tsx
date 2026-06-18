@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
-import { addToast } from '@heroui/toast';
 import { Divider } from '@heroui/divider';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -12,6 +11,7 @@ import { useMockExamsContext } from '@/features/providers/mockExams.provider';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { createMockExam } from '@/features/connectors';
 import { PublicExamManager } from '@/shared/components/PublicExamManager';
+import { notify } from '@/shared/lib/notify';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { MockExamSubjectConfig } from '@/shared/types';
 
@@ -72,7 +72,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
 
     if (saved) {
       addMockExam(saved);
-      addToast({ title: t('toast.success'), description: t('simulado.pageTitle'), color: 'success' });
+      notify.success(t('simulado.created'), t('simulado.createdDescription', { name: saved.name ?? selectedPublicExam.name }));
       onCreated();
     }
   }

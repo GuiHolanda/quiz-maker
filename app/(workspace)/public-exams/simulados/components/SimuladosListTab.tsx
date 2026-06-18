@@ -5,7 +5,6 @@ import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@heroui/modal';
 import { useRouter } from 'next/navigation';
-import { addToast } from '@heroui/toast';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
@@ -13,6 +12,7 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useMockExamsContext } from '@/features/providers/mockExams.provider';
 import { deleteMockExam, startMockExamAttempt } from '@/features/connectors';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
+import { notify } from '@/shared/lib/notify';
 import { MockExamListItem } from '@/shared/types';
 
 type AttemptSummary = MockExamListItem['attempts'][number];
@@ -40,12 +40,10 @@ export function SimuladosListTab() {
 
       router.push(`/public-exams/simulados/${mockExam.id}/tentativa/${attempt.id}`);
     } catch (e: unknown) {
-      addToast({
-        title: t('toast.error'),
-        description:
-          (e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t('toast.somethingWrong'),
-        color: 'danger',
-      });
+      notify.error(
+        t('toast.error'),
+        (e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t('toast.somethingWrong')
+      );
       setStartingId(null);
     }
   }
@@ -56,15 +54,15 @@ export function SimuladosListTab() {
     try {
       await deleteMockExam(deleteTarget.id);
       removeMockExam(deleteTarget.id);
+      const removedName = deleteTarget.name ?? deleteTarget.publicExam.name;
+
       setDeleteTarget(null);
-      addToast({ title: t('toast.success'), description: t('simulado.pageTitle'), color: 'success' });
+      notify.success(t('simulado.deleted'), t('simulado.deletedDescription', { name: removedName }));
     } catch (e: unknown) {
-      addToast({
-        title: t('toast.error'),
-        description:
-          (e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t('toast.somethingWrong'),
-        color: 'danger',
-      });
+      notify.error(
+        t('toast.error'),
+        (e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t('toast.somethingWrong')
+      );
     } finally {
       setIsDeleting(false);
     }
