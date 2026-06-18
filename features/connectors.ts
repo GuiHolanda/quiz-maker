@@ -22,6 +22,7 @@ import {
   ADMIN_USERS_URL,
   ADMIN_OVERVIEW_URL,
   ADMIN_AUDIT_LOG_URL,
+  CERT_SIMULADOS_URL,
 } from '@/config/constants';
 import {
   AIQuestion,
@@ -55,6 +56,12 @@ import {
   AdminAuditLogResponse,
   UserAdminRow,
   UserPlan,
+  CertSimuladoListItem,
+  CertSimulado,
+  CertSimuladoAttempt,
+  CertSimuladoResult,
+  CreateCertSimuladoPayload,
+  CertFinishAttemptPayload,
 } from '@/shared/types';
 import api from '@/lib/bff.api';
 
@@ -404,6 +411,54 @@ export async function getAdminAuditLog(params: {
   targetId?: string;
 }): Promise<AdminAuditLogResponse> {
   const { data } = await api.get<AdminAuditLogResponse>(ADMIN_AUDIT_LOG_URL, { params });
+
+  return data;
+}
+
+// — Certification Simulados —
+
+export async function getCertSimulados(): Promise<CertSimuladoListItem[]> {
+  const { data } = await api.get<{ simulados: CertSimuladoListItem[] }>(CERT_SIMULADOS_URL);
+
+  return data.simulados;
+}
+
+export async function createCertSimulado(payload: CreateCertSimuladoPayload): Promise<CertSimuladoListItem> {
+  const { data } = await api.post<{ simulado: CertSimuladoListItem }>(CERT_SIMULADOS_URL, payload);
+
+  return data.simulado;
+}
+
+export async function deleteCertSimulado(id: number): Promise<void> {
+  await api.delete(`${CERT_SIMULADOS_URL}?id=${id}`);
+}
+
+export async function getCertSimulado(id: number): Promise<CertSimulado> {
+  const { data } = await api.get<{ simulado: CertSimulado }>(`${CERT_SIMULADOS_URL}/${id}`);
+
+  return data.simulado;
+}
+
+export async function startCertSimuladoAttempt(simuladoId: number): Promise<CertSimuladoAttempt> {
+  const { data } = await api.post<{ attempt: CertSimuladoAttempt }>(
+    `${CERT_SIMULADOS_URL}/${simuladoId}/attempts`
+  );
+
+  return data.attempt;
+}
+
+export async function finishCertSimuladoAttempt(
+  simuladoId: number,
+  attemptId: number,
+  payload: CertFinishAttemptPayload
+): Promise<void> {
+  await api.patch(`${CERT_SIMULADOS_URL}/${simuladoId}/attempts/${attemptId}`, payload);
+}
+
+export async function getCertSimuladoResult(simuladoId: number, attemptId: number): Promise<CertSimuladoResult> {
+  const { data } = await api.get<CertSimuladoResult>(
+    `${CERT_SIMULADOS_URL}/${simuladoId}/attempts/${attemptId}`
+  );
 
   return data;
 }

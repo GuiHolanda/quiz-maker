@@ -1,6 +1,7 @@
 import { CertificationsState } from '@/features/reducers/certifications.reducer';
 import { PublicExamsState } from '@/features/reducers/publicExams.reducer';
 import { MockExamsState } from '@/features/reducers/mockExams.reducer';
+import { CertSimuladosState } from '@/features/reducers/certSimulados.reducer';
 
 export const CERTIFICATION_GENERATOR_URL = '/certification/question-generator';
 export const GET_CERTIFICATION_ANSWERS_URL = '/certification/get-answers';
@@ -197,3 +198,8 @@ export const INITIAL_MOCK_EXAMS_STATE: MockExamsState = {
 export const CERT_SIMULADOS_URL = '/certification-simulados';
 export const CERT_SIMULADOS_LOCAL_STORAGE_KEY = 'CERT_SIMULADOS';
 export const CERT_QUESTION_EXPLANATION_URL = '/certification/questions';
+
+export const INITIAL_CERT_SIMULADOS_STATE: CertSimuladosState = {
+  simulados: [],
+  isLoading: true,
+};
