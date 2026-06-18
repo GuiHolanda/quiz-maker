@@ -3,11 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PublicExamQuestionService, validateAiQuestions } from '@/features/services/question.service';
 import { AIPublicExamQuestion } from '@/shared/types';
 import { OpenAIService } from '@/features/services/openAI.service';
-import { buildGetPublicExamAnswersPrompt } from '@/config/promptSchemas/getPublicExamAnswers';
+import { publicExamAnswersPrompt } from '@/config/prompts/public-exam-answers.prompt';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
-// OpenAI explanation generation can take 30-90s for a batch.
 export const maxDuration = 300;
 
 const questionService = new PublicExamQuestionService();
@@ -31,7 +30,7 @@ export async function POST(request: NextRequest) {
       select: { role: true },
     });
 
-    const prompt = buildGetPublicExamAnswersPrompt({
+    const llmResponse = await openAIService.call(publicExamAnswersPrompt, {
       public_exam_name: publicExamName,
       exam_board_name: examBoardName,
       role: publicExam?.role ?? undefined,
@@ -40,7 +39,6 @@ export async function POST(request: NextRequest) {
       questions,
     });
 
-    const llmResponse = await openAIService.getLLMResponseInline(prompt);
     const formattedAnswers = JSON.parse(llmResponse);
 
     await questionService.saveAnswers(formattedAnswers.answers);

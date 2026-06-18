@@ -4,7 +4,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { PublicExamQuestionService } from '@/features/services/question.service';
-import { buildGetPublicExamExplanationsPrompt } from '@/config/promptSchemas/getPublicExamExplanations';
+import { publicExamExplanationsPrompt } from '@/config/prompts/public-exam-explanations.prompt';
 
 export const maxDuration = 300;
 
@@ -45,7 +45,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     const correctOptions = question.answer.correctOptions as string[];
     const options = Object.fromEntries(question.options.map((o) => [o.label, o.text]));
 
-    const prompt = buildGetPublicExamExplanationsPrompt({
+    const llmResponse = await openAIService.call(publicExamExplanationsPrompt, {
       public_exam_name: question.publicExamName,
       exam_board_name: question.examBoardName,
       role: publicExam?.role ?? undefined,
@@ -54,7 +54,6 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       question: { text: question.text, options, correctOptions },
     });
 
-    const llmResponse = await openAIService.getLLMResponseInline(prompt);
     const { explanations } = JSON.parse(llmResponse) as { explanations: Record<string, string> };
 
     await questionService.saveExplanations(question.answer.id, explanations);
