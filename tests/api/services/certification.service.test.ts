@@ -123,7 +123,47 @@ describe('CertificationService', () => {
     });
   });
 
-  // Behaviour 8: updateCertificationMeta() throws 409 when newKey conflicts
+  // Behaviour 8: deleteCertification() throws 404 when certification not found
+  it('deleteCertification() throws 404 when no certification exists for the given key', async () => {
+    prismaMock.certification.findUnique.mockResolvedValue(null);
+
+    await expect(service.deleteCertification('aws-saa', 'user-1')).rejects.toMatchObject({
+      status: 404,
+    });
+
+    expect(prismaMock.certification.delete).not.toHaveBeenCalled();
+  });
+
+  // Behaviour 9: deleteCertification() throws 403 when requester is not the owner
+  it('deleteCertification() throws 403 when the requesting user is not the certification owner', async () => {
+    prismaMock.certification.findUnique.mockResolvedValue({
+      id: 'cert-1',
+      key: 'aws-saa',
+      userId: 'other-user',
+    } as any);
+
+    await expect(service.deleteCertification('aws-saa', 'current-user')).rejects.toMatchObject({
+      status: 403,
+    });
+
+    expect(prismaMock.certification.delete).not.toHaveBeenCalled();
+  });
+
+  // Behaviour 10: deleteCertification() deletes by key on the happy path
+  it('deleteCertification() calls prisma.certification.delete with the matching key when owner matches', async () => {
+    prismaMock.certification.findUnique.mockResolvedValue({
+      id: 'cert-1',
+      key: 'aws-saa',
+      userId: 'user-1',
+    } as any);
+    prismaMock.certification.delete.mockResolvedValue({ id: 'cert-1' } as any);
+
+    await service.deleteCertification('aws-saa', 'user-1');
+
+    expect(prismaMock.certification.delete).toHaveBeenCalledWith({ where: { key: 'aws-saa' } });
+  });
+
+  // Behaviour 11: updateCertificationMeta() throws 409 when newKey conflicts
   it('updateCertificationMeta() throws 409 when newKey already belongs to a different certification', async () => {
     prismaMock.certification.findUnique
       .mockResolvedValueOnce({ id: 'cert-1', key: 'aws-saa', userId: 'user-1' } as any)
