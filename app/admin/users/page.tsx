@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { Input } from '@heroui/input';
 import { Select, SelectItem } from '@heroui/select';
 import { Button } from '@heroui/button';
-import { addToast } from '@heroui/toast';
 
 import { getAdminUsers, updateAdminUser } from '@/features/connectors';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { notify } from '@/shared/lib/notify';
 import type { UserAdminRow, UserPlan, AdminUsersResponse } from '@/shared/types';
 import { inputProperties } from '@/config/constants/inputStyles';
 
@@ -16,6 +17,7 @@ const STATUS_OPTIONS = ['active', 'canceled'];
 const PAGE_SIZE = 20;
 
 export default function AdminUsersPage() {
+  const { t } = useTranslation();
   const [data, setData] = useState<AdminUsersResponse | null>(null);
   const [search, setSearch] = useState('');
   const [planFilter, setPlanFilter] = useState('');
@@ -35,9 +37,9 @@ export default function AdminUsersPage() {
       });
       setData(result);
     } catch {
-      addToast({ title: 'Erro', description: 'Falha ao carregar usuários', color: 'danger' });
+      notify.error(t('admin.usersLoadFailed'), t('admin.usersLoadFailedDescription'));
     }
-  }, [page, search, planFilter, statusFilter]);
+  }, [page, search, planFilter, statusFilter, t]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
@@ -74,11 +76,11 @@ export default function AdminUsersPage() {
 
     try {
       await updateAdminUser(user.id, { plan: edit.plan, customQuotaOverride });
-      addToast({ title: 'Sucesso', description: 'Usuário atualizado com sucesso', color: 'success' });
+      notify.success(t('admin.saveSuccess'), t('admin.saveSuccessDescription'));
       setPendingEdits((prev) => { const n = { ...prev }; delete n[user.id]; return n; });
       fetchUsers();
     } catch {
-      addToast({ title: 'Erro', description: 'Falha ao atualizar usuário', color: 'danger' });
+      notify.error(t('admin.saveError'), t('admin.saveErrorDescription'));
     } finally {
       setSaving((prev) => ({ ...prev, [user.id]: false }));
     }

@@ -7,13 +7,13 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
-import { addToast } from '@heroui/toast';
 
 import { StepHeader } from './StepHeader';
 
 import { inputProperties } from '@/config/constants/inputStyles';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { getExamBoards } from '@/features/connectors';
+import { notify } from '@/shared/lib/notify';
 
 interface Step1BasicInfoProps {
   readonly name: string;
@@ -51,7 +51,7 @@ export function Step1BasicInfo({
 
   const handleNext = () => {
     if (!name.trim() || !examBoardName.trim()) {
-      addToast({ title: t('toast.validationError'), description: t('error.nameAndBancaRequired'), color: 'danger' });
+      notify.error(t('toast.validationError'), t('error.nameAndBancaRequired'));
 
       return;
     }
@@ -59,11 +59,7 @@ export function Step1BasicInfo({
   };
 
   const handleSaveDraft = () => {
-    addToast({
-      title: t('toast.success'),
-      description: t('toast.savedSuccessfully', { title: name || t('concurso.namePlaceholder') }),
-      color: 'success',
-    });
+    notify.success(t('toast.success'), t('toast.savedSuccessfully', { title: name || t('concurso.namePlaceholder') }));
   };
 
   return (

@@ -265,14 +265,21 @@ Página pública, fundo `bg-background`, `'use client'`.
 
 ### Domínio: Certifications (`app/(workspace)/certifications/`)
 
-#### Generate Questions (`certifications/generate/`)
+#### Questions (`certifications/questions/`)
+
+Página unificada (HeroUI Tabs) com aba **Gerar** (form + lista de questões geradas) e aba **Biblioteca** (browse das questões salvas). Estado da aba persiste em `?tab=generate|browse` para deep-link.
 
 | Arquivo | Papel |
 |---|---|
-| `page.tsx` | Providers + layout `.app-bg` |
+| `page.tsx` | Providers (`CertificationsProvider` + `QuizProvider`) + Tabs + sync com `?tab=` |
 | `components/QuestionGeneratorForm.tsx` | Form de configuração (certification, topic, count) |
-| `components/GeneratedQuestionsList.tsx` | Lista com select-all, botões de salvar/descartar |
+| `components/GeneratedQuestionsList.tsx` | Lista com select-all, salvar/descartar; `onSaved` auto-troca para Biblioteca |
 | `components/GeneratedQuestionsCard.tsx` | Card individual: texto + opções (Listbox) + checkbox |
+| `components/BrowseQuestionsContent.tsx` | Wrapper da aba Biblioteca; aceita `embedded?` para suprimir `<PageHeader>` interno |
+| `components/CertificationAccordion.tsx` | Accordion de seleção de certificação |
+| `components/TopicAccordion.tsx` | Accordion de seleção de tópico |
+| `components/QuestionList.tsx` | Lista de questões filtradas |
+| `components/QuestionDetailPanel.tsx` | Painel de detalhe da questão |
 
 #### Quiz (`certifications/quiz/`)
 
@@ -296,17 +303,6 @@ Página pública, fundo `bg-background`, `'use client'`.
 | `components/EditCertificationTab.tsx` | Select para escolher qual editar |
 | `components/TopicForm.tsx` | Form de adição de tópico com Slider de percentual |
 
-#### Browse Questions (`certifications/browse/`)
-
-| Arquivo | Papel |
-|---|---|
-| `page.tsx` | Provider + layout `.app-bg` |
-| `components/BrowseQuestionsContent.tsx` | Layout wrapper principal |
-| `components/CertificationAccordion.tsx` | Accordion de seleção de certificação |
-| `components/TopicAccordion.tsx` | Accordion de seleção de tópico |
-| `components/QuestionList.tsx` | Lista de questões filtradas |
-| `components/QuestionDetailPanel.tsx` | Painel de detalhe da questão |
-
 ---
 
 ### Domínio: Public Exams (`app/(workspace)/public-exams/`)
@@ -320,20 +316,17 @@ Página pública, fundo `bg-background`, `'use client'`.
 | `components/PublicExamsListTab.tsx` | Accordion dos concursos do usuário com botão de excluir, modal de confirmação, empty state com CTA e `SkeletonListLoader` durante o carregamento |
 | `components/EditPublicExamModal.tsx` | Modal de edição de concurso |
 
-#### Generate Public Exam Questions (`public-exams/generate/`)
+#### Questions (`public-exams/questions/`)
+
+Página unificada (HeroUI Tabs) com aba **Gerar** e aba **Biblioteca**, mesmo padrão do escopo de certificações.
 
 | Arquivo | Papel |
 |---|---|
-| `page.tsx` | Providers + layout `.app-bg` |
+| `page.tsx` | `PublicExamsProvider` + Tabs + sync com `?tab=` |
 | `components/PublicExamQuestionGeneratorForm.tsx` | Form de configuração (concurso, assunto, count) |
-| `components/GeneratedPublicExamQuestionsList.tsx` | Lista com select-all, botões de salvar/descartar |
+| `components/GeneratedPublicExamQuestionsList.tsx` | Lista com select-all, salvar/descartar; `onSaved` auto-troca para Biblioteca |
 | `components/GeneratedPublicExamQuestionsCard.tsx` | Card individual de questão de concurso |
-
-#### Browse Public Exam Questions (`public-exams/browse/`)
-
-| Arquivo | Papel |
-|---|---|
-| `page.tsx` | Provider + layout `.app-bg` |
+| `components/BrowsePublicExamQuestionsContent.tsx` | Wrapper da aba Biblioteca; aceita `embedded?` |
 | `components/PublicExamAccordion.tsx` | Accordion de seleção de concurso |
 | `components/SubjectAccordion.tsx` | Accordion de seleção de assunto |
 | `components/PublicExamQuestionList.tsx` | Lista de questões filtradas |
@@ -446,22 +439,27 @@ await request(payload, () => {
 
 ---
 
-## Toasts (`@heroui/toast`)
+## Toasts (User Feedback)
 
-Sempre mostre feedback em mutations (save/update/delete), tanto em sucesso quanto em erro.
+**Sempre usar `notify` de `shared/lib/notify.ts`. Não importar `addToast` direto.**
 
 ```tsx
-import { addToast } from '@heroui/toast';
+import { notify } from '@/shared/lib/notify';
 
-// Sucesso
-addToast({ title: t('toast.success'), description: t('certification.saved'), color: 'success' });
-
-// Erro (manual, fora de useRequest)
-addToast({ title: t('toast.error'), description: t('toast.somethingWrong'), color: 'danger' });
+notify.success(t('toast.success'), t('certification.savedDescription'));
+notify.error(t('toast.error'), t('toast.somethingWrong'));
+notify.warning(t('toast.validationError'), t('error.titleCodeRequired'));
+notify.info(t('info.title'), t('info.description'));
 ```
 
-- `color`: `'success'` | `'danger'` | `'warning'` | `'default'`
-- Erros HTTP via `useRequest` já chamam `addToast` — não adicione um segundo toast para esses casos.
+Title e description sempre via `t()` — nunca strings hardcoded. Description é
+opcional na assinatura mas **fortemente recomendada**: um toast só com "Sucesso"
+sem detalhe é antipattern. A assinatura `(title, description?)` torna a falta
+de detalhe visível no call site durante revisão de código.
+
+`useRequest` já mostra toast em erro HTTP — **não duplicar** no `catch` do componente.
+
+Sempre mostre feedback em mutations (save/update/delete), tanto em sucesso quanto em erro.
 
 ---
 

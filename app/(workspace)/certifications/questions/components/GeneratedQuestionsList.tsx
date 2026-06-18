@@ -2,36 +2,37 @@ import React from 'react';
 import { Button } from '@heroui/button';
 import { Checkbox } from '@heroui/checkbox';
 import { Chip } from '@heroui/chip';
-import { addToast } from '@heroui/toast';
 
-import { GeneratedPublicExamQuestionsCard } from './GeneratedPublicExamQuestionsCard';
+import { GeneratedQuestionsCard } from './GeneratedQuestionsCard';
 
-import { AIPublicExamQuestion } from '@/shared/types';
+import { AIQuestion } from '@/shared/types';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
 import { ItemsPerPageSelect } from '@/shared/components/ui/ItemsPerPageSelect';
-import { BusyDialog } from '@/shared/components/ui/BusyDialog';
+import useQuizContext from '@/features/hooks/useQuizContext.hook';
 import { useRequest } from '@/features/hooks/useRequest.hook';
-import { savePublicExamQuestions } from '@/features/connectors';
+import { saveQuestions } from '@/features/connectors';
+import { BusyDialog } from '@/shared/components/ui/BusyDialog';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
-interface GeneratedPublicExamQuestionsListProps {
-  readonly questions: AIPublicExamQuestion[];
-  readonly setQuestions: React.Dispatch<React.SetStateAction<AIPublicExamQuestion[]>>;
-}
-
-export function GeneratedPublicExamQuestionsList({ questions, setQuestions }: GeneratedPublicExamQuestionsListProps) {
-  const [selectedIds, setSelectedIds] = React.useState<number[]>([]);
+export function GeneratedQuestionsList({
+  questions,
+  onSaved,
+}: Readonly<{
+  questions: AIQuestion[];
+  onSaved?: () => void;
+}>) {
+  const { state, setSelectedAIquestions, setAIquestions } = useQuizContext();
   const [currentPage, setCurrentPage] = React.useState(1);
   const [questionsPerPage, setQuestionsPerPage] = React.useState<number>(5);
-  const { loading, request } = useRequest(savePublicExamQuestions);
+  const { loading, error, setError, request } = useRequest(saveQuestions);
   const { t } = useTranslation();
 
-  const selectedCount = selectedIds.length;
+  const selectedCount = state?.selectedAIQuestions?.length ?? 0;
   const selectedCountLabel = String(selectedCount).padStart(2, '0');
   const allSelected = questions.length > 0 && selectedCount === questions.length;
 
   const onToggleSelectAll = (checked: boolean) => {
-    setSelectedIds(checked ? questions.map((q) => q.id) : []);
+    setSelectedAIquestions(checked ? questions.map((question) => question.id) : []);
   };
 
   const totalPages = Math.max(1, Math.ceil(questions.length / questionsPerPage));
@@ -47,39 +48,37 @@ export function GeneratedPublicExamQuestionsList({ questions, setQuestions }: Ge
     setCurrentPage(1);
   };
 
-  const onSaveSelected = async () => {
-    const payload = selectedIds
-      .map((id) => questions.find((q) => q.id === id))
-      .filter(Boolean) as AIPublicExamQuestion[];
+  const onSaveSelectedQuestions = async () => {
+    const requestPayload = {
+      questions: state?.selectedAIQuestions?.map((id) => questions.find((q) => q.id === id)).filter(Boolean),
+    };
 
-    await request(payload, () => {
-      addToast({
-        title: t('toast.success'),
-        description: t('toast.publicExamQuestionsSaved', { count: payload.length }),
-        color: 'success',
-      });
-      setSelectedIds([]);
-      setQuestions([]);
-    });
+    await request(requestPayload, onSaveSelectedQuestionsSuccess);
   };
 
-  const onDiscard = () => {
-    if (selectedCount > 0) {
-      const remaining = questions.filter((q) => !selectedIds.includes(q.id));
+  const onSaveSelectedQuestionsSuccess = () => {
+    setSelectedAIquestions([]);
+    setAIquestions([], null);
+    onSaved?.();
+  };
 
-      setSelectedIds([]);
-      setQuestions(remaining);
+  const onDiscardQuestions = () => {
+    if (selectedCount > 0) {
+      const remaining = questions.filter((q) => !state?.selectedAIQuestions?.includes(q.id));
+
+      setSelectedAIquestions([]);
+      setAIquestions(remaining, null);
     } else {
-      setSelectedIds([]);
-      setQuestions([]);
+      setSelectedAIquestions([]);
+      setAIquestions([], null);
     }
   };
 
   return (
     <div className="flex flex-col gap-4 mt-8">
       <div className="flex items-end justify-between">
-        <div className="flex items-center gap-4 font-bold text-sm">
-          <Checkbox className="ml-auto" classNames={{label: 'text-sm'}} isSelected={allSelected} onChange={(e) => onToggleSelectAll(e.target.checked)}>
+        <div className="flex items-center space-x-4 font-bold text-sm">
+          <Checkbox className="ml-auto" isSelected={allSelected} onChange={(e) => onToggleSelectAll(e.target.checked)}>
             {t('common.selectAll')}
           </Checkbox>
           {selectedCount > 0 && (
@@ -97,12 +96,10 @@ export function GeneratedPublicExamQuestionsList({ questions, setQuestions }: Ge
             const globalIndex = startIndex + idx;
 
             return (
-              <GeneratedPublicExamQuestionsCard
-                key={`${question.subject}-${globalIndex}`}
+              <GeneratedQuestionsCard
+                key={`${question.topic}-${globalIndex}`}
                 index={globalIndex}
                 question={question}
-                selectedIds={selectedIds}
-                setSelectedIds={setSelectedIds}
               />
             );
           })}
@@ -110,10 +107,12 @@ export function GeneratedPublicExamQuestionsList({ questions, setQuestions }: Ge
 
       <div className="flex gap-2">
         <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
-        <Button className="ml-auto" color="danger" size="sm" variant="flat" onPress={onDiscard}>
+
+        <Button className="ml-auto" color="danger" size="sm" variant="flat" onPress={onDiscardQuestions}>
           {selectedCount > 0 ? t('common.discardSelected') : t('common.discardAll')}
         </Button>
-        <Button color="primary" hidden={selectedCount === 0} size="sm" variant="flat" onPress={onSaveSelected}>
+
+        <Button color="primary" hidden={selectedCount === 0} size="sm" variant="flat" onPress={onSaveSelectedQuestions}>
           {t('common.saveSelected')}
         </Button>
       </div>

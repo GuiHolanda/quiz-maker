@@ -4,7 +4,6 @@ import { useState, useCallback } from 'react';
 import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Button } from '@heroui/button';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
-import { addToast } from '@heroui/toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash, faPlus } from '@fortawesome/free-solid-svg-icons';
 
@@ -16,6 +15,7 @@ import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
 import { deletePublicExam } from '@/features/connectors';
 import { PublicExam, PublicExamSubject, PublicExamTopic, ExamBoard } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { notify } from '@/shared/lib/notify';
 
 interface PublicExamsListTabProps {
   readonly onCreateNew: () => void;
@@ -108,14 +108,10 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
     try {
       await deletePublicExam(deletingExam.id);
       removePublicExam(deletingExam.id);
-      addToast({
-        title: t('toast.success'),
-        description: t('concurso.examDeleted', { name: deletingExam.name }),
-        color: 'success',
-      });
+      notify.success(t('toast.success'), t('concurso.examDeleted', { name: deletingExam.name }));
       setDeletingExam(null);
     } catch {
-      addToast({ title: t('toast.error'), description: t('concurso.examDeleteError'), color: 'danger' });
+      notify.error(t('toast.error'), t('concurso.examDeleteError'));
     } finally {
       setIsDeleting(false);
     }

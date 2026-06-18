@@ -3,34 +3,40 @@ import { Button } from '@heroui/button';
 import { Checkbox } from '@heroui/checkbox';
 import { Chip } from '@heroui/chip';
 
-import { GeneratedQuestionsCard } from './GeneratedQuestionsCard';
+import { GeneratedPublicExamQuestionsCard } from './GeneratedPublicExamQuestionsCard';
 
-import { AIQuestion } from '@/shared/types';
+import { AIPublicExamQuestion } from '@/shared/types';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
 import { ItemsPerPageSelect } from '@/shared/components/ui/ItemsPerPageSelect';
-import useQuizContext from '@/features/hooks/useQuizContext.hook';
-import { useRequest } from '@/features/hooks/useRequest.hook';
-import { saveQuestions } from '@/features/connectors';
 import { BusyDialog } from '@/shared/components/ui/BusyDialog';
+import { useRequest } from '@/features/hooks/useRequest.hook';
+import { savePublicExamQuestions } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { notify } from '@/shared/lib/notify';
 
-export function GeneratedQuestionsList({
+interface GeneratedPublicExamQuestionsListProps {
+  readonly questions: AIPublicExamQuestion[];
+  readonly setQuestions: React.Dispatch<React.SetStateAction<AIPublicExamQuestion[]>>;
+  readonly onSaved?: () => void;
+}
+
+export function GeneratedPublicExamQuestionsList({
   questions,
-}: Readonly<{
-  questions: AIQuestion[];
-}>) {
-  const { state, setSelectedAIquestions, setAIquestions } = useQuizContext();
+  setQuestions,
+  onSaved,
+}: GeneratedPublicExamQuestionsListProps) {
+  const [selectedIds, setSelectedIds] = React.useState<number[]>([]);
   const [currentPage, setCurrentPage] = React.useState(1);
   const [questionsPerPage, setQuestionsPerPage] = React.useState<number>(5);
-  const { loading, error, setError, request } = useRequest(saveQuestions);
+  const { loading, request } = useRequest(savePublicExamQuestions);
   const { t } = useTranslation();
 
-  const selectedCount = state?.selectedAIQuestions?.length ?? 0;
+  const selectedCount = selectedIds.length;
   const selectedCountLabel = String(selectedCount).padStart(2, '0');
   const allSelected = questions.length > 0 && selectedCount === questions.length;
 
   const onToggleSelectAll = (checked: boolean) => {
-    setSelectedAIquestions(checked ? questions.map((question) => question.id) : []);
+    setSelectedIds(checked ? questions.map((q) => q.id) : []);
   };
 
   const totalPages = Math.max(1, Math.ceil(questions.length / questionsPerPage));
@@ -46,36 +52,36 @@ export function GeneratedQuestionsList({
     setCurrentPage(1);
   };
 
-  const onSaveSelectedQuestions = async () => {
-    const requestPayload = {
-      questions: state?.selectedAIQuestions?.map((id) => questions.find((q) => q.id === id)).filter(Boolean),
-    };
+  const onSaveSelected = async () => {
+    const payload = selectedIds
+      .map((id) => questions.find((q) => q.id === id))
+      .filter(Boolean) as AIPublicExamQuestion[];
 
-    await request(requestPayload, onSaveSelectedQuestionsSuccess);
+    await request(payload, () => {
+      notify.success(t('toast.success'), t('toast.publicExamQuestionsSaved', { count: payload.length }));
+      setSelectedIds([]);
+      setQuestions([]);
+      onSaved?.();
+    });
   };
 
-  const onSaveSelectedQuestionsSuccess = () => {
-    setSelectedAIquestions([]);
-    setAIquestions([], null);
-  };
-
-  const onDiscardQuestions = () => {
+  const onDiscard = () => {
     if (selectedCount > 0) {
-      const remaining = questions.filter((q) => !state?.selectedAIQuestions?.includes(q.id));
+      const remaining = questions.filter((q) => !selectedIds.includes(q.id));
 
-      setSelectedAIquestions([]);
-      setAIquestions(remaining, null);
+      setSelectedIds([]);
+      setQuestions(remaining);
     } else {
-      setSelectedAIquestions([]);
-      setAIquestions([], null);
+      setSelectedIds([]);
+      setQuestions([]);
     }
   };
 
   return (
     <div className="flex flex-col gap-4 mt-8">
       <div className="flex items-end justify-between">
-        <div className="flex items-center space-x-4 font-bold text-sm">
-          <Checkbox className="ml-auto" isSelected={allSelected} onChange={(e) => onToggleSelectAll(e.target.checked)}>
+        <div className="flex items-center gap-4 font-bold text-sm">
+          <Checkbox className="ml-auto" classNames={{label: 'text-sm'}} isSelected={allSelected} onChange={(e) => onToggleSelectAll(e.target.checked)}>
             {t('common.selectAll')}
           </Checkbox>
           {selectedCount > 0 && (
@@ -93,10 +99,12 @@ export function GeneratedQuestionsList({
             const globalIndex = startIndex + idx;
 
             return (
-              <GeneratedQuestionsCard
-                key={`${question.topic}-${globalIndex}`}
+              <GeneratedPublicExamQuestionsCard
+                key={`${question.subject}-${globalIndex}`}
                 index={globalIndex}
                 question={question}
+                selectedIds={selectedIds}
+                setSelectedIds={setSelectedIds}
               />
             );
           })}
@@ -104,12 +112,10 @@ export function GeneratedQuestionsList({
 
       <div className="flex gap-2">
         <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
-
-        <Button className="ml-auto" color="danger" size="sm" variant="flat" onPress={onDiscardQuestions}>
+        <Button className="ml-auto" color="danger" size="sm" variant="flat" onPress={onDiscard}>
           {selectedCount > 0 ? t('common.discardSelected') : t('common.discardAll')}
         </Button>
-
-        <Button color="primary" hidden={selectedCount === 0} size="sm" variant="flat" onPress={onSaveSelectedQuestions}>
+        <Button color="primary" hidden={selectedCount === 0} size="sm" variant="flat" onPress={onSaveSelected}>
           {t('common.saveSelected')}
         </Button>
       </div>

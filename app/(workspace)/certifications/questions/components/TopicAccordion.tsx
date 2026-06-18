@@ -1,23 +1,23 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { addToast } from '@heroui/toast';
 
-import { PublicExamQuestionList } from './PublicExamQuestionList';
+import { QuestionList } from './QuestionList';
 
-import { StoredPublicExamQuestion, BrowsePublicExamSubjectSummary } from '@/shared/types';
-import { getPublicExamBrowseQuestions, deletePublicExamBrowseQuestion } from '@/features/connectors';
+import { StoredQuestion, BrowseTopicSummary } from '@/shared/types';
+import { getBrowseQuestions, deleteBrowseQuestion } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { notify } from '@/shared/lib/notify';
 
-interface SubjectAccordionProps {
-  readonly subject: BrowsePublicExamSubjectSummary;
-  readonly publicExamName: string;
+interface TopicAccordionProps {
+  readonly topic: BrowseTopicSummary;
+  readonly certificationTitle: string;
   readonly isOpen: boolean;
 }
 
-export function SubjectAccordion({ subject, publicExamName, isOpen }: SubjectAccordionProps) {
+export function TopicAccordion({ topic, certificationTitle, isOpen }: TopicAccordionProps) {
   const { t } = useTranslation();
   const hasFetched = useRef(false);
-  const [questions, setQuestions] = useState<StoredPublicExamQuestion[]>([]);
+  const [questions, setQuestions] = useState<StoredQuestion[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
@@ -33,9 +33,9 @@ export function SubjectAccordion({ subject, publicExamName, isOpen }: SubjectAcc
   async function fetchQuestions(nextPage: number, nextPageSize: number) {
     setIsLoading(true);
     try {
-      const data = await getPublicExamBrowseQuestions({
-        publicExamName,
-        subject: subject.name,
+      const data = await getBrowseQuestions({
+        certificationTitle,
+        topic: topic.name,
         page: nextPage,
         pageSize: nextPageSize,
       });
@@ -45,7 +45,7 @@ export function SubjectAccordion({ subject, publicExamName, isOpen }: SubjectAcc
       setPage(data.page);
       setPageSize(data.pageSize);
     } catch {
-      addToast({ title: t('toast.failedToLoad'), description: t('browse.loadError'), color: 'danger' });
+      notify.error(t('toast.failedToLoad'), t('browse.loadError'));
     } finally {
       setIsLoading(false);
     }
@@ -53,17 +53,17 @@ export function SubjectAccordion({ subject, publicExamName, isOpen }: SubjectAcc
 
   async function handleDelete(id: number) {
     try {
-      await deletePublicExamBrowseQuestion(id);
+      await deleteBrowseQuestion(id);
       setQuestions((prev) => prev.filter((q) => q.id !== id));
       setTotal((prev) => prev - 1);
-      addToast({ title: t('toast.success'), description: t('browse.deleteSuccess'), color: 'success' });
+      notify.success(t('toast.success'), t('browse.deleteSuccess'));
     } catch {
-      addToast({ title: t('toast.error'), description: t('browse.deleteError'), color: 'danger' });
+      notify.error(t('toast.error'), t('browse.deleteError'));
     }
   }
 
   return (
-    <PublicExamQuestionList
+    <QuestionList
       isLoading={isLoading}
       page={page}
       pageSize={pageSize}

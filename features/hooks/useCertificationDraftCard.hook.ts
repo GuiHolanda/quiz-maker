@@ -1,10 +1,10 @@
 'use client';
 import { useState, useCallback } from 'react';
-import { addToast } from '@heroui/toast';
 
 import { Certification, CertificationTopic } from '@/shared/types';
 import { saveCertification } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { notify } from '@/shared/lib/notify';
 
 export type CertificationDraftStatus = 'editing' | 'saving' | 'saved' | 'error';
 
@@ -55,7 +55,7 @@ export function useCertificationDraftCard(initialDraft: Certification): UseCerti
       const saved = await saveCertification(draft);
 
       setStatus('saved');
-      addToast({ title: t('chat.created'), color: 'success' });
+      notify.success(t('chat.created'), t('chat.createdDescription', { name: draft.label }));
       window.dispatchEvent(new CustomEvent('certification-created', { detail: saved }));
 
       return 'success';
@@ -63,13 +63,13 @@ export function useCertificationDraftCard(initialDraft: Certification): UseCerti
       const httpStatus = err?.response?.status ?? err?.status;
 
       if (httpStatus === 409) {
-        addToast({ title: t('chat.errorDuplicate', { key: draft.key }), color: 'danger' });
+        notify.error(t('chat.errorDuplicate', { key: draft.key }), t('chat.errorDuplicateDescription'));
         setStatus('editing');
 
         return 'duplicate';
       }
 
-      addToast({ title: t('chat.errorGeneric'), color: 'danger' });
+      notify.error(t('chat.errorGeneric'), t('chat.errorGenericDescription'));
       setStatus('editing');
 
       return 'error';

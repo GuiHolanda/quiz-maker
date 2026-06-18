@@ -4,11 +4,11 @@ import React, { useCallback, useRef, useState } from 'react';
 import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
 import { Slider } from '@heroui/slider';
-import { addToast } from '@heroui/toast';
 
 import { Certification, CertificationTopic } from '@/shared/types';
 import { updateCertificationTopic, deleteCertificationTopic, addCertificationTopic } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { notify } from '@/shared/lib/notify';
 import { inputProperties } from '@/config/constants/inputStyles';
 
 interface SectionsTableProps {
@@ -74,11 +74,7 @@ export function SectionsTable({
             maxQuestions: field === 'maxQuestions' ? value : topic.maxQuestions,
           });
         } catch {
-          addToast({
-            title: t('toast.error'),
-            description: t('toast.failedToUpdate', { name: topic.name }),
-            color: 'danger',
-          });
+          notify.error(t('toast.error'), t('toast.failedToUpdate', { name: topic.name }));
         }
       }, 600);
     },
@@ -112,17 +108,9 @@ export function SectionsTable({
       });
       onTopicUpdated?.(topicId, editState.name, editState.min, editState.max);
       setEditingTopicId(null);
-      addToast({
-        title: t('toast.success'),
-        description: t('toast.topicUpdated', { name: editState.name }),
-        color: 'success',
-      });
+      notify.success(t('toast.success'), t('toast.topicUpdated', { name: editState.name }));
     } catch {
-      addToast({
-        title: t('toast.error'),
-        description: t('toast.failedToUpdate', { name: editState.name }),
-        color: 'danger',
-      });
+      notify.error(t('toast.error'), t('toast.failedToUpdate', { name: editState.name }));
     } finally {
       setSaving(false);
     }
@@ -133,17 +121,9 @@ export function SectionsTable({
     try {
       await deleteCertificationTopic(topicId);
       onTopicRemoved?.(topicId);
-      addToast({
-        title: t('toast.success'),
-        description: t('toast.topicRemoved', { name: topicName }),
-        color: 'success',
-      });
+      notify.success(t('toast.success'), t('toast.topicRemoved', { name: topicName }));
     } catch {
-      addToast({
-        title: t('toast.error'),
-        description: t('toast.failedToUpdate', { name: topicName }),
-        color: 'danger',
-      });
+      notify.error(t('toast.error'), t('toast.failedToUpdate', { name: topicName }));
     } finally {
       setRemovingId(null);
     }
@@ -163,17 +143,9 @@ export function SectionsTable({
       onTopicAdded?.(topic);
       setIsAddingTopic(false);
       setAddState({ name: '', min: 0, max: 0 });
-      addToast({
-        title: t('toast.success'),
-        description: t('toast.topicAdded', { name: addState.name }),
-        color: 'success',
-      });
+      notify.success(t('toast.success'), t('toast.topicAdded', { name: addState.name }));
     } catch {
-      addToast({
-        title: t('toast.error'),
-        description: t('toast.failedToUpdate', { name: addState.name }),
-        color: 'danger',
-      });
+      notify.error(t('toast.error'), t('toast.failedToUpdate', { name: addState.name }));
     } finally {
       setAdding(false);
     }

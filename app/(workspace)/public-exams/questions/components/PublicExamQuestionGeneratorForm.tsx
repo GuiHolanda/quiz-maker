@@ -1,13 +1,14 @@
 'use client';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
+import { Form } from '@heroui/form';
 
 import { getPublicExamQuestions } from '@/features/connectors';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { PublicExamFormErrors, AIPublicExamQuestion, PublicExamQuestionParams } from '@/shared/types';
 import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
 import { PublicExamManager } from '@/shared/components/PublicExamManager';
-import { FormAccordion } from '@/shared/components/ui/FormAccordion';
+import { BusyDialog } from '@/shared/components/ui/BusyDialog';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 
@@ -53,35 +54,33 @@ export function PublicExamQuestionGeneratorForm({ onGenerated }: Readonly<Public
   };
 
   return (
-    <FormAccordion
-      accordionKey="configure-public-exam-generator"
-      isLoading={loading}
-      title={t('concurso.configureGenerator')}
-      validationErrors={error as Record<string, string>}
-      onSubmit={handleSubmit}
-    >
-      <PublicExamManager showTopic className="flex w-full gap-4 items-end" />
-      <div className="flex w-full items-end gap-4">
-        <div className="no-number-spinners w-1/4">
-          <Input
-            id="num_questions"
-            label={t('common.numberOfQuestions')}
-            max={20}
-            min={1}
-            name="num_questions"
-            placeholder={t('concurso.numQuestionsPlaceholder')}
-            type="number"
-            {...inputProperties.input}
-          />
+    <Form validationErrors={error as Record<string, string>} onSubmit={handleSubmit}>
+      <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6 w-full">
+        <PublicExamManager showTopic className="flex w-full gap-4 items-end" />
+        <div className="flex w-full items-end gap-4">
+          <div className="no-number-spinners w-1/4">
+            <Input
+              id="num_questions"
+              label={t('common.numberOfQuestions')}
+              max={20}
+              min={1}
+              name="num_questions"
+              placeholder={t('concurso.numQuestionsPlaceholder')}
+              type="number"
+              {...inputProperties.input}
+            />
+          </div>
+          <Button
+            className="ml-auto bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
+            disabled={loading}
+            type="submit"
+          >
+            {t('common.generate')}
+          </Button>
         </div>
-        <Button
-          className="ml-auto bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
-          disabled={loading}
-          type="submit"
-        >
-          {t('common.generate')}
-        </Button>
       </div>
-    </FormAccordion>
+      <BusyDialog isOpen={loading} />
+    </Form>
   );
 }
+

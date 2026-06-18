@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { addToast } from '@heroui/toast';
 
 import { getAdminAuditLog } from '@/features/connectors';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { notify } from '@/shared/lib/notify';
 import type { AdminAuditLogResponse } from '@/shared/types';
 
 const ACTION_LABELS: Record<string, string> = {
@@ -16,6 +17,7 @@ const ACTION_LABELS: Record<string, string> = {
 const PAGE_SIZE = 20;
 
 export default function AdminAuditLogPage() {
+  const { t } = useTranslation();
   const [data, setData] = useState<AdminAuditLogResponse | null>(null);
   const [page, setPage] = useState(1);
 
@@ -24,9 +26,9 @@ export default function AdminAuditLogPage() {
       const result = await getAdminAuditLog({ page, limit: PAGE_SIZE });
       setData(result);
     } catch {
-      addToast({ title: 'Erro', description: 'Falha ao carregar audit log', color: 'danger' });
+      notify.error(t('admin.auditLogLoadFailed'), t('admin.auditLogLoadFailedDescription'));
     }
-  }, [page]);
+  }, [page, t]);
 
   useEffect(() => { fetchLog(); }, [fetchLog]);
 

@@ -4,12 +4,12 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import { Select, SelectItem } from '@heroui/select';
-import { addToast } from '@heroui/toast';
 
 import { StepHeader } from './StepHeader';
 
 import { inputProperties } from '@/config/constants/inputStyles';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { notify } from '@/shared/lib/notify';
 
 interface Step1BasicInfoProps {
   readonly title: string;
@@ -44,7 +44,7 @@ export function Step1BasicInfo({
 
   const handleNext = () => {
     if (!title.trim() || !code.trim()) {
-      addToast({ title: t('toast.validationError'), description: t('error.titleCodeRequired'), color: 'danger' });
+      notify.error(t('toast.validationError'), t('error.titleCodeRequired'));
 
       return;
     }
@@ -52,11 +52,10 @@ export function Step1BasicInfo({
   };
 
   const handleSaveDraft = () => {
-    addToast({
-      title: t('toast.success'),
-      description: t('toast.savedSuccessfully', { title: title || t('certification.certificationTitlePlaceholder') }),
-      color: 'success',
-    });
+    notify.success(
+      t('toast.success'),
+      t('toast.savedSuccessfully', { title: title || t('certification.certificationTitlePlaceholder') })
+    );
   };
 
   return (

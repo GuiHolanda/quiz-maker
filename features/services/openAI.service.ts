@@ -6,14 +6,16 @@ export interface TemplateReference {
 }
 
 export class OpenAIService {
-  // Configure the SDK transport with an explicit per-request timeout and one
-  // retry. Without this, slow OpenAI responses surface as the bare
-  // "TypeError: fetch failed" undici error when Vercel kills the function or
-  // the underlying socket is reset, which is hard to diagnose downstream.
+  // Single attempt with a generous 280s timeout. The earlier 90s + 1 retry
+  // pattern produced ~180s spent on stacked timeouts — exactly the failure
+  // mode reported in production logs. With maxRetries: 0, slow generations
+  // get one window that fits under Vercel's 300s function ceiling; rare
+  // transient errors surface to the user, who can re-submit faster than the
+  // SDK can retry a request that is already known to be slow.
   constructor(
     private readonly openAIClient: OpenAI = new OpenAI({
-      timeout: 90_000,
-      maxRetries: 1,
+      timeout: 280_000,
+      maxRetries: 0,
     })
   ) {}
 

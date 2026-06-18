@@ -79,7 +79,7 @@ function HeroSection() {
             <Button
               as={NextLink}
               className="border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold transition-colors duration-200 rounded-lg"
-              href="/certifications/generate"
+              href="/certifications/questions"
               size="lg"
               variant="bordered"
             >

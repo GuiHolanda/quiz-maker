@@ -4,7 +4,6 @@ import { useState, useCallback } from 'react';
 import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Button } from '@heroui/button';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
-import { addToast } from '@heroui/toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash, faPlus } from '@fortawesome/free-solid-svg-icons';
 
@@ -16,6 +15,7 @@ import useCertificationsContext from '@/features/hooks/useCertificationsContext.
 import { deleteCertification } from '@/features/connectors';
 import { Certification, CertificationTopic } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { notify } from '@/shared/lib/notify';
 
 interface CertificationsListTabProps {
   readonly onCreateNew: () => void;
@@ -68,18 +68,10 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
     try {
       await deleteCertification(deletingCert.key);
       removeCertification(deletingCert.key);
-      addToast({
-        title: t('toast.success'),
-        description: t('certification.certificationDeleted', { name: deletingCert.label }),
-        color: 'success',
-      });
+      notify.success(t('toast.success'), t('certification.certificationDeleted', { name: deletingCert.label }));
       setDeletingCert(null);
     } catch {
-      addToast({
-        title: t('toast.error'),
-        description: t('certification.certificationDeleteError'),
-        color: 'danger',
-      });
+      notify.error(t('toast.error'), t('certification.certificationDeleteError'));
     } finally {
       setIsDeleting(false);
     }

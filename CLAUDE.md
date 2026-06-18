@@ -172,6 +172,20 @@ Note: `setIsBusy(false)` goes in the `catch` only — on success the user naviga
 - Error responses: `{ error, message }` with appropriate HTTP status
 - Validation errors throw with a `.status` property: `Object.assign(new Error(...), { status: 409 })`
 
+### HTTP timeouts (request chain)
+
+For long-running endpoints (e.g. question generation), the timeout chain is:
+
+| Layer | Setting | File |
+|---|---|---|
+| Vercel function | `maxDuration = 300` | route handler |
+| axios client | `timeout: 280_000` | `lib/bff.api.ts` |
+| OpenAI SDK | `timeout: 280_000`, `maxRetries: 0` | `features/services/openAI.service.ts` |
+
+The axios + OpenAI SDK timeouts are deliberately shorter than `maxDuration` so the request fails fast before the platform kills the function. **When raising one, raise the others** — they're co-dependent. `maxRetries: 0` is intentional: timeouts on the OpenAI Responses API are slow-generation, not transient network failures, so retrying just doubles the wait. Per-call overrides are possible (`api.get(url, { timeout: 30_000 })`) but not currently used.
+
+`useRequest.hook.ts` detects axios timeouts (`error.code === 'ECONNABORTED'`) and surfaces `toast.requestTimeout` instead of the generic error toast.
+
 ### Imports
 - All absolute imports use `@/` alias (maps to project root)
 - Never use relative `../..` for cross-directory imports
