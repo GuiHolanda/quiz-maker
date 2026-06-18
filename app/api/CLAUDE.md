@@ -35,7 +35,7 @@ LemonSqueezy integration and quota tracking. Service: `features/services/quota.s
 
 ### `certification/`
 
-Everything related to IT certification exam preparation.
+Everything related to professional certification exam preparation (any domain: IT, finance, engineering, healthcare, law, and others).
 
 | Route | Method | Description |
 |---|---|---|
@@ -44,9 +44,10 @@ Everything related to IT certification exam preparation.
 | `certification/save-certification` | PUT | Add topic to certification |
 | `certification/save-certification` | PATCH | Update certification or topic metadata |
 | `certification/save-certification` | DELETE | Delete certification or topic (`?certificationKey=` or `?topicId=`) |
-| `certification/question-generator` | GET | Generate questions via OpenAI for a topic |
+| `certification/question-generator` | GET | Generate questions via OpenAI (web search) for a topic |
 | `certification/save-questions` | POST | Persist generated questions to DB |
-| `certification/get-answers` | POST | Generate and save answers/explanations via OpenAI |
+| `certification/get-answers` | POST | Generate and save correct answers via OpenAI |
+| `certification/questions/[questionId]/explanation` | GET | Generate and cache per-option explanations for a question |
 | `certification/quiz-generator` | GET | Fetch stored questions distributed across topics for a quiz |
 | `certification/browse-questions/questions` | GET | Paginated list of stored questions (filterable by cert + topic) |
 | `certification/browse-questions/questions` | DELETE | Delete a stored question (ownership check) |
@@ -119,11 +120,11 @@ Route handlers never contain business logic — they delegate to services.
 
 | File | Responsibility |
 |---|---|
-| `openAI.service.ts` | OpenAI client wrapper: template-based, inline, and web-search LLM calls |
+| `openAI.service.ts` | OpenAI client wrapper — single `call(prompt, input)` method using Responses API with `web_search_preview` |
 | `quota.service.ts` | Check and record usage quota per user per period. Supports `customQuotaOverride` (sentinel `-1` = ∞). Actions: `generate_questions`, `create_certification`, `create_public_exam`. |
 | `certification.service.ts` | CRUD for certifications and topics |
 | `public-exam.service.ts` | CRUD for public exams, subjects, and topics |
-| `question.service.ts` | `validateAiQuestions` (shared), `CertificationQuestionService`, `PublicExamQuestionService` |
+| `question.service.ts` | `validateAiQuestions` (shared), `CertificationQuestionService` (with `saveExplanations`), `PublicExamQuestionService` |
 | `browse.service.ts` | `BrowseQuestionsService`, `PublicExamBrowseQuestionsService`, `BrowseSummaryService`, `PublicExamBrowseSummaryService` |
 | `quiz-generator.service.ts` | Parse params, distribute questions across topics, fetch stored questions |
 | `aiChat.service.ts` | Validate chat messages, select prompt, stream OpenAI response |

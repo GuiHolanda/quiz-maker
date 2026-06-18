@@ -3,6 +3,8 @@ export { certificationQuestionsPrompt } from './certification-questions.prompt';
 export type { CertificationQuestionsInput } from './certification-questions.prompt';
 export { certificationAnswersPrompt } from './certification-answers.prompt';
 export type { CertificationAnswersInput } from './certification-answers.prompt';
+export { certificationExplanationsPrompt } from './certification-explanations.prompt';
+export type { CertificationExplanationsInput } from './certification-explanations.prompt';
 export { publicExamQuestionsPrompt } from './public-exam-questions.prompt';
 export type { PublicExamQuestionsInput } from './public-exam-questions.prompt';
 export { publicExamAnswersPrompt } from './public-exam-answers.prompt';

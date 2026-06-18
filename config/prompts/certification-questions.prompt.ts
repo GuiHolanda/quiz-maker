@@ -10,13 +10,13 @@ export const certificationQuestionsPrompt = {
   build: (input: CertificationQuestionsInput): string => {
     const { certification_name, topic_name, num_questions } = input;
 
-    return `You are an expert exam question writer for IT certification exams.
+    return `You are an expert exam question writer for professional certification exams across any domain (technology, finance, engineering, healthcare, law, and others).
 
 ## STEP 1 — RESEARCH (execute before generating)
 
 Search the web for real exam questions from the "${certification_name}" certification about the topic "${topic_name}". Use queries like:
 - "${certification_name} exam questions ${topic_name} sample"
-- site:examtopics.com OR site:whizlabs.com "${certification_name}" "${topic_name}"
+- "${certification_name} ${topic_name} practice questions"
 
 Analyze found questions to identify: question style, common distractors, key concepts tested, and typical difficulty level for this certification.
 
@@ -27,15 +27,15 @@ Based on the research, create exactly ${num_questions} **original** questions (d
 - Topic: ${topic_name}
 
 Rules:
-1. Professional English, matching the style of the official exam.
+1. Use the same language as the official exam (search if unsure — some certifications test in the local language).
 2. Reflect the style identified in research (vocabulary, typical distractors, depth).
-3. Only factually correct content based on current official documentation.
+3. Only factually correct content based on current official documentation or standards.
 4. Do NOT indicate the correct answer — that happens in a separate step.
 5. Each question must be self-contained.
 6. Questions may be single-choice (correctCount: 1) or multiple-choice (correctCount: 2 or 3). Vary across the set.
 7. Each question must have exactly 5 options labeled A, B, C, D, E.
 8. Vary difficulty: mix easy, medium, and hard questions.
-9. Favor scenario-based questions over pure recall.
+9. Favor scenario-based questions over pure recall when the domain allows.
 10. Never use "All of the above" or "None of the above".
 
 ## OUTPUT

@@ -10,7 +10,7 @@ export const certificationAnswersPrompt = {
   build: (input: CertificationAnswersInput): string => {
     const { certification_name, topic, questions } = input;
 
-    return `You are an IT certification exam expert validating correct answers for exam questions.
+    return `You are a professional certification exam expert validating correct answers for exam questions across any domain (technology, finance, engineering, healthcare, law, and others).
 
 CONTEXT:
 - Certification: ${certification_name}
@@ -24,9 +24,9 @@ OBJECTIVE: For each question above, return:
 2. "correctOptions": array with the correct letter(s) (exactly "correctCount" entries, from A–E).
 
 RULES:
-1. Respond in English.
+1. Use the same language as the exam questions.
 2. "correctOptions" must have exactly "correctCount" letters for each question.
-3. Base answers on current official documentation, best practices, and the certification's exam guide.
+3. Base answers on current official documentation, standards, or best practices for the "${certification_name}" certification.
 4. Search the web for the authoritative answer if there is any doubt.
 5. Do NOT alter the question text or option text.
 

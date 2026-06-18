@@ -41,7 +41,7 @@ shared/
 config/
   constants/index.ts          # App-wide constants, API URLs, localStorage keys, PLAN_LIMITS
   constants/inputStyles.ts    # Shared HeroUI input/select props (inputProperties)
-  promptSchemas/              # LLM prompt templates (JSON schemas)
+  promptSchemas/              # JSON output validation schemas (questionSchema.json, etc.)
   site.ts                     # Site metadata and nav config
 features/
   connectors.ts               # All HTTP client calls (single file)
@@ -185,6 +185,48 @@ For long-running endpoints (e.g. question generation), the timeout chain is:
 The axios + OpenAI SDK timeouts are deliberately shorter than `maxDuration` so the request fails fast before the platform kills the function. **When raising one, raise the others** — they're co-dependent. `maxRetries: 0` is intentional: timeouts on the OpenAI Responses API are slow-generation, not transient network failures, so retrying just doubles the wait. Per-call overrides are possible (`api.get(url, { timeout: 30_000 })`) but not currently used.
 
 `useRequest.hook.ts` detects axios timeouts (`error.code === 'ECONNABORTED'`) and surfaces `toast.requestTimeout` instead of the generic error toast.
+
+### Prompt management (LLM)
+
+All LLM prompts live in `config/prompts/` as TypeScript files. There are no prompts stored in the OpenAI dashboard.
+
+**Pattern:** one file per prompt, each exports a typed `PromptDefinition<TInput>` object:
+
+```typescript
+// config/prompts/my-feature.prompt.ts
+import type { PromptDefinition } from './types';
+
+export interface MyFeatureInput {
+  readonly param: string;
+}
+
+export const myFeaturePrompt = {
+  build: (input: MyFeatureInput): string => `...${input.param}...`,
+} satisfies PromptDefinition<MyFeatureInput>;
+```
+
+**Calling the LLM:** always use `OpenAIService.call(prompt, input)` — a single method that uses the Responses API with `web_search_preview`. Never call `openAIClient` directly in route handlers.
+
+```typescript
+const response = await openAIService.call(myFeaturePrompt, { param: 'value' });
+```
+
+**Model:** controlled by `OPENAI_MODEL` env var (default `gpt-4o`). One env var governs all non-streaming calls. Change model in one place.
+
+**AI chat** is the only exception — `AiChatService` uses streaming and manages its own `responses.create()` call. Its prompt strings live in `config/prompts/ai-chat-*.prompt.ts` but are not `PromptDefinition` instances.
+
+**Discovery:** `config/prompts/index.ts` re-exports all `PromptDefinition` prompts and their input types.
+
+| File | Prompt | Domain |
+|---|---|---|
+| `certification-questions.prompt.ts` | Generate certification questions | Any certification (IT, finance, health, engineering…) |
+| `certification-answers.prompt.ts` | Validate certification answers | Any certification |
+| `certification-explanations.prompt.ts` | Explain certification answers per option | Any certification |
+| `public-exam-questions.prompt.ts` | Generate concurso público questions | Concursos brasileiros |
+| `public-exam-answers.prompt.ts` | Validate concurso answers | Concursos brasileiros |
+| `public-exam-explanations.prompt.ts` | Explain concurso answers per option | Concursos brasileiros |
+| `ai-chat-identify.prompt.ts` | First-turn chat classification | AI chat (streaming) |
+| `ai-chat-topics.prompt.ts` | Topic retrieval and config chat | AI chat (streaming) |
 
 ### Imports
 - All absolute imports use `@/` alias (maps to project root)

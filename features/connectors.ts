@@ -362,6 +362,14 @@ export async function getQuestionExplanation(questionId: number): Promise<Record
   return data.explanations;
 }
 
+export async function getCertificationQuestionExplanation(questionId: number): Promise<Record<string, string>> {
+  const { data } = await api.get<{ explanations: Record<string, string> }>(
+    `/certification/questions/${questionId}/explanation`
+  );
+
+  return data.explanations;
+}
+
 export async function getAdminOverview(): Promise<AdminOverviewStats> {
   const { data } = await api.get<AdminOverviewStats>(ADMIN_OVERVIEW_URL);
 
