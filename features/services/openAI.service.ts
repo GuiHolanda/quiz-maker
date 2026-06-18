@@ -23,7 +23,7 @@ export class OpenAIService {
     this.openAIClient.apiKey = apiKey;
 
     const response = await (this.openAIClient.responses.create as Function)({
-      model: process.env.OPENAI_MODEL ?? 'gpt-4o',
+      model: process.env.OPENAI_MODEL ?? 'gpt-5.4',
       tools: [{ type: 'web_search_preview' }],
       input: prompt.build(input),
       max_output_tokens: 16000,
