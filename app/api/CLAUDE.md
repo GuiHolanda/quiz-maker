@@ -140,3 +140,13 @@ Auth services (`register.service.ts`, `forgot-password.service.ts`, `reset-passw
 - Error shape: `{ error, message }` with `status: err.status || 500`
 - All imports use `@/` absolute paths — no relative `../../` across directories
 - No barrel `index.ts` files
+
+---
+
+## Testes
+
+Os services da camada de negócio têm cobertura de testes unitários em `tests/api/services/`. Ao modificar um service coberto, rodar `npm test` para garantir que não há regressão.
+
+Services cobertos: `quota`, `certification`, `public-exam`, `quiz-generator`, `register`, `reset-password`, `mock-exam`.
+
+Padrões de mock (Prisma, `$transaction`, dependências externas) estão documentados na seção **Testes Unitários** do `CLAUDE.md` raiz.
