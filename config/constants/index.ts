@@ -193,3 +193,7 @@ export const INITIAL_MOCK_EXAMS_STATE: MockExamsState = {
   mockExams: [],
   isLoading: true,
 };
+
+export const CERT_SIMULADOS_URL = '/certification-simulados';
+export const CERT_SIMULADOS_LOCAL_STORAGE_KEY = 'CERT_SIMULADOS';
+export const CERT_QUESTION_EXPLANATION_URL = '/certification/questions';

@@ -443,3 +443,89 @@ export interface AdminAuditLogResponse {
   page: number;
   totalPages: number;
 }
+
+// Generic interfaces for SimuladoQuestionList and ResultQuestionCard (both domains)
+export interface SimuladoQuestion {
+  readonly id: number;
+  readonly mockExamQuestionId: number;
+  readonly text: string;
+  readonly correctCount: number;
+  readonly options: Record<string, string>;
+}
+
+export interface SimuladoResultQuestion {
+  readonly id: number;
+  readonly simuladoQuestionId: number;
+  readonly order: number;
+  readonly groupLabel: string;
+  readonly text: string;
+  readonly correctCount: number;
+  readonly options: Record<string, string>;
+  readonly answer: { correctOptions: string[] } | null;
+}
+
+// Certification Simulado types
+export interface CertSimuladoTopicConfig {
+  topicName: string;
+  questionCount: number;
+}
+
+export interface CertSimuladoQuestion {
+  id: number;
+  order: number;
+  question: StoredQuestion;
+}
+
+export interface CertSimuladoAttemptAnswer {
+  simuladoQuestionId: number;
+  selectedOptions: string[];
+}
+
+export interface CertSimuladoAttempt {
+  id: number;
+  simuladoId: number;
+  startedAt: string;
+  finishedAt: string | null;
+  score: number | null;
+  answers: CertSimuladoAttemptAnswer[];
+}
+
+export interface CertSimuladoListItem {
+  id: number;
+  name: string | null;
+  certKey: string;
+  certLabel: string;
+  totalQuestions: number;
+  attemptCount: number;
+  bestScore: number | null;
+  lastAttemptId: number | null;
+  attempts: Pick<CertSimuladoAttempt, 'id' | 'score' | 'startedAt' | 'finishedAt'>[];
+  createdAt: string;
+}
+
+export interface CertSimulado {
+  id: number;
+  name: string | null;
+  certKey: string;
+  certLabel: string;
+  topics: CertSimuladoTopicConfig[];
+  questions: CertSimuladoQuestion[];
+}
+
+export interface CreateCertSimuladoPayload {
+  certKey: string;
+  name?: string;
+  topics: CertSimuladoTopicConfig[];
+}
+
+export interface CertFinishAttemptPayload {
+  answers: CertSimuladoAttemptAnswer[];
+  score: number;
+}
+
+export interface CertSimuladoResult {
+  attempt: CertSimuladoAttempt;
+  simulado: Pick<CertSimulado, 'id' | 'name' | 'certKey' | 'certLabel'>;
+  questions: CertSimuladoQuestion[];
+  topicBreakdown: { topicName: string; correct: number; total: number }[];
+}
