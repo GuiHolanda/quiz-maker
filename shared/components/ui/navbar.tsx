@@ -17,6 +17,7 @@ import { Avatar } from '@heroui/avatar';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSection } from '@heroui/dropdown';
 import NextLink from 'next/link';
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowUp, faBrain, faChevronDown, faGear } from '@fortawesome/free-solid-svg-icons';
@@ -49,6 +50,10 @@ const NAV_LINKS = [
 export const Navbar = () => {
   const { data: session, status } = useSession();
   const { t } = useTranslation();
+  const pathname = usePathname() ?? '';
+  const isCertificationsScope = pathname.startsWith('/certifications');
+  const isConcursosScope = pathname.startsWith('/public-exams');
+  const isAdminScope = pathname.startsWith('/admin');
   const [usage, setUsage] = useState<UsageStats | null>(null);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
 
@@ -140,7 +145,13 @@ export const Navbar = () => {
             <NavbarItem>
               <Dropdown>
                 <DropdownTrigger>
-                  <button className="flex items-center gap-1.5 text-default-500 hover:text-foreground text-sm px-3 py-1.5 rounded-lg hover:bg-default-100 transition-colors duration-200">
+                  <button
+                    className={
+                      isCertificationsScope
+                        ? 'flex items-center gap-1.5 text-foreground bg-default-100 font-semibold text-sm px-3 py-1.5 rounded-lg transition-colors duration-200'
+                        : 'flex items-center gap-1.5 text-default-500 hover:text-foreground text-sm px-3 py-1.5 rounded-lg hover:bg-default-100 transition-colors duration-200'
+                    }
+                  >
                     {t('nav.certificates')}
                     <FontAwesomeIcon className="w-2.5 h-2.5" icon={faChevronDown} />
                   </button>
@@ -158,7 +169,13 @@ export const Navbar = () => {
               <NavbarItem>
                 <Dropdown>
                   <DropdownTrigger>
-                    <button className="flex items-center gap-1.5 text-default-500 hover:text-foreground text-sm px-3 py-1.5 rounded-lg hover:bg-default-100 transition-colors duration-200">
+                    <button
+                      className={
+                        isConcursosScope
+                          ? 'flex items-center gap-1.5 text-foreground bg-default-100 font-semibold text-sm px-3 py-1.5 rounded-lg transition-colors duration-200'
+                          : 'flex items-center gap-1.5 text-default-500 hover:text-foreground text-sm px-3 py-1.5 rounded-lg hover:bg-default-100 transition-colors duration-200'
+                      }
+                    >
                       {t('nav.concursos')}
                       <FontAwesomeIcon className="w-2.5 h-2.5" icon={faChevronDown} />
                     </button>
@@ -186,7 +203,11 @@ export const Navbar = () => {
             {status === 'authenticated' && session?.user?.plan === 'admin' && (
               <NavbarItem>
                 <NextLink
-                  className="flex items-center gap-1.5 text-default-500 hover:text-foreground text-sm px-3 py-1.5 rounded-lg hover:bg-default-100 transition-colors duration-200"
+                  className={
+                    isAdminScope
+                      ? 'flex items-center gap-1.5 text-foreground bg-default-100 font-semibold text-sm px-3 py-1.5 rounded-lg transition-colors duration-200'
+                      : 'flex items-center gap-1.5 text-default-500 hover:text-foreground text-sm px-3 py-1.5 rounded-lg hover:bg-default-100 transition-colors duration-200'
+                  }
                   href="/admin"
                 >
                   <FontAwesomeIcon className="w-3 h-3" icon={faGear} />
