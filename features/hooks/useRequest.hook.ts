@@ -22,9 +22,14 @@ export function useRequest(requestMethod: (args: any) => Promise<any>) {
       return questionare;
     } catch (error: any) {
       queueMicrotask(() => setError(error));
+      const isTimeout =
+        error?.code === 'ECONNABORTED' || (typeof error?.message === 'string' && error.message.includes('timeout'));
+
       addToast({
         title: t('toast.failedToLoad'),
-        description: error?.response?.data?.message || t('toast.somethingWrong'),
+        description: isTimeout
+          ? t('toast.requestTimeout')
+          : error?.response?.data?.message || t('toast.somethingWrong'),
         color: 'danger',
       });
     } finally {
