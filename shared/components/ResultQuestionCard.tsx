@@ -3,36 +3,36 @@
 import { useState } from 'react';
 import { Button } from '@heroui/button';
 
-import { MockExamQuestion } from '@/shared/types';
-import { getQuestionExplanation } from '@/features/connectors';
+import { SimuladoResultQuestion } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface ResultQuestionCardProps {
-  readonly mq: MockExamQuestion;
+  readonly question: SimuladoResultQuestion;
   readonly selected: string[];
   readonly localIndex: number;
   readonly showDivider: boolean;
+  readonly onLoadExplanation: (questionId: number) => Promise<Record<string, string>>;
 }
 
-export function ResultQuestionCard({ mq, selected, localIndex, showDivider }: ResultQuestionCardProps) {
+export function ResultQuestionCard({
+  question,
+  selected,
+  localIndex,
+  showDivider,
+  onLoadExplanation,
+}: ResultQuestionCardProps) {
   const { t } = useTranslation();
-  const options = mq.publicExamQuestion.options as Record<string, string>;
-  const correctOptions: string[] = (mq.publicExamQuestion.answer?.correctOptions as string[]) ?? [];
+  const correctOptions: string[] = question.answer?.correctOptions ?? [];
   const isCorrect =
     correctOptions.length > 0 &&
     selected.length === correctOptions.length &&
     selected.every((s) => correctOptions.includes(s));
 
-  const initialExplanations =
-    mq.publicExamQuestion.answer?.explanations && Object.keys(mq.publicExamQuestion.answer.explanations).length > 0
-      ? (mq.publicExamQuestion.answer.explanations as Record<string, string>)
-      : null;
-
-  const [explanations, setExplanations] = useState<Record<string, string> | null>(initialExplanations);
+  const [explanations, setExplanations] = useState<Record<string, string> | null>(null);
   const [showExplanations, setShowExplanations] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const hasAnswer = !!mq.publicExamQuestion.answer;
+  const hasAnswer = !!question.answer;
 
   async function handleToggleExplanation() {
     if (explanations) {
@@ -42,7 +42,7 @@ export function ResultQuestionCard({ mq, selected, localIndex, showDivider }: Re
     }
     setIsLoading(true);
     try {
-      const data = await getQuestionExplanation(mq.publicExamQuestion.id);
+      const data = await onLoadExplanation(question.id);
 
       setExplanations(data);
       setShowExplanations(true);
@@ -58,12 +58,12 @@ export function ResultQuestionCard({ mq, selected, localIndex, showDivider }: Re
       {showDivider && <div className="border-t border-default-100" />}
       <div className={`rounded-xl p-4 ${isCorrect ? 'bg-success-200/20' : 'bg-danger-400/20'}`}>
         <p className="text-xs mb-1">
-          {String(localIndex + 1).padStart(2, '0')}. {mq.publicExamQuestion.subject}
+          {String(localIndex + 1).padStart(2, '0')}. {question.groupLabel}
         </p>
-        <p className="text-sm font-bold text-foreground mb-4">{mq.publicExamQuestion.text}</p>
+        <p className="text-sm font-bold text-foreground mb-4">{question.text}</p>
 
         <div className="flex flex-col gap-1.5">
-          {Object.entries(options).map(([key, text]) => {
+          {Object.entries(question.options).map(([key, text]) => {
             const isSelected = selected.includes(key);
             const isCorrectOption = correctOptions.includes(key);
 

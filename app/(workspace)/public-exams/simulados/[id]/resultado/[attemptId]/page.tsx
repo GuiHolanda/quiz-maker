@@ -6,11 +6,11 @@ import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { Accordion, AccordionItem } from '@heroui/accordion';
 
-import { ResultQuestionCard } from './components/ResultQuestionCard';
+import { ResultQuestionCard } from '@/shared/components/ResultQuestionCard';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { getMockExamAttemptResult, startMockExamAttempt } from '@/features/connectors';
-import { MockExamResult, MockExamQuestion } from '@/shared/types';
+import { getMockExamAttemptResult, startMockExamAttempt, getQuestionExplanation } from '@/features/connectors';
+import { MockExamResult, SimuladoResultQuestion } from '@/shared/types';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 
 function scoreColor(percent: number): 'success' | 'warning' | 'danger' {
@@ -41,12 +41,22 @@ export default function SimuladoResultadoPage() {
 
   const answersMap = new Map(result.attempt.answers.map((a) => [a.mockExamQuestionId, a.selectedOptions]));
 
-  const questionsBySubject = result.questions.reduce<Record<string, MockExamQuestion[]>>((acc, mq) => {
-    const subject = mq.publicExamQuestion.subject ?? t('simulado.unknownSubject');
+  const mappedQuestions: SimuladoResultQuestion[] = result.questions.map((mq) => ({
+    id: mq.publicExamQuestion.id,
+    simuladoQuestionId: mq.id,
+    order: mq.order,
+    groupLabel: mq.publicExamQuestion.subject ?? t('simulado.unknownSubject'),
+    text: mq.publicExamQuestion.text,
+    correctCount: mq.publicExamQuestion.correctCount,
+    options: mq.publicExamQuestion.options as Record<string, string>,
+    answer: mq.publicExamQuestion.answer
+      ? { correctOptions: mq.publicExamQuestion.answer.correctOptions as string[] }
+      : null,
+  }));
 
-    if (!acc[subject]) acc[subject] = [];
-    acc[subject].push(mq);
-
+  const questionsBySubject = mappedQuestions.reduce<Record<string, SimuladoResultQuestion[]>>((acc, q) => {
+    if (!acc[q.groupLabel]) acc[q.groupLabel] = [];
+    acc[q.groupLabel].push(q);
     return acc;
   }, {});
 
@@ -162,13 +172,14 @@ export default function SimuladoResultadoPage() {
                 }
               >
                 <div className="flex flex-col gap-2 pt-1">
-                  {questions.map((mq, i) => (
+                  {questions.map((q, i) => (
                     <ResultQuestionCard
-                      key={mq.id}
+                      key={q.simuladoQuestionId}
                       localIndex={i}
-                      mq={mq}
-                      selected={answersMap.get(mq.id) ?? []}
+                      question={q}
+                      selected={answersMap.get(q.simuladoQuestionId) ?? []}
                       showDivider={i > 0}
+                      onLoadExplanation={getQuestionExplanation}
                     />
                   ))}
                 </div>

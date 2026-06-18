@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 
-import { SimuladoQuestionList } from './components/SimuladoQuestionList';
+import { SimuladoQuestionList } from '@/shared/components/SimuladoQuestionList';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { getMockExam, getMockExamAnswers, finishMockExamAttempt } from '@/features/connectors';
@@ -28,7 +28,7 @@ export default function SimuladoTentativaPage() {
 
   const questions = mockExam.questions.map((mq) => ({
     id: mq.publicExamQuestion.id,
-    mockExamQuestionId: mq.id,
+    simuladoQuestionId: mq.id,
     text: mq.publicExamQuestion.text,
     correctCount: mq.publicExamQuestion.correctCount,
     options: mq.publicExamQuestion.options as Record<string, string>,
