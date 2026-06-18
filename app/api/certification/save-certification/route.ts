@@ -41,19 +41,26 @@ export async function DELETE(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url);
+    const certificationKey = searchParams.get('certificationKey');
     const topicId = searchParams.get('topicId');
 
+    if (certificationKey) {
+      await certificationService.deleteCertification(certificationKey, session.user.id);
+
+      return NextResponse.json({ message: 'Certification deleted successfully' }, { status: 200 });
+    }
+
     if (!topicId) {
-      return NextResponse.json({ error: 'topicId is required' }, { status: 400 });
+      return NextResponse.json({ error: 'certificationKey or topicId is required' }, { status: 400 });
     }
 
     await certificationService.deleteTopic(topicId, session.user.id);
 
     return NextResponse.json({ message: 'Topic deleted successfully' }, { status: 200 });
   } catch (err: any) {
-    console.error('Failed to delete topic:', err);
+    console.error('Failed to delete:', err);
 
-    return NextResponse.json({ error: err.message || 'Failed to delete topic' }, { status: err.status || 500 });
+    return NextResponse.json({ error: err.message || 'Failed to delete' }, { status: err.status || 500 });
   }
 }
 
