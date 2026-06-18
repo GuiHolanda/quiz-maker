@@ -1,6 +1,5 @@
-'use client';
-import { BrowseQuestionsContent } from './components/BrowseQuestionsContent';
+import { redirect } from 'next/navigation';
 
-export default function BrowseQuestionsPage() {
-  return <BrowseQuestionsContent />;
+export default function BrowseRedirect() {
+  redirect('/certifications/questions?tab=browse');
 }

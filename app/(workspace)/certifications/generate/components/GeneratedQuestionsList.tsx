@@ -16,8 +16,10 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 export function GeneratedQuestionsList({
   questions,
+  onSaved,
 }: Readonly<{
   questions: AIQuestion[];
+  onSaved?: () => void;
 }>) {
   const { state, setSelectedAIquestions, setAIquestions } = useQuizContext();
   const [currentPage, setCurrentPage] = React.useState(1);
@@ -57,6 +59,7 @@ export function GeneratedQuestionsList({
   const onSaveSelectedQuestionsSuccess = () => {
     setSelectedAIquestions([]);
     setAIquestions([], null);
+    onSaved?.();
   };
 
   const onDiscardQuestions = () => {
