@@ -1,7 +1,7 @@
 'use client';
 import type { Key } from '@react-types/shared';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Tabs, Tab } from '@heroui/tabs';
 
@@ -34,13 +34,21 @@ function PageContent() {
   const searchParams = useSearchParams();
   const initialTab: Key = searchParams.get('tab') === 'browse' ? 'browse' : 'generate';
   const [selectedTab, setSelectedTab] = useState<Key>(initialTab);
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
+    // Skip the first run so the initial render does not trigger a router.replace
+    // which would cause a re-render that steals focus from inputs the user is
+    // about to click on (the "double-click to focus" symptom).
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+
+      return;
+    }
     const params = new URLSearchParams(Array.from(searchParams.entries()));
 
     params.set('tab', String(selectedTab));
     router.replace(`?${params.toString()}`, { scroll: false });
-    // We intentionally only sync on tab changes — searchParams updates would loop.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTab]);
 

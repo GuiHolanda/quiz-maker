@@ -1,7 +1,7 @@
 'use client';
 import type { Key } from '@react-types/shared';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Tabs, Tab } from '@heroui/tabs';
 
@@ -31,8 +31,15 @@ function PageContent() {
   const initialTab: Key = searchParams.get('tab') === 'browse' ? 'browse' : 'generate';
   const [selectedTab, setSelectedTab] = useState<Key>(initialTab);
   const [questions, setQuestions] = useState<AIPublicExamQuestion[]>([]);
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
+    // Skip the first run — see certifications/questions/page.tsx for rationale.
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+
+      return;
+    }
     const params = new URLSearchParams(Array.from(searchParams.entries()));
 
     params.set('tab', String(selectedTab));
