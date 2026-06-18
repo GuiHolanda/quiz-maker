@@ -1,6 +1,7 @@
 'use client';
 
 import { Select, SelectItem } from '@heroui/select';
+import type { Selection } from '@react-types/shared';
 
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -16,20 +17,17 @@ export const CertificationManager = ({ isMultiple, noTopics, ...props }: Certifi
   const { certifications, selectedCertification, selectedTopics, setSelectedCertification, setSelectedTopics } =
     useCertificationsContext();
 
-  const onCertificationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const certification = certifications.find((cert) => cert.key === e.target.value);
+  const onCertificationChange = (keys: Selection) => {
+    if (keys === 'all') return;
+    const key = Array.from(keys as Set<React.Key>)[0];
+    const certification = certifications.find((cert) => cert.key === String(key));
 
     setSelectedCertification(certification || null);
   };
 
-  const onTopicsChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedValues = e.target.value;
-
-    if (selectedValues) {
-      setSelectedTopics(selectedValues.split(','));
-    } else {
-      setSelectedTopics([]);
-    }
+  const onTopicsChange = (keys: Selection) => {
+    if (keys === 'all') return;
+    setSelectedTopics(Array.from(keys as Set<React.Key>).map(String));
   };
 
   return (
@@ -40,7 +38,7 @@ export const CertificationManager = ({ isMultiple, noTopics, ...props }: Certifi
         name="certificationTitle"
         placeholder={t('certification.selectCertificationPlaceholder')}
         selectedKeys={selectedCertification ? [selectedCertification.key] : []}
-        onChange={onCertificationChange}
+        onSelectionChange={onCertificationChange}
         {...inputProperties.select}
       >
         {certifications.map((certification) => (
@@ -55,7 +53,7 @@ export const CertificationManager = ({ isMultiple, noTopics, ...props }: Certifi
           placeholder={t('certification.selectTopicPlaceholder')}
           selectedKeys={selectedTopics}
           selectionMode={isMultiple ? 'multiple' : 'single'}
-          onChange={onTopicsChange}
+          onSelectionChange={onTopicsChange}
           {...inputProperties.select}
         >
           {selectedCertification

@@ -1,6 +1,7 @@
 'use client';
 
 import { Select, SelectItem } from '@heroui/select';
+import type { Selection } from '@react-types/shared';
 
 import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -24,28 +25,29 @@ export const PublicExamManager = ({ isMultiple, noSubjects, showTopic, ...props 
     setSelectedTopic,
   } = usePublicExamsContext();
 
-  const onPublicExamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const exam = publicExams.find((p) => p.id === e.target.value);
+  const onPublicExamChange = (keys: Selection) => {
+    if (keys === 'all') return;
+    const key = Array.from(keys as Set<React.Key>)[0];
+    const exam = publicExams.find((p) => (p.id ?? p.name) === String(key));
 
     setSelectedPublicExam(exam || null);
     setSelectedSubjects([]);
     setSelectedTopic(null);
   };
 
-  const onSubjectsChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedValues = e.target.value;
+  const onSubjectsChange = (keys: Selection) => {
+    if (keys === 'all') return;
+    const next = Array.from(keys as Set<React.Key>).map(String);
 
-    if (selectedValues) {
-      setSelectedSubjects(selectedValues.split(','));
-      setSelectedTopic(null);
-    } else {
-      setSelectedSubjects([]);
-      setSelectedTopic(null);
-    }
+    setSelectedSubjects(next);
+    setSelectedTopic(null);
   };
 
-  const onTopicChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedTopic(e.target.value || null);
+  const onTopicChange = (keys: Selection) => {
+    if (keys === 'all') return;
+    const key = Array.from(keys as Set<React.Key>)[0];
+
+    setSelectedTopic(key ? String(key) : null);
   };
 
   // Topics for the currently selected single subject (only when not multi-subject).
@@ -67,7 +69,7 @@ export const PublicExamManager = ({ isMultiple, noSubjects, showTopic, ...props 
         name="publicExamName"
         placeholder={t('concurso.selectPublicExamPlaceholder')}
         selectedKeys={selectedPublicExam ? [selectedPublicExam.id ?? selectedPublicExam.name] : []}
-        onChange={onPublicExamChange}
+        onSelectionChange={onPublicExamChange}
         {...inputProperties.select}
       >
         {publicExams.map((exam) => {
@@ -88,7 +90,7 @@ export const PublicExamManager = ({ isMultiple, noSubjects, showTopic, ...props 
           placeholder={t('concurso.selectSubjectPlaceholder')}
           selectedKeys={selectedSubjects}
           selectionMode={isMultiple ? 'multiple' : 'single'}
-          onChange={onSubjectsChange}
+          onSelectionChange={onSubjectsChange}
           {...inputProperties.select}
         >
           {selectedPublicExam
@@ -105,7 +107,7 @@ export const PublicExamManager = ({ isMultiple, noSubjects, showTopic, ...props 
           placeholder={t('concurso.selectTopicPlaceholder')}
           selectedKeys={selectedTopic ? [selectedTopic] : []}
           selectionMode="single"
-          onChange={onTopicChange}
+          onSelectionChange={onTopicChange}
           {...inputProperties.select}
         >
           {topicsForCurrentSubject.map((topic) => (
