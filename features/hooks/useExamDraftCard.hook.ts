@@ -1,10 +1,10 @@
 'use client';
 import { useState, useCallback } from 'react';
-import { addToast } from '@heroui/toast';
 
 import { PublicExam, PublicExamSubject, PublicExamTopic } from '@/shared/types';
 import { savePublicExam } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { notify } from '@/shared/lib/notify';
 
 export type ExamDraftStatus = 'editing' | 'saving' | 'saved' | 'error';
 
@@ -112,12 +112,14 @@ export function useExamDraftCard(initialDraft: PublicExam): UseExamDraftCardRetu
       const saved = await savePublicExam(draft);
 
       setStatus('saved');
-      addToast({ title: t('chat.examSaved'), color: 'success' });
+      notify.success(t('chat.examSaved'), t('chat.examSavedDescription', { name: draft.name }));
       window.dispatchEvent(new CustomEvent('public-exam-created', { detail: saved }));
     } catch (err: any) {
-      const message = err?.response?.status === 409 ? t('chat.examDuplicate') : t('chat.examSaveError');
+      const isDuplicate = err?.response?.status === 409;
+      const title = isDuplicate ? t('chat.examDuplicate') : t('chat.examSaveError');
+      const description = isDuplicate ? t('chat.examDuplicateDescription') : t('chat.examSaveErrorDescription');
 
-      addToast({ title: message, color: 'danger' });
+      notify.error(title, description);
       setStatus('editing');
     }
   }, [draft, t]);
