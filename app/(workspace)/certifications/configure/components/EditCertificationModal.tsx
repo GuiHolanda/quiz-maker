@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@heroui/modal';
 import { Input } from '@heroui/input';
-import { Select, SelectItem } from '@heroui/select';
 import { Button } from '@heroui/button';
 
 import { Certification } from '@/shared/types';
@@ -18,9 +17,6 @@ interface EditCertificationModalProps {
   onClose: () => void;
   onSaved: (oldKey: string, updated: { label: string; key: string; provider?: string }) => void;
 }
-
-const PROVIDERS = ['providerAws', 'providerMicrosoft', 'providerGoogle', 'providerComptia', 'providerCisco'] as const;
-const PROVIDER_VALUES = ['AWS', 'Microsoft', 'Google Cloud', 'CompTIA', 'Cisco'] as const;
 
 export function EditCertificationModal({ certification, isOpen, onClose, onSaved }: EditCertificationModalProps) {
   const { t } = useTranslation();
@@ -79,17 +75,14 @@ export function EditCertificationModal({ certification, isOpen, onClose, onSaved
             onChange={(e) => setCertKey(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
           />
-          <Select
-            {...inputProperties.select}
+          <Input
+            {...inputProperties.input}
             label={t('certification.provider')}
             placeholder={t('certification.providerPlaceholder')}
-            selectedKeys={provider ? new Set([provider]) : new Set()}
-            onSelectionChange={(keys) => setProvider((Array.from(keys)[0] as string) ?? '')}
-          >
-            {PROVIDER_VALUES.map((val, i) => (
-              <SelectItem key={val}>{t(`certification.${PROVIDERS[i]}`)}</SelectItem>
-            ))}
-          </Select>
+            value={provider}
+            onChange={(e) => setProvider(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+          />
         </ModalBody>
         <ModalFooter>
           <Button

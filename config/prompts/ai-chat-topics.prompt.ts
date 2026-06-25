@@ -21,10 +21,15 @@ Do NOT try to generate topics from text alone — the edital PDF is required for
 
 TOPIC RULES (IT certifications only):
 - Topics and percentages must come from the official exam guide/blueprint.
-- Topic percentages (minQuestions and maxQuestions) must be decimals between 0 and 1 (e.g., 0.2 = 20%).
-- The sum of all maxQuestions across topics should be approximately 1.0 (100%).
+- Topic percentages (minQuestions and maxQuestions) must be integers between 0 and 100 representing the percentage (e.g., 20 means 20%).
+- The sum of all maxQuestions across topics should be approximately 100 (100%).
 - minQuestions should always be less than maxQuestions for each topic.
 - Use the official exam code in the format (EXAM-CODE).
+
+PROVIDER RULES:
+- Always include a "provider" field with the certifying body's name (e.g., "AWS", "Microsoft", "Google Cloud", "CompTIA", "Cisco", "HashiCorp", "CNCF", "Oracle", "SAP", "Salesforce", "Kubernetes", "Red Hat").
+- Use the most recognizable short name, not the legal entity (e.g., "AWS" not "Amazon Web Services, Inc.").
+- Infer the provider from the certification context — do not ask the user.
 
 CERTIFICATION-DATA FORMAT:
 When generating certification data, output ONLY a JSON block inside \`\`\`certification-data delimiters with this exact structure:
@@ -36,8 +41,9 @@ When generating certification data, output ONLY a JSON block inside \`\`\`certif
   "certificationData": {
     "label": "Full Certification Name",
     "key": "(EXAM-CODE)",
+    "provider": "Certifying Body",
     "topics": [
-      { "name": "Topic Name", "minQuestions": 0.15, "maxQuestions": 0.25 }
+      { "name": "Topic Name", "minQuestions": 15, "maxQuestions": 25 }
     ]
   }
 }
@@ -61,11 +67,12 @@ Assistant:
   "certificationData": {
     "label": "AWS Certified Solutions Architect – Associate",
     "key": "(SAA-C03)",
+    "provider": "AWS",
     "topics": [
-      { "name": "Design Secure Architectures", "minQuestions": 0.26, "maxQuestions": 0.34 },
-      { "name": "Design Resilient Architectures", "minQuestions": 0.24, "maxQuestions": 0.32 },
-      { "name": "Design High-Performing Architectures", "minQuestions": 0.20, "maxQuestions": 0.28 },
-      { "name": "Design Cost-Optimized Architectures", "minQuestions": 0.12, "maxQuestions": 0.20 }
+      { "name": "Design Secure Architectures", "minQuestions": 26, "maxQuestions": 34 },
+      { "name": "Design Resilient Architectures", "minQuestions": 24, "maxQuestions": 32 },
+      { "name": "Design High-Performing Architectures", "minQuestions": 20, "maxQuestions": 28 },
+      { "name": "Design Cost-Optimized Architectures", "minQuestions": 12, "maxQuestions": 20 }
     ]
   }
 }
@@ -80,10 +87,11 @@ Assistant:
   "certificationData": {
     "label": "AWS Certified Solutions Architect – Associate",
     "key": "(SAA-C03)",
+    "provider": "AWS",
     "topics": [
-      { "name": "Design Secure Architectures", "minQuestions": 0.32, "maxQuestions": 0.40 },
-      { "name": "Design Resilient Architectures", "minQuestions": 0.28, "maxQuestions": 0.36 },
-      { "name": "Design High-Performing Architectures", "minQuestions": 0.24, "maxQuestions": 0.32 }
+      { "name": "Design Secure Architectures", "minQuestions": 32, "maxQuestions": 40 },
+      { "name": "Design Resilient Architectures", "minQuestions": 28, "maxQuestions": 36 },
+      { "name": "Design High-Performing Architectures", "minQuestions": 24, "maxQuestions": 32 }
     ]
   }
 }
@@ -98,10 +106,11 @@ Assistant:
   "certificationData": {
     "label": "Example Certification",
     "key": "(EX-001)",
+    "provider": "Example Provider",
     "topics": [
-      { "name": "Topic A", "minQuestions": 0.30, "maxQuestions": 0.40 },
-      { "name": "Topic B", "minQuestions": 0.25, "maxQuestions": 0.35 },
-      { "name": "Topic C", "minQuestions": 0.20, "maxQuestions": 0.30 }
+      { "name": "Topic A", "minQuestions": 30, "maxQuestions": 40 },
+      { "name": "Topic B", "minQuestions": 25, "maxQuestions": 35 },
+      { "name": "Topic C", "minQuestions": 20, "maxQuestions": 30 }
     ]
   }
 }

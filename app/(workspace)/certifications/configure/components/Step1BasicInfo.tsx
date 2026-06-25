@@ -3,7 +3,6 @@ import { faArrowRight, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
-import { Select, SelectItem } from '@heroui/select';
 
 import { StepHeader } from './StepHeader';
 
@@ -21,14 +20,6 @@ interface Step1BasicInfoProps {
   readonly onBack: () => void;
   readonly onNext: () => void;
 }
-
-const PROVIDERS = [
-  { key: 'aws', labelKey: 'certification.providerAws' },
-  { key: 'microsoft', labelKey: 'certification.providerMicrosoft' },
-  { key: 'google', labelKey: 'certification.providerGoogle' },
-  { key: 'comptia', labelKey: 'certification.providerComptia' },
-  { key: 'cisco', labelKey: 'certification.providerCisco' },
-] as const;
 
 export function Step1BasicInfo({
   title,
@@ -77,17 +68,13 @@ export function Step1BasicInfo({
           </div>
 
           {/* Provider */}
-          <Select
+          <Input
             label={t('certification.provider')}
             placeholder={t('certification.providerPlaceholder')}
-            selectedKeys={provider ? [provider] : []}
-            onSelectionChange={(keys) => onProviderChange((Array.from(keys)[0] as string) ?? '')}
-            {...inputProperties.select}
-          >
-            {PROVIDERS.map((p) => (
-              <SelectItem key={p.key}>{t(p.labelKey)}</SelectItem>
-            ))}
-          </Select>
+            value={provider}
+            onChange={(e) => onProviderChange(e.target.value)}
+            {...inputProperties.input}
+          />
 
           {/* Exam Code */}
           <Input
