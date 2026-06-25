@@ -10,14 +10,18 @@ import { QuestionGeneratorForm } from './components/QuestionGeneratorForm';
 import { CertificationsProvider } from '@/features/providers/certifications.provider';
 import { QuizProvider } from '@/features/providers/quiz.provider';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
+import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { AIQuestion } from '@/shared/types';
 
 function CertificationsQuestionsPageContent() {
   const { t } = useTranslation();
   const [selectedTab, setSelectedTab] = useState<Key>('browse');
   const { state, replaceQuiz, setAIquestions } = useQuizContext();
+  const { certifications, isLoading } = useCertificationsContext();
 
   const onQuestionsGenerated = (generatedQuestions: AIQuestion[] | undefined) => {
     if (!generatedQuestions) return;
@@ -51,18 +55,41 @@ function CertificationsQuestionsPageContent() {
           onSelectionChange={setSelectedTab}
         >
           <Tab key="browse" title={t('certification.questionsTabLibrary')}>
-            <BrowseQuestionsContent embedded />
+            <BrowseQuestionsContent embedded onGenerateClick={() => setSelectedTab('generate')} />
           </Tab>
           <Tab key="generate" title={t('certification.questionsTabGenerate')}>
-            <QuestionGeneratorForm onGenerated={onQuestionsGenerated} />
-            {(state?.aiQuestions?.length ?? 0) > 0 && (
-              <GeneratedQuestionsList questions={state?.aiQuestions ?? []} onSaved={() => setSelectedTab('browse')} />
-            )}
+            {renderGenerateTab()}
           </Tab>
         </Tabs>
       </div>
     </PageHeader>
   );
+
+  function renderGenerateTab() {
+    if (isLoading) return <SkeletonListLoader />;
+
+    if (certifications.length === 0) {
+      return (
+        <EmptyState
+          action={{
+            href: '/certifications/configure',
+            label: t('certification.tabNew'),
+          }}
+          description={t('certification.noCertificationsDescription')}
+          title={t('certification.noCertificationsTitle')}
+        />
+      );
+    }
+
+    return (
+      <>
+        <QuestionGeneratorForm onGenerated={onQuestionsGenerated} />
+        {(state?.aiQuestions?.length ?? 0) > 0 && (
+          <GeneratedQuestionsList questions={state?.aiQuestions ?? []} onSaved={() => setSelectedTab('browse')} />
+        )}
+      </>
+    );
+  }
 }
 
 export default function CertificationsQuestionsPage() {

@@ -31,7 +31,7 @@ function SimuladosPageContent() {
           onSelectionChange={setSelectedTab}
         >
           <Tab key="list" title={t('simulado.tabList')}>
-            <SimuladosListTab />
+            <SimuladosListTab onCreateNew={() => setSelectedTab('new')} />
           </Tab>
           <Tab key="new" title={t('simulado.tabNew')}>
             <NewSimuladoTab onCreated={() => setSelectedTab('list')} />

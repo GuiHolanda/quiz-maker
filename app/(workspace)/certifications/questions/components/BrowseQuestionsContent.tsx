@@ -11,9 +11,15 @@ import { BrowseCertificationSummary } from '@/shared/types';
 import { getBrowseSummary } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { notify } from '@/shared/lib/notify';
 
-export function BrowseQuestionsContent({ embedded }: Readonly<{ embedded?: boolean }> = {}) {
+interface BrowseQuestionsContentProps {
+  readonly embedded?: boolean;
+  readonly onGenerateClick?: () => void;
+}
+
+export function BrowseQuestionsContent({ embedded, onGenerateClick }: Readonly<BrowseQuestionsContentProps> = {}) {
   const { t } = useTranslation();
   const [certifications, setCertifications] = useState<BrowseCertificationSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -62,7 +68,13 @@ export function BrowseQuestionsContent({ embedded }: Readonly<{ embedded?: boole
     }
 
     if (certifications.length === 0) {
-      return <p className="text-default-400 text-sm">{t('browse.noQuestions')}</p>;
+      return (
+        <EmptyState
+          action={onGenerateClick ? { label: t('browse.generateCta'), onPress: onGenerateClick } : undefined}
+          description={t('browse.noQuestionsDescription')}
+          title={t('browse.noQuestions')}
+        />
+      );
     }
 
     return (

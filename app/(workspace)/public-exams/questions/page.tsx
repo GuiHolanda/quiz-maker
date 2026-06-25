@@ -8,14 +8,18 @@ import { GeneratedPublicExamQuestionsList } from './components/GeneratedPublicEx
 import { PublicExamQuestionGeneratorForm } from './components/PublicExamQuestionGeneratorForm';
 
 import { PublicExamsProvider } from '@/features/providers/publicExams.provider';
+import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { AIPublicExamQuestion } from '@/shared/types';
 
 function PublicExamsQuestionsPageContent() {
   const { t } = useTranslation();
   const [selectedTab, setSelectedTab] = useState<Key>('browse');
   const [questions, setQuestions] = useState<AIPublicExamQuestion[]>([]);
+  const { publicExams, isLoading } = usePublicExamsContext();
 
   const onQuestionsGenerated = (generated: AIPublicExamQuestion[] | undefined) => {
     if (!generated) return;
@@ -38,22 +42,45 @@ function PublicExamsQuestionsPageContent() {
           onSelectionChange={setSelectedTab}
         >
           <Tab key="browse" title={t('concurso.questionsTabLibrary')}>
-            <BrowsePublicExamQuestionsContent embedded />
+            <BrowsePublicExamQuestionsContent embedded onGenerateClick={() => setSelectedTab('generate')} />
           </Tab>
           <Tab key="generate" title={t('concurso.questionsTabGenerate')}>
-            <PublicExamQuestionGeneratorForm onGenerated={onQuestionsGenerated} />
-            {questions.length > 0 && (
-              <GeneratedPublicExamQuestionsList
-                questions={questions}
-                setQuestions={setQuestions}
-                onSaved={() => setSelectedTab('browse')}
-              />
-            )}
+            {renderGenerateTab()}
           </Tab>
         </Tabs>
       </div>
     </PageHeader>
   );
+
+  function renderGenerateTab() {
+    if (isLoading) return <SkeletonListLoader />;
+
+    if (publicExams.length === 0) {
+      return (
+        <EmptyState
+          action={{
+            href: '/public-exams/configure',
+            label: t('concurso.tabNew'),
+          }}
+          description={t('concurso.noExamsDescription')}
+          title={t('concurso.noExamsTitle')}
+        />
+      );
+    }
+
+    return (
+      <>
+        <PublicExamQuestionGeneratorForm onGenerated={onQuestionsGenerated} />
+        {questions.length > 0 && (
+          <GeneratedPublicExamQuestionsList
+            questions={questions}
+            setQuestions={setQuestions}
+            onSaved={() => setSelectedTab('browse')}
+          />
+        )}
+      </>
+    );
+  }
 }
 
 export default function PublicExamsQuestionsPage() {

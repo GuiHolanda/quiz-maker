@@ -11,9 +11,18 @@ import { BrowsePublicExamSummary } from '@/shared/types';
 import { getPublicExamBrowseSummary } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { notify } from '@/shared/lib/notify';
 
-export function BrowsePublicExamQuestionsContent({ embedded }: Readonly<{ embedded?: boolean }> = {}) {
+interface BrowsePublicExamQuestionsContentProps {
+  readonly embedded?: boolean;
+  readonly onGenerateClick?: () => void;
+}
+
+export function BrowsePublicExamQuestionsContent({
+  embedded,
+  onGenerateClick,
+}: Readonly<BrowsePublicExamQuestionsContentProps> = {}) {
   const { t } = useTranslation();
   const [publicExams, setPublicExams] = useState<BrowsePublicExamSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -62,7 +71,13 @@ export function BrowsePublicExamQuestionsContent({ embedded }: Readonly<{ embedd
     }
 
     if (publicExams.length === 0) {
-      return <p className="text-default-400 text-sm">{t('concurso.browseNoQuestions')}</p>;
+      return (
+        <EmptyState
+          action={onGenerateClick ? { label: t('concurso.browseGenerateCta'), onPress: onGenerateClick } : undefined}
+          description={t('concurso.browseNoQuestionsDescription')}
+          title={t('concurso.browseNoQuestions')}
+        />
+      );
     }
 
     return (
