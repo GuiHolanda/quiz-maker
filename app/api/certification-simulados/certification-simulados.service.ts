@@ -13,6 +13,13 @@ export class CertificationSimuladosService {
       orderBy: { createdAt: 'desc' },
     });
 
+    const certKeys = Array.from(new Set(simulados.map((s) => s.certKey)));
+    const certs = await prisma.certification.findMany({
+      where: { key: { in: certKeys }, OR: [{ userId }, { userId: null }] },
+      select: { key: true, label: true },
+    });
+    const labelByKey = new Map(certs.map((c) => [c.key, c.label]));
+
     return simulados.map((s) => {
       const finished = s.attempts;
       const bestScore = finished.length > 0 ? Math.max(...finished.map((a) => a.score ?? 0)) : null;
@@ -22,7 +29,7 @@ export class CertificationSimuladosService {
         id: s.id,
         name: s.name,
         certKey: s.certKey,
-        certLabel: s.certKey,
+        certLabel: labelByKey.get(s.certKey) ?? s.certKey,
         totalQuestions: s._count.questions,
         attemptCount: finished.length,
         bestScore,
@@ -41,10 +48,12 @@ export class CertificationSimuladosService {
   async create(payload: CreateCertSimuladoPayload, userId: string) {
     const { certKey, name, topics } = payload;
 
-    await this.validateTopicAvailability(certKey, topics, userId);
+    const certLabel = await this.resolveCertLabel(certKey, userId);
 
-    const selectedQuestionIds = await this.drawQuestions(certKey, topics, userId);
-    const autoName = name?.trim() || `${certKey} – ${selectedQuestionIds.length} questões`;
+    await this.validateTopicAvailability(certLabel, topics, userId);
+
+    const selectedQuestionIds = await this.drawQuestions(certLabel, topics, userId);
+    const autoName = name?.trim() || `${certLabel} – ${selectedQuestionIds.length} questões`;
 
     const simulado = await prisma.certificationSimulado.create({
       data: {
@@ -63,7 +72,7 @@ export class CertificationSimuladosService {
       id: simulado.id,
       name: simulado.name,
       certKey: simulado.certKey,
-      certLabel: simulado.certKey,
+      certLabel,
       totalQuestions: simulado._count.questions,
       attemptCount: 0,
       bestScore: null,
@@ -73,14 +82,23 @@ export class CertificationSimuladosService {
     };
   }
 
-  private async validateTopicAvailability(
-    certKey: string,
-    topics: CertSimuladoTopicConfig[],
-    userId: string
-  ) {
+  private async resolveCertLabel(certKey: string, userId: string): Promise<string> {
+    const cert = await prisma.certification.findFirst({
+      where: { key: certKey, OR: [{ userId }, { userId: null }] },
+      select: { label: true },
+    });
+
+    if (!cert) {
+      throw Object.assign(new Error(`Certificação "${certKey}" não encontrada`), { status: 404 });
+    }
+
+    return cert.label;
+  }
+
+  private async validateTopicAvailability(certLabel: string, topics: CertSimuladoTopicConfig[], userId: string) {
     for (const t of topics) {
       const count = await prisma.question.count({
-        where: { userId, certificationTitle: certKey, topic: t.topicName },
+        where: { userId, certificationTitle: certLabel, topic: t.topicName },
       });
 
       if (count < t.questionCount) {
@@ -94,16 +112,12 @@ export class CertificationSimuladosService {
     }
   }
 
-  private async drawQuestions(
-    certKey: string,
-    topics: CertSimuladoTopicConfig[],
-    userId: string
-  ): Promise<number[]> {
+  private async drawQuestions(certLabel: string, topics: CertSimuladoTopicConfig[], userId: string): Promise<number[]> {
     const ids: number[] = [];
 
     for (const t of topics) {
       const questions = await prisma.question.findMany({
-        where: { userId, certificationTitle: certKey, topic: t.topicName },
+        where: { userId, certificationTitle: certLabel, topic: t.topicName },
         select: { id: true },
       });
       const shuffled = questions.sort(() => Math.random() - 0.5).slice(0, t.questionCount);
@@ -197,6 +211,10 @@ export class CertificationSimuladosService {
 
     if (!attempt) throw Object.assign(new Error('Tentativa não encontrada'), { status: 404 });
 
+    const certLabel = await this.resolveCertLabel(attempt.simulado.certKey, userId).catch(
+      () => attempt.simulado.certKey
+    );
+
     const topicMap = new Map<string, { correct: number; total: number }>();
     const answersMap = new Map(
       attempt.answers.map((a) => [a.simuladoQuestionId, JSON.parse(a.selectedOptions) as string[]])
@@ -236,7 +254,7 @@ export class CertificationSimuladosService {
         id: attempt.simulado.id,
         name: attempt.simulado.name,
         certKey: attempt.simulado.certKey,
-        certLabel: attempt.simulado.certKey,
+        certLabel,
       },
       questions: attempt.simulado.questions.map((sq) => ({
         id: sq.id,

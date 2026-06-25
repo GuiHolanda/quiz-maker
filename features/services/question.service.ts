@@ -68,8 +68,15 @@ export class CertificationQuestionService {
   public async saveAnswers(answers: Answer[]) {
     return this.prismaService.$transaction(async (tx) => {
       for (const answer of answers) {
-        await tx.answer.create({
-          data: { questionId: answer.questionId, correctOptions: answer.correctOptions },
+        if (!Array.isArray(answer.correctOptions) || answer.correctOptions.length === 0) continue;
+        // Upsert with empty update keeps first-writer-wins: never overwrites
+        // an existing Answer (which would invalidate cached Explanations and
+        // could regrade in-flight tentativas). Idempotent across concurrent
+        // ensureAnswers invocations and React StrictMode double-renders.
+        await tx.answer.upsert({
+          where: { questionId: answer.questionId },
+          create: { questionId: answer.questionId, correctOptions: answer.correctOptions },
+          update: {},
         });
       }
     });
@@ -180,8 +187,12 @@ export class PublicExamQuestionService {
   public async saveAnswers(answers: Answer[]) {
     return this.prismaService.$transaction(async (tx) => {
       for (const answer of answers) {
-        await tx.publicExamAnswer.create({
-          data: { questionId: answer.questionId, correctOptions: answer.correctOptions },
+        if (!Array.isArray(answer.correctOptions) || answer.correctOptions.length === 0) continue;
+        // See CertificationQuestionService.saveAnswers for the upsert rationale.
+        await tx.publicExamAnswer.upsert({
+          where: { questionId: answer.questionId },
+          create: { questionId: answer.questionId, correctOptions: answer.correctOptions },
+          update: {},
         });
       }
     });

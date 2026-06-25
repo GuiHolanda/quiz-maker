@@ -82,7 +82,8 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
   return (
     <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6">
       <Select
-        label={t('certification.selectLabel')}
+        label={t('certification.selectCertification')}
+        placeholder={t('certification.selectCertificationPlaceholder')}
         selectedKeys={selectedCert ? [selectedCert.key] : []}
         onSelectionChange={(keys) => {
           const key = Array.from(keys)[0] as string;
@@ -102,7 +103,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
           placeholder={
             selectedCert
               ? t('simulado.namePlaceholder', { examName: selectedCert.label, count: totalQuestions || '?' })
-              : ''
+              : t('simulado.nameFallbackPlaceholder')
           }
           value={name}
           onValueChange={setName}
@@ -111,6 +112,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
         <Input
           label={t('simulado.totalQuestions')}
           min={1}
+          placeholder={t('simulado.totalQuestionsPlaceholder')}
           type="number"
           value={totalQuestions}
           onValueChange={setTotalQuestions}
@@ -139,7 +141,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
         <div className="flex flex-col">
           <Divider />
           <div className="flex items-center justify-between mt-4">
-            <p className="text-xs font-semibold">{t('simulado.distribution')}</p>
+            <p className="text-xs font-semibold">{t('simulado.distributionByTopic')}</p>
             <span className={`text-xs font-medium ${isDistributionValid ? 'text-success' : 'text-danger'}`}>
               {t('simulado.distributed', { distributed: distributedTotal, total })}
             </span>

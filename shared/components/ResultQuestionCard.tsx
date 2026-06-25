@@ -69,9 +69,9 @@ export function ResultQuestionCard({
 
             let textClass = 'text-default-400';
 
-            if (isSelected && isCorrect) textClass = 'text-success-500';
-            else if (isSelected && !isCorrect) textClass = 'text-danger-500';
-            else if (!isSelected && isCorrectOption && !isCorrect) textClass = 'text-success-500';
+            if (isSelected && isCorrectOption) textClass = 'text-success-500';
+            else if (isSelected && !isCorrectOption) textClass = 'text-danger-500';
+            else if (!isSelected && isCorrectOption && !isCorrect) textClass = 'text-foreground font-extrabold';
 
             return (
               <p key={key} className={`text-xs ${textClass} font-extrabold`}>

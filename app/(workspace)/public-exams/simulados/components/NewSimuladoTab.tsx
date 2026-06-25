@@ -87,7 +87,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
           placeholder={
             selectedPublicExam
               ? t('simulado.namePlaceholder', { examName: selectedPublicExam.name, count: totalQuestions || '?' })
-              : ''
+              : t('simulado.nameFallbackPlaceholder')
           }
           value={name}
           onValueChange={setName}
@@ -97,6 +97,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
         <Input
           label={t('simulado.totalQuestions')}
           min={1}
+          placeholder={t('simulado.totalQuestionsPlaceholder')}
           type="number"
           value={totalQuestions}
           onValueChange={setTotalQuestions}
