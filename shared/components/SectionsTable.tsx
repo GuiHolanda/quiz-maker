@@ -248,7 +248,7 @@ export function SectionsTable({
                         onChange={(val) => handleSliderChange(topic, 'minQuestions', val as number)}
                       />
                     ) : (
-                      `${topic.minQuestions}%`
+                      `${Math.round(topic.minQuestions ?? 0)}%`
                     )}
                   </td>
 
@@ -282,7 +282,7 @@ export function SectionsTable({
                         onChange={(val) => handleSliderChange(topic, 'maxQuestions', val as number)}
                       />
                     ) : (
-                      `${topic.maxQuestions}%`
+                      `${Math.round(topic.maxQuestions ?? 0)}%`
                     )}
                   </td>
 

@@ -32,7 +32,7 @@ export function TopicForm({ topicName, onTopicNameChange, onSubmit }: TopicFormP
     const maxRaw = Number.parseFloat(getFormString(formData, 'maxQuestions', '0')) || 0;
 
     if (!name) return;
-    onSubmit(name, minRaw / 100, maxRaw / 100);
+    onSubmit(name, minRaw, maxRaw);
   };
 
   return (

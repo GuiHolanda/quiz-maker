@@ -140,8 +140,8 @@ export function CertificationDraftReviewModal({
     const isLast = ti === draft.topics.length - 1;
     const tdClass = isLast ? TD_LAST : TD;
     const rowBg = ti % 2 === 0 ? 'bg-content1' : 'bg-default-50';
-    const minPctValue = Math.round((topic.minQuestions ?? 0) * 100);
-    const maxPctValue = Math.round((topic.maxQuestions ?? 0) * 100);
+    const minPctValue = Math.round(topic.minQuestions ?? 0);
+    const maxPctValue = Math.round(topic.maxQuestions ?? 0);
 
     return (
       <tr key={ti} className={rowBg}>
@@ -164,7 +164,9 @@ export function CertificationDraftReviewModal({
             size="sm"
             type="number"
             value={minPctValue.toString()}
-            onValueChange={(v) => updateTopic(ti, { minQuestions: (parseFloat(v) || 0) / 100 })}
+            onValueChange={(v) =>
+              updateTopic(ti, { minQuestions: Math.min(100, Math.max(0, parseFloat(v) || 0)) })
+            }
           />
         </td>
         <td className={tdClass}>
@@ -176,7 +178,9 @@ export function CertificationDraftReviewModal({
             size="sm"
             type="number"
             value={maxPctValue.toString()}
-            onValueChange={(v) => updateTopic(ti, { maxQuestions: (parseFloat(v) || 0) / 100 })}
+            onValueChange={(v) =>
+              updateTopic(ti, { maxQuestions: Math.min(100, Math.max(0, parseFloat(v) || 0)) })
+            }
           />
         </td>
         <td className={tdClass}>

@@ -29,8 +29,8 @@ export class QuizGeneratorService {
     const maxs = new Map<string, number>();
 
     for (const t of topics) {
-      const minCount = Math.floor(t.minQuestions * total);
-      const maxCount = Math.ceil(t.maxQuestions * total);
+      const minCount = Math.floor((t.minQuestions / 100) * total);
+      const maxCount = Math.ceil((t.maxQuestions / 100) * total);
 
       mins.set(t.name, minCount);
       maxs.set(t.name, maxCount);

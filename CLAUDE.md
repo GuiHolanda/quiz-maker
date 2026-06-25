@@ -523,6 +523,14 @@ npm run db:seed:dev           # Seed dev database with sample certifications + q
 npm run db:clear:dev          # Wipe dev database
 ```
 
+### Topic / subject percentage unit
+
+`CertificationTopic.minQuestions` / `maxQuestions` and `PublicExamSubject.minQuestions` / `maxQuestions` are **integers 0–100** (e.g. `25` means 25%). This is the canonical unit across the entire stack: AI chat prompts, draft modal, manual wizard, SectionsTable sliders/inputs, API routes, and the database all use integer 0–100. **Do not multiply or divide by 100 when reading or writing these fields.**
+
+The only exception is `QuizGeneratorService.distributeQuestions` in [features/services/quiz-generator.service.ts](features/services/quiz-generator.service.ts), which converts to a fraction internally to multiply by `total` (`Math.floor((t.minQuestions / 100) * total)`).
+
+A historical mixed-unit window (fractional rows from old AI chat saves) was normalized via `scripts/normalize-topic-units.ts` — re-run with `--apply` if a fresh DB import brings in old fractional data.
+
 ---
 
 ## Git Workflow
