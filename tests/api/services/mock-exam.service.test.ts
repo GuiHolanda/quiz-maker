@@ -1,11 +1,20 @@
 import { prismaMock } from '../__mocks__/prisma';
 import { MockExamService } from '@/app/api/mock-exams/mock-exam.service';
 
+const openAICallMock = vi.fn();
+
+vi.mock('@/features/services/openAI.service', () => ({
+  OpenAIService: class {
+    call = openAICallMock;
+  },
+}));
+
 describe('MockExamService', () => {
   let service: MockExamService;
 
   beforeEach(() => {
     service = new MockExamService();
+    openAICallMock.mockReset();
   });
 
   // Behaviour 1: validateSubjectAvailability throws 422 when count < requested (tested via create())
@@ -213,5 +222,148 @@ describe('MockExamService', () => {
         }),
       }),
     );
+  });
+
+  // Behaviour 5: ensureAnswers — idempotent gabarito generation
+  describe('ensureAnswers', () => {
+    it('throws 404 when mockExam not found', async () => {
+      prismaMock.mockExam.findFirst.mockResolvedValue(null);
+
+      await expect(service.ensureAnswers(999, 'user-1')).rejects.toMatchObject({ status: 404 });
+    });
+
+    it('returns generated:0 when every question already has an answer (idempotent)', async () => {
+      prismaMock.mockExam.findFirst.mockResolvedValue({
+        id: 1,
+        publicExam: { name: 'Concurso ABC', role: null, examBoard: { name: 'CESGRANRIO' } },
+        questions: [
+          {
+            publicExamQuestion: {
+              id: 100,
+              subject: 'Matemática',
+              topic: null,
+              text: 'Q1',
+              correctCount: 1,
+              difficulty: 'medium',
+              publicExamName: 'Concurso ABC',
+              examBoardName: 'CESGRANRIO',
+              options: [{ label: 'A', text: 'opt' }],
+              answer: { id: 9, correctOptions: ['A'] },
+            },
+          },
+        ],
+      } as any);
+
+      const result = await service.ensureAnswers(1, 'user-1');
+
+      expect(result).toEqual({ generated: 0 });
+      expect(openAICallMock).not.toHaveBeenCalled();
+    });
+
+    it('calls OpenAI per subject and persists answers for missing questions', async () => {
+      prismaMock.mockExam.findFirst.mockResolvedValue({
+        id: 1,
+        publicExam: { name: 'Concurso ABC', role: 'Analista', examBoard: { name: 'CESGRANRIO' } },
+        questions: [
+          {
+            publicExamQuestion: {
+              id: 100,
+              subject: 'Matemática',
+              topic: 'Álgebra',
+              text: 'Q1',
+              correctCount: 1,
+              difficulty: 'medium',
+              publicExamName: 'Concurso ABC',
+              examBoardName: 'CESGRANRIO',
+              options: [{ label: 'A', text: 'opt-a' }],
+              answer: null,
+            },
+          },
+          {
+            publicExamQuestion: {
+              id: 200,
+              subject: 'Português',
+              topic: 'Sintaxe',
+              text: 'Q2',
+              correctCount: 1,
+              difficulty: 'easy',
+              publicExamName: 'Concurso ABC',
+              examBoardName: 'CESGRANRIO',
+              options: [{ label: 'A', text: 'opt-a' }],
+              answer: null,
+            },
+          },
+        ],
+      } as any);
+
+      openAICallMock
+        .mockResolvedValueOnce(JSON.stringify({ answers: [{ questionId: 100, correctOptions: ['A'] }] }))
+        .mockResolvedValueOnce(JSON.stringify({ answers: [{ questionId: 200, correctOptions: ['B'] }] }));
+      prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+
+      const result = await service.ensureAnswers(1, 'user-1');
+
+      expect(result.generated).toBe(2);
+      expect(openAICallMock).toHaveBeenCalledTimes(2);
+      const subjects = new Set(openAICallMock.mock.calls.map((c: any[]) => c[1].subject_name));
+
+      expect(subjects.has('Matemática')).toBe(true);
+      expect(subjects.has('Português')).toBe(true);
+      // Each call carries the exam context.
+      const firstInput = openAICallMock.mock.calls[0][1];
+
+      expect(firstInput.public_exam_name).toBe('Concurso ABC');
+      expect(firstInput.exam_board_name).toBe('CESGRANRIO');
+      expect(firstInput.role).toBe('Analista');
+    });
+
+    it('skips only the questions that already have an answer', async () => {
+      prismaMock.mockExam.findFirst.mockResolvedValue({
+        id: 1,
+        publicExam: { name: 'Concurso ABC', role: null, examBoard: { name: 'CESGRANRIO' } },
+        questions: [
+          {
+            publicExamQuestion: {
+              id: 100,
+              subject: 'Matemática',
+              topic: null,
+              text: 'Q1',
+              correctCount: 1,
+              difficulty: 'medium',
+              publicExamName: 'Concurso ABC',
+              examBoardName: 'CESGRANRIO',
+              options: [{ label: 'A', text: 'opt' }],
+              answer: { id: 9, correctOptions: ['A'] }, // skip
+            },
+          },
+          {
+            publicExamQuestion: {
+              id: 101,
+              subject: 'Matemática',
+              topic: null,
+              text: 'Q2',
+              correctCount: 1,
+              difficulty: 'medium',
+              publicExamName: 'Concurso ABC',
+              examBoardName: 'CESGRANRIO',
+              options: [{ label: 'A', text: 'opt' }],
+              answer: null, // generate
+            },
+          },
+        ],
+      } as any);
+
+      openAICallMock.mockResolvedValueOnce(
+        JSON.stringify({ answers: [{ questionId: 101, correctOptions: ['A'] }] })
+      );
+      prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+
+      const result = await service.ensureAnswers(1, 'user-1');
+
+      expect(result.generated).toBe(1);
+      const payloadSent = openAICallMock.mock.calls[0][1].questions as Array<{ id: number }>;
+
+      expect(payloadSent.map((q) => q.id)).toEqual([101]);
+    });
   });
 });
