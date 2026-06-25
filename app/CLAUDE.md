@@ -247,6 +247,80 @@ function PageContent() {
 
 ---
 
+## Padrão de empty state
+
+Sempre usar `<EmptyState>` de `shared/components/ui/EmptyState.tsx` para qualquer feedback de "sem dados". **Não criar markup inline** com card + título + botão — usa o componente.
+
+### API
+
+```tsx
+import { EmptyState } from '@/shared/components/ui/EmptyState';
+
+interface EmptyStateProps {
+  readonly title: string;
+  readonly description?: string;
+  readonly action?: {
+    readonly label: string;
+    readonly href?: string;       // navegação — renderiza com NextLink
+    readonly onPress?: () => void; // callback — ex.: trocar de aba
+    readonly icon?: IconDefinition; // default: faPlus
+  };
+}
+```
+
+### Quando usar `href` vs `onPress`
+
+- **`href`** — quando a CTA deve **navegar** para outra rota (ex.: "criar primeira certificação" leva a `/certifications/configure`).
+- **`onPress`** — quando a CTA deve **trocar de aba ou disparar uma ação local** dentro da mesma página (ex.: "Gerar questões" troca para a aba "Gerar" da página atual).
+- Se nem `href` nem `onPress` forem fornecidos, o botão não é renderizado — útil quando o componente filho não conhece o controlador de abas.
+
+### Exemplos
+
+```tsx
+// CTA de navegação (questions page sem certificações)
+<EmptyState
+  title={t('certification.noCertificationsTitle')}
+  description={t('certification.noCertificationsDescription')}
+  action={{
+    label: t('certification.tabNew'),
+    href: '/certifications/configure',
+  }}
+/>
+
+// CTA de troca de aba (biblioteca vazia → aba Gerar)
+<EmptyState
+  title={t('browse.noQuestions')}
+  description={t('browse.noQuestionsDescription')}
+  action={{
+    label: t('browse.generateCta'),
+    onPress: () => setSelectedTab('generate'),
+  }}
+/>
+
+// Apenas título + descrição (sem ação acionável)
+<EmptyState
+  title={t('common.noResultsTitle')}
+  description={t('common.noResultsDescription')}
+/>
+```
+
+### Propagação do callback entre páginas/abas
+
+Quando o `EmptyState` está dentro de um filho (ex.: `BrowseQuestionsContent`, `SimuladosListTab`) cuja página pai controla as abas, o filho expõe uma prop opcional (`onGenerateClick?`, `onCreateNew?`) e a página pai passa o setter de aba como callback. Filho sem callback → `EmptyState` aparece sem CTA.
+
+### Onde já é usado
+
+- `CertificationsListTab` / `PublicExamsListTab` — "sem certificações/concursos" com `onPress` para a aba "New"
+- Cert e concurso `questions/page.tsx` Generate tab — guard com `href` para `/.../configure`
+- `BrowseQuestionsContent` / `BrowsePublicExamQuestionsContent` — "sem questões salvas" com `onPress` para a aba "Gerar"
+- Cert e concurso `SimuladosListTab` — "sem simulados" com `onPress` para a aba "New"
+
+### Copy
+
+Toda i18n: `title`, `description` e `action.label` sempre via `t('chave')`. Para "sem dados", convencionar pares `*.noXTitle` / `*.noXDescription` / `*.tabNew` (ou similar) — descrição deve dizer **o que fazer a seguir**, não apenas repetir o título.
+
+---
+
 ## Estrutura de páginas e componentes
 
 ### Homepage (`app/page.tsx`)
@@ -281,16 +355,6 @@ Página unificada (HeroUI Tabs) com aba **Gerar** (form + lista de questões ger
 | `components/QuestionList.tsx` | Lista de questões filtradas |
 | `components/QuestionDetailPanel.tsx` | Painel de detalhe da questão |
 
-#### Quiz (`certifications/quiz/`)
-
-| Arquivo | Papel |
-|---|---|
-| `page.tsx` | Providers + layout `.app-bg` |
-| `components/QuizForm.tsx` | Form de configuração do quiz |
-| `components/QuestionList.tsx` | Lista paginada + barra de progresso + botão finish |
-| `components/QuestionCard.tsx` | Card interativo: Radio (1 resposta) ou Checkbox (N respostas) |
-| `components/AnswredQuestionCard.tsx` | Card respondido: gabarito + explicações |
-
 #### Configure Certification (`certifications/configure/`)
 
 | Arquivo | Papel |
@@ -298,10 +362,20 @@ Página unificada (HeroUI Tabs) com aba **Gerar** (form + lista de questões ger
 | `page.tsx` | Provider + layout + HeroUI Tabs (abre por padrão na aba **Minhas certificações**) |
 | `components/CertificationHeader.tsx` | Exibe nome/código da certificação selecionada |
 | `components/NewCertificationTab.tsx` | Form de criação com validação |
-| `components/CertificationsListTab.tsx` | Accordion das certificações do usuário com botão de excluir, modal de confirmação, empty state com CTA e `SkeletonListLoader` durante o carregamento |
+| `components/CertificationsListTab.tsx` | Accordion das certificações do usuário com botão de excluir, modal de confirmação, `<EmptyState>` com CTA `onPress` para a aba "New" e `SkeletonListLoader` durante o carregamento |
 | `components/EditCertificationModal.tsx` | Modal de edição de metadados (label, key, provider) |
 | `components/EditCertificationTab.tsx` | Select para escolher qual editar |
 | `components/TopicForm.tsx` | Form de adição de tópico com Slider de percentual |
+
+#### Simulados (`certifications/simulados/`)
+
+| Arquivo | Papel |
+|---|---|
+| `page.tsx` | Provider (`CertSimuladosProvider` + `CertificationsProvider`) + tabs List/New |
+| `components/SimuladosListTab.tsx` | Lista de simulados; chama `ensureCertSimuladoAnswers(id)` antes de `startCertSimuladoAttempt(id)` |
+| `components/NewSimuladoTab.tsx` | Form de criação (Select cert + Input nome + total + distribuição por tópico) |
+| `[id]/tentativa/[attemptId]/page.tsx` | Interface interativa de resposta (usa `shared/components/SimuladoQuestionList`) |
+| `[id]/resultado/[attemptId]/page.tsx` | Página de resultado com breakdown por tópico; faz fallback chamando `ensureCertSimuladoAnswers` se detectar questões sem `answer` |
 
 ---
 
@@ -313,7 +387,7 @@ Página unificada (HeroUI Tabs) com aba **Gerar** (form + lista de questões ger
 |---|---|
 | `page.tsx` | Provider + layout + HeroUI Tabs |
 | `components/NewPublicExamTab.tsx` | Form de criação de concurso |
-| `components/PublicExamsListTab.tsx` | Accordion dos concursos do usuário com botão de excluir, modal de confirmação, empty state com CTA e `SkeletonListLoader` durante o carregamento |
+| `components/PublicExamsListTab.tsx` | Accordion dos concursos do usuário com botão de excluir, modal de confirmação, `<EmptyState>` com CTA `onPress` para a aba "New" e `SkeletonListLoader` durante o carregamento |
 | `components/EditPublicExamModal.tsx` | Modal de edição de concurso |
 
 #### Questions (`public-exams/questions/`)
@@ -337,12 +411,10 @@ Página unificada (HeroUI Tabs) com aba **Gerar** e aba **Biblioteca**, mesmo pa
 | Arquivo | Papel |
 |---|---|
 | `page.tsx` | Provider + layout `.app-bg` — tabs List/New |
-| `components/SimuladosListTab.tsx` | Lista de simulados com histórico de tentativas |
+| `components/SimuladosListTab.tsx` | Lista de simulados; chama `ensureMockExamAnswers(id)` antes de `startMockExamAttempt(id)` |
 | `components/NewSimuladoTab.tsx` | Form de criação de simulado |
-| `[id]/tentativa/[attemptId]/page.tsx` | Interface interativa de resposta |
-| `[id]/tentativa/[attemptId]/components/SimuladoQuestionList.tsx` | Lista paginada com tracking de respostas |
-| `[id]/resultado/[attemptId]/page.tsx` | Página de resultados com breakdown por assunto |
-| `[id]/resultado/[attemptId]/components/ResultQuestionCard.tsx` | Card com resposta do usuário vs gabarito |
+| `[id]/tentativa/[attemptId]/page.tsx` | Interface interativa de resposta (usa `shared/components/SimuladoQuestionList`) |
+| `[id]/resultado/[attemptId]/page.tsx` | Página de resultados com breakdown por matéria; faz fallback chamando `ensureMockExamAnswers` se detectar questões sem `answer` |
 
 ### Login / Auth (`app/login/`)
 
@@ -383,6 +455,7 @@ Layout completamente separado do `(workspace)` — usa sidebar própria, sem o n
 | `language-switch.tsx` | Toggle PT/EN via `useTranslation` |
 | `BusyDialog.tsx` | Modal de loading durante operações assíncronas |
 | `SkeletonListLoader.tsx` | Skeleton placeholder para listas que dependem de fetch (HeroUI Skeleton, props `count`/`height`/`className`). Usado pelos list tabs de certificações, concursos e simulados durante o carregamento inicial do provider. |
+| `EmptyState.tsx` | Card padrão de "sem dados" — título obrigatório, descrição opcional, e CTA opcional via `action: { label, href?, onPress?, icon? }`. `href` renderiza com `NextLink`; `onPress` é callback. Ícone padrão `faPlus`. Ver seção dedicada abaixo. |
 | `FormAccordion.tsx` | Accordion com `<Form>` integrado, BusyDialog e footer de ações |
 | `PaginationControls.tsx` | Botões prev/next reutilizáveis |
 | `ItemsPerPageSelect.tsx` | Select de itens por página |
@@ -463,6 +536,88 @@ Sempre mostre feedback em mutations (save/update/delete), tanto em sucesso quant
 
 ---
 
+## Padrão de simulados — garantir gabarito antes da tentativa
+
+Simulados (cert e concurso) são compostos por questões salvas pelo usuário, que podem ter sido geradas sem `Answer` no banco (o fluxo de **salvar questões** não dispara `get-answers` automaticamente). Sem gabarito, a página de resultado fica com `correctOptions = []` (cálculo de acerto quebra) e o endpoint `/explanation` retorna 404.
+
+**Regra:** sempre que um usuário for **iniciar uma tentativa** ou **revisar um resultado**, o frontend deve chamar o endpoint `ensure*Answers` antes do fetch principal.
+
+### Endpoints
+
+| Endpoint | Descrição |
+|---|---|
+| `POST /api/certification-simulados/[id]/answers` | Gera `Answer` rows faltantes para questões do simulado de certificação |
+| `POST /api/mock-exams/[id]/answers` | Gera `PublicExamAnswer` rows faltantes para simulado de concurso |
+
+Ambos são **idempotentes** — questões que já têm answer são puladas. Retornam `{ generated: N }`.
+
+### Connectors
+
+```ts
+import { ensureCertSimuladoAnswers, ensureMockExamAnswers } from '@/features/connectors';
+
+await ensureCertSimuladoAnswers(simuladoId);   // cert
+await ensureMockExamAnswers(mockExamId);       // concurso
+```
+
+### Pontos de uso obrigatórios
+
+1. **Ao iniciar uma tentativa** — em `SimuladosListTab.handleStart()` (cert e concurso), antes de chamar `start*Attempt`:
+
+```ts
+async function handleStart(simulado) {
+  setStartingId(simulado.id);
+  try {
+    await ensureCertSimuladoAnswers(simulado.id);   // garante gabarito
+    const attempt = await startCertSimuladoAttempt(simulado.id);
+    router.push(`/.../tentativa/${attempt.id}`);
+  } catch (e) {
+    notify.error(...);
+    setStartingId(null);
+  }
+}
+```
+
+2. **Ao carregar o resultado** — em `[id]/resultado/[attemptId]/page.tsx` (cert e concurso), fallback resiliente para simulados antigos que foram criados antes desse fluxo existir:
+
+```tsx
+useEffect(() => {
+  let cancelled = false;
+
+  async function load() {
+    const data = await getCertSimuladoResult(id, attemptId);
+    if (cancelled) return;
+
+    const hasMissingAnswer = data.questions.some((sq) => !sq.question.answer);
+    if (hasMissingAnswer) {
+      try {
+        await ensureCertSimuladoAnswers(id);
+        const refreshed = await getCertSimuladoResult(id, attemptId);
+        if (!cancelled) setResult(refreshed);
+        return;
+      } catch {
+        // fall back to partial data
+      }
+    }
+    setResult(data);
+  }
+
+  load();
+  return () => { cancelled = true; };
+}, [id, attemptId]);
+```
+
+### Quando NÃO precisa chamar
+
+- Quizzes do tipo "Generate" (`questions/page.tsx`) — geram questões via LLM com gabarito incluído no mesmo fluxo.
+- Browse / library — apenas leitura, não precisa de answer pra renderizar lista.
+
+### Custo e tempo
+
+`ensure*Answers` chama OpenAI em batches de 10 questões, agrupando por tópico/matéria. Um simulado de 40 questões em 4 tópicos = 4 chamadas LLM em paralelo (sequenciais no service, mas tópicos pequenos terminam rápido). Cobertura via `BusyDialog`/`isLoading` na UI evita confusão.
+
+---
+
 ## Padrões de responsividade
 
 ```
@@ -514,6 +669,8 @@ Transição:   transition-colors duration-200 (cards, inputs)
 - [ ] Chamadas HTTP via `useRequest` — nunca `useState` + `try/catch` manual
 - [ ] Toast de sucesso em toda mutation; erro já coberto por `useRequest`
 - [ ] Para listas que dependem de fetch via provider (`CertificationsProvider`, `PublicExamsProvider`, `MockExamsProvider`), renderizar `<SkeletonListLoader />` enquanto `isLoading` for `true` — evita flash de estado vazio antes do fetch completar
+- [ ] Para qualquer estado "sem dados", usar `<EmptyState>` de `shared/components/ui/EmptyState.tsx` — nunca markup inline. Sempre incluir `title` + `description`; CTA via `href` (navegação) ou `onPress` (trocar de aba)
+- [ ] Em fluxos de simulado (cert/concurso), chamar `ensure*Answers(id)` antes de iniciar tentativa **e** ao detectar `answer === null` em qualquer questão na página de resultado
 
 ---
 

@@ -81,6 +81,48 @@ Services: `features/services/public-exam.service.ts`, `features/services/questio
 
 ---
 
+### `certification-simulados/`
+
+Simulados (mock exams) baseados em questões de certificação salvas pelo usuário. Cada simulado é uma seleção fixa de questões do banco, agrupadas por tópicos, que o usuário responde em tentativas separadas.
+
+| Route | Method | Description |
+|---|---|---|
+| `certification-simulados` | GET | Lista simulados do usuário com tentativas e melhor pontuação |
+| `certification-simulados` | POST | Cria simulado: valida disponibilidade de questões por tópico (consultando `Question.certificationTitle === certLabel`) e sorteia IDs |
+| `certification-simulados?id={id}` | DELETE | Remove simulado do usuário |
+| `certification-simulados/[id]` | GET | Detalhe completo do simulado (questões + opções + answer + explicações) |
+| `certification-simulados/[id]/answers` | POST | **Garante gabarito**: busca questões do simulado sem `Answer`, agrupa por tópico, chama OpenAI em batches de 10, persiste `Answer` rows. Idempotente. Retorna `{ generated: N }`. |
+| `certification-simulados/[id]/attempts` | POST | Inicia nova tentativa |
+| `certification-simulados/[id]/attempts/[attemptId]` | PATCH | Finaliza tentativa (salva respostas + score) |
+| `certification-simulados/[id]/attempts/[attemptId]` | GET | Resultado da tentativa: score, breakdown por tópico, respostas vs gabarito |
+
+**Important — `certLabel` vs `certKey`:** simulados são criados com `certKey` (slug), mas `Question.certificationTitle` armazena o **label** humano da certificação (vindo do gerador da LLM). O service resolve o label via `prisma.certification.findFirst({ key: certKey })` antes de qualquer query em `Question`. Quebra esse contrato e a criação retorna 422 "Questões insuficientes" mesmo com questões existentes no banco.
+
+**Fluxo de gabarito (ensure-answers):** o frontend chama `POST /[id]/answers` **antes** de iniciar a tentativa, garantindo que todas as questões do simulado tenham `Answer` no banco. Sem isso, a página de resultado fica sem `correctOptions` (cálculo de acerto quebra) e o endpoint `/explanation` retorna 404. A página de resultado também faz fallback chamando o endpoint quando detecta questões sem answer (cobre simulados antigos).
+
+Service: `app/api/certification-simulados/certification-simulados.service.ts` (`CertificationSimuladosService`). Co-located, não compartilhado com client. Usa `OpenAIService` + `CertificationQuestionService` (lazy-init para não exigir `OPENAI_API_KEY` em testes unitários).
+
+---
+
+### `mock-exams/`
+
+Simulados (mock exams) baseados em questões de concurso público salvas pelo usuário. Mesmo padrão de `certification-simulados/`, com grouping por **subject** ao invés de **topic**.
+
+| Route | Method | Description |
+|---|---|---|
+| `mock-exams` | GET | Lista simulados do usuário |
+| `mock-exams` | POST | Cria simulado: valida disponibilidade por matéria (com fallback FK + denormalized name match) |
+| `mock-exams?id={id}` | DELETE | Remove simulado |
+| `mock-exams/[id]` | GET | Detalhe completo do simulado |
+| `mock-exams/[id]/answers` | POST | **Garante gabarito** — idêntico ao cert: questões sem `PublicExamAnswer` são agrupadas por subject, geradas via OpenAI em batches de 10, persistidas. Idempotente. Retorna `{ generated: N }`. |
+| `mock-exams/[id]/attempts` | POST | Inicia nova tentativa |
+| `mock-exams/[id]/attempts/[attemptId]` | PATCH | Finaliza tentativa |
+| `mock-exams/[id]/attempts/[attemptId]` | GET | Resultado da tentativa com breakdown por matéria |
+
+Service: `app/api/mock-exams/mock-exam.service.ts` (`MockExamService`). Mesmo padrão lazy-init de `OpenAIService` + `PublicExamQuestionService` do cert.
+
+---
+
 ### `admin/`
 
 Admin dashboard API. All routes verify `plan === 'admin'` via a direct DB lookup before executing. Business logic lives in the co-located `admin.service.ts`.
@@ -133,6 +175,8 @@ Admin service is co-located in `app/api/admin/admin.service.ts` (not in `feature
 
 Auth services (`register.service.ts`, `forgot-password.service.ts`, `reset-password.service.ts`) remain co-located in `app/api/auth/` and are not shared.
 
+Simulado services (`app/api/certification-simulados/certification-simulados.service.ts`, `app/api/mock-exams/mock-exam.service.ts`) também são co-located. Ambos seguem o mesmo contrato `ensureAnswers(id, userId)` para garantir gabarito antes da tentativa — método idempotente que só gera para questões sem `Answer`.
+
 ---
 
 ## Conventions
@@ -148,6 +192,17 @@ Auth services (`register.service.ts`, `forgot-password.service.ts`, `reset-passw
 
 Os services da camada de negócio têm cobertura de testes unitários em `tests/api/services/`. Ao modificar um service coberto, rodar `npm test` para garantir que não há regressão.
 
-Services cobertos: `quota`, `certification`, `public-exam`, `quiz-generator`, `register`, `reset-password`, `mock-exam`.
+Services cobertos: `quota`, `certification`, `public-exam`, `quiz-generator`, `register`, `reset-password`, `mock-exam`, `certification-simulados`.
+
+**Lazy init no constructor:** services que instanciam `OpenAIService` ou outros services pesados devem usar **getters com lazy init** (instância criada na primeira leitura), nunca `private readonly x = new X()` na class field. `new OpenAI()` exige `OPENAI_API_KEY` no boot e quebra os testes unitários (que rodam sem env vars). Padrão usado em `CertificationSimuladosService` e `MockExamService`:
+
+```ts
+private openAIServiceInstance: OpenAIService | null = null;
+
+private get openAIService(): OpenAIService {
+  this.openAIServiceInstance ??= new OpenAIService();
+  return this.openAIServiceInstance;
+}
+```
 
 Padrões de mock (Prisma, `$transaction`, dependências externas) estão documentados na seção **Testes Unitários** do `CLAUDE.md` raiz.
