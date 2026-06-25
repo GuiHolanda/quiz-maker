@@ -4,12 +4,12 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 
 import { SimuladoQuestionList } from '@/shared/components/SimuladoQuestionList';
-
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { getMockExam, getMockExamAnswers, finishMockExamAttempt } from '@/features/connectors';
 import { MockExam, MockExamAttemptAnswer, AnswersMap } from '@/shared/types';
 import { BusyDialog } from '@/shared/components/ui/BusyDialog';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { notify } from '@/shared/lib/notify';
 
 export default function SimuladoTentativaPage() {
@@ -24,7 +24,13 @@ export default function SimuladoTentativaPage() {
     getMockExam(Number(params.id)).then(setMockExam);
   }, [params.id]);
 
-  if (!mockExam) return null;
+  if (!mockExam) {
+    return (
+      <PageHeader subtitle="" title="">
+        <SkeletonListLoader count={5} height="h-32" />
+      </PageHeader>
+    );
+  }
 
   const questions = mockExam.questions.map((mq) => ({
     id: mq.publicExamQuestion.id,

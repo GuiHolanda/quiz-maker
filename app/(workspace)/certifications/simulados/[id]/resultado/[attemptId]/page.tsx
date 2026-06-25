@@ -8,9 +8,15 @@ import { Accordion, AccordionItem } from '@heroui/accordion';
 
 import { ResultQuestionCard } from '@/shared/components/ResultQuestionCard';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { getCertSimuladoResult, startCertSimuladoAttempt, getCertificationQuestionExplanation } from '@/features/connectors';
+import {
+  ensureCertSimuladoAnswers,
+  getCertSimuladoResult,
+  startCertSimuladoAttempt,
+  getCertificationQuestionExplanation,
+} from '@/features/connectors';
 import { CertSimuladoResult, SimuladoResultQuestion } from '@/shared/types';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 
 function scoreColor(percent: number): 'success' | 'warning' | 'danger' {
   if (percent >= 70) return 'success';
@@ -27,10 +33,47 @@ export default function CertSimuladoResultadoPage() {
   const [isStarting, setIsStarting] = useState(false);
 
   useEffect(() => {
-    getCertSimuladoResult(Number(params.id), Number(params.attemptId)).then(setResult);
+    let cancelled = false;
+
+    async function load() {
+      const data = await getCertSimuladoResult(Number(params.id), Number(params.attemptId));
+
+      if (cancelled) return;
+
+      const hasMissingAnswer = data.questions.some((sq) => !sq.question.answer);
+
+      if (hasMissingAnswer) {
+        try {
+          await ensureCertSimuladoAnswers(Number(params.id));
+          const refreshed = await getCertSimuladoResult(Number(params.id), Number(params.attemptId));
+
+          if (!cancelled) setResult(refreshed);
+
+          return;
+        } catch {
+          // fall back to whatever we already have — better partial than blank
+        }
+      }
+      setResult(data);
+    }
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
   }, [params.id, params.attemptId]);
 
-  if (!result) return null;
+  if (!result) {
+    return (
+      <PageHeader subtitle="" title={t('simulado.scoreTitle')}>
+        <div className="flex flex-col gap-6">
+          <SkeletonListLoader count={1} height="h-48" />
+          <SkeletonListLoader count={4} height="h-14" />
+        </div>
+      </PageHeader>
+    );
+  }
 
   const total = result.questions.length;
   const correct = result.attempt.score ?? 0;
@@ -54,6 +97,7 @@ export default function CertSimuladoResultadoPage() {
   const questionsByTopic = mappedQuestions.reduce<Record<string, SimuladoResultQuestion[]>>((acc, q) => {
     if (!acc[q.groupLabel]) acc[q.groupLabel] = [];
     acc[q.groupLabel].push(q);
+
     return acc;
   }, {});
 

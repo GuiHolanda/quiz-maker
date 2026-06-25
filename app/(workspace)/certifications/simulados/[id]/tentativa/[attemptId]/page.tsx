@@ -9,6 +9,7 @@ import { getCertSimulado, finishCertSimuladoAttempt } from '@/features/connector
 import { CertSimulado, CertSimuladoAttemptAnswer, AnswersMap, SimuladoQuestion } from '@/shared/types';
 import { BusyDialog } from '@/shared/components/ui/BusyDialog';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { notify } from '@/shared/lib/notify';
 
 export default function CertSimuladoTentativaPage() {
@@ -23,7 +24,13 @@ export default function CertSimuladoTentativaPage() {
     getCertSimulado(Number(params.id)).then(setSimulado);
   }, [params.id]);
 
-  if (!simulado) return null;
+  if (!simulado) {
+    return (
+      <PageHeader subtitle="" title="">
+        <SkeletonListLoader count={5} height="h-32" />
+      </PageHeader>
+    );
+  }
 
   const questions: SimuladoQuestion[] = simulado.questions.map((sq) => ({
     id: sq.question.id,

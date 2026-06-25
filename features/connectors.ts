@@ -344,6 +344,12 @@ export async function startMockExamAttempt(mockExamId: number): Promise<MockExam
   return data.attempt;
 }
 
+export async function ensureMockExamAnswers(mockExamId: number): Promise<{ generated: number }> {
+  const { data } = await api.post<{ generated: number }>(`${MOCK_EXAMS_URL}/${mockExamId}/answers`);
+
+  return data;
+}
+
 export async function finishMockExamAttempt(
   mockExamId: number,
   attemptId: number,
@@ -441,11 +447,15 @@ export async function getCertSimulado(id: number): Promise<CertSimulado> {
 }
 
 export async function startCertSimuladoAttempt(simuladoId: number): Promise<CertSimuladoAttempt> {
-  const { data } = await api.post<{ attempt: CertSimuladoAttempt }>(
-    `${CERT_SIMULADOS_URL}/${simuladoId}/attempts`
-  );
+  const { data } = await api.post<{ attempt: CertSimuladoAttempt }>(`${CERT_SIMULADOS_URL}/${simuladoId}/attempts`);
 
   return data.attempt;
+}
+
+export async function ensureCertSimuladoAnswers(simuladoId: number): Promise<{ generated: number }> {
+  const { data } = await api.post<{ generated: number }>(`${CERT_SIMULADOS_URL}/${simuladoId}/answers`);
+
+  return data;
 }
 
 export async function finishCertSimuladoAttempt(
@@ -457,9 +467,7 @@ export async function finishCertSimuladoAttempt(
 }
 
 export async function getCertSimuladoResult(simuladoId: number, attemptId: number): Promise<CertSimuladoResult> {
-  const { data } = await api.get<CertSimuladoResult>(
-    `${CERT_SIMULADOS_URL}/${simuladoId}/attempts/${attemptId}`
-  );
+  const { data } = await api.get<CertSimuladoResult>(`${CERT_SIMULADOS_URL}/${simuladoId}/attempts/${attemptId}`);
 
   return data;
 }

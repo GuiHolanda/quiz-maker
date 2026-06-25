@@ -1,8 +1,28 @@
 import { prisma } from '@/lib/prisma';
-import { CreateMockExamPayload, MockExamSubjectConfig } from '@/shared/types';
+import { CreateMockExamPayload, MockExamSubjectConfig, AIPublicExamQuestion } from '@/shared/types';
 import { normalizeName, looseKey } from '@/shared/utils';
+import { OpenAIService } from '@/features/services/openAI.service';
+import { PublicExamQuestionService } from '@/features/services/question.service';
+import { publicExamAnswersPrompt } from '@/config/prompts/public-exam-answers.prompt';
+
+const ANSWERS_BATCH_SIZE = 10;
 
 export class MockExamService {
+  private openAIServiceInstance: OpenAIService | null = null;
+  private questionServiceInstance: PublicExamQuestionService | null = null;
+
+  private get openAIService(): OpenAIService {
+    this.openAIServiceInstance ??= new OpenAIService();
+
+    return this.openAIServiceInstance;
+  }
+
+  private get questionService(): PublicExamQuestionService {
+    this.questionServiceInstance ??= new PublicExamQuestionService();
+
+    return this.questionServiceInstance;
+  }
+
   async list(userId: string) {
     const mockExams = await prisma.mockExam.findMany({
       where: { userId },
@@ -239,6 +259,88 @@ export class MockExamService {
     });
 
     return attempt;
+  }
+
+  /**
+   * Generates and persists PublicExamAnswer rows for any question in this
+   * mock exam that still lacks one. Idempotent — questions that already have
+   * an answer are skipped. Used by the frontend before starting an attempt so
+   * the result page always has a gabarito to compare against.
+   */
+  async ensureAnswers(mockExamId: number, userId: string) {
+    const mockExam = await prisma.mockExam.findFirst({
+      where: { id: mockExamId, userId },
+      include: {
+        publicExam: { include: { examBoard: true } },
+        questions: {
+          include: {
+            publicExamQuestion: { include: { options: true, answer: true } },
+          },
+        },
+      },
+    });
+
+    if (!mockExam) throw Object.assign(new Error('Simulado não encontrado'), { status: 404 });
+
+    const missing = mockExam.questions.map((mq) => mq.publicExamQuestion).filter((q) => !q.answer);
+
+    if (missing.length === 0) return { generated: 0 };
+
+    type MissingQuestion = (typeof missing)[number];
+    // Group by subject so each LLM call has consistent context.
+    const bySubject = new Map<string, MissingQuestion[]>();
+
+    for (const q of missing) {
+      const list = bySubject.get(q.subject) ?? [];
+
+      list.push(q);
+      bySubject.set(q.subject, list);
+    }
+
+    let totalGenerated = 0;
+
+    for (const [subject, subjectQuestions] of Array.from(bySubject.entries())) {
+      for (let i = 0; i < subjectQuestions.length; i += ANSWERS_BATCH_SIZE) {
+        const slice = subjectQuestions.slice(i, i + ANSWERS_BATCH_SIZE);
+        const payload: AIPublicExamQuestion[] = slice.map((q: MissingQuestion) => ({
+          id: q.id,
+          publicExamName: q.publicExamName,
+          examBoardName: q.examBoardName,
+          subject: q.subject,
+          topic: q.topic ?? undefined,
+          text: q.text,
+          correctCount: q.correctCount,
+          difficulty: q.difficulty,
+          options: Object.fromEntries(q.options.map((o: { label: string; text: string }) => [o.label, o.text])),
+        }));
+
+        const llmResponse = await this.openAIService.call(publicExamAnswersPrompt, {
+          public_exam_name: mockExam.publicExam.name,
+          exam_board_name: mockExam.publicExam.examBoard?.name ?? '',
+          role: mockExam.publicExam.role ?? undefined,
+          subject_name: subject,
+          topic_name: slice[0]?.topic ?? undefined,
+          questions: payload,
+        });
+
+        const parsed = JSON.parse(llmResponse) as {
+          answers?: { questionId: number; correctOptions: string[] }[];
+        };
+
+        if (Array.isArray(parsed?.answers)) {
+          await this.questionService.saveAnswers(
+            parsed.answers.map((a) => ({
+              questionId: a.questionId,
+              correctOptions: a.correctOptions,
+              explanations: {},
+            }))
+          );
+          totalGenerated += parsed.answers.length;
+        }
+      }
+    }
+
+    return { generated: totalGenerated };
   }
 
   async finishAttempt(

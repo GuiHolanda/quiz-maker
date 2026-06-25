@@ -10,8 +10,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useMockExamsContext } from '@/features/providers/mockExams.provider';
-import { deleteMockExam, startMockExamAttempt } from '@/features/connectors';
+import { deleteMockExam, ensureMockExamAnswers, startMockExamAttempt } from '@/features/connectors';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { notify } from '@/shared/lib/notify';
 import { MockExamListItem } from '@/shared/types';
 
@@ -24,7 +25,11 @@ function scoreColor(percent: number): 'success' | 'warning' | 'danger' {
   return 'danger';
 }
 
-export function SimuladosListTab() {
+interface SimuladosListTabProps {
+  readonly onCreateNew?: () => void;
+}
+
+export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
   const { t } = useTranslation();
   const { mockExams, isLoading, removeMockExam } = useMockExamsContext();
   const [deleteTarget, setDeleteTarget] = useState<MockExamListItem | null>(null);
@@ -36,6 +41,7 @@ export function SimuladosListTab() {
   async function handleStart(mockExam: MockExamListItem) {
     setStartingId(mockExam.id);
     try {
+      await ensureMockExamAnswers(mockExam.id);
       const attempt = await startMockExamAttempt(mockExam.id);
 
       router.push(`/public-exams/simulados/${mockExam.id}/tentativa/${attempt.id}`);
@@ -73,7 +79,13 @@ export function SimuladosListTab() {
   }
 
   if (!mockExams.length) {
-    return <p className="text-default-400 text-sm">{t('simulado.noSimulados')}</p>;
+    return (
+      <EmptyState
+        action={onCreateNew ? { label: t('simulado.tabNew'), onPress: onCreateNew } : undefined}
+        description={t('simulado.noSimuladosDescription')}
+        title={t('simulado.noSimulados')}
+      />
+    );
   }
 
   return (

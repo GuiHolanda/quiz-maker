@@ -1,7 +1,27 @@
 import { prisma } from '@/lib/prisma';
 import { CreateCertSimuladoPayload, CertSimuladoTopicConfig } from '@/shared/types';
+import { OpenAIService } from '@/features/services/openAI.service';
+import { CertificationQuestionService } from '@/features/services/question.service';
+import { certificationAnswersPrompt } from '@/config/prompts/certification-answers.prompt';
+
+const ANSWERS_BATCH_SIZE = 10;
 
 export class CertificationSimuladosService {
+  private openAIServiceInstance: OpenAIService | null = null;
+  private questionServiceInstance: CertificationQuestionService | null = null;
+
+  private get openAIService(): OpenAIService {
+    this.openAIServiceInstance ??= new OpenAIService();
+
+    return this.openAIServiceInstance;
+  }
+
+  private get questionService(): CertificationQuestionService {
+    this.questionServiceInstance ??= new CertificationQuestionService();
+
+    return this.questionServiceInstance;
+  }
+
   async list(userId: string) {
     const simulados = await prisma.certificationSimulado.findMany({
       where: { userId },
@@ -133,6 +153,79 @@ export class CertificationSimuladosService {
 
     if (!s) throw Object.assign(new Error('Simulado não encontrado'), { status: 404 });
     await prisma.certificationSimulado.delete({ where: { id } });
+  }
+
+  /**
+   * Generates and persists Answer rows for any question in this simulado that
+   * still lacks one. Idempotent — questions that already have an Answer are
+   * skipped. Used by the frontend before starting an attempt so the result
+   * page always has a gabarito to compare against.
+   */
+  async ensureAnswers(simuladoId: number, userId: string) {
+    const simulado = await prisma.certificationSimulado.findFirst({
+      where: { id: simuladoId, userId },
+      include: {
+        questions: {
+          include: {
+            question: { include: { options: true, answer: true } },
+          },
+        },
+      },
+    });
+
+    if (!simulado) throw Object.assign(new Error('Simulado não encontrado'), { status: 404 });
+
+    const certLabel = await this.resolveCertLabel(simulado.certKey, userId).catch(() => simulado.certKey);
+
+    const missing = simulado.questions.map((sq) => sq.question).filter((q) => !q.answer);
+
+    if (missing.length === 0) return { generated: 0 };
+
+    type MissingQuestion = (typeof missing)[number];
+    const byTopic = new Map<string, MissingQuestion[]>();
+
+    for (const q of missing) {
+      const list = byTopic.get(q.topic) ?? [];
+
+      list.push(q);
+      byTopic.set(q.topic, list);
+    }
+
+    let totalGenerated = 0;
+
+    for (const [topic, topicQuestions] of Array.from(byTopic.entries())) {
+      for (let i = 0; i < topicQuestions.length; i += ANSWERS_BATCH_SIZE) {
+        const slice = topicQuestions.slice(i, i + ANSWERS_BATCH_SIZE).map((q: MissingQuestion) => ({
+          id: q.id,
+          text: q.text,
+          correctCount: q.correctCount,
+          options: Object.fromEntries(q.options.map((o: { label: string; text: string }) => [o.label, o.text])),
+        }));
+
+        const llmResponse = await this.openAIService.call(certificationAnswersPrompt, {
+          certification_name: certLabel,
+          topic,
+          questions: JSON.stringify(slice),
+        });
+
+        const parsed = JSON.parse(llmResponse) as {
+          answers?: { questionId: number; correctOptions: string[] }[];
+        };
+
+        if (Array.isArray(parsed?.answers)) {
+          await this.questionService.saveAnswers(
+            parsed.answers.map((a) => ({
+              questionId: a.questionId,
+              correctOptions: a.correctOptions,
+              explanations: {},
+            }))
+          );
+          totalGenerated += parsed.answers.length;
+        }
+      }
+    }
+
+    return { generated: totalGenerated };
   }
 
   async getById(id: number, userId: string) {

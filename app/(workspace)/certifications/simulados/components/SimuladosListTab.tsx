@@ -10,8 +10,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useCertSimuladosContext } from '@/features/providers/certSimulados.provider';
-import { deleteCertSimulado, startCertSimuladoAttempt } from '@/features/connectors';
+import { deleteCertSimulado, ensureCertSimuladoAnswers, startCertSimuladoAttempt } from '@/features/connectors';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { notify } from '@/shared/lib/notify';
 import { CertSimuladoListItem } from '@/shared/types';
 
@@ -24,7 +25,11 @@ function scoreColor(percent: number): 'success' | 'warning' | 'danger' {
   return 'danger';
 }
 
-export function SimuladosListTab() {
+interface SimuladosListTabProps {
+  readonly onCreateNew?: () => void;
+}
+
+export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
   const { t } = useTranslation();
   const { simulados, isLoading, removeSimulado } = useCertSimuladosContext();
   const [deleteTarget, setDeleteTarget] = useState<CertSimuladoListItem | null>(null);
@@ -36,6 +41,7 @@ export function SimuladosListTab() {
   async function handleStart(simulado: CertSimuladoListItem) {
     setStartingId(simulado.id);
     try {
+      await ensureCertSimuladoAnswers(simulado.id);
       const attempt = await startCertSimuladoAttempt(simulado.id);
 
       router.push(`/certifications/simulados/${simulado.id}/tentativa/${attempt.id}`);
@@ -70,7 +76,15 @@ export function SimuladosListTab() {
 
   if (isLoading) return <SkeletonListLoader />;
 
-  if (!simulados.length) return <p className="text-default-400 text-sm">{t('simulado.noSimulados')}</p>;
+  if (!simulados.length) {
+    return (
+      <EmptyState
+        action={onCreateNew ? { label: t('simulado.tabNew'), onPress: onCreateNew } : undefined}
+        description={t('simulado.noSimuladosDescription')}
+        title={t('simulado.noSimulados')}
+      />
+    );
+  }
 
   return (
     <>
