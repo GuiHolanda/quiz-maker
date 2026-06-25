@@ -9,11 +9,13 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
 import { useMockExamsContext } from '@/features/providers/mockExams.provider';
 import { useRequest } from '@/features/hooks/useRequest.hook';
-import { createMockExam } from '@/features/connectors';
+import { createMockExam, getPublicExamBrowseSummary } from '@/features/connectors';
 import { PublicExamManager } from '@/shared/components/PublicExamManager';
 import { notify } from '@/shared/lib/notify';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { MockExamSubjectConfig } from '@/shared/types';
+import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
 
 interface NewSimuladoTabProps {
   readonly onCreated: () => void;
@@ -21,12 +23,24 @@ interface NewSimuladoTabProps {
 
 export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
   const { t } = useTranslation();
-  const { selectedPublicExam } = usePublicExamsContext();
+  const { publicExams, isLoading: isExamsLoading, selectedPublicExam } = usePublicExamsContext();
   const { addMockExam } = useMockExamsContext();
   const [name, setName] = useState('');
   const [totalQuestions, setTotalQuestions] = useState('');
   const [distribution, setDistribution] = useState<MockExamSubjectConfig[]>([]);
+  const [totalSavedQuestions, setTotalSavedQuestions] = useState<number | null>(null);
   const { loading, request } = useRequest(createMockExam);
+
+  useEffect(() => {
+    if (isExamsLoading || publicExams.length === 0) return;
+    getPublicExamBrowseSummary()
+      .then((data) => {
+        const total = data.publicExams.reduce((acc, e) => acc + e.totalCount, 0);
+
+        setTotalSavedQuestions(total);
+      })
+      .catch(() => setTotalSavedQuestions(0));
+  }, [isExamsLoading, publicExams.length]);
 
   useEffect(() => {
     if (!selectedPublicExam || !totalQuestions) {
@@ -51,6 +65,30 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
     setDistribution(suggested);
   }, [selectedPublicExam, totalQuestions]);
 
+  if (isExamsLoading || (publicExams.length > 0 && totalSavedQuestions === null)) {
+    return <SkeletonListLoader count={3} height="h-12" />;
+  }
+
+  if (publicExams.length === 0) {
+    return (
+      <EmptyState
+        action={{ href: '/public-exams/configure', label: t('concurso.tabNew') }}
+        description={t('concurso.noExamsDescription')}
+        title={t('concurso.noExamsTitle')}
+      />
+    );
+  }
+
+  if (totalSavedQuestions === 0) {
+    return (
+      <EmptyState
+        action={{ href: '/public-exams/questions', label: t('simulado.noQuestionsGoToQuestions') }}
+        description={t('simulado.noQuestionsDescription')}
+        title={t('simulado.noQuestionsTitle')}
+      />
+    );
+  }
+
   const distributedTotal = distribution.reduce((acc, s) => acc + s.questionCount, 0);
   const total = Number(totalQuestions) || 0;
   const isDistributionValid = distribution.length > 0 && distributedTotal === total;
@@ -72,7 +110,10 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
 
     if (saved) {
       addMockExam(saved);
-      notify.success(t('simulado.created'), t('simulado.createdDescription', { name: saved.name ?? selectedPublicExam.name }));
+      notify.success(
+        t('simulado.created'),
+        t('simulado.createdDescription', { name: saved.name ?? selectedPublicExam.name })
+      );
       onCreated();
     }
   }

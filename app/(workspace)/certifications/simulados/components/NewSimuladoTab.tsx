@@ -10,10 +10,12 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useCertSimuladosContext } from '@/features/providers/certSimulados.provider';
 import { useCertificationsContext } from '@/features/hooks/useCertificationsContext.hook';
 import { useRequest } from '@/features/hooks/useRequest.hook';
-import { createCertSimulado } from '@/features/connectors';
+import { createCertSimulado, getBrowseSummary } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { CertSimuladoTopicConfig, Certification } from '@/shared/types';
+import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
 
 interface NewSimuladoTabProps {
   readonly onCreated: () => void;
@@ -21,17 +23,30 @@ interface NewSimuladoTabProps {
 
 export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
   const { t } = useTranslation();
-  const { certifications } = useCertificationsContext();
+  const { certifications, isLoading: isCertsLoading } = useCertificationsContext();
   const { addSimulado } = useCertSimuladosContext();
   const [selectedCert, setSelectedCert] = useState<Certification | null>(null);
   const [name, setName] = useState('');
   const [totalQuestions, setTotalQuestions] = useState('');
   const [distribution, setDistribution] = useState<CertSimuladoTopicConfig[]>([]);
+  const [totalSavedQuestions, setTotalSavedQuestions] = useState<number | null>(null);
   const { loading, request } = useRequest(createCertSimulado);
+
+  useEffect(() => {
+    if (isCertsLoading || certifications.length === 0) return;
+    getBrowseSummary()
+      .then((data) => {
+        const total = data.certifications.reduce((acc, c) => acc + c.totalCount, 0);
+
+        setTotalSavedQuestions(total);
+      })
+      .catch(() => setTotalSavedQuestions(0));
+  }, [isCertsLoading, certifications.length]);
 
   useEffect(() => {
     if (!selectedCert || !totalQuestions) {
       setDistribution([]);
+
       return;
     }
     const total = Number(totalQuestions);
@@ -51,15 +66,33 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
     setDistribution(suggested);
   }, [selectedCert, totalQuestions]);
 
+  if (isCertsLoading || (certifications.length > 0 && totalSavedQuestions === null)) {
+    return <SkeletonListLoader count={3} height="h-12" />;
+  }
+
+  if (certifications.length === 0) {
+    return (
+      <EmptyState
+        action={{ href: '/certifications/configure', label: t('certification.tabNew') }}
+        description={t('certification.noCertificationsDescription')}
+        title={t('certification.noCertificationsTitle')}
+      />
+    );
+  }
+
+  if (totalSavedQuestions === 0) {
+    return (
+      <EmptyState
+        action={{ href: '/certifications/questions', label: t('simulado.noQuestionsGoToQuestions') }}
+        description={t('simulado.noQuestionsDescription')}
+        title={t('simulado.noQuestionsTitle')}
+      />
+    );
+  }
+
   const distributedTotal = distribution.reduce((acc, s) => acc + s.questionCount, 0);
   const total = Number(totalQuestions) || 0;
   const isDistributionValid = distribution.length > 0 && distributedTotal === total;
-
-  function handleTopicChange(topicName: string, value: string) {
-    setDistribution((prev) =>
-      prev.map((s) => (s.topicName === topicName ? { ...s, questionCount: Number(value) || 0 } : s))
-    );
-  }
 
   async function handleCreate() {
     if (!selectedCert) return;
@@ -79,6 +112,12 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
     }
   }
 
+  function handleTopicChange(topicName: string, value: string) {
+    setDistribution((prev) =>
+      prev.map((s) => (s.topicName === topicName ? { ...s, questionCount: Number(value) || 0 } : s))
+    );
+  }
+
   return (
     <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6">
       <Select
@@ -87,6 +126,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
         selectedKeys={selectedCert ? [selectedCert.key] : []}
         onSelectionChange={(keys) => {
           const key = Array.from(keys)[0] as string;
+
           setSelectedCert(certifications.find((c) => c.key === key) ?? null);
         }}
         {...inputProperties.select}

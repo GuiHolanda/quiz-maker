@@ -24,7 +24,7 @@ export function EmptyState({ title, description, action }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-16 bg-content1 border border-default-200 rounded-xl text-center">
       <p className="text-base font-semibold text-foreground">{title}</p>
-      {description && <p className="text-sm text-default-500 max-w-sm">{description}</p>}
+      {description && <p className="text-sm text-default-500 max-w-lg">{description}</p>}
       {action && renderAction()}
     </div>
   );
