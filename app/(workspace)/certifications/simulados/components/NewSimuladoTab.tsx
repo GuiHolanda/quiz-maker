@@ -1,19 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
+import { Select, SelectItem } from '@heroui/select';
 import { Divider } from '@heroui/divider';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
-import { useMockExamsContext } from '@/features/providers/mockExams.provider';
+import { useCertSimuladosContext } from '@/features/providers/certSimulados.provider';
+import { useCertificationsContext } from '@/features/hooks/useCertificationsContext.hook';
 import { useRequest } from '@/features/hooks/useRequest.hook';
-import { createMockExam } from '@/features/connectors';
-import { PublicExamManager } from '@/shared/components/PublicExamManager';
+import { createCertSimulado } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
 import { inputProperties } from '@/config/constants/inputStyles';
-import { MockExamSubjectConfig } from '@/shared/types';
+import { CertSimuladoTopicConfig, Certification } from '@/shared/types';
 
 interface NewSimuladoTabProps {
   readonly onCreated: () => void;
@@ -21,27 +21,27 @@ interface NewSimuladoTabProps {
 
 export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
   const { t } = useTranslation();
-  const { selectedPublicExam } = usePublicExamsContext();
-  const { addMockExam } = useMockExamsContext();
+  const { certifications } = useCertificationsContext();
+  const { addSimulado } = useCertSimuladosContext();
+  const [selectedCert, setSelectedCert] = useState<Certification | null>(null);
   const [name, setName] = useState('');
   const [totalQuestions, setTotalQuestions] = useState('');
-  const [distribution, setDistribution] = useState<MockExamSubjectConfig[]>([]);
-  const { loading, request } = useRequest(createMockExam);
+  const [distribution, setDistribution] = useState<CertSimuladoTopicConfig[]>([]);
+  const { loading, request } = useRequest(createCertSimulado);
 
   useEffect(() => {
-    if (!selectedPublicExam || !totalQuestions) {
+    if (!selectedCert || !totalQuestions) {
       setDistribution([]);
-
       return;
     }
     const total = Number(totalQuestions);
 
     if (isNaN(total) || total <= 0) return;
 
-    const totalMax = selectedPublicExam.subjects.reduce((acc, s) => acc + s.maxQuestions, 0);
-    const suggested = selectedPublicExam.subjects.map((s) => ({
-      subjectName: s.name,
-      questionCount: Math.round((s.maxQuestions / totalMax) * total),
+    const totalMax = selectedCert.topics.reduce((acc, t) => acc + t.maxQuestions, 0);
+    const suggested = selectedCert.topics.map((topic) => ({
+      topicName: topic.name,
+      questionCount: totalMax > 0 ? Math.round((topic.maxQuestions / totalMax) * total) : 0,
     }));
 
     const sum = suggested.reduce((acc, s) => acc + s.questionCount, 0);
@@ -49,51 +49,66 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
     if (suggested.length > 0) suggested[suggested.length - 1].questionCount += total - sum;
 
     setDistribution(suggested);
-  }, [selectedPublicExam, totalQuestions]);
+  }, [selectedCert, totalQuestions]);
 
   const distributedTotal = distribution.reduce((acc, s) => acc + s.questionCount, 0);
   const total = Number(totalQuestions) || 0;
   const isDistributionValid = distribution.length > 0 && distributedTotal === total;
 
-  function handleSubjectChange(subjectName: string, value: string) {
+  function handleTopicChange(topicName: string, value: string) {
     setDistribution((prev) =>
-      prev.map((s) => (s.subjectName === subjectName ? { ...s, questionCount: Number(value) || 0 } : s))
+      prev.map((s) => (s.topicName === topicName ? { ...s, questionCount: Number(value) || 0 } : s))
     );
   }
 
   async function handleCreate() {
-    if (!selectedPublicExam?.id) return;
+    if (!selectedCert) return;
     const saved = await request({
-      publicExamId: selectedPublicExam.id,
+      certKey: selectedCert.key,
       name: name.trim() || undefined,
-      totalQuestions: total,
-      subjects: distribution,
+      topics: distribution,
     });
 
     if (saved) {
-      addMockExam(saved);
-      notify.success(t('simulado.created'), t('simulado.createdDescription', { name: saved.name ?? selectedPublicExam.name }));
+      addSimulado(saved);
+      notify.success(
+        t('simulado.created'),
+        t('simulado.createdDescription', { name: saved.name ?? selectedCert.label })
+      );
       onCreated();
     }
   }
 
   return (
     <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6">
-      <PublicExamManager noSubjects className="w-full" />
+      <Select
+        label={t('certification.selectCertification')}
+        placeholder={t('certification.selectCertificationPlaceholder')}
+        selectedKeys={selectedCert ? [selectedCert.key] : []}
+        onSelectionChange={(keys) => {
+          const key = Array.from(keys)[0] as string;
+          setSelectedCert(certifications.find((c) => c.key === key) ?? null);
+        }}
+        {...inputProperties.select}
+      >
+        {certifications.map((c) => (
+          <SelectItem key={c.key}>{c.label}</SelectItem>
+        ))}
+      </Select>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Input
           autoComplete="off"
           label={t('simulado.nameLabel')}
           placeholder={
-            selectedPublicExam
-              ? t('simulado.namePlaceholder', { examName: selectedPublicExam.name, count: totalQuestions || '?' })
+            selectedCert
+              ? t('simulado.namePlaceholder', { examName: selectedCert.label, count: totalQuestions || '?' })
               : t('simulado.nameFallbackPlaceholder')
           }
           value={name}
           onValueChange={setName}
           {...inputProperties.input}
         />
-
         <Input
           label={t('simulado.totalQuestions')}
           min={1}
@@ -110,7 +125,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
       <div className="flex justify-end pt-2">
         <Button
           className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
-          isDisabled={!selectedPublicExam || !isDistributionValid}
+          isDisabled={!selectedCert || !isDistributionValid}
           isLoading={loading}
           onPress={handleCreate}
         >
@@ -126,7 +141,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
         <div className="flex flex-col">
           <Divider />
           <div className="flex items-center justify-between mt-4">
-            <p className="text-xs font-semibold">{t('simulado.distribution')}</p>
+            <p className="text-xs font-semibold">{t('simulado.distributionByTopic')}</p>
             <span className={`text-xs font-medium ${isDistributionValid ? 'text-success' : 'text-danger'}`}>
               {t('simulado.distributed', { distributed: distributedTotal, total })}
             </span>
@@ -135,10 +150,12 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
         <div className="bg-content1 border border-default-200 rounded-xl overflow-hidden">
           {distribution.map((s, i) => (
             <div
-              key={s.subjectName}
-              className={`flex items-center justify-between gap-4 px-4 py-3 ${i < distribution.length - 1 ? 'border-b border-default-200' : ''}`}
+              key={s.topicName}
+              className={`flex items-center justify-between gap-4 px-4 py-3 ${
+                i < distribution.length - 1 ? 'border-b border-default-200' : ''
+              }`}
             >
-              <span className="text-sm text-foreground flex-1">{s.subjectName}</span>
+              <span className="text-sm text-foreground flex-1">{s.topicName}</span>
               <Input
                 className="w-24 shrink-0"
                 classNames={{ inputWrapper: 'h-8' }}
@@ -147,7 +164,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
                 type="number"
                 value={String(s.questionCount)}
                 variant="bordered"
-                onValueChange={(v) => handleSubjectChange(s.subjectName, v)}
+                onValueChange={(v) => handleTopicChange(s.topicName, v)}
               />
             </div>
           ))}

@@ -71,7 +71,7 @@ function HeroSection() {
             <Button
               as={NextLink}
               className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
-              href="/certifications/quiz"
+              href="/certifications/simulados"
               size="lg"
             >
               {t('homepage.cta.startFreeTrial')}

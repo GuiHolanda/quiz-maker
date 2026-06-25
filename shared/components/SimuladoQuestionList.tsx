@@ -6,18 +6,10 @@ import { Progress } from '@heroui/progress';
 import { Tooltip } from '@heroui/tooltip';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { AnswersMap } from '@/shared/types';
+import { AnswersMap, SimuladoQuestion } from '@/shared/types';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
 import { ItemsPerPageSelect } from '@/shared/components/ui/ItemsPerPageSelect';
 import { QuestionCard } from '@/shared/components/QuestionCard';
-
-interface SimuladoQuestion {
-  readonly id: number;
-  readonly mockExamQuestionId: number;
-  readonly text: string;
-  readonly correctCount: number;
-  readonly options: Record<string, string>;
-}
 
 interface SimuladoQuestionListProps {
   readonly questions: SimuladoQuestion[];
@@ -30,7 +22,6 @@ export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFin
   const { t } = useTranslation();
   const [currentPage, setCurrentPage] = React.useState(1);
   const [questionsPerPage, setQuestionsPerPage] = React.useState<number>(5);
-  // draftAnswers keeps unsaved selections so they survive page changes
   const [draftAnswers, setDraftAnswers] = React.useState<AnswersMap>({});
 
   const totalPages = Math.max(1, Math.ceil(questions.length / questionsPerPage));
@@ -40,7 +31,6 @@ export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFin
   const answeredCount = Object.keys(answers).length;
   const allAnswered = answeredCount === questions.length;
 
-  // Questions with unsaved selection changes (draft differs from saved)
   const pendingQuestions = questions
     .map((q, i) => ({ q, globalIndex: i + 1 }))
     .filter(({ q }) => {
@@ -54,7 +44,6 @@ export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFin
     });
 
   const hasPending = pendingQuestions.length > 0;
-  // Confirmed = saved answers minus those with unsaved changes
   const confirmedCount = answeredCount - pendingQuestions.length;
   const canFinish = allAnswered && !hasPending;
 
@@ -63,7 +52,6 @@ export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFin
       const arr = Array.isArray(value) ? value : [value];
 
       onAnswerChange(questionId, arr);
-      // Clear draft for this question — it is now saved
       setDraftAnswers((prev) => {
         const next = { ...prev };
 

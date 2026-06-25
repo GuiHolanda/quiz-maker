@@ -6,8 +6,8 @@ import { Tab, Tabs } from '@heroui/tabs';
 import { NewSimuladoTab } from './components/NewSimuladoTab';
 import { SimuladosListTab } from './components/SimuladosListTab';
 
-import { MockExamsProvider } from '@/features/providers/mockExams.provider';
-import { PublicExamsProvider } from '@/features/providers/publicExams.provider';
+import { CertSimuladosProvider } from '@/features/providers/certSimulados.provider';
+import { CertificationsProvider } from '@/features/providers/certifications.provider';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 
@@ -21,9 +21,8 @@ function SimuladosPageContent() {
         <Tabs
           aria-label={t('simulado.pageTitle')}
           classNames={{
-            tabList: 'bg-content1 border border-default-200 rounded-xl gap-1',
-            tab: 'rounded-xl text-default-400 data-[selected=true]:text-foreground data-[selected=true]:font-semibold transition-colors duration-200',
-            tabContent: 'group-data-[selected=true]:text-foreground',
+            tabList: 'bg-default-100 border border-default-200 rounded-xl p-1 gap-1',
+            tab: 'text-default-400 data-[selected=true]:text-foreground data-[selected=true]:font-semibold',
             cursor: 'bg-primary rounded-xl',
             panel: 'pt-4',
           }}
@@ -42,12 +41,12 @@ function SimuladosPageContent() {
   );
 }
 
-export default function SimuladosPage() {
+export default function CertSimuladosPage() {
   return (
-    <PublicExamsProvider>
-      <MockExamsProvider>
+    <CertificationsProvider>
+      <CertSimuladosProvider>
         <SimuladosPageContent />
-      </MockExamsProvider>
-    </PublicExamsProvider>
+      </CertSimuladosProvider>
+    </CertificationsProvider>
   );
 }

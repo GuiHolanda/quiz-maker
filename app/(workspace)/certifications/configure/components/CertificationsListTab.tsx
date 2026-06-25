@@ -5,12 +5,13 @@ import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Button } from '@heroui/button';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faTrash } from '@fortawesome/free-solid-svg-icons';
 
 import { EditCertificationModal } from './EditCertificationModal';
 
 import { SectionsTable } from '@/shared/components/SectionsTable';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
 import { deleteCertification } from '@/features/connectors';
 import { Certification, CertificationTopic } from '@/shared/types';
@@ -84,17 +85,14 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
   return (
     <>
       {certifications.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-4 py-16 bg-content1 border border-default-200 rounded-xl text-center">
-          <p className="text-base font-semibold text-foreground">{t('certification.noCertificationsTitle')}</p>
-          <p className="text-sm text-default-500 max-w-sm">{t('certification.noCertificationsDescription')}</p>
-          <Button
-            className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200 mt-2"
-            startContent={<FontAwesomeIcon className="w-3.5 h-3.5" icon={faPlus} />}
-            onPress={onCreateNew}
-          >
-            {t('certification.tabNew')}
-          </Button>
-        </div>
+        <EmptyState
+          action={{
+            label: t('certification.tabNew'),
+            onPress: onCreateNew,
+          }}
+          description={t('certification.noCertificationsDescription')}
+          title={t('certification.noCertificationsTitle')}
+        />
       ) : (
         <Accordion
           className="mt-2 flex flex-col gap-2 px-0"

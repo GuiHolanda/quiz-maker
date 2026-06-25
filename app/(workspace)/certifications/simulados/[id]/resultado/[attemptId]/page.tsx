@@ -9,12 +9,12 @@ import { Accordion, AccordionItem } from '@heroui/accordion';
 import { ResultQuestionCard } from '@/shared/components/ResultQuestionCard';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import {
-  ensureMockExamAnswers,
-  getMockExamAttemptResult,
-  startMockExamAttempt,
-  getQuestionExplanation,
+  ensureCertSimuladoAnswers,
+  getCertSimuladoResult,
+  startCertSimuladoAttempt,
+  getCertificationQuestionExplanation,
 } from '@/features/connectors';
-import { MockExamResult, SimuladoResultQuestion } from '@/shared/types';
+import { CertSimuladoResult, SimuladoResultQuestion } from '@/shared/types';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 
@@ -25,27 +25,27 @@ function scoreColor(percent: number): 'success' | 'warning' | 'danger' {
   return 'danger';
 }
 
-export default function SimuladoResultadoPage() {
+export default function CertSimuladoResultadoPage() {
   const { t } = useTranslation();
   const params = useParams<{ id: string; attemptId: string }>();
   const router = useRouter();
-  const [result, setResult] = useState<MockExamResult | null>(null);
+  const [result, setResult] = useState<CertSimuladoResult | null>(null);
   const [isStarting, setIsStarting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
-      const data = await getMockExamAttemptResult(Number(params.id), Number(params.attemptId));
+      const data = await getCertSimuladoResult(Number(params.id), Number(params.attemptId));
 
       if (cancelled) return;
 
-      const hasMissingAnswer = data.questions.some((mq) => !mq.publicExamQuestion.answer);
+      const hasMissingAnswer = data.questions.some((sq) => !sq.question.answer);
 
       if (hasMissingAnswer) {
         try {
-          await ensureMockExamAnswers(Number(params.id));
-          const refreshed = await getMockExamAttemptResult(Number(params.id), Number(params.attemptId));
+          await ensureCertSimuladoAnswers(Number(params.id));
+          const refreshed = await getCertSimuladoResult(Number(params.id), Number(params.attemptId));
 
           if (!cancelled) setResult(refreshed);
 
@@ -81,22 +81,20 @@ export default function SimuladoResultadoPage() {
   const percent = total > 0 ? Math.round((correct / total) * 100) : 0;
   const color = scoreColor(percent);
 
-  const answersMap = new Map(result.attempt.answers.map((a) => [a.mockExamQuestionId, a.selectedOptions]));
+  const answersMap = new Map(result.attempt.answers.map((a) => [a.simuladoQuestionId, a.selectedOptions]));
 
-  const mappedQuestions: SimuladoResultQuestion[] = result.questions.map((mq) => ({
-    id: mq.publicExamQuestion.id,
-    simuladoQuestionId: mq.id,
-    order: mq.order,
-    groupLabel: mq.publicExamQuestion.subject ?? t('simulado.unknownSubject'),
-    text: mq.publicExamQuestion.text,
-    correctCount: mq.publicExamQuestion.correctCount,
-    options: mq.publicExamQuestion.options as Record<string, string>,
-    answer: mq.publicExamQuestion.answer
-      ? { correctOptions: mq.publicExamQuestion.answer.correctOptions as string[] }
-      : null,
+  const mappedQuestions: SimuladoResultQuestion[] = result.questions.map((sq) => ({
+    id: sq.question.id,
+    simuladoQuestionId: sq.id,
+    order: sq.order,
+    groupLabel: sq.question.topic,
+    text: sq.question.text,
+    correctCount: sq.question.correctCount,
+    options: sq.question.options as Record<string, string>,
+    answer: sq.question.answer ? { correctOptions: sq.question.answer.correctOptions as string[] } : null,
   }));
 
-  const questionsBySubject = mappedQuestions.reduce<Record<string, SimuladoResultQuestion[]>>((acc, q) => {
+  const questionsByTopic = mappedQuestions.reduce<Record<string, SimuladoResultQuestion[]>>((acc, q) => {
     if (!acc[q.groupLabel]) acc[q.groupLabel] = [];
     acc[q.groupLabel].push(q);
 
@@ -116,25 +114,23 @@ export default function SimuladoResultadoPage() {
   async function handleTryAgain() {
     setIsStarting(true);
     try {
-      const attempt = await startMockExamAttempt(Number(params.id));
+      const attempt = await startCertSimuladoAttempt(Number(params.id));
 
-      router.push(`/public-exams/simulados/${params.id}/tentativa/${attempt.id}`);
+      router.push(`/certifications/simulados/${params.id}/tentativa/${attempt.id}`);
     } finally {
       setIsStarting(false);
     }
   }
 
-  const examName = result.mockExam.name ?? result.mockExam.publicExam.name;
+  const examName = result.simulado.name ?? result.simulado.certLabel;
 
   return (
-    <>
-      <PageHeader subtitle={examName} title={t('simulado.scoreTitle')}>
-        <div className="flex flex-col gap-6">
-          {renderInfoCard()}
-          {renderSubjectAccordion()}
-        </div>
-      </PageHeader>
-    </>
+    <PageHeader subtitle={examName} title={t('simulado.scoreTitle')}>
+      <div className="flex flex-col gap-6">
+        {renderInfoCard()}
+        {renderTopicAccordion()}
+      </div>
+    </PageHeader>
   );
 
   function renderInfoCard() {
@@ -164,7 +160,7 @@ export default function SimuladoResultadoPage() {
           <Button color="primary" isLoading={isStarting} onPress={handleTryAgain}>
             {t('simulado.tryAgain')}
           </Button>
-          <Button variant="bordered" onPress={() => router.push('/public-exams/simulados')}>
+          <Button variant="bordered" onPress={() => router.push('/certifications/simulados')}>
             {t('simulado.backToList')}
           </Button>
         </div>
@@ -181,10 +177,10 @@ export default function SimuladoResultadoPage() {
     );
   }
 
-  function renderSubjectAccordion() {
+  function renderTopicAccordion() {
     return (
       <div>
-        <h2 className="font-semibold mb-3 text-foreground">{t('simulado.bySubject')}</h2>
+        <h2 className="font-semibold mb-3 text-foreground">{t('simulado.byTopic')}</h2>
         <Accordion
           className="flex flex-col gap-2 px-0"
           itemClasses={{
@@ -197,19 +193,19 @@ export default function SimuladoResultadoPage() {
           }}
           showDivider={false}
         >
-          {result!.subjectBreakdown.map((s) => {
-            const pct = s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
-            const questions = questionsBySubject[s.subjectName] ?? [];
+          {result!.topicBreakdown.map((tb) => {
+            const pct = tb.total > 0 ? Math.round((tb.correct / tb.total) * 100) : 0;
+            const questions = questionsByTopic[tb.topicName] ?? [];
 
             return (
               <AccordionItem
-                key={s.subjectName}
-                aria-label={s.subjectName}
+                key={tb.topicName}
+                aria-label={tb.topicName}
                 title={
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className="truncate flex-1 min-w-0">{s.subjectName}</span>
+                    <span className="truncate flex-1 min-w-0">{tb.topicName}</span>
                     <Chip className="shrink-0 font-semibold" color={scoreColor(pct)} size="sm" variant="flat">
-                      {s.correct}/{s.total} — {pct}%
+                      {tb.correct}/{tb.total} — {pct}%
                     </Chip>
                   </div>
                 }
@@ -222,7 +218,7 @@ export default function SimuladoResultadoPage() {
                       question={q}
                       selected={answersMap.get(q.simuladoQuestionId) ?? []}
                       showDivider={i > 0}
-                      onLoadExplanation={getQuestionExplanation}
+                      onLoadExplanation={getCertificationQuestionExplanation}
                     />
                   ))}
                 </div>
