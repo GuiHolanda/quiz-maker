@@ -17,7 +17,10 @@ declare module 'next-auth' {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma),
-  session: { strategy: 'jwt' },
+  // JWT expires after 8 hours of absolute time. Combined with the client-side
+  // inactivity timer (30 min), the effective idle timeout is 30 min while the
+  // hard maximum per login is 8 hours.
+  session: { strategy: 'jwt', maxAge: 8 * 60 * 60 },
   providers: [
     Credentials({
       credentials: {
@@ -54,6 +57,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { id: token.sub },
           select: { plan: true },
         });
+
         session.user.plan = dbUser?.plan ?? 'free';
       }
 

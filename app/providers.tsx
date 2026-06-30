@@ -10,6 +10,7 @@ import { ToastProvider } from '@heroui/toast';
 import { SessionProvider } from 'next-auth/react';
 
 import { LanguageProvider } from '@/features/providers/language.provider';
+import { useInactivityLogout } from '@/features/hooks/useInactivityLogout.hook';
 
 export interface ProvidersProps {
   children: React.ReactNode;
@@ -22,11 +23,18 @@ declare module '@react-types/shared' {
   }
 }
 
+function InactivityGuard() {
+  useInactivityLogout();
+
+  return null;
+}
+
 export function Providers({ children, themeProps }: ProvidersProps) {
   const router = useRouter();
 
   return (
     <SessionProvider>
+      <InactivityGuard />
       <LanguageProvider>
         <HeroUIProvider navigate={router.push}>
           <ToastProvider />

@@ -60,9 +60,22 @@ function parseCertificationData(text: string): ParsedCertResponse | null {
   }
 }
 
-function loadMessages(): ChatMessage[] {
+const LEGACY_AI_CHAT_KEY = 'AI_CHAT_MESSAGES';
+const LEGACY_AI_CHAT_FOLLOWUP_KEY = 'AI_CHAT_FOLLOWUP_TS';
+
+function loadMessages(userId: string): ChatMessage[] {
   try {
-    const stored = localStorage.getItem(AI_CHAT_LOCAL_STORAGE_KEY);
+    // One-time migration: copy messages stored under the pre-userId-scoping key
+    // and delete it so the next load uses the scoped key exclusively.
+    const legacy = localStorage.getItem(LEGACY_AI_CHAT_KEY);
+
+    if (legacy) {
+      localStorage.setItem(AI_CHAT_LOCAL_STORAGE_KEY(userId), legacy);
+      localStorage.removeItem(LEGACY_AI_CHAT_KEY);
+      localStorage.removeItem(LEGACY_AI_CHAT_FOLLOWUP_KEY);
+    }
+
+    const stored = localStorage.getItem(AI_CHAT_LOCAL_STORAGE_KEY(userId));
 
     if (!stored) return [];
 
@@ -72,8 +85,8 @@ function loadMessages(): ChatMessage[] {
   }
 }
 
-export function useAiChat(): UseAiChatReturn {
-  const [messages, setMessages] = useState<ChatMessage[]>(loadMessages);
+export function useAiChat(userId: string): UseAiChatReturn {
+  const [messages, setMessages] = useState<ChatMessage[]>(() => loadMessages(userId));
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [currentStreamContent, setCurrentStreamContent] = useState('');
@@ -83,9 +96,15 @@ export function useAiChat(): UseAiChatReturn {
   const followUpTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { t, language } = useTranslation();
 
+  // Persist messages to user-scoped localStorage key.
+  // Guard: skip the write on the same render tick where userId just changed —
+  // prevUserIdRef is updated synchronously inside the userId-change effect,
+  // so if they differ here we know we are in the transition render and the
+  // in-memory messages still belong to the previous user.
   useEffect(() => {
-    localStorage.setItem(AI_CHAT_LOCAL_STORAGE_KEY, JSON.stringify(messages));
-  }, [messages]);
+    if (prevUserIdRef.current !== userId) return;
+    localStorage.setItem(AI_CHAT_LOCAL_STORAGE_KEY(userId), JSON.stringify(messages));
+  }, [messages, userId]);
 
   const reset = useCallback(() => {
     abortControllerRef.current?.abort();
@@ -95,13 +114,40 @@ export function useAiChat(): UseAiChatReturn {
     setInput('');
     setIsStreaming(false);
     setCurrentStreamContent('');
-    localStorage.removeItem(AI_CHAT_LOCAL_STORAGE_KEY);
+    localStorage.removeItem(AI_CHAT_LOCAL_STORAGE_KEY(userId));
     if (followUpTimerRef.current) {
       clearTimeout(followUpTimerRef.current);
       followUpTimerRef.current = null;
     }
-    localStorage.removeItem(AI_CHAT_FOLLOWUP_TIMESTAMP_KEY);
-  }, []);
+    localStorage.removeItem(AI_CHAT_FOLLOWUP_TIMESTAMP_KEY(userId));
+  }, [userId]);
+
+  // When userId changes (user logged out and a different user logged in),
+  // reset all state and load the new user's messages from their scoped key.
+  const prevUserIdRef = useRef(userId);
+
+  useEffect(() => {
+    if (prevUserIdRef.current === userId) return;
+    const outgoingUserId = prevUserIdRef.current;
+
+    prevUserIdRef.current = userId;
+
+    // Remove the outgoing user's follow-up timer key so it doesn't fire
+    // unexpectedly if they log back in on this device.
+    localStorage.removeItem(AI_CHAT_FOLLOWUP_TIMESTAMP_KEY(outgoingUserId));
+
+    abortControllerRef.current?.abort();
+    pendingEditalRef.current = null;
+    if (followUpTimerRef.current) {
+      clearTimeout(followUpTimerRef.current);
+      followUpTimerRef.current = null;
+    }
+    setPendingFile(null);
+    setInput('');
+    setIsStreaming(false);
+    setCurrentStreamContent('');
+    setMessages(loadMessages(userId));
+  }, [userId]);
 
   const scheduleFollowUpReset = useCallback(
     (expiresAt: number) => {
@@ -118,24 +164,24 @@ export function useAiChat(): UseAiChatReturn {
       clearTimeout(followUpTimerRef.current);
       followUpTimerRef.current = null;
     }
-    localStorage.removeItem(AI_CHAT_FOLLOWUP_TIMESTAMP_KEY);
-  }, []);
+    localStorage.removeItem(AI_CHAT_FOLLOWUP_TIMESTAMP_KEY(userId));
+  }, [userId]);
 
   const markFollowUpInactivity = useCallback(() => {
     const expiresAt = Date.now() + AI_CHAT_INACTIVITY_TIMEOUT_MS;
 
-    localStorage.setItem(AI_CHAT_FOLLOWUP_TIMESTAMP_KEY, String(expiresAt));
+    localStorage.setItem(AI_CHAT_FOLLOWUP_TIMESTAMP_KEY(userId), String(expiresAt));
     scheduleFollowUpReset(expiresAt);
-  }, [scheduleFollowUpReset]);
+  }, [scheduleFollowUpReset, userId]);
 
   useEffect(() => {
-    const raw = localStorage.getItem(AI_CHAT_FOLLOWUP_TIMESTAMP_KEY);
+    const raw = localStorage.getItem(AI_CHAT_FOLLOWUP_TIMESTAMP_KEY(userId));
 
     if (!raw) return;
     const expiresAt = parseInt(raw, 10);
 
     if (!Number.isFinite(expiresAt)) {
-      localStorage.removeItem(AI_CHAT_FOLLOWUP_TIMESTAMP_KEY);
+      localStorage.removeItem(AI_CHAT_FOLLOWUP_TIMESTAMP_KEY(userId));
 
       return;
     }
@@ -147,7 +193,7 @@ export function useAiChat(): UseAiChatReturn {
         followUpTimerRef.current = null;
       }
     };
-  }, [scheduleFollowUpReset]);
+  }, [scheduleFollowUpReset, userId]);
 
   const sendMessage = useCallback(async () => {
     if ((input.trim() === '' && !pendingEditalRef.current) || isStreaming) return;
@@ -275,7 +321,10 @@ export function useAiChat(): UseAiChatReturn {
       setMessages((prev) => [...prev, assistantMsg]);
 
       if (accumulated.includes('[ENCERRAR_SESSAO]')) {
-        setTimeout(() => reset(), 1500);
+        // Store in followUpTimerRef so userId-change cleanup can cancel it
+        // if the user switches accounts within the 1500ms window.
+        if (followUpTimerRef.current) clearTimeout(followUpTimerRef.current);
+        followUpTimerRef.current = setTimeout(() => reset(), 1500);
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
@@ -299,7 +348,7 @@ export function useAiChat(): UseAiChatReturn {
       setIsStreaming(false);
       setCurrentStreamContent('');
     }
-  }, [input, isStreaming, messages, t, language, clearFollowUpInactivity]);
+  }, [input, isStreaming, messages, t, language, clearFollowUpInactivity, reset]);
 
   const handleEditalUpload = useCallback(
     (file: File) => {

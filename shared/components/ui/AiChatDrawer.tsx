@@ -17,9 +17,10 @@ import { AiChatExamDraftCard } from '@/shared/components/ui/AiChatExamDraftCard'
 interface AiChatDrawerProps {
   readonly isOpen: boolean;
   readonly onClose: () => void;
+  readonly userId: string;
 }
 
-export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
+export function AiChatDrawer({ isOpen, onClose, userId }: AiChatDrawerProps) {
   const { t } = useTranslation();
   const {
     messages,
@@ -34,7 +35,7 @@ export function AiChatDrawer({ isOpen, onClose }: AiChatDrawerProps) {
     cancelPendingFile,
     injectAssistantMessage,
     markFollowUpInactivity,
-  } = useAiChat();
+  } = useAiChat(userId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

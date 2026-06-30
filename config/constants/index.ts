@@ -12,9 +12,11 @@ export const QUIZ_LOCAL_STORAGE_KEY = 'QUIZ';
 export const CERTIFICATIONS_LOCAL_STORAGE_KEY = 'CERTIFICATIONS';
 export const PUBLIC_EXAMS_LOCAL_STORAGE_KEY = 'PUBLIC_EXAMS';
 export const LANGUAGE_LOCAL_STORAGE_KEY = 'app-language';
-export const AI_CHAT_LOCAL_STORAGE_KEY = 'AI_CHAT_MESSAGES';
-export const AI_CHAT_FOLLOWUP_TIMESTAMP_KEY = 'AI_CHAT_FOLLOWUP_TS';
+export const AI_CHAT_LOCAL_STORAGE_KEY = (userId: string) => `AI_CHAT_MESSAGES_${userId}`;
+export const AI_CHAT_FOLLOWUP_TIMESTAMP_KEY = (userId: string) => `AI_CHAT_FOLLOWUP_TS_${userId}`;
 export const AI_CHAT_INACTIVITY_TIMEOUT_MS = 60 * 60 * 1000;
+// Auto-logout after 30 minutes of no mouse/keyboard/touch activity while chat is open
+export const AI_CHAT_LOGOUT_INACTIVITY_MS = 30 * 60 * 1000;
 export const QUESTIONS_PER_PAGE_OPTIONS = [
   { key: '1', label: '1' },
   { key: '5', label: '5' },

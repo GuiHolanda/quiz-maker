@@ -11,13 +11,15 @@ export function AiChatWrapper() {
   const { data: session, status } = useSession();
   const [isOpen, setIsOpen] = useState(false);
 
+  const userId = session?.user?.id ?? '';
+
   if (status !== 'authenticated') return null;
   if (!AI_CHAT_PLANS.includes(session?.user?.plan ?? '')) return null;
 
   return (
     <>
       {!isOpen && <AiChatFab onPress={() => setIsOpen(true)} />}
-      <AiChatDrawer isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      <AiChatDrawer isOpen={isOpen} userId={userId} onClose={() => setIsOpen(false)} />
     </>
   );
 }
