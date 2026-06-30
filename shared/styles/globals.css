@@ -92,18 +92,6 @@
 	appearance: textfield;
 }
 
-/* ── Auth Background ─────────────────────────────────────── */
-
-.auth-bg {
-  position: relative;
-  min-height: calc(100vh - 4rem);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem 1rem;
-  color: aquamarine;
-}
-
 /* ── App Page Background ─────────────────────────────────── */
 
 .app-bg {
