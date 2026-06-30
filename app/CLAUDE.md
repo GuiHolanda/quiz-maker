@@ -38,7 +38,8 @@ bg-default-100       → backgrounds sutis (hover, tabs inativos)
 | Classe CSS | Onde usar |
 |---|---|
 | `.app-bg` | Todas as páginas autenticadas (quiz, generate, configure) |
-| `.auth-bg` | Páginas de autenticação (login, register, forgot-password) |
+
+As páginas de auth (login, register, forgot-password, reset-password) usam um layout próprio em duas colunas (`AuthSplitLayout` em `app/(auth)/components/AuthSplitLayout.tsx`) e **não** dependem de `.auth-bg`. Veja `app/(auth)/layout.tsx`.
 
 ```tsx
 // Página autenticada
@@ -48,12 +49,10 @@ bg-default-100       → backgrounds sutis (hover, tabs inativos)
   </div>
 </div>
 
-// Página de auth
-<div className="auth-bg">
-  <div className="bg-content1 border border-default-200 rounded-2xl p-8 w-full max-w-md">
-    ...
-  </div>
-</div>
+// Página de auth — usa AuthSplitLayout
+<AuthSplitLayout>
+  {/* conteúdo do form */}
+</AuthSplitLayout>
 ```
 
 ### Classes CSS custom (`styles/globals.css`)
@@ -61,7 +60,6 @@ bg-default-100       → backgrounds sutis (hover, tabs inativos)
 | Classe | Uso |
 |---|---|
 | `.app-bg` | min-height para páginas autenticadas |
-| `.auth-bg` | Flex centering para páginas de auth |
 | `.page-header-title` | font-size: 2rem, font-weight: 800 |
 | `.page-header-subtitle` | font-size: 0.9rem |
 
@@ -182,6 +180,24 @@ import { inputProperties } from '@/config/constants/inputStyles';
 | Transição | `transition-colors duration-200` |
 
 O `bordered` usa fundo transparente + borda semântica, com foco mudando para indigo. Funciona em dark e light mode automaticamente.
+
+### Regra obrigatória: `label` exige `placeholder`
+
+`inputProperties.input` define `labelPlacement: 'outside'`. No HeroUI v2, o label **só renderiza acima do campo quando `placeholder` está presente** — sem placeholder o label colapsa para dentro do input como floating, dando a aparência de "só placeholder, sem label". Portanto:
+
+```tsx
+// ❌ Errado — label vai aparecer dentro do campo como floating
+<Input label={t('login.emailLabel')} {...inputProperties.input} />
+
+// ✅ Certo — passar placeholder em todo Input/Select/PasswordInput com label
+<Input label={t('login.emailLabel')} placeholder={t('login.emailPlaceholder')} {...inputProperties.input} />
+```
+
+Quando não houver dica útil para o placeholder, use `placeholder=" "` (espaço em branco) como fallback documentado — mas a UX é melhor com texto descritivo (ex.: "voce@exemplo.com", "Sua senha"). Vale para `<Input>`, `<Select>` e `<PasswordInput>` igualmente.
+
+### Senhas — sempre `PasswordInput`
+
+Para campos de senha, use `<PasswordInput>` (`shared/components/ui/PasswordInput.tsx`) em vez de `<Input type="password">`. Ele já inclui toggle de visibilidade (olho/olho-cortado), labels acessíveis traduzidos, e o spread de `inputProperties.input`. Aceita todas as props do `<Input>` exceto `type` e `endContent` (controlados internamente).
 
 ---
 
@@ -323,7 +339,23 @@ Toda i18n: `title`, `description` e `action.label` sempre via `t('chave')`. Para
 
 ## Estrutura de páginas e componentes
 
-### Homepage (`app/page.tsx`)
+### Arquitetura de layouts — Route Groups
+
+`app/layout.tsx` (raiz) **não renderiza Navbar/Footer/AiChat**. Esses elementos são aplicados pelos layouts de cada route group:
+
+| Group | Layout | Chrome renderizada | Rotas |
+|---|---|---|---|
+| `(marketing)` | `app/(marketing)/layout.tsx` | Navbar + Footer | `/` (homepage), futuras `/privacy`, `/terms`, etc. |
+| `(workspace)` | `app/(workspace)/layout.tsx` | Navbar + Footer + AiChatWrapper | `/certifications/*`, `/public-exams/*`, `/billing` |
+| `(auth)` | `app/(auth)/layout.tsx` | Top bar minimalista (chip MyQuiz + LanguageSwitch) | `/login`, `/register`, `/forgot-password`, `/reset-password` |
+| `admin/` (não é group) | `app/admin/layout.tsx` | Sidebar admin própria | `/admin/*` |
+
+Route groups (`(name)`) são transparentes na URL — `app/(marketing)/page.tsx` continua servindo `/`. Para criar uma página nova:
+- **Pública sem login (marketing)** → `app/(marketing)/<rota>/page.tsx` e adicionar em `publicRoutePrefixes` de `auth.config.ts` (ou tratamento exato para `/`).
+- **Autenticada** → `app/(workspace)/<rota>/page.tsx`.
+- **Auth flow** → `app/(auth)/<rota>/page.tsx` e adicionar prefixo em `publicRoutePrefixes`.
+
+### Homepage (`app/(marketing)/page.tsx`)
 
 Página pública, fundo `bg-background`, `'use client'`.
 
@@ -416,12 +448,18 @@ Página unificada (HeroUI Tabs) com aba **Gerar** e aba **Biblioteca**, mesmo pa
 | `[id]/tentativa/[attemptId]/page.tsx` | Interface interativa de resposta (usa `shared/components/SimuladoQuestionList`) |
 | `[id]/resultado/[attemptId]/page.tsx` | Página de resultados com breakdown por matéria; faz fallback chamando `ensureMockExamAnswers` se detectar questões sem `answer` |
 
-### Login / Auth (`app/login/`)
+### Login / Auth (`app/(auth)/`)
+
+Grupo de rotas com layout próprio (`app/(auth)/layout.tsx`) **sem** Navbar/Footer/AiChat — apenas uma top bar discreta com a chip da marca e o `LanguageSwitch`. O conteúdo das páginas usa `AuthSplitLayout` (painel indigo à esquerda + form à direita).
 
 | Arquivo | Papel |
 |---|---|
-| `page.tsx` | Layout `.auth-bg` |
-| `components/LoginForm.tsx` | Email + senha + Google OAuth + links |
+| `layout.tsx` | Wrapper minimalista de auth (sem chrome global) |
+| `components/AuthSplitLayout.tsx` | Layout em duas colunas (marca + form) reutilizado por todas as páginas auth |
+| `login/components/LoginForm.tsx` | Email + senha (com `PasswordInput`) + Google OAuth |
+| `register/components/RegisterForm.tsx` | Nome + email + senha + criar conta |
+| `forgot-password/components/ForgotPasswordForm.tsx` | Pedir reset por e-mail |
+| `reset-password/components/ResetPasswordForm.tsx` | Trocar senha via token de e-mail |
 
 ---
 
@@ -457,6 +495,7 @@ Layout completamente separado do `(workspace)` — usa sidebar própria, sem o n
 | `SkeletonListLoader.tsx` | Skeleton placeholder para listas que dependem de fetch (HeroUI Skeleton, props `count`/`height`/`className`). Usado pelos list tabs de certificações, concursos e simulados durante o carregamento inicial do provider. |
 | `EmptyState.tsx` | Card padrão de "sem dados" — título obrigatório, descrição opcional, e CTA opcional via `action: { label, href?, onPress?, icon? }`. `href` renderiza com `NextLink`; `onPress` é callback. Ícone padrão `faPlus`. Ver seção dedicada abaixo. |
 | `FormAccordion.tsx` | Accordion com `<Form>` integrado, BusyDialog e footer de ações |
+| `PasswordInput.tsx` | Wrapper de `<Input>` com toggle olho/olho-cortado (`faEye`/`faEyeSlash`). Gerencia `type=password\|text` internamente, spread de `inputProperties.input` por padrão. Botão `tabIndex={-1}` + `onMouseDown.preventDefault()` para não roubar foco. `aria-label` via `aria.showPassword`/`aria.hidePassword`. **Sempre passar `placeholder` quando usar `labelPlacement="outside"` — ver seção "Padrão de inputs".** |
 | `PaginationControls.tsx` | Botões prev/next reutilizáveis |
 | `ItemsPerPageSelect.tsx` | Select de itens por página |
 | `PlanBadge.tsx` | Chip de plano do usuário (Free/Pro) com link para billing |
@@ -728,6 +767,7 @@ Transição:   transition-colors duration-200 (cards, inputs)
 - [ ] Componente marcado com `'use client'` se usar hooks
 - [ ] Componentes page-specific em `app/(workspace)/<dominio>/<pagina>/components/`, nunca em `shared/components/`
 - [ ] Usar HeroUI para todos os elementos de UI
+- [ ] **`<Input>`/`<Select>`/`<PasswordInput>` com `label` SEMPRE acompanhados de `placeholder`** — sem isso o label colapsa para dentro do campo como floating. Para campos de senha use `<PasswordInput>` (toggle de visibilidade incluso).
 - [ ] Usar tokens semânticos, nunca cores hard-coded
 - [ ] Verificar em dark e light mode
 - [ ] Chamadas HTTP via `useRequest` — nunca `useState` + `try/catch` manual
