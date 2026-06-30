@@ -1,6 +1,8 @@
 import type { NextAuthConfig } from 'next-auth';
 
-const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password'];
+// Prefix-matched public routes. The homepage `/` is handled by an exact match
+// in `authorized` to avoid matching every other path (startsWith('/') is always true).
+const publicRoutePrefixes = ['/login', '/register', '/forgot-password', '/reset-password'];
 
 export default {
   providers: [],
@@ -11,7 +13,10 @@ export default {
     authorized({ auth, request }) {
       const { pathname } = request.nextUrl;
       const isLoggedIn = !!auth?.user;
-      const isPublicRoute = publicRoutes.some((r) => pathname.startsWith(r)) || pathname.startsWith('/api/auth');
+      const isPublicRoute =
+        pathname === '/' ||
+        publicRoutePrefixes.some((r) => pathname.startsWith(r)) ||
+        pathname.startsWith('/api/auth');
 
       if (isPublicRoute) return true;
 
