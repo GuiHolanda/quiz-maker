@@ -490,6 +490,8 @@ Layout completamente separado do `(workspace)` — usa sidebar própria, sem o n
 | `usePublicExamsContext.hook.ts` | Acesso ao estado de concursos do `PublicExamsProvider` |
 | `useQuizContext.hook.ts` | Acesso ao estado do quiz do `QuizProvider` |
 | `useMockExamsContext` | Exportado direto de `features/providers/mockExams.provider.tsx` |
+| `useAiChat.hook.ts` | Estado completo do AI chat — mensagens, streaming, upload de edital, inatividade. Recebe `userId` e isola o histórico em localStorage por usuário. Ver seção abaixo. |
+| `useInactivityLogout.hook.ts` | Auto-logout por inatividade — monitora eventos de interação na janela toda e chama `signOut()` após 30 min sem atividade. Ver seção abaixo. |
 
 ### `useRequest` — padrão para chamadas HTTP
 
@@ -533,6 +535,68 @@ de detalhe visível no call site durante revisão de código.
 `useRequest` já mostra toast em erro HTTP — **não duplicar** no `catch` do componente.
 
 Sempre mostre feedback em mutations (save/update/delete), tanto em sucesso quanto em erro.
+
+---
+
+## Sessão, auto-logout por inatividade e AI chat history
+
+### Auto-logout global — `useInactivityLogout`
+
+`features/hooks/useInactivityLogout.hook.ts` monitora eventos de interação (`mousemove`, `mousedown`, `keydown`, `touchstart`, `scroll`) na janela toda. Após `AI_CHAT_LOGOUT_INACTIVITY_MS` (30 min, definido em `config/constants/index.ts`) sem qualquer evento, chama `signOut({ callbackUrl: '/login' })`.
+
+O hook é ativado via o componente interno `<InactivityGuard />` em `app/providers.tsx` — ele roda para **qualquer usuário autenticado**, em todas as páginas, independentemente do AI chat estar aberto.
+
+```tsx
+// app/providers.tsx (padrão atual)
+function InactivityGuard() {
+  useInactivityLogout();  // só ativo quando status === 'authenticated'
+  return null;
+}
+// … inserido como filho direto de <SessionProvider>
+```
+
+**Regra:** Nunca mova `<InactivityGuard />` para fora do `<SessionProvider>` — o hook usa `useSession()` e quebraria.
+
+### JWT maxAge — `auth.ts`
+
+`session: { strategy: 'jwt', maxAge: 8 * 60 * 60 }` — o cookie JWT expira **8 horas** após o login, independentemente de atividade. Garante que sessões abertas em dispositivos compartilhados ou esquecidos expirem mesmo sem interação do usuário.
+
+Para alterar o timeout de inatividade (30 min) ou o ceiling da sessão (8h), edite apenas as constantes em `config/constants/index.ts`:
+
+```ts
+export const AI_CHAT_LOGOUT_INACTIVITY_MS = 30 * 60 * 1000;  // inatividade → signOut()
+// maxAge em auth.ts é independente e deve ser >= AI_CHAT_LOGOUT_INACTIVITY_MS
+```
+
+### AI chat — histórico isolado por usuário
+
+`useAiChat(userId)` isola o histórico em localStorage por usuário. As chaves são funções:
+
+```ts
+AI_CHAT_LOCAL_STORAGE_KEY(userId)       // "AI_CHAT_MESSAGES_<userId>"
+AI_CHAT_FOLLOWUP_TIMESTAMP_KEY(userId)  // "AI_CHAT_FOLLOWUP_TS_<userId>"
+```
+
+Quando `userId` muda (troca de usuário no mesmo browser), o hook:
+1. Aborta o stream em andamento
+2. Limpa timers de inatividade de follow-up
+3. Zera todo o estado em memória
+4. Carrega o histórico do novo usuário do localStorage
+
+`AiChatWrapper.tsx` extrai o `userId` da sessão e passa para `AiChatDrawer`, que repassa para `useAiChat`:
+
+```tsx
+// AiChatWrapper
+const userId = session?.user?.id ?? '';
+// ...
+<AiChatDrawer isOpen={isOpen} userId={userId} onClose={...} />
+```
+
+**Invariante:** Nunca use `useAiChat()` sem `userId` ou com string estática — isso colapsaria o histórico de todos os usuários na mesma chave.
+
+### O que NÃO testar unitariamente (fora de escopo)
+
+`useInactivityLogout` e `useAiChat` são React hooks que dependem de `window`, timers, `useSession` e streaming HTTP. Sem infraestrutura de UI testing (React Testing Library + jsdom), estes hooks estão fora do escopo de testes unitários — comportamento validado por integração manual.
 
 ---
 

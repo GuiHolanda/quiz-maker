@@ -506,6 +506,36 @@ Features that require specific plans are hidden at the UI layer as well as enfor
 
 ---
 
+## Session & Inactivity Policy
+
+### JWT expiration (server)
+
+`auth.ts` configures `session: { strategy: 'jwt', maxAge: 8 * 60 * 60 }` — JWT cookie expires **8 hours** after login regardless of activity. On the next request after expiry, NextAuth invalidates the session and the `authorized` callback in `auth.config.ts` redirects to `/login`.
+
+Do **not** increase `maxAge` without explicit approval — it directly impacts security on shared or unattended devices.
+
+### Inactivity auto-logout (client)
+
+`features/hooks/useInactivityLogout.hook.ts` monitors `mousemove`, `mousedown`, `keydown`, `touchstart`, and `scroll` events on `window`. If no event fires within `AI_CHAT_LOGOUT_INACTIVITY_MS` (30 minutes, in `config/constants/index.ts`), it calls `signOut({ callbackUrl: '/login' })`.
+
+The hook is wired **globally** via `<InactivityGuard />` in `app/providers.tsx` — it runs for every authenticated user on every page, not just inside the AI chat. It activates when `status === 'authenticated'` and tears down cleanly on logout or unmount.
+
+**Combined policy:**
+| Trigger | Timeout | Layer |
+|---|---|---|
+| No interaction (mouse/key/touch/scroll) | 30 min | Client (`useInactivityLogout`) |
+| Absolute session ceiling from last login | 8 h | Server (JWT `maxAge`) |
+
+### AI chat history isolation
+
+Chat messages are scoped to the authenticated user via user-specific localStorage keys:
+- `AI_CHAT_MESSAGES_{userId}` — message history
+- `AI_CHAT_FOLLOWUP_TS_{userId}` — inactivity follow-up timer
+
+The keys are computed by `AI_CHAT_LOCAL_STORAGE_KEY(userId)` and `AI_CHAT_FOLLOWUP_TIMESTAMP_KEY(userId)` (both functions in `config/constants/index.ts`). When `useAiChat(userId)` detects a `userId` change (e.g., user A logs out and user B logs in on the same device), it aborts any active stream, clears all in-memory state, and loads user B's messages from their own key. User A's history is never shown to user B.
+
+---
+
 ## Database
 
 Two environments, two schemas:
