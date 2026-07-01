@@ -9,7 +9,8 @@ import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleCheck, faCircleInfo, faXmark } from '@fortawesome/free-solid-svg-icons';
 
-import { BrowsePublicExamQuestionsContent } from './components/BrowsePublicExamQuestionsContent';
+import { BrowseCategoriesView } from '@/shared/components/browse/BrowseCategoriesView';
+import { publicExamBrowseConfig } from '@/shared/browse-configs/publicExamBrowseConfig';
 import { GeneratedPublicExamQuestionsList } from './components/GeneratedPublicExamQuestionsList';
 import { PublicExamQuestionGeneratorForm } from './components/PublicExamQuestionGeneratorForm';
 
@@ -92,7 +93,11 @@ function PublicExamsQuestionsPageContent() {
     return (
       <>
         {renderSimuladosBanner()}
-        <BrowsePublicExamQuestionsContent embedded onGenerateClick={() => setSelectedTab('generate')} />
+        <BrowseCategoriesView
+          config={publicExamBrowseConfig}
+          embedded
+          onGenerateClick={() => setSelectedTab('generate')}
+        />
       </>
     );
   }

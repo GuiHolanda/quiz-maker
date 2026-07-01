@@ -9,7 +9,8 @@ import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleCheck, faCircleInfo, faXmark } from '@fortawesome/free-solid-svg-icons';
 
-import { BrowseQuestionsContent } from './components/BrowseQuestionsContent';
+import { BrowseCategoriesView } from '@/shared/components/browse/BrowseCategoriesView';
+import { certificationBrowseConfig } from '@/shared/browse-configs/certificationBrowseConfig';
 import { GeneratedQuestionsList } from './components/GeneratedQuestionsList';
 import { QuestionGeneratorForm } from './components/QuestionGeneratorForm';
 
@@ -105,7 +106,11 @@ function CertificationsQuestionsPageContent() {
     return (
       <>
         {renderSimuladosBanner()}
-        <BrowseQuestionsContent embedded onGenerateClick={() => setSelectedTab('generate')} />
+        <BrowseCategoriesView
+          config={certificationBrowseConfig}
+          embedded
+          onGenerateClick={() => setSelectedTab('generate')}
+        />
       </>
     );
   }

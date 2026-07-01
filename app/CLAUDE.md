@@ -322,18 +322,76 @@ interface EmptyStateProps {
 
 ### Propagação do callback entre páginas/abas
 
-Quando o `EmptyState` está dentro de um filho (ex.: `BrowseQuestionsContent`, `SimuladosListTab`) cuja página pai controla as abas, o filho expõe uma prop opcional (`onGenerateClick?`, `onCreateNew?`) e a página pai passa o setter de aba como callback. Filho sem callback → `EmptyState` aparece sem CTA.
+Quando o `EmptyState` está dentro de um filho (ex.: `<BrowseCategoriesView>`, `SimuladosListTab`) cuja página pai controla as abas, o filho expõe uma prop opcional (`onGenerateClick?`, `onCreateNew?`) e a página pai passa o setter de aba como callback. Filho sem callback → `EmptyState` aparece sem CTA.
 
 ### Onde já é usado
 
 - `CertificationsListTab` / `PublicExamsListTab` — "sem certificações/concursos" com `onPress` para a aba "New"
 - Cert e concurso `questions/page.tsx` Generate tab — guard com `href` para `/.../configure`
-- `BrowseQuestionsContent` / `BrowsePublicExamQuestionsContent` — "sem questões salvas" com `onPress` para a aba "Gerar"
+- `BrowseCategoriesView` (usado nas duas rotas de `questions/`) — "sem questões salvas" com `onPress` para a aba "Gerar"
 - Cert e concurso `SimuladosListTab` — "sem simulados" com `onPress` para a aba "New"
 
 ### Copy
 
 Toda i18n: `title`, `description` e `action.label` sempre via `t('chave')`. Para "sem dados", convencionar pares `*.noXTitle` / `*.noXDescription` / `*.tabNew` (ou similar) — descrição deve dizer **o que fazer a seguir**, não apenas repetir o título.
+
+---
+
+## Padrão de browse — accordion aninhado genérico
+
+Para bibliotecas de questões (certificações e concursos) o padrão é **accordion aninhado em coluna única com search** parametrizado por um único componente `<BrowseCategoriesView>` que recebe um `BrowseDomainConfig`. Categoria expande subcategoria, subcategoria expande a lista de questões, que ocupa toda a largura da página. Nunca criar wrappers de accordion aninhado por domínio — o generic já cobre.
+
+### Arquitetura
+
+```
+shared/components/browse/
+├── BrowseCategoriesView.tsx          ← orchestrator: search + accordion aninhado + estado
+├── BrowseQuestionsToolbar.tsx        ← counter + select-all + trash bulk (dentro de cada subcategoria)
+└── types.ts                          ← BrowseCategoryNode, BrowseDomainConfig<T>
+
+shared/browse-configs/
+├── certificationBrowseConfig.ts      ← adapter para BrowseSummary + endpoints de certs
+└── publicExamBrowseConfig.ts         ← adapter para PublicExamBrowseSummary + endpoints de concursos
+```
+
+### Como consumir
+
+Diretamente da `page.tsx`:
+
+```tsx
+'use client';
+import { BrowseCategoriesView } from '@/shared/components/browse/BrowseCategoriesView';
+import { certificationBrowseConfig } from '@/shared/browse-configs/certificationBrowseConfig';
+
+// dentro do JSX da aba Browse:
+<BrowseCategoriesView
+  config={certificationBrowseConfig}
+  embedded
+  onGenerateClick={() => setSelectedTab('generate')}
+/>
+```
+
+Para adicionar um terceiro domínio (ex.: cursos livres): criar um novo `BrowseDomainConfig` mapeando `fetchSummary`, `mapSummary`, `fetchQuestions`, `deleteQuestion` e `i18nPrefix`. Nenhum componente novo é necessário.
+
+### Delete (single + bulk)
+
+A lógica de delete está no hook `features/hooks/useBrowseQuestionsDelete.hook.ts`. Ele encapsula estado do modal, `Promise.allSettled` para partial-failures, e toasts. `CategoryQuestionsPanel` já o consome. **Nunca duplicar essa lógica em outros componentes.**
+
+Comportamento:
+- **Single delete** — cada linha tem um trash inline (visível no hover no desktop, sempre visível no mobile). Clique → modal `browse.singleDeleteConfirm{Title,Body}`.
+- **Bulk delete** — checkbox por linha (Gmail-style, aparece no hover) + toolbar com trash. Clique → modal `browse.bulkDeleteConfirm{Title,Body}`.
+
+### i18n prefix
+
+Cada `BrowseDomainConfig` declara `i18nPrefix: 'browse' | 'concurso.browse'`. O view resolve `${prefix}.title`, `${prefix}.subtitle`, `${prefix}.searchPlaceholder`, `${prefix}.noQuestions*`, `${prefix}.generateCta`, `${prefix}.searchNoResults`. Chaves de baixo-nível (`browse.hasAnswer`, `browse.optionsSectionLabel`, `browse.bulkDeleteConfirm*`, etc.) são **compartilhadas** entre os domínios e ficam no namespace `browse.*`.
+
+### Regras visuais reforçadas
+
+- Row hover: `bg-primary/5` (indigo sutil) — nunca `bg-content2` (colide com chips `default flat`).
+- Row selecionada / expandida: `bg-primary/10 border-l-2 border-l-primary`.
+- Row com checkbox marcado (não expandida): `bg-primary/5`.
+- Tags padronizadas: todas usam `<Chip size="sm" variant="flat">`; a hierarquia visual vem da cor (colorido = status; default = neutros como difficulty/topic).
+- Search input sticky no topo, com filtro case+diacritic-insensitive (`.normalize('NFD')`) e `useDeferredValue` para não travar a árvore em queries longas.
 
 ---
 
@@ -377,15 +435,10 @@ Página unificada (HeroUI Tabs) com aba **Gerar** (form + lista de questões ger
 
 | Arquivo | Papel |
 |---|---|
-| `page.tsx` | Providers (`CertificationsProvider` + `QuizProvider`) + Tabs + sync com `?tab=` |
+| `page.tsx` | Providers (`CertificationsProvider` + `QuizProvider`) + Tabs + sync com `?tab=`. Aba Browse renderiza `<BrowseCategoriesView config={certificationBrowseConfig} embedded onGenerateClick={...} />` diretamente |
 | `components/QuestionGeneratorForm.tsx` | Form de configuração (certification, topic, count) |
 | `components/GeneratedQuestionsList.tsx` | Lista com select-all, salvar/descartar; `onSaved` auto-troca para Biblioteca |
 | `components/GeneratedQuestionsCard.tsx` | Card individual: texto + opções (Listbox) + checkbox |
-| `components/BrowseQuestionsContent.tsx` | Wrapper da aba Biblioteca; aceita `embedded?` para suprimir `<PageHeader>` interno |
-| `components/CertificationAccordion.tsx` | Accordion de seleção de certificação |
-| `components/TopicAccordion.tsx` | Accordion de seleção de tópico |
-| `components/QuestionList.tsx` | Lista de questões filtradas |
-| `components/QuestionDetailPanel.tsx` | Painel de detalhe da questão |
 
 #### Configure Certification (`certifications/configure/`)
 
@@ -428,15 +481,10 @@ Página unificada (HeroUI Tabs) com aba **Gerar** e aba **Biblioteca**, mesmo pa
 
 | Arquivo | Papel |
 |---|---|
-| `page.tsx` | `PublicExamsProvider` + Tabs + sync com `?tab=` |
+| `page.tsx` | `PublicExamsProvider` + Tabs + sync com `?tab=`. Aba Browse renderiza `<BrowseCategoriesView config={publicExamBrowseConfig} embedded onGenerateClick={...} />` diretamente |
 | `components/PublicExamQuestionGeneratorForm.tsx` | Form de configuração (concurso, assunto, count) |
 | `components/GeneratedPublicExamQuestionsList.tsx` | Lista com select-all, salvar/descartar; `onSaved` auto-troca para Biblioteca |
 | `components/GeneratedPublicExamQuestionsCard.tsx` | Card individual de questão de concurso |
-| `components/BrowsePublicExamQuestionsContent.tsx` | Wrapper da aba Biblioteca; aceita `embedded?` |
-| `components/PublicExamAccordion.tsx` | Accordion de seleção de concurso |
-| `components/SubjectAccordion.tsx` | Accordion de seleção de assunto |
-| `components/PublicExamQuestionList.tsx` | Lista de questões filtradas |
-| `components/PublicExamQuestionDetailPanel.tsx` | Painel de detalhe da questão |
 
 #### Simulados (`public-exams/simulados/`)
 
