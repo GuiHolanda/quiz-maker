@@ -8,15 +8,15 @@ import { useRequest } from '@/features/hooks/useRequest.hook';
 import { QuizFormErrors, AIQuestion, QuestionParams } from '@/shared/types';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
 import { CertificationManager } from '@/shared/components/CertificationManager';
-import { BusyDialog } from '@/shared/components/ui/BusyDialog';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 
 interface QuestionareFormProps {
-  onGenerated: (questions: AIQuestion[]) => void;
+  readonly onGenerated: (questions: AIQuestion[]) => void;
+  readonly onGenerationStart?: (numQuestions: number) => void;
 }
 
-export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormProps>) {
+export function QuestionGeneratorForm({ onGenerated, onGenerationStart }: Readonly<QuestionareFormProps>) {
   const { selectedCertification, selectedTopics } = useCertificationsContext();
   const { loading, error, setError, request } = useRequest(getQuestions);
   const { t } = useTranslation();
@@ -45,6 +45,8 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
       topic_name: selectedTopic,
       num_questions: num_questions,
     };
+
+    onGenerationStart?.(parseInt(num_questions, 10) || 5);
 
     const questions = await request(requestPayload);
 
@@ -79,7 +81,6 @@ export function QuestionGeneratorForm({ onGenerated }: Readonly<QuestionareFormP
           </Button>
         </div>
       </div>
-      <BusyDialog isOpen={loading} />
     </Form>
   );
 }

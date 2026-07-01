@@ -24,7 +24,7 @@ export function GeneratedQuestionsList({
   const { state, setSelectedAIquestions, setAIquestions } = useQuizContext();
   const [currentPage, setCurrentPage] = React.useState(1);
   const [questionsPerPage, setQuestionsPerPage] = React.useState<number>(5);
-  const { loading, error, setError, request } = useRequest(saveQuestions);
+  const { loading, request } = useRequest(saveQuestions);
   const { t } = useTranslation();
 
   const selectedCount = state?.selectedAIQuestions?.length ?? 0;
@@ -78,11 +78,11 @@ export function GeneratedQuestionsList({
     <div className="flex flex-col gap-4 mt-8">
       <div className="flex items-end justify-between">
         <div className="flex items-center space-x-4 font-bold text-sm">
-          <Checkbox className="ml-auto" isSelected={allSelected} onChange={(e) => onToggleSelectAll(e.target.checked)}>
+          <Checkbox className="ml-auto"  isSelected={allSelected} onChange={(e) => onToggleSelectAll(e.target.checked)} classNames={{ label: 'text-xs' }}>
             {t('common.selectAll')}
           </Checkbox>
           {selectedCount > 0 && (
-            <Chip color="primary">
+            <Chip color="primary" className='text-xs'>
               <strong>{t('common.selectedQuestions', { count: selectedCountLabel })}</strong>
             </Chip>
           )}
