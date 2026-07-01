@@ -1,7 +1,13 @@
 'use client';
 
-import { Key, useState } from 'react';
+import { Key, useEffect, useState } from 'react';
 import { Tab, Tabs } from '@heroui/tabs';
+import { Progress } from '@heroui/progress';
+import { Card, CardBody } from '@heroui/card';
+import { Button } from '@heroui/button';
+import Link from 'next/link';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCircleCheck, faCircleInfo, faXmark } from '@fortawesome/free-solid-svg-icons';
 
 import { BrowseQuestionsContent } from './components/BrowseQuestionsContent';
 import { GeneratedQuestionsList } from './components/GeneratedQuestionsList';
@@ -22,21 +28,51 @@ function CertificationsQuestionsPageContent() {
   const [selectedTab, setSelectedTab] = useState<Key>('browse');
   const { state, replaceQuiz, setAIquestions } = useQuizContext();
   const { certifications, isLoading } = useCertificationsContext();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatingCount, setGeneratingCount] = useState(5);
+  const [progress, setProgress] = useState(0);
+  const [showSimuladosBanner, setShowSimuladosBanner] = useState(false);
+  const [showHint, setShowHint] = useState(false);
+
+  useEffect(() => {
+    if (!isGenerating) return;
+    setProgress(0);
+    const id = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 88) return 88;
+        return prev + Math.max(0.4, (88 - prev) * 0.06);
+      });
+    }, 250);
+    return () => clearInterval(id);
+  }, [isGenerating]);
+
+  const onGenerationStart = (numQuestions: number) => {
+    setGeneratingCount(numQuestions);
+    setIsGenerating(true);
+    setShowHint(true);
+  };
 
   const onQuestionsGenerated = (generatedQuestions: AIQuestion[] | undefined) => {
-    if (!generatedQuestions) return;
-    replaceQuiz({
-      meta: {
-        topic: generatedQuestions[0]?.topic ?? '',
-        num_questions: generatedQuestions.length,
-      },
-      questions: [],
-      answers: {},
-      isFinished: false,
-      aiQuestions: generatedQuestions,
-      selectedAIQuestions: [],
-    });
-    setAIquestions(generatedQuestions, null);
+    if (!generatedQuestions) {
+      setIsGenerating(false);
+      return;
+    }
+    setProgress(100);
+    setTimeout(() => {
+      replaceQuiz({
+        meta: {
+          topic: generatedQuestions[0]?.topic ?? '',
+          num_questions: generatedQuestions.length,
+        },
+        questions: [],
+        answers: {},
+        isFinished: false,
+        aiQuestions: generatedQuestions,
+        selectedAIQuestions: [],
+      });
+      setAIquestions(generatedQuestions, null);
+      setIsGenerating(false);
+    }, 350);
   };
 
   return (
@@ -55,7 +91,7 @@ function CertificationsQuestionsPageContent() {
           onSelectionChange={setSelectedTab}
         >
           <Tab key="browse" title={t('certification.questionsTabLibrary')}>
-            <BrowseQuestionsContent embedded onGenerateClick={() => setSelectedTab('generate')} />
+            {renderBrowseTab()}
           </Tab>
           <Tab key="generate" title={t('certification.questionsTabGenerate')}>
             {renderGenerateTab()}
@@ -64,6 +100,41 @@ function CertificationsQuestionsPageContent() {
       </div>
     </PageHeader>
   );
+
+  function renderBrowseTab() {
+    return (
+      <>
+        {renderSimuladosBanner()}
+        <BrowseQuestionsContent embedded onGenerateClick={() => setSelectedTab('generate')} />
+      </>
+    );
+  }
+
+  function renderSimuladosBanner() {
+    if (!showSimuladosBanner) return null;
+    return (
+      <Card className="border border-success-200 bg-success-50 dark:bg-success-900/20 shadow-none mb-4">
+        <CardBody className="flex flex-row items-center justify-between gap-3 py-3 px-4">
+          <div className="flex items-center gap-2">
+            <FontAwesomeIcon className="text-success shrink-0" icon={faCircleCheck} />
+            <p className="text-sm text-default-700">{t('generate.questionsReadyHint')}</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button as={Link} color="success" href="/certifications/simulados" size="sm" variant="flat">
+              {t('generate.goToSimulados')}
+            </Button>
+            <button
+              aria-label={t('common.dismiss')}
+              className="text-default-400 hover:text-default-600"
+              onClick={() => setShowSimuladosBanner(false)}
+            >
+              <FontAwesomeIcon icon={faXmark} />
+            </button>
+          </div>
+        </CardBody>
+      </Card>
+    );
+  }
 
   function renderGenerateTab() {
     if (isLoading) return <SkeletonListLoader />;
@@ -83,11 +154,55 @@ function CertificationsQuestionsPageContent() {
 
     return (
       <>
-        <QuestionGeneratorForm onGenerated={onQuestionsGenerated} />
-        {(state?.aiQuestions?.length ?? 0) > 0 && (
-          <GeneratedQuestionsList questions={state?.aiQuestions ?? []} onSaved={() => setSelectedTab('browse')} />
+        <QuestionGeneratorForm onGenerated={onQuestionsGenerated} onGenerationStart={onGenerationStart} />
+        {(isGenerating || (state?.aiQuestions?.length ?? 0) > 0) && renderSelectionHint()}
+        {isGenerating && renderGenerationProgress()}
+        {!isGenerating && (state?.aiQuestions?.length ?? 0) > 0 && (
+          <GeneratedQuestionsList
+            questions={state?.aiQuestions ?? []}
+            onSaved={() => {
+              setShowSimuladosBanner(true);
+              setSelectedTab('browse');
+            }}
+          />
         )}
       </>
+    );
+  }
+
+  function renderGenerationProgress() {
+    return (
+      <div className="flex flex-col gap-4 mt-8">
+        <Progress
+          aria-label={t('busy.generating')}
+          classNames={{ label: 'text-xs', value: 'text-xs' }}
+          color="primary"
+          label={progress < 75 ? t('busy.generating') : t('busy.almostDone')}
+          showValueLabel
+          value={progress}
+        />
+        {progress >= 75 && <SkeletonListLoader count={generatingCount} height="h-24" />}
+      </div>
+    );
+  }
+
+  function renderSelectionHint() {
+    if (!showHint) return null;
+
+    return (
+      <Card className="bg-primary-50/60 dark:bg-primary-900/20 shadow-none mt-4">
+        <CardBody className="flex flex-row items-center gap-3 py-3 px-4">
+          <FontAwesomeIcon className="text-primary mt-0.5 shrink-0" icon={faCircleInfo} />
+          <p className="text-xs text-default-700 flex-1">{t('generate.selectionHint')}</p>
+          <button
+            aria-label={t('common.dismiss')}
+            className="text-default-400 hover:text-default-600 shrink-0"
+            onClick={() => setShowHint(false)}
+          >
+            <FontAwesomeIcon icon={faXmark} />
+          </button>
+        </CardBody>
+      </Card>
     );
   }
 }

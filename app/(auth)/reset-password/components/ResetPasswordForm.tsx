@@ -2,17 +2,19 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
 import { Link } from '@heroui/link';
 import NextLink from 'next/link';
 
+import { AuthSplitLayout } from '@/app/(auth)/components/AuthSplitLayout';
 import api from '@/lib/bff.api';
 import { RESET_PASSWORD_URL } from '@/config/constants';
-import { inputProperties } from '@/config/constants/inputStyles';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { PasswordInput } from '@/shared/components/ui/PasswordInput';
 
 export function ResetPasswordForm() {
   const router = useRouter();
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
 
@@ -23,25 +25,31 @@ export function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <div className="bg-content1 border border-default-200 rounded-2xl w-full max-w-md px-8 py-12 relative z-10 flex flex-col items-center text-center gap-5">
-        <div className="w-16 h-16 rounded-2xl bg-danger/10 border border-danger/20 flex items-center justify-center">
-          <svg className="w-7 h-7 text-danger" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+      <AuthSplitLayout>
+        <div className="flex flex-col items-center text-center gap-5">
+          <div className="w-16 h-16 rounded-2xl bg-danger/10 border border-danger/20 flex items-center justify-center">
+            <svg className="w-7 h-7 text-danger" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path
+                d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-foreground">{t('resetPassword.invalidTitle')}</h2>
+            <p className="text-default-400 text-sm mt-2">{t('resetPassword.invalidBody')}</p>
+          </div>
+          <Link
+            as={NextLink}
+            className="text-primary font-medium transition-opacity hover:opacity-80"
+            href="/forgot-password"
+            size="sm"
+          >
+            {t('resetPassword.requestNewLink')} &rarr;
+          </Link>
         </div>
-        <div>
-          <h2 className="text-xl font-bold text-foreground">Invalid reset link</h2>
-          <p className="text-default-400 text-sm mt-2">This link is invalid or has expired.</p>
-        </div>
-        <Link
-          as={NextLink}
-          className="text-primary font-medium transition-opacity hover:opacity-80"
-          href="/forgot-password"
-          size="sm"
-        >
-          Request a new reset link &rarr;
-        </Link>
-      </div>
+      </AuthSplitLayout>
     );
   }
 
@@ -49,12 +57,12 @@ export function ResetPasswordForm() {
     e.preventDefault();
     setError(null);
     if (password !== confirm) {
-      setError('Passwords do not match');
+      setError(t('resetPassword.passwordsDoNotMatch'));
 
       return;
     }
     if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError(t('resetPassword.minLength'));
 
       return;
     }
@@ -63,48 +71,38 @@ export function ResetPasswordForm() {
       await api.post(RESET_PASSWORD_URL, { token, password });
       router.push('/login?reset=success');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Reset failed. The link may have expired.');
+      setError(err.response?.data?.message || t('resetPassword.failed'));
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="bg-content1 border border-default-200 rounded-2xl w-full max-w-md px-8 py-10 relative z-10">
-      {/* Brand */}
-      <div className="flex items-center gap-2.5 mb-8">
-        <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
-          <span className="text-white text-xs font-bold tracking-tight">AI</span>
-        </div>
-        <span className="text-default-600 font-semibold text-sm tracking-wide">AIQuiz</span>
+    <AuthSplitLayout>
+      <div className="mb-8">
+        <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight leading-tight">
+          {t('resetPassword.title')}
+        </h1>
+        <p className="text-default-500 text-sm mt-2">{t('resetPassword.subtitle')}</p>
       </div>
 
-      {/* Heading */}
-      <div className="mb-7">
-        <h1 className="text-3xl font-bold text-foreground leading-tight">New password</h1>
-        <p className="text-default-400 text-sm mt-1.5">Enter your new password below</p>
-      </div>
-
-      {/* Form */}
-      <form className="flex flex-col gap-3.5" onSubmit={handleSubmit}>
-        <Input
+      <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+        <PasswordInput
           isRequired
           autoComplete="new-password"
-          description="At least 8 characters"
-          label="New password"
-          type="password"
+          description={t('register.passwordHint')}
+          label={t('resetPassword.newPasswordLabel')}
+          placeholder={t('register.newPasswordPlaceholder')}
           value={password}
           onValueChange={setPassword}
-          {...inputProperties.input}
         />
-        <Input
+        <PasswordInput
           isRequired
           autoComplete="new-password"
-          label="Confirm password"
-          type="password"
+          label={t('resetPassword.confirmLabel')}
+          placeholder={t('register.newPasswordPlaceholder')}
           value={confirm}
           onValueChange={setConfirm}
-          {...inputProperties.input}
         />
 
         {error && (
@@ -120,9 +118,9 @@ export function ResetPasswordForm() {
           isLoading={loading}
           type="submit"
         >
-          Reset Password
+          {t('resetPassword.submit')}
         </Button>
       </form>
-    </div>
+    </AuthSplitLayout>
   );
 }

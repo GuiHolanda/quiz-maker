@@ -8,12 +8,16 @@ import { Button } from '@heroui/button';
 import { Link } from '@heroui/link';
 import NextLink from 'next/link';
 
+import { AuthSplitLayout } from '@/app/(auth)/components/AuthSplitLayout';
 import api from '@/lib/bff.api';
 import { REGISTER_URL } from '@/config/constants';
 import { inputProperties } from '@/config/constants/inputStyles';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { PasswordInput } from '@/shared/components/ui/PasswordInput';
 
 export function RegisterForm() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,7 +33,7 @@ export function RegisterForm() {
       const result = await signIn('credentials', { email, password, redirect: false });
 
       if (result?.error) {
-        setError('Account created but sign-in failed. Please go to the login page.');
+        setError(t('register.signInAfterCreateFailed'));
         setLoading(false);
 
         return;
@@ -37,32 +41,35 @@ export function RegisterForm() {
       router.push('/');
       router.refresh();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setError(err.response?.data?.message || t('register.failed'));
       setLoading(false);
     }
   }
 
   return (
-    <div className="bg-content1 border border-default-200 rounded-2xl w-full max-w-md px-8 py-10 relative z-10">
-      {/* Brand */}
-      <div className="flex items-center gap-2.5 mb-8">
-        <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
-          <span className="text-white text-xs font-bold tracking-tight">AI</span>
-        </div>
-        <span className="text-default-600 font-semibold text-sm tracking-wide">AIQuiz</span>
+    <AuthSplitLayout>
+      <div className="mb-8">
+        <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight leading-tight">
+          {t('register.title')}
+        </h1>
+        <p className="text-default-500 text-sm mt-2">
+          {t('register.haveAccount')}{' '}
+          <Link
+            as={NextLink}
+            className="text-primary font-semibold transition-opacity hover:opacity-80"
+            href="/login"
+            size="sm"
+          >
+            {t('common.signIn')}
+          </Link>
+        </p>
       </div>
 
-      {/* Heading */}
-      <div className="mb-7">
-        <h1 className="text-3xl font-bold text-foreground leading-tight">Create account</h1>
-        <p className="text-default-400 text-sm mt-1.5">Start your certification prep journey</p>
-      </div>
-
-      {/* Form */}
-      <form className="flex flex-col gap-3.5" onSubmit={handleSubmit}>
+      <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
         <Input
           autoComplete="name"
-          label="Full name"
+          label={t('register.nameLabel')}
+          placeholder={t('register.namePlaceholder')}
           type="text"
           value={name}
           onValueChange={setName}
@@ -71,21 +78,21 @@ export function RegisterForm() {
         <Input
           isRequired
           autoComplete="email"
-          label="Email address"
+          label={t('login.emailLabel')}
+          placeholder={t('login.emailPlaceholder')}
           type="email"
           value={email}
           onValueChange={setEmail}
           {...inputProperties.input}
         />
-        <Input
+        <PasswordInput
           isRequired
           autoComplete="new-password"
-          description="At least 8 characters"
-          label="Password"
-          type="password"
+          description={t('register.passwordHint')}
+          label={t('login.passwordLabel')}
+          placeholder={t('register.newPasswordPlaceholder')}
           value={password}
           onValueChange={setPassword}
-          {...inputProperties.input}
         />
 
         {error && (
@@ -101,21 +108,9 @@ export function RegisterForm() {
           isLoading={loading}
           type="submit"
         >
-          Create Account
+          {t('register.createAccount')}
         </Button>
       </form>
-
-      <p className="text-center text-sm text-default-400 mt-6">
-        Already have an account?{' '}
-        <Link
-          as={NextLink}
-          className="text-primary font-semibold transition-opacity hover:opacity-80"
-          href="/login"
-          size="sm"
-        >
-          Sign in
-        </Link>
-      </p>
-    </div>
+    </AuthSplitLayout>
   );
 }

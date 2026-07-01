@@ -8,15 +8,15 @@ import { useRequest } from '@/features/hooks/useRequest.hook';
 import { PublicExamFormErrors, AIPublicExamQuestion, PublicExamQuestionParams } from '@/shared/types';
 import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
 import { PublicExamManager } from '@/shared/components/PublicExamManager';
-import { BusyDialog } from '@/shared/components/ui/BusyDialog';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 
 interface PublicExamQuestionGeneratorFormProps {
-  onGenerated: (questions: AIPublicExamQuestion[]) => void;
+  readonly onGenerated: (questions: AIPublicExamQuestion[]) => void;
+  readonly onGenerationStart?: (numQuestions: number) => void;
 }
 
-export function PublicExamQuestionGeneratorForm({ onGenerated }: Readonly<PublicExamQuestionGeneratorFormProps>) {
+export function PublicExamQuestionGeneratorForm({ onGenerated, onGenerationStart }: Readonly<PublicExamQuestionGeneratorFormProps>) {
   const { selectedPublicExam, selectedSubjects, selectedTopic } = usePublicExamsContext();
   const { loading, error, setError, request } = useRequest(getPublicExamQuestions);
   const { t } = useTranslation();
@@ -47,6 +47,8 @@ export function PublicExamQuestionGeneratorForm({ onGenerated }: Readonly<Public
       topic_name: selectedTopic || undefined,
       num_questions,
     };
+
+    onGenerationStart?.(parseInt(num_questions, 10) || 5);
 
     const questions = await request(requestPayload);
 
@@ -79,7 +81,6 @@ export function PublicExamQuestionGeneratorForm({ onGenerated }: Readonly<Public
           </Button>
         </div>
       </div>
-      <BusyDialog isOpen={loading} />
     </Form>
   );
 }
