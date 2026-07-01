@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Skeleton } from '@heroui/skeleton';
 import { Chip } from '@heroui/chip';
+import { Checkbox } from '@heroui/checkbox';
 
 import { PublicExamQuestionDetailPanel } from './PublicExamQuestionDetailPanel';
 
@@ -17,9 +18,11 @@ interface PublicExamQuestionListProps {
   readonly pageSize: number;
   readonly total: number;
   readonly isLoading: boolean;
+  readonly selectedIds: Set<number>;
   readonly onPageChange: (page: number) => void;
   readonly onPageSizeChange: (pageSize: number) => void;
   readonly onDelete: (id: number) => Promise<void>;
+  readonly onToggleSelect: (id: number) => void;
 }
 
 export function PublicExamQuestionList({
@@ -28,9 +31,11 @@ export function PublicExamQuestionList({
   pageSize,
   total,
   isLoading,
+  selectedIds,
   onPageChange,
   onPageSizeChange,
   onDelete,
+  onToggleSelect,
 }: PublicExamQuestionListProps) {
   const { t } = useTranslation();
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -58,34 +63,46 @@ export function PublicExamQuestionList({
         ) : (
           questions.map((q) => {
             const isSelected = selectedId === q.id;
+            const isChecked = selectedIds.has(q.id);
 
             return (
               <React.Fragment key={q.id}>
-                <button
-                  className={`w-full text-left p-4 border-b-2 border-default-100 text-foreground transition-colors duration-150 ${
-                    isSelected ? 'bg-content2' : 'bg-content1 hover:bg-content2'
+                <div
+                  className={`w-full flex items-stretch border-b-2 border-default-100 text-foreground transition-colors duration-150 ${
+                    isSelected || isChecked ? 'bg-content2' : 'bg-content1 hover:bg-content2'
                   }`}
-                  onClick={() => setSelectedId(isSelected ? null : q.id)}
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs rounded px-1.5 py-0.5 bg-default-100 text-default-500 capitalize">
-                      {q.difficulty}
-                    </span>
-                    {q.topic && (
-                      <span className="text-xs rounded px-1.5 py-0.5 bg-primary-50 text-primary-700">{q.topic}</span>
-                    )}
-                    <span className="text-xs text-default-400">{q.examBoardName}</span>
-                    <Chip
-                      className="ml-auto"
-                      color={q.answer?.correctOptions?.length > 0 ? 'success' : 'default'}
-                      size="sm"
-                      variant="flat"
-                    >
-                      {q.answer?.correctOptions?.length > 0 ? t('browse.hasAnswer') : t('browse.noAnswer')}
-                    </Chip>
+                  <div
+                    className="flex items-center px-3 cursor-pointer flex-shrink-0"
+                    role="presentation"
+                    onClick={() => onToggleSelect(q.id)}
+                  >
+                    <Checkbox isSelected={isChecked} size="sm" onValueChange={() => onToggleSelect(q.id)} />
                   </div>
-                  <p className="text-xs leading-snug font-extrabold">{q.text}</p>
-                </button>
+                  <button
+                    className="flex-1 text-left py-4 pr-4 min-w-0"
+                    onClick={() => setSelectedId(isSelected ? null : q.id)}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs rounded px-1.5 py-0.5 bg-default-100 text-default-500 capitalize">
+                        {q.difficulty}
+                      </span>
+                      {q.topic && (
+                        <span className="text-xs rounded px-1.5 py-0.5 bg-primary-50 text-primary-700">{q.topic}</span>
+                      )}
+                      <span className="text-xs text-default-400">{q.examBoardName}</span>
+                      <Chip
+                        className="ml-auto"
+                        color={q.answer?.correctOptions?.length > 0 ? 'success' : 'default'}
+                        size="sm"
+                        variant="flat"
+                      >
+                        {q.answer?.correctOptions?.length > 0 ? t('browse.hasAnswer') : t('browse.noAnswer')}
+                      </Chip>
+                    </div>
+                    <p className="text-xs leading-snug font-extrabold">{q.text}</p>
+                  </button>
+                </div>
                 <AnimatePresence>
                   {isSelected && (
                     <motion.div
