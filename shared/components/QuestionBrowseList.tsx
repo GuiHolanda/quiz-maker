@@ -63,7 +63,7 @@ export function QuestionBrowseList({
 
   return (
     <div className="flex flex-col">
-      <div className="flex flex-col">{isLoading ? renderSkeleton() : questions.map((q) => renderRow(q))}</div>
+      <div className="flex flex-col">{isLoading ? renderSkeleton() : questions.map((q) => renderQuestionRow(q))}</div>
       {!isLoading && total > 0 && renderPagination()}
     </div>
   );
@@ -79,7 +79,7 @@ export function QuestionBrowseList({
     );
   }
 
-  function renderRow(q: BrowseQuestion) {
+  function renderQuestionRow(q: BrowseQuestion) {
     const isExpanded = expandedId === q.id;
     const isChecked = selectedIds.has(q.id);
     const correctOptions = q.answer?.correctOptions ?? [];

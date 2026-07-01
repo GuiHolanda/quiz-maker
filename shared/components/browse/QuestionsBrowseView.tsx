@@ -13,14 +13,14 @@ import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { BrowseQuestionsToolbar } from './BrowseQuestionsToolbar';
 import type { BrowseCategoryNode, BrowseDomainConfig } from './types';
 
-import { CategoryQuestionsPanel } from '@/shared/components/CategoryQuestionsPanel';
+import { QuestionsByCategoryPanel } from '@/shared/components/QuestionsByCategoryPanel';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { notify } from '@/shared/lib/notify';
 
-interface BrowseCategoriesViewProps<T> {
+interface QuestionsBrowseViewProps<T> {
   readonly config: BrowseDomainConfig<T>;
   readonly embedded?: boolean;
   readonly onGenerateClick?: () => void;
@@ -32,7 +32,7 @@ function normalize(text: string) {
   return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
 
-export function BrowseCategoriesView<T>({ config, embedded, onGenerateClick }: BrowseCategoriesViewProps<T>) {
+export function QuestionsBrowseView<T>({ config, embedded, onGenerateClick }: QuestionsBrowseViewProps<T>) {
   const { t } = useTranslation();
   const { i18nPrefix } = config;
   const [categories, setCategories] = useState<readonly BrowseCategoryNode[]>([]);
@@ -278,7 +278,7 @@ export function BrowseCategoriesView<T>({ config, embedded, onGenerateClick }: B
 
     return (
       <AccordionItem key={child.id} title={renderSubcategoryTitle(child, isOpen, leafKey)}>
-        <CategoryQuestionsPanel
+        <QuestionsByCategoryPanel
           key={leafKey}
           deleteQuestion={config.deleteQuestion}
           fetchPage={(page, pageSize) => config.fetchQuestions(category, child, page, pageSize)}

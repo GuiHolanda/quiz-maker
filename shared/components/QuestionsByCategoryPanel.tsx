@@ -9,7 +9,7 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useBrowseQuestionsDelete } from '@/features/hooks/useBrowseQuestionsDelete.hook';
 import { notify } from '@/shared/lib/notify';
 
-interface CategoryQuestionsPanelProps {
+interface QuestionsByCategoryPanelProps {
   readonly isOpen: boolean;
   readonly selectedIds: Set<number>;
   readonly onQuestionsLoaded: (ids: number[]) => void;
@@ -23,7 +23,7 @@ interface CategoryQuestionsPanelProps {
   readonly deleteQuestion: (id: number) => Promise<void>;
 }
 
-export function CategoryQuestionsPanel({
+export function QuestionsByCategoryPanel({
   isOpen,
   selectedIds,
   onQuestionsLoaded,
@@ -32,7 +32,7 @@ export function CategoryQuestionsPanel({
   onRegisterBulkTrigger,
   fetchPage,
   deleteQuestion,
-}: CategoryQuestionsPanelProps) {
+}: QuestionsByCategoryPanelProps) {
   const { t } = useTranslation();
   const hasFetched = useRef(false);
   const [questions, setQuestions] = useState<BrowseQuestion[]>([]);
@@ -101,6 +101,12 @@ export function CategoryQuestionsPanel({
         onPageSizeChange={(ps) => loadPage(1, ps)}
         onToggleSelect={onToggleSelect}
       />
+      {renderDeleteConfirmModal()}
+    </>
+  );
+
+  function renderDeleteConfirmModal() {
+    return (
       <Modal
         isDismissable={!deleter.isDeleting}
         isKeyboardDismissDisabled={deleter.isDeleting}
@@ -126,6 +132,6 @@ export function CategoryQuestionsPanel({
           </ModalFooter>
         </ModalContent>
       </Modal>
-    </>
-  );
+    );
+  }
 }
