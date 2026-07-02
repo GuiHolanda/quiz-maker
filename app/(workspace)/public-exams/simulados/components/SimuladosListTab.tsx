@@ -9,6 +9,7 @@ import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 import { useMockExamsContext } from '@/features/providers/mockExams.provider';
 import { deleteMockExam, ensureMockExamAnswers, startMockExamAttempt } from '@/features/connectors';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
@@ -99,10 +100,10 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
             <p className="text-default-500">{deleteTarget?.name}</p>
           </ModalBody>
           <ModalFooter>
-            <Button isDisabled={isDeleting} variant="light" onPress={() => setDeleteTarget(null)}>
+            <Button className={buttonStyles.secondary} isDisabled={isDeleting} variant="bordered" onPress={() => setDeleteTarget(null)}>
               {t('common.cancel')}
             </Button>
-            <Button color="danger" isLoading={isDeleting} onPress={handleDelete}>
+            <Button className={buttonStyles.danger} isLoading={isDeleting} onPress={handleDelete}>
               {t('common.delete')}
             </Button>
           </ModalFooter>
@@ -142,7 +143,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
         <div className="flex flex-wrap justify-between mt-4">
           <div className="flex gap-2">
             <Button
-              color="primary"
+              className={buttonStyles.primarySm}
               isDisabled={startingId !== null}
               isLoading={startingId === m.id}
               size="sm"
@@ -151,7 +152,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
               {isAnswered ? t('simulado.tryAgain') : t('simulado.respond')}
             </Button>
             {isAnswered && (
-              <Button size="sm" variant="bordered" onPress={() => setHistoryTarget(m)}>
+              <Button className={buttonStyles.secondary} size="sm" variant="bordered" onPress={() => setHistoryTarget(m)}>
                 {t('simulado.viewResults')}
               </Button>
             )}
@@ -183,7 +184,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
           )}
         </ModalBody>
         <ModalFooter>
-          <Button variant="light" onPress={() => setHistoryTarget(null)}>
+          <Button className={buttonStyles.secondary} variant="bordered" onPress={() => setHistoryTarget(null)}>
             {t('common.cancel')}
           </Button>
         </ModalFooter>
@@ -217,6 +218,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
           {t('simulado.attemptScore', { correct: score, total: m.totalQuestions, percent })}
         </Chip>
         <Button
+          className={buttonStyles.secondary}
           size="sm"
           variant="bordered"
           onPress={() => {

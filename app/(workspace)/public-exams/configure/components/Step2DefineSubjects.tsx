@@ -9,6 +9,7 @@ import { Input } from '@heroui/input';
 import { StepHeader } from './StepHeader';
 
 import { inputProperties } from '@/config/constants/inputStyles';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface Step2DefineSubjectsProps {
@@ -155,9 +156,10 @@ export function Step2DefineSubjects({
                 <div className="shrink-0 pb-1">
                   <Button
                     isIconOnly
-                    className="bg-default-100 border border-default-200 text-default-500 hover:text-danger hover:bg-danger/10 transition-colors duration-200 rounded-lg"
+                    aria-label={t('common.remove')}
+                    className={buttonStyles.iconOnly.danger}
                     size="sm"
-                    variant="flat"
+                    variant="light"
                     onPress={() => onRemoveSubject(index)}
                   >
                     <FontAwesomeIcon className="text-xs" icon={faTrash} />

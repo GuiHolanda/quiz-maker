@@ -9,6 +9,7 @@ import { faTrash } from '@fortawesome/free-solid-svg-icons';
 
 import { EditPublicExamModal } from './EditPublicExamModal';
 
+import { buttonStyles } from '@/config/constants/buttonStyles';
 import { PublicExamSubjectsTable } from '@/shared/components/PublicExamSubjectsTable';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
@@ -166,24 +167,16 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
                       <span className="text-xs text-default-500 shrink-0">{publicExam.year}</span>
                     </>
                   )}
-                  <span
+                  <Button
+                    isIconOnly
                     aria-label={t('common.remove')}
-                    className="ml-auto shrink-0 p-1.5 rounded-lg text-default-400 hover:text-danger hover:bg-danger/10 transition-colors cursor-pointer"
-                    role="button"
-                    tabIndex={0}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeletingExam(publicExam);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.stopPropagation();
-                        setDeletingExam(publicExam);
-                      }
-                    }}
+                    className={`${buttonStyles.iconOnly.danger} ml-auto shrink-0`}
+                    size="sm"
+                    variant="light"
+                    onPress={() => setDeletingExam(publicExam)}
                   >
                     <FontAwesomeIcon className="w-3 h-3" icon={faTrash} />
-                  </span>
+                  </Button>
                 </div>
               }
             >
@@ -224,14 +217,14 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
           </ModalBody>
           <ModalFooter>
             <Button
-              className="border border-default-200 text-default-600"
+              className={buttonStyles.secondary}
               isDisabled={isDeleting}
-              variant="flat"
+              variant="bordered"
               onPress={() => setDeletingExam(null)}
             >
               {t('common.cancel')}
             </Button>
-            <Button color="danger" isLoading={isDeleting} onPress={handleDeleteConfirm}>
+            <Button className={buttonStyles.danger} isLoading={isDeleting} onPress={handleDeleteConfirm}>
               {t('common.remove')}
             </Button>
           </ModalFooter>

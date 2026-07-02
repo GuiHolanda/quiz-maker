@@ -21,6 +21,7 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { AIPublicExamQuestion } from '@/shared/types';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 
 function PublicExamsQuestionsPageContent() {
   const { t } = useTranslation();
@@ -112,16 +113,19 @@ function PublicExamsQuestionsPageContent() {
             <p className="text-sm text-default-700">{t('generate.questionsReadyHint')}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Button as={Link} color="success" href="/certifications/simulados" size="sm" variant="flat">
+            <Button as={Link} className={buttonStyles.secondary} href="/public-exams/simulados" size="sm" variant="bordered">
               {t('generate.goToSimulados')}
             </Button>
-            <button
+            <Button
+              isIconOnly
               aria-label={t('common.dismiss')}
-              className="text-default-400 hover:text-default-600"
-              onClick={() => setShowSimuladosBanner(false)}
+              className={buttonStyles.iconOnly.neutral}
+              size="sm"
+              variant="light"
+              onPress={() => setShowSimuladosBanner(false)}
             >
               <FontAwesomeIcon icon={faXmark} />
-            </button>
+            </Button>
           </div>
         </CardBody>
       </Card>
@@ -187,13 +191,16 @@ function PublicExamsQuestionsPageContent() {
         <CardBody className="flex flex-row items-start gap-3 py-3 px-4">
           <FontAwesomeIcon className="text-primary mt-0.5 shrink-0" icon={faCircleInfo} />
           <p className="text-sm text-default-700 flex-1">{t('generate.selectionHint')}</p>
-          <button
+          <Button
+            isIconOnly
             aria-label={t('common.dismiss')}
-            className="text-default-400 hover:text-default-600 shrink-0"
-            onClick={() => setShowHint(false)}
+            className={`${buttonStyles.iconOnly.neutral} shrink-0`}
+            size="sm"
+            variant="light"
+            onPress={() => setShowHint(false)}
           >
             <FontAwesomeIcon icon={faXmark} />
-          </button>
+          </Button>
         </CardBody>
       </Card>
     );

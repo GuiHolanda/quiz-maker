@@ -13,6 +13,7 @@ import { useRequest } from '@/features/hooks/useRequest.hook';
 import { savePublicExamQuestions } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface GeneratedPublicExamQuestionsListProps {
   readonly questions: AIPublicExamQuestion[];
@@ -85,7 +86,7 @@ export function GeneratedPublicExamQuestionsList({
             {t('common.selectAll')}
           </Checkbox>
           {selectedCount > 0 && (
-            <Chip color="primary">
+            <Chip color="primary" size="sm" variant="flat">
               <strong>{t('common.selectedQuestions', { count: selectedCountLabel })}</strong>
             </Chip>
           )}
@@ -112,10 +113,10 @@ export function GeneratedPublicExamQuestionsList({
 
       <div className="flex gap-2">
         <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
-        <Button className="ml-auto" color="danger" size="sm" variant="flat" onPress={onDiscard}>
+        <Button className={`${buttonStyles.dangerFlat} ml-auto`} size="sm" onPress={onDiscard}>
           {selectedCount > 0 ? t('common.discardSelected') : t('common.discardAll')}
         </Button>
-        <Button color="primary" hidden={selectedCount === 0} size="sm" variant="flat" onPress={onSaveSelected}>
+        <Button className={buttonStyles.primarySm} hidden={selectedCount === 0} size="sm" onPress={onSaveSelected}>
           {t('common.saveSelected')}
         </Button>
       </div>
