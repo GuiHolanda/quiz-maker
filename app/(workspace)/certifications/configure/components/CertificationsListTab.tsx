@@ -17,6 +17,7 @@ import { deleteCertification } from '@/features/connectors';
 import { Certification, CertificationTopic } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface CertificationsListTabProps {
   readonly onCreateNew: () => void;
@@ -120,24 +121,18 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
                       <span className="text-xs text-default-500 shrink-0">{certification.provider}</span>
                     </>
                   )}
-                  <span
+                  <Button
+                    isIconOnly
                     aria-label={t('common.remove')}
-                    className="ml-auto shrink-0 p-1.5 rounded-lg text-default-400 hover:text-danger hover:bg-danger/10 transition-colors cursor-pointer"
-                    role="button"
-                    tabIndex={0}
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    className={`${buttonStyles.iconOnly.danger} ml-auto shrink-0`}
+                    size="sm"
+                    variant="light"
+                    onPress={() => {
                       setDeletingCert(certification);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.stopPropagation();
-                        setDeletingCert(certification);
-                      }
                     }}
                   >
                     <FontAwesomeIcon className="w-3 h-3" icon={faTrash} />
-                  </span>
+                  </Button>
                 </div>
               }
             >

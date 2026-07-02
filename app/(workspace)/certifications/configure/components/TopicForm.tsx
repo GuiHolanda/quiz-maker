@@ -7,6 +7,7 @@ import { Input } from '@heroui/input';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface TopicFormProps {
   readonly topicName: string;
@@ -69,7 +70,7 @@ export function TopicForm({ topicName, onTopicNameChange, onSubmit }: TopicFormP
           type="number"
           {...inputProperties.input}
         />
-        <Button className="mb-0.5" color="primary" size="sm" type="submit" variant="solid">
+        <Button className={`mb-0.5 ${buttonStyles.primarySm}`} size="sm" type="submit">
           {t('certification.addTopic')}
           <FontAwesomeIcon className="text-lg" icon={faCirclePlus} />
         </Button>

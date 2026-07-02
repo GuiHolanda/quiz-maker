@@ -23,6 +23,7 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { AIQuestion } from '@/shared/types';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 
 function CertificationsQuestionsPageContent() {
   const { t } = useTranslation();
@@ -125,16 +126,19 @@ function CertificationsQuestionsPageContent() {
             <p className="text-sm text-default-700">{t('generate.questionsReadyHint')}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Button as={Link} color="success" href="/certifications/simulados" size="sm" variant="flat">
+            <Button as={Link} href="/certifications/simulados" size="sm" variant="bordered" className={buttonStyles.secondary}>
               {t('generate.goToSimulados')}
             </Button>
-            <button
+            <Button
+              isIconOnly
               aria-label={t('common.dismiss')}
-              className="text-default-400 hover:text-default-600"
-              onClick={() => setShowSimuladosBanner(false)}
+              className={buttonStyles.iconOnly.neutral}
+              size="sm"
+              variant="light"
+              onPress={() => setShowSimuladosBanner(false)}
             >
               <FontAwesomeIcon icon={faXmark} />
-            </button>
+            </Button>
           </div>
         </CardBody>
       </Card>

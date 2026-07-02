@@ -17,6 +17,7 @@ import {
 import { CertSimuladoResult, SimuladoResultQuestion } from '@/shared/types';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 
 function scoreColor(percent: number): 'success' | 'warning' | 'danger' {
   if (percent >= 70) return 'success';
@@ -24,6 +25,12 @@ function scoreColor(percent: number): 'success' | 'warning' | 'danger' {
 
   return 'danger';
 }
+
+const scoreTextColor = {
+  success: 'text-success',
+  warning: 'text-warning',
+  danger: 'text-danger',
+} as const;
 
 export default function CertSimuladoResultadoPage() {
   const { t } = useTranslation();
@@ -140,9 +147,9 @@ export default function CertSimuladoResultadoPage() {
 
         <div className="flex flex-col sm:flex-row gap-6 items-start">
           <div className="flex flex-col items-center gap-1 shrink-0">
-            <Chip className="text-2xl px-6 py-4 h-auto font-bold" color={color} variant="flat">
+            <div className={`text-3xl font-extrabold ${scoreTextColor[color]}`}>
               {t('simulado.scoreGeneral', { correct, total })}
-            </Chip>
+            </div>
             <p className="text-sm text-default-500">{t('simulado.scorePercent', { percent })}</p>
           </div>
 
@@ -157,7 +164,7 @@ export default function CertSimuladoResultadoPage() {
         </div>
 
         <div className="border-t border-default-200 mt-6 pt-4 flex gap-3">
-          <Button color="primary" isLoading={isStarting} onPress={handleTryAgain}>
+          <Button className={buttonStyles.primary} isLoading={isStarting} onPress={handleTryAgain}>
             {t('simulado.tryAgain')}
           </Button>
           <Button variant="bordered" onPress={() => router.push('/certifications/simulados')}>

@@ -20,7 +20,7 @@ export function StepProgress({ currentStep }: StepProgressProps) {
         <span className="text-sm font-semibold text-foreground">
           {t('certification.stepProgress', { current: String(currentStep), total: '3', title })}
         </span>
-        <Chip color="primary">
+        <Chip color="primary" size="sm" variant="flat">
           <span className="text-xs font-extrabold">
             {t('certification.percentComplete', { percent: String(percent) })}
           </span>

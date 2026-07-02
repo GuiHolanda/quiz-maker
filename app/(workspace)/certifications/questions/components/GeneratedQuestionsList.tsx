@@ -13,6 +13,7 @@ import { useRequest } from '@/features/hooks/useRequest.hook';
 import { saveQuestions } from '@/features/connectors';
 import { BusyDialog } from '@/shared/components/ui/BusyDialog';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 
 export function GeneratedQuestionsList({
   questions,
@@ -82,7 +83,7 @@ export function GeneratedQuestionsList({
             {t('common.selectAll')}
           </Checkbox>
           {selectedCount > 0 && (
-            <Chip color="primary" className='text-xs'>
+            <Chip size="sm" variant="flat" color="primary">
               <strong>{t('common.selectedQuestions', { count: selectedCountLabel })}</strong>
             </Chip>
           )}
@@ -108,11 +109,11 @@ export function GeneratedQuestionsList({
       <div className="flex gap-2">
         <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
 
-        <Button className="ml-auto" color="danger" size="sm" variant="flat" onPress={onDiscardQuestions}>
+        <Button className={`${buttonStyles.dangerFlat} ml-auto`} size="sm" onPress={onDiscardQuestions}>
           {selectedCount > 0 ? t('common.discardSelected') : t('common.discardAll')}
         </Button>
 
-        <Button color="primary" hidden={selectedCount === 0} size="sm" variant="flat" onPress={onSaveSelectedQuestions}>
+        <Button className={buttonStyles.primarySm} hidden={selectedCount === 0} size="sm" onPress={onSaveSelectedQuestions}>
           {t('common.saveSelected')}
         </Button>
       </div>

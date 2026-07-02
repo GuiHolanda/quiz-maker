@@ -15,6 +15,7 @@ import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { notify } from '@/shared/lib/notify';
 import { CertSimuladoListItem } from '@/shared/types';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 
 type AttemptSummary = CertSimuladoListItem['attempts'][number];
 
@@ -97,10 +98,10 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
             <p className="text-default-500">{deleteTarget?.name ?? deleteTarget?.certLabel}</p>
           </ModalBody>
           <ModalFooter>
-            <Button isDisabled={isDeleting} variant="light" onPress={() => setDeleteTarget(null)}>
+            <Button isDisabled={isDeleting} variant="bordered" className={buttonStyles.secondary} onPress={() => setDeleteTarget(null)}>
               {t('common.cancel')}
             </Button>
-            <Button color="danger" isLoading={isDeleting} onPress={handleDelete}>
+            <Button className={buttonStyles.danger} isLoading={isDeleting} onPress={handleDelete}>
               {t('common.delete')}
             </Button>
           </ModalFooter>
@@ -140,7 +141,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
         <div className="flex flex-wrap justify-between mt-4">
           <div className="flex gap-2">
             <Button
-              color="primary"
+              className={buttonStyles.primarySm}
               isDisabled={startingId !== null}
               isLoading={startingId === s.id}
               size="sm"
@@ -149,7 +150,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
               {isAnswered ? t('simulado.tryAgain') : t('simulado.respond')}
             </Button>
             {isAnswered && (
-              <Button size="sm" variant="bordered" onPress={() => setHistoryTarget(s)}>
+              <Button className={buttonStyles.secondary} size="sm" variant="bordered" onPress={() => setHistoryTarget(s)}>
                 {t('simulado.viewResults')}
               </Button>
             )}
@@ -181,7 +182,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
           )}
         </ModalBody>
         <ModalFooter>
-          <Button variant="light" onPress={() => setHistoryTarget(null)}>
+          <Button variant="bordered" className={buttonStyles.secondary} onPress={() => setHistoryTarget(null)}>
             {t('common.cancel')}
           </Button>
         </ModalFooter>

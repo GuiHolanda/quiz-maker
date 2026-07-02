@@ -10,6 +10,7 @@ import { StepHeader } from './StepHeader';
 
 import { inputProperties } from '@/config/constants/inputStyles';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface Step2DefineTopicsProps {
   readonly title: string;
@@ -149,9 +150,10 @@ export function Step2DefineTopics({
                 <div className="shrink-0 pb-1">
                   <Button
                     isIconOnly
-                    className="bg-default-100 border border-default-200 text-default-500 hover:text-danger hover:bg-danger/10 transition-colors duration-200 rounded-lg"
+                    aria-label={t('common.remove')}
+                    className={buttonStyles.iconOnly.danger}
                     size="sm"
-                    variant="flat"
+                    variant="light"
                     onPress={() => onRemoveTopic(index)}
                   >
                     <FontAwesomeIcon className="text-xs" icon={faTrash} />
