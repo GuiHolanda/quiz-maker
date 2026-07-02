@@ -88,52 +88,76 @@ Corpo secundário  → text-xs text-default-400
 
 ## Padrão de botões
 
+Todos os classNames de botão vivem em `config/constants/buttonStyles.ts`. **Nunca repita as strings inline** — importe e use as constantes.
+
+```tsx
+import { buttonStyles } from '@/config/constants/buttonStyles';
+```
+
 ### Primário
 
 ```tsx
-<Button
-  className="bg-primary text-primary-foreground font-semibold rounded-lg
-             hover:opacity-90 transition-opacity duration-200"
->
-  {t('common.save')}
-</Button>
+<Button className={buttonStyles.primary}>{t('common.save')}</Button>
 ```
 
 ### Secundário (bordered)
 
 ```tsx
-<Button
-  variant="bordered"
-  className="border-default-300 text-default-600 hover:text-foreground
-             hover:border-default-400 font-semibold transition-colors duration-200"
->
-  {t('common.cancel')}
-</Button>
+<Button className={buttonStyles.secondary} variant="bordered">{t('common.cancel')}</Button>
 ```
 
 ### Flat (ação discreta)
 
 ```tsx
-<Button
-  variant="flat"
-  className="bg-default-100 border border-default-200 text-default-600
-             hover:bg-default-200 rounded-lg transition-colors"
->
-  {t('common.signOut')}
-</Button>
+<Button className={buttonStyles.flat}>{t('common.signOut')}</Button>
 ```
 
 ### Pequeno (ação em tabela/card)
 
 ```tsx
-<Button
-  size="sm"
-  className="bg-primary text-primary-foreground text-xs font-semibold
-             rounded-lg hover:opacity-90 h-8 px-4 transition-opacity duration-200"
->
-  {t('common.submit')}
+<Button className={buttonStyles.primarySm} size="sm">{t('common.submit')}</Button>
+```
+
+### Danger (confirmação de exclusão)
+
+```tsx
+<Button className={buttonStyles.danger}>{t('common.delete')}</Button>
+```
+
+### Danger flat (ação destrutiva discreta)
+
+```tsx
+<Button className={buttonStyles.dangerFlat}>{t('common.discard')}</Button>
+```
+
+### Icon-only
+
+Sempre requer `isIconOnly` + `size="sm"` + `aria-label` obrigatório.
+
+```tsx
+// Neutro (fechar, dispensar)
+<Button isIconOnly aria-label={t('common.close')} className={buttonStyles.iconOnly.neutral} size="sm" variant="light">
+  <FontAwesomeIcon icon={faXmark} />
+</Button>
+
+// Primário (confirmar, enviar)
+<Button isIconOnly aria-label={t('common.save')} className={buttonStyles.iconOnly.primary} size="sm">
+  <FontAwesomeIcon icon={faCheck} />
+</Button>
+
+// Danger (excluir, remover)
+<Button isIconOnly aria-label={t('common.remove')} className={buttonStyles.iconOnly.danger} size="sm" variant="light">
+  <FontAwesomeIcon icon={faTrash} />
 </Button>
 ```
+
+### Regras obrigatórias
+
+- **Nunca use `color=` em `<Button>`** — toda coloração vem via `className={buttonStyles.*}`
+- **Nunca use `variant="ghost"`, `variant="solid"` ou `variant="shadow"`** — variants aprovadas: `bordered` (secondary), `light` (icon-only), ou ausente (primary/flat/danger)
+- **Nunca use `variant="light"` em botões com texto** — apenas em icon-only
+- **`aria-label` é obrigatório** em todo botão `isIconOnly`
+- **`<span role="button">` é proibido** — use sempre `<Button>` do HeroUI
 
 ---
 
@@ -145,6 +169,41 @@ Corpo secundário  → text-xs text-default-400
   ...
 </div>
 ```
+
+---
+
+## Padrão de chips e tags
+
+Chips comunicam status ou categorias. Sempre `size="sm"` — nunca override de tamanho via `className`.
+
+```tsx
+// Padrão (flat — use por default)
+<Chip color="success" size="sm" variant="flat">{t('simulado.statusAnswered')}</Chip>
+
+// Bordered
+<Chip color="primary" size="sm" variant="bordered">{label}</Chip>
+
+// Solid
+<Chip color="danger" size="sm" variant="solid">{label}</Chip>
+```
+
+### Score color pattern
+
+```tsx
+function scoreColor(percent: number): 'success' | 'warning' | 'danger' {
+  if (percent >= 70) return 'success';
+  if (percent >= 50) return 'warning';
+  return 'danger';
+}
+
+<Chip color={scoreColor(pct)} size="sm" variant="flat">{pct}%</Chip>
+```
+
+### Regras obrigatórias
+
+- **`size="sm"` é obrigatório** — nunca omitir, nunca usar `md` ou `lg`
+- **Nunca sobreponha tamanho via `className`** (ex: `text-2xl px-6`) — se precisar de uma exibição grande, use um `<div>` ou `<p>` com as classes de cor semântica (`text-success`, `text-warning`, `text-danger`)
+- **`color=` é o único mecanismo de coloração** — não use `className` para colorir chips
 
 ---
 
@@ -815,6 +874,9 @@ Transição:   transition-colors duration-200 (cards, inputs)
 - [ ] Componente marcado com `'use client'` se usar hooks
 - [ ] Componentes page-specific em `app/(workspace)/<dominio>/<pagina>/components/`, nunca em `shared/components/`
 - [ ] Usar HeroUI para todos os elementos de UI
+- [ ] **Botões via `buttonStyles.*`** de `config/constants/buttonStyles.ts` — nunca repita className inline. Nunca use `color=` em `<Button>`. Nunca use `variant="ghost"`, `variant="solid"` ou `variant="shadow"`. Icon-only exige `isIconOnly` + `aria-label` + `size="sm"`
+- [ ] **`<span role="button">` é proibido** — use sempre `<Button isIconOnly>` do HeroUI
+- [ ] **Chips sempre com `size="sm"`** — nunca omitir. Use `color=` para coloração; nunca `className` para sobrepor tamanho
 - [ ] **`<Input>`/`<Select>`/`<PasswordInput>` com `label` SEMPRE acompanhados de `placeholder`** — sem isso o label colapsa para dentro do campo como floating. Para campos de senha use `<PasswordInput>` (toggle de visibilidade incluso).
 - [ ] Usar tokens semânticos, nunca cores hard-coded
 - [ ] Verificar em dark e light mode
