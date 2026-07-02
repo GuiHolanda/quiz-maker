@@ -10,6 +10,7 @@ import { Certification, CertificationTopic } from '@/shared/types';
 import { useCertificationDraftCard } from '@/features/hooks/useCertificationDraftCard.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface CertificationDraftReviewModalProps {
   readonly certification: Certification;
@@ -187,7 +188,7 @@ export function CertificationDraftReviewModal({
           <Button
             isIconOnly
             aria-label={t('common.remove')}
-            className="text-default-400 hover:text-danger"
+            className={buttonStyles.iconOnly.danger}
             isDisabled={isSaving}
             size="sm"
             variant="light"

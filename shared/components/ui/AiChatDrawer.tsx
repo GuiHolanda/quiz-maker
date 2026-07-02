@@ -10,6 +10,7 @@ import { faXmark, faPaperPlane, faRotateRight, faPaperclip, faFilePdf } from '@f
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useAiChat } from '@/features/hooks/useAiChat.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 import { AiChatMessage } from '@/shared/components/ui/AiChatMessage';
 import { AiChatCertificationDraftCard } from '@/shared/components/ui/AiChatCertificationDraftCard';
 import { AiChatExamDraftCard } from '@/shared/components/ui/AiChatExamDraftCard';
@@ -73,17 +74,16 @@ export function AiChatDrawer({ isOpen, onClose, userId }: AiChatDrawerProps) {
           <div className="flex items-center gap-1">
             {messages.length > 0 && (
               <Button
-                className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 rounded-lg transition-colors text-xs font-semibold"
+                className={`${buttonStyles.flat} text-xs`}
                 isDisabled={isStreaming}
                 size="sm"
                 startContent={<FontAwesomeIcon className="w-3 h-3" icon={faRotateRight} />}
-                variant="flat"
                 onPress={handleNewChat}
               >
                 {t('chat.newChat')}
               </Button>
             )}
-            <Button isIconOnly aria-label="Close" size="sm" variant="light" onPress={onClose}>
+            <Button isIconOnly aria-label={t('common.close')} className={buttonStyles.iconOnly.neutral} size="sm" variant="light" onPress={onClose}>
               <FontAwesomeIcon icon={faXmark} />
             </Button>
           </div>
@@ -180,7 +180,7 @@ export function AiChatDrawer({ isOpen, onClose, userId }: AiChatDrawerProps) {
             <Button
               isIconOnly
               aria-label={t('chat.uploadEdital')}
-              className="shrink-0 text-default-400 hover:text-foreground"
+              className={`${buttonStyles.iconOnly.neutral} shrink-0`}
               isDisabled={isStreaming}
               size="sm"
               variant="light"
@@ -202,7 +202,8 @@ export function AiChatDrawer({ isOpen, onClose, userId }: AiChatDrawerProps) {
             />
             <Button
               isIconOnly
-              className="bg-primary text-primary-foreground rounded-lg shrink-0"
+              aria-label={t('chat.sendMessage')}
+              className={`${buttonStyles.iconOnly.primary} shrink-0`}
               isDisabled={isStreaming || (!input.trim() && !pendingFile)}
               onPress={sendMessage}
             >

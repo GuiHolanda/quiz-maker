@@ -10,6 +10,7 @@ import { AnswersMap, SimuladoQuestion } from '@/shared/types';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
 import { ItemsPerPageSelect } from '@/shared/components/ui/ItemsPerPageSelect';
 import { QuestionCard } from '@/shared/components/QuestionCard';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface SimuladoQuestionListProps {
   readonly questions: SimuladoQuestion[];
@@ -134,7 +135,7 @@ export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFin
           isDisabled={canFinish}
         >
           <span className="ml-auto">
-            <Button color="danger" isDisabled={!canFinish} size="sm" variant="flat" onPress={onFinish}>
+            <Button className={buttonStyles.dangerFlat} isDisabled={!canFinish} size="sm" onPress={onFinish}>
               {t('simulado.finalize')}
             </Button>
           </span>

@@ -11,6 +11,7 @@ import { PublicExam, PublicExamSubject } from '@/shared/types';
 import { useExamDraftCard } from '@/features/hooks/useExamDraftCard.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface ExamDraftReviewModalProps {
   readonly publicExam: PublicExam;
@@ -68,17 +69,16 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
         <ModalFooter>
           <div className="flex gap-2 w-full">
             <Button
-              className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg"
+              className={`${buttonStyles.flat} text-xs`}
               isDisabled={isSaving}
               size="sm"
               startContent={<FontAwesomeIcon className="w-3 h-3" icon={faPlus} />}
-              variant="flat"
               onPress={addSubject}
             >
               {t('chat.addSubject')}
             </Button>
             <Button
-              className="bg-primary text-primary-foreground font-semibold rounded-lg"
+              className={buttonStyles.primarySm}
               isDisabled={isSaving || !draft.name.trim() || !draft.examBoard.name.trim()}
               size="sm"
               startContent={isSaving ? <Spinner color="current" size="sm" /> : undefined}
@@ -215,11 +215,9 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
           </td>
           <td className={tdClass}>
             <Button
-              className="text-xs font-semibold rounded-lg h-8 px-3"
-              color="danger"
+              className={`${buttonStyles.dangerFlat} text-xs h-8 px-3`}
               isDisabled={isSaving}
               size="sm"
-              variant="flat"
               onPress={() => removeSubject(si)}
             >
               {t('common.remove')}
@@ -271,7 +269,7 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
                     <Button
                       isIconOnly
                       aria-label={t('common.save')}
-                      className="bg-primary text-primary-foreground h-7 w-7 min-w-0 shrink-0"
+                      className={`${buttonStyles.iconOnly.primary} h-7 w-7 min-w-0 shrink-0`}
                       isDisabled={!editValue.trim()}
                       size="sm"
                       onPress={() => {
@@ -344,7 +342,7 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
               onValueChange={(v) => setNewTopicInputs((prev) => ({ ...prev, [si]: v }))}
             />
             <Button
-              className="bg-primary text-primary-foreground text-xs h-7 px-2"
+              className={`${buttonStyles.primarySm} h-7 px-2`}
               isDisabled={isSaving || !newTopicInputs[si]?.trim()}
               size="sm"
               onPress={() => {

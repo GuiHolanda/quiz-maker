@@ -28,6 +28,7 @@ import { getBillingUsage } from '@/features/connectors';
 import { ThemeSwitch } from '@/shared/components/ui/theme-switch';
 import { LanguageSwitch } from '@/shared/components/ui/language-switch';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 
 const PRODUCT_ITEMS = [
   { label: 'nav.configureCertification', href: '/certifications/configure' },
@@ -237,7 +238,7 @@ export const Navbar = () => {
                 </NextLink>
                 <Button
                   as={NextLink}
-                  className="bg-primary text-primary-foreground font-semibold rounded-lg transition-colors duration-200 px-4"
+                  className={`${buttonStyles.primary} px-4`}
                   href="/login"
                   size="sm"
                 >
@@ -254,7 +255,7 @@ export const Navbar = () => {
           ) : (
             <Button
               as={NextLink}
-              className="bg-primary text-primary-foreground font-semibold rounded-lg"
+              className={buttonStyles.primary}
               href="/login"
               size="sm"
             >
