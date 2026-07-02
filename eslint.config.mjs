@@ -105,7 +105,7 @@ export default defineConfig([globalIgnores([
             argsIgnorePattern: "^_.*?$",
         }],
 
-        "import/order": ["warn", {
+        "import/order": ["off", {
             groups: [
                 "type",
                 "builtin",
@@ -126,16 +126,16 @@ export default defineConfig([globalIgnores([
             "newlines-between": "always",
         }],
 
-        "react/self-closing-comp": "warn",
+        "react/self-closing-comp": "off",
 
-        "react/jsx-sort-props": ["warn", {
+        "react/jsx-sort-props": ["off", {
             callbacksLast: true,
             shorthandFirst: true,
             noSortAlphabetically: false,
             reservedFirst: true,
         }],
 
-        "padding-line-between-statements": ["warn", {
+        "padding-line-between-statements": ["off", {
             blankLine: "always",
             prev: "*",
             next: "return",
