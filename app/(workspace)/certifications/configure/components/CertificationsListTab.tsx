@@ -168,14 +168,14 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
           </ModalBody>
           <ModalFooter>
             <Button
-              className="border border-default-200 text-default-600"
+              className={buttonStyles.secondary}
               isDisabled={isDeleting}
-              variant="flat"
+              variant="bordered"
               onPress={() => setDeletingCert(null)}
             >
               {t('common.cancel')}
             </Button>
-            <Button color="danger" isLoading={isDeleting} onPress={handleDeleteConfirm}>
+            <Button className={buttonStyles.danger} isLoading={isDeleting} onPress={handleDeleteConfirm}>
               {t('common.remove')}
             </Button>
           </ModalFooter>

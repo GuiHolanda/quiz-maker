@@ -687,7 +687,7 @@ function StyleGuideContent() {
             <Button isLoading variant="bordered">
               Deleting…
             </Button>
-            <Button color="danger" isLoading variant="flat">
+            <Button className={buttonStyles.dangerFlat} isLoading>
               Processing…
             </Button>
           </div>
