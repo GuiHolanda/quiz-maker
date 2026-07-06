@@ -25,7 +25,7 @@ Do NOT try to generate topics from text alone — the edital PDF is required for
 TOPIC RULES (certifications only):
 - Topics and percentages must come from the official exam guide/blueprint.
 - Topic percentages (minQuestions and maxQuestions) must be integers between 0 and 100 representing the percentage (e.g., 20 means 20%).
-- The sum of all maxQuestions across topics should be approximately 100 (100%).
+- The sum of all maxQuestions across topics should be approximately 100 (100%) when the exam uses mutually exclusive topic allocations. For certifications that publish independent per-topic percentage ranges (e.g., CFA), preserve the official ranges even if they sum above 100.
 - minQuestions should always be less than maxQuestions for each topic.
 - Use the official exam code in the format (EXAM-CODE).
 
