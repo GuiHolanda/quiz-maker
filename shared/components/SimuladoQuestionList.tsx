@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Button } from '@heroui/button';
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@heroui/modal';
 import { Progress } from '@heroui/progress';
 import { Tooltip } from '@heroui/tooltip';
 
@@ -17,13 +18,16 @@ interface SimuladoQuestionListProps {
   readonly answers: AnswersMap;
   readonly onAnswerChange: (questionId: number, selected: string[]) => void;
   readonly onFinish: () => void;
+  readonly onCancel: () => void;
+  readonly onPendingChange?: (hasPending: boolean) => void;
 }
 
-export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFinish }: SimuladoQuestionListProps) {
+export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFinish, onCancel, onPendingChange }: SimuladoQuestionListProps) {
   const { t } = useTranslation();
   const [currentPage, setCurrentPage] = React.useState(1);
   const [questionsPerPage, setQuestionsPerPage] = React.useState<number>(5);
   const [draftAnswers, setDraftAnswers] = React.useState<AnswersMap>({});
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const totalPages = Math.max(1, Math.ceil(questions.length / questionsPerPage));
   const startIndex = (currentPage - 1) * questionsPerPage;
@@ -45,6 +49,11 @@ export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFin
     });
 
   const hasPending = pendingQuestions.length > 0;
+
+  useEffect(() => {
+    onPendingChange?.(hasPending);
+  }, [hasPending, onPendingChange]);
+
   const confirmedCount = answeredCount - pendingQuestions.length;
   const canFinish = allAnswered && !hasPending;
 
@@ -77,6 +86,22 @@ export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFin
 
   return (
     <div className="flex flex-col gap-4 mt-8">
+      <Modal isOpen={showCancelConfirm} onClose={() => setShowCancelConfirm(false)}>
+        <ModalContent>
+          <ModalHeader>{t('simulado.cancelAttempt')}</ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-default-500">{t('simulado.cancelAttemptConfirm')}</p>
+          </ModalBody>
+          <ModalFooter>
+            <Button className={buttonStyles.secondary} variant="bordered" onPress={() => setShowCancelConfirm(false)}>
+              {t('common.back')}
+            </Button>
+            <Button className={buttonStyles.dangerFlat} onPress={onCancel}>
+              {t('simulado.cancelAttempt')}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
       <div className="flex items-end justify-between gap-4">
         <Tooltip
           className="flex-1"
@@ -123,6 +148,9 @@ export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFin
       </div>
 
       <div className="flex gap-2">
+        <Button className={buttonStyles.secondary} variant="bordered" size="sm" onPress={() => setShowCancelConfirm(true)}>
+          {t('simulado.cancelAttempt')}
+        </Button>
         <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
         <Tooltip
           content={
