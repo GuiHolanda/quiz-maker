@@ -1,27 +1,25 @@
 'use client';
+import { useState } from 'react';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import { Form } from '@heroui/form';
 
-import { getQuestions } from '@/features/connectors';
-import { useRequest } from '@/features/hooks/useRequest.hook';
-import { QuizFormErrors, AIQuestion, QuestionParams } from '@/shared/types';
+import { QuizFormErrors, QuestionParams } from '@/shared/types';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
 import { CertificationManager } from '@/shared/components/CertificationManager';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 
-interface QuestionareFormProps {
-  readonly onGenerated: (questions: AIQuestion[]) => void;
-  readonly onGenerationStart?: (numQuestions: number) => void;
+interface QuestionGeneratorFormProps {
+  readonly onGenerationStart: (params: QuestionParams) => void;
 }
 
-export function QuestionGeneratorForm({ onGenerated, onGenerationStart }: Readonly<QuestionareFormProps>) {
+export function QuestionGeneratorForm({ onGenerationStart }: Readonly<QuestionGeneratorFormProps>) {
   const { selectedCertification, selectedTopics } = useCertificationsContext();
-  const { loading, error, setError, request } = useRequest(getQuestions);
+  const [error, setError] = useState<QuizFormErrors>({});
   const { t } = useTranslation();
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
@@ -46,13 +44,7 @@ export function QuestionGeneratorForm({ onGenerated, onGenerationStart }: Readon
       num_questions: num_questions,
     };
 
-    onGenerationStart?.(parseInt(num_questions, 10) || 5);
-
-    const questions = await request(requestPayload);
-
-    if (questions) {
-      onGenerated(questions);
-    }
+    onGenerationStart(requestPayload);
   };
 
   return (
@@ -74,7 +66,6 @@ export function QuestionGeneratorForm({ onGenerated, onGenerationStart }: Readon
           </div>
           <Button
             className="ml-auto bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
-            disabled={loading}
             type="submit"
           >
             {t('common.generate')}
