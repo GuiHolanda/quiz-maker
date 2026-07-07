@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@heroui/button';
 import { Checkbox } from '@heroui/checkbox';
 import { Chip } from '@heroui/chip';
+import { Spinner } from '@heroui/spinner';
 
 import { GeneratedQuestionsCard } from './GeneratedQuestionsCard';
 
@@ -18,9 +19,13 @@ import { buttonStyles } from '@/config/constants/buttonStyles';
 export function GeneratedQuestionsList({
   questions,
   onSaved,
+  isLoadingMore = false,
+  remainingCount = 0,
 }: Readonly<{
   questions: AIQuestion[];
   onSaved?: () => void;
+  isLoadingMore?: boolean;
+  remainingCount?: number;
 }>) {
   const { state, setSelectedAIquestions, setAIquestions } = useQuizContext();
   const [currentPage, setCurrentPage] = React.useState(1);
@@ -88,7 +93,7 @@ export function GeneratedQuestionsList({
             </Chip>
           )}
         </div>
-        <ItemsPerPageSelect value={questionsPerPage} onChange={onItemsPerPageChange} />
+        <ItemsPerPageSelect value={questionsPerPage} onChange={onItemsPerPageChange} isDisabled={isLoadingMore} />
       </div>
 
       <div className="flex flex-col gap-3">
@@ -106,8 +111,15 @@ export function GeneratedQuestionsList({
           })}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center flex-wrap">
         <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
+
+        {isLoadingMore && remainingCount > 0 && (
+          <Chip className="flex items-center gap-1" color="default" size="sm" variant="flat">
+            <Spinner className="mr-1" size="sm" />
+            {t('generate.loadingMoreQuestions', { count: remainingCount })}
+          </Chip>
+        )}
 
         <Button className={`${buttonStyles.dangerFlat} ml-auto`} size="sm" onPress={onDiscardQuestions}>
           {selectedCount > 0 ? t('common.discardSelected') : t('common.discardAll')}

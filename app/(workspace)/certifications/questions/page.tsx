@@ -1,6 +1,6 @@
 'use client';
 
-import { Key, Suspense, useEffect, useRef, useState } from 'react';
+import { Key, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Tab, Tabs } from '@heroui/tabs';
 import { Progress } from '@heroui/progress';
@@ -23,8 +23,11 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
-import { AIQuestion } from '@/shared/types';
+import { AIQuestion, QuestionParams } from '@/shared/types';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+import { useTwoPhaseGeneration } from '@/features/hooks/useTwoPhaseGeneration.hook';
+import { getQuestions } from '@/features/connectors';
+import { notify } from '@/shared/lib/notify';
 
 function CertificationsQuestionsPageContent() {
   const { t } = useTranslation();
@@ -37,6 +40,7 @@ function CertificationsQuestionsPageContent() {
   const [progress, setProgress] = useState(0);
   const [showSimuladosBanner, setShowSimuladosBanner] = useState(false);
   const [showHint, setShowHint] = useState(false);
+  const [generationParams, setGenerationParams] = useState<QuestionParams | null>(null);
 
   const generatingStartRef = useRef<number>(0);
 
@@ -44,7 +48,7 @@ function CertificationsQuestionsPageContent() {
     if (!isGenerating) return;
     setProgress(0);
     generatingStartRef.current = Date.now();
-    const estimatedMs = 8_000 + generatingCount * 1_200;
+    const estimatedMs = 8_000 + Math.min(5, generatingCount) * 1_200;
     const id = setInterval(() => {
       const ratio = (Date.now() - generatingStartRef.current) / estimatedMs;
       const target = 92 * (1 - Math.exp(-2.5 * ratio));
@@ -53,34 +57,68 @@ function CertificationsQuestionsPageContent() {
     return () => clearInterval(id);
   }, [isGenerating, generatingCount]);
 
-  const onGenerationStart = (numQuestions: number) => {
-    setGeneratingCount(numQuestions);
+  const onFirstBatch = useCallback(
+    (questions: AIQuestion[]) => {
+      setProgress(100);
+      setTimeout(() => {
+        replaceQuiz({
+          meta: {
+            topic: questions[0]?.topic ?? '',
+            num_questions: generatingCount,
+          },
+          questions: [],
+          answers: {},
+          isFinished: false,
+          aiQuestions: questions,
+          selectedAIQuestions: [],
+        });
+        setAIquestions(questions, null);
+        setIsGenerating(false);
+      }, 350);
+    },
+    [replaceQuiz, setAIquestions, generatingCount],
+  );
+
+  const onSecondBatch = useCallback(
+    (allQuestions: AIQuestion[]) => {
+      setAIquestions(allQuestions, null);
+    },
+    [setAIquestions],
+  );
+
+  const onGenerationError = useCallback(
+    (error: unknown, phase: 1 | 2) => {
+      if (phase === 1) setIsGenerating(false);
+      const err = error as { response?: { data?: { message?: string } } };
+      notify.error(t('toast.failedToLoad'), err?.response?.data?.message ?? t('toast.somethingWrong'));
+    },
+    [t],
+  );
+
+  const { isSecondPhaseLoading, generate, abort } = useTwoPhaseGeneration<QuestionParams, AIQuestion>({
+    generateFn: getQuestions,
+    params: generationParams ?? { certification_name: '', topic_name: '', num_questions: '5' },
+    totalCount: generatingCount,
+    onFirstBatch,
+    onSecondBatch,
+    onError: onGenerationError,
+  });
+
+  const remainingCount = Math.max(0, generatingCount - (state?.aiQuestions?.length ?? 0));
+
+  const onGenerationStart = (params: QuestionParams) => {
+    setGeneratingCount(parseInt(params.num_questions, 10) || 5);
+    setGenerationParams(params);
     setIsGenerating(true);
     setShowHint(true);
   };
 
-  const onQuestionsGenerated = (generatedQuestions: AIQuestion[] | undefined) => {
-    if (!generatedQuestions) {
-      setIsGenerating(false);
-      return;
+  useEffect(() => {
+    if (generationParams && isGenerating) {
+      generate();
     }
-    setProgress(100);
-    setTimeout(() => {
-      replaceQuiz({
-        meta: {
-          topic: generatedQuestions[0]?.topic ?? '',
-          num_questions: generatedQuestions.length,
-        },
-        questions: [],
-        answers: {},
-        isFinished: false,
-        aiQuestions: generatedQuestions,
-        selectedAIQuestions: [],
-      });
-      setAIquestions(generatedQuestions, null);
-      setIsGenerating(false);
-    }, 350);
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [generationParams]);
 
   return (
     <PageHeader subtitle={t('certification.questionsPageSubtitle')} title={t('certification.questionsPageTitle')}>
@@ -174,13 +212,16 @@ function CertificationsQuestionsPageContent() {
 
     return (
       <>
-        <QuestionGeneratorForm onGenerated={onQuestionsGenerated} onGenerationStart={onGenerationStart} />
+        <QuestionGeneratorForm onGenerationStart={onGenerationStart} />
         {(isGenerating || (state?.aiQuestions?.length ?? 0) > 0) && renderSelectionHint()}
         {isGenerating && renderGenerationProgress()}
         {!isGenerating && (state?.aiQuestions?.length ?? 0) > 0 && (
           <GeneratedQuestionsList
             questions={state?.aiQuestions ?? []}
+            isLoadingMore={isSecondPhaseLoading}
+            remainingCount={remainingCount}
             onSaved={() => {
+              abort();
               setShowSimuladosBanner(true);
               setSelectedTab('browse');
             }}
@@ -202,7 +243,7 @@ function CertificationsQuestionsPageContent() {
           value={progress}
           size='sm'
         />
-        {progress >= 75 && <SkeletonListLoader count={generatingCount} height="h-24" />}
+        {progress >= 75 && <SkeletonListLoader count={Math.min(5, generatingCount)} height="h-24" />}
       </div>
     );
   }
