@@ -44,7 +44,7 @@ export class CertificationService {
     const { label, key, provider, topics } = certification;
 
     return this.prismaService.$transaction(async (tx) => {
-      const existing = await tx.certification.findUnique({ where: { key } });
+      const existing = await tx.certification.findFirst({ where: { key, userId } });
 
       if (existing) {
         throw Object.assign(new Error(`Certification with key "${key}" already exists`), { status: 409 });
@@ -135,19 +135,15 @@ export class CertificationService {
   }
 
   public async deleteCertification(certificationKey: string, userId: string) {
-    const certification = await this.prismaService.certification.findUnique({
-      where: { key: certificationKey },
+    const certification = await this.prismaService.certification.findFirst({
+      where: { key: certificationKey, userId },
     });
 
     if (!certification) {
       throw Object.assign(new Error('Certification not found'), { status: 404 });
     }
 
-    if (certification.userId !== userId) {
-      throw Object.assign(new Error('Forbidden'), { status: 403 });
-    }
-
-    await this.prismaService.certification.delete({ where: { key: certificationKey } });
+    await this.prismaService.certification.delete({ where: { userId_key: { userId, key: certificationKey } } });
   }
 
   public async addTopic(
@@ -157,16 +153,12 @@ export class CertificationService {
     maxQuestions: number,
     userId: string
   ) {
-    const certification = await this.prismaService.certification.findUnique({
-      where: { key: certificationKey },
+    const certification = await this.prismaService.certification.findFirst({
+      where: { key: certificationKey, userId },
     });
 
     if (!certification) {
       throw Object.assign(new Error(`Certification "${certificationKey}" not found`), { status: 404 });
-    }
-
-    if (certification.userId !== userId) {
-      throw Object.assign(new Error('Forbidden'), { status: 403 });
     }
 
     const existing = await this.prismaService.certificationTopic.findUnique({
@@ -187,18 +179,14 @@ export class CertificationService {
     updates: { newLabel?: string; newKey?: string; newProvider?: string | null },
     userId: string
   ) {
-    const cert = await this.prismaService.certification.findUnique({ where: { key: certKey } });
+    const cert = await this.prismaService.certification.findFirst({ where: { key: certKey, userId } });
 
     if (!cert) {
       throw Object.assign(new Error('Certification not found'), { status: 404 });
     }
 
-    if (cert.userId !== userId) {
-      throw Object.assign(new Error('Forbidden'), { status: 403 });
-    }
-
     if (updates.newKey && updates.newKey !== certKey) {
-      const conflict = await this.prismaService.certification.findUnique({ where: { key: updates.newKey } });
+      const conflict = await this.prismaService.certification.findFirst({ where: { key: updates.newKey, userId } });
 
       if (conflict) {
         throw Object.assign(new Error(`Certification with key "${updates.newKey}" already exists`), { status: 409 });
@@ -206,7 +194,7 @@ export class CertificationService {
     }
 
     return this.prismaService.certification.update({
-      where: { key: certKey },
+      where: { userId_key: { userId, key: certKey } },
       data: {
         ...(updates.newLabel !== undefined && { label: updates.newLabel }),
         ...(updates.newKey !== undefined && { key: updates.newKey }),

@@ -1279,12 +1279,12 @@ async function main() {
     console.log(`\nSeeding certification: ${cert.certificationTitle}`);
 
     // upsert certification + topics
-    const existingCert = await prisma.certification.findUnique({ where: { key: cert.certificationKey } });
+    const existingCert = await prisma.certification.findFirst({ where: { key: cert.certificationKey, userId: null } });
 
     if (existingCert) {
       await prisma.certificationTopic.deleteMany({ where: { certificationId: existingCert.id } });
       await prisma.certification.update({
-        where: { key: cert.certificationKey },
+        where: { userId_key: { userId: null, key: cert.certificationKey } },
         data: {
           label: cert.certificationTitle,
           topics: {

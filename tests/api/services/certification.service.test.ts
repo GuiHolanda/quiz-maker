@@ -52,7 +52,7 @@ describe('CertificationService', () => {
       topics: [{ id: 'topic-1', name: 'IAM', minQuestions: 5, maxQuestions: 20, certificationId: 'cert-1' }],
     };
 
-    prismaMock.certification.findUnique.mockResolvedValue(null);
+    prismaMock.certification.findFirst.mockResolvedValue(null);
     prismaMock.certification.create.mockResolvedValue(fakeCert as any);
 
     const certification = {
@@ -80,7 +80,7 @@ describe('CertificationService', () => {
 
   // Behaviour 5: save() throws 409 on duplicate key
   it('save() throws 409 when a certification with the same key already exists', async () => {
-    prismaMock.certification.findUnique.mockResolvedValue({ id: 'existing-cert' } as any);
+    prismaMock.certification.findFirst.mockResolvedValue({ id: 'existing-cert' } as any);
 
     const certification = {
       label: 'AWS SAA',
@@ -96,7 +96,7 @@ describe('CertificationService', () => {
 
   // Behaviour 6: addTopic() throws 409 when topic name already exists
   it('addTopic() throws 409 when topic name already exists in the certification', async () => {
-    prismaMock.certification.findUnique.mockResolvedValue({
+    prismaMock.certification.findFirst.mockResolvedValue({
       id: 'cert-1',
       userId: 'user-1',
     } as any);
@@ -125,7 +125,7 @@ describe('CertificationService', () => {
 
   // Behaviour 8: deleteCertification() throws 404 when certification not found
   it('deleteCertification() throws 404 when no certification exists for the given key', async () => {
-    prismaMock.certification.findUnique.mockResolvedValue(null);
+    prismaMock.certification.findFirst.mockResolvedValue(null);
 
     await expect(service.deleteCertification('aws-saa', 'user-1')).rejects.toMatchObject({
       status: 404,
@@ -134,24 +134,20 @@ describe('CertificationService', () => {
     expect(prismaMock.certification.delete).not.toHaveBeenCalled();
   });
 
-  // Behaviour 9: deleteCertification() throws 403 when requester is not the owner
-  it('deleteCertification() throws 403 when the requesting user is not the certification owner', async () => {
-    prismaMock.certification.findUnique.mockResolvedValue({
-      id: 'cert-1',
-      key: 'aws-saa',
-      userId: 'other-user',
-    } as any);
+  // Behaviour 9: deleteCertification() throws 404 when certification belongs to a different user
+  it('deleteCertification() throws 404 when the certification does not belong to the requesting user', async () => {
+    prismaMock.certification.findFirst.mockResolvedValue(null);
 
     await expect(service.deleteCertification('aws-saa', 'current-user')).rejects.toMatchObject({
-      status: 403,
+      status: 404,
     });
 
     expect(prismaMock.certification.delete).not.toHaveBeenCalled();
   });
 
-  // Behaviour 10: deleteCertification() deletes by key on the happy path
-  it('deleteCertification() calls prisma.certification.delete with the matching key when owner matches', async () => {
-    prismaMock.certification.findUnique.mockResolvedValue({
+  // Behaviour 10: deleteCertification() deletes by userId+key on the happy path
+  it('deleteCertification() calls prisma.certification.delete with userId+key when owner matches', async () => {
+    prismaMock.certification.findFirst.mockResolvedValue({
       id: 'cert-1',
       key: 'aws-saa',
       userId: 'user-1',
@@ -160,12 +156,14 @@ describe('CertificationService', () => {
 
     await service.deleteCertification('aws-saa', 'user-1');
 
-    expect(prismaMock.certification.delete).toHaveBeenCalledWith({ where: { key: 'aws-saa' } });
+    expect(prismaMock.certification.delete).toHaveBeenCalledWith({
+      where: { userId_key: { userId: 'user-1', key: 'aws-saa' } },
+    });
   });
 
   // Behaviour 11: updateCertificationMeta() throws 409 when newKey conflicts
   it('updateCertificationMeta() throws 409 when newKey already belongs to a different certification', async () => {
-    prismaMock.certification.findUnique
+    prismaMock.certification.findFirst
       .mockResolvedValueOnce({ id: 'cert-1', key: 'aws-saa', userId: 'user-1' } as any)
       .mockResolvedValueOnce({ id: 'cert-2', key: 'aws-saa-new' } as any);
 

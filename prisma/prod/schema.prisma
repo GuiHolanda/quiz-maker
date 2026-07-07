@@ -72,11 +72,13 @@ model VerificationToken {
 model Certification {
   id       String               @id @default(cuid())
   label    String
-  key      String               @unique
+  key      String
   provider String?
   topics   CertificationTopic[]
   userId   String?
   user     User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
 }
 
 model CertificationTopic {
