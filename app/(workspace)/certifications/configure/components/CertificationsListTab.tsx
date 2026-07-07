@@ -102,6 +102,7 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
             content: 'px-4 pb-4 mt-4',
             indicator: 'text-default-400',
           }}
+          showDivider={false}
         >
           {certifications.map((certification) => (
             <AccordionItem

@@ -98,7 +98,12 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
             <p className="text-default-500">{deleteTarget?.name ?? deleteTarget?.certLabel}</p>
           </ModalBody>
           <ModalFooter>
-            <Button isDisabled={isDeleting} variant="bordered" className={buttonStyles.secondary} onPress={() => setDeleteTarget(null)}>
+            <Button
+              isDisabled={isDeleting}
+              variant="bordered"
+              className={buttonStyles.secondary}
+              onPress={() => setDeleteTarget(null)}
+            >
               {t('common.cancel')}
             </Button>
             <Button className={buttonStyles.danger} isLoading={isDeleting} onPress={handleDelete}>
@@ -138,7 +143,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
           </p>
         </div>
 
-        <div className="flex flex-wrap justify-between mt-4">
+        <div className="flex flex-wrap justify-between mt-8">
           <div className="flex gap-2">
             <Button
               className={buttonStyles.primarySm}
@@ -150,17 +155,18 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
               {isAnswered ? t('simulado.tryAgain') : t('simulado.respond')}
             </Button>
             {isAnswered && (
-              <Button className={buttonStyles.secondary} size="sm" variant="bordered" onPress={() => setHistoryTarget(s)}>
+              <Button
+                className={buttonStyles.secondary}
+                size="sm"
+                variant="bordered"
+                onPress={() => setHistoryTarget(s)}
+              >
                 {t('simulado.viewResults')}
               </Button>
             )}
           </div>
-          <Button
-            className="p-1.5 text-default-400 hover:text-danger hover:bg-danger/10 transition-colors"
-            variant="light"
-            onPress={() => setDeleteTarget(s)}
-          >
-            <FontAwesomeIcon className="w-5 h-5" icon={faTrash} />
+          <Button className={buttonStyles.danger} size="sm" onPress={() => setDeleteTarget(s)}>
+            {t('simulado.delete')}
           </Button>
         </div>
       </div>
