@@ -1,27 +1,25 @@
 'use client';
+import { useState } from 'react';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import { Form } from '@heroui/form';
 
-import { getPublicExamQuestions } from '@/features/connectors';
-import { useRequest } from '@/features/hooks/useRequest.hook';
-import { PublicExamFormErrors, AIPublicExamQuestion, PublicExamQuestionParams } from '@/shared/types';
+import { PublicExamFormErrors, PublicExamQuestionParams } from '@/shared/types';
 import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
 import { PublicExamManager } from '@/shared/components/PublicExamManager';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 
 interface PublicExamQuestionGeneratorFormProps {
-  readonly onGenerated: (questions: AIPublicExamQuestion[]) => void;
-  readonly onGenerationStart?: (numQuestions: number) => void;
+  readonly onGenerationStart: (params: PublicExamQuestionParams) => void;
 }
 
-export function PublicExamQuestionGeneratorForm({ onGenerated, onGenerationStart }: Readonly<PublicExamQuestionGeneratorFormProps>) {
+export function PublicExamQuestionGeneratorForm({ onGenerationStart }: Readonly<PublicExamQuestionGeneratorFormProps>) {
   const { selectedPublicExam, selectedSubjects, selectedTopic } = usePublicExamsContext();
-  const { loading, error, setError, request } = useRequest(getPublicExamQuestions);
+  const [error, setError] = useState<PublicExamFormErrors>({});
   const { t } = useTranslation();
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
@@ -48,11 +46,7 @@ export function PublicExamQuestionGeneratorForm({ onGenerated, onGenerationStart
       num_questions,
     };
 
-    onGenerationStart?.(parseInt(num_questions, 10) || 5);
-
-    const questions = await request(requestPayload);
-
-    if (questions) onGenerated(questions);
+    onGenerationStart(requestPayload);
   };
 
   return (
@@ -74,7 +68,6 @@ export function PublicExamQuestionGeneratorForm({ onGenerated, onGenerationStart
           </div>
           <Button
             className="ml-auto bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
-            disabled={loading}
             type="submit"
           >
             {t('common.generate')}
@@ -84,4 +77,3 @@ export function PublicExamQuestionGeneratorForm({ onGenerated, onGenerationStart
     </Form>
   );
 }
-
