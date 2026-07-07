@@ -10,9 +10,10 @@ import { inputProperties } from '@/config/constants/inputStyles';
 interface ItemsPerPageSelectProps {
   readonly value: number;
   readonly onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  readonly isDisabled?: boolean;
 }
 
-export function ItemsPerPageSelect({ value, onChange }: ItemsPerPageSelectProps) {
+export function ItemsPerPageSelect({ value, onChange, isDisabled }: ItemsPerPageSelectProps) {
   const { t } = useTranslation();
 
   return (
@@ -23,6 +24,7 @@ export function ItemsPerPageSelect({ value, onChange }: ItemsPerPageSelectProps)
       <Select
         className="w-24 ml-auto"
         id="questionsPerPage"
+        isDisabled={isDisabled}
         items={QUESTIONS_PER_PAGE_OPTIONS}
         selectedKeys={[String(value)]}
         onChange={onChange}
