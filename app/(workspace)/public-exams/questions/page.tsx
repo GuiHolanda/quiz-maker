@@ -1,6 +1,6 @@
 'use client';
 
-import { Key, useEffect, useState } from 'react';
+import { Key, useEffect, useRef, useState } from 'react';
 import { Tab, Tabs } from '@heroui/tabs';
 import { Progress } from '@heroui/progress';
 import { Card, CardBody } from '@heroui/card';
@@ -34,17 +34,20 @@ function PublicExamsQuestionsPageContent() {
   const [showSimuladosBanner, setShowSimuladosBanner] = useState(false);
   const [showHint, setShowHint] = useState(false);
 
+  const generatingStartRef = useRef<number>(0);
+
   useEffect(() => {
     if (!isGenerating) return;
     setProgress(0);
+    generatingStartRef.current = Date.now();
+    const estimatedMs = 8_000 + generatingCount * 1_200;
     const id = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 88) return 88;
-        return prev + Math.max(0.4, (88 - prev) * 0.06);
-      });
-    }, 250);
+      const ratio = (Date.now() - generatingStartRef.current) / estimatedMs;
+      const target = 92 * (1 - Math.exp(-2.5 * ratio));
+      setProgress((prev) => Math.max(prev, Math.min(target, 92)));
+    }, 200);
     return () => clearInterval(id);
-  }, [isGenerating]);
+  }, [isGenerating, generatingCount]);
 
   const onGenerationStart = (numQuestions: number) => {
     setGeneratingCount(numQuestions);
