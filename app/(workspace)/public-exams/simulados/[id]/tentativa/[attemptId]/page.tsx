@@ -24,7 +24,6 @@ export default function SimuladoTentativaPage() {
   const [isFinishing, setIsFinishing] = useState(false);
   const [hasPendingDrafts, setHasPendingDrafts] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
-  const [pendingNavTarget, setPendingNavTarget] = useState<string | null>(null);
 
   const { answers, handleAnswerChange, clearProgress } = useAttemptProgress(Number(params.attemptId));
 
@@ -58,19 +57,17 @@ export default function SimuladoTentativaPage() {
   }));
 
   function handleCancel() {
-    const target = '/public-exams/simulados';
     if (hasPendingDrafts) {
-      setPendingNavTarget(target);
       setShowExitConfirm(true);
       return;
     }
     clearProgress();
-    router.push(target);
+    router.push('/public-exams/simulados');
   }
 
   function handleConfirmExit() {
     clearProgress();
-    router.push(pendingNavTarget!);
+    router.push('/public-exams/simulados');
   }
 
   async function handleFinish() {

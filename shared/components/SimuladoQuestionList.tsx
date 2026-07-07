@@ -96,7 +96,7 @@ export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFin
             <Button className={buttonStyles.secondary} variant="bordered" onPress={() => setShowCancelConfirm(false)}>
               {t('common.back')}
             </Button>
-            <Button className={buttonStyles.dangerFlat} onPress={onCancel}>
+            <Button className={buttonStyles.dangerFlat} onPress={() => { setShowCancelConfirm(false); onCancel(); }}>
               {t('simulado.cancelAttempt')}
             </Button>
           </ModalFooter>
