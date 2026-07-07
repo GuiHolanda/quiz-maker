@@ -1,6 +1,6 @@
 import type { Certification, CertificationsStoreApi } from '@/shared/types';
 
-import React, { useReducer, useEffect, useCallback, useMemo } from 'react';
+import React, { useReducer, useEffect, useRef, useCallback, useMemo } from 'react';
 
 import { certificationsReducer } from '../reducers/certifications.reducer';
 import { getCertifications } from '../connectors';
@@ -11,39 +11,55 @@ export const CertificationsContext = React.createContext<CertificationsStoreApi 
 
 export function CertificationsProvider({ children }: Readonly<{ children: React.ReactNode }>) {
   const [state, dispatch] = useReducer(certificationsReducer, INITIAL_CERTIFICATIONS_STATE);
+  const hydrated = useRef(false);
 
   useEffect(() => {
+    let storedKey: string | null = null;
+    let storedTopics: string[] = [];
+
     try {
       const raw = localStorage.getItem(CERTIFICATIONS_LOCAL_STORAGE_KEY);
 
       if (raw) {
         const parsed = JSON.parse(raw);
 
-        dispatch({ type: 'setSelectedCertification', payload: { key: parsed?.selectedCertification?.key ?? null } });
-        dispatch({ type: 'setSelectedTopics', payload: { topics: parsed?.selectedTopics ?? [] } });
+        storedKey = parsed?.selectedCertification?.key ?? null;
+        storedTopics = parsed?.selectedTopics ?? [];
       }
     } catch (err) {
       console.warn('Failed to read UI state from storage', err);
     }
 
     getCertifications()
-      .then((certs) => dispatch({ type: 'setCertifications', payload: { certifications: certs } }))
+      .then((certs) => {
+        dispatch({ type: 'setCertifications', payload: { certifications: certs } });
+        if (storedKey) dispatch({ type: 'setSelectedCertification', payload: { key: storedKey } });
+        dispatch({ type: 'setSelectedTopics', payload: { topics: storedTopics } });
+        hydrated.current = true;
+      })
       .catch(() => {
         try {
           const raw = localStorage.getItem(CERTIFICATIONS_LOCAL_STORAGE_KEY);
 
-          if (!raw) return;
+          if (!raw) {
+            hydrated.current = true;
+            return;
+          }
           const parsed = JSON.parse(raw);
 
           if (Array.isArray(parsed?.certifications)) {
             dispatch({ type: 'setCertifications', payload: { certifications: parsed.certifications } });
+            if (storedKey) dispatch({ type: 'setSelectedCertification', payload: { key: storedKey } });
+            dispatch({ type: 'setSelectedTopics', payload: { topics: storedTopics } });
           }
         } catch {}
+        hydrated.current = true;
       })
       .finally(() => dispatch({ type: 'setLoading', payload: { isLoading: false } }));
   }, []);
 
   useEffect(() => {
+    if (!hydrated.current) return;
     try {
       const toStore = { selectedCertification: state.selectedCertification, selectedTopics: state.selectedTopics };
 

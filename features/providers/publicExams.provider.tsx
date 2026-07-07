@@ -1,6 +1,6 @@
 import type { PublicExam, PublicExamsStoreApi } from '@/shared/types';
 
-import React, { useReducer, useEffect, useCallback, useMemo } from 'react';
+import React, { useReducer, useEffect, useRef, useCallback, useMemo } from 'react';
 
 import { publicExamsReducer } from '../reducers/publicExams.reducer';
 import { getPublicExams } from '../connectors';
@@ -11,43 +11,59 @@ export const PublicExamsContext = React.createContext<PublicExamsStoreApi | null
 
 export function PublicExamsProvider({ children }: Readonly<{ children: React.ReactNode }>) {
   const [state, dispatch] = useReducer(publicExamsReducer, INITIAL_PUBLIC_EXAMS_STATE);
+  const hydrated = useRef(false);
 
   useEffect(() => {
+    let storedId: string | null = null;
+    let storedSubjects: string[] = [];
+    let storedTopic: string | null = null;
+
     try {
       const raw = localStorage.getItem(PUBLIC_EXAMS_LOCAL_STORAGE_KEY);
 
       if (raw) {
         const parsed = JSON.parse(raw);
 
-        dispatch({
-          type: 'setSelectedPublicExam',
-          payload: { id: parsed?.selectedPublicExam?.id ?? null },
-        });
-        dispatch({ type: 'setSelectedSubjects', payload: { subjects: parsed?.selectedSubjects ?? [] } });
-        dispatch({ type: 'setSelectedTopic', payload: { topic: parsed?.selectedTopic ?? null } });
+        storedId = parsed?.selectedPublicExam?.id ?? null;
+        storedSubjects = parsed?.selectedSubjects ?? [];
+        storedTopic = parsed?.selectedTopic ?? null;
       }
     } catch (err) {
       console.warn('Failed to read UI state from storage', err);
     }
 
     getPublicExams()
-      .then((exams) => dispatch({ type: 'setPublicExams', payload: { publicExams: exams } }))
+      .then((exams) => {
+        dispatch({ type: 'setPublicExams', payload: { publicExams: exams } });
+        if (storedId) dispatch({ type: 'setSelectedPublicExam', payload: { id: storedId } });
+        dispatch({ type: 'setSelectedSubjects', payload: { subjects: storedSubjects } });
+        dispatch({ type: 'setSelectedTopic', payload: { topic: storedTopic } });
+        hydrated.current = true;
+      })
       .catch(() => {
         try {
           const raw = localStorage.getItem(PUBLIC_EXAMS_LOCAL_STORAGE_KEY);
 
-          if (!raw) return;
+          if (!raw) {
+            hydrated.current = true;
+            return;
+          }
           const parsed = JSON.parse(raw);
 
           if (Array.isArray(parsed?.publicExams)) {
             dispatch({ type: 'setPublicExams', payload: { publicExams: parsed.publicExams } });
+            if (storedId) dispatch({ type: 'setSelectedPublicExam', payload: { id: storedId } });
+            dispatch({ type: 'setSelectedSubjects', payload: { subjects: storedSubjects } });
+            dispatch({ type: 'setSelectedTopic', payload: { topic: storedTopic } });
           }
         } catch {}
+        hydrated.current = true;
       })
       .finally(() => dispatch({ type: 'setLoading', payload: { isLoading: false } }));
   }, []);
 
   useEffect(() => {
+    if (!hydrated.current) return;
     try {
       const toStore = {
         selectedPublicExam: state.selectedPublicExam,

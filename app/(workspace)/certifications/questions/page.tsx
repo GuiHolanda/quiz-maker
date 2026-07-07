@@ -1,6 +1,7 @@
 'use client';
 
-import { Key, useEffect, useRef, useState } from 'react';
+import { Key, Suspense, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Tab, Tabs } from '@heroui/tabs';
 import { Progress } from '@heroui/progress';
 import { Card, CardBody } from '@heroui/card';
@@ -27,7 +28,8 @@ import { buttonStyles } from '@/config/constants/buttonStyles';
 
 function CertificationsQuestionsPageContent() {
   const { t } = useTranslation();
-  const [selectedTab, setSelectedTab] = useState<Key>('browse');
+  const searchParams = useSearchParams();
+  const [selectedTab, setSelectedTab] = useState<Key>(searchParams.get('tab') ?? 'browse');
   const { state, replaceQuiz, setAIquestions } = useQuizContext();
   const { certifications, isLoading } = useCertificationsContext();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -230,7 +232,9 @@ export default function CertificationsQuestionsPage() {
   return (
     <CertificationsProvider>
       <QuizProvider>
-        <CertificationsQuestionsPageContent />
+        <Suspense>
+          <CertificationsQuestionsPageContent />
+        </Suspense>
       </QuizProvider>
     </CertificationsProvider>
   );
