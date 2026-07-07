@@ -4,9 +4,6 @@ import { useState, useCallback } from 'react';
 import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Button } from '@heroui/button';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash } from '@fortawesome/free-solid-svg-icons';
-
 import { EditCertificationModal } from './EditCertificationModal';
 
 import { SectionsTable } from '@/shared/components/SectionsTable';
@@ -102,7 +99,7 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
             title: 'text-sm text-foreground font-semibold',
             titleWrapper: 'flex-1 flex flex-col text-start min-w-0 overflow-hidden',
             trigger: 'px-4 py-3 hover:bg-default-100 rounded-xl transition-colors duration-200',
-            content: 'px-4 pb-4',
+            content: 'px-4 pb-4 mt-4',
             indicator: 'text-default-400',
           }}
         >
@@ -116,29 +113,15 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
                     {certification.label}
                   </span>
                   {certification.provider && (
-                    <>
-                      <span className="text-xs text-default-400 shrink-0">·</span>
-                      <span className="text-xs text-default-500 shrink-0">{certification.provider}</span>
-                    </>
+                    <span className="text-xs text-default-500 shrink-0">{certification.provider}</span>
                   )}
-                  <Button
-                    isIconOnly
-                    aria-label={t('common.remove')}
-                    className={`${buttonStyles.iconOnly.danger} ml-auto shrink-0`}
-                    size="sm"
-                    variant="light"
-                    onPress={() => {
-                      setDeletingCert(certification);
-                    }}
-                  >
-                    <FontAwesomeIcon className="w-3 h-3" icon={faTrash} />
-                  </Button>
                 </div>
               }
             >
               <SectionsTable
                 selectedCertification={certification}
                 topicsList={certification.topics}
+                onDeleteCertification={() => setDeletingCert(certification)}
                 onEditCertification={() => setEditingCert(certification)}
                 onTopicAdded={(topic) => handleTopicAdded(certification, topic)}
                 onTopicRemoved={(topicId) => handleTopicRemoved(certification, topicId)}

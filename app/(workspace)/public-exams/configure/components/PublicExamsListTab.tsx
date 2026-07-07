@@ -4,9 +4,6 @@ import { useState, useCallback } from 'react';
 import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Button } from '@heroui/button';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash } from '@fortawesome/free-solid-svg-icons';
-
 import { EditPublicExamModal } from './EditPublicExamModal';
 
 import { buttonStyles } from '@/config/constants/buttonStyles';
@@ -167,22 +164,13 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
                       <span className="text-xs text-default-500 shrink-0">{publicExam.year}</span>
                     </>
                   )}
-                  <Button
-                    isIconOnly
-                    aria-label={t('common.remove')}
-                    className={`${buttonStyles.iconOnly.danger} ml-auto shrink-0`}
-                    size="sm"
-                    variant="light"
-                    onPress={() => setDeletingExam(publicExam)}
-                  >
-                    <FontAwesomeIcon className="w-3 h-3" icon={faTrash} />
-                  </Button>
                 </div>
               }
             >
               <PublicExamSubjectsTable
                 selectedPublicExam={publicExam}
                 subjectsList={publicExam.subjects}
+                onDeletePublicExam={() => setDeletingExam(publicExam)}
                 onEditPublicExam={() => setEditingExam(publicExam)}
                 onSubjectAdded={(subject) => handleSubjectAdded(publicExam, subject)}
                 onSubjectRemoved={(subjectId) => handleSubjectRemoved(publicExam, subjectId)}

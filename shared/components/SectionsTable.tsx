@@ -10,6 +10,7 @@ import { updateCertificationTopic, deleteCertificationTopic, addCertificationTop
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
 import { inputProperties } from '@/config/constants/inputStyles';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface SectionsTableProps {
   selectedCertification: Certification | null;
@@ -20,6 +21,7 @@ interface SectionsTableProps {
   onTopicRemoved?: (topicId: string) => void;
   onTopicAdded?: (topic: CertificationTopic) => void;
   onEditCertification?: () => void;
+  onDeleteCertification?: () => void;
 }
 
 interface EditState {
@@ -48,6 +50,7 @@ export function SectionsTable({
   onTopicRemoved,
   onTopicAdded,
   onEditCertification,
+  onDeleteCertification,
 }: SectionsTableProps) {
   const { t } = useTranslation();
   const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
@@ -409,26 +412,33 @@ export function SectionsTable({
           </tbody>
         </table>
       </div>
-      {(!isAddingTopic && onTopicAdded) || onEditCertification ? (
-        <div className="mt-3 flex gap-2">
-          {onEditCertification && (
-            <Button
-              className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
-              size="sm"
-              variant="flat"
-              onPress={onEditCertification}
-            >
-              {t('certification.editCertification')}
-            </Button>
-          )}
-          {!isAddingTopic && onTopicAdded && (
-            <Button
-              className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
-              size="sm"
-              variant="flat"
-              onPress={() => setIsAddingTopic(true)}
-            >
-              {t('certification.addTopic')}
+      {(!isAddingTopic && onTopicAdded) || onEditCertification || onDeleteCertification ? (
+        <div className="mt-8 flex items-center justify-between gap-2">
+          <div className="flex gap-2">
+            {onEditCertification && (
+              <Button
+                className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
+                size="sm"
+                variant="flat"
+                onPress={onEditCertification}
+              >
+                {t('certification.editCertification')}
+              </Button>
+            )}
+            {!isAddingTopic && onTopicAdded && (
+              <Button
+                className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
+                size="sm"
+                variant="flat"
+                onPress={() => setIsAddingTopic(true)}
+              >
+                {t('certification.addTopic')}
+              </Button>
+            )}
+          </div>
+          {onDeleteCertification && (
+            <Button className={buttonStyles.danger} size="sm" onPress={onDeleteCertification}>
+              {t('certification.deleteCertificationTitle')}
             </Button>
           )}
         </div>

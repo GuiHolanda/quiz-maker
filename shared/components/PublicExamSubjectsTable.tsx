@@ -17,6 +17,7 @@ import {
 } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface PublicExamSubjectsTableProps {
   readonly selectedPublicExam: PublicExam | null;
@@ -30,6 +31,7 @@ interface PublicExamSubjectsTableProps {
   readonly onTopicRemoved?: (subjectId: string, topicId: string) => void;
   readonly onTopicUpdated?: (subjectId: string, topicId: string, newName: string) => void;
   readonly onEditPublicExam?: () => void;
+  readonly onDeletePublicExam?: () => void;
 }
 
 const TH = 'text-left text-xs font-semibold text-default-400 px-4 py-3 border-b border-default-200';
@@ -46,6 +48,7 @@ export function PublicExamSubjectsTable({
   onTopicRemoved,
   onTopicUpdated,
   onEditPublicExam,
+  onDeletePublicExam,
 }: PublicExamSubjectsTableProps) {
   const { t } = useTranslation();
   const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
@@ -219,12 +222,23 @@ export function PublicExamSubjectsTable({
   }
 
   function renderTableFooter() {
-    if (isAddingSubject || (!onSubjectAdded && !onEditPublicExam)) return null;
+    if (isAddingSubject || (!onSubjectAdded && !onEditPublicExam && !onDeletePublicExam)) return null;
 
     return (
-      <div className="mt-3 flex gap-2">
-        {onEditPublicExam && renderEditExamButton()}
-        {!isAddingSubject && onSubjectAdded && renderAddSubjectButton()}
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <div className="flex gap-2">
+          {onEditPublicExam && renderEditExamButton()}
+          {!isAddingSubject && onSubjectAdded && renderAddSubjectButton()}
+        </div>
+        {onDeletePublicExam && (
+          <Button
+            className={buttonStyles.danger}
+            size="sm"
+            onPress={onDeletePublicExam}
+          >
+            {t('concurso.deleteExamTitle')}
+          </Button>
+        )}
       </div>
     );
   }
