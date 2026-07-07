@@ -33,6 +33,18 @@ export function useTwoPhaseGeneration<TParams extends { num_questions: string },
   const [isSecondPhaseLoading, setIsSecondPhaseLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
+  const paramsRef = useRef(params);
+  paramsRef.current = params;
+  const generateFnRef = useRef(generateFn);
+  generateFnRef.current = generateFn;
+  const onFirstBatchRef = useRef(onFirstBatch);
+  onFirstBatchRef.current = onFirstBatch;
+  const onSecondBatchRef = useRef(onSecondBatch);
+  onSecondBatchRef.current = onSecondBatch;
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
+
+  // Clears loading state and prevents stale updates; does not cancel the in-flight network request
   const abort = useCallback(() => {
     abortRef.current?.abort();
     abortRef.current = null;
@@ -45,39 +57,43 @@ export function useTwoPhaseGeneration<TParams extends { num_questions: string },
     const controller = new AbortController();
     abortRef.current = controller;
 
+    setIsFirstPhaseLoading(false);
+    setIsSecondPhaseLoading(false);
+
+    const currentParams = paramsRef.current;
     const phase1Count = Math.min(firstBatchSize, totalCount);
     const phase2Count = totalCount - phase1Count;
 
     setIsFirstPhaseLoading(true);
     let phase1Questions: T[];
     try {
-      phase1Questions = await generateFn({ ...params, num_questions: String(phase1Count) });
+      phase1Questions = await generateFnRef.current({ ...currentParams, num_questions: String(phase1Count) });
     } catch (error) {
       if (controller.signal.aborted) return;
       setIsFirstPhaseLoading(false);
-      onError(error, 1);
+      onErrorRef.current(error, 1);
       return;
     }
     if (controller.signal.aborted) return;
     setIsFirstPhaseLoading(false);
-    onFirstBatch(phase1Questions);
+    onFirstBatchRef.current(phase1Questions);
 
     if (phase2Count <= 0) return;
 
     setIsSecondPhaseLoading(true);
     let phase2Questions: T[];
     try {
-      phase2Questions = await generateFn({ ...params, num_questions: String(phase2Count) });
+      phase2Questions = await generateFnRef.current({ ...currentParams, num_questions: String(phase2Count) });
     } catch (error) {
       if (controller.signal.aborted) return;
       setIsSecondPhaseLoading(false);
-      onError(error, 2);
+      onErrorRef.current(error, 2);
       return;
     }
     if (controller.signal.aborted) return;
     setIsSecondPhaseLoading(false);
-    onSecondBatch(dedup([...phase1Questions, ...phase2Questions]));
-  }, [generateFn, params, totalCount, firstBatchSize, onFirstBatch, onSecondBatch, onError]);
+    onSecondBatchRef.current(dedup([...phase1Questions, ...phase2Questions]));
+  }, [firstBatchSize, totalCount]);
 
   return { isFirstPhaseLoading, isSecondPhaseLoading, generate, abort };
 }
