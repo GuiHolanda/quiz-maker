@@ -11,15 +11,6 @@ interface UseTwoPhaseGenerationOptions<TParams extends { num_questions: string }
   readonly onError: (error: unknown, phase: 1 | 2) => void;
 }
 
-function dedup<T extends { id: number }>(questions: T[]): T[] {
-  const seen = new Set<number>();
-  return questions.filter((q) => {
-    if (seen.has(q.id)) return false;
-    seen.add(q.id);
-    return true;
-  });
-}
-
 export function useTwoPhaseGeneration<TParams extends { num_questions: string }, T extends { id: number }>({
   generateFn,
   params,
@@ -92,7 +83,9 @@ export function useTwoPhaseGeneration<TParams extends { num_questions: string },
     }
     if (controller.signal.aborted) return;
     setIsSecondPhaseLoading(false);
-    onSecondBatchRef.current(dedup([...phase1Questions, ...phase2Questions]));
+    // Reassign sequential IDs to avoid collisions — both phases receive IDs 1..N from the LLM
+    const merged = [...phase1Questions, ...phase2Questions].map((q, i) => ({ ...q, id: i + 1 }));
+    onSecondBatchRef.current(merged);
   }, [firstBatchSize, totalCount]);
 
   return { isFirstPhaseLoading, isSecondPhaseLoading, generate, abort };

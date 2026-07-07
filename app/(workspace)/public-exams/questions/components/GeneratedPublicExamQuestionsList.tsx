@@ -119,8 +119,7 @@ export function GeneratedPublicExamQuestionsList({
       <div className="flex gap-2 items-center flex-wrap">
         <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
         {isLoadingMore && remainingCount > 0 && (
-          <Chip className="flex items-center gap-1" color="default" size="sm" variant="flat">
-            <Spinner className="mr-1" size="sm" />
+          <Chip color="default" size="sm" startContent={<Spinner size="sm" />} variant="flat">
             {t('generate.loadingMoreQuestions', { count: remainingCount })}
           </Chip>
         )}
