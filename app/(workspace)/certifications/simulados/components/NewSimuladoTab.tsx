@@ -1,10 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import { Select, SelectItem } from '@heroui/select';
 import { Divider } from '@heroui/divider';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faXmark, faCheck } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useCertSimuladosContext } from '@/features/providers/certSimulados.provider';
@@ -13,23 +16,35 @@ import { useRequest } from '@/features/hooks/useRequest.hook';
 import { createCertSimulado, getBrowseSummary } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
 import { inputProperties } from '@/config/constants/inputStyles';
-import { CertSimuladoTopicConfig, Certification } from '@/shared/types';
+import { buttonStyles } from '@/config/constants/buttonStyles';
+import { CertSimuladoTopicConfig, Certification, BrowseSummary } from '@/shared/types';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { CERTIFICATIONS_LOCAL_STORAGE_KEY } from '@/config/constants';
 
 interface NewSimuladoTabProps {
   readonly onCreated: () => void;
 }
 
+interface LocalTopicEntry extends CertSimuladoTopicConfig {
+  isTemporary?: boolean;
+}
+
 export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
   const { t } = useTranslation();
+  const router = useRouter();
   const { certifications, isLoading: isCertsLoading } = useCertificationsContext();
   const { addSimulado } = useCertSimuladosContext();
   const [selectedCert, setSelectedCert] = useState<Certification | null>(null);
   const [name, setName] = useState('');
   const [totalQuestions, setTotalQuestions] = useState('');
-  const [distribution, setDistribution] = useState<CertSimuladoTopicConfig[]>([]);
+  const [distribution, setDistribution] = useState<LocalTopicEntry[]>([]);
   const [totalSavedQuestions, setTotalSavedQuestions] = useState<number | null>(null);
+  const [browseSummary, setBrowseSummary] = useState<BrowseSummary | null>(null);
+  const [availableCounts, setAvailableCounts] = useState<Record<string, number>>({});
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newTopicName, setNewTopicName] = useState('');
+  const [newTopicCount, setNewTopicCount] = useState('');
   const { loading, request } = useRequest(createCertSimulado);
 
   useEffect(() => {
@@ -39,9 +54,31 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
         const total = data.certifications.reduce((acc, c) => acc + c.totalCount, 0);
 
         setTotalSavedQuestions(total);
+        setBrowseSummary(data);
       })
       .catch(() => setTotalSavedQuestions(0));
   }, [isCertsLoading, certifications.length]);
+
+  useEffect(() => {
+    if (!selectedCert || !browseSummary) {
+      setAvailableCounts({});
+
+      return;
+    }
+    const certData = browseSummary.certifications.find((c) => c.key === selectedCert.key);
+
+    if (!certData) {
+      setAvailableCounts({});
+
+      return;
+    }
+    const counts: Record<string, number> = {};
+
+    certData.topics.forEach((t) => {
+      counts[t.name] = t.questionCount;
+    });
+    setAvailableCounts(counts);
+  }, [selectedCert, browseSummary]);
 
   useEffect(() => {
     if (!selectedCert || !totalQuestions) {
@@ -54,7 +91,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
     if (isNaN(total) || total <= 0) return;
 
     const totalMax = selectedCert.topics.reduce((acc, t) => acc + t.maxQuestions, 0);
-    const suggested = selectedCert.topics.map((topic) => ({
+    const suggested: LocalTopicEntry[] = selectedCert.topics.map((topic) => ({
       topicName: topic.name,
       questionCount: totalMax > 0 ? Math.round((topic.maxQuestions / totalMax) * total) : 0,
     }));
@@ -64,6 +101,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
     if (suggested.length > 0) suggested[suggested.length - 1].questionCount += total - sum;
 
     setDistribution(suggested);
+    setShowAddForm(false);
   }, [selectedCert, totalQuestions]);
 
   if (isCertsLoading || (certifications.length > 0 && totalSavedQuestions === null)) {
@@ -99,7 +137,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
     const saved = await request({
       certKey: selectedCert.key,
       name: name.trim() || undefined,
-      topics: distribution,
+      topics: distribution.map(({ topicName, questionCount }) => ({ topicName, questionCount })),
     });
 
     if (saved) {
@@ -116,6 +154,21 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
     setDistribution((prev) =>
       prev.map((s) => (s.topicName === topicName ? { ...s, questionCount: Number(value) || 0 } : s))
     );
+  }
+
+  function handleRemoveTopic(topicName: string) {
+    setDistribution((prev) => prev.filter((s) => s.topicName !== topicName));
+  }
+
+  function handleAddTopic() {
+    const name = newTopicName.trim();
+    const count = Number(newTopicCount) || 0;
+
+    if (!name) return;
+    setDistribution((prev) => [...prev, { topicName: name, questionCount: count, isTemporary: true }]);
+    setNewTopicName('');
+    setNewTopicCount('');
+    setShowAddForm(false);
   }
 
   return (
@@ -164,7 +217,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
 
       <div className="flex justify-end pt-2">
         <Button
-          className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
+          className={buttonStyles.primary}
           isDisabled={!selectedCert || !isDistributionValid}
           isLoading={loading}
           onPress={handleCreate}
@@ -188,26 +241,126 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
           </div>
         </div>
         <div className="bg-content1 border border-default-200 rounded-xl overflow-hidden">
-          {distribution.map((s, i) => (
-            <div
-              key={s.topicName}
-              className={`flex items-center justify-between gap-4 px-4 py-3 ${
-                i < distribution.length - 1 ? 'border-b border-default-200' : ''
-              }`}
-            >
-              <span className="text-sm text-foreground flex-1">{s.topicName}</span>
-              <Input
-                className="w-24 shrink-0"
-                classNames={{ inputWrapper: 'h-8' }}
-                min={0}
-                size="sm"
-                type="number"
-                value={String(s.questionCount)}
-                variant="bordered"
-                onValueChange={(v) => handleTopicChange(s.topicName, v)}
-              />
-            </div>
-          ))}
+          {distribution.map((s, i) => {
+            const available = s.isTemporary ? undefined : availableCounts[s.topicName];
+            const isInsufficient = !s.isTemporary && (available === undefined || s.questionCount > available);
+            const isLast = i === distribution.length - 1;
+
+            return (
+              <div
+                key={s.topicName}
+                className={`flex items-center gap-3 px-4 py-3 ${!isLast ? 'border-b border-default-200' : ''} ${isInsufficient ? 'border-l-2 border-l-danger bg-danger/5' : ''}`}
+              >
+                <span className="text-sm text-foreground flex-1 min-w-0 truncate">{s.topicName}</span>
+                <span className={`text-xs shrink-0 ${isInsufficient ? 'text-danger' : 'text-default-400'}`}>
+                  {t('simulado.availableQuestions', { count: available ?? 0 })}
+                </span>
+                {isInsufficient && (
+                  <Button
+                    className={buttonStyles.primarySm}
+                    size="sm"
+                    onPress={() => {
+                      try {
+                        const current = JSON.parse(localStorage.getItem(CERTIFICATIONS_LOCAL_STORAGE_KEY) ?? '{}');
+
+                        localStorage.setItem(
+                          CERTIFICATIONS_LOCAL_STORAGE_KEY,
+                          JSON.stringify({ ...current, selectedCertification: selectedCert, selectedTopics: [s.topicName] })
+                        );
+                      } catch {}
+                      router.push('/certifications/questions?tab=generate');
+                    }}
+                  >
+                    {t('simulado.generateMissing')}
+                  </Button>
+                )}
+                <Input
+                  className="w-20 shrink-0"
+                  classNames={{ inputWrapper: 'h-8' }}
+                  min={0}
+                  size="sm"
+                  type="number"
+                  value={String(s.questionCount)}
+                  variant="bordered"
+                  onValueChange={(v) => handleTopicChange(s.topicName, v)}
+                />
+                <Button
+                  isIconOnly
+                  aria-label={t('simulado.removeTopicAriaLabel')}
+                  className={buttonStyles.iconOnly.danger}
+                  isDisabled={distribution.length <= 1}
+                  size="sm"
+                  variant="light"
+                  onPress={() => handleRemoveTopic(s.topicName)}
+                >
+                  <FontAwesomeIcon icon={faXmark} />
+                </Button>
+              </div>
+            );
+          })}
+          {renderAddTopicRow()}
+        </div>
+      </div>
+    );
+  }
+
+  function renderAddTopicRow() {
+    if (!showAddForm) {
+      return (
+        <div className="px-4 py-3 border-t border-default-200">
+          <Button className={buttonStyles.flat} size="sm" onPress={() => setShowAddForm(true)}>
+            {t('simulado.addTemporaryTopic')}
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex items-end gap-3 px-4 py-3 border-t border-default-200">
+        <Input
+          className="flex-1"
+          label={t('simulado.temporaryTopicName')}
+          placeholder={t('simulado.temporaryTopicNamePlaceholder')}
+          size="sm"
+          value={newTopicName}
+          onValueChange={setNewTopicName}
+          {...inputProperties.input}
+        />
+        <Input
+          className="w-28 shrink-0"
+          label={t('simulado.temporaryTopicCount')}
+          min={0}
+          placeholder={t('simulado.temporaryTopicCountPlaceholder')}
+          size="sm"
+          type="number"
+          value={newTopicCount}
+          onValueChange={setNewTopicCount}
+          {...inputProperties.input}
+        />
+        <div className="flex gap-1 shrink-0 pb-1">
+          <Button
+            isIconOnly
+            aria-label={t('common.save')}
+            className={buttonStyles.iconOnly.primary}
+            size="sm"
+            onPress={handleAddTopic}
+          >
+            <FontAwesomeIcon icon={faCheck} />
+          </Button>
+          <Button
+            isIconOnly
+            aria-label={t('common.cancel')}
+            className={buttonStyles.iconOnly.neutral}
+            size="sm"
+            variant="light"
+            onPress={() => {
+              setShowAddForm(false);
+              setNewTopicName('');
+              setNewTopicCount('');
+            }}
+          >
+            <FontAwesomeIcon icon={faXmark} />
+          </Button>
         </div>
       </div>
     );

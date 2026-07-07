@@ -1,9 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import { Divider } from '@heroui/divider';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faXmark, faCheck } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
@@ -13,22 +16,38 @@ import { createMockExam, getPublicExamBrowseSummary } from '@/features/connector
 import { PublicExamManager } from '@/shared/components/PublicExamManager';
 import { notify } from '@/shared/lib/notify';
 import { inputProperties } from '@/config/constants/inputStyles';
-import { MockExamSubjectConfig } from '@/shared/types';
+import { buttonStyles } from '@/config/constants/buttonStyles';
+import { MockExamSubjectConfig, PublicExamBrowseSummary } from '@/shared/types';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { PUBLIC_EXAMS_LOCAL_STORAGE_KEY } from '@/config/constants';
 
 interface NewSimuladoTabProps {
   readonly onCreated: () => void;
 }
 
+interface LocalSubjectEntry extends MockExamSubjectConfig {
+  isTemporary?: boolean;
+}
+
 export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
   const { t } = useTranslation();
-  const { publicExams, isLoading: isExamsLoading, selectedPublicExam } = usePublicExamsContext();
+  const router = useRouter();
+  const {
+    publicExams,
+    isLoading: isExamsLoading,
+    selectedPublicExam,
+  } = usePublicExamsContext();
   const { addMockExam } = useMockExamsContext();
   const [name, setName] = useState('');
   const [totalQuestions, setTotalQuestions] = useState('');
-  const [distribution, setDistribution] = useState<MockExamSubjectConfig[]>([]);
+  const [distribution, setDistribution] = useState<LocalSubjectEntry[]>([]);
   const [totalSavedQuestions, setTotalSavedQuestions] = useState<number | null>(null);
+  const [browseSummary, setBrowseSummary] = useState<PublicExamBrowseSummary | null>(null);
+  const [availableCounts, setAvailableCounts] = useState<Record<string, number>>({});
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newSubjectName, setNewSubjectName] = useState('');
+  const [newSubjectCount, setNewSubjectCount] = useState('');
   const { loading, request } = useRequest(createMockExam);
 
   useEffect(() => {
@@ -38,9 +57,31 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
         const total = data.publicExams.reduce((acc, e) => acc + e.totalCount, 0);
 
         setTotalSavedQuestions(total);
+        setBrowseSummary(data);
       })
       .catch(() => setTotalSavedQuestions(0));
   }, [isExamsLoading, publicExams.length]);
+
+  useEffect(() => {
+    if (!selectedPublicExam || !browseSummary) {
+      setAvailableCounts({});
+
+      return;
+    }
+    const examData = browseSummary.publicExams.find((e) => e.id === selectedPublicExam.id);
+
+    if (!examData) {
+      setAvailableCounts({});
+
+      return;
+    }
+    const counts: Record<string, number> = {};
+
+    examData.subjects.forEach((s) => {
+      counts[s.name] = s.questionCount;
+    });
+    setAvailableCounts(counts);
+  }, [selectedPublicExam, browseSummary]);
 
   useEffect(() => {
     if (!selectedPublicExam || !totalQuestions) {
@@ -53,7 +94,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
     if (isNaN(total) || total <= 0) return;
 
     const totalMax = selectedPublicExam.subjects.reduce((acc, s) => acc + s.maxQuestions, 0);
-    const suggested = selectedPublicExam.subjects.map((s) => ({
+    const suggested: LocalSubjectEntry[] = selectedPublicExam.subjects.map((s) => ({
       subjectName: s.name,
       questionCount: Math.round((s.maxQuestions / totalMax) * total),
     }));
@@ -63,6 +104,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
     if (suggested.length > 0) suggested[suggested.length - 1].questionCount += total - sum;
 
     setDistribution(suggested);
+    setShowAddForm(false);
   }, [selectedPublicExam, totalQuestions]);
 
   if (isExamsLoading || (publicExams.length > 0 && totalSavedQuestions === null)) {
@@ -99,13 +141,28 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
     );
   }
 
+  function handleRemoveSubject(subjectName: string) {
+    setDistribution((prev) => prev.filter((s) => s.subjectName !== subjectName));
+  }
+
+  function handleAddSubject() {
+    const name = newSubjectName.trim();
+    const count = Number(newSubjectCount) || 0;
+
+    if (!name) return;
+    setDistribution((prev) => [...prev, { subjectName: name, questionCount: count, isTemporary: true }]);
+    setNewSubjectName('');
+    setNewSubjectCount('');
+    setShowAddForm(false);
+  }
+
   async function handleCreate() {
     if (!selectedPublicExam?.id) return;
     const saved = await request({
       publicExamId: selectedPublicExam.id,
       name: name.trim() || undefined,
       totalQuestions: total,
-      subjects: distribution,
+      subjects: distribution.map(({ subjectName, questionCount }) => ({ subjectName, questionCount })),
     });
 
     if (saved) {
@@ -150,7 +207,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
 
       <div className="flex justify-end pt-2">
         <Button
-          className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
+          className={buttonStyles.primary}
           isDisabled={!selectedPublicExam || !isDistributionValid}
           isLoading={loading}
           onPress={handleCreate}
@@ -174,24 +231,126 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
           </div>
         </div>
         <div className="bg-content1 border border-default-200 rounded-xl overflow-hidden">
-          {distribution.map((s, i) => (
-            <div
-              key={s.subjectName}
-              className={`flex items-center justify-between gap-4 px-4 py-3 ${i < distribution.length - 1 ? 'border-b border-default-200' : ''}`}
-            >
-              <span className="text-sm text-foreground flex-1">{s.subjectName}</span>
-              <Input
-                className="w-24 shrink-0"
-                classNames={{ inputWrapper: 'h-8' }}
-                min={0}
-                size="sm"
-                type="number"
-                value={String(s.questionCount)}
-                variant="bordered"
-                onValueChange={(v) => handleSubjectChange(s.subjectName, v)}
-              />
-            </div>
-          ))}
+          {distribution.map((s, i) => {
+            const available = s.isTemporary ? undefined : availableCounts[s.subjectName];
+            const isInsufficient = !s.isTemporary && (available === undefined || s.questionCount > available);
+            const isLast = i === distribution.length - 1;
+
+            return (
+              <div
+                key={s.subjectName}
+                className={`flex items-center gap-3 px-4 py-3 ${!isLast ? 'border-b border-default-200' : ''} ${isInsufficient ? 'border-l-2 border-l-danger bg-danger/5' : ''}`}
+              >
+                <span className="text-sm text-foreground flex-1 min-w-0 truncate">{s.subjectName}</span>
+                <span className={`text-xs shrink-0 ${isInsufficient ? 'text-danger' : 'text-default-400'}`}>
+                  {t('simulado.availableQuestions', { count: available ?? 0 })}
+                </span>
+                {isInsufficient && (
+                  <Button
+                    className={buttonStyles.primarySm}
+                    size="sm"
+                    onPress={() => {
+                      try {
+                        const current = JSON.parse(localStorage.getItem(PUBLIC_EXAMS_LOCAL_STORAGE_KEY) ?? '{}');
+
+                        localStorage.setItem(
+                          PUBLIC_EXAMS_LOCAL_STORAGE_KEY,
+                          JSON.stringify({ ...current, selectedPublicExam, selectedSubjects: [s.subjectName] })
+                        );
+                      } catch {}
+                      router.push('/public-exams/questions?tab=generate');
+                    }}
+                  >
+                    {t('simulado.generateMissing')}
+                  </Button>
+                )}
+                <Input
+                  className="w-20 shrink-0"
+                  classNames={{ inputWrapper: 'h-8' }}
+                  min={0}
+                  size="sm"
+                  type="number"
+                  value={String(s.questionCount)}
+                  variant="bordered"
+                  onValueChange={(v) => handleSubjectChange(s.subjectName, v)}
+                />
+                <Button
+                  isIconOnly
+                  aria-label={t('simulado.removeTopicAriaLabel')}
+                  className={buttonStyles.iconOnly.danger}
+                  isDisabled={distribution.length <= 1}
+                  size="sm"
+                  variant="light"
+                  onPress={() => handleRemoveSubject(s.subjectName)}
+                >
+                  <FontAwesomeIcon icon={faXmark} />
+                </Button>
+              </div>
+            );
+          })}
+          {renderAddSubjectRow()}
+        </div>
+      </div>
+    );
+  }
+
+  function renderAddSubjectRow() {
+    if (!showAddForm) {
+      return (
+        <div className="px-4 py-3 border-t border-default-200">
+          <Button className={buttonStyles.flat} size="sm" onPress={() => setShowAddForm(true)}>
+            {t('simulado.addTemporaryTopic')}
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex items-end gap-3 px-4 py-3 border-t border-default-200">
+        <Input
+          className="flex-1"
+          label={t('simulado.temporaryTopicName')}
+          placeholder={t('simulado.temporaryTopicNamePlaceholder')}
+          size="sm"
+          value={newSubjectName}
+          onValueChange={setNewSubjectName}
+          {...inputProperties.input}
+        />
+        <Input
+          className="w-28 shrink-0"
+          label={t('simulado.temporaryTopicCount')}
+          min={0}
+          placeholder={t('simulado.temporaryTopicCountPlaceholder')}
+          size="sm"
+          type="number"
+          value={newSubjectCount}
+          onValueChange={setNewSubjectCount}
+          {...inputProperties.input}
+        />
+        <div className="flex gap-1 shrink-0 pb-1">
+          <Button
+            isIconOnly
+            aria-label={t('common.save')}
+            className={buttonStyles.iconOnly.primary}
+            size="sm"
+            onPress={handleAddSubject}
+          >
+            <FontAwesomeIcon icon={faCheck} />
+          </Button>
+          <Button
+            isIconOnly
+            aria-label={t('common.cancel')}
+            className={buttonStyles.iconOnly.neutral}
+            size="sm"
+            variant="light"
+            onPress={() => {
+              setShowAddForm(false);
+              setNewSubjectName('');
+              setNewSubjectCount('');
+            }}
+          >
+            <FontAwesomeIcon icon={faXmark} />
+          </Button>
         </div>
       </div>
     );
