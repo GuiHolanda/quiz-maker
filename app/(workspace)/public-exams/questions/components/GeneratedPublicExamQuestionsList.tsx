@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@heroui/button';
 import { Checkbox } from '@heroui/checkbox';
 import { Chip } from '@heroui/chip';
+import { Spinner } from '@heroui/spinner';
 
 import { GeneratedPublicExamQuestionsCard } from './GeneratedPublicExamQuestionsCard';
 
@@ -19,12 +20,16 @@ interface GeneratedPublicExamQuestionsListProps {
   readonly questions: AIPublicExamQuestion[];
   readonly setQuestions: React.Dispatch<React.SetStateAction<AIPublicExamQuestion[]>>;
   readonly onSaved?: () => void;
+  readonly isLoadingMore?: boolean;
+  readonly remainingCount?: number;
 }
 
 export function GeneratedPublicExamQuestionsList({
   questions,
   setQuestions,
   onSaved,
+  isLoadingMore = false,
+  remainingCount = 0,
 }: GeneratedPublicExamQuestionsListProps) {
   const [selectedIds, setSelectedIds] = React.useState<number[]>([]);
   const [currentPage, setCurrentPage] = React.useState(1);
@@ -91,7 +96,7 @@ export function GeneratedPublicExamQuestionsList({
             </Chip>
           )}
         </div>
-        <ItemsPerPageSelect value={questionsPerPage} onChange={onItemsPerPageChange} />
+        <ItemsPerPageSelect isDisabled={isLoadingMore} value={questionsPerPage} onChange={onItemsPerPageChange} />
       </div>
 
       <div className="flex flex-col gap-3">
@@ -111,8 +116,14 @@ export function GeneratedPublicExamQuestionsList({
           })}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center flex-wrap">
         <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
+        {isLoadingMore && remainingCount > 0 && (
+          <Chip className="flex items-center gap-1" color="default" size="sm" variant="flat">
+            <Spinner className="mr-1" size="sm" />
+            {t('generate.loadingMoreQuestions', { count: remainingCount })}
+          </Chip>
+        )}
         <Button className={`${buttonStyles.dangerFlat} ml-auto`} size="sm" onPress={onDiscard}>
           {selectedCount > 0 ? t('common.discardSelected') : t('common.discardAll')}
         </Button>
