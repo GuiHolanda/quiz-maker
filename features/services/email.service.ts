@@ -60,6 +60,7 @@ function emailLayout(bodyHtml: string, bodyText: string) {
           <td align="center" style="padding-top:24px;padding-right:40px;padding-bottom:32px;padding-left:40px;">
             <p style="margin:0;font-family:${FONT};font-size:12px;color:#94a3b8;line-height:1.6;">${BRAND_NAME} &bull; Preparacao para certificacoes com IA</p>
             <p style="margin:4px 0 0;font-family:${FONT};font-size:12px;color:#94a3b8;line-height:1.6;">Se voce nao reconhece esta atividade, ignore este e-mail.</p>
+            <p style="margin:8px 0 0;font-family:${FONT};font-size:11px;color:#cbd5e1;line-height:1.6;">certifiqueai.com</p>
           </td>
         </tr>
 
@@ -76,6 +77,10 @@ function emailLayout(bodyHtml: string, bodyText: string) {
 export class EmailService {
   private readonly resend = new Resend(process.env.RESEND_API_KEY);
   private readonly from = process.env.RESEND_FROM_EMAIL!;
+
+  private get sender() {
+    return `${BRAND_NAME} <${this.from}>`;
+  }
 
   async sendEmailVerification(to: string, code: string): Promise<void> {
     const bodyHtml = `
@@ -106,7 +111,7 @@ export class EmailService {
     const { html, text } = emailLayout(bodyHtml, bodyText);
 
     await this.resend.emails.send({
-      from: this.from,
+      from: this.sender,
       to,
       subject: `${code} - Codigo de verificacao ${BRAND_NAME}`,
       html,
@@ -157,7 +162,7 @@ export class EmailService {
     const { html, text } = emailLayout(bodyHtml, bodyText);
 
     await this.resend.emails.send({
-      from: this.from,
+      from: this.sender,
       to,
       subject: `Redefinicao de senha - ${BRAND_NAME}`,
       html,
