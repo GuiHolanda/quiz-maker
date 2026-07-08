@@ -7,7 +7,8 @@ const config = {
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     './shared/components/**/*.{js,ts,jsx,tsx,mdx}',
     './config/**/*.{js,ts,jsx,tsx}',
-    "./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}"
+    "./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}",
+    "./node_modules/@heroui/input-otp/dist/**/*.{js,ts,jsx,tsx}"
   ],
   theme: {
     extend: {
