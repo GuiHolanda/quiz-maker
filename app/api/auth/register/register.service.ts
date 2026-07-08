@@ -23,6 +23,23 @@ export class RegisterService {
     const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 
     if (existing) {
+      // Account exists but email was never verified — resend the code and let the
+      // frontend redirect to /verify-email instead of showing a hard error.
+      if (!existing.emailVerified) {
+        const code = String(Math.floor(Math.random() * 900000) + 100000);
+        const identifier = `email-verify:${normalizedEmail}`;
+        const expires = new Date(Date.now() + 15 * 60 * 1000);
+
+        await prisma.verificationToken.deleteMany({ where: { identifier } });
+        await prisma.verificationToken.create({ data: { identifier, token: code, expires } });
+        await new EmailService().sendEmailVerification(normalizedEmail, code);
+
+        throw Object.assign(
+          new Error('EMAIL_PENDING_VERIFICATION'),
+          { status: 409, code: 'EMAIL_PENDING_VERIFICATION' },
+        );
+      }
+
       throw Object.assign(new Error('An account with this email already exists'), { status: 409 });
     }
 
