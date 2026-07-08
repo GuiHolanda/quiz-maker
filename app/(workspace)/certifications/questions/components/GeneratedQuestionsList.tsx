@@ -84,7 +84,12 @@ export function GeneratedQuestionsList({
     <div className="flex flex-col gap-4 mt-8">
       <div className="flex items-end justify-between">
         <div className="flex items-center space-x-4 font-bold text-sm">
-          <Checkbox className="ml-auto"  isSelected={allSelected} onChange={(e) => onToggleSelectAll(e.target.checked)} classNames={{ label: 'text-xs' }}>
+          <Checkbox
+            className="ml-auto"
+            isSelected={allSelected}
+            onChange={(e) => onToggleSelectAll(e.target.checked)}
+            classNames={{ label: 'text-xs' }}
+          >
             {t('common.selectAll')}
           </Checkbox>
           {selectedCount > 0 && (
@@ -115,7 +120,7 @@ export function GeneratedQuestionsList({
         <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
 
         {isLoadingMore && remainingCount > 0 && (
-          <Chip color="default" size="sm" startContent={<Spinner size="sm" />} variant="flat">
+          <Chip color="default" size="sm" startContent={<Spinner size="sm" className="mr-4" />} variant="flat">
             {t('generate.loadingMoreQuestions', { count: remainingCount })}
           </Chip>
         )}
@@ -124,7 +129,12 @@ export function GeneratedQuestionsList({
           {selectedCount > 0 ? t('common.discardSelected') : t('common.discardAll')}
         </Button>
 
-        <Button className={buttonStyles.primarySm} hidden={selectedCount === 0} size="sm" onPress={onSaveSelectedQuestions}>
+        <Button
+          className={buttonStyles.primarySm}
+          hidden={selectedCount === 0}
+          size="sm"
+          onPress={onSaveSelectedQuestions}
+        >
           {t('common.saveSelected')}
         </Button>
       </div>
