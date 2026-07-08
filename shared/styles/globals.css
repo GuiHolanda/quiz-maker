@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@config "../../tailwind.config.js";
+@config "../../tailwind.config.mjs";
 
 /* ── Design Tokens ───────────────────────────────────────────
    Source of truth for theme colors. Edit visually here with
