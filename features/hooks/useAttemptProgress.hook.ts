@@ -1,20 +1,21 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { SIMULADO_ATTEMPT_PROGRESS_KEY } from '@/config/constants';
 import { AnswersMap } from '@/shared/types';
 
 export function useAttemptProgress(attemptId: number) {
-  const [answers, setAnswers] = useState<AnswersMap>(() => {
+  const [answers, setAnswers] = useState<AnswersMap>({});
+
+  useEffect(() => {
     try {
       const stored = localStorage.getItem(SIMULADO_ATTEMPT_PROGRESS_KEY(attemptId));
-      if (stored) return JSON.parse(stored) as AnswersMap;
+      if (stored) setAnswers(JSON.parse(stored) as AnswersMap);
     } catch {
       // ignore parse errors or unavailable storage
     }
-    return {};
-  });
+  }, [attemptId]);
 
   const handleAnswerChange = useCallback(
     (questionId: number, selected: string[]) => {

@@ -40,10 +40,12 @@ export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFin
     .map((q, i) => ({ q, globalIndex: i + 1 }))
     .filter(({ q }) => {
       const draft = draftAnswers[q.id];
-      const saved = answers[q.id];
 
       if (!draft || draft.length === 0) return false;
-      if (!saved || saved.length === 0) return false;
+
+      const saved = answers[q.id];
+
+      if (!saved || saved.length === 0) return true;
 
       return draft.length !== saved.length || draft.some((v, idx) => v !== saved[idx]);
     });
