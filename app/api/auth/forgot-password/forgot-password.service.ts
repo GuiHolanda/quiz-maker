@@ -44,9 +44,9 @@ export class ForgotPasswordService {
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL!,
       to: normalizedEmail,
-      subject: 'Reset your MyQuiz password',
+      subject: 'Reset your CertifiqueAI password',
       html: `
-        <p>You requested a password reset for your MyQuiz account.</p>
+        <p>You requested a password reset for your CertifiqueAI account.</p>
         <p><a href="${resetUrl}">Click here to reset your password</a></p>
         <p>This link expires in 1 hour. If you did not request this, you can safely ignore this email.</p>
       `,

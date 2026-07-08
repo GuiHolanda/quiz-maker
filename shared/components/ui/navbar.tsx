@@ -16,11 +16,12 @@ import { Button } from '@heroui/button';
 import { Avatar } from '@heroui/avatar';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSection } from '@heroui/dropdown';
 import NextLink from 'next/link';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowUp, faBrain, faChevronDown, faGear } from '@fortawesome/free-solid-svg-icons';
+import { faArrowUp, faChevronDown, faGear } from '@fortawesome/free-solid-svg-icons';
 
 import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
 import { UsageBadge } from '@/shared/components/ui/UsageBadge';
@@ -136,9 +137,9 @@ export const Navbar = () => {
       >
         <NavbarContent className="basis-1/5 sm:basis-full" justify="start">
           <NavbarBrand as="li" className="gap-3 max-w-fit">
-            <NextLink className="flex justify-start items-center gap-2.5" href="/">
-              <FontAwesomeIcon className="text-primary text-lg" icon={faBrain} />
-              <p className="font-bold text-foreground tracking-wide text-sm">MyQuiz</p>
+            <NextLink className="flex justify-start items-center gap-2" href="/">
+              <Image alt="CertifiqueAI" className="rounded-md" height={22} src="/icon.svg" width={22} />
+              <p className="font-bold text-foreground tracking-wide text-sm">CertifiqueAI</p>
             </NextLink>
           </NavbarBrand>
 
