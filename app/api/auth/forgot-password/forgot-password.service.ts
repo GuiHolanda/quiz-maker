@@ -1,8 +1,7 @@
 import { randomBytes } from 'crypto';
 
-import { Resend } from 'resend';
-
 import { prisma } from '@/lib/prisma';
+import { EmailService } from '@/features/services/email.service';
 
 export class ForgotPasswordService {
   async requestReset(body: unknown): Promise<void> {
@@ -17,10 +16,6 @@ export class ForgotPasswordService {
     }
 
     const normalizedEmail = email.toLowerCase();
-
-    if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) {
-      throw Object.assign(new Error('Email service is not configured'), { status: 500 });
-    }
 
     const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 
@@ -39,17 +34,6 @@ export class ForgotPasswordService {
 
     const resetUrl = `${process.env.AUTH_URL}/reset-password?token=${token}`;
 
-    const resend = new Resend(process.env.RESEND_API_KEY);
-
-    await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL!,
-      to: normalizedEmail,
-      subject: 'Reset your CertifiqueAI password',
-      html: `
-        <p>You requested a password reset for your CertifiqueAI account.</p>
-        <p><a href="${resetUrl}">Click here to reset your password</a></p>
-        <p>This link expires in 1 hour. If you did not request this, you can safely ignore this email.</p>
-      `,
-    });
+    await new EmailService().sendPasswordReset(normalizedEmail, resetUrl);
   }
 }
