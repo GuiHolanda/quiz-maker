@@ -1,9 +1,10 @@
 'use client';
 
 import NextLink from 'next/link';
+import Image from 'next/image';
 import { Button } from '@heroui/button';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faRobot, faFileLines, faRoute } from '@fortawesome/free-solid-svg-icons';
+import { faRobot, faFileLines, faRoute, faQuoteLeft } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
@@ -27,6 +28,13 @@ const FEATURES = [
   },
 ] as const;
 
+const STATS = [
+  { value: '2M+', label: 'homepage.stats.questionsGenerated' },
+  { value: '40+', label: 'homepage.stats.certificationTracks' },
+  { value: '89%', label: 'homepage.stats.passRate' },
+  { value: '< 15s', label: 'homepage.stats.generateTime' },
+] as const;
+
 const COMPANIES = [
   { name: 'Accenture', color: '#A100FF' },
   { name: 'Deloitte', color: '#86BC25' },
@@ -38,14 +46,51 @@ const COMPANIES = [
   { name: 'Infosys', color: '#007CC5' },
 ] as const;
 
+const CERTIFICATIONS = [
+  { name: 'AWS SAA-C03', provider: 'AWS', color: '#FF9900' },
+  { name: 'AWS Developer', provider: 'AWS', color: '#FF9900' },
+  { name: 'Azure AZ-900', provider: 'Azure', color: '#0089D6' },
+  { name: 'Azure AZ-104', provider: 'Azure', color: '#0089D6' },
+  { name: 'GCP Associate', provider: 'GCP', color: '#4285F4' },
+  { name: 'SAP C_HCMPAY', provider: 'SAP', color: '#0FAAFF' },
+  { name: 'SAP C_ARCON', provider: 'SAP', color: '#0FAAFF' },
+  { name: 'CompTIA A+', provider: 'CompTIA', color: '#C8202F' },
+  { name: 'CompTIA Network+', provider: 'CompTIA', color: '#C8202F' },
+  { name: 'CKA', provider: 'Linux Foundation', color: '#30638E' },
+  { name: 'Terraform Associate', provider: 'HashiCorp', color: '#7B42BC' },
+  { name: 'Kubernetes CKS', provider: 'Linux Foundation', color: '#30638E' },
+] as const;
+
+const TESTIMONIALS = [
+  {
+    quote: 'homepage.testimonials.quote1',
+    role: 'homepage.testimonials.role1',
+    initials: 'RC',
+  },
+  {
+    quote: 'homepage.testimonials.quote2',
+    role: 'homepage.testimonials.role2',
+    initials: 'ML',
+  },
+  {
+    quote: 'homepage.testimonials.quote3',
+    role: 'homepage.testimonials.role3',
+    initials: 'AK',
+  },
+] as const;
+
 /* ── Page ───────────────────────────────────────────────── */
 
 export default function HeroPage() {
   return (
     <div className="bg-background text-foreground">
       <HeroSection />
-      <TrustedBySection />
+      <StatsSection />
+      <CompaniesSection />
       <FeaturesSection />
+      <CertificationsSection />
+      <TestimonialsSection />
+      <CtaSection />
     </div>
   );
 }
@@ -86,6 +131,7 @@ function HeroSection() {
               {t('homepage.cta.viewSampleQuestions')}
             </Button>
           </div>
+          <p className="text-xs text-default-400">{t('homepage.hero.disclaimer')}</p>
         </div>
 
         <div className="w-full md:w-7/12">
@@ -102,75 +148,102 @@ function AppMockup() {
   const { t } = useTranslation();
 
   return (
-    <div className="relative bg-content1 border border-divider rounded-xl overflow-hidden aspect-[4/3] shadow-lg">
-      <div className="absolute top-0 left-0 w-full h-8 bg-content2 border-b border-divider flex items-center px-4 gap-2 z-10">
+    <div className="relative bg-content1 border border-divider rounded-xl overflow-hidden shadow-lg">
+      {/* Window chrome */}
+      <div className="flex items-center gap-2 px-4 py-3 bg-content2 border-b border-divider">
         <div className="w-2.5 h-2.5 rounded-full bg-default-300" />
         <div className="w-2.5 h-2.5 rounded-full bg-default-300" />
         <div className="w-2.5 h-2.5 rounded-full bg-default-300" />
-      </div>
-      <div className="absolute inset-0 pt-8 p-5 flex flex-col gap-2 font-mono text-xs select-none overflow-hidden">
-        <div>
-          <span className="text-indigo-400">const</span> <span className="text-cyan-300">question</span>{' '}
-          <span className="text-default-400">=</span> <span className="text-amber-300">await</span>{' '}
-          <span className="text-cyan-300">generateQuestion</span>
-          <span className="text-default-500">{'({'}</span>
-        </div>
-        <div className="pl-4">
-          <span className="text-cyan-200">certification</span>
-          <span className="text-default-500">:</span> <span className="text-amber-200">&quot;AWS-SAA-C03&quot;</span>
-          <span className="text-default-500">,</span>
-        </div>
-        <div className="pl-4">
-          <span className="text-cyan-200">domain</span>
-          <span className="text-default-500">:</span> <span className="text-amber-200">&quot;Security&quot;</span>
-          <span className="text-default-500">,</span>
-        </div>
-        <div className="pl-4">
-          <span className="text-cyan-200">difficulty</span>
-          <span className="text-default-500">:</span> <span className="text-amber-200">&quot;advanced&quot;</span>
-        </div>
-        <div>
-          <span className="text-default-500">{'}'});</span>
-        </div>
-        <div className="mt-2">
-          <span className="text-indigo-400">const</span> <span className="text-cyan-300">score</span>{' '}
-          <span className="text-default-400">=</span> <span className="text-default-400">{'{'}</span>
-        </div>
-        <div className="pl-4">
-          <span className="text-cyan-200">correct</span>
-          <span className="text-default-500">:</span> <span className="text-indigo-300">47</span>
-          <span className="text-default-500">,</span>
-        </div>
-        <div className="pl-4">
-          <span className="text-cyan-200">total</span>
-          <span className="text-default-500">:</span> <span className="text-indigo-300">50</span>
-          <span className="text-default-500">,</span>
-        </div>
-        <div className="pl-4">
-          <span className="text-cyan-200">confidence</span>
-          <span className="text-default-500">:</span> <span className="text-indigo-300">0.942</span>
-        </div>
-        <div>
-          <span className="text-default-500">{'}'}</span>
+        <div className="ml-3 flex items-center gap-2">
+          <Image alt="" aria-hidden height={14} src="/icon.svg" width={14} />
+          <span className="text-xs text-default-400 font-medium">certifiqueai.com</span>
         </div>
       </div>
-      <div className="absolute bottom-4 right-4 bg-content2 border border-divider rounded-lg p-3 flex flex-col gap-0.5">
-        <span className="text-xs text-primary font-medium">{t('homepage.mockup.analysisComplete')}</span>
-        <span className="text-xs font-mono text-foreground">{t('homepage.mockup.confidence')}</span>
+
+      {/* Quiz interface mockup */}
+      <div className="p-5 flex flex-col gap-4">
+        {/* Question */}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-md">AWS SAA-C03</span>
+            <span className="text-xs text-default-400">Security · Question 3/20</span>
+          </div>
+          <p className="text-sm text-foreground font-medium leading-relaxed">
+            A company needs to store sensitive customer data in Amazon S3. The data must be encrypted at rest
+            and the company must manage the encryption keys themselves. Which solution meets these requirements?
+          </p>
+        </div>
+
+        {/* Options */}
+        <div className="flex flex-col gap-2">
+          {[
+            { label: 'A', text: 'SSE-S3 (Server-Side Encryption with Amazon S3-managed keys)', selected: false },
+            { label: 'B', text: 'SSE-KMS with AWS managed key', selected: false },
+            { label: 'C', text: 'SSE-KMS with customer managed key (CMK)', selected: true },
+            { label: 'D', text: 'SSE-C (Server-Side Encryption with customer-provided keys)', selected: false },
+          ].map((opt) => (
+            <div
+              key={opt.label}
+              className={`flex items-start gap-3 p-3 rounded-lg border text-xs transition-colors duration-150 ${
+                opt.selected
+                  ? 'border-primary bg-primary/10 text-foreground'
+                  : 'border-default-200 bg-content2 text-default-500'
+              }`}
+            >
+              <span
+                className={`w-5 h-5 rounded-full flex items-center justify-center font-bold flex-shrink-0 text-[10px] ${
+                  opt.selected ? 'bg-primary text-white' : 'bg-default-200 text-default-500'
+                }`}
+              >
+                {opt.label}
+              </span>
+              <span>{opt.text}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Confidence badge */}
+        <div className="flex items-center justify-between pt-1">
+          <span className="text-xs text-default-400">
+            {t('homepage.mockup.analysisComplete')}
+          </span>
+          <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+            {t('homepage.mockup.confidence')}
+          </span>
+        </div>
       </div>
     </div>
   );
 }
 
-/* ── Trusted By ─────────────────────────────────────────── */
+/* ── Stats ──────────────────────────────────────────────── */
 
-function TrustedBySection() {
+function StatsSection() {
   const { t } = useTranslation();
 
   return (
-    <section className="border-y border-divider bg-content1/50 py-10 px-6">
+    <section className="border-y border-divider bg-content1/40 py-12 px-6">
+      <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
+        {STATS.map((stat) => (
+          <div key={stat.label} className="flex flex-col items-center gap-1.5 text-center">
+            <span className="text-3xl lg:text-4xl font-extrabold text-primary">{stat.value}</span>
+            <span className="text-xs text-default-400 leading-snug">{t(stat.label)}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ── Companies ──────────────────────────────────────────── */
+
+function CompaniesSection() {
+  const { t } = useTranslation();
+
+  return (
+    <section className="py-10 px-6">
       <div className="max-w-5xl mx-auto flex flex-col items-center gap-6">
-        <span className="text-xs font-semibold text-default-400">{t('homepage.trustedBy')}</span>
+        <span className="text-xs font-semibold text-default-400">{t('homepage.companies.label')}</span>
         <div className="flex flex-wrap justify-center gap-8 md:gap-12">
           {COMPANIES.map((company) => (
             <span
@@ -193,20 +266,145 @@ function FeaturesSection() {
   const { t } = useTranslation();
 
   return (
-    <section className="py-20 px-6">
-      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
-        {FEATURES.map((feature) => (
-          <div
-            key={feature.heading}
-            className="bg-content1 border border-divider rounded-xl p-6 flex flex-col gap-4 hover:border-default-300 transition-colors duration-200"
-          >
-            <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-              <FontAwesomeIcon className="text-primary text-sm" icon={feature.icon} />
+    <section className="py-20 px-6 bg-content1/20">
+      <div className="max-w-6xl mx-auto flex flex-col gap-12">
+        <div className="flex flex-col gap-3 max-w-2xl">
+          <span className="text-xs font-semibold text-primary">{t('homepage.features.sectionLabel')}</span>
+          <h2 className="text-3xl font-extrabold text-foreground">
+            {t('homepage.features.title.before')}{' '}
+            <span className="text-primary">{t('homepage.features.title.highlight')}</span>
+          </h2>
+          <p className="text-sm text-default-500 leading-relaxed">{t('homepage.features.subtitle')}</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {FEATURES.map((feature) => (
+            <div
+              key={feature.heading}
+              className="bg-content1 border border-divider rounded-xl p-6 flex flex-col gap-4 hover:border-default-300 transition-colors duration-200"
+            >
+              <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                <FontAwesomeIcon className="text-primary text-sm" icon={feature.icon} />
+              </div>
+              <h3 className="text-lg font-bold text-foreground">{t(feature.heading)}</h3>
+              <p className="text-sm text-default-500 leading-relaxed">{t(feature.body)}</p>
             </div>
-            <h3 className="text-lg font-bold text-foreground">{t(feature.heading)}</h3>
-            <p className="text-sm text-default-500 leading-relaxed">{t(feature.body)}</p>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── Certifications ─────────────────────────────────────── */
+
+function CertificationsSection() {
+  const { t } = useTranslation();
+
+  return (
+    <section className="py-20 px-6">
+      <div className="max-w-6xl mx-auto flex flex-col gap-10">
+        <div className="flex flex-col gap-3 max-w-2xl">
+          <span className="text-xs font-semibold text-primary">{t('homepage.certifications.sectionLabel')}</span>
+          <h2 className="text-3xl font-extrabold text-foreground">{t('homepage.certifications.title')}</h2>
+          <p className="text-sm text-default-500 leading-relaxed">{t('homepage.certifications.subtitle')}</p>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          {CERTIFICATIONS.map((cert) => (
+            <div
+              key={cert.name}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-content1 border border-divider hover:border-default-300 transition-colors duration-200"
+            >
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: cert.color }}
+              />
+              <span className="text-sm font-medium text-foreground">{cert.name}</span>
+              <span className="text-xs text-default-400">{cert.provider}</span>
+            </div>
+          ))}
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/5 border border-primary/20">
+            <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+            <span className="text-sm font-medium text-primary">+ many more</span>
           </div>
-        ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── Testimonials ───────────────────────────────────────── */
+
+function TestimonialsSection() {
+  const { t } = useTranslation();
+
+  return (
+    <section className="py-20 px-6 bg-content1/20">
+      <div className="max-w-6xl mx-auto flex flex-col gap-12">
+        <div className="flex flex-col gap-3 max-w-2xl">
+          <span className="text-xs font-semibold text-primary">{t('homepage.testimonials.sectionLabel')}</span>
+          <h2 className="text-3xl font-extrabold text-foreground">{t('homepage.testimonials.title')}</h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {TESTIMONIALS.map((item) => (
+            <div
+              key={item.quote}
+              className="bg-content1 border border-divider rounded-xl p-6 flex flex-col gap-5 hover:border-default-300 transition-colors duration-200"
+            >
+              <FontAwesomeIcon className="text-primary/40 text-xl" icon={faQuoteLeft} />
+              <p className="text-sm text-default-500 leading-relaxed flex-1">&ldquo;{t(item.quote)}&rdquo;</p>
+              <div className="flex items-center gap-3 pt-2 border-t border-divider">
+                <span className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-xs font-bold text-primary flex-shrink-0">
+                  {item.initials}
+                </span>
+                <span className="text-xs text-default-400">{t(item.role)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── CTA2 ───────────────────────────────────────────────── */
+
+function CtaSection() {
+  const { t } = useTranslation();
+
+  return (
+    <section className="py-20 px-6">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-primary/5 border border-primary/20 rounded-2xl p-10 md:p-14 flex flex-col items-center gap-6 text-center">
+          <Image alt="CertifiqueAI" className="mb-2" height={40} src="/icon.svg" width={40} />
+          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground leading-tight">
+            {t('homepage.cta2.title')}
+          </h2>
+          <p className="text-sm text-default-500 leading-relaxed max-w-xl">
+            {t('homepage.cta2.subtitle')}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 pt-2">
+            <Button
+              as={NextLink}
+              className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
+              href="/certifications/simulados"
+              size="lg"
+            >
+              {t('homepage.cta2.generateQuiz')}
+            </Button>
+            <Button
+              as={NextLink}
+              className="border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold transition-colors duration-200 rounded-lg"
+              href="/certifications/configure"
+              size="lg"
+              variant="bordered"
+            >
+              {t('homepage.cta2.setupCertification')}
+            </Button>
+          </div>
+        </div>
       </div>
     </section>
   );
