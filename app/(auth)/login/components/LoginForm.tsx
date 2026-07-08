@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
 import { Divider } from '@heroui/divider';
@@ -16,11 +16,14 @@ import { PasswordInput } from '@/shared/components/ui/PasswordInput';
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const isJustVerified = searchParams.get('verified') === '1';
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,6 +32,11 @@ export function LoginForm() {
     const result = await signIn('credentials', { email, password, redirect: false });
 
     setLoading(false);
+    if (result?.error === 'EMAIL_NOT_VERIFIED') {
+      setError(t('login.emailNotVerified'));
+
+      return;
+    }
     if (result?.error) {
       setError(t('login.invalidCredentials'));
 
@@ -60,6 +68,13 @@ export function LoginForm() {
           </Link>
         </p>
       </div>
+
+      {isJustVerified && (
+        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-success/10 border border-success/20 mb-4">
+          <span className="w-1.5 h-1.5 rounded-full bg-success flex-shrink-0" />
+          <p className="text-success text-xs">{t('login.emailVerifiedSuccess')}</p>
+        </div>
+      )}
 
       <Button
         fullWidth
@@ -98,9 +113,21 @@ export function LoginForm() {
         />
 
         {error && (
-          <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-danger flex-shrink-0" />
-            <p className="text-danger text-xs">{error}</p>
+          <div className="flex flex-col gap-1 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/20">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-danger flex-shrink-0" />
+              <p className="text-danger text-xs">{error}</p>
+            </div>
+            {error === t('login.emailNotVerified') && (
+              <Link
+                as={NextLink}
+                className="text-primary text-xs font-semibold hover:opacity-80 transition-opacity ml-3.5"
+                href={`/verify-email?email=${encodeURIComponent(email)}`}
+                size="sm"
+              >
+                {t('login.verifyNow')}
+              </Link>
+            )}
           </div>
         )}
 
@@ -150,3 +177,4 @@ function GoogleIcon() {
     </svg>
   );
 }
+

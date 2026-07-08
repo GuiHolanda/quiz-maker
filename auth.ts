@@ -1,12 +1,16 @@
 import NextAuth, { DefaultSession } from 'next-auth';
 import { PrismaAdapter } from '@auth/prisma-adapter';
-import Credentials from 'next-auth/providers/credentials';
+import Credentials, { CredentialsSignin } from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import bcrypt from 'bcryptjs';
 
 import authConfig from './auth.config';
 
 import { prisma } from '@/lib/prisma';
+
+class EmailNotVerifiedError extends CredentialsSignin {
+  code = 'EMAIL_NOT_VERIFIED';
+}
 
 declare module 'next-auth' {
   interface Session {
@@ -37,6 +41,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const valid = await bcrypt.compare(credentials.password, user.password);
 
         if (!valid) return null;
+
+        if (!user.emailVerified) throw new EmailNotVerifiedError();
 
         return { id: user.id, name: user.name, email: user.email, image: user.image };
       },
