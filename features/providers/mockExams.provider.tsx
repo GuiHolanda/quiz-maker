@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useReducer } from 'react';
+import { createContext, useCallback, useContext, useEffect, useReducer } from 'react';
 
 import { MockExamListItem } from '@/shared/types';
 import { mockExamsReducer, MockExamsState } from '@/features/reducers/mockExams.reducer';
@@ -11,6 +11,7 @@ interface MockExamsContextValue extends MockExamsState {
   setMockExams: (mockExams: MockExamListItem[]) => void;
   addMockExam: (mockExam: MockExamListItem) => void;
   removeMockExam: (id: number) => void;
+  refresh: () => Promise<void>;
 }
 
 const MockExamsContext = createContext<MockExamsContextValue | null>(null);
@@ -18,22 +19,29 @@ const MockExamsContext = createContext<MockExamsContextValue | null>(null);
 export function MockExamsProvider({ children }: { readonly children: React.ReactNode }) {
   const [state, dispatch] = useReducer(mockExamsReducer, INITIAL_MOCK_EXAMS_STATE);
 
-  useEffect(() => {
-    getMockExams()
-      .then((mockExams) => dispatch({ type: 'setMockExams', payload: mockExams }))
-      .catch(() => {
-        const stored = localStorage.getItem(MOCK_EXAMS_LOCAL_STORAGE_KEY);
+  const refresh = useCallback(async () => {
+    try {
+      const mockExams = await getMockExams();
 
-        if (stored) {
-          try {
-            dispatch({ type: 'setMockExams', payload: JSON.parse(stored) });
-          } catch {
-            // ignore
-          }
+      dispatch({ type: 'setMockExams', payload: mockExams });
+    } catch {
+      const stored = localStorage.getItem(MOCK_EXAMS_LOCAL_STORAGE_KEY);
+
+      if (stored) {
+        try {
+          dispatch({ type: 'setMockExams', payload: JSON.parse(stored) });
+        } catch {
+          // ignore
         }
-      })
-      .finally(() => dispatch({ type: 'setLoading', payload: false }));
+      }
+    } finally {
+      dispatch({ type: 'setLoading', payload: false });
+    }
   }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   useEffect(() => {
     localStorage.setItem(MOCK_EXAMS_LOCAL_STORAGE_KEY, JSON.stringify(state.mockExams));
@@ -44,6 +52,7 @@ export function MockExamsProvider({ children }: { readonly children: React.React
     setMockExams: (mockExams) => dispatch({ type: 'setMockExams', payload: mockExams }),
     addMockExam: (mockExam) => dispatch({ type: 'addMockExam', payload: mockExam }),
     removeMockExam: (id) => dispatch({ type: 'removeMockExam', payload: id }),
+    refresh,
   };
 
   return <MockExamsContext.Provider value={value}>{children}</MockExamsContext.Provider>;
