@@ -43,3 +43,21 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'Internal Server Error', message: (e as Error).message }, { status });
   }
 }
+
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string; attemptId: string }> }) {
+  const session = await auth();
+
+  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const { id, attemptId } = await params;
+
+  try {
+    await service.discardAttempt(Number(id), Number(attemptId), session.user.id);
+
+    return NextResponse.json({ message: 'Attempt discarded' });
+  } catch (e: unknown) {
+    const status = (e as { status?: number }).status ?? 500;
+
+    return NextResponse.json({ error: 'Internal Server Error', message: (e as Error).message }, { status });
+  }
+}

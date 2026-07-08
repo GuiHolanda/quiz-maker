@@ -358,6 +358,10 @@ export async function finishMockExamAttempt(
   await api.patch(`${MOCK_EXAMS_URL}/${mockExamId}/attempts/${attemptId}`, payload);
 }
 
+export async function discardMockExamAttempt(mockExamId: number, attemptId: number): Promise<void> {
+  await api.delete(`${MOCK_EXAMS_URL}/${mockExamId}/attempts/${attemptId}`);
+}
+
 export async function getMockExamAttemptResult(mockExamId: number, attemptId: number): Promise<MockExamResult> {
   const { data } = await api.get<MockExamResult>(`${MOCK_EXAMS_URL}/${mockExamId}/attempts/${attemptId}`);
 
@@ -464,6 +468,10 @@ export async function finishCertSimuladoAttempt(
   payload: CertFinishAttemptPayload
 ): Promise<void> {
   await api.patch(`${CERT_SIMULADOS_URL}/${simuladoId}/attempts/${attemptId}`, payload);
+}
+
+export async function discardCertSimuladoAttempt(simuladoId: number, attemptId: number): Promise<void> {
+  await api.delete(`${CERT_SIMULADOS_URL}/${simuladoId}/attempts/${attemptId}`);
 }
 
 export async function getCertSimuladoResult(simuladoId: number, attemptId: number): Promise<CertSimuladoResult> {

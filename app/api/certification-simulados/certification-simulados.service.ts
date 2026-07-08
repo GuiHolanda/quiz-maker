@@ -27,7 +27,7 @@ export class CertificationSimuladosService {
       where: { userId },
       include: {
         topics: true,
-        attempts: { where: { finishedAt: { not: null } }, orderBy: { finishedAt: 'desc' } },
+        attempts: { orderBy: { startedAt: 'desc' } },
         _count: { select: { questions: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -41,7 +41,11 @@ export class CertificationSimuladosService {
     const labelByKey = new Map(certs.map((c) => [c.key, c.label]));
 
     return simulados.map((s) => {
-      const finished = s.attempts;
+      const finished = s.attempts
+        .filter((a) => a.finishedAt !== null)
+        .sort((a, b) => (b.finishedAt?.getTime() ?? 0) - (a.finishedAt?.getTime() ?? 0));
+      // attempts come from Prisma sorted by startedAt DESC — `.find` returns the newest open.
+      const open = s.attempts.find((a) => a.finishedAt === null) ?? null;
       const bestScore = finished.length > 0 ? Math.max(...finished.map((a) => a.score ?? 0)) : null;
       const lastAttemptId = finished.length > 0 ? finished[0].id : null;
 
@@ -54,6 +58,7 @@ export class CertificationSimuladosService {
         attemptCount: finished.length,
         bestScore,
         lastAttemptId,
+        openAttemptId: open?.id ?? null,
         attempts: finished.map((a) => ({
           id: a.id,
           score: a.score,
@@ -253,6 +258,13 @@ export class CertificationSimuladosService {
 
     if (!s) throw Object.assign(new Error('Simulado não encontrado'), { status: 404 });
 
+    const open = await prisma.certificationSimuladoAttempt.findFirst({
+      where: { simuladoId, userId, finishedAt: null },
+      orderBy: { startedAt: 'desc' },
+    });
+
+    if (open) return open;
+
     return prisma.certificationSimuladoAttempt.create({ data: { simuladoId, userId } });
   }
 
@@ -282,6 +294,18 @@ export class CertificationSimuladosService {
         data: { finishedAt: new Date(), score },
       }),
     ]);
+  }
+
+  async discardAttempt(simuladoId: number, attemptId: number, userId: string) {
+    const attempt = await prisma.certificationSimuladoAttempt.findFirst({
+      where: { id: attemptId, simuladoId, userId },
+    });
+
+    if (!attempt) throw Object.assign(new Error('Tentativa não encontrada'), { status: 404 });
+    if (attempt.finishedAt !== null) {
+      throw Object.assign(new Error('Tentativa já finalizada'), { status: 409 });
+    }
+    await prisma.certificationSimuladoAttempt.delete({ where: { id: attemptId } });
   }
 
   async getAttemptResult(simuladoId: number, attemptId: number, userId: string) {
