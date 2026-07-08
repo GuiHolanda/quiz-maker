@@ -81,7 +81,7 @@ export function ForgotPasswordForm() {
         />
         <Button
           fullWidth
-          className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200 h-12"
+          className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200 h-11"
           isLoading={loading}
           type="submit"
         >

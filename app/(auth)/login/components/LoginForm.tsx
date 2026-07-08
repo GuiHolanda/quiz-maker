@@ -24,6 +24,7 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
 
   const isJustVerified = searchParams.get('verified') === '1';
+  const isPasswordReset = searchParams.get('reset') === 'success';
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -73,6 +74,13 @@ export function LoginForm() {
         <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-success/10 border border-success/20 mb-4">
           <span className="w-1.5 h-1.5 rounded-full bg-success flex-shrink-0" />
           <p className="text-success text-xs">{t('login.emailVerifiedSuccess')}</p>
+        </div>
+      )}
+
+      {isPasswordReset && (
+        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-success/10 border border-success/20 mb-4">
+          <span className="w-1.5 h-1.5 rounded-full bg-success flex-shrink-0" />
+          <p className="text-success text-xs">{t('login.passwordResetSuccess')}</p>
         </div>
       )}
 

@@ -70,8 +70,10 @@ export function ResetPasswordForm() {
     try {
       await api.post(RESET_PASSWORD_URL, { token, password });
       router.push('/login?reset=success');
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('resetPassword.failed'));
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
+
+      setError(e.response?.data?.message || t('resetPassword.failed'));
     } finally {
       setLoading(false);
     }
@@ -114,7 +116,7 @@ export function ResetPasswordForm() {
 
         <Button
           fullWidth
-          className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200 h-12 mt-1"
+          className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200 h-11 mt-1"
           isLoading={loading}
           type="submit"
         >
