@@ -1284,7 +1284,7 @@ async function main() {
     if (existingCert) {
       await prisma.certificationTopic.deleteMany({ where: { certificationId: existingCert.id } });
       await prisma.certification.update({
-        where: { userId_key: { userId: null, key: cert.certificationKey } },
+        where: { id: existingCert.id },
         data: {
           label: cert.certificationTitle,
           topics: {
