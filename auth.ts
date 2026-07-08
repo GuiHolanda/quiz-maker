@@ -1,6 +1,6 @@
-import NextAuth, { DefaultSession } from 'next-auth';
+import NextAuth, { CredentialsSignin, DefaultSession } from 'next-auth';
 import { PrismaAdapter } from '@auth/prisma-adapter';
-import Credentials, { CredentialsSignin } from 'next-auth/providers/credentials';
+import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import bcrypt from 'bcryptjs';
 
