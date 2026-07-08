@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useReducer } from 'react';
+import { createContext, useCallback, useContext, useEffect, useReducer } from 'react';
 
 import { CertSimuladoListItem } from '@/shared/types';
 import { certSimuladosReducer, CertSimuladosState } from '@/features/reducers/certSimulados.reducer';
@@ -11,6 +11,7 @@ interface CertSimuladosContextValue extends CertSimuladosState {
   setSimulados: (simulados: CertSimuladoListItem[]) => void;
   addSimulado: (simulado: CertSimuladoListItem) => void;
   removeSimulado: (id: number) => void;
+  refresh: () => Promise<void>;
 }
 
 const CertSimuladosContext = createContext<CertSimuladosContextValue | null>(null);
@@ -18,22 +19,29 @@ const CertSimuladosContext = createContext<CertSimuladosContextValue | null>(nul
 export function CertSimuladosProvider({ children }: { readonly children: React.ReactNode }) {
   const [state, dispatch] = useReducer(certSimuladosReducer, INITIAL_CERT_SIMULADOS_STATE);
 
-  useEffect(() => {
-    getCertSimulados()
-      .then((simulados) => dispatch({ type: 'setSimulados', payload: simulados }))
-      .catch(() => {
-        const stored = localStorage.getItem(CERT_SIMULADOS_LOCAL_STORAGE_KEY);
+  const refresh = useCallback(async () => {
+    try {
+      const simulados = await getCertSimulados();
 
-        if (stored) {
-          try {
-            dispatch({ type: 'setSimulados', payload: JSON.parse(stored) });
-          } catch {
-            // ignore
-          }
+      dispatch({ type: 'setSimulados', payload: simulados });
+    } catch {
+      const stored = localStorage.getItem(CERT_SIMULADOS_LOCAL_STORAGE_KEY);
+
+      if (stored) {
+        try {
+          dispatch({ type: 'setSimulados', payload: JSON.parse(stored) });
+        } catch {
+          // ignore
         }
-      })
-      .finally(() => dispatch({ type: 'setLoading', payload: false }));
+      }
+    } finally {
+      dispatch({ type: 'setLoading', payload: false });
+    }
   }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   useEffect(() => {
     localStorage.setItem(CERT_SIMULADOS_LOCAL_STORAGE_KEY, JSON.stringify(state.simulados));
@@ -44,6 +52,7 @@ export function CertSimuladosProvider({ children }: { readonly children: React.R
     setSimulados: (simulados) => dispatch({ type: 'setSimulados', payload: simulados }),
     addSimulado: (simulado) => dispatch({ type: 'addSimulado', payload: simulado }),
     removeSimulado: (id) => dispatch({ type: 'removeSimulado', payload: id }),
+    refresh,
   };
 
   return <CertSimuladosContext.Provider value={value}>{children}</CertSimuladosContext.Provider>;

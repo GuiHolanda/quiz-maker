@@ -601,3 +601,28 @@ Types: `feat`, `fix`, `refactor`, `chore`, `docs`, `test`
 Examples from this repo:
 - `feat: sync certifications state with database as source of truth`
 - `refactor: Use queueMicrotask for setting errors in QuestionGeneratorForm`
+
+---
+
+## GitHub Issues
+
+The project backlog is tracked as GitHub Issues at **https://github.com/GuiHolanda/quiz-maker/issues**.
+
+Issues are created via the `gh` CLI (authenticated to `github.com`):
+
+```bash
+gh issue create --repo GuiHolanda/quiz-maker --title "<title>" --label "<label>" --body "<body>"
+```
+
+Common labels: `bug`, `feature`, `enhancement`, `backlog`.
+
+### When to suggest creating an issue
+
+**Always ask the user** whether to create a GitHub Issue when you identify any of the following during a task:
+
+- A bug or broken behavior spotted in code that is **out of scope** for the current task
+- A gap in UX or functionality (missing button, missing feedback, missing validation, etc.)
+- A technical debt item or known limitation worth tracking
+- An inconsistency between certifications and public-exams flows that should be unified
+
+The question should be brief and specific — name the problem, then ask: *"Quer que eu crie uma issue para isso?"*. Do **not** create issues silently without asking.

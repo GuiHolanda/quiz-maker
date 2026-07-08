@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@heroui/modal';
@@ -32,16 +32,24 @@ interface SimuladosListTabProps {
 
 export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
   const { t } = useTranslation();
-  const { simulados, isLoading, removeSimulado } = useCertSimuladosContext();
+  const { simulados, isLoading, removeSimulado, refresh } = useCertSimuladosContext();
   const [deleteTarget, setDeleteTarget] = useState<CertSimuladoListItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [startingId, setStartingId] = useState<number | null>(null);
   const [historyTarget, setHistoryTarget] = useState<CertSimuladoListItem | null>(null);
   const router = useRouter();
 
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
   async function handleStart(simulado: CertSimuladoListItem) {
     setStartingId(simulado.id);
     try {
+      if (simulado.openAttemptId != null) {
+        router.push(`/certifications/simulados/${simulado.id}/tentativa/${simulado.openAttemptId}`);
+        return;
+      }
       await ensureCertSimuladoAnswers(simulado.id);
       const attempt = await startCertSimuladoAttempt(simulado.id);
 
@@ -121,6 +129,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
 
   function renderCard(s: CertSimuladoListItem) {
     const isAnswered = s.attemptCount > 0;
+    const isInProgress = s.openAttemptId != null;
     const attempts =
       s.attemptCount === 1
         ? t('simulado.attempt', { count: s.attemptCount })
@@ -130,8 +139,12 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
       <div key={s.id} className="bg-content1 border border-default-200 rounded-xl p-4 flex flex-col">
         <div className="flex items-start justify-between gap-2">
           <p className="font-semibold">{s.name ?? s.certLabel}</p>
-          <Chip color={isAnswered ? 'success' : 'warning'} size="sm" variant="flat">
-            {isAnswered ? t('simulado.statusAnswered') : t('simulado.statusPending')}
+          <Chip color={isInProgress ? 'warning' : isAnswered ? 'success' : 'warning'} size="sm" variant="flat">
+            {isInProgress
+              ? t('simulado.statusInProgress')
+              : isAnswered
+                ? t('simulado.statusAnswered')
+                : t('simulado.statusPending')}
           </Chip>
         </div>
 
@@ -152,7 +165,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
               size="sm"
               onPress={() => handleStart(s)}
             >
-              {isAnswered ? t('simulado.tryAgain') : t('simulado.respond')}
+              {isInProgress ? t('simulado.continue') : isAnswered ? t('simulado.tryAgain') : t('simulado.respond')}
             </Button>
             {isAnswered && (
               <Button

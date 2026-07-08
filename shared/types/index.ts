@@ -373,6 +373,7 @@ export interface MockExamListItem {
   attemptCount: number;
   bestScore: number | null;
   lastAttemptId: number | null;
+  openAttemptId: number | null;
   attempts: Pick<MockExamAttempt, 'id' | 'score' | 'startedAt' | 'finishedAt'>[];
   createdAt: string;
 }
@@ -499,6 +500,7 @@ export interface CertSimuladoListItem {
   attemptCount: number;
   bestScore: number | null;
   lastAttemptId: number | null;
+  openAttemptId: number | null;
   attempts: Pick<CertSimuladoAttempt, 'id' | 'score' | 'startedAt' | 'finishedAt'>[];
   createdAt: string;
 }

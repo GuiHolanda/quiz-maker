@@ -44,6 +44,7 @@ describe('CertificationSimuladosService', () => {
       expect(result[0].totalQuestions).toBe(10);
       expect(result[0].attemptCount).toBe(0);
       expect(result[0].bestScore).toBeNull();
+      expect(result[0].openAttemptId).toBeNull();
     });
 
     it('falls back to certKey when certification row is missing', async () => {
@@ -64,6 +65,51 @@ describe('CertificationSimuladosService', () => {
       const result = await service.list('user1');
 
       expect(result[0].certLabel).toBe('orphan-key');
+    });
+
+    it('separates finished attempts from an open one and exposes openAttemptId', async () => {
+      prismaMock.certificationSimulado.findMany.mockResolvedValue([
+        {
+          id: 1,
+          name: 'My Simulado',
+          certKey: 'AWS-SAA',
+          userId: 'user1',
+          createdAt: new Date('2026-01-01'),
+          topics: [],
+          attempts: [
+            {
+              id: 42,
+              score: null,
+              startedAt: new Date('2026-01-03'),
+              finishedAt: null,
+            },
+            {
+              id: 40,
+              score: 8,
+              startedAt: new Date('2026-01-02'),
+              finishedAt: new Date('2026-01-02T10:00:00Z'),
+            },
+            {
+              id: 39,
+              score: 6,
+              startedAt: new Date('2026-01-01'),
+              finishedAt: new Date('2026-01-01T10:00:00Z'),
+            },
+          ],
+          _count: { questions: 10 },
+        },
+      ] as any);
+      prismaMock.certification.findMany.mockResolvedValue([
+        { key: 'AWS-SAA', label: 'AWS Solutions Architect Associate' },
+      ] as any);
+
+      const result = await service.list('user1');
+
+      expect(result[0].attemptCount).toBe(2);
+      expect(result[0].bestScore).toBe(8);
+      expect(result[0].openAttemptId).toBe(42);
+      expect(result[0].lastAttemptId).toBe(40);
+      expect(result[0].attempts.map((a: { id: number }) => a.id)).toEqual([40, 39]);
     });
   });
 
@@ -90,8 +136,9 @@ describe('CertificationSimuladosService', () => {
       await expect(service.startAttempt(1, 'user1')).rejects.toMatchObject({ status: 404 });
     });
 
-    it('creates attempt when simulado belongs to user', async () => {
+    it('creates attempt when simulado belongs to user and there is no open attempt', async () => {
       prismaMock.certificationSimulado.findFirst.mockResolvedValue({ id: 1 } as any);
+      prismaMock.certificationSimuladoAttempt.findFirst.mockResolvedValue(null);
       prismaMock.certificationSimuladoAttempt.create.mockResolvedValue({
         id: 5,
         simuladoId: 1,
@@ -104,6 +151,24 @@ describe('CertificationSimuladosService', () => {
       const attempt = await service.startAttempt(1, 'user1');
 
       expect(attempt.id).toBe(5);
+      expect(prismaMock.certificationSimuladoAttempt.create).toHaveBeenCalled();
+    });
+
+    it('reuses the open attempt when one already exists', async () => {
+      prismaMock.certificationSimulado.findFirst.mockResolvedValue({ id: 1 } as any);
+      prismaMock.certificationSimuladoAttempt.findFirst.mockResolvedValue({
+        id: 42,
+        simuladoId: 1,
+        userId: 'user1',
+        startedAt: new Date(),
+        finishedAt: null,
+        score: null,
+      } as any);
+
+      const attempt = await service.startAttempt(1, 'user1');
+
+      expect(attempt.id).toBe(42);
+      expect(prismaMock.certificationSimuladoAttempt.create).not.toHaveBeenCalled();
     });
   });
 

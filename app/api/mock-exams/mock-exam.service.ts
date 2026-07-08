@@ -29,14 +29,17 @@ export class MockExamService {
       include: {
         publicExam: { include: { examBoard: true } },
         subjects: true,
-        attempts: { where: { finishedAt: { not: null } }, orderBy: { finishedAt: 'desc' } },
+        attempts: { orderBy: { startedAt: 'desc' } },
         _count: { select: { questions: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
 
     return mockExams.map((m) => {
-      const finishedAttempts = m.attempts;
+      const finishedAttempts = m.attempts
+        .filter((a) => a.finishedAt !== null)
+        .sort((a, b) => (b.finishedAt?.getTime() ?? 0) - (a.finishedAt?.getTime() ?? 0));
+      const open = m.attempts.find((a) => a.finishedAt === null) ?? null;
       const bestScore = finishedAttempts.length > 0 ? Math.max(...finishedAttempts.map((a) => a.score ?? 0)) : null;
       const lastAttemptId = finishedAttempts.length > 0 ? finishedAttempts[0].id : null;
 
@@ -48,6 +51,7 @@ export class MockExamService {
         attemptCount: finishedAttempts.length,
         bestScore,
         lastAttemptId,
+        openAttemptId: open?.id ?? null,
         attempts: finishedAttempts.map((a) => ({
           id: a.id,
           score: a.score,
@@ -254,6 +258,13 @@ export class MockExamService {
 
     if (!exam) throw Object.assign(new Error('Simulado não encontrado'), { status: 404 });
 
+    const open = await prisma.mockExamAttempt.findFirst({
+      where: { mockExamId, userId, finishedAt: null },
+      orderBy: { startedAt: 'desc' },
+    });
+
+    if (open) return open;
+
     const attempt = await prisma.mockExamAttempt.create({
       data: { mockExamId, userId },
     });
@@ -369,6 +380,18 @@ export class MockExamService {
         data: { finishedAt: new Date(), score },
       }),
     ]);
+  }
+
+  async discardAttempt(mockExamId: number, attemptId: number, userId: string) {
+    const attempt = await prisma.mockExamAttempt.findFirst({
+      where: { id: attemptId, mockExamId, userId },
+    });
+
+    if (!attempt) throw Object.assign(new Error('Tentativa não encontrada'), { status: 404 });
+    if (attempt.finishedAt !== null) {
+      throw Object.assign(new Error('Tentativa já finalizada'), { status: 409 });
+    }
+    await prisma.mockExamAttempt.delete({ where: { id: attemptId } });
   }
 
   async getAttemptResult(mockExamId: number, attemptId: number, userId: string) {

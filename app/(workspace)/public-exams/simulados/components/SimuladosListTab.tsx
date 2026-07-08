@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@heroui/modal';
@@ -32,16 +32,24 @@ interface SimuladosListTabProps {
 
 export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
   const { t } = useTranslation();
-  const { mockExams, isLoading, removeMockExam } = useMockExamsContext();
+  const { mockExams, isLoading, removeMockExam, refresh } = useMockExamsContext();
   const [deleteTarget, setDeleteTarget] = useState<MockExamListItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [startingId, setStartingId] = useState<number | null>(null);
   const [historyTarget, setHistoryTarget] = useState<MockExamListItem | null>(null);
   const router = useRouter();
 
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
   async function handleStart(mockExam: MockExamListItem) {
     setStartingId(mockExam.id);
     try {
+      if (mockExam.openAttemptId != null) {
+        router.push(`/public-exams/simulados/${mockExam.id}/tentativa/${mockExam.openAttemptId}`);
+        return;
+      }
       await ensureMockExamAnswers(mockExam.id);
       const attempt = await startMockExamAttempt(mockExam.id);
 
@@ -118,6 +126,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
 
   function renderCard(m: MockExamListItem) {
     const isAnswered = m.attemptCount > 0;
+    const isInProgress = m.openAttemptId != null;
     const attempts =
       m.attemptCount === 1
         ? t('simulado.attempt', { count: m.attemptCount })
@@ -128,8 +137,12 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
         <div className="flex items-start justify-between gap-2">
           <p className="font-semibold">{m.name ?? m.publicExam.name}</p>
 
-          <Chip color={isAnswered ? 'success' : 'warning'} size="sm" variant="flat">
-            {isAnswered ? t('simulado.statusAnswered') : t('simulado.statusPending')}
+          <Chip color={isInProgress ? 'warning' : isAnswered ? 'success' : 'warning'} size="sm" variant="flat">
+            {isInProgress
+              ? t('simulado.statusInProgress')
+              : isAnswered
+                ? t('simulado.statusAnswered')
+                : t('simulado.statusPending')}
           </Chip>
         </div>
 
@@ -149,7 +162,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
               size="sm"
               onPress={() => handleStart(m)}
             >
-              {isAnswered ? t('simulado.tryAgain') : t('simulado.respond')}
+              {isInProgress ? t('simulado.continue') : isAnswered ? t('simulado.tryAgain') : t('simulado.respond')}
             </Button>
             {isAnswered && (
               <Button className={buttonStyles.secondary} size="sm" variant="bordered" onPress={() => setHistoryTarget(m)}>
