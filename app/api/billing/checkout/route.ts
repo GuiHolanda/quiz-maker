@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { lemonSqueezySetup, createCheckout } from '@lemonsqueezy/lemonsqueezy.js';
+import Stripe from 'stripe';
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
-lemonSqueezySetup({ apiKey: process.env.LEMONSQUEEZY_API_KEY! });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-06-24.dahlia' });
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -17,41 +17,44 @@ export async function GET(request: NextRequest) {
   const billingPeriod = searchParams.get('period') === 'yearly' ? 'yearly' : 'monthly';
   const product = searchParams.get('product') === 'pro_ai' ? 'pro_ai' : 'pro';
 
-  let variantId: string;
+  let priceId: string;
 
   if (product === 'pro_ai') {
-    variantId =
+    priceId =
       billingPeriod === 'yearly'
-        ? process.env.LEMONSQUEEZY_PRODUCT_VARIANT_ID_PRO_AI_YEARLY!
-        : process.env.LEMONSQUEEZY_PRODUCT_VARIANT_ID_PRO_AI_MONTHLY!;
+        ? process.env.STRIPE_PRICE_ID_PRO_AI_YEARLY!
+        : process.env.STRIPE_PRICE_ID_PRO_AI_MONTHLY!;
   } else {
-    variantId =
+    priceId =
       billingPeriod === 'yearly'
-        ? process.env.LEMONSQUEEZY_PRODUCT_VARIANT_ID_YEARLY!
-        : process.env.LEMONSQUEEZY_PRODUCT_VARIANT_ID_MONTHLY!;
+        ? process.env.STRIPE_PRICE_ID_PRO_YEARLY!
+        : process.env.STRIPE_PRICE_ID_PRO_MONTHLY!;
   }
 
   const user = await prisma.user.findUniqueOrThrow({
     where: { id: session.user.id },
-    select: { email: true, name: true },
+    select: { email: true, stripeCustomerId: true },
   });
 
-  const { data, error } = await createCheckout(process.env.LEMONSQUEEZY_STORE_ID!, variantId, {
-    checkoutOptions: { embed: false },
-    checkoutData: {
-      email: user.email ?? undefined,
-      name: user.name ?? undefined,
-      custom: { user_id: session.user.id },
-    },
-    productOptions: {
-      redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/billing?upgraded=true`,
-      receiptButtonText: 'Go to Dashboard',
-    },
-  });
+  const checkoutParams: Stripe.Checkout.SessionCreateParams = {
+    mode: 'subscription',
+    line_items: [{ price: priceId, quantity: 1 }],
+    metadata: { user_id: session.user.id },
+    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?upgraded=true`,
+    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing`,
+  };
 
-  if (error || !data) {
+  if (user.stripeCustomerId) {
+    checkoutParams.customer = user.stripeCustomerId;
+  } else if (user.email) {
+    checkoutParams.customer_email = user.email;
+  }
+
+  const stripeSession = await stripe.checkout.sessions.create(checkoutParams);
+
+  if (!stripeSession.url) {
     return NextResponse.json({ error: 'Failed to create checkout' }, { status: 500 });
   }
 
-  return NextResponse.json({ url: data.data.attributes.url }, { status: 200 });
+  return NextResponse.json({ url: stripeSession.url }, { status: 200 });
 }

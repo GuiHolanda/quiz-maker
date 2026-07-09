@@ -28,8 +28,8 @@ model User {
   plan                         String   @default("free")
   questionsGeneratedThisPeriod Int      @default(0)
   periodStartDate              DateTime @default(now())
-  lemonSqueezyCustomerId       String?
-  lemonSqueezySubscriptionId   String?
+  stripeCustomerId             String?
+  stripeSubscriptionId         String?  @unique
   subscriptionStatus           String?
   customQuotaOverride          Int?
   createdAt     DateTime   @default(now())

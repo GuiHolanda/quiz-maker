@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { lemonSqueezySetup, getSubscription } from '@lemonsqueezy/lemonsqueezy.js';
+import Stripe from 'stripe';
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
-lemonSqueezySetup({ apiKey: process.env.LEMONSQUEEZY_API_KEY! });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-06-24.dahlia' });
 
 export async function GET() {
   const session = await auth();
@@ -15,24 +15,17 @@ export async function GET() {
 
   const user = await prisma.user.findUniqueOrThrow({
     where: { id: session.user.id },
-    select: { lemonSqueezySubscriptionId: true },
+    select: { stripeCustomerId: true },
   });
 
-  if (!user.lemonSqueezySubscriptionId) {
+  if (!user.stripeCustomerId) {
     return NextResponse.json({ error: 'No active subscription' }, { status: 404 });
   }
 
-  const { data, error } = await getSubscription(user.lemonSqueezySubscriptionId);
+  const portalSession = await stripe.billingPortal.sessions.create({
+    customer: user.stripeCustomerId,
+    return_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing`,
+  });
 
-  if (error || !data) {
-    return NextResponse.json({ error: 'Failed to fetch subscription' }, { status: 500 });
-  }
-
-  const portalUrl = data.data.attributes.urls?.customer_portal;
-
-  if (!portalUrl) {
-    return NextResponse.json({ error: 'Portal URL not available' }, { status: 500 });
-  }
-
-  return NextResponse.json({ url: portalUrl }, { status: 200 });
+  return NextResponse.json({ url: portalSession.url }, { status: 200 });
 }

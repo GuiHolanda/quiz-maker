@@ -157,8 +157,8 @@ export async function getBillingUsage(): Promise<UsageStats> {
   return data;
 }
 
-export async function getCheckoutUrl(period: 'monthly' | 'yearly'): Promise<string> {
-  const { data } = await api.get<{ url: string }>(BILLING_CHECKOUT_URL, { params: { period } });
+export async function getCheckoutUrl(period: 'monthly' | 'yearly', product: 'pro' | 'pro_ai' = 'pro'): Promise<string> {
+  const { data } = await api.get<{ url: string }>(BILLING_CHECKOUT_URL, { params: { period, product } });
 
   return data.url;
 }
