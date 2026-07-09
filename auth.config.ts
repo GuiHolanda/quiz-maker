@@ -2,7 +2,7 @@ import type { NextAuthConfig } from 'next-auth';
 
 // Prefix-matched public routes. The homepage `/` is handled by an exact match
 // in `authorized` to avoid matching every other path (startsWith('/') is always true).
-const publicRoutePrefixes = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email'];
+const publicRoutePrefixes = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/pricing'];
 
 export default {
   providers: [],

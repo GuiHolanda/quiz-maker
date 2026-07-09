@@ -3,7 +3,7 @@
 import type { UsageStats } from '@/shared/types';
 
 import { Button } from '@heroui/button';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 import { UsageCard } from '@/app/(workspace)/billing/components/UsageCard';
@@ -18,16 +18,46 @@ export function BillingOverview() {
   const [usage, setUsage] = useState<UsageStats | null>(null);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
+  const toastFiredRef = useRef(false);
+  const isUpgradeFlow = searchParams.get('upgraded') === 'true';
 
   useEffect(() => {
-    getBillingUsage().then(setUsage);
-  }, []);
-
-  useEffect(() => {
-    if (searchParams.get('upgraded') === 'true') {
-      notify.success(t('billing.toast.upgraded'), t('billing.toast.upgradedDescription'));
+    if (!isUpgradeFlow) {
+      getBillingUsage().then(setUsage);
+      return;
     }
-  }, [searchParams, t]);
+
+    let attempts = 0;
+    let cancelled = false;
+
+    async function pollUntilUpgraded() {
+      while (attempts < 8 && !cancelled) {
+        const data = await getBillingUsage();
+
+        if (cancelled) return;
+
+        if (data.plan !== 'free' || attempts === 7) {
+          setUsage(data);
+          return;
+        }
+
+        attempts++;
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+
+    pollUntilUpgraded();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isUpgradeFlow]);
+
+  useEffect(() => {
+    if (!isUpgradeFlow || !usage || toastFiredRef.current) return;
+    toastFiredRef.current = true;
+    notify.success(t('billing.toast.upgraded'), t('billing.toast.upgradedDescription'));
+  }, [isUpgradeFlow, usage, t]);
 
   if (!usage) return null;
 
@@ -56,7 +86,11 @@ export function BillingOverview() {
         <div>
           <p className="text-xs font-semibold text-primary mb-1">{t('billing.currentPlan')}</p>
           <p className="text-xl font-bold text-foreground">
-            {usage.plan === 'pro' ? t('billing.planPro') : t('billing.planFree')}
+            {usage.plan === 'pro_ai'
+              ? t('billing.planProAi')
+              : usage.plan === 'pro'
+                ? t('billing.planPro')
+                : t('billing.planFree')}
           </p>
           <p className="text-xs text-default-400 mt-1">{t('billing.periodResetsOn', { date: resetLabel })}</p>
         </div>

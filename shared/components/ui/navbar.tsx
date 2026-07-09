@@ -45,7 +45,7 @@ const CONCURSO_ITEMS = [
 
 const NAV_LINKS = [
   { label: 'nav.solutions', href: '#' },
-  { label: 'nav.pricing', href: '#' },
+  { label: 'nav.pricing', href: '/pricing' },
   { label: 'nav.docs', href: '#' },
 ] as const;
 
@@ -192,16 +192,24 @@ export const Navbar = () => {
                 </Dropdown>
               </NavbarItem>
             )}
-            {NAV_LINKS.map((item) => (
-              <NavbarItem key={item.label}>
-                <NextLink
-                  className="text-default-500 hover:text-foreground text-sm px-3 py-1.5 rounded-lg hover:bg-default-100 transition-colors duration-200"
-                  href={item.href}
-                >
-                  {t(item.label)}
-                </NextLink>
-              </NavbarItem>
-            ))}
+            {NAV_LINKS.map((item) => {
+              const isActive = item.href !== '#' && pathname === item.href;
+
+              return (
+                <NavbarItem key={item.label}>
+                  <NextLink
+                    className={`text-sm px-3 py-1.5 rounded-lg transition-colors duration-200 ${
+                      isActive
+                        ? 'text-foreground font-semibold bg-default-100'
+                        : 'text-default-500 hover:text-foreground hover:bg-default-100'
+                    }`}
+                    href={item.href}
+                  >
+                    {t(item.label)}
+                  </NextLink>
+                </NavbarItem>
+              );
+            })}
             {status === 'authenticated' && session?.user?.plan === 'admin' && (
               <NavbarItem>
                 <NextLink
