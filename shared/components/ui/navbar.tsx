@@ -21,7 +21,7 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowUp, faChevronDown, faGear } from '@fortawesome/free-solid-svg-icons';
+import { faArrowUp, faChevronDown, faGear, faUser } from '@fortawesome/free-solid-svg-icons';
 
 import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
 import { UsageBadge } from '@/shared/components/ui/UsageBadge';
@@ -85,6 +85,14 @@ export const Navbar = () => {
           <DropdownItem key="user-info" isReadOnly className="opacity-100 cursor-default">
             <p className="text-sm font-semibold text-foreground">{session?.user?.name}</p>
             <p className="text-xs text-default-400">{session?.user?.email}</p>
+          </DropdownItem>
+          <DropdownItem
+            key="billing"
+            as={NextLink}
+            href="/billing"
+            startContent={<FontAwesomeIcon className="w-3 h-3" icon={faUser} />}
+          >
+            {t('nav.manageAccount')}
           </DropdownItem>
         </DropdownSection>
         {usage?.plan === 'free' ? (
