@@ -41,6 +41,7 @@ const config = {
         light: {
           colors: {
             background: "#f8fafc",
+            background2: "#eef2f6",
             foreground: "#0f172a",
             primary: {
               50: "#eef2ff",
