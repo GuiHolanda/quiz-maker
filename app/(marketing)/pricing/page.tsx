@@ -2,8 +2,6 @@
 
 import NextLink from 'next/link';
 import { Button } from '@heroui/button';
-import { Tabs, Tab } from '@heroui/tabs';
-import Image from 'next/image';
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -14,7 +12,6 @@ import { PricingFaq } from '@/app/(marketing)/pricing/components/PricingFaq';
 import { getCheckoutUrl } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
-import { buttonStyles } from '@/config/constants/buttonStyles';
 
 type BillingPeriod = 'monthly' | 'yearly';
 type LoadingKey = 'pro' | 'pro_ai' | null;
@@ -106,9 +103,19 @@ function PricingPageContent() {
   const proSubline = period === 'yearly' ? t('pricing.plan.billedAnnually') : undefined;
 
   return (
-    <div className="bg-background text-foreground">
-      {renderHero()}
-      {renderCards()}
+    <div className="bg-navy-900 text-[#e8edf3]">
+      <div className="relative overflow-hidden grid-bg">
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'linear-gradient(135deg, #070e20 0%, #0f1b3d 50%, rgba(30,58,95,0.2) 100%)' }}
+        />
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full pointer-events-none"
+          style={{ background: 'rgba(0,212,255,0.04)', filter: 'blur(60px)' }}
+        />
+        {renderHero()}
+        {renderCards()}
+      </div>
       {renderComparisonTable()}
       <PricingFaq />
       {renderBottomCta()}
@@ -117,40 +124,34 @@ function PricingPageContent() {
 
   function renderHero() {
     return (
-      <section className="py-20 px-6 text-center">
+      <section className="py-20 px-6 text-center relative z-10">
         <div className="max-w-3xl mx-auto flex flex-col items-center gap-6">
-          <span className="text-xs font-semibold text-primary">{t('pricing.hero.sectionLabel')}</span>
-          <h1 className="text-4xl lg:text-5xl font-extrabold leading-tight tracking-tight text-foreground">
+          <div className="flex items-center gap-3">
+            <div className="w-px h-4 bg-accent" />
+            <span className="font-mono text-xs text-navy-400 tracking-widest uppercase">
+              {t('pricing.hero.sectionLabel')}
+            </span>
+            <div className="w-px h-4 bg-accent" />
+          </div>
+          <h1 className="font-sora font-extrabold text-white text-3xl sm:text-4xl xl:text-5xl leading-tight">
             {t('pricing.hero.title')}
           </h1>
-          <p className="text-base text-default-500 leading-relaxed max-w-xl">
-            {t('pricing.hero.subtitle')}
-          </p>
+          <p className="font-mono text-sm text-navy-400 leading-relaxed max-w-xl">{t('pricing.hero.subtitle')}</p>
 
-          <div className="flex items-center gap-3 mt-2">
-            <Tabs
-              aria-label={t('pricing.toggle.monthly')}
-              classNames={{
-                tabList: 'bg-default-100 border border-default-200 rounded-xl p-1 gap-1',
-                tab: 'text-default-400 data-[selected=true]:text-foreground data-[selected=true]:font-semibold',
-                cursor: 'bg-primary rounded-xl',
-              }}
-              selectedKey={period}
-              onSelectionChange={(key) => setPeriod(key as BillingPeriod)}
+          <div className="inline-flex items-center border border-navy-700 rounded p-1 mt-2">
+            <button
+              className={`font-mono text-xs px-4 py-2 rounded transition-all ${period === 'monthly' ? 'bg-navy-800 text-[#e8edf3]' : 'text-navy-500 hover:text-navy-300'}`}
+              onClick={() => setPeriod('monthly')}
             >
-              <Tab key="monthly" title={t('pricing.toggle.monthly')} />
-              <Tab
-                key="yearly"
-                title={
-                  <div className="flex items-center gap-2">
-                    <span>{t('pricing.toggle.yearly')}</span>
-                    <span className="text-[10px] font-semibold text-success bg-success/10 px-1.5 py-0.5 rounded-md">
-                      {t('pricing.toggle.savePercent')}
-                    </span>
-                  </div>
-                }
-              />
-            </Tabs>
+              {t('pricing.toggle.monthly')}
+            </button>
+            <button
+              className={`font-mono text-xs px-4 py-2 rounded transition-all flex items-center gap-2 ${period === 'yearly' ? 'bg-navy-800 text-[#e8edf3]' : 'text-navy-500 hover:text-navy-300'}`}
+              onClick={() => setPeriod('yearly')}
+            >
+              {t('pricing.toggle.yearly')}
+              <span className="text-accent">{t('pricing.toggle.savePercent')}</span>
+            </button>
           </div>
         </div>
       </section>
@@ -159,7 +160,7 @@ function PricingPageContent() {
 
   function renderCards() {
     return (
-      <section className="px-6 pb-20">
+      <section className="px-6 pb-20 relative z-10">
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
           <PricingCard
             ctaLabelKey={getFreeCtaKey()}
@@ -203,7 +204,7 @@ function PricingPageContent() {
 
   function renderComparisonTable() {
     return (
-      <section className="py-16 px-6 bg-content1/20">
+      <section className="py-16 px-6 bg-navy-950 border-y border-navy-800/40">
         <div className="max-w-5xl mx-auto">
           <FeatureComparisonTable />
         </div>
@@ -213,36 +214,30 @@ function PricingPageContent() {
 
   function renderBottomCta() {
     return (
-      <section className="py-20 px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-primary/5 border border-primary/20 rounded-2xl p-10 md:p-14 flex flex-col items-center gap-6 text-center">
-            <Image alt="CertifiqueAI" className="mb-2" height={40} src="/icon.svg" width={40} />
-            <h2 className="text-3xl md:text-4xl font-extrabold text-foreground leading-tight">
-              {t('pricing.cta2.title')}
-            </h2>
-            <p className="text-sm text-default-500 leading-relaxed max-w-xl">
-              {t('pricing.cta2.subtitle')}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 pt-2">
-              <Button
-                as={NextLink}
-                className={buttonStyles.primary}
-                href="/register"
-                size="lg"
-              >
-                {t('pricing.cta2.button')}
-              </Button>
-              <Button
-                as={NextLink}
-                className={buttonStyles.secondary}
-                href="/certifications/simulados"
-                size="lg"
-                variant="bordered"
-              >
-                {t('homepage.cta.startPracticing')}
-              </Button>
-            </div>
+      <section className="py-20 px-6 bg-navy-950 border-t border-navy-800/40">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="font-sora font-extrabold text-white text-2xl sm:text-4xl mb-5">{t('pricing.cta2.title')}</h2>
+          <p className="font-mono text-sm text-navy-400 mb-8 max-w-lg mx-auto">{t('pricing.cta2.subtitle')}</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button
+              as={NextLink}
+              className="font-semibold text-sm bg-navy-600 hover:bg-navy-500 text-white border border-navy-500 rounded tracking-wide"
+              href="/register"
+              size="lg"
+            >
+              {t('pricing.cta2.button')}
+            </Button>
+            <Button
+              as={NextLink}
+              className="font-medium text-sm text-navy-400 hover:text-white border border-navy-700 hover:border-navy-600 rounded tracking-wide"
+              href="/certifications/simulados"
+              size="lg"
+              variant="bordered"
+            >
+              {t('homepage.cta.startPracticing')}
+            </Button>
           </div>
+          <p className="font-mono text-xs text-navy-600 mt-4">{t('homepage.hero.disclaimer')}</p>
         </div>
       </section>
     );

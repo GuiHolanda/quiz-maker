@@ -50,7 +50,7 @@ function FeatureCell({ value }: FeatureCellProps) {
     return (
       <div className="flex justify-center">
         <FontAwesomeIcon
-          className={value ? 'text-success' : 'text-default-300'}
+          className={value ? 'text-accent' : 'text-navy-700'}
           icon={value ? faCheck : faXmark}
         />
       </div>
@@ -59,7 +59,7 @@ function FeatureCell({ value }: FeatureCellProps) {
 
   return (
     <div className="flex justify-center">
-      <span className="text-sm font-semibold text-foreground">{t(value)}</span>
+      <span className="font-mono text-sm font-semibold text-white">{t(value)}</span>
     </div>
   );
 }
@@ -68,44 +68,52 @@ export function FeatureComparisonTable() {
   const { t } = useTranslation();
 
   return (
-    <div className="hidden md:block overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-default-200">
-            <th className="py-4 text-left text-sm font-semibold text-default-400 w-2/5">
-              {t('pricing.features.sectionLabel')}
-            </th>
-            <th className="py-4 text-center text-sm font-bold text-foreground w-1/5">
-              {t('pricing.plan.free')}
-            </th>
-            <th className="py-4 text-center text-sm font-bold text-foreground w-1/5">
-              {t('pricing.plan.pro')}
-            </th>
-            <th className="py-4 text-center text-sm font-bold text-primary w-1/5">
-              {t('pricing.plan.proAi')}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {FEATURES.map((row, i) => (
-            <tr
-              key={row.labelKey}
-              className={`border-b border-default-100 ${i % 2 === 0 ? '' : 'bg-content1/50'}`}
-            >
-              <td className="py-3.5 text-sm text-default-500">{t(row.labelKey)}</td>
-              <td className="py-3.5">
-                <FeatureCell value={row.free} />
-              </td>
-              <td className="py-3.5">
-                <FeatureCell value={row.pro} />
-              </td>
-              <td className="py-3.5">
-                <FeatureCell value={row.proAi} />
-              </td>
+    <div>
+      <div className="flex items-center gap-3 mb-8">
+        <div className="w-px h-4 bg-accent" />
+        <span className="font-mono text-xs text-navy-400 tracking-widest uppercase">
+          {t('pricing.features.sectionLabel')}
+        </span>
+      </div>
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-navy-800/60">
+              <th className="py-4 text-left font-mono text-xs text-navy-500 uppercase tracking-widest w-2/5">
+                {t('pricing.features.sectionLabel')}
+              </th>
+              <th className="py-4 text-center font-mono text-xs text-navy-400 uppercase tracking-widest w-1/5">
+                {t('pricing.plan.free')}
+              </th>
+              <th className="py-4 text-center font-mono text-xs text-navy-400 uppercase tracking-widest w-1/5">
+                {t('pricing.plan.pro')}
+              </th>
+              <th className="py-4 text-center font-mono text-xs uppercase tracking-widest w-1/5" style={{ color: '#00d4ff' }}>
+                {t('pricing.plan.proAi')}
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {FEATURES.map((row, i) => (
+              <tr
+                key={row.labelKey}
+                className={`border-b border-navy-800/40 ${i % 2 === 0 ? '' : 'bg-navy-950/30'}`}
+              >
+                <td className="py-3.5 font-mono text-xs text-navy-400">{t(row.labelKey)}</td>
+                <td className="py-3.5">
+                  <FeatureCell value={row.free} />
+                </td>
+                <td className="py-3.5">
+                  <FeatureCell value={row.pro} />
+                </td>
+                <td className="py-3.5">
+                  <FeatureCell value={row.proAi} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

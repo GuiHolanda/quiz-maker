@@ -1,12 +1,10 @@
 'use client';
 
 import { Button } from '@heroui/button';
-import { Chip } from '@heroui/chip';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faXmark, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface PricingFeature {
   readonly labelKey: string;
@@ -41,59 +39,76 @@ export function PricingCard({
 }: PricingCardProps) {
   const { t } = useTranslation();
   const isProAi = planKey === 'pro_ai';
-  const isFree = planKey === 'free';
 
   return (
     <div
-      className={`relative flex flex-col gap-6 rounded-xl border p-6 transition-colors duration-200 ${
+      className={`relative flex flex-col gap-6 rounded-lg p-7 transition-colors duration-200 ${
         isProAi
-          ? 'border-primary/40 bg-primary/5'
-          : 'bg-content1 border border-default-200'
+          ? 'bg-navy-950/60 border-2 border-navy-600'
+          : 'bg-navy-950/40 border border-navy-700/60'
       }`}
     >
       {isPopular && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <Chip color="primary" size="sm" variant="flat">
+        <div className="absolute top-4 right-4">
+          <span
+            className="font-mono text-xs px-2 py-1 rounded tracking-wider uppercase"
+            style={{ background: 'rgba(0,212,255,0.1)', color: '#00d4ff', border: '1px solid rgba(0,212,255,0.2)' }}
+          >
             {t('pricing.plan.mostPopular')}
-          </Chip>
+          </span>
         </div>
       )}
 
       <div className="flex flex-col gap-2 min-h-[6rem]">
-        <p className="text-xs font-semibold text-primary">{t(nameKey)}</p>
-        <div className="flex items-end gap-1">
-          <span className="text-4xl font-extrabold text-foreground">{t(priceKey)}</span>
-          {!isFree && (
-            <span className="text-sm text-default-400 mb-1">{t('pricing.plan.perMonth')}</span>
-          )}
+        <span className={`font-mono text-xs uppercase tracking-widest ${isProAi ? 'text-accent' : 'text-navy-500'}`}>
+          {t(nameKey)}
+        </span>
+        <div className="flex items-end gap-2">
+          <span className="font-sora font-extrabold text-white text-3xl">{t(priceKey)}</span>
+          <span className="font-mono text-xs text-navy-500 mb-1.5">{t('pricing.plan.perMonth')}</span>
         </div>
-        <p className="text-xs text-default-400 min-h-[1rem]">
+        <p className="font-mono text-xs text-navy-500 min-h-[1rem]">
           {sublineKey ? t(sublineKey) : ''}
         </p>
       </div>
 
-      <Button
-        className={isCurrent ? buttonStyles.secondary : buttonStyles.primary}
-        disabled={isCurrent}
-        isLoading={isLoading}
-        size="md"
-        variant={isCurrent ? 'bordered' : undefined}
-        onPress={onCtaPress}
-      >
-        {t(ctaLabelKey)}
-      </Button>
+      {isCurrent ? (
+        <button
+          disabled
+          className="w-full font-mono text-xs text-navy-600 py-3 rounded border border-navy-800/40 cursor-default"
+        >
+          {t(ctaLabelKey)}
+        </button>
+      ) : (
+        <Button
+          className={`w-full font-sans font-semibold text-sm rounded tracking-wide ${
+            isProAi
+              ? 'bg-navy-600 hover:bg-navy-500 text-white border border-navy-500'
+              : 'text-navy-400 hover:text-white border border-navy-700 hover:border-navy-500'
+          }`}
+          isLoading={isLoading}
+          variant={isProAi ? undefined : 'bordered'}
+          onPress={onCtaPress}
+        >
+          {t(ctaLabelKey)}
+          {isProAi && <FontAwesomeIcon className="ml-2 text-xs" icon={faArrowRight} />}
+        </Button>
+      )}
 
-      <div className="flex flex-col gap-3">
+      <div className="space-y-0">
         {features.map((feature) => (
-          <div key={feature.labelKey} className="flex items-center gap-3">
+          <div
+            key={feature.labelKey}
+            className="flex items-center gap-3 py-2.5 border-b border-navy-800/40 last:border-0"
+          >
             <FontAwesomeIcon
-              className={feature.included ? 'text-success' : 'text-default-300'}
+              className={`text-xs w-4 shrink-0 ${feature.included ? 'text-accent' : 'text-navy-700'}`}
               icon={feature.included ? faCheck : faXmark}
             />
-            <span className="text-sm text-default-500">
+            <span className={`text-sm ${feature.included ? 'text-[#e8edf3]' : 'text-navy-600'}`}>
               {feature.value ? (
                 <>
-                  <span className="font-semibold text-foreground">{feature.value}</span>{' '}
+                  <span className="font-semibold">{feature.value}</span>{' '}
                   {t(feature.labelKey)}
                 </>
               ) : (
