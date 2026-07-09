@@ -79,7 +79,36 @@
   }
 }
 
-/* Hide number input spinners (Chrome, Safari, Edge) */
+/* ── Marketing Page — Animations & Utilities ─────────────── */
+
+@keyframes marquee {
+  0%   { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes scanline {
+  0%   { top: 0%;   opacity: 0.8; }
+  100% { top: 100%; opacity: 0; }
+}
+
+.marquee-track { animation: marquee 30s linear infinite; }
+
+.scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #00d4ff, transparent);
+  animation: scanline 2.5s linear infinite;
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(59, 111, 160, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 111, 160, 0.08) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
 .no-number-spinners input[type='number']::-webkit-outer-spin-button,
 .no-number-spinners input[type='number']::-webkit-inner-spin-button {
 	-webkit-appearance: none;

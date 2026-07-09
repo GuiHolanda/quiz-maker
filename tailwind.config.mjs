@@ -15,6 +15,20 @@ const config = {
       fontFamily: {
         sans: ["var(--font-sans)"],
         mono: ["var(--font-mono)"],
+        sora: ["var(--font-sora)", "sans-serif"],
+      },
+      colors: {
+        navy: {
+          950: '#070e20',
+          900: '#0f1b3d',
+          800: '#1e3a5f',
+          700: '#2a4f7a',
+          600: '#3b6fa0',
+          500: '#4d87bc',
+          400: '#6a9fc8',
+        },
+        accent: '#00d4ff',
+        electric: '#4fc3f7',
       },
     },
   },
