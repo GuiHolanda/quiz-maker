@@ -472,20 +472,6 @@ Route groups (`(name)`) são transparentes na URL — `app/(marketing)/page.tsx`
 - **Autenticada** → `app/(workspace)/<rota>/page.tsx`.
 - **Auth flow** → `app/(auth)/<rota>/page.tsx` e adicionar prefixo em `publicRoutePrefixes`.
 
-### Homepage (`app/(marketing)/page.tsx`)
-
-Página pública, fundo `bg-background`, `'use client'`.
-
-| Seção | Componente | Descrição |
-|---|---|---|
-| Hero | `HeroSection` | min-h-[90vh], CTA duplo, texto primary + foreground |
-| Stats | `StatsSection` | Grid 2→4 colunas, valores `text-primary` |
-| Features | `FeaturesSection` | Grid 3 colunas, cards `bg-content1 border-default-200` |
-| Certifications | `CertificationsSection` | Badges flex-wrap com logo colorido |
-| Testimonials | `TestimonialsSection` | Grid 3 colunas, cards `bg-content1` |
-| Companies | `CompaniesSection` | Logos texto com cor da marca |
-| CTA | `CtaSection` | Box `bg-primary/5 border-primary/20` |
-
 ### Domínio: Certifications (`app/(workspace)/certifications/`)
 
 #### Questions (`certifications/questions/`)
