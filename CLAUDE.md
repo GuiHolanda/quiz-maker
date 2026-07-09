@@ -1,8 +1,10 @@
-# MyQuiz — Project Context
+# CertifiqueAI — Project Context
 
 ## Purpose
 
-MyQuiz is a **certification exam prep platform** being built as a product for public launch. It generates AI-powered practice questions for IT certifications (SAP, AWS, etc.), allows users to create and manage custom certifications with topics, and provides configurable quiz generation with answer tracking and explanations.
+**CertifiqueAI** (`www.certifiqueai.com`) is a **certification and concursos públicos prep platform** being built as a product for public launch. It generates AI-powered practice questions for a broad range of certification areas — including IT (AWS, Azure, SAP, etc.), healthcare (CRM, nursing boards), finance (CPA, CFP, CFA), law (OAB, legal specializations), and engineering (CREA, CONFEA) — as well as Brazilian concursos públicos. Users can create and manage custom certifications with topics, configure quiz generation, and track answers with AI-generated explanations.
+
+The product is not limited to any single industry vertical. When generating questions or building prompts, treat the domain as generic: the LLM should handle IT, health, finance, law, and engineering exams with equal quality.
 
 ---
 
@@ -33,7 +35,7 @@ app/                          # Next.js App Router (pages + API routes)
   (workspace)/                # Authenticated workspace pages
 shared/
   components/                 # Components reused across multiple pages
-    ui/                       # Generic UI primitives (navbar, PageHeader, etc.)
+    ui/                       # Generic UI primitives (sidebar, workspace-header, PageHeader, etc.)
   types/
     index.ts                  # All shared TypeScript types
   styles/
@@ -499,10 +501,12 @@ Features that require specific plans are hidden at the UI layer as well as enfor
 
 | Feature | Plans | Where gated |
 |---|---|---|
-| Concursos nav menu | `pro`, `pro_ai`, `tester`, `admin` | `navbar.tsx` — hidden when `usage.publicExamsLimit === 0` |
+| Concursos section in sidebar | `pro`, `pro_ai`, `tester`, `admin` | `sidebar.tsx` — hidden when `usage.publicExamsLimit === 0` |
 | AI Chat FAB + Drawer | `pro_ai`, `tester`, `admin` | `AiChatWrapper.tsx` — hidden unless `session.user.plan` is in allowed list |
-| Admin link in navbar | `admin` | `navbar.tsx` — hidden unless `session.user.plan === 'admin'` |
-| Usage badge | plans with finite limit | `UsageBadge.tsx` — hidden when `questionsLimit === -1` |
+| Admin link in sidebar | `admin` | `sidebar.tsx` — hidden unless `session.user.plan === 'admin'` |
+| Usage badge (header) | plans with finite limit | `UsageBadge.tsx` inside `WorkspaceHeader` — hidden when `questionsLimit === -1` |
+| Upgrade CTA (user dropdown) | `free` | `workspace-header.tsx` — shown only when `usage.plan === 'free'` |
+| Public exams counter (sidebar) | `pro`, `pro_ai`, `tester`, `admin` | `sidebar.tsx` — hidden when `publicExamsLimit === 0` |
 
 ---
 

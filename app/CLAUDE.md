@@ -1,4 +1,4 @@
-  # MyQuiz — Frontend Context
+  # CertifiqueAI — Frontend Context
 
 Guia de referência para padronização de páginas e componentes. Todas as decisões visuais estão aqui.
 
@@ -37,7 +37,9 @@ bg-default-100       → backgrounds sutis (hover, tabs inativos)
 
 | Classe CSS | Onde usar |
 |---|---|
-| `.app-bg` | Todas as páginas autenticadas (quiz, generate, configure) |
+| `.app-bg` | Páginas autenticadas com `PageHeader` (quiz, generate, configure) |
+
+> **Nota:** `.app-bg` usa `min-height: 100%` (antes era `calc(100vh - 4rem)`, que compensava a antiga navbar). Com o app shell lateral, o `<main>` é `flex-grow` e o `100%` funciona corretamente. A página `/dashboard` não usa `.app-bg` — aplica `min-h-full bg-default-100/50` diretamente para o fundo levemente cinza do painel.
 
 As páginas de auth (login, register, forgot-password, reset-password) usam um layout próprio em duas colunas (`AuthSplitLayout` em `app/(auth)/components/AuthSplitLayout.tsx`) e **não** dependem de `.auth-bg`. Veja `app/(auth)/layout.tsx`.
 
@@ -458,19 +460,87 @@ Cada `BrowseDomainConfig` declara `i18nPrefix: 'browse' | 'concurso.browse'`. O 
 
 ### Arquitetura de layouts — Route Groups
 
-`app/layout.tsx` (raiz) **não renderiza Navbar/Footer/AiChat**. Esses elementos são aplicados pelos layouts de cada route group:
+`app/layout.tsx` (raiz) **não renderiza Sidebar/Header/AiChat**. Esses elementos são aplicados pelos layouts de cada route group:
 
 | Group | Layout | Chrome renderizada | Rotas |
 |---|---|---|---|
 | `(marketing)` | `app/(marketing)/layout.tsx` | Navbar + Footer | `/` (homepage), futuras `/privacy`, `/terms`, etc. |
-| `(workspace)` | `app/(workspace)/layout.tsx` | Navbar + Footer + AiChatWrapper | `/certifications/*`, `/public-exams/*`, `/billing` |
-| `(auth)` | `app/(auth)/layout.tsx` | Top bar minimalista (chip MyQuiz + LanguageSwitch) | `/login`, `/register`, `/forgot-password`, `/reset-password` |
+| `(workspace)` | `app/(workspace)/layout.tsx` | Sidebar + WorkspaceHeader + AiChatWrapper | `/dashboard`, `/certifications/*`, `/public-exams/*`, `/billing` |
+| `(auth)` | `app/(auth)/layout.tsx` | Top bar minimalista (chip CertifiqueAI + LanguageSwitch) | `/login`, `/register`, `/forgot-password`, `/reset-password` |
 | `admin/` (não é group) | `app/admin/layout.tsx` | Sidebar admin própria | `/admin/*` |
+
+### Layout do Workspace — App Shell
+
+O `(workspace)` usa um **app shell** com sidebar fixa à esquerda e coluna de conteúdo à direita. Estrutura do `layout.tsx`:
+
+```tsx
+<div className="flex min-h-screen bg-background">
+  <Sidebar />                          {/* w-64, sticky, desktop only */}
+  <div className="flex flex-col flex-1 min-w-0">
+    <WorkspaceHeader />                {/* h-14, hidden md:flex, desktop only */}
+    <main className="flex-grow pt-14 md:pt-0">{children}</main>
+  </div>
+  <AiChatWrapper />
+</div>
+```
+
+**Regras críticas:**
+- `min-w-0` na coluna de conteúdo é **obrigatório** — sem isso, tabelas e accordions sangram para fora do flex container
+- `pt-14 md:pt-0` no `<main>` compensa a top bar mobile do Sidebar (`h-14 fixed`); no desktop não há top bar, então zero padding
+- Não há `<Footer>` no workspace — o rodapé foi removido do layout autenticado
+- O `<Footer>` continua existindo em `(marketing)/layout.tsx`
+
+### Sidebar (`shared/components/ui/sidebar.tsx`)
+
+Componente `'use client'` que renderiza três regiões distintas:
+
+**Desktop** (`hidden md:flex`): painel `w-64 sticky h-screen` com:
+- Brand header (`h-14`) alinhado ao `WorkspaceHeader`
+- Navegação com seções colapsáveis (Certifications, Concursos) e item flat (Dashboard com `faHouse`)
+- Rodapé com contadores de uso (questões, certificações, concursos)
+
+**Mobile top bar** (`flex md:hidden fixed top-0 z-40 h-14`): hamburger + logo + avatar
+
+**Mobile drawer** (HeroUI `<Drawer placement="left" size="xs">`): mesmo conteúdo de nav + contadores
+
+**Contadores no rodapé do sidebar** (aparecem após o `usage` ser carregado):
+- Questões usadas: `questionsUsed / questionsLimit` com barra de progresso colorida (`bg-danger` >90%, `bg-warning` >70%, `bg-primary` demais); oculta quando `questionsLimit === -1`
+- Certificações: `certificationsUsed / certificationsLimit`; `∞` quando `-1`
+- Concursos: `publicExamsUsed / publicExamsLimit`; oculto quando `publicExamsLimit === 0` (plano sem acesso)
+
+**O que NÃO está no sidebar** (foi movido para o `WorkspaceHeader`): user dropdown, theme switch, language switch, manage account, upgrade CTA, sign out.
+
+### WorkspaceHeader (`shared/components/ui/workspace-header.tsx`)
+
+Componente `'use client'` `hidden md:flex` que ocupa a faixa `h-14` do topo da coluna de conteúdo. Contém:
+- Campo de busca com ícone de lupa e atalho `⌘K` (visual, sem lógica de busca por enquanto)
+- Botão de notificações com badge vermelho
+- `UsageBadge` (barra de questões usadas — se oculta automaticamente para planos ilimitados)
+- **Dropdown completo do usuário** via HeroUI `<Dropdown>`:
+  - User info (nome + email, read-only)
+  - Manage Account → `/billing`
+  - Upgrade CTA (apenas `plan === 'free'`)
+  - Theme switch + Language switch (read-only items)
+  - Sign out
+- `UpgradeModal` (controlado por `isUpgradeOpen` local)
+- Faz fetch próprio de `getBillingUsage()` para popular o dropdown e o `UsageBadge`
+
+**Nota:** O sidebar e o WorkspaceHeader fazem fetches independentes de `getBillingUsage()`. Isso é intencional para manter os componentes desacoplados — ambos usam `useEffect` com dependência em `status`.
 
 Route groups (`(name)`) são transparentes na URL — `app/(marketing)/page.tsx` continua servindo `/`. Para criar uma página nova:
 - **Pública sem login (marketing)** → `app/(marketing)/<rota>/page.tsx` e adicionar em `publicRoutePrefixes` de `auth.config.ts` (ou tratamento exato para `/`).
 - **Autenticada** → `app/(workspace)/<rota>/page.tsx`.
 - **Auth flow** → `app/(auth)/<rota>/page.tsx` e adicionar prefixo em `publicRoutePrefixes`.
+
+### Dashboard (`app/(workspace)/dashboard/`)
+
+| Arquivo | Papel |
+|---|---|
+| `page.tsx` | Página `'use client'` com dados mock — performance header, KPI ribbon, focus areas, score trend sparkline, recent sessions, domain breakdown |
+
+A página é **100% mock por enquanto** — todos os dados são constantes estáticas. Quando o backend de métricas for implementado, substituir as constantes `MOCK_*` por chamadas via `features/connectors.ts`. A estrutura de componentes usa renderer functions (`renderKpi`) seguindo o padrão do projeto.
+
+Não usa `<PageHeader>` — aplica seu próprio fundo `bg-default-100/50` para o estilo de painel/dashboard.
 
 ### Domínio: Certifications (`app/(workspace)/certifications/`)
 
@@ -580,8 +650,10 @@ Layout completamente separado do `(workspace)` — usa sidebar própria, sem o n
 | Componente | Uso |
 |---|---|
 | `PageHeader.tsx` | Layout padrão de página autenticada — `.app-bg` + container + título/subtítulo |
-| `navbar.tsx` | Shell de navegação global (sticky, `bg-background border-divider`) |
-| `footer.tsx` | Rodapé global |
+| `sidebar.tsx` | Shell lateral do workspace — navegação, contadores de uso. Ver seção "Sidebar" acima. |
+| `workspace-header.tsx` | Top bar do workspace (desktop) — busca, notificações, user dropdown. Ver seção "WorkspaceHeader" acima. |
+| `navbar.tsx` | **Legado** — top navbar horizontal, não usado pelo workspace. Ainda importado por `(marketing)/layout.tsx` via marketing-navbar. Não remover. |
+| `footer.tsx` | Rodapé — usado apenas em `(marketing)/layout.tsx`. Removido do workspace. |
 | `theme-switch.tsx` | Toggle light/dark via next-themes |
 | `language-switch.tsx` | Toggle PT/EN via `useTranslation` |
 | `BusyDialog.tsx` | Modal de loading durante operações assíncronas |
