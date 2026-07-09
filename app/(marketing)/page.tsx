@@ -22,15 +22,6 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 /* ── Data ───────────────────────────────────────────────── */
 
-const MARQUEE_ITEMS = [
-  { label: 'Questions Generated Today', value: '14,203' },
-  { label: 'Active Study Sessions', value: '4,891' },
-  { label: 'AI Accuracy Rate', value: '98.2%' },
-  { label: 'Certifications Passed This Month', value: '2,107' },
-  { label: 'AWS SAA-C03 — Updated Questions', value: '47 New' },
-  { label: 'CESPE/CEBRASPE — 2025 Edital Sync', value: 'Active' },
-] as const;
-
 const EXAM_TRACKS = [
   {
     icon: faAws,
@@ -152,15 +143,25 @@ export default function HeroPage() {
 /* ── Marquee Data Strip ─────────────────────────────────── */
 
 function MarqueeDataStrip() {
-  const items = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS];
+  const { t } = useTranslation();
+
+  const items = [
+    { labelKey: 'homepage.marquee.questionsToday', value: '14,203' },
+    { labelKey: 'homepage.marquee.activeSessions', value: '4,891' },
+    { labelKey: 'homepage.marquee.aiAccuracy', value: '98.2%' },
+    { labelKey: 'homepage.marquee.certsPassed', value: '2,107' },
+    { labelKey: 'homepage.marquee.awsUpdated', value: '47 New' },
+    { labelKey: 'homepage.marquee.editalSync', value: 'Active' },
+  ];
+  const doubled = [...items, ...items];
 
   return (
     <div className="bg-navy-950 border-b border-navy-800/40 overflow-hidden h-8">
       <div className="marquee-track flex items-center h-full whitespace-nowrap">
-        {items.map((item, i) => (
+        {doubled.map((item, i) => (
           <span key={i} className="flex items-center gap-10 px-6 h-full font-mono text-xs text-navy-400">
             <span className="text-accent font-medium">{item.value}</span>
-            {' '}{item.label}
+            {' '}{t(item.labelKey)}
             <span className="text-navy-600 mx-4">·</span>
           </span>
         ))}
@@ -262,7 +263,7 @@ function HeroSection() {
                   ))}
                 </div>
                 <p className="font-mono text-xs text-navy-400">
-                  <span className="text-white">12,400+</span> professionals certified
+                  {t('homepage.hero.professionalsCertified', { count: '12,400' })}
                 </p>
               </div>
             </div>
@@ -437,7 +438,11 @@ function FeaturesSection() {
             <div className="w-px h-4 bg-accent" />
             <span className="font-mono text-xs text-navy-400 tracking-widest uppercase">{t('homepage.features.sectionLabel')}</span>
           </div>
-          <h2 className="font-sora font-bold text-white text-2xl sm:text-3xl">{t('homepage.features.subtitle')}</h2>
+          <h2 className="font-sora font-bold text-white text-2xl sm:text-3xl mb-3">
+            {t('homepage.features.title.before')}{' '}
+            <span style={{ color: '#00d4ff' }}>{t('homepage.features.title.highlight')}</span>
+          </h2>
+          <p className="text-navy-400 text-base max-w-2xl">{t('homepage.features.subtitle')}</p>
         </div>
 
         {renderFeature1()}
@@ -451,11 +456,15 @@ function FeaturesSection() {
     return (
       <div className="grid lg:grid-cols-2 gap-10 items-center mb-16 pb-16 border-b border-navy-800/40">
         <div className="order-2 lg:order-1">
-          <span className="font-mono text-xs text-accent tracking-widest uppercase block mb-4">01 — AI Generation</span>
+          <span className="font-mono text-xs text-accent tracking-widest uppercase block mb-4">{t('homepage.features.feature1.label')}</span>
           <h3 className="font-sora font-bold text-white text-xl sm:text-2xl mb-4">{t('homepage.features.ai.heading')}</h3>
           <p className="text-navy-400 text-base leading-relaxed mb-6">{t('homepage.features.ai.body')}</p>
           <div className="space-y-3">
-            {['Supports any certification standard or Edital', 'Difficulty calibration per domain', 'Portuguese and English language support'].map((item) => (
+            {[
+              t('homepage.features.feature1.bullet1'),
+              t('homepage.features.feature1.bullet2'),
+              t('homepage.features.feature1.bullet3'),
+            ].map((item) => (
               <div key={item} className="flex items-center gap-3 py-3 border-b border-navy-800/40 last:border-0">
                 <FontAwesomeIcon className="text-accent text-xs w-4 shrink-0" icon={faCheck} />
                 <span className="text-sm text-navy-300">{item}</span>
@@ -509,7 +518,7 @@ function FeaturesSection() {
           <div className="border border-navy-700 rounded-lg overflow-hidden bg-navy-900/60">
             <div className="flex border-b border-navy-800">
               <div className="flex-1 p-4 border-r border-navy-800">
-                <p className="font-mono text-xs text-navy-500 uppercase tracking-widest mb-3">Your Answer</p>
+                <p className="font-mono text-xs text-navy-500 uppercase tracking-widest mb-3">{t('homepage.features.mockup.yourAnswer')}</p>
                 <div className="rounded p-3" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }}>
                   <div className="flex items-start gap-2">
                     <FontAwesomeIcon className="text-red-400 text-xs mt-0.5 shrink-0" icon={faXmark} />
@@ -518,7 +527,7 @@ function FeaturesSection() {
                 </div>
               </div>
               <div className="flex-1 p-4">
-                <p className="font-mono text-xs text-navy-500 uppercase tracking-widest mb-3">Correct Answer</p>
+                <p className="font-mono text-xs text-navy-500 uppercase tracking-widest mb-3">{t('homepage.features.mockup.correctAnswer')}</p>
                 <div className="rounded p-3" style={{ background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)' }}>
                   <div className="flex items-start gap-2">
                     <FontAwesomeIcon className="text-green-400 text-xs mt-0.5 shrink-0" icon={faCheck} />
@@ -532,7 +541,7 @@ function FeaturesSection() {
                 <div className="w-5 h-5 rounded flex items-center justify-center shrink-0" style={{ background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)' }}>
                   <FontAwesomeIcon className="text-accent text-xs" icon={faRobot} />
                 </div>
-                <span className="font-mono text-xs text-accent">AI Explanation</span>
+                <span className="font-mono text-xs text-accent">{t('homepage.features.mockup.aiExplanation')}</span>
               </div>
               <p className="font-mono text-xs text-navy-300 leading-relaxed">
                 Standard SQS queues use a distributed architecture providing{' '}
@@ -543,11 +552,15 @@ function FeaturesSection() {
           </div>
         </div>
         <div>
-          <span className="font-mono text-xs text-accent tracking-widest uppercase block mb-4">02 — Real-time Feedback</span>
+          <span className="font-mono text-xs text-accent tracking-widest uppercase block mb-4">{t('homepage.features.feature2.label')}</span>
           <h3 className="font-sora font-bold text-white text-xl sm:text-2xl mb-4">{t('homepage.features.answers.heading')}</h3>
           <p className="text-navy-400 text-base leading-relaxed mb-6">{t('homepage.features.answers.body')}</p>
           <div className="space-y-3">
-            {['Distractor pattern analysis for every wrong option', 'Links to official documentation', 'Automatic weak-area flagging'].map((item) => (
+            {[
+              t('homepage.features.feature2.bullet1'),
+              t('homepage.features.feature2.bullet2'),
+              t('homepage.features.feature2.bullet3'),
+            ].map((item) => (
               <div key={item} className="flex items-center gap-3 py-3 border-b border-navy-800/40 last:border-0">
                 <FontAwesomeIcon className="text-accent text-xs w-4 shrink-0" icon={faCheck} />
                 <span className="text-sm text-navy-300">{item}</span>
@@ -582,13 +595,17 @@ function FeaturesSection() {
     return (
       <div className="grid lg:grid-cols-2 gap-10 items-center">
         <div className="order-2 lg:order-1">
-          <span className="font-mono text-xs text-accent tracking-widest uppercase block mb-4">03 — Performance Analytics</span>
-          <h3 className="font-sora font-bold text-white text-xl sm:text-2xl mb-4">Know Your Probability of Passing</h3>
+          <span className="font-mono text-xs text-accent tracking-widest uppercase block mb-4">{t('homepage.features.feature3.label')}</span>
+          <h3 className="font-sora font-bold text-white text-xl sm:text-2xl mb-4">{t('homepage.features.feature3.heading')}</h3>
           <p className="text-navy-400 text-base leading-relaxed mb-6">
-            CertifyAI&apos;s predictive model analyzes your performance trajectory against thousands of previous exam-takers to forecast your passing probability — updated after every practice session.
+            {t('homepage.features.feature3.body')}
           </p>
           <div className="space-y-3">
-            {['Domain-by-domain scoring breakdown', 'Projected exam-ready date calculation', 'Percentile rank vs. peer cohort'].map((item) => (
+            {[
+              t('homepage.features.feature3.bullet1'),
+              t('homepage.features.feature3.bullet2'),
+              t('homepage.features.feature3.bullet3'),
+            ].map((item) => (
               <div key={item} className="flex items-center gap-3 py-3 border-b border-navy-800/40 last:border-0">
                 <FontAwesomeIcon className="text-accent text-xs w-4 shrink-0" icon={faCheck} />
                 <span className="text-sm text-navy-300">{item}</span>
@@ -601,8 +618,8 @@ function FeaturesSection() {
           <div className="border border-navy-700 rounded-lg bg-navy-900/60 p-4">
             {/* Chart header */}
             <div className="flex items-center justify-between mb-3">
-              <span className="font-mono text-xs text-navy-400 uppercase tracking-widest">Pass Probability — AWS SAA-C03</span>
-              <span className="font-mono text-xs text-green-400">↑ 23.4% this week</span>
+              <span className="font-mono text-xs text-navy-400 uppercase tracking-widest">{t('homepage.features.chart.title')}</span>
+              <span className="font-mono text-xs text-green-400">{t('homepage.features.chart.weeklyGain')}</span>
             </div>
 
             {/* SVG chart */}
@@ -642,15 +659,15 @@ function FeaturesSection() {
             <div className="flex items-center gap-5 mt-1 mb-3">
               <div className="flex items-center gap-1.5">
                 <div className="w-5 h-0.5 bg-accent rounded" />
-                <span className="font-mono text-xs text-navy-500">Your Score</span>
+                <span className="font-mono text-xs text-navy-500">{t('homepage.features.chart.yourScore')}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <svg width="20" height="2"><line x1="0" y1="1" x2="20" y2="1" stroke="#3b6fa0" strokeWidth="1.5" strokeDasharray="4,3" /></svg>
-                <span className="font-mono text-xs text-navy-500">Avg. Cohort</span>
+                <span className="font-mono text-xs text-navy-500">{t('homepage.features.chart.avgCohort')}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <svg width="20" height="2"><line x1="0" y1="1" x2="20" y2="1" stroke="#4ade80" strokeWidth="1.5" strokeDasharray="5,4" /></svg>
-                <span className="font-mono text-xs text-navy-500">Pass Threshold</span>
+                <span className="font-mono text-xs text-navy-500">{t('homepage.features.chart.passThreshold')}</span>
               </div>
             </div>
 
@@ -658,15 +675,15 @@ function FeaturesSection() {
             <div className="grid grid-cols-3 gap-3 pt-3 border-t border-navy-800">
               <div className="text-center">
                 <p className="font-mono text-sm text-white font-medium">78.4%</p>
-                <p className="font-mono text-xs text-navy-500 mt-0.5">Current</p>
+                <p className="font-mono text-xs text-navy-500 mt-0.5">{t('homepage.features.chart.current')}</p>
               </div>
               <div className="text-center">
                 <p className="font-mono text-sm text-green-400 font-medium">82.1%</p>
-                <p className="font-mono text-xs text-navy-500 mt-0.5">Projected (7d)</p>
+                <p className="font-mono text-xs text-navy-500 mt-0.5">{t('homepage.features.chart.projected')}</p>
               </div>
               <div className="text-center">
                 <p className="font-mono text-sm text-accent font-medium">Top 12%</p>
-                <p className="font-mono text-xs text-navy-500 mt-0.5">Peer Rank</p>
+                <p className="font-mono text-xs text-navy-500 mt-0.5">{t('homepage.features.chart.peerRank')}</p>
               </div>
             </div>
           </div>
@@ -911,7 +928,7 @@ function CtaSection() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="flex items-center justify-center gap-2 mb-6">
           <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-          <span className="font-mono text-xs text-green-400 tracking-wider">All Systems Operational · 99.98% Uptime</span>
+          <span className="font-mono text-xs text-green-400 tracking-wider">{t('homepage.cta.systemOnline')}</span>
         </div>
         <h2 className="font-sora font-extrabold text-white text-2xl sm:text-4xl mb-5">
           {t('homepage.cta2.title')}
