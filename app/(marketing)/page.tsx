@@ -14,7 +14,6 @@ import {
   faDatabase,
   faLandmark,
   faFileLines,
-  faChartLine,
 } from '@fortawesome/free-solid-svg-icons';
 import { faAws, faMicrosoft } from '@fortawesome/free-brands-svg-icons';
 import { useSession } from 'next-auth/react';
@@ -74,16 +73,19 @@ const TESTIMONIALS = [
   {
     quote: 'homepage.testimonials.quote1',
     role: 'homepage.testimonials.role1',
+    name: 'Ana Beatriz S.',
     initials: 'AB',
   },
   {
     quote: 'homepage.testimonials.quote2',
     role: 'homepage.testimonials.role2',
+    name: 'Carlos M.',
     initials: 'CM',
   },
   {
     quote: 'homepage.testimonials.quote3',
     role: 'homepage.testimonials.role3',
+    name: 'Priya K.',
     initials: 'PK',
   },
 ] as const;
@@ -558,14 +560,35 @@ function FeaturesSection() {
   }
 
   function renderFeature3() {
+    const weeks = ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4', 'Wk 5', 'Wk 6', 'Wk 7', 'Wk 8'];
+    const yourScore = [32, 41, 48, 55, 59, 67, 73, 78];
+    const cohort    = [30, 35, 39, 44, 49, 53, 57, 61];
+    const passLine  = 72;
+
+    const W = 480, H = 200, PAD = { t: 10, r: 12, b: 32, l: 36 };
+    const innerW = W - PAD.l - PAD.r;
+    const innerH = H - PAD.t - PAD.b;
+    const minY = 20, maxY = 90;
+
+    function sx(i: number) { return PAD.l + (i / (weeks.length - 1)) * innerW; }
+    function sy(v: number) { return PAD.t + innerH - ((v - minY) / (maxY - minY)) * innerH; }
+
+    const yourPath = yourScore.map((v, i) => `${i === 0 ? 'M' : 'L'}${sx(i)},${sy(v)}`).join(' ');
+    const cohortPath = cohort.map((v, i) => `${i === 0 ? 'M' : 'L'}${sx(i)},${sy(v)}`).join(' ');
+    const fillPath = `${yourPath} L${sx(yourScore.length - 1)},${sy(minY)} L${sx(0)},${sy(minY)} Z`;
+
+    const yTicks = [20, 40, 60, 80];
+
     return (
       <div className="grid lg:grid-cols-2 gap-10 items-center">
         <div className="order-2 lg:order-1">
-          <span className="font-mono text-xs text-accent tracking-widest uppercase block mb-4">03 — Topic Weighting</span>
-          <h3 className="font-sora font-bold text-white text-xl sm:text-2xl mb-4">{t('homepage.features.topics.heading')}</h3>
-          <p className="text-navy-400 text-base leading-relaxed mb-6">{t('homepage.features.topics.body')}</p>
+          <span className="font-mono text-xs text-accent tracking-widest uppercase block mb-4">03 — Performance Analytics</span>
+          <h3 className="font-sora font-bold text-white text-xl sm:text-2xl mb-4">Know Your Probability of Passing</h3>
+          <p className="text-navy-400 text-base leading-relaxed mb-6">
+            CertifyAI&apos;s predictive model analyzes your performance trajectory against thousands of previous exam-takers to forecast your passing probability — updated after every practice session.
+          </p>
           <div className="space-y-3">
-            {['Domain-by-domain percentage control', 'Match real exam distribution', 'Custom sessions per topic'].map((item) => (
+            {['Domain-by-domain scoring breakdown', 'Projected exam-ready date calculation', 'Percentile rank vs. peer cohort'].map((item) => (
               <div key={item} className="flex items-center gap-3 py-3 border-b border-navy-800/40 last:border-0">
                 <FontAwesomeIcon className="text-accent text-xs w-4 shrink-0" icon={faCheck} />
                 <span className="text-sm text-navy-300">{item}</span>
@@ -573,32 +596,78 @@ function FeaturesSection() {
             ))}
           </div>
         </div>
+
         <div className="order-1 lg:order-2">
-          <div className="border border-navy-700 rounded-lg bg-navy-900/60 p-5">
-            <div className="flex items-center justify-between mb-1">
-              <span className="font-mono text-xs text-navy-400 uppercase tracking-widest">Domain Distribution · AWS SAA-C03</span>
-              <FontAwesomeIcon className="text-accent text-sm" icon={faChartLine} />
+          <div className="border border-navy-700 rounded-lg bg-navy-900/60 p-4">
+            {/* Chart header */}
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-mono text-xs text-navy-400 uppercase tracking-widest">Pass Probability — AWS SAA-C03</span>
+              <span className="font-mono text-xs text-green-400">↑ 23.4% this week</span>
             </div>
-            <div className="mt-5 space-y-4">
-              {[
-                { label: 'Design Resilient Architectures', value: 30, color: '#00d4ff' },
-                { label: 'Design High-Performing', value: 28, color: '#4fc3f7' },
-                { label: 'Design Secure Architectures', value: 24, color: '#818cf8' },
-                { label: 'Design Cost-Optimized', value: 18, color: '#6a9fc8' },
-              ].map((domain) => (
-                <div key={domain.label}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="font-mono text-xs text-navy-400">{domain.label}</span>
-                    <span className="font-mono text-xs text-white">{domain.value}%</span>
-                  </div>
-                  <div className="h-1.5 bg-navy-800 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-1000"
-                      style={{ width: `${domain.value}%`, background: domain.color }}
-                    />
-                  </div>
-                </div>
+
+            {/* SVG chart */}
+            <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 200 }}>
+              {/* Grid lines + Y ticks */}
+              {yTicks.map((v) => (
+                <g key={v}>
+                  <line x1={PAD.l} y1={sy(v)} x2={W - PAD.r} y2={sy(v)} stroke="rgba(59,111,160,0.15)" strokeWidth="1" />
+                  <text x={PAD.l - 4} y={sy(v) + 4} textAnchor="end" fontSize="9" fill="#4d87bc" fontFamily="monospace">{v}%</text>
+                </g>
               ))}
+
+              {/* Pass threshold dashed line */}
+              <line x1={PAD.l} y1={sy(passLine)} x2={W - PAD.r} y2={sy(passLine)} stroke="#4ade80" strokeWidth="1" strokeDasharray="5,4" />
+
+              {/* Fill under your score */}
+              <path d={fillPath} fill="rgba(0,212,255,0.06)" />
+
+              {/* Cohort avg dashed */}
+              <path d={cohortPath} fill="none" stroke="#3b6fa0" strokeWidth="1.5" strokeDasharray="4,3" />
+
+              {/* Your score line */}
+              <path d={yourPath} fill="none" stroke="#00d4ff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+
+              {/* Dots on your score */}
+              {yourScore.map((v, i) => (
+                <circle key={i} cx={sx(i)} cy={sy(v)} r="3.5" fill="#00d4ff" />
+              ))}
+
+              {/* X-axis labels */}
+              {weeks.map((w, i) => (
+                <text key={w} x={sx(i)} y={H - 6} textAnchor="middle" fontSize="9" fill="#4d87bc" fontFamily="monospace">{w}</text>
+              ))}
+            </svg>
+
+            {/* Legend */}
+            <div className="flex items-center gap-5 mt-1 mb-3">
+              <div className="flex items-center gap-1.5">
+                <div className="w-5 h-0.5 bg-accent rounded" />
+                <span className="font-mono text-xs text-navy-500">Your Score</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <svg width="20" height="2"><line x1="0" y1="1" x2="20" y2="1" stroke="#3b6fa0" strokeWidth="1.5" strokeDasharray="4,3" /></svg>
+                <span className="font-mono text-xs text-navy-500">Avg. Cohort</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <svg width="20" height="2"><line x1="0" y1="1" x2="20" y2="1" stroke="#4ade80" strokeWidth="1.5" strokeDasharray="5,4" /></svg>
+                <span className="font-mono text-xs text-navy-500">Pass Threshold</span>
+              </div>
+            </div>
+
+            {/* Stats row */}
+            <div className="grid grid-cols-3 gap-3 pt-3 border-t border-navy-800">
+              <div className="text-center">
+                <p className="font-mono text-sm text-white font-medium">78.4%</p>
+                <p className="font-mono text-xs text-navy-500 mt-0.5">Current</p>
+              </div>
+              <div className="text-center">
+                <p className="font-mono text-sm text-green-400 font-medium">82.1%</p>
+                <p className="font-mono text-xs text-navy-500 mt-0.5">Projected (7d)</p>
+              </div>
+              <div className="text-center">
+                <p className="font-mono text-sm text-accent font-medium">Top 12%</p>
+                <p className="font-mono text-xs text-navy-500 mt-0.5">Peer Rank</p>
+              </div>
             </div>
           </div>
         </div>
@@ -613,8 +682,17 @@ function TestimonialsStrip() {
   const { t } = useTranslation();
 
   return (
-    <div className="border-y border-navy-800/40 py-10" style={{ background: 'rgba(30,58,95,0.3)' }}>
+    <div className="border-y border-navy-800/40 py-14" style={{ background: 'rgba(30,58,95,0.3)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Section header */}
+        <div className="mb-10">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-px h-4 bg-accent" />
+            <span className="font-mono text-xs text-navy-400 tracking-widest uppercase">{t('homepage.testimonials.sectionLabel')}</span>
+          </div>
+          <h2 className="font-sora font-bold text-white text-2xl sm:text-3xl">{t('homepage.testimonials.title')}</h2>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {TESTIMONIALS.map((item) => (
             <div
@@ -627,7 +705,7 @@ function TestimonialsStrip() {
               </div>
               <div>
                 <p className="text-sm text-navy-300 leading-relaxed mb-2">&ldquo;{t(item.quote)}&rdquo;</p>
-                <p className="font-mono text-xs text-navy-500">{t(item.role)}</p>
+                <p className="font-mono text-xs text-navy-500">{item.name} — {t(item.role)}</p>
               </div>
             </div>
           ))}
