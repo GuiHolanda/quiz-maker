@@ -44,13 +44,18 @@ export function MarketingNavbar() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-navy-800/60" style={{ background: 'rgba(15,27,61,0.95)', backdropFilter: 'blur(8px)' }}>
+      <header
+        className="fixed top-0 left-0 right-0 z-50 border-b border-navy-800/60"
+        style={{ background: 'rgba(15,27,61,0.95)', backdropFilter: 'blur(8px)' }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
-
             {/* Logo */}
             <NextLink className="flex items-center gap-3" href="/">
-              <div className="w-7 h-7 rounded flex items-center justify-center" style={{ background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)' }}>
+              <div
+                className="w-7 h-7 rounded flex items-center justify-center"
+                style={{ background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)' }}
+              >
                 <FontAwesomeIcon className="text-accent text-xs" icon={faMicrochip} />
               </div>
               <span className="font-sora font-bold text-white text-sm tracking-tight">CertifiqueAI</span>
@@ -73,12 +78,6 @@ export function MarketingNavbar() {
 
             {/* Right side */}
             <div className="flex items-center gap-4">
-              {/* Status pill */}
-              <div className="hidden sm:flex items-center gap-2 border border-navy-700 rounded px-3 py-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                <span className="font-mono text-xs text-green-400 tracking-wider">System: Online</span>
-              </div>
-
               {/* Auth state */}
               {status === 'authenticated' && session?.user ? (
                 renderUserDropdown()

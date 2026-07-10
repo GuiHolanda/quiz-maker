@@ -253,12 +253,7 @@ export const Navbar = () => {
                 >
                   {t('nav.logIn')}
                 </NextLink>
-                <Button
-                  as={NextLink}
-                  className={`${buttonStyles.primary} px-4`}
-                  href="/login"
-                  size="sm"
-                >
+                <Button as={NextLink} className={`${buttonStyles.primary} px-4`} href="/login" size="sm">
                   {t('nav.startFreeTrial')}
                 </Button>
               </div>
@@ -270,12 +265,7 @@ export const Navbar = () => {
           {status === 'authenticated' && session?.user ? (
             userDropdown
           ) : (
-            <Button
-              as={NextLink}
-              className={buttonStyles.primary}
-              href="/login"
-              size="sm"
-            >
+            <Button as={NextLink} className={buttonStyles.primary} href="/login" size="sm">
               {t('nav.logIn')}
             </Button>
           )}
@@ -313,7 +303,11 @@ export const Navbar = () => {
             ))}
             {status === 'authenticated' && session?.user?.plan === 'admin' && (
               <NavbarMenuItem>
-                <Link className="text-default-500 hover:text-foreground flex items-center gap-1.5" href="/admin" size="lg">
+                <Link
+                  className="text-default-500 hover:text-foreground flex items-center gap-1.5"
+                  href="/admin"
+                  size="lg"
+                >
                   <FontAwesomeIcon className="w-3 h-3" icon={faGear} />
                   Admin
                 </Link>

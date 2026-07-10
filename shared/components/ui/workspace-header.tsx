@@ -22,6 +22,7 @@ export function WorkspaceHeader() {
   const { t } = useTranslation();
   const [usage, setUsage] = useState<UsageStats | null>(null);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -69,7 +70,7 @@ export function WorkspaceHeader() {
 
           {/* User dropdown */}
           {status === 'authenticated' && session?.user && (
-            <Dropdown placement="bottom-end">
+            <Dropdown isOpen={isDropdownOpen} placement="bottom-end" onOpenChange={setIsDropdownOpen}>
               <DropdownTrigger>
                 <Avatar
                   as="button"
@@ -90,6 +91,7 @@ export function WorkspaceHeader() {
                     as={NextLink}
                     href="/billing"
                     startContent={<FontAwesomeIcon className="w-3 h-3" icon={faUser} />}
+                    onPress={() => setIsDropdownOpen(false)}
                   >
                     {t('nav.manageAccount')}
                   </DropdownItem>
