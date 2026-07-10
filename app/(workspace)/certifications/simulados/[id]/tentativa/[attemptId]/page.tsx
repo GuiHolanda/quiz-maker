@@ -100,23 +100,14 @@ export default function CertSimuladoTentativaPage() {
   async function handleFinish() {
     setIsFinishing(true);
     try {
-      let score = 0;
       const attemptAnswers: CertSimuladoAttemptAnswer[] = simulado!.questions.map((sq) => {
         const selected = answers[sq.question.id] ?? [];
-        const correctOptions: string[] = (sq.question.answer?.correctOptions as string[]) ?? [];
-        const isCorrect =
-          correctOptions.length > 0 &&
-          selected.length === correctOptions.length &&
-          selected.every((s) => correctOptions.includes(s));
-
-        if (isCorrect) score += 1;
 
         return { simuladoQuestionId: sq.id, selectedOptions: selected };
       });
 
       await finishCertSimuladoAttempt(Number(params.id), Number(params.attemptId), {
         answers: attemptAnswers,
-        score,
       });
       clearProgress();
       bypassNext();

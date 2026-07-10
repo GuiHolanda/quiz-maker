@@ -175,15 +175,24 @@ describe('CertificationSimuladosService', () => {
   describe('finishAttempt', () => {
     it('throws 404 when attempt not found', async () => {
       prismaMock.certificationSimuladoAttempt.findFirst.mockResolvedValue(null);
+      prismaMock.certificationSimuladoQuestion.findMany.mockResolvedValue([]);
 
-      await expect(service.finishAttempt(1, 99, 'user1', [], 0)).rejects.toMatchObject({ status: 404 });
+      await expect(service.finishAttempt(1, 99, 'user1', [])).rejects.toMatchObject({ status: 404 });
     });
 
-    it('persists answers and score via $transaction', async () => {
+    it('persists answers and server-calculated score via $transaction', async () => {
       prismaMock.certificationSimuladoAttempt.findFirst.mockResolvedValue({ id: 5 } as any);
+      prismaMock.certificationSimuladoQuestion.findMany.mockResolvedValue([
+        {
+          id: 10,
+          question: {
+            answer: { correctOptions: ['A'] },
+          },
+        },
+      ] as any);
       prismaMock.$transaction.mockResolvedValue([undefined, undefined] as any);
 
-      await service.finishAttempt(1, 5, 'user1', [{ simuladoQuestionId: 10, selectedOptions: ['A'] }], 1);
+      await service.finishAttempt(1, 5, 'user1', [{ simuladoQuestionId: 10, selectedOptions: ['A'] }]);
 
       expect(prismaMock.$transaction).toHaveBeenCalled();
     });

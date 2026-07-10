@@ -272,14 +272,34 @@ export class CertificationSimuladosService {
     simuladoId: number,
     attemptId: number,
     userId: string,
-    answers: { simuladoQuestionId: number; selectedOptions: string[] }[],
-    score: number
+    answers: { simuladoQuestionId: number; selectedOptions: string[] }[]
   ) {
     const attempt = await prisma.certificationSimuladoAttempt.findFirst({
       where: { id: attemptId, simuladoId, userId },
     });
 
     if (!attempt) throw Object.assign(new Error('Tentativa não encontrada'), { status: 404 });
+
+    const simuladoQuestions = await prisma.certificationSimuladoQuestion.findMany({
+      where: { simuladoId },
+      include: { question: { include: { answer: true } } },
+    });
+
+    const answersMap = new Map(answers.map((a) => [a.simuladoQuestionId, a.selectedOptions]));
+    let score = 0;
+
+    for (const sq of simuladoQuestions) {
+      const correctOptions: string[] = sq.question.answer
+        ? (sq.question.answer.correctOptions as unknown as string[])
+        : [];
+      const selected = answersMap.get(sq.id) ?? [];
+      const isCorrect =
+        correctOptions.length > 0 &&
+        selected.length === correctOptions.length &&
+        selected.every((s) => correctOptions.includes(s));
+
+      if (isCorrect) score += 1;
+    }
 
     await prisma.$transaction([
       prisma.certificationSimuladoAttemptAnswer.createMany({

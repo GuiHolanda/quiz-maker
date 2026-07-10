@@ -387,7 +387,6 @@ export interface CreateMockExamPayload {
 
 export interface FinishAttemptPayload {
   answers: MockExamAttemptAnswer[];
-  score: number;
 }
 
 export interface MockExamResult {
@@ -522,7 +521,6 @@ export interface CreateCertSimuladoPayload {
 
 export interface CertFinishAttemptPayload {
   answers: CertSimuladoAttemptAnswer[];
-  score: number;
 }
 
 export interface CertSimuladoResult {

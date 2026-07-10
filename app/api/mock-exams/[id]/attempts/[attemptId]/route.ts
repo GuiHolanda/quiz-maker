@@ -14,9 +14,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const { id, attemptId } = await params;
 
   try {
-    const { answers, score } = await request.json();
+    const { answers } = await request.json();
 
-    await service.finishAttempt(Number(id), Number(attemptId), session.user.id, answers, score);
+    await service.finishAttempt(Number(id), Number(attemptId), session.user.id, answers);
 
     return NextResponse.json({ message: 'Attempt finished' });
   } catch (e: unknown) {

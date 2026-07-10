@@ -358,14 +358,34 @@ export class MockExamService {
     mockExamId: number,
     attemptId: number,
     userId: string,
-    answers: { mockExamQuestionId: number; selectedOptions: string[] }[],
-    score: number
+    answers: { mockExamQuestionId: number; selectedOptions: string[] }[]
   ) {
     const attempt = await prisma.mockExamAttempt.findFirst({
       where: { id: attemptId, mockExamId, userId },
     });
 
     if (!attempt) throw Object.assign(new Error('Tentativa não encontrada'), { status: 404 });
+
+    const mockExamQuestions = await prisma.mockExamQuestion.findMany({
+      where: { mockExamId },
+      include: { publicExamQuestion: { include: { answer: true } } },
+    });
+
+    const answersMap = new Map(answers.map((a) => [a.mockExamQuestionId, a.selectedOptions]));
+    let score = 0;
+
+    for (const mq of mockExamQuestions) {
+      const correctOptions: string[] = mq.publicExamQuestion.answer
+        ? (mq.publicExamQuestion.answer.correctOptions as unknown as string[])
+        : [];
+      const selected = answersMap.get(mq.id) ?? [];
+      const isCorrect =
+        correctOptions.length > 0 &&
+        selected.length === correctOptions.length &&
+        selected.every((s) => correctOptions.includes(s));
+
+      if (isCorrect) score += 1;
+    }
 
     await prisma.$transaction([
       prisma.mockExamAttemptAnswer.createMany({

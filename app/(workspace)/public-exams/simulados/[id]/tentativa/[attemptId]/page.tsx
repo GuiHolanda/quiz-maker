@@ -120,21 +120,13 @@ export default function SimuladoTentativaPage() {
 
       const updatedExam = await getMockExam(Number(params.id));
 
-      let score = 0;
       const attemptAnswers: MockExamAttemptAnswer[] = updatedExam.questions.map((mq) => {
         const selected = answers[mq.publicExamQuestion.id] ?? [];
-        const correctOptions: string[] = (mq.publicExamQuestion.answer?.correctOptions as string[]) ?? [];
-        const isCorrect =
-          correctOptions.length > 0 &&
-          selected.length === correctOptions.length &&
-          selected.every((s) => correctOptions.includes(s));
-
-        if (isCorrect) score += 1;
 
         return { mockExamQuestionId: mq.id, selectedOptions: selected };
       });
 
-      await finishMockExamAttempt(Number(params.id), Number(params.attemptId), { answers: attemptAnswers, score });
+      await finishMockExamAttempt(Number(params.id), Number(params.attemptId), { answers: attemptAnswers });
       clearProgress();
       bypassNext();
       router.push(`/public-exams/simulados/${params.id}/resultado/${params.attemptId}`);

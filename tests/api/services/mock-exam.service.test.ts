@@ -46,18 +46,27 @@ describe('MockExamService', () => {
     ).rejects.toMatchObject({ status: 422, message: /insuficientes/ });
   });
 
-  // Behaviour 2: finishAttempt saves answers and marks attempt finished
-  it('finishAttempt() calls $transaction once and records answers with JSON-stringified options + score', async () => {
+  // Behaviour 2: finishAttempt saves answers and calculates score server-side
+  it('finishAttempt() calls $transaction once and records answers with server-calculated score', async () => {
     prismaMock.mockExamAttempt.findFirst.mockResolvedValue({
       id: 10,
       mockExamId: 1,
       userId: 'user-1',
     } as any);
 
+    prismaMock.mockExamQuestion.findMany.mockResolvedValue([
+      {
+        id: 5,
+        publicExamQuestion: {
+          answer: { correctOptions: ['A'] },
+        },
+      },
+    ] as any);
+
     // Array-form transaction mock — batch form, not callback form
     prismaMock.$transaction.mockResolvedValue([undefined, undefined] as any);
 
-    await service.finishAttempt(1, 10, 'user-1', [{ mockExamQuestionId: 5, selectedOptions: ['A'] }], 80);
+    await service.finishAttempt(1, 10, 'user-1', [{ mockExamQuestionId: 5, selectedOptions: ['A'] }]);
 
     expect(prismaMock.$transaction).toHaveBeenCalledOnce();
 
@@ -77,7 +86,7 @@ describe('MockExamService', () => {
       expect.objectContaining({
         where: { id: 10 },
         data: expect.objectContaining({
-          score: 80,
+          score: 1,
           finishedAt: expect.any(Date),
         }),
       }),
