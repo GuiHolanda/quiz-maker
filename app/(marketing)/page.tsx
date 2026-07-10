@@ -189,6 +189,7 @@ function MarqueeDataStrip() {
 
 function HeroSection() {
   const { t } = useTranslation();
+  const { data: session } = useSession();
   const [displayedText, setDisplayedText] = useState('');
   const [showOptions, setShowOptions] = useState(false);
 
@@ -236,7 +237,7 @@ function HeroSection() {
               <Button
                 as={NextLink}
                 className="font-semibold text-sm bg-navy-600 hover:bg-navy-500 text-white border border-navy-500 rounded tracking-wide"
-                href="/certifications/simulados"
+                href={session?.user ? '/certifications/simulados' : '/register'}
                 size="lg"
               >
                 {t('homepage.cta.startFreeTrial')}

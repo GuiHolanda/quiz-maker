@@ -43,12 +43,12 @@ export function LoginForm() {
 
       return;
     }
-    router.push('/');
+    router.push('/dashboard');
     router.refresh();
   }
 
   async function handleGoogle() {
-    await signIn('google', { callbackUrl: '/' });
+    await signIn('google', { callbackUrl: '/dashboard' });
   }
 
   return (
