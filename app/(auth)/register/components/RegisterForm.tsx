@@ -35,11 +35,6 @@ export function RegisterForm() {
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
 
-      if (e.response?.data?.message === 'EMAIL_PENDING_VERIFICATION') {
-        router.push('/verify-email?email=' + encodeURIComponent(email));
-
-        return;
-      }
       setError(e.response?.data?.message || t('register.failed'));
       setLoading(false);
     }

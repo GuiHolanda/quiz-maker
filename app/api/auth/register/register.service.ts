@@ -23,8 +23,6 @@ export class RegisterService {
     const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 
     if (existing) {
-      // Account exists but email was never verified — resend the code and let the
-      // frontend redirect to /verify-email instead of showing a hard error.
       if (!existing.emailVerified) {
         const code = String(Math.floor(Math.random() * 900000) + 100000);
         const identifier = `email-verify:${normalizedEmail}`;
@@ -34,13 +32,12 @@ export class RegisterService {
         await prisma.verificationToken.create({ data: { identifier, token: code, expires } });
         await new EmailService().sendEmailVerification(normalizedEmail, code);
 
-        throw Object.assign(
-          new Error('EMAIL_PENDING_VERIFICATION'),
-          { status: 409, code: 'EMAIL_PENDING_VERIFICATION' },
-        );
+        return { id: existing.id, email: existing.email, redirectToVerify: true as const };
       }
 
-      throw Object.assign(new Error('An account with this email already exists'), { status: 409 });
+      // Return success-shaped response for verified existing accounts too, to
+      // prevent callers from distinguishing registered vs. unregistered emails.
+      return { id: existing.id, email: existing.email, redirectToVerify: false as const };
     }
 
     const hashed = await bcrypt.hash(password, 12);
@@ -62,6 +59,6 @@ export class RegisterService {
 
     await new EmailService().sendEmailVerification(normalizedEmail, code);
 
-    return { id: user.id, email: user.email };
+    return { id: user.id, email: user.email, redirectToVerify: true as const };
   }
 }
