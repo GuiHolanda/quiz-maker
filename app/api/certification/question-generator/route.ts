@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
   const count = parseInt(questionParams.num_questions, 10) || 1;
 
   try {
-    await quotaService.check(session.user.id, 'generate_questions', count);
+    await quotaService.checkAndRecordQuestions(session.user.id, count);
 
     const rawResponse = await openAIService.call(certificationQuestionsPrompt, {
       certification_name: questionParams.certification_name,
@@ -39,8 +39,6 @@ export async function GET(request: NextRequest) {
       num_questions: questionParams.num_questions,
     });
     const questionsFromAi = validateAiQuestions(JSON.parse(extractJson(rawResponse)));
-
-    await quotaService.record(session.user.id, 'generate_questions', count);
 
     return NextResponse.json(questionsFromAi, { status: 200 });
   } catch (err: any) {

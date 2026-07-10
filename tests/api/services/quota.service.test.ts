@@ -159,4 +159,58 @@ describe('QuotaService', () => {
       periodStartDate: periodStart.toISOString(),
     });
   });
+
+  describe('checkAndRecordQuestions (atomic quota enforcement)', () => {
+    // Behaviour 9: checkAndRecordQuestions performs atomic updateMany for finite limit
+    it('checkAndRecordQuestions succeeds when used + count <= limit (atomic updateMany)', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'free', questionsGeneratedThisPeriod: 100 }),
+      );
+      prismaMock.user.updateMany.mockResolvedValue({ count: 1 });
+      prismaMock.usageLog.create.mockResolvedValue({} as any);
+
+      await expect(service.checkAndRecordQuestions('user-1', 10)).resolves.toBeUndefined();
+
+      expect(prismaMock.user.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ id: 'user-1', questionsGeneratedThisPeriod: { lte: 240 } }),
+          data: { questionsGeneratedThisPeriod: { increment: 10 } },
+        }),
+      );
+    });
+
+    // Behaviour 10: checkAndRecordQuestions throws 403 when updateMany returns count === 0
+    it('checkAndRecordQuestions throws 403 when atomic update returns count=0 (quota exceeded)', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'free', questionsGeneratedThisPeriod: 245 }),
+      );
+      prismaMock.user.updateMany.mockResolvedValue({ count: 0 });
+
+      const promise = service.checkAndRecordQuestions('user-1', 10);
+
+      await expect(promise).rejects.toMatchObject({
+        status: 403,
+        body: { error: 'quota_exceeded' },
+      });
+    });
+
+    // Behaviour 11: checkAndRecordQuestions skips updateMany for infinite limit (tester plan)
+    it('checkAndRecordQuestions uses direct increment for unlimited plans (tester)', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'tester', questionsGeneratedThisPeriod: 99999, customQuotaOverride: null }),
+      );
+      prismaMock.user.update.mockResolvedValue({} as any);
+      prismaMock.usageLog.create.mockResolvedValue({} as any);
+
+      await expect(service.checkAndRecordQuestions('user-1', 50)).resolves.toBeUndefined();
+
+      expect(prismaMock.user.updateMany).not.toHaveBeenCalled();
+      expect(prismaMock.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'user-1' },
+          data: { questionsGeneratedThisPeriod: { increment: 50 } },
+        }),
+      );
+    });
+  });
 });

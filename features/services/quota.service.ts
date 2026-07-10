@@ -98,6 +98,52 @@ export class QuotaService {
     }
   }
 
+  // Atomically check and record question usage in a single DB write, preventing
+  // TOCTOU race conditions where concurrent requests all pass the check before
+  // any of them records usage.
+  async checkAndRecordQuestions(userId: string, count: number): Promise<void> {
+    const user = await this.getUserWithPeriodReset(userId);
+    const plan = this.resolvePlan(user.plan);
+    const limit = this.resolveQuestionsLimit(user);
+
+    if (limit === Infinity) {
+      await Promise.all([
+        prisma.user.update({
+          where: { id: userId },
+          data: { questionsGeneratedThisPeriod: { increment: count } },
+        }),
+        prisma.usageLog.create({ data: { userId, action: 'generate_questions', count } }),
+      ]);
+      return;
+    }
+
+    // Atomic conditional increment: only succeeds if used + count <= limit.
+    const updated = await prisma.user.updateMany({
+      where: {
+        id: userId,
+        questionsGeneratedThisPeriod: { lte: limit - count },
+      },
+      data: { questionsGeneratedThisPeriod: { increment: count } },
+    });
+
+    if (updated.count === 0) {
+      const used = user.questionsGeneratedThisPeriod;
+      const err = Object.assign(new Error(`Question generation limit reached (${limit}/period)`), {
+        status: 403,
+        body: {
+          error: 'quota_exceeded',
+          message: `Question generation limit reached (${limit}/period)`,
+          limit,
+          used,
+          plan,
+        },
+      });
+      throw err;
+    }
+
+    await prisma.usageLog.create({ data: { userId, action: 'generate_questions', count } });
+  }
+
   async record(userId: string, action: QuotaAction, count: number): Promise<void> {
     await Promise.all([
       action === 'generate_questions'
