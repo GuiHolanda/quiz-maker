@@ -23,12 +23,12 @@ Authentication flows. Services stay co-located here (not in `features/services/`
 
 ### `billing/`
 
-LemonSqueezy integration and quota tracking. Service: `features/services/quota.service.ts`.
+Stripe integration and quota tracking. Service: `features/services/quota.service.ts`.
 
 | Route | Method | Description |
 |---|---|---|
-| `billing/checkout` | GET | Create LemonSqueezy checkout session, returns `{ url }` |
-| `billing/portal` | GET | Create LemonSqueezy customer portal URL, returns `{ url }` |
+| `billing/checkout` | GET | Create Stripe checkout session, returns `{ url }` |
+| `billing/portal` | GET | Create Stripe customer portal URL, returns `{ url }` |
 | `billing/usage` | GET | Returns current quota usage (`UsageStats`) |
 
 ---
@@ -152,7 +152,7 @@ Service: `features/services/aiChat.service.ts`.
 
 | Route | Method | Description |
 |---|---|---|
-| `webhooks/lemonsqueezy` | POST | Handle LemonSqueezy subscription events (create / update / cancel / expire). Updates `user.plan` in DB. Differentiates `pro` vs `pro_ai` by variant ID (`LEMONSQUEEZY_PRODUCT_VARIANT_ID_PRO_AI_MONTHLY/YEARLY`). |
+| `webhooks/stripe` | POST | Handle Stripe subscription events (`checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`). Updates `user.plan` in DB. Differentiates `pro` vs `pro_ai` by price ID (`STRIPE_PRICE_ID_PRO_AI_MONTHLY/YEARLY`). |
 
 ---
 
