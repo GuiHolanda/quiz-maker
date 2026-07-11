@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { EmailService } from '@/features/services/email.service';
 
 export class RegisterService {
-  async register(body: unknown): Promise<{ id: string; email: string }> {
+  async register(body: unknown): Promise<{ id: string; email: string; redirectToVerify: boolean }> {
     if (!body || typeof body !== 'object') {
       throw Object.assign(new Error('Invalid request body'), { status: 400 });
     }
