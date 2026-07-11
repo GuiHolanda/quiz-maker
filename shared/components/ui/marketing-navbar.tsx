@@ -58,7 +58,7 @@ export function MarketingNavbar() {
               >
                 <FontAwesomeIcon className="text-accent text-xs" icon={faMicrochip} />
               </div>
-              <span className="font-sora font-bold text-white text-sm tracking-tight">CertifiqueAI</span>
+              <span className="font-sora font-bold text-white text-sm tracking-tight">Certifique AI</span>
               <span className="hidden sm:block w-px h-4 bg-navy-700 mx-1" />
               <span className="hidden sm:block font-mono text-xs text-navy-400 tracking-wider">EXAM PLATFORM</span>
             </NextLink>

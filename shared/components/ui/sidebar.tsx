@@ -110,7 +110,7 @@ export function Sidebar() {
         </button>
         <NextLink className="flex items-center gap-2" href="/">
           <Image alt="CertifiqueAI" className="rounded-md" height={22} src="/icon.svg" width={22} />
-          <p className="font-bold text-foreground tracking-wide text-sm">CertifiqueAI</p>
+          <p className="font-bold text-foreground tracking-wide text-sm">Certifique AI</p>
         </NextLink>
         <Avatar
           classNames={{ base: 'ring-2 ring-primary/40 ring-offset-1 ring-offset-transparent cursor-pointer' }}
@@ -126,7 +126,7 @@ export function Sidebar() {
           <DrawerHeader className="flex items-center justify-between border-b border-divider px-4 py-3">
             <NextLink className="flex items-center gap-2" href="/" onClick={() => setIsMobileOpen(false)}>
               <Image alt="CertifiqueAI" className="rounded-md" height={22} src="/icon.svg" width={22} />
-              <p className="font-bold text-foreground tracking-wide text-sm">CertifiqueAI</p>
+              <p className="font-bold text-foreground tracking-wide text-sm">Certifique AI</p>
             </NextLink>
             <button
               aria-label={t('nav.closeSidebar')}
@@ -150,7 +150,7 @@ export function Sidebar() {
       <div className="h-14 flex items-center gap-3 px-4 border-b border-divider shrink-0">
         <NextLink className="flex items-center gap-2" href="/">
           <Image alt="CertifiqueAI" className="rounded-md" height={22} src="/icon.svg" width={22} />
-          <p className="font-bold text-foreground tracking-wide text-sm">CertifiqueAI</p>
+          <p className="font-bold text-foreground tracking-wide text-sm">Certifique AI</p>
         </NextLink>
       </div>
     );
