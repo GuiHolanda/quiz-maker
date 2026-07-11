@@ -384,7 +384,7 @@ import bcrypt from 'bcryptjs';
 ### O que NÃO testar (fora de escopo atual)
 
 - Serviços externos com streaming (OpenAI, edital extractor)
-- Webhooks LemonSqueezy (requer assinatura real)
+- Webhooks Stripe (requer assinatura real)
 - Route handlers (integração — próxima iteração)
 - Componentes React (sem infra de UI testing)
 
@@ -408,7 +408,7 @@ type UserPlan = 'free' | 'pro' | 'pro_ai' | 'tester' | 'admin';
 | `tester` | ∞ | ∞ | ∞ | ✓ | ✗ |
 | `admin` | ∞ | ∞ | ∞ | ✓ | ✓ |
 
-`tester` and `admin` are assigned manually (no LemonSqueezy product). `pro_ai` is a LemonSqueezy add-on with its own variant IDs (`LEMONSQUEEZY_PRODUCT_VARIANT_ID_PRO_AI_MONTHLY/YEARLY`).
+`tester` and `admin` are assigned manually (no Stripe product). `pro_ai` is a Stripe add-on differentiated by price ID (`STRIPE_PRICE_ID_PRO_AI_MONTHLY/YEARLY`).
 
 ### `customQuotaOverride` (User field)
 
