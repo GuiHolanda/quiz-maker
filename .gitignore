@@ -53,3 +53,9 @@ prisma/dev.db
 .mcp.json
 
 .superpowers/
+
+# E2E
+e2e/auth/storageState.json
+.env.test
+playwright-report/
+test-results/
