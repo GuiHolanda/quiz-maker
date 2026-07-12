@@ -59,3 +59,4 @@ e2e/auth/storageState.json
 .env.test
 playwright-report/
 test-results/
+prisma/dev/prisma/
