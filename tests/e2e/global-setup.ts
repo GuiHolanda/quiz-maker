@@ -5,9 +5,10 @@ import path from 'path';
 import dotenv from 'dotenv';
 
 // Load .env.test first (E2E credentials), then fall back to project .env for DATABASE_URL
-dotenv.config({ path: path.join(__dirname, '../../.env.test') });
+// Use process.cwd() — always the project root regardless of how TypeScript resolves __dirname
+dotenv.config({ path: path.join(process.cwd(), '.env.test') });
 if (!process.env.DATABASE_URL) {
-  dotenv.config({ path: path.join(__dirname, '../../.env') });
+  dotenv.config({ path: path.join(process.cwd(), '.env') });
 }
 
 const prisma = new PrismaClient({
