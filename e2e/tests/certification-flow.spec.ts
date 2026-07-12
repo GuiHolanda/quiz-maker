@@ -13,14 +13,18 @@ test('full certification journey: configure → questions → simulado → answe
 
   // Step 1 — fill basic info
   await page.getByLabel(/Título da Certificação|Certification Title/i).fill(E2E_CERT_LABEL);
-  await page.getByLabel(/Código do Exame|Exam Code/i).fill(E2E_CERT_KEY);
+  await page.getByLabel(/Código da Certificação|Exam Code/i).fill(E2E_CERT_KEY);
 
   // Advance to Step 2 via the "Definir Tópicos / Define Topics" button
   await page.getByRole('button', { name: /Definir Tópicos|Define Topics/i }).click();
 
-  // Step 2 — add a topic
-  await page.getByLabel(/Nome do Tópico|Topic Name/i).fill(E2E_CERT_TOPIC);
-  await page.getByRole('button', { name: /Adicionar tópico|Add topic/i }).click();
+  // Step 2 — add a domain (topic row), fill its name, and set max weight to 100
+  await page.getByRole('button', { name: /Adicionar Domínio|Add topic/i }).click();
+  await page.getByLabel(/Nome do Domínio|Topic Name/i).first().fill(E2E_CERT_TOPIC);
+  // Set maxQuestions to 100 so weightage is valid (required to enable Finalizar button)
+  const weightInputs = page.getByRole('spinbutton');
+  await weightInputs.first().fill('0');
+  await weightInputs.nth(1).fill('100');
 
   // Advance to Step 3 via "Finalizar Certificação / Finalize Certification"
   await page.getByRole('button', { name: /Finalizar Certificação|Finalize Certification/i }).click();
@@ -37,14 +41,16 @@ test('full certification journey: configure → questions → simulado → answe
 
   // ─── Step 2: Generate questions ──────────────────────────────────────────
 
-  await page.goto('/certifications/questions');
+  await page.goto('/certifications/questions?tab=generate');
 
   // Select the certification we just created
-  await page.getByLabel(/Selecione uma Certificação|Select a Certification/i).click();
+  await page.getByRole('button', { name: /Selecione uma Certificação|Select a Certification/i }).click();
+  await expect(page.getByRole('option', { name: E2E_CERT_LABEL })).toBeVisible({ timeout: 8_000 });
   await page.getByRole('option', { name: E2E_CERT_LABEL }).click();
 
   // Select the topic
-  await page.getByLabel(/Selecione um Tópico|Select a Topic/i).click();
+  await page.getByRole('button', { name: /Selecione um Tópico|Select a Topic/i }).click();
+  await expect(page.getByRole('option', { name: E2E_CERT_TOPIC })).toBeVisible({ timeout: 5_000 });
   await page.getByRole('option', { name: E2E_CERT_TOPIC }).click();
 
   // Set number of questions (use 3 to stay within mock data)
@@ -57,8 +63,8 @@ test('full certification journey: configure → questions → simulado → answe
   // Wait for the generated questions list to appear
   await expect(page.getByText(/E2E Question/i).first()).toBeVisible({ timeout: 15_000 });
 
-  // Select all generated questions
-  await page.getByRole('checkbox', { name: /Selecionar tudo|Select all/i }).click();
+  // Select all generated questions — use force click for HeroUI hidden checkbox input
+  await page.getByRole('checkbox', { name: /Selecionar tudo|Select all/i }).click({ force: true });
 
   // Save selected questions
   await page.getByRole('button', { name: /Salvar Questões Selecionadas|Save Selected questions/i }).click();
@@ -74,7 +80,8 @@ test('full certification journey: configure → questions → simulado → answe
   await page.getByRole('tab', { name: /Novo Simulado|New Mock Exam/i }).click();
 
   // Select certification
-  await page.getByLabel(/Selecione uma Certificação|Select a Certification/i).click();
+  await page.getByRole('button', { name: /Selecione uma Certificação|Select a Certification/i }).click();
+  await expect(page.getByRole('option', { name: E2E_CERT_LABEL })).toBeVisible({ timeout: 8_000 });
   await page.getByRole('option', { name: E2E_CERT_LABEL }).click();
 
   // Set total questions to 3
@@ -96,36 +103,31 @@ test('full certification journey: configure → questions → simulado → answe
 
   // ─── Step 4: Answer the simulado ──────────────────────────────────────────
 
-  // For each question, click the first radio option then confirm (save)
+  // Each question card has a RadioGroup + type=submit button.
+  // HeroUI radios have a hidden input (opacity-[0.0001]) overlaid by visual elements.
+  // Use { force: true } to bypass Playwright's actionability checks on the hidden input.
   const radioGroups = page.locator('[role="radiogroup"]');
   const groupCount = await radioGroups.count();
 
   for (let i = 0; i < groupCount; i++) {
     const group = radioGroups.nth(i);
-    // Click the first radio button in this group
-    await group.getByRole('radio').first().click();
-
-    // The confirm/save button appears after a selection — click it if visible
-    const saveButton = page.getByRole('button', { name: /Salvar|Save|Submit/i }).first();
-    const isSaveVisible = await saveButton.isVisible().catch(() => false);
-    if (isSaveVisible) {
-      await saveButton.click();
+    // Force-click the hidden radio input to trigger onValueChange
+    await group.getByRole('radio').first().click({ force: true });
+    // Wait for React to process the selection and render the submit button
+    await page.waitForTimeout(300);
+    // The submit button shows "Enviar" in PT before saving
+    const enviarBtn = page.getByRole('button', { name: /Enviar|Salvar|Save/i }).first();
+    if (await enviarBtn.isVisible({ timeout: 1_000 }).catch(() => false)) {
+      await enviarBtn.click();
       await page.waitForTimeout(300);
     }
   }
 
-  // Re-check all radio groups are answered and click save per question if needed
-  // (some questions may need an explicit confirm after radio selection)
-  const submitButtons = page.locator('button[type="submit"]');
-  const submitCount = await submitButtons.count();
-  for (let i = 0; i < submitCount; i++) {
-    const btn = submitButtons.nth(i);
-    const isVisible = await btn.isVisible().catch(() => false);
-    if (isVisible) {
-      await btn.click();
-      await page.waitForTimeout(300);
-    }
-  }
+  // Wait for progress to update
+  await page.waitForTimeout(500);
+
+  // Wait for "Finalizar Simulado" to become enabled (all questions answered)
+  await expect(page.getByRole('button', { name: /Finalizar Simulado|Finish Exam/i })).toBeEnabled({ timeout: 5_000 });
 
   // Click "Finalizar Simulado / Finish Exam"
   await page.getByRole('button', { name: /Finalizar Simulado|Finish Exam/i }).click();

@@ -17,9 +17,13 @@ test('public exam full flow: configure -> questions -> simulado -> attempt -> re
   // Banca is an Autocomplete — type into the input element
   const bancaInput = page.getByLabel(/Banca/i).first();
   await bancaInput.fill(E2E_EXAM_BOARD);
+  // Press Tab to dismiss the autocomplete dropdown and move focus away
+  await bancaInput.press('Tab');
+  // Wait briefly for dropdown animation to complete
+  await page.waitForTimeout(500);
 
   // Click "Próximo: Definir Matérias" to advance to step 2
-  await page.getByRole('button', { name: /Pr[oó]ximo.*Mat[eé]rias|Next.*Subject/i }).click();
+  await page.getByRole('button', { name: /Pr[oó]ximo.*Mat[eé]rias|Next.*Subject/i }).click({ force: true });
 
   // Step 2 — define subjects: add one subject with 100% weight
   await page.getByRole('button', { name: /Adicionar Mat[eé]ria|Add Subject/i }).click();
@@ -49,12 +53,17 @@ test('public exam full flow: configure -> questions -> simulado -> attempt -> re
   // Select exam — the PublicExamManager Select label is "Selecione um Concurso"
   const examSelect = page.getByRole('button', { name: /Selecione um Concurso|Select.*exam/i }).first();
   await examSelect.click();
+  await expect(page.getByRole('option', { name: new RegExp(E2E_PUBLIC_EXAM_NAME, 'i') })).toBeVisible({ timeout: 8_000 });
   await page.getByRole('option', { name: new RegExp(E2E_PUBLIC_EXAM_NAME, 'i') }).click();
 
   // Select subject
   const subjectSelect = page.getByRole('button', { name: /Selecione uma Mat[eé]ria|Select.*Subject/i }).first();
   await subjectSelect.click();
+  await expect(page.getByRole('option', { name: new RegExp(E2E_SUBJECT, 'i') })).toBeVisible({ timeout: 5_000 });
   await page.getByRole('option', { name: new RegExp(E2E_SUBJECT, 'i') }).click();
+
+  // Set number of questions before generating
+  await page.getByLabel(/N[uú]mero de Quest[oõ]es|Number of Questions/i).fill('3');
 
   // Click generate (the mocked API will respond immediately)
   await page.getByRole('button', { name: /Gerar|Generate/i }).click();
@@ -62,8 +71,8 @@ test('public exam full flow: configure -> questions -> simulado -> attempt -> re
   // Wait for generated questions list to appear
   await expect(page.getByText(/Selecionar tudo|Select all/i)).toBeVisible({ timeout: 30_000 });
 
-  // Select all questions
-  await page.getByText(/Selecionar tudo|Select all/i).click();
+  // Select all questions — use force click for HeroUI hidden checkbox input
+  await page.getByRole('checkbox', { name: /Selecionar tudo|Select all/i }).click({ force: true });
 
   // Save selected questions
   await page.getByRole('button', { name: /Salvar Questões Selecionadas|Save Selected/i }).click();
@@ -81,6 +90,8 @@ test('public exam full flow: configure -> questions -> simulado -> attempt -> re
   // Select the exam in the PublicExamManager
   const newSimuladoExamSelect = page.getByRole('button', { name: /Selecione um Concurso|Select.*exam/i }).first();
   await newSimuladoExamSelect.click();
+  // Wait for options to appear (exams loaded from API)
+  await expect(page.getByRole('option', { name: new RegExp(E2E_PUBLIC_EXAM_NAME, 'i') })).toBeVisible({ timeout: 8_000 });
   await page.getByRole('option', { name: new RegExp(E2E_PUBLIC_EXAM_NAME, 'i') }).click();
 
   // Set total questions to 3
@@ -107,20 +118,28 @@ test('public exam full flow: configure -> questions -> simulado -> attempt -> re
   await page.waitForURL(/\/tentativa\//, { timeout: 15_000 });
 
   // Answer each question by selecting option A and confirming
+  // HeroUI radios have a hidden input overlaid by visual elements — use force: true
   const radioGroups = page.getByRole('radiogroup');
   const count = await radioGroups.count();
 
   for (let i = 0; i < count; i++) {
     const group = radioGroups.nth(i);
-    const firstOption = group.getByRole('radio').first();
-    await firstOption.click();
-
-    // After selection, a confirm/submit button may appear
-    const submitBtn = page.getByRole('button', { name: /Enviar|Submit/i }).first();
-    if (await submitBtn.isVisible({ timeout: 1_000 }).catch(() => false)) {
-      await submitBtn.click();
+    // Force-click to bypass Playwright's actionability checks on the hidden radio input
+    await group.getByRole('radio').first().click({ force: true });
+    // Wait for React to process selection
+    await page.waitForTimeout(300);
+    // Click the submit button (shows "Enviar" in PT)
+    const enviarBtn = page.getByRole('button', { name: /Enviar|Salvar|Save/i }).first();
+    if (await enviarBtn.isVisible({ timeout: 1_000 }).catch(() => false)) {
+      await enviarBtn.click();
+      await page.waitForTimeout(300);
     }
   }
+
+  await page.waitForTimeout(500);
+
+  // Wait for "Finalizar Simulado" to become enabled before clicking
+  await expect(page.getByRole('button', { name: /Finalizar Simulado|Finish Exam/i })).toBeEnabled({ timeout: 5_000 });
 
   // Click "Finalizar Simulado" / "Finish Exam"
   await page.getByRole('button', { name: /Finalizar Simulado|Finish Exam/i }).click();

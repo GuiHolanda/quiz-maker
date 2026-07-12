@@ -42,8 +42,8 @@ async function globalSetup(config: FullConfig) {
   const page = await browser.newPage();
 
   await page.goto(`${baseURL}/login`);
-  await page.getByRole('textbox', { name: /email/i }).fill(E2E_USER_EMAIL);
-  await page.getByLabel(/password/i).fill(E2E_USER_PASSWORD);
+  await page.locator('input[type="email"]').fill(E2E_USER_EMAIL);
+  await page.locator('input[type="password"]').fill(E2E_USER_PASSWORD);
   await page.getByRole('button', { name: /sign in|login|entrar/i }).click();
   await page.waitForURL(`${baseURL}/dashboard`, { timeout: 15_000 });
 
