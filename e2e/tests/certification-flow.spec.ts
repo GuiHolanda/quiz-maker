@@ -104,17 +104,22 @@ test('full certification journey: configure → questions → simulado → answe
 
   // ─── Step 4: Answer the simulado ──────────────────────────────────────────
 
-  // HeroUI Radio: the hidden <input type="radio"> (opacity-[0.0001], z-[1], covers the full label)
-  // is the actual event target. Playwright's .check({ force: true }) fires the native change event
-  // that React (via useRadioGroupState) listens to — this is the only reliable way to trigger
-  // onValueChange in a headless browser without pointer coordinates.
+  // HeroUI Radio: React Aria uses usePress on the label and useRadio on the input.
+  // Pointer events must target the visible label element (not the hidden input) to trigger
+  // React Aria's onValueChange. Use getBoundingClientRect on the label and fire real mouse
+  // events via page.mouse — this bypasses the z-index stacking that causes force-click to
+  // only hit the hidden input and not propagate through usePress.
   const radioGroups = page.locator('[role="radiogroup"]');
   const groupCount = await radioGroups.count();
 
   for (let i = 0; i < groupCount; i++) {
     const group = radioGroups.nth(i);
-    // .check() on the hidden input triggers the native change event React processes
-    await group.locator('input[type="radio"]').first().check({ force: true });
+    const firstLabel = group.locator('label').first();
+    const box = await firstLabel.boundingBox();
+    if (box) {
+      // Click at the left edge of the label (near the radio circle, before the text)
+      await page.mouse.click(box.x + 10, box.y + box.height / 2);
+    }
     await page.waitForTimeout(350);
     // The form wrapping this radiogroup; submit button appears once canSubmit is true
     const submitBtn = page.locator('form:has([role="radiogroup"])').nth(i).locator('button[type="submit"]');

@@ -87,26 +87,30 @@ test('public exam full flow: configure -> questions -> simulado -> attempt -> re
   // Switch to "Novo Simulado" / "New Mock Exam" tab
   await page.getByRole('tab', { name: /Novo Simulado|New Mock Exam/i }).click();
 
-  // Wait for NewSimuladoTab to finish loading (getPublicExamBrowseSummary must resolve
-  // before totalSavedQuestions is set and the form renders instead of the skeleton)
-  const newSimuladoExamSelect = page.getByRole('button', { name: /Selecione um Concurso|Select.*exam/i }).first();
-  await expect(newSimuladoExamSelect).toBeVisible({ timeout: 10_000 });
-  await newSimuladoExamSelect.click();
-  // Wait for options to appear
-  await expect(page.getByRole('option', { name: new RegExp(E2E_PUBLIC_EXAM_NAME, 'i') })).toBeVisible({ timeout: 8_000 });
-  await page.getByRole('option', { name: new RegExp(E2E_PUBLIC_EXAM_NAME, 'i') }).click();
-  // Give React time to run onSelectionChange and update selectedPublicExam in context
-  await page.waitForTimeout(500);
-
-  // Set total questions to 3
+  // The PublicExamsProvider restores selectedPublicExam from localStorage (set by step 2).
+  // Wait for the form to finish loading (skeleton shows until getPublicExamBrowseSummary resolves).
+  // We detect form readiness by the presence of the "Total de questões" input.
   const totalQuestionsInput = page.getByLabel(/Total de quest[oõ]es|Total questions/i);
+  await expect(totalQuestionsInput).toBeVisible({ timeout: 10_000 });
+
+  // If the exam wasn't restored from localStorage, select it manually.
+  const examTrigger = page.locator('[data-slot="trigger"]').filter({ has: page.locator('[data-slot="value"]') }).first();
+  const triggerText = await examTrigger.textContent().catch(() => '');
+  if (!triggerText || triggerText.includes('Buscar concursos')) {
+    await examTrigger.click();
+    await expect(page.getByRole('option', { name: new RegExp(E2E_PUBLIC_EXAM_NAME, 'i') })).toBeVisible({ timeout: 8_000 });
+    await page.getByRole('option', { name: new RegExp(E2E_PUBLIC_EXAM_NAME, 'i') }).click();
+    await page.waitForTimeout(500);
+  }
+
+  // Fill total questions; the distribution useEffect fires when both fields are set
   await totalQuestionsInput.clear();
   await totalQuestionsInput.fill('3');
-  // React useEffect that computes distribution watches [selectedPublicExam, totalQuestions]
-  // Give it time to run and render the distribution rows
   await page.waitForTimeout(800);
 
-  // Click "Criar Simulado" / "Create Mock Exam"
+  // The "Criar Simulado" button is enabled when selectedPublicExam is set and distribution is valid.
+  // Wait for it to be enabled before clicking.
+  await expect(page.getByRole('button', { name: /Criar Simulado|Create Mock Exam/i })).toBeEnabled({ timeout: 8_000 });
   await page.getByRole('button', { name: /Criar Simulado|Create Mock Exam/i }).click();
 
   // Wait for redirect back to list tab
@@ -123,13 +127,17 @@ test('public exam full flow: configure -> questions -> simulado -> attempt -> re
   // Wait for the attempt page (URL contains /tentativa/)
   await page.waitForURL(/\/tentativa\//, { timeout: 15_000 });
 
-  // Answer each question — .check({ force: true }) on hidden input triggers React's native change event
+  // HeroUI Radio: use page.mouse.click at exact label coordinates to fire real pointer events.
   const radioGroups = page.locator('[role="radiogroup"]');
   const count = await radioGroups.count();
 
   for (let i = 0; i < count; i++) {
     const group = radioGroups.nth(i);
-    await group.locator('input[type="radio"]').first().check({ force: true });
+    const firstLabel = group.locator('label').first();
+    const box = await firstLabel.boundingBox();
+    if (box) {
+      await page.mouse.click(box.x + 10, box.y + box.height / 2);
+    }
     await page.waitForTimeout(350);
     const submitBtn = page.locator('form:has([role="radiogroup"])').nth(i).locator('button[type="submit"]');
     if (await submitBtn.isVisible({ timeout: 1_500 }).catch(() => false)) {
