@@ -1,12 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
 import path from 'path';
 
-export const STORAGE_STATE = path.join(__dirname, 'e2e/auth/storageState.json');
+export const STORAGE_STATE = path.join(__dirname, 'tests/e2e/auth/storageState.json');
 
 export default defineConfig({
-  testDir: './e2e/tests',
-  globalSetup: './e2e/global-setup.ts',
-  globalTeardown: './e2e/global-teardown.ts',
+  testDir: './tests/e2e/tests',
+  globalSetup: './tests/e2e/global-setup.ts',
+  globalTeardown: './tests/e2e/global-teardown.ts',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

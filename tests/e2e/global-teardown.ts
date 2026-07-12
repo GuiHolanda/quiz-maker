@@ -2,9 +2,9 @@ import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config({ path: path.join(__dirname, '../.env.test') });
+dotenv.config({ path: path.join(__dirname, '../../.env.test') });
 if (!process.env.DATABASE_URL) {
-  dotenv.config({ path: path.join(__dirname, '../.env') });
+  dotenv.config({ path: path.join(__dirname, '../../.env') });
 }
 
 const prisma = new PrismaClient({

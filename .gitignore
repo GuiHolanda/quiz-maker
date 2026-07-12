@@ -55,7 +55,7 @@ prisma/dev.db
 .superpowers/
 
 # E2E
-e2e/auth/storageState.json
+tests/e2e/auth/storageState.json
 .env.test
 playwright-report/
 test-results/

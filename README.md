@@ -144,8 +144,8 @@ Two spec files covering the full user journeys end-to-end against a real `next d
 
 | Spec | Journey |
 |---|---|
-| `e2e/tests/certification-flow.spec.ts` | Configure cert → generate questions → create simulado → answer → result → cancel |
-| `e2e/tests/public-exam-flow.spec.ts` | Configure concurso → generate questions → create simulado → answer → result → cancel |
+| `tests/e2e/tests/certification-flow.spec.ts` | Configure cert → generate questions → create simulado → answer → result → cancel |
+| `tests/e2e/tests/public-exam-flow.spec.ts` | Configure concurso → generate questions → create simulado → answer → result → cancel |
 
 **Setup — one-time:**
 
@@ -186,7 +186,7 @@ npx playwright show-report
 
 **How it works:**
 
-- `globalSetup` creates/resets a `tester`-plan user in the dev DB, performs a real UI login, and saves the session cookie to `e2e/auth/storageState.json` — all subsequent tests start pre-authenticated.
+- `globalSetup` creates/resets a `tester`-plan user in the dev DB, performs a real UI login, and saves the session cookie to `tests/e2e/auth/storageState.json` — all subsequent tests start pre-authenticated.
 - OpenAI API routes (`question-generator`, `answers`) are intercepted by `page.route()` and return static fixtures — no API key consumed during tests.
 - `globalTeardown` deletes all data created by the E2E user after the suite completes.
 

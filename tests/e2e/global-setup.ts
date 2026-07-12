@@ -5,9 +5,9 @@ import path from 'path';
 import dotenv from 'dotenv';
 
 // Load .env.test first (E2E credentials), then fall back to project .env for DATABASE_URL
-dotenv.config({ path: path.join(__dirname, '../.env.test') });
+dotenv.config({ path: path.join(__dirname, '../../.env.test') });
 if (!process.env.DATABASE_URL) {
-  dotenv.config({ path: path.join(__dirname, '../.env') });
+  dotenv.config({ path: path.join(__dirname, '../../.env') });
 }
 
 const prisma = new PrismaClient({

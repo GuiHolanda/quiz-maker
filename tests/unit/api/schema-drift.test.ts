@@ -3,8 +3,8 @@ import path from 'path';
 import { createClient, type Client } from '@libsql/client';
 import { beforeAll, afterAll, describe, expect, it } from 'vitest';
 
-const PROD_SCHEMA_PATH = path.resolve(__dirname, '../../prisma/prod/schema.prisma');
-const DEV_DB_PATH = path.resolve(__dirname, '../../prisma/dev.db');
+const PROD_SCHEMA_PATH = path.resolve(__dirname, '../../../prisma/prod/schema.prisma');
+const DEV_DB_PATH = path.resolve(__dirname, '../../../prisma/dev.db');
 
 interface ParsedModel {
   readonly name: string;

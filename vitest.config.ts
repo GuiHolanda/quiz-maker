@@ -5,8 +5,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['tests/**/*.test.ts'],
-    setupFiles: ['./tests/api/__mocks__/prisma.ts'],
+    include: ['tests/unit/**/*.test.ts'],
+    setupFiles: ['./tests/unit/api/__mocks__/prisma.ts'],
     coverage: {
       provider: 'v8',
       include: ['app/api/**', 'features/services/**'],

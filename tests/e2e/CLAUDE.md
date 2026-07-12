@@ -5,7 +5,7 @@ Esta pasta contém os testes end-to-end do CertifiqueAI usando Playwright.
 ## Arquitetura
 
 ```
-e2e/
+tests/e2e/
   auth/
     storageState.json      ← sessão salva pelo globalSetup (gitignored)
   fixtures/
@@ -31,7 +31,7 @@ e2e/
 
 ## Como adicionar um novo spec
 
-1. Criar `e2e/tests/<nome>.spec.ts`
+1. Criar `tests/e2e/tests/<nome>.spec.ts`
 2. Importar o fixture: `import { test, expect } from '../fixtures/auth.fixture'`
 3. Usar `authedPage` como page: `async ({ authedPage: page }) => { ... }`
 4. Mocks de OpenAI já estão aplicados no fixture para certification e public-exam. Para outros endpoints, adicionar `page.route()` no próprio spec.

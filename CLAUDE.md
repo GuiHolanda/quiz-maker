@@ -333,12 +333,13 @@ npm run test:coverage # gera relatório de cobertura
 
 ```
 tests/
-  api/
-    __mocks__/
-      prisma.ts         ← deep-mock global do prisma (setupFiles)
-    services/
-      *.service.test.ts ← um arquivo por service
-vitest.config.ts        ← raiz do projeto
+  unit/
+    api/
+      __mocks__/
+        prisma.ts         ← deep-mock global do prisma (setupFiles)
+      services/
+        *.service.test.ts ← um arquivo por service
+vitest.config.ts          ← raiz do projeto
 ```
 
 ### Padrões de teste
@@ -421,20 +422,21 @@ npx playwright show-report
 ### Estrutura de arquivos
 
 ```
-e2e/
-  auth/
-    storageState.json        ← sessão salva (gitignored)
-  fixtures/
-    auth.fixture.ts          ← fixture com mocks das rotas OpenAI
-    mock-data.ts             ← questões estáticas retornadas pelos mocks
-  tests/
-    certification-flow.spec.ts   ← jornada completa de certificações
-    public-exam-flow.spec.ts     ← jornada completa de concursos
-  global-setup.ts            ← cria usuário tester, faz login, salva sessão
-  global-teardown.ts         ← deleta todos os dados do usuário E2E
-playwright.config.ts         ← raiz do projeto
-.env.test                    ← credenciais E2E (gitignored)
-.github/workflows/e2e.yml   ← CI no push para main
+tests/
+  e2e/
+    auth/
+      storageState.json        ← sessão salva (gitignored)
+    fixtures/
+      auth.fixture.ts          ← fixture com mocks das rotas OpenAI
+      mock-data.ts             ← questões estáticas retornadas pelos mocks
+    tests/
+      certification-flow.spec.ts   ← jornada completa de certificações
+      public-exam-flow.spec.ts     ← jornada completa de concursos
+    global-setup.ts            ← cria usuário tester, faz login, salva sessão
+    global-teardown.ts         ← deleta todos os dados do usuário E2E
+playwright.config.ts           ← raiz do projeto
+.env.test                      ← credenciais E2E (gitignored)
+.github/workflows/e2e.yml      ← CI no push para main
 ```
 
 ### Setup local obrigatório
