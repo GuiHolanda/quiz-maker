@@ -33,7 +33,7 @@ export default defineConfig({
     stdout: 'pipe',
     stderr: 'pipe',
     env: {
-      DATABASE_URL: process.env.DATABASE_URL ?? 'file:./prisma/dev.db',
+      DATABASE_URL: process.env.DATABASE_URL ?? `file:${path.join(__dirname, 'prisma/dev.db')}`,
     },
   },
 });
