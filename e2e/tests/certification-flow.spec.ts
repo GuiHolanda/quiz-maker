@@ -13,6 +13,7 @@ test('full certification journey: configure → questions → simulado → answe
 
   // Step 1 — fill basic info
   await page.getByLabel(/Título da Certificação|Certification Title/i).fill(E2E_CERT_LABEL);
+  await page.getByLabel(/Código do Exame|Exam Code/i).fill(E2E_CERT_KEY);
 
   // Advance to Step 2 via the "Definir Tópicos / Define Topics" button
   await page.getByRole('button', { name: /Definir Tópicos|Define Topics/i }).click();
@@ -54,9 +55,7 @@ test('full certification journey: configure → questions → simulado → answe
   await page.getByRole('button', { name: /Gerar|Generate/i }).click();
 
   // Wait for the generated questions list to appear
-  await expect(page.getByRole('checkbox', { name: /Selecionar tudo|Select all/i })).toBeVisible({
-    timeout: 15_000,
-  });
+  await expect(page.getByText(/E2E Question/i).first()).toBeVisible({ timeout: 15_000 });
 
   // Select all generated questions
   await page.getByRole('checkbox', { name: /Selecionar tudo|Select all/i }).click();
