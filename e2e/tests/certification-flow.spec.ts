@@ -103,31 +103,32 @@ test('full certification journey: configure → questions → simulado → answe
 
   // ─── Step 4: Answer the simulado ──────────────────────────────────────────
 
-  // Each question card has a RadioGroup + type=submit button.
-  // HeroUI radios have a hidden input (opacity-[0.0001]) overlaid by visual elements.
-  // Use { force: true } to bypass Playwright's actionability checks on the hidden input.
-  const radioGroups = page.locator('[role="radiogroup"]');
-  const groupCount = await radioGroups.count();
+  // Each QuestionCard renders: <div card> > <Form> > <RadioGroup> + <button type="submit">
+  // We locate each card div, click the first radio label (visible span), then click submit.
+  // HeroUI Radio: the visible clickable element is the <span> with role="radio" or the <label>.
+  // Using locator('label').first() on the radiogroup clicks the visible label wrapper.
+  const questionCards = page.locator('form').filter({ has: page.locator('[role="radiogroup"]') });
+  const cardCount = await questionCards.count();
 
-  for (let i = 0; i < groupCount; i++) {
-    const group = radioGroups.nth(i);
-    // Force-click the hidden radio input to trigger onValueChange
-    await group.getByRole('radio').first().click({ force: true });
-    // Wait for React to process the selection and render the submit button
+  for (let i = 0; i < cardCount; i++) {
+    const card = questionCards.nth(i);
+    // Click the first radio label (visible, not the hidden input)
+    const firstRadioLabel = card.locator('[role="radio"]').first();
+    await firstRadioLabel.click();
+    // Wait for React state update
+    await page.waitForTimeout(400);
+    // Click the submit button scoped to this card's form
+    const submitBtn = card.locator('button[type="submit"]');
+    await expect(submitBtn).toBeVisible({ timeout: 2_000 });
+    await submitBtn.click();
     await page.waitForTimeout(300);
-    // The submit button shows "Enviar" in PT before saving
-    const enviarBtn = page.getByRole('button', { name: /Enviar|Salvar|Save/i }).first();
-    if (await enviarBtn.isVisible({ timeout: 1_000 }).catch(() => false)) {
-      await enviarBtn.click();
-      await page.waitForTimeout(300);
-    }
   }
 
-  // Wait for progress to update
-  await page.waitForTimeout(500);
+  // Wait for all answers to register
+  await page.waitForTimeout(800);
 
   // Wait for "Finalizar Simulado" to become enabled (all questions answered)
-  await expect(page.getByRole('button', { name: /Finalizar Simulado|Finish Exam/i })).toBeEnabled({ timeout: 5_000 });
+  await expect(page.getByRole('button', { name: /Finalizar Simulado|Finish Exam/i })).toBeEnabled({ timeout: 8_000 });
 
   // Click "Finalizar Simulado / Finish Exam"
   await page.getByRole('button', { name: /Finalizar Simulado|Finish Exam/i }).click();
