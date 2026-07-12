@@ -104,21 +104,26 @@ test('full certification journey: configure → questions → simulado → answe
 
   // ─── Step 4: Answer the simulado ──────────────────────────────────────────
 
-  // HeroUI Radio renders: label[data-slot="base"] > span > input[hidden] + span[control]
-  // React Aria registers pointer events on the outer `label` element.
-  // Strategy: two passes — first select (click label), then submit (click button[type="submit"])
+  // HeroUI Radio hides the actual <input type="radio"> with opacity-[0.0001].
+  // React Aria handles selection via pointer events on the wrapper element.
+  // The most reliable approach: dispatch a native click event on each hidden radio input
+  // via page.evaluate, which bypasses Playwright's actionability checks and directly
+  // triggers React Aria's onChange → onValueChange → our applySelection handler.
 
-  const radioGroups = page.locator('[role="radiogroup"]');
-  const groupCount = await radioGroups.count();
+  await page.evaluate(() => {
+    const radioGroups = document.querySelectorAll('[role="radiogroup"]');
+    radioGroups.forEach((group) => {
+      const firstInput = group.querySelector('input[type="radio"]');
+      if (firstInput) {
+        firstInput.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        firstInput.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+  });
 
-  // Pass 1: click the first option label in each question
-  for (let i = 0; i < groupCount; i++) {
-    await radioGroups.nth(i).locator('label').first().click();
-    await page.waitForTimeout(350);
-  }
+  await page.waitForTimeout(600);
 
-  // Pass 2: click the visible submit button for each answered question
-  // After clicking a radio, button[type="submit"] becomes visible in the same form
+  // After selecting, button[type="submit"] appears in each form — click them all
   const submitButtons = page.locator('form:has([role="radiogroup"]) button[type="submit"]');
   const btnCount = await submitButtons.count();
   for (let i = 0; i < btnCount; i++) {

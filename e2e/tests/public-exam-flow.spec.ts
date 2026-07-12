@@ -87,11 +87,12 @@ test('public exam full flow: configure -> questions -> simulado -> attempt -> re
   // Switch to "Novo Simulado" / "New Mock Exam" tab
   await page.getByRole('tab', { name: /Novo Simulado|New Mock Exam/i }).click();
 
-  // Wait for the exam select to be visible (may take time while loading exams + browse summary)
-  const newSimuladoExamSelect = page.getByRole('button', { name: /Selecione um Concurso|Select.*exam/i }).first();
+  // Wait for the exam select to be visible
+  // PublicExamManager renders a <Select name="publicExamName"> — use the name attr to find the trigger
+  const newSimuladoExamSelect = page.locator('button[data-slot="trigger"][name="publicExamName"]').first();
   await expect(newSimuladoExamSelect).toBeVisible({ timeout: 10_000 });
   await newSimuladoExamSelect.click();
-  // Wait for options to appear (exams loaded from API)
+  // Wait for options to appear
   await expect(page.getByRole('option', { name: new RegExp(E2E_PUBLIC_EXAM_NAME, 'i') })).toBeVisible({ timeout: 8_000 });
   await page.getByRole('option', { name: new RegExp(E2E_PUBLIC_EXAM_NAME, 'i') }).click();
 
@@ -123,15 +124,19 @@ test('public exam full flow: configure -> questions -> simulado -> attempt -> re
   // Wait for the attempt page (URL contains /tentativa/)
   await page.waitForURL(/\/tentativa\//, { timeout: 15_000 });
 
-  // Answer each question — same two-pass strategy as certification spec.
-  // Pass 1: select first option (click label), Pass 2: click submit buttons.
-  const radioGroups = page.locator('[role="radiogroup"]');
-  const count = await radioGroups.count();
+  // Answer each question — same evaluate-based approach as certification spec
+  await page.evaluate(() => {
+    const radioGroups = document.querySelectorAll('[role="radiogroup"]');
+    radioGroups.forEach((group) => {
+      const firstInput = group.querySelector('input[type="radio"]');
+      if (firstInput) {
+        firstInput.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        firstInput.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+  });
 
-  for (let i = 0; i < count; i++) {
-    await radioGroups.nth(i).locator('label').first().click();
-    await page.waitForTimeout(350);
-  }
+  await page.waitForTimeout(600);
 
   const submitButtons = page.locator('form:has([role="radiogroup"]) button[type="submit"]');
   const btnCount = await submitButtons.count();
