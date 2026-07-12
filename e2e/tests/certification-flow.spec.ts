@@ -104,11 +104,11 @@ test('full certification journey: configure → questions → simulado → answe
 
   // ─── Step 4: Answer the simulado ──────────────────────────────────────────
 
+  // Wait for questions to load (getCertSimulado async fetch must complete)
+  await expect(page.locator('[role="radiogroup"]').first()).toBeVisible({ timeout: 10_000 });
+
   // HeroUI Radio: React Aria uses usePress on the label and useRadio on the input.
-  // Pointer events must target the visible label element (not the hidden input) to trigger
-  // React Aria's onValueChange. Use getBoundingClientRect on the label and fire real mouse
-  // events via page.mouse — this bypasses the z-index stacking that causes force-click to
-  // only hit the hidden input and not propagate through usePress.
+  // page.mouse.click at the label's bounding box fires real pointer events React Aria processes.
   const radioGroups = page.locator('[role="radiogroup"]');
   const groupCount = await radioGroups.count();
 

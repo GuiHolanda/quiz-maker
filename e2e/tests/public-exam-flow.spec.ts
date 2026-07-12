@@ -127,6 +127,9 @@ test('public exam full flow: configure -> questions -> simulado -> attempt -> re
   // Wait for the attempt page (URL contains /tentativa/)
   await page.waitForURL(/\/tentativa\//, { timeout: 15_000 });
 
+  // Wait for questions to load (async fetch must complete before radiogroups appear)
+  await expect(page.locator('[role="radiogroup"]').first()).toBeVisible({ timeout: 10_000 });
+
   // HeroUI Radio: use page.mouse.click at exact label coordinates to fire real pointer events.
   const radioGroups = page.locator('[role="radiogroup"]');
   const count = await radioGroups.count();
