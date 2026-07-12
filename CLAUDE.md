@@ -390,6 +390,106 @@ import bcrypt from 'bcryptjs';
 
 ---
 
+## Testes E2E (Playwright)
+
+### Infraestrutura
+
+| Ferramenta | Versão | Papel |
+|---|---|---|
+| `@playwright/test` | 1.x | Test runner + browser automation |
+| Chromium | (bundled) | Único browser testado |
+
+### Scripts
+
+```bash
+# Rodar headless (modo padrão)
+DATABASE_URL="file:/Users/<you>/.../myquiz/prisma/dev.db" npm run e2e
+
+# Interface gráfica (ver cada step em tempo real)
+DATABASE_URL="file:/Users/<you>/.../myquiz/prisma/dev.db" npm run e2e:ui
+
+# Com browser visível
+DATABASE_URL="file:/Users/<you>/.../myquiz/prisma/dev.db" npx playwright test --headed
+
+# Spec individual
+DATABASE_URL="..." npx playwright test certification-flow
+
+# Ver relatório do último run
+npx playwright show-report
+```
+
+### Estrutura de arquivos
+
+```
+e2e/
+  auth/
+    storageState.json        ← sessão salva (gitignored)
+  fixtures/
+    auth.fixture.ts          ← fixture com mocks das rotas OpenAI
+    mock-data.ts             ← questões estáticas retornadas pelos mocks
+  tests/
+    certification-flow.spec.ts   ← jornada completa de certificações
+    public-exam-flow.spec.ts     ← jornada completa de concursos
+  global-setup.ts            ← cria usuário tester, faz login, salva sessão
+  global-teardown.ts         ← deleta todos os dados do usuário E2E
+playwright.config.ts         ← raiz do projeto
+.env.test                    ← credenciais E2E (gitignored)
+.github/workflows/e2e.yml   ← CI no push para main
+```
+
+### Setup local obrigatório
+
+Criar `.env.test` na raiz do projeto (gitignored):
+
+```
+E2E_USER_EMAIL=e2e-test@certifiqueai.test
+E2E_USER_PASSWORD=E2ePassword123!
+```
+
+Instalar browsers uma vez:
+
+```bash
+npx playwright install chromium
+```
+
+### Como funciona
+
+- **`globalSetup`**: cria/reseta usuário `tester` (sem limite de quota) no banco dev, faz login pela UI, salva `storageState.json`. Todos os testes partem autenticados sem re-login.
+- **Mocks OpenAI**: `auth.fixture.ts` intercepta `/api/certification/question-generator`, `/api/public-exam/question-generator` e os endpoints `answers` — retorna questões estáticas de `mock-data.ts`. Nenhuma chamada real à OpenAI.
+- **`globalTeardown`**: deleta todos os dados do usuário E2E em ordem de dependência FK (simulados, tentativas, questões, certificações, concursos).
+- **DATABASE_URL**: o `globalSetup` e o `globalTeardown` precisam usar o mesmo banco que o `next dev` — passe o path absoluto como variável de ambiente.
+
+### Jornadas cobertas
+
+Ambas as specs cobrem o mesmo fluxo de 6 steps:
+
+1. Configurar (certification ou concurso) via wizard de 3 steps
+2. Gerar questões (mockado) → selecionar todas → salvar
+3. Criar simulado
+4. Responder todas as questões → finalizar
+5. Analisar resultado (score + botão "Tentar novamente")
+6. Iniciar nova tentativa → cancelar → voltar para lista
+
+### CI (GitHub Actions)
+
+`.github/workflows/e2e.yml` — trigger: `push` em `main`.
+
+Secrets necessários no repositório: `E2E_USER_EMAIL`, `E2E_USER_PASSWORD`, `NEXTAUTH_SECRET`.
+
+Em falha, o report HTML (screenshots + traces) é salvo como artifact em `playwright-report/`.
+
+### Nota técnica — HeroUI Radio
+
+O componente `Radio` do HeroUI v2 renderiza um `<input type="radio">` com `opacity: 0.0001` sobreposto ao label. Playwright não aceita `.click()` em elementos quasi-invisíveis. A solução correta é usar `dispatchEvent('click')` no input, que bypassa a verificação de visibilidade e dispara os handlers React corretamente:
+
+```typescript
+await group.locator('input').first().dispatchEvent('click');
+```
+
+Não use: `.click({ force: true })`, `.check({ force: true })`, `page.mouse.click()` com boundingBox, ou `page.evaluate` com eventos sintéticos — nenhum desses funciona com React Aria.
+
+---
+
 ## Plans and Quotas
 
 ### `UserPlan` type

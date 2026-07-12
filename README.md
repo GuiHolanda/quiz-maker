@@ -118,6 +118,79 @@ npm run dev
 | `npm run prisma:generate:prod` | Regenerate Prisma client (prod) |
 | `npm run db:seed:dev` | Seed dev database with sample data |
 | `npm run db:clear:dev` | Wipe all dev database records |
+| `npm test` | Run unit tests (Vitest) |
+| `npm run test:coverage` | Unit tests with coverage report |
+| `npm run e2e` | Run E2E tests (Playwright) |
+| `npm run e2e:ui` | Open Playwright UI — interactive test runner |
+| `npm run e2e:debug` | Run E2E tests with Playwright Inspector |
+
+---
+
+## Testing
+
+### Unit Tests (Vitest)
+
+Tests live in `tests/api/services/`. Each service has its own test file. Prisma is deep-mocked via `vitest-mock-extended`.
+
+```bash
+npm test                 # run all tests (CI-safe)
+npm run test:watch       # watch mode
+npm run test:coverage    # with coverage report
+```
+
+### E2E Tests (Playwright)
+
+Two spec files covering the full user journeys end-to-end against a real `next dev` server:
+
+| Spec | Journey |
+|---|---|
+| `e2e/tests/certification-flow.spec.ts` | Configure cert → generate questions → create simulado → answer → result → cancel |
+| `e2e/tests/public-exam-flow.spec.ts` | Configure concurso → generate questions → create simulado → answer → result → cancel |
+
+**Setup — one-time:**
+
+1. Create `.env.test` at the project root:
+
+```env
+E2E_USER_EMAIL=e2e-test@certifiqueai.test
+E2E_USER_PASSWORD=E2ePassword123!
+```
+
+2. Install Playwright browsers:
+
+```bash
+npx playwright install chromium
+```
+
+**Run:**
+
+```bash
+# Headless (CI-style)
+DATABASE_URL="file:/Users/<you>/path/to/myquiz/prisma/dev.db" npm run e2e
+
+# Interactive UI — watch each step execute
+DATABASE_URL="file:/Users/<you>/path/to/myquiz/prisma/dev.db" npm run e2e:ui
+
+# Headed browser (visible window)
+DATABASE_URL="file:/Users/<you>/path/to/myquiz/prisma/dev.db" npx playwright test --headed
+
+# Single spec
+DATABASE_URL="file:/Users/<you>/path/to/myquiz/prisma/dev.db" npx playwright test certification-flow
+```
+
+**View last run report:**
+
+```bash
+npx playwright show-report
+```
+
+**How it works:**
+
+- `globalSetup` creates/resets a `tester`-plan user in the dev DB, performs a real UI login, and saves the session cookie to `e2e/auth/storageState.json` — all subsequent tests start pre-authenticated.
+- OpenAI API routes (`question-generator`, `answers`) are intercepted by `page.route()` and return static fixtures — no API key consumed during tests.
+- `globalTeardown` deletes all data created by the E2E user after the suite completes.
+
+**CI:** The workflow at `.github/workflows/e2e.yml` runs on every push to `main`. Required GitHub Actions secrets: `E2E_USER_EMAIL`, `E2E_USER_PASSWORD`, `NEXTAUTH_SECRET`.
 
 ---
 
