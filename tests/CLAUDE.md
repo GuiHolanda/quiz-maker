@@ -1,0 +1,187 @@
+# Tests — Context
+
+Esta pasta contém todos os testes do CertifiqueAI, organizados em dois escopos independentes.
+
+```
+tests/
+  unit/          ← Vitest — lógica de negócio (services, sem browser)
+  e2e/           ← Playwright — jornadas completas do usuário (com browser)
+```
+
+---
+
+## Testes Unitários (`tests/unit/`)
+
+### Ferramenta
+
+Vitest 4.x — ambiente Node puro, sem browser.
+
+### Scripts
+
+```bash
+npm test                 # roda todos os testes (CI-safe)
+npm run test:watch       # modo watch
+npm run test:coverage    # com relatório de cobertura
+```
+
+### Estrutura
+
+```
+tests/unit/
+  api/
+    __mocks__/
+      prisma.ts              ← deep-mock global do Prisma (carregado via setupFiles)
+    schema-drift.test.ts     ← detecta divergência entre schema prod e banco dev
+    services/
+      *.service.test.ts      ← um arquivo por service
+```
+
+### Padrões
+
+**Mock do Prisma — services com constructor injection:**
+```ts
+import { prismaMock } from '../__mocks__/prisma';
+const service = new MyService(prismaMock as any);
+```
+
+**Mock do Prisma — services com prisma no módulo:**
+```ts
+import { prismaMock } from '../__mocks__/prisma';
+const service = new MyService(); // usa prismaMock automaticamente via setupFiles
+```
+
+**Mock de `$transaction` callback:**
+```ts
+prismaMock.$transaction.mockImplementation(async (fn) => fn(prismaMock));
+```
+
+**Mock de `$transaction` array:**
+```ts
+prismaMock.$transaction.mockResolvedValue([undefined, undefined]);
+```
+
+### O que testar
+
+- Lógica de negócio em `.service.ts` — validações, guards de ownership, cálculos
+- Caminhos de erro com `status` correto (`rejects.toMatchObject({ status: 403 })`)
+- Efeitos colaterais críticos (desnormalização, soft-deletes, etc.)
+
+### O que NÃO testar
+
+- Serviços externos com streaming (OpenAI, edital extractor)
+- Webhooks Stripe
+- Route handlers (integração — próxima iteração)
+- Componentes React
+
+---
+
+## Testes E2E (`tests/e2e/`)
+
+### Ferramenta
+
+Playwright 1.x — Chromium headless, servidor `next dev` iniciado automaticamente.
+
+### Scripts
+
+```bash
+# Headless (padrão)
+DATABASE_URL="file:/caminho/absoluto/prisma/dev.db" npm run e2e
+
+# Interface gráfica — ver cada step em tempo real
+DATABASE_URL="file:/caminho/absoluto/prisma/dev.db" npm run e2e:ui
+
+# Com browser visível
+DATABASE_URL="file:/caminho/absoluto/prisma/dev.db" npx playwright test --headed
+
+# Spec individual
+DATABASE_URL="..." npx playwright test certification-flow
+
+# Ver relatório do último run
+npx playwright show-report
+```
+
+### Estrutura
+
+```
+tests/e2e/
+  auth/
+    storageState.json        ← sessão salva (gitignored)
+  fixtures/
+    auth.fixture.ts          ← estende o test base com mocks das rotas OpenAI
+    mock-data.ts             ← questões estáticas retornadas pelos mocks
+  tests/
+    certification-flow.spec.ts   ← jornada completa de certificações (6 steps)
+    public-exam-flow.spec.ts     ← jornada completa de concursos (6 steps)
+  global-setup.ts            ← cria usuário tester, login UI, salva sessão
+  global-teardown.ts         ← deleta todos os dados do usuário E2E
+```
+
+### Setup local obrigatório
+
+1. Criar `.env.test` na raiz do projeto (gitignored):
+
+```
+E2E_USER_EMAIL=e2e-test@certifiqueai.test
+E2E_USER_PASSWORD=E2ePassword123!
+```
+
+2. Instalar browsers:
+
+```bash
+npx playwright install chromium
+```
+
+### Como funciona
+
+- **`globalSetup`**: cria/reseta usuário `tester` (sem limite de quota) no banco dev, faz login pela UI, salva `storageState.json`. Todos os testes partem autenticados sem re-login.
+- **Mocks OpenAI**: `auth.fixture.ts` intercepta `/api/certification/question-generator`, `/api/public-exam/question-generator` e endpoints `answers` via `page.route()` — retorna questões estáticas, sem custo de API.
+- **`globalTeardown`**: deleta todos os dados do usuário E2E em ordem FK-safe após o suite.
+- **DATABASE_URL**: `globalSetup`, `globalTeardown` e `next dev` precisam usar o mesmo banco. Passe caminho absoluto.
+- **Idempotência**: `globalSetup` limpa dados de runs anteriores antes de criar novos — pode rodar múltiplas vezes sem acumular dados.
+
+### Jornadas cobertas
+
+Ambos os specs cobrem 6 steps:
+
+1. Configurar (cert ou concurso) via wizard
+2. Gerar questões (mockado) → selecionar todas → salvar
+3. Criar simulado
+4. Responder todas as questões → finalizar
+5. Analisar resultado
+6. Iniciar nova tentativa → cancelar → voltar para lista
+
+### Como adicionar um novo spec
+
+1. Criar `tests/e2e/tests/<nome>.spec.ts`
+2. Importar o fixture: `import { test, expect } from '../fixtures/auth.fixture'`
+3. Usar `authedPage` como page: `async ({ authedPage: page }) => { ... }`
+4. Para mocks adicionais além dos já configurados no fixture, usar `page.route()` no próprio spec
+5. Dados criados pelo usuário E2E (`e2e-test@certifiqueai.test`) são limpos automaticamente pelo `globalTeardown`
+
+### Notas técnicas — HeroUI
+
+**Radio:** o input é `opacity: 0.0001`. Única abordagem que funciona:
+```typescript
+await group.locator('input').first().dispatchEvent('click');
+```
+Não usar: `.click({ force: true })`, `.check({ force: true })`, `page.mouse.click()` com boundingBox.
+
+**Select/Combobox:** o trigger é `button[data-slot="trigger"]`:
+```typescript
+await page.getByRole('button', { name: /label/i }).click();
+await expect(page.getByRole('option', { name: /opção/i })).toBeVisible({ timeout: 8_000 });
+await page.getByRole('option', { name: /opção/i }).click();
+```
+
+**i18n:** a UI padrão é PT-BR. Use regex cobrindo ambos os idiomas:
+```typescript
+page.getByRole('button', { name: /Finalizar Simulado|Finish Exam/i })
+```
+
+### CI
+
+`.github/workflows/e2e.yml` — trigger: push para `main`.
+
+Secrets: `E2E_USER_EMAIL`, `E2E_USER_PASSWORD`, `NEXTAUTH_SECRET`.
+
+Em falha, relatório HTML salvo como artifact (`playwright-report/`).
