@@ -127,21 +127,18 @@ test('public exam full flow: configure -> questions -> simulado -> attempt -> re
   // Wait for the attempt page (URL contains /tentativa/)
   await page.waitForURL(/\/tentativa\//, { timeout: 15_000 });
 
-  // Wait for questions to load (async fetch must complete before radiogroups appear)
+  // Wait for questions to load
   await expect(page.locator('[role="radiogroup"]').first()).toBeVisible({ timeout: 10_000 });
 
-  // HeroUI Radio: use page.mouse.click at exact label coordinates to fire real pointer events.
+  // Same dispatchEvent approach as certification spec
   const radioGroups = page.locator('[role="radiogroup"]');
   const count = await radioGroups.count();
 
   for (let i = 0; i < count; i++) {
     const group = radioGroups.nth(i);
-    const firstLabel = group.locator('label').first();
-    const box = await firstLabel.boundingBox();
-    if (box) {
-      await page.mouse.click(box.x + 10, box.y + box.height / 2);
-    }
-    await page.waitForTimeout(350);
+    const firstInput = group.locator('input').first();
+    await firstInput.dispatchEvent('click');
+    await page.waitForTimeout(400);
     const submitBtn = page.locator('form:has([role="radiogroup"])').nth(i).locator('button[type="submit"]');
     if (await submitBtn.isVisible({ timeout: 1_500 }).catch(() => false)) {
       await submitBtn.click();

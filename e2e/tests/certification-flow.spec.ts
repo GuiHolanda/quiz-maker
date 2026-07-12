@@ -104,24 +104,21 @@ test('full certification journey: configure → questions → simulado → answe
 
   // ─── Step 4: Answer the simulado ──────────────────────────────────────────
 
-  // Wait for questions to load (getCertSimulado async fetch must complete)
+  // Wait for questions to load
   await expect(page.locator('[role="radiogroup"]').first()).toBeVisible({ timeout: 10_000 });
 
-  // HeroUI Radio: React Aria uses usePress on the label and useRadio on the input.
-  // page.mouse.click at the label's bounding box fires real pointer events React Aria processes.
+  // HeroUI Radio v2: the hidden input has pointer-events:auto and covers the full label.
+  // React Aria usePress listens for pointer events on this input.
+  // Playwright's dispatchEvent fires the event directly, bypassing visibility checks,
+  // and triggers React's event handlers correctly.
   const radioGroups = page.locator('[role="radiogroup"]');
   const groupCount = await radioGroups.count();
 
   for (let i = 0; i < groupCount; i++) {
     const group = radioGroups.nth(i);
-    const firstLabel = group.locator('label').first();
-    const box = await firstLabel.boundingBox();
-    if (box) {
-      // Click at the left edge of the label (near the radio circle, before the text)
-      await page.mouse.click(box.x + 10, box.y + box.height / 2);
-    }
-    await page.waitForTimeout(350);
-    // The form wrapping this radiogroup; submit button appears once canSubmit is true
+    const firstInput = group.locator('input').first();
+    await firstInput.dispatchEvent('click');
+    await page.waitForTimeout(400);
     const submitBtn = page.locator('form:has([role="radiogroup"])').nth(i).locator('button[type="submit"]');
     if (await submitBtn.isVisible({ timeout: 1_500 }).catch(() => false)) {
       await submitBtn.click();
