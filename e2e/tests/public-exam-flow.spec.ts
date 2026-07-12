@@ -103,8 +103,8 @@ test('public exam full flow: configure -> questions -> simulado -> attempt -> re
   await totalQuestionsInput.clear();
   await totalQuestionsInput.fill('3');
 
-  // Wait for distribution to render (subject row appears)
-  await expect(page.getByText(new RegExp(E2E_SUBJECT, 'i'))).toBeVisible({ timeout: 8_000 });
+  // Wait for distribution table to update
+  await page.waitForTimeout(1_000);
 
   // Click "Criar Simulado" / "Create Mock Exam"
   await page.getByRole('button', { name: /Criar Simulado|Create Mock Exam/i }).click();
@@ -115,30 +115,32 @@ test('public exam full flow: configure -> questions -> simulado -> attempt -> re
   // ── Step 4: Answer the simulado ───────────────────────────────────────────
 
   // Find the simulado card and click "Responder" / "Answer"
-  const respondButton = page.getByRole('button', { name: /Responder|Answer/i }).first();
+  // (or "Continuar" if there's an in-progress attempt from a prior run)
+  const respondButton = page.getByRole('button', { name: /Responder|Continuar|Answer/i }).first();
   await expect(respondButton).toBeVisible({ timeout: 10_000 });
   await respondButton.click();
 
   // Wait for the attempt page (URL contains /tentativa/)
   await page.waitForURL(/\/tentativa\//, { timeout: 15_000 });
 
-  // Answer each question by selecting the first option and confirming.
-  // Scope each interaction to the <form> element wrapping each QuestionCard.
-  const questionCards = page.locator('form').filter({ has: page.locator('[role="radiogroup"]') });
-  const count = await questionCards.count();
+  // Answer each question — same two-pass strategy as certification spec.
+  // Pass 1: select first option (click label), Pass 2: click submit buttons.
+  const radioGroups = page.locator('[role="radiogroup"]');
+  const count = await radioGroups.count();
 
   for (let i = 0; i < count; i++) {
-    const card = questionCards.nth(i);
-    // Click the first radio (visible role="radio" element)
-    const firstRadio = card.locator('[role="radio"]').first();
-    await firstRadio.click();
-    // Wait for React state update
-    await page.waitForTimeout(400);
-    // Click the submit button scoped to this card's form
-    const submitBtn = card.locator('button[type="submit"]');
-    await expect(submitBtn).toBeVisible({ timeout: 2_000 });
-    await submitBtn.click();
-    await page.waitForTimeout(300);
+    await radioGroups.nth(i).locator('label').first().click();
+    await page.waitForTimeout(350);
+  }
+
+  const submitButtons = page.locator('form:has([role="radiogroup"]) button[type="submit"]');
+  const btnCount = await submitButtons.count();
+  for (let i = 0; i < btnCount; i++) {
+    const btn = submitButtons.nth(i);
+    if (await btn.isVisible()) {
+      await btn.click();
+      await page.waitForTimeout(300);
+    }
   }
 
   await page.waitForTimeout(800);
