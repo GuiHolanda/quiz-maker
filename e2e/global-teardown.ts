@@ -3,6 +3,9 @@ import dotenv from 'dotenv';
 import path from 'path';
 
 dotenv.config({ path: path.join(__dirname, '../.env.test') });
+if (!process.env.DATABASE_URL) {
+  dotenv.config({ path: path.join(__dirname, '../.env') });
+}
 
 const prisma = new PrismaClient({
   datasources: { db: { url: process.env.DATABASE_URL ?? 'file:./prisma/dev.db' } },
@@ -40,6 +43,7 @@ async function globalTeardown() {
   });
   await prisma.mockExam.deleteMany({ where: { userId } });
 
+  await prisma.explanation.deleteMany({ where: { answer: { question: { userId } } } });
   await prisma.answer.deleteMany({ where: { question: { userId } } });
   await prisma.option.deleteMany({ where: { question: { userId } } });
   await prisma.question.deleteMany({ where: { userId } });
@@ -49,6 +53,7 @@ async function globalTeardown() {
   });
   await prisma.certification.deleteMany({ where: { userId } });
 
+  await prisma.publicExamExplanation.deleteMany({ where: { answer: { question: { userId } } } });
   await prisma.publicExamAnswer.deleteMany({ where: { question: { userId } } });
   await prisma.publicExamOption.deleteMany({ where: { question: { userId } } });
   await prisma.publicExamQuestion.deleteMany({ where: { userId } });

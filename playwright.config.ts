@@ -13,7 +13,7 @@ export default defineConfig({
   workers: 1,
   reporter: [['html', { open: 'never' }], ['list']],
   use: {
-    baseURL: 'http://localhost:3001',
+    baseURL: 'http://localhost:3000',
     storageState: STORAGE_STATE,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
@@ -26,15 +26,14 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev -- --port 3001',
-    url: 'http://localhost:3001',
+    command: 'npm run dev',
+    url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     stdout: 'pipe',
     stderr: 'pipe',
     env: {
       DATABASE_URL: process.env.DATABASE_URL ?? 'file:./prisma/dev.db',
-      PORT: '3001',
     },
   },
 });
