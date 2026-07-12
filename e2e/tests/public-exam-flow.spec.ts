@@ -87,25 +87,24 @@ test('public exam full flow: configure -> questions -> simulado -> attempt -> re
   // Switch to "Novo Simulado" / "New Mock Exam" tab
   await page.getByRole('tab', { name: /Novo Simulado|New Mock Exam/i }).click();
 
-  // Wait for the exam select to be visible
-  // PublicExamManager renders a <Select name="publicExamName"> — use the name attr to find the trigger
-  const newSimuladoExamSelect = page.locator('button[data-slot="trigger"][name="publicExamName"]').first();
+  // Wait for NewSimuladoTab to finish loading (getPublicExamBrowseSummary must resolve
+  // before totalSavedQuestions is set and the form renders instead of the skeleton)
+  const newSimuladoExamSelect = page.getByRole('button', { name: /Selecione um Concurso|Select.*exam/i }).first();
   await expect(newSimuladoExamSelect).toBeVisible({ timeout: 10_000 });
   await newSimuladoExamSelect.click();
   // Wait for options to appear
   await expect(page.getByRole('option', { name: new RegExp(E2E_PUBLIC_EXAM_NAME, 'i') })).toBeVisible({ timeout: 8_000 });
   await page.getByRole('option', { name: new RegExp(E2E_PUBLIC_EXAM_NAME, 'i') }).click();
-
-  // Wait for selection to register — distribution table appears after exam is selected
+  // Give React time to run onSelectionChange and update selectedPublicExam in context
   await page.waitForTimeout(500);
 
   // Set total questions to 3
   const totalQuestionsInput = page.getByLabel(/Total de quest[oõ]es|Total questions/i);
   await totalQuestionsInput.clear();
   await totalQuestionsInput.fill('3');
-
-  // Wait for distribution table to update
-  await page.waitForTimeout(1_000);
+  // React useEffect that computes distribution watches [selectedPublicExam, totalQuestions]
+  // Give it time to run and render the distribution rows
+  await page.waitForTimeout(800);
 
   // Click "Criar Simulado" / "Create Mock Exam"
   await page.getByRole('button', { name: /Criar Simulado|Create Mock Exam/i }).click();
@@ -124,26 +123,17 @@ test('public exam full flow: configure -> questions -> simulado -> attempt -> re
   // Wait for the attempt page (URL contains /tentativa/)
   await page.waitForURL(/\/tentativa\//, { timeout: 15_000 });
 
-  // Answer each question — same evaluate-based approach as certification spec
-  await page.evaluate(() => {
-    const radioGroups = document.querySelectorAll('[role="radiogroup"]');
-    radioGroups.forEach((group) => {
-      const firstInput = group.querySelector('input[type="radio"]');
-      if (firstInput) {
-        firstInput.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-        firstInput.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-    });
-  });
+  // Answer each question — .check({ force: true }) on hidden input triggers React's native change event
+  const radioGroups = page.locator('[role="radiogroup"]');
+  const count = await radioGroups.count();
 
-  await page.waitForTimeout(600);
-
-  const submitButtons = page.locator('form:has([role="radiogroup"]) button[type="submit"]');
-  const btnCount = await submitButtons.count();
-  for (let i = 0; i < btnCount; i++) {
-    const btn = submitButtons.nth(i);
-    if (await btn.isVisible()) {
-      await btn.click();
+  for (let i = 0; i < count; i++) {
+    const group = radioGroups.nth(i);
+    await group.locator('input[type="radio"]').first().check({ force: true });
+    await page.waitForTimeout(350);
+    const submitBtn = page.locator('form:has([role="radiogroup"])').nth(i).locator('button[type="submit"]');
+    if (await submitBtn.isVisible({ timeout: 1_500 }).catch(() => false)) {
+      await submitBtn.click();
       await page.waitForTimeout(300);
     }
   }

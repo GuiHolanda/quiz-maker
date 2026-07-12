@@ -104,32 +104,22 @@ test('full certification journey: configure → questions → simulado → answe
 
   // ─── Step 4: Answer the simulado ──────────────────────────────────────────
 
-  // HeroUI Radio hides the actual <input type="radio"> with opacity-[0.0001].
-  // React Aria handles selection via pointer events on the wrapper element.
-  // The most reliable approach: dispatch a native click event on each hidden radio input
-  // via page.evaluate, which bypasses Playwright's actionability checks and directly
-  // triggers React Aria's onChange → onValueChange → our applySelection handler.
+  // HeroUI Radio: the hidden <input type="radio"> (opacity-[0.0001], z-[1], covers the full label)
+  // is the actual event target. Playwright's .check({ force: true }) fires the native change event
+  // that React (via useRadioGroupState) listens to — this is the only reliable way to trigger
+  // onValueChange in a headless browser without pointer coordinates.
+  const radioGroups = page.locator('[role="radiogroup"]');
+  const groupCount = await radioGroups.count();
 
-  await page.evaluate(() => {
-    const radioGroups = document.querySelectorAll('[role="radiogroup"]');
-    radioGroups.forEach((group) => {
-      const firstInput = group.querySelector('input[type="radio"]');
-      if (firstInput) {
-        firstInput.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-        firstInput.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-    });
-  });
-
-  await page.waitForTimeout(600);
-
-  // After selecting, button[type="submit"] appears in each form — click them all
-  const submitButtons = page.locator('form:has([role="radiogroup"]) button[type="submit"]');
-  const btnCount = await submitButtons.count();
-  for (let i = 0; i < btnCount; i++) {
-    const btn = submitButtons.nth(i);
-    if (await btn.isVisible()) {
-      await btn.click();
+  for (let i = 0; i < groupCount; i++) {
+    const group = radioGroups.nth(i);
+    // .check() on the hidden input triggers the native change event React processes
+    await group.locator('input[type="radio"]').first().check({ force: true });
+    await page.waitForTimeout(350);
+    // The form wrapping this radiogroup; submit button appears once canSubmit is true
+    const submitBtn = page.locator('form:has([role="radiogroup"])').nth(i).locator('button[type="submit"]');
+    if (await submitBtn.isVisible({ timeout: 1_500 }).catch(() => false)) {
+      await submitBtn.click();
       await page.waitForTimeout(300);
     }
   }
