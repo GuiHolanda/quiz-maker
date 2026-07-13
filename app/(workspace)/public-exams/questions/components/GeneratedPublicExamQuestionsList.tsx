@@ -1,4 +1,5 @@
 import React from 'react';
+import { Alert } from '@heroui/alert';
 import { Button } from '@heroui/button';
 import { Checkbox } from '@heroui/checkbox';
 import { Chip } from '@heroui/chip';
@@ -86,14 +87,23 @@ export function GeneratedPublicExamQuestionsList({
   return (
     <div className="flex flex-col gap-4 mt-8">
       <div className="flex items-end justify-between">
-        <div className="flex items-center gap-4 font-bold text-sm">
-          <Checkbox className="ml-auto" classNames={{label: 'text-sm'}} isSelected={allSelected} onChange={(e) => onToggleSelectAll(e.target.checked)}>
-            {t('common.selectAll')}
-          </Checkbox>
-          {selectedCount > 0 && (
-            <Chip color="primary" size="sm" variant="flat">
-              <strong>{t('common.selectedQuestions', { count: selectedCountLabel })}</strong>
-            </Chip>
+        <div className="flex items-center font-bold text-sm">
+          {!isLoadingMore && (
+            <>
+              <Checkbox
+                className="ml-auto mr-4"
+                classNames={{ label: 'text-sm' }}
+                isSelected={allSelected}
+                onChange={(e) => onToggleSelectAll(e.target.checked)}
+              >
+                {t('common.selectAll')}
+              </Checkbox>
+              {selectedCount > 0 && (
+                <Chip color="primary" size="sm" variant="flat">
+                  <strong>{t('common.selectedQuestions', { count: selectedCountLabel })}</strong>
+                </Chip>
+              )}
+            </>
           )}
         </div>
         <ItemsPerPageSelect isDisabled={isLoadingMore} value={questionsPerPage} onChange={onItemsPerPageChange} />
@@ -119,14 +129,24 @@ export function GeneratedPublicExamQuestionsList({
       <div className="flex gap-2 items-center flex-wrap">
         <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
         {isLoadingMore && remainingCount > 0 && (
-          <Chip color="default" size="sm" startContent={<Spinner size="sm" />} variant="flat">
-            {t('generate.loadingMoreQuestions', { count: remainingCount })}
-          </Chip>
+          <Alert
+            color="warning"
+            variant="flat"
+            title={t('generate.loadingMoreQuestions', { count: remainingCount })}
+            description={t('generate.loadingMoreQuestionsHint')}
+            endContent={<Spinner size="sm" />}
+            classNames={{ base: 'w-full mt-2', title: 'text-xs font-semibold', description: 'text-xs font-semibold' }}
+          />
         )}
-        <Button className={`${buttonStyles.dangerFlat} ml-auto`} size="sm" onPress={onDiscard}>
+        <Button className={`${buttonStyles.dangerFlat} ml-auto`} size="sm" onPress={onDiscard} hidden={isLoadingMore}>
           {selectedCount > 0 ? t('common.discardSelected') : t('common.discardAll')}
         </Button>
-        <Button className={buttonStyles.primarySm} hidden={selectedCount === 0} size="sm" onPress={onSaveSelected}>
+        <Button
+          className={buttonStyles.primarySm}
+          hidden={selectedCount === 0 || isLoadingMore}
+          size="sm"
+          onPress={onSaveSelected}
+        >
           {t('common.saveSelected')}
         </Button>
       </div>
