@@ -48,6 +48,11 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
     }
   };
 
+  const handleDiscard = () => {
+    draft.reset();
+    onBackToLibrary();
+  };
+
   if (draft.step === 1) {
     return (
       <Step1BasicInfo
@@ -56,6 +61,7 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
         title={draft.title}
         onBack={onBackToLibrary}
         onCodeChange={draft.setCode}
+        onDiscard={handleDiscard}
         onNext={() => draft.setStep(2)}
         onProviderChange={draft.setProvider}
         onTitleChange={draft.setTitle}
@@ -72,9 +78,9 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
         topics={draft.topics}
         onAddEmptyTopic={draft.addEmptyTopic}
         onBack={() => draft.setStep(1)}
+        onDiscard={handleDiscard}
         onNext={() => draft.setStep(3)}
         onRemoveTopic={draft.removeTopic}
-        onSaveDraft={onBackToLibrary}
         onUpdateTopic={draft.updateTopic}
       />
     );
@@ -88,6 +94,7 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
       title={draft.title}
       topics={draft.topics}
       onBack={() => draft.setStep(2)}
+      onDiscard={handleDiscard}
       onSave={handleSave}
     />
   );

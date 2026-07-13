@@ -22,7 +22,7 @@ interface Step2DefineTopicsProps {
   readonly onRemoveTopic: (index: number) => void;
   readonly onBack: () => void;
   readonly onNext: () => void;
-  readonly onSaveDraft: () => void;
+  readonly onDiscard: () => void;
 }
 
 export function Step2DefineTopics({
@@ -35,7 +35,7 @@ export function Step2DefineTopics({
   onRemoveTopic,
   onBack,
   onNext,
-  onSaveDraft,
+  onDiscard,
 }: Step2DefineTopicsProps) {
   const { t } = useTranslation();
   const totalWeightage = topics.reduce((sum, topic) => sum + Number(topic.maxQuestions), 0);
@@ -168,16 +168,12 @@ export function Step2DefineTopics({
             })}
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 px-6 py-5 border-t border-default-200">
-            <Button
-              className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 rounded-lg transition-colors duration-200 text-sm font-semibold"
-              variant="flat"
-              onPress={onSaveDraft}
-            >
-              {t('certification.saveAsDraft')}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-6 py-5 border-t border-default-200">
+            <Button className={buttonStyles.dangerFlat} onPress={onDiscard}>
+              {t('certification.discardDraft')}
             </Button>
             <Button
-              className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
+              className={buttonStyles.primary}
               isDisabled={!allTopicsNamed || !isWeightageValid || !isMinMaxValid}
               onPress={onNext}
             >

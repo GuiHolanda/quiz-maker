@@ -23,7 +23,7 @@ interface Step2DefineSubjectsProps {
   readonly onRemoveSubject: (index: number) => void;
   readonly onBack: () => void;
   readonly onNext: () => void;
-  readonly onSaveDraft: () => void;
+  readonly onDiscard: () => void;
 }
 
 export function Step2DefineSubjects({
@@ -37,7 +37,7 @@ export function Step2DefineSubjects({
   onRemoveSubject,
   onBack,
   onNext,
-  onSaveDraft,
+  onDiscard,
 }: Step2DefineSubjectsProps) {
   const { t } = useTranslation();
   const totalWeightage = subjects.reduce((sum, subject) => sum + Number(subject.maxQuestions), 0);
@@ -174,16 +174,12 @@ export function Step2DefineSubjects({
             })}
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 px-6 py-5 border-t border-default-200">
-            <Button
-              className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 rounded-lg transition-colors duration-200 text-sm font-semibold"
-              variant="flat"
-              onPress={onSaveDraft}
-            >
-              {t('concurso.saveAsDraft')}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-6 py-5 border-t border-default-200">
+            <Button className={buttonStyles.dangerFlat} onPress={onDiscard}>
+              {t('concurso.discardDraft')}
             </Button>
             <Button
-              className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
+              className={buttonStyles.primary}
               isDisabled={!allSubjectsNamed || !isWeightageValid || !isMinMaxValid}
               onPress={onNext}
             >

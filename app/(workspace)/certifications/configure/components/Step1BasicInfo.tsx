@@ -20,6 +20,7 @@ interface Step1BasicInfoProps {
   readonly onProviderChange: (v: string) => void;
   readonly onBack: () => void;
   readonly onNext: () => void;
+  readonly onDiscard: () => void;
 }
 
 export function Step1BasicInfo({
@@ -31,6 +32,7 @@ export function Step1BasicInfo({
   onProviderChange,
   onBack,
   onNext,
+  onDiscard,
 }: Step1BasicInfoProps) {
   const { t } = useTranslation();
 
@@ -43,21 +45,12 @@ export function Step1BasicInfo({
     onNext();
   };
 
-  const handleSaveDraft = () => {
-    notify.success(
-      t('toast.success'),
-      t('toast.savedSuccessfully', { title: title || t('certification.certificationTitlePlaceholder') })
-    );
-  };
-
   return (
     <div className="flex flex-col gap-6">
       <StepHeader currentStep={1} onBack={onBack} />
 
-      {/* Form card */}
       <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Certification Name — full width */}
           <div className="col-span-full">
             <Input
               label={t('certification.certificationTitle')}
@@ -68,7 +61,6 @@ export function Step1BasicInfo({
             />
           </div>
 
-          {/* Provider */}
           <Input
             label={t('certification.provider')}
             placeholder={t('certification.providerPlaceholder')}
@@ -77,7 +69,6 @@ export function Step1BasicInfo({
             {...inputProperties.input}
           />
 
-          {/* Exam Code */}
           <Input
             label={t('certification.certificationCode')}
             placeholder={t('certification.certificationCodePlaceholder')}
@@ -86,7 +77,6 @@ export function Step1BasicInfo({
             {...inputProperties.input}
           />
 
-          {/* Tip box — full width */}
           <div className="col-span-full flex items-start gap-4 p-4 bg-background border border-default-200 rounded-xl">
             <div className="flex-shrink-0 w-10 h-10 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-center">
               <FontAwesomeIcon className="text-primary text-base" icon={faCircleInfo} />
@@ -98,40 +88,19 @@ export function Step1BasicInfo({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-between pt-4 border-t border-default-200">
-          <Button
-            className={buttonStyles.flat}
-            variant="flat"
-            onPress={handleSaveDraft}
-          >
-            {t('certification.saveAsDraft')}
+          <Button className={buttonStyles.dangerFlat} onPress={onDiscard}>
+            {t('certification.discardDraft')}
           </Button>
           <Button
-            className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200 flex items-center gap-2"
+            className={buttonStyles.primary}
+            endContent={<FontAwesomeIcon icon={faArrowRight} />}
             onPress={handleNext}
           >
             {t('certification.nextDefineTopics')}
-            <FontAwesomeIcon icon={faArrowRight} />
           </Button>
         </div>
       </div>
-
-      {/* Contextual helper cards */}
-      {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-content1 border border-default-200 rounded-xl p-4 flex flex-col gap-1">
-          <span className="text-xs font-semibold text-primary uppercase tracking-[0.2em]">{t('certification.validationLabel')}</span>
-          <p className="text-xs text-default-500">{t('certification.validationDesc')}</p>
-        </div>
-        <div className="bg-content1 border border-default-200 rounded-xl p-4 flex flex-col gap-1">
-          <span className="text-xs font-semibold text-secondary uppercase tracking-[0.2em]">{t('certification.automationLabel')}</span>
-          <p className="text-xs text-default-500">{t('certification.automationDesc')}</p>
-        </div>
-        <div className="bg-content1 border border-default-200 rounded-xl p-4 flex flex-col gap-1">
-          <span className="text-xs font-semibold text-warning uppercase tracking-[0.2em]">{t('certification.privacyLabel')}</span>
-          <p className="text-xs text-default-500">{t('certification.privacyDesc')}</p>
-        </div>
-      </div> */}
     </div>
   );
 }

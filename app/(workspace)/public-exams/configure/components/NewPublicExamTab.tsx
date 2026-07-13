@@ -57,6 +57,11 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
     }
   };
 
+  const handleDiscard = () => {
+    draft.reset();
+    onBackToLibrary();
+  };
+
   if (draft.step === 1) {
     return (
       <Step1BasicInfo
@@ -65,6 +70,7 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
         role={draft.role}
         year={draft.year}
         onBack={onBackToLibrary}
+        onDiscard={handleDiscard}
         onExamBoardChange={draft.setExamBoardName}
         onNameChange={draft.setName}
         onNext={() => draft.setStep(2)}
@@ -84,9 +90,9 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
         year={draft.year}
         onAddEmptySubject={draft.addEmptySubject}
         onBack={() => draft.setStep(1)}
+        onDiscard={handleDiscard}
         onNext={() => draft.setStep(3)}
         onRemoveSubject={draft.removeSubject}
-        onSaveDraft={onBackToLibrary}
         onUpdateSubject={draft.updateSubject}
       />
     );
@@ -101,6 +107,7 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
       subjects={draft.subjects}
       year={draft.year}
       onBack={() => draft.setStep(2)}
+      onDiscard={handleDiscard}
       onSave={handleSave}
     />
   );
