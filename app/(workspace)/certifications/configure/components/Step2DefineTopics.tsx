@@ -99,61 +99,73 @@ export function Step2DefineTopics({
             {topics.length === 0 && (
               <p className="text-sm text-default-400 text-center py-10">{t('certification.noTopics')}</p>
             )}
-            {topics.map((topic, index) => (
-              <div key={index} className="bg-content1 rounded-lg flex flex-col sm:flex-row gap-4 sm:items-end">
-                <div className="w-1/2">
-                  <Input
-                    {...inputProperties.input}
-                    label={t('certification.domainName')}
-                    placeholder={t('certification.topicNamePlaceholder')}
-                    value={topic.name}
-                    onChange={(e) => onUpdateTopic(index, e.target.value, topic.minQuestions, topic.maxQuestions)}
-                  />
+            {topics.map((topic, index) => {
+              const hasMinMaxError = topic.minQuestions > topic.maxQuestions;
+
+              return (
+                <div
+                  key={index}
+                  className={`rounded-lg flex flex-col gap-3 ${hasMinMaxError ? 'border border-danger/50 bg-danger/5 p-3' : 'bg-content1'}`}
+                >
+                  <div className="flex flex-col sm:flex-row gap-4 sm:items-end">
+                    <div className="w-1/2">
+                      <Input
+                        {...inputProperties.input}
+                        label={t('certification.domainName')}
+                        placeholder={t('certification.topicNamePlaceholder')}
+                        value={topic.name}
+                        onChange={(e) => onUpdateTopic(index, e.target.value, topic.minQuestions, topic.maxQuestions)}
+                      />
+                    </div>
+                    <div className="w-1/4 flex flex-col gap-1">
+                      <Input
+                        {...inputProperties.input}
+                        endContent={<span className="text-default-400 text-sm">%</span>}
+                        label={t('certification.minQuestions')}
+                        max={100}
+                        min={0}
+                        type="number"
+                        value={String(topic.minQuestions)}
+                        onChange={(e) => {
+                          const newMin = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+                          onUpdateTopic(index, topic.name, newMin, topic.maxQuestions);
+                        }}
+                      />
+                    </div>
+                    <div className="w-1/4 flex flex-col gap-1">
+                      <Input
+                        {...inputProperties.input}
+                        endContent={<span className="text-default-400 text-sm">%</span>}
+                        label={t('certification.maxQuestions')}
+                        max={100}
+                        min={0}
+                        type="number"
+                        value={String(topic.maxQuestions)}
+                        onChange={(e) => {
+                          const newMax = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+                          onUpdateTopic(index, topic.name, topic.minQuestions, newMax);
+                        }}
+                      />
+                    </div>
+                    <div className="shrink-0 pb-1">
+                      <Button
+                        isIconOnly
+                        aria-label={t('common.remove')}
+                        className={buttonStyles.iconOnly.danger}
+                        size="sm"
+                        variant="light"
+                        onPress={() => onRemoveTopic(index)}
+                      >
+                        <FontAwesomeIcon className="text-xs" icon={faTrash} />
+                      </Button>
+                    </div>
+                  </div>
+                  {hasMinMaxError && (
+                    <p className="text-xs text-danger font-medium">{t('certification.minGreaterThanMax')}</p>
+                  )}
                 </div>
-                <div className="w-1/4 flex flex-col gap-1">
-                  <Input
-                    {...inputProperties.input}
-                    endContent={<span className="text-default-400 text-sm">%</span>}
-                    label={t('certification.minQuestions')}
-                    max={100}
-                    min={0}
-                    type="number"
-                    value={String(topic.minQuestions)}
-                    onChange={(e) => {
-                      const newMin = Math.min(100, Math.max(0, Number(e.target.value) || 0));
-                      onUpdateTopic(index, topic.name, newMin, topic.maxQuestions);
-                    }}
-                  />
-                </div>
-                <div className="w-1/4 flex flex-col gap-1">
-                  <Input
-                    {...inputProperties.input}
-                    endContent={<span className="text-default-400 text-sm">%</span>}
-                    label={t('certification.maxQuestions')}
-                    max={100}
-                    min={0}
-                    type="number"
-                    value={String(topic.maxQuestions)}
-                    onChange={(e) => {
-                      const newMax = Math.min(100, Math.max(0, Number(e.target.value) || 0));
-                      onUpdateTopic(index, topic.name, topic.minQuestions, newMax);
-                    }}
-                  />
-                </div>
-                <div className="shrink-0 pb-1">
-                  <Button
-                    isIconOnly
-                    aria-label={t('common.remove')}
-                    className={buttonStyles.iconOnly.danger}
-                    size="sm"
-                    variant="light"
-                    onPress={() => onRemoveTopic(index)}
-                  >
-                    <FontAwesomeIcon className="text-xs" icon={faTrash} />
-                  </Button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 px-6 py-5 border-t border-default-200">
