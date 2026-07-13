@@ -1,4 +1,7 @@
 'use client';
+import { useState } from 'react';
+import { Button } from '@heroui/button';
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
 
 import { Step1BasicInfo } from './Step1BasicInfo';
 import { Step2DefineTopics } from './Step2DefineTopics';
@@ -10,6 +13,7 @@ import { useCertificationDraft } from '@/features/hooks/useCertificationDraft.ho
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface NewCertificationTabProps {
   readonly onBackToLibrary: () => void;
@@ -20,6 +24,7 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
   const { loading, request } = useRequest(saveCertification);
   const draft = useCertificationDraft();
   const { t } = useTranslation();
+  const [isDiscardOpen, setIsDiscardOpen] = useState(false);
 
   const handleSave = async () => {
     const label = draft.title.trim();
@@ -48,20 +53,21 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
     }
   };
 
-  const handleDiscard = () => {
+  const handleConfirmDiscard = () => {
     draft.reset();
+    setIsDiscardOpen(false);
     onBackToLibrary();
   };
 
   if (draft.step === 1) {
-    return (
+    return renderStep(
       <Step1BasicInfo
         code={draft.code}
         provider={draft.provider}
         title={draft.title}
         onBack={onBackToLibrary}
         onCodeChange={draft.setCode}
-        onDiscard={handleDiscard}
+        onDiscard={() => setIsDiscardOpen(true)}
         onNext={() => draft.setStep(2)}
         onProviderChange={draft.setProvider}
         onTitleChange={draft.setTitle}
@@ -70,7 +76,7 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
   }
 
   if (draft.step === 2) {
-    return (
+    return renderStep(
       <Step2DefineTopics
         code={draft.code}
         provider={draft.provider}
@@ -78,7 +84,7 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
         topics={draft.topics}
         onAddEmptyTopic={draft.addEmptyTopic}
         onBack={() => draft.setStep(1)}
-        onDiscard={handleDiscard}
+        onDiscard={() => setIsDiscardOpen(true)}
         onNext={() => draft.setStep(3)}
         onRemoveTopic={draft.removeTopic}
         onUpdateTopic={draft.updateTopic}
@@ -86,7 +92,7 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
     );
   }
 
-  return (
+  return renderStep(
     <Step3Review
       code={draft.code}
       isLoading={loading}
@@ -94,8 +100,32 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
       title={draft.title}
       topics={draft.topics}
       onBack={() => draft.setStep(2)}
-      onDiscard={handleDiscard}
+      onDiscard={() => setIsDiscardOpen(true)}
       onSave={handleSave}
     />
   );
+
+  function renderStep(step: React.ReactNode) {
+    return (
+      <>
+        {step}
+        <Modal isOpen={isDiscardOpen} size="sm" onClose={() => setIsDiscardOpen(false)}>
+          <ModalContent>
+            <ModalHeader>{t('certification.discardDraftTitle')}</ModalHeader>
+            <ModalBody>
+              <p className="text-sm text-default-600">{t('certification.discardDraftBody')}</p>
+            </ModalBody>
+            <ModalFooter>
+              <Button className={buttonStyles.secondary} variant="bordered" onPress={() => setIsDiscardOpen(false)}>
+                {t('common.cancel')}
+              </Button>
+              <Button className={buttonStyles.danger} onPress={handleConfirmDiscard}>
+                {t('certification.discardDraft')}
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      </>
+    );
+  }
 }
