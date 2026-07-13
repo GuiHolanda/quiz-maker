@@ -41,6 +41,7 @@ export function Step2DefineTopics({
   const totalWeightage = topics.reduce((sum, topic) => sum + Number(topic.maxQuestions), 0);
   const isWeightageValid = totalWeightage === 100;
   const allTopicsNamed = topics.length > 0 && topics.every((t) => t.name.trim().length > 0);
+  const isMinMaxValid = topics.every((t) => t.minQuestions <= t.maxQuestions);
 
   return (
     <div className="flex flex-col gap-6">
@@ -118,14 +119,10 @@ export function Step2DefineTopics({
                     min={0}
                     type="number"
                     value={String(topic.minQuestions)}
-                    onChange={(e) =>
-                      onUpdateTopic(
-                        index,
-                        topic.name,
-                        Math.min(100, Math.max(0, Number(e.target.value) || 0)),
-                        topic.maxQuestions
-                      )
-                    }
+                    onChange={(e) => {
+                      const newMin = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+                      onUpdateTopic(index, topic.name, newMin, Math.max(newMin, topic.maxQuestions));
+                    }}
                   />
                 </div>
                 <div className="w-1/4 flex flex-col gap-1">
@@ -137,14 +134,10 @@ export function Step2DefineTopics({
                     min={0}
                     type="number"
                     value={String(topic.maxQuestions)}
-                    onChange={(e) =>
-                      onUpdateTopic(
-                        index,
-                        topic.name,
-                        topic.minQuestions,
-                        Math.min(100, Math.max(0, Number(e.target.value) || 0))
-                      )
-                    }
+                    onChange={(e) => {
+                      const newMax = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+                      onUpdateTopic(index, topic.name, Math.min(topic.minQuestions, newMax), newMax);
+                    }}
                   />
                 </div>
                 <div className="shrink-0 pb-1">
@@ -173,7 +166,7 @@ export function Step2DefineTopics({
             </Button>
             <Button
               className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
-              isDisabled={!allTopicsNamed || !isWeightageValid}
+              isDisabled={!allTopicsNamed || !isWeightageValid || !isMinMaxValid}
               onPress={onNext}
             >
               {t('certification.finalizeCertification')}

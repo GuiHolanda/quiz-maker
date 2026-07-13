@@ -30,7 +30,7 @@ export function StepHeader({ currentStep, onBack }: StepHeaderProps) {
     <div className="flex flex-col gap-4">
       {onBack && (
         <button
-          className="flex items-center gap-2 text-xs font-semibold text-primary w-fit hover:opacity-80 transition-opacity"
+          className="flex items-center gap-2 text-xs font-semibold text-primary w-fit hover:opacity-80 transition-opacity cursor-pointer"
           onClick={onBack}
         >
           <FontAwesomeIcon className="text-sm" icon={faArrowLeft} />

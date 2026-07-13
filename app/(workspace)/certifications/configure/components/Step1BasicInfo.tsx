@@ -6,6 +6,7 @@ import { Input } from '@heroui/input';
 
 import { StepHeader } from './StepHeader';
 
+import { buttonStyles } from '@/config/constants/buttonStyles';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
@@ -100,7 +101,7 @@ export function Step1BasicInfo({
         {/* Footer */}
         <div className="flex items-center justify-between pt-4 border-t border-default-200">
           <Button
-            className="bg-transparent text-default-400 hover:text-foreground text-xs font-semibold transition-colors"
+            className={buttonStyles.flat}
             variant="flat"
             onPress={handleSaveDraft}
           >
