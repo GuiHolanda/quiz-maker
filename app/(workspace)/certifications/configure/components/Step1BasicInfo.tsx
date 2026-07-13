@@ -35,6 +35,7 @@ export function Step1BasicInfo({
   onDiscard,
 }: Step1BasicInfoProps) {
   const { t } = useTranslation();
+  const hasDraft = !!(title || code || provider);
 
   const handleNext = () => {
     if (!title.trim() || !code.trim()) {
@@ -89,9 +90,11 @@ export function Step1BasicInfo({
         </div>
 
         <div className="flex items-center justify-between pt-4 border-t border-default-200">
-          <Button className={buttonStyles.dangerFlat} onPress={onDiscard}>
-            {t('certification.discardDraft')}
-          </Button>
+          {hasDraft && (
+            <Button className={buttonStyles.dangerFlat} onPress={onDiscard}>
+              {t('certification.discardDraft')}
+            </Button>
+          )}
           <Button
             className={buttonStyles.primary}
             endContent={<FontAwesomeIcon icon={faArrowRight} />}

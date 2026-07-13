@@ -42,6 +42,7 @@ export function Step2DefineTopics({
   const isWeightageValid = totalWeightage === 100;
   const allTopicsNamed = topics.length > 0 && topics.every((t) => t.name.trim().length > 0);
   const isMinMaxValid = topics.every((t) => t.minQuestions <= t.maxQuestions);
+  const hasDraft = !!(title || code || provider || topics.length > 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -169,9 +170,11 @@ export function Step2DefineTopics({
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-6 py-5 border-t border-default-200">
-            <Button className={buttonStyles.dangerFlat} onPress={onDiscard}>
-              {t('certification.discardDraft')}
-            </Button>
+            {hasDraft && (
+              <Button className={buttonStyles.dangerFlat} onPress={onDiscard}>
+                {t('certification.discardDraft')}
+              </Button>
+            )}
             <Button
               className={buttonStyles.primary}
               isDisabled={!allTopicsNamed || !isWeightageValid || !isMinMaxValid}

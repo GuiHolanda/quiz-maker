@@ -44,6 +44,7 @@ export function Step2DefineSubjects({
   const isWeightageValid = totalWeightage === 100;
   const allSubjectsNamed = subjects.length > 0 && subjects.every((s) => s.name.trim().length > 0);
   const isMinMaxValid = subjects.every((s) => s.minQuestions <= s.maxQuestions);
+  const hasDraft = !!(name || examBoardName || role || year || subjects.length > 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -175,9 +176,11 @@ export function Step2DefineSubjects({
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-6 py-5 border-t border-default-200">
-            <Button className={buttonStyles.dangerFlat} onPress={onDiscard}>
-              {t('concurso.discardDraft')}
-            </Button>
+            {hasDraft && (
+              <Button className={buttonStyles.dangerFlat} onPress={onDiscard}>
+                {t('concurso.discardDraft')}
+              </Button>
+            )}
             <Button
               className={buttonStyles.primary}
               isDisabled={!allSubjectsNamed || !isWeightageValid || !isMinMaxValid}

@@ -34,6 +34,7 @@ export function Step3Review({
   onDiscard,
 }: Step3ReviewProps) {
   const { t } = useTranslation();
+  const hasDraft = !!(name || examBoardName || role || year || subjects.length > 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -108,9 +109,11 @@ export function Step3Review({
       </div>
 
       <div className="flex items-center justify-between gap-4 pt-6 border-t border-default-200">
-        <Button className={buttonStyles.dangerFlat} isDisabled={isLoading} onPress={onDiscard}>
-          {t('concurso.discardDraft')}
-        </Button>
+        {hasDraft && (
+          <Button className={buttonStyles.dangerFlat} isDisabled={isLoading} onPress={onDiscard}>
+            {t('concurso.discardDraft')}
+          </Button>
+        )}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <p className="text-xs text-default-400 text-center sm:text-left">{t('concurso.readyToDeploy')}</p>
           <Button

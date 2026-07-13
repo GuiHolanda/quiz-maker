@@ -45,6 +45,7 @@ export function Step1BasicInfo({
 }: Step1BasicInfoProps) {
   const { t } = useTranslation();
   const [boards, setBoards] = useState<ExamBoard[]>([]);
+  const hasDraft = !!(name || examBoardName || role || year);
 
   useEffect(() => {
     getExamBoards()
@@ -119,9 +120,11 @@ export function Step1BasicInfo({
         </div>
 
         <div className="flex items-center justify-between pt-4 border-t border-default-200">
-          <Button className={buttonStyles.dangerFlat} onPress={onDiscard}>
-            {t('concurso.discardDraft')}
-          </Button>
+          {hasDraft && (
+            <Button className={buttonStyles.dangerFlat} onPress={onDiscard}>
+              {t('concurso.discardDraft')}
+            </Button>
+          )}
           <Button
             className={buttonStyles.primary}
             endContent={<FontAwesomeIcon icon={faArrowRight} />}

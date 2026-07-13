@@ -23,6 +23,7 @@ interface Step3ReviewProps {
 
 export function Step3Review({ title, code, provider, topics, isLoading, onBack, onSave, onDiscard }: Step3ReviewProps) {
   const { t } = useTranslation();
+  const hasDraft = !!(title || code || provider || topics.length > 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -93,9 +94,11 @@ export function Step3Review({ title, code, provider, topics, isLoading, onBack, 
       </div>
 
       <div className="flex items-center justify-between gap-4 pt-6 border-t border-default-200">
-        <Button className={buttonStyles.dangerFlat} isDisabled={isLoading} onPress={onDiscard}>
-          {t('certification.discardDraft')}
-        </Button>
+        {hasDraft && (
+          <Button className={buttonStyles.dangerFlat} isDisabled={isLoading} onPress={onDiscard}>
+            {t('certification.discardDraft')}
+          </Button>
+        )}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <p className="text-xs text-default-400 text-center sm:text-left">{t('certification.readyToDeploy')}</p>
           <Button
