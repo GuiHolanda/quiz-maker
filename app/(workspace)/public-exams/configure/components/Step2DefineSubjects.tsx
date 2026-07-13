@@ -127,7 +127,7 @@ export function Step2DefineSubjects({
                     value={String(subject.minQuestions)}
                     onChange={(e) => {
                       const newMin = Math.min(100, Math.max(0, Number(e.target.value) || 0));
-                      onUpdateSubject(index, subject.name, newMin, Math.max(newMin, subject.maxQuestions));
+                      onUpdateSubject(index, subject.name, newMin, subject.maxQuestions);
                     }}
                   />
                 </div>
@@ -142,7 +142,7 @@ export function Step2DefineSubjects({
                     value={String(subject.maxQuestions)}
                     onChange={(e) => {
                       const newMax = Math.min(100, Math.max(0, Number(e.target.value) || 0));
-                      onUpdateSubject(index, subject.name, Math.min(subject.minQuestions, newMax), newMax);
+                      onUpdateSubject(index, subject.name, subject.minQuestions, newMax);
                     }}
                   />
                 </div>
