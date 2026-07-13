@@ -11,6 +11,7 @@ import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
 import { StepHeader } from './StepHeader';
 
 import { inputProperties } from '@/config/constants/inputStyles';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { getExamBoards } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
@@ -121,7 +122,7 @@ export function Step1BasicInfo({
 
         <div className="flex items-center justify-between pt-4 border-t border-default-200">
           <Button
-            className="bg-transparent text-default-400 hover:text-foreground text-xs font-semibold transition-colors"
+            className={buttonStyles.flat}
             variant="flat"
             onPress={handleSaveDraft}
           >

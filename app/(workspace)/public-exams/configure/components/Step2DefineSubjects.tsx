@@ -43,6 +43,7 @@ export function Step2DefineSubjects({
   const totalWeightage = subjects.reduce((sum, subject) => sum + Number(subject.maxQuestions), 0);
   const isWeightageValid = totalWeightage === 100;
   const allSubjectsNamed = subjects.length > 0 && subjects.every((s) => s.name.trim().length > 0);
+  const isMinMaxValid = subjects.every((s) => s.minQuestions <= s.maxQuestions);
 
   return (
     <div className="flex flex-col gap-6">
@@ -124,14 +125,10 @@ export function Step2DefineSubjects({
                     min={0}
                     type="number"
                     value={String(subject.minQuestions)}
-                    onChange={(e) =>
-                      onUpdateSubject(
-                        index,
-                        subject.name,
-                        Math.min(100, Math.max(0, Number(e.target.value) || 0)),
-                        subject.maxQuestions
-                      )
-                    }
+                    onChange={(e) => {
+                      const newMin = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+                      onUpdateSubject(index, subject.name, newMin, Math.max(newMin, subject.maxQuestions));
+                    }}
                   />
                 </div>
                 <div className="w-1/4 flex flex-col gap-1">
@@ -143,14 +140,10 @@ export function Step2DefineSubjects({
                     min={0}
                     type="number"
                     value={String(subject.maxQuestions)}
-                    onChange={(e) =>
-                      onUpdateSubject(
-                        index,
-                        subject.name,
-                        subject.minQuestions,
-                        Math.min(100, Math.max(0, Number(e.target.value) || 0))
-                      )
-                    }
+                    onChange={(e) => {
+                      const newMax = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+                      onUpdateSubject(index, subject.name, Math.min(subject.minQuestions, newMax), newMax);
+                    }}
                   />
                 </div>
                 <div className="shrink-0 pb-1">
@@ -179,7 +172,7 @@ export function Step2DefineSubjects({
             </Button>
             <Button
               className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
-              isDisabled={!allSubjectsNamed || !isWeightageValid}
+              isDisabled={!allSubjectsNamed || !isWeightageValid || !isMinMaxValid}
               onPress={onNext}
             >
               {t('concurso.finalizePublicExam')}

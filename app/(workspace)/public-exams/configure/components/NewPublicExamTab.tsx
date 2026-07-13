@@ -1,5 +1,4 @@
 'use client';
-import { useState } from 'react';
 
 import { Step1BasicInfo } from './Step1BasicInfo';
 import { Step2DefineSubjects } from './Step2DefineSubjects';
@@ -21,7 +20,6 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
   const { loading, request } = useRequest(savePublicExam);
   const draft = usePublicExamDraft();
   const { t } = useTranslation();
-  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const handleSave = async () => {
     const name = draft.name.trim();
@@ -54,13 +52,12 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
     if (saved) {
       addPublicExam(saved);
       draft.reset();
-      setStep(1);
       notify.success(t('toast.success'), t('toast.savedSuccessfully', { title: name }));
       onBackToLibrary();
     }
   };
 
-  if (step === 1) {
+  if (draft.step === 1) {
     return (
       <Step1BasicInfo
         examBoardName={draft.examBoardName}
@@ -70,14 +67,14 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
         onBack={onBackToLibrary}
         onExamBoardChange={draft.setExamBoardName}
         onNameChange={draft.setName}
-        onNext={() => setStep(2)}
+        onNext={() => draft.setStep(2)}
         onRoleChange={draft.setRole}
         onYearChange={draft.setYear}
       />
     );
   }
 
-  if (step === 2) {
+  if (draft.step === 2) {
     return (
       <Step2DefineSubjects
         examBoardName={draft.examBoardName}
@@ -86,8 +83,8 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
         subjects={draft.subjects}
         year={draft.year}
         onAddEmptySubject={draft.addEmptySubject}
-        onBack={() => setStep(1)}
-        onNext={() => setStep(3)}
+        onBack={() => draft.setStep(1)}
+        onNext={() => draft.setStep(3)}
         onRemoveSubject={draft.removeSubject}
         onSaveDraft={onBackToLibrary}
         onUpdateSubject={draft.updateSubject}
@@ -103,7 +100,7 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
       role={draft.role}
       subjects={draft.subjects}
       year={draft.year}
-      onBack={() => setStep(2)}
+      onBack={() => draft.setStep(2)}
       onSave={handleSave}
     />
   );
