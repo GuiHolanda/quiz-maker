@@ -5,16 +5,30 @@ import { Input } from '@heroui/input';
 import { Select, SelectItem } from '@heroui/select';
 import { Button } from '@heroui/button';
 
-import { getAdminUsers, updateAdminUser } from '@/features/connectors';
+import { getAdminUsers, updateAdminUser, getExchangeRate } from '@/features/connectors';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
 import type { UserAdminRow, UserPlan, AdminUsersResponse } from '@/shared/types';
 import { inputProperties } from '@/config/constants/inputStyles';
+import { GPT_54_PRICING_USD, USD_TO_BRL_FALLBACK } from '@/config/constants';
 
 const PLAN_OPTIONS: UserPlan[] = ['free', 'pro', 'pro_ai', 'tester', 'admin'];
 const STATUS_OPTIONS = ['active', 'canceled'];
 const PAGE_SIZE = 20;
+
+const brlFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+  minimumFractionDigits: 4,
+});
+
+function computeCostBRL(inputTokens: number, outputTokens: number, usdToBrl: number): number {
+  const usd =
+    (inputTokens * GPT_54_PRICING_USD.inputPerMillion) / 1_000_000 +
+    (outputTokens * GPT_54_PRICING_USD.outputPerMillion) / 1_000_000;
+  return usd * usdToBrl;
+}
 
 export default function AdminUsersPage() {
   const { t } = useTranslation();
@@ -25,6 +39,7 @@ export default function AdminUsersPage() {
   const [page, setPage] = useState(1);
   const [pendingEdits, setPendingEdits] = useState<Record<string, { plan?: UserPlan; overrideMode: 'none' | 'infinite' | 'value'; overrideValue: string }>>({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
+  const [usdToBrl, setUsdToBrl] = useState<number>(USD_TO_BRL_FALLBACK);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -42,6 +57,12 @@ export default function AdminUsersPage() {
   }, [page, search, planFilter, statusFilter, t]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
+
+  useEffect(() => {
+    getExchangeRate()
+      .then(({ rate }) => setUsdToBrl(rate))
+      .catch(() => {});
+  }, []);
 
   function getEdit(user: UserAdminRow) {
     if (pendingEdits[user.id]) return pendingEdits[user.id];
@@ -126,6 +147,9 @@ export default function AdminUsersPage() {
               <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Usuário</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Plano</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Uso do Período</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Tokens</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Custo Total</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Custo/questão</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Override</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Assinatura</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Ações</th>
@@ -184,6 +208,12 @@ export default function AdminUsersPage() {
           </div>
         </td>
         <td className="px-4 py-3">
+          {renderTokensCell(user)}
+        </td>
+        <td className="px-4 py-3">
+          {renderCostCell(user)}
+        </td>
+        <td className="px-4 py-3">
           {renderOverrideCell(user, edit)}
         </td>
         <td className="px-4 py-3">
@@ -211,8 +241,57 @@ export default function AdminUsersPage() {
     );
   }
 
-  function renderOverrideCell(user: UserAdminRow, edit: ReturnType<typeof getEdit>) {
+  function renderTokensCell(user: UserAdminRow) {
+    const total = user.totalInputTokens + user.totalOutputTokens;
+    const avg = user.totalQuestionsGeneratedAllTime > 0
+      ? Math.round(total / user.totalQuestionsGeneratedAllTime)
+      : null;
+
+    if (total === 0) {
+      return <span className="text-xs text-default-400">—</span>;
+    }
+
     return (
+      <div className="flex flex-col gap-0.5">
+        <span className="text-xs font-semibold text-foreground">{total.toLocaleString('pt-BR')} tokens</span>
+        <span className="text-xs text-default-400">
+          {avg !== null ? `${avg.toLocaleString('pt-BR')}/questão` : '—'}
+        </span>
+        <span className="text-xs text-default-400">
+          {user.totalInputTokens.toLocaleString('pt-BR')} in / {user.totalOutputTokens.toLocaleString('pt-BR')} out
+        </span>
+      </div>
+    );
+  }
+
+  function renderCostCell(user: UserAdminRow) {
+    const totalTokens = user.totalInputTokens + user.totalOutputTokens;
+    if (totalTokens === 0) {
+      return <span className="text-xs text-default-400">—</span>;
+    }
+    const totalCostBRL = computeCostBRL(user.totalInputTokens, user.totalOutputTokens, usdToBrl);
+    const costPerQBRL = user.totalQuestionsGeneratedAllTime > 0
+      ? totalCostBRL / user.totalQuestionsGeneratedAllTime
+      : null;
+    const rateLabel = new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(usdToBrl);
+
+    return (
+      <div className="flex flex-col gap-0.5">
+        <span className="text-xs font-semibold text-foreground">{brlFormatter.format(totalCostBRL)}</span>
+        <span className="text-xs text-default-400">
+          {costPerQBRL !== null ? `${brlFormatter.format(costPerQBRL)}/questão` : '—'}
+        </span>
+        <span className="text-xs text-default-400">Cotação: {rateLabel}/USD</span>
+      </div>
+    );
+  }
+
+  function renderOverrideCell(user: UserAdminRow, edit: ReturnType<typeof getEdit>) {    return (
       <div className="flex flex-col gap-1">
         <Select
           {...inputProperties.select}

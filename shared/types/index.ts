@@ -158,6 +158,7 @@ export interface UsageStats {
   plan: UserPlan;
   questionsUsed: number;
   questionsLimit: number;
+  questionsSavedInLibrary: number;
   certificationsUsed: number;
   certificationsLimit: number;
   publicExamsUsed: number;
@@ -406,6 +407,9 @@ export interface UserAdminRow {
   periodStartDate: string;
   subscriptionStatus: string | null;
   createdAt: string;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalQuestionsGeneratedAllTime: number;
 }
 
 export interface AdminOverviewStats {
@@ -414,6 +418,10 @@ export interface AdminOverviewStats {
   activeSubscriptions: number;
   totalQuestionsGenerated: number;
   avgUsagePercent: number;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  avgTokensPerQuestion: number;
+  tokensByPlan: Record<UserPlan, { inputTokens: number; outputTokens: number; questionsGenerated: number }>;
 }
 
 export interface AdminAuditEntry {
