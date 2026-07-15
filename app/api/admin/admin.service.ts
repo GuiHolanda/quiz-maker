@@ -182,21 +182,30 @@ export class AdminService {
       },
     });
 
-    await prisma.adminAuditLog.create({
-      data: {
-        adminId,
-        targetId,
-        action: data.plan && data.plan !== before.plan ? 'change_plan' : 'set_quota_override',
-        before: JSON.stringify({ plan: before.plan, customQuotaOverride: before.customQuotaOverride }),
-        after: JSON.stringify({ plan: updated.plan, customQuotaOverride: updated.customQuotaOverride }),
-      },
-    });
+    const [, tokenTotals] = await Promise.all([
+      prisma.adminAuditLog.create({
+        data: {
+          adminId,
+          targetId,
+          action: data.plan && data.plan !== before.plan ? 'change_plan' : 'set_quota_override',
+          before: JSON.stringify({ plan: before.plan, customQuotaOverride: before.customQuotaOverride }),
+          after: JSON.stringify({ plan: updated.plan, customQuotaOverride: updated.customQuotaOverride }),
+        },
+      }),
+      prisma.usageLog.aggregate({
+        where: { userId: targetId },
+        _sum: { inputTokens: true, outputTokens: true, count: true },
+      }),
+    ]);
 
     return {
       ...updated,
       plan: updated.plan as UserPlan,
       periodStartDate: updated.periodStartDate.toISOString(),
       createdAt: updated.createdAt.toISOString(),
+      totalInputTokens: tokenTotals._sum.inputTokens ?? 0,
+      totalOutputTokens: tokenTotals._sum.outputTokens ?? 0,
+      totalQuestionsGeneratedAllTime: tokenTotals._sum.count ?? 0,
     };
   }
 
