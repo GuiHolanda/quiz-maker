@@ -6,7 +6,7 @@ import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import { Divider } from '@heroui/divider';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faXmark, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faXmark, faCheck, faRotateLeft } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
@@ -42,6 +42,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
   const [name, setName] = useState('');
   const [totalQuestions, setTotalQuestions] = useState('');
   const [distribution, setDistribution] = useState<LocalSubjectEntry[]>([]);
+  const [originalDistribution, setOriginalDistribution] = useState<LocalSubjectEntry[]>([]);
   const [totalSavedQuestions, setTotalSavedQuestions] = useState<number | null>(null);
   const [browseSummary, setBrowseSummary] = useState<PublicExamBrowseSummary | null>(null);
   const [availableCounts, setAvailableCounts] = useState<Record<string, number>>({});
@@ -104,6 +105,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
     if (suggested.length > 0) suggested[suggested.length - 1].questionCount += total - sum;
 
     setDistribution(suggested);
+    setOriginalDistribution(suggested.map((entry) => ({ ...entry })));
     setShowAddForm(false);
   }, [selectedPublicExam, totalQuestions]);
 
@@ -134,6 +136,17 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
   const distributedTotal = distribution.reduce((acc, s) => acc + s.questionCount, 0);
   const total = Number(totalQuestions) || 0;
   const isDistributionValid = distribution.length > 0 && distributedTotal === total;
+  const isDistributionModified =
+    distribution.length !== originalDistribution.length ||
+    distribution.some((entry, i) => {
+      const original = originalDistribution[i];
+      return !original || original.subjectName !== entry.subjectName || original.questionCount !== entry.questionCount;
+    });
+
+  function handleResetDistribution() {
+    setDistribution(originalDistribution.map((entry) => ({ ...entry })));
+    setShowAddForm(false);
+  }
 
   function handleSubjectChange(subjectName: string, value: string) {
     setDistribution((prev) =>
@@ -225,9 +238,21 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
           <Divider />
           <div className="flex items-center justify-between mt-4">
             <p className="text-xs font-semibold">{t('simulado.distribution')}</p>
-            <span className={`text-xs font-medium ${isDistributionValid ? 'text-success' : 'text-danger'}`}>
-              {t('simulado.distributed', { distributed: distributedTotal, total })}
-            </span>
+            <div className="flex items-center gap-3">
+              {isDistributionModified && (
+                <Button
+                  className={buttonStyles.flat}
+                  size="sm"
+                  onPress={handleResetDistribution}
+                >
+                  <FontAwesomeIcon icon={faRotateLeft} />
+                  {t('simulado.resetDistribution')}
+                </Button>
+              )}
+              <span className={`text-xs font-medium ${isDistributionValid ? 'text-success' : 'text-danger'}`}>
+                {t('simulado.distributed', { distributed: distributedTotal, total })}
+              </span>
+            </div>
           </div>
         </div>
         <div className="bg-content1 border border-default-200 rounded-xl overflow-hidden">

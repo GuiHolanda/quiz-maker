@@ -7,7 +7,7 @@ import { Input } from '@heroui/input';
 import { Select, SelectItem } from '@heroui/select';
 import { Divider } from '@heroui/divider';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faXmark, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faXmark, faCheck, faRotateLeft } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useCertSimuladosContext } from '@/features/providers/certSimulados.provider';
@@ -42,6 +42,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
   const [totalSavedQuestions, setTotalSavedQuestions] = useState<number | null>(null);
   const [browseSummary, setBrowseSummary] = useState<BrowseSummary | null>(null);
   const [availableCounts, setAvailableCounts] = useState<Record<string, number>>({});
+  const [originalDistribution, setOriginalDistribution] = useState<LocalTopicEntry[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newTopicName, setNewTopicName] = useState('');
   const [newTopicCount, setNewTopicCount] = useState('');
@@ -101,6 +102,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
     if (suggested.length > 0) suggested[suggested.length - 1].questionCount += total - sum;
 
     setDistribution(suggested);
+    setOriginalDistribution(suggested.map((entry) => ({ ...entry })));
     setShowAddForm(false);
   }, [selectedCert, totalQuestions]);
 
@@ -131,6 +133,12 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
   const distributedTotal = distribution.reduce((acc, s) => acc + s.questionCount, 0);
   const total = Number(totalQuestions) || 0;
   const isDistributionValid = distribution.length > 0 && distributedTotal === total;
+  const isDistributionModified =
+    distribution.length !== originalDistribution.length ||
+    distribution.some((entry, i) => {
+      const original = originalDistribution[i];
+      return !original || original.topicName !== entry.topicName || original.questionCount !== entry.questionCount;
+    });
 
   async function handleCreate() {
     if (!selectedCert) return;
@@ -148,6 +156,11 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
       );
       onCreated();
     }
+  }
+
+  function handleResetDistribution() {
+    setDistribution(originalDistribution.map((entry) => ({ ...entry })));
+    setShowAddForm(false);
   }
 
   function handleTopicChange(topicName: string, value: string) {
@@ -235,9 +248,17 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
           <Divider />
           <div className="flex items-center justify-between mt-4">
             <p className="text-xs font-semibold">{t('simulado.distributionByTopic')}</p>
-            <span className={`text-xs font-medium ${isDistributionValid ? 'text-success' : 'text-danger'}`}>
-              {t('simulado.distributed', { distributed: distributedTotal, total })}
-            </span>
+            <div className="flex items-center gap-3">
+              {isDistributionModified && (
+                <Button className={buttonStyles.flat} size="sm" onPress={handleResetDistribution}>
+                  <FontAwesomeIcon icon={faRotateLeft} />
+                  {t('simulado.resetDistribution')}
+                </Button>
+              )}
+              <span className={`text-xs font-medium ${isDistributionValid ? 'text-success' : 'text-danger'}`}>
+                {t('simulado.distributed', { distributed: distributedTotal, total })}
+              </span>
+            </div>
           </div>
         </div>
         <div className="bg-content1 border border-default-200 rounded-xl overflow-hidden">
@@ -265,7 +286,11 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
 
                         localStorage.setItem(
                           CERTIFICATIONS_LOCAL_STORAGE_KEY,
-                          JSON.stringify({ ...current, selectedCertification: selectedCert, selectedTopics: [s.topicName] })
+                          JSON.stringify({
+                            ...current,
+                            selectedCertification: selectedCert,
+                            selectedTopics: [s.topicName],
+                          })
                         );
                       } catch {}
                       router.push('/certifications/questions?tab=generate');
