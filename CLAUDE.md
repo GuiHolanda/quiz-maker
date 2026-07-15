@@ -94,6 +94,37 @@ The Axios instance uses `baseURL: '/api'` (relative URL). **Never import it in s
 - No JSDoc or multi-line comment blocks
 - UI built exclusively with **[HeroUI](https://heroui.com/docs/react/components)** — always look up available components there before building custom ones
 
+### Código declarativo e legível
+
+Prefira código que lê como uma descrição do que está acontecendo, não como uma sequência de operações.
+
+**Regras práticas:**
+- Em callbacks de array (`map`, `filter`, `some`, `reduce`), extraia variáveis locais para dar nome ao que está sendo acessado antes de operar sobre ele:
+  ```ts
+  // ❌ difícil de ler — referências repetidas e indexadas
+  distribution.some((s, i) => !originalDistribution[i] || originalDistribution[i].questionCount !== s.questionCount)
+
+  // ✅ legível — nome revela a intenção
+  distribution.some((entry, i) => {
+    const original = originalDistribution[i];
+    return !original || original.questionCount !== entry.questionCount;
+  })
+  ```
+- Prefira nomes descritivos como `entry`, `original`, `current` a `s`, `a`, `x` em callbacks que não são triviais (uma única expressão)
+- Condicionais booleanas com múltiplas cláusulas devem usar variáveis intermediárias nomeadas quando a intenção não é imediatamente óbvia:
+  ```ts
+  // ❌
+  const isDistributionModified = distribution.length !== originalDistribution.length || distribution.some((s, i) => !originalDistribution[i] || ...)
+
+  // ✅
+  const isDistributionModified =
+    distribution.length !== originalDistribution.length ||
+    distribution.some((entry, i) => {
+      const original = originalDistribution[i];
+      return !original || original.topicName !== entry.topicName || original.questionCount !== entry.questionCount;
+    });
+  ```
+
 ### Renderer functions
 
 Use **renderer functions** (regular functions declared inside the component, after the `return`) to break large JSX into named, scannable pieces — without creating new files or lifting state.
