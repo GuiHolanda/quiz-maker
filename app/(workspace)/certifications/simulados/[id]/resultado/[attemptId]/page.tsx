@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { Accordion, AccordionItem } from '@heroui/accordion';
+import { Progress } from '@heroui/progress';
+import { Skeleton } from '@heroui/skeleton';
 
 import { ResultQuestionCard } from '@/shared/components/ResultQuestionCard';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -16,7 +18,6 @@ import {
 } from '@/features/connectors';
 import { CertSimuladoResult, SimuladoResultQuestion } from '@/shared/types';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
-import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 
 function scoreColor(percent: number): 'success' | 'warning' | 'danger' {
@@ -74,9 +75,46 @@ export default function CertSimuladoResultadoPage() {
   if (!result) {
     return (
       <PageHeader subtitle="" title={t('simulado.scoreTitle')}>
-        <div className="flex flex-col gap-6">
-          <SkeletonListLoader count={1} height="h-48" />
-          <SkeletonListLoader count={4} height="h-14" />
+        <div className="flex flex-col gap-4">
+          <Progress
+            isIndeterminate
+            aria-label={t('simulado.calculating')}
+            classNames={{ label: 'text-xs font-extrabold' }}
+            color="primary"
+            label={t('simulado.calculating')}
+            size="sm"
+          />
+          <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6">
+            <Skeleton className="h-3 w-24 rounded-lg" />
+            <div className="flex flex-col sm:flex-row gap-6 items-start">
+              <div className="flex flex-col items-center gap-2 shrink-0">
+                <Skeleton className="h-9 w-20 rounded-lg" />
+                <Skeleton className="h-4 w-12 rounded-lg" />
+              </div>
+              <div className="hidden sm:block self-stretch border-r border-default-200" />
+              <div className="grid grid-cols-2 gap-x-8 gap-y-3 flex-1">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex flex-col gap-1">
+                    <Skeleton className="h-3 w-16 rounded-lg" />
+                    <Skeleton className="h-4 w-20 rounded-lg" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="border-t border-default-200 pt-4 flex gap-3">
+              <Skeleton className="h-9 w-32 rounded-lg" />
+              <Skeleton className="h-9 w-32 rounded-lg" />
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-5 w-36 rounded-lg" />
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="bg-content1 border border-default-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+                <Skeleton className="h-4 flex-1 max-w-48 rounded-lg" />
+                <Skeleton className="h-6 w-20 rounded-lg" />
+              </div>
+            ))}
+          </div>
         </div>
       </PageHeader>
     );
