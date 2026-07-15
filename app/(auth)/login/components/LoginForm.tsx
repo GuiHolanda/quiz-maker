@@ -26,6 +26,14 @@ export function LoginForm() {
   const isJustVerified = searchParams.get('verified') === '1';
   const isPasswordReset = searchParams.get('reset') === 'success';
 
+  const oauthErrorParam = searchParams.get('error');
+  const oauthError =
+    oauthErrorParam === 'OAuthAccountNotLinked'
+      ? t('login.oauthAccountNotLinked')
+      : oauthErrorParam
+        ? t('login.oauthError')
+        : null;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -81,6 +89,13 @@ export function LoginForm() {
         <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-success/10 border border-success/20 mb-4">
           <span className="w-1.5 h-1.5 rounded-full bg-success flex-shrink-0" />
           <p className="text-success text-xs">{t('login.passwordResetSuccess')}</p>
+        </div>
+      )}
+
+      {oauthError && (
+        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/20 mb-4">
+          <span className="w-1.5 h-1.5 rounded-full bg-danger flex-shrink-0" />
+          <p className="text-danger text-xs">{oauthError}</p>
         </div>
       )}
 
