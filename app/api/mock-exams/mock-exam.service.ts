@@ -366,10 +366,20 @@ export class MockExamService {
 
     if (!attempt) throw Object.assign(new Error('Tentativa não encontrada'), { status: 404 });
 
-    const mockExamQuestions = await prisma.mockExamQuestion.findMany({
+    let mockExamQuestions = await prisma.mockExamQuestion.findMany({
       where: { mockExamId },
       include: { publicExamQuestion: { include: { answer: true } } },
     });
+
+    const hasMissing = mockExamQuestions.some((mq) => !mq.publicExamQuestion.answer);
+
+    if (hasMissing) {
+      await this.ensureAnswers(mockExamId, userId);
+      mockExamQuestions = await prisma.mockExamQuestion.findMany({
+        where: { mockExamId },
+        include: { publicExamQuestion: { include: { answer: true } } },
+      });
+    }
 
     const answersMap = new Map(answers.map((a) => [a.mockExamQuestionId, a.selectedOptions]));
     let score = 0;

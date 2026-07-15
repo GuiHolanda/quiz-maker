@@ -280,10 +280,20 @@ export class CertificationSimuladosService {
 
     if (!attempt) throw Object.assign(new Error('Tentativa não encontrada'), { status: 404 });
 
-    const simuladoQuestions = await prisma.certificationSimuladoQuestion.findMany({
+    let simuladoQuestions = await prisma.certificationSimuladoQuestion.findMany({
       where: { simuladoId },
       include: { question: { include: { answer: true } } },
     });
+
+    const hasMissing = simuladoQuestions.some((sq) => !sq.question.answer);
+
+    if (hasMissing) {
+      await this.ensureAnswers(simuladoId, userId);
+      simuladoQuestions = await prisma.certificationSimuladoQuestion.findMany({
+        where: { simuladoId },
+        include: { question: { include: { answer: true } } },
+      });
+    }
 
     const answersMap = new Map(answers.map((a) => [a.simuladoQuestionId, a.selectedOptions]));
     let score = 0;

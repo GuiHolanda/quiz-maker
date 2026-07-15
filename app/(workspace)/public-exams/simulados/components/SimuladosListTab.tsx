@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@heroui/modal';
+import { Progress } from '@heroui/progress';
 import { useRouter } from 'next/navigation';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -50,7 +51,8 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
         router.push(`/public-exams/simulados/${mockExam.id}/tentativa/${mockExam.openAttemptId}`);
         return;
       }
-      await ensureMockExamAnswers(mockExam.id);
+      // fire-and-forget: se falhar, finishAttempt garante os answers antes de calcular o score
+      ensureMockExamAnswers(mockExam.id).catch(() => {});
       const attempt = await startMockExamAttempt(mockExam.id);
 
       router.push(`/public-exams/simulados/${mockExam.id}/tentativa/${attempt.id}`);
@@ -103,9 +105,9 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
 
       <Modal isOpen={!!deleteTarget} onClose={() => !isDeleting && setDeleteTarget(null)}>
         <ModalContent>
-          <ModalHeader>{t('simulado.deleteConfirm')}</ModalHeader>
+          <ModalHeader>{t('simulado.deleteTitle')}</ModalHeader>
           <ModalBody>
-            <p className="text-default-500">{deleteTarget?.name}</p>
+            <p className="text-default-500 text-sm">{t('simulado.deleteConfirm', { name: deleteTarget?.name ?? deleteTarget?.publicExam?.name ?? '' })}</p>
           </ModalBody>
           <ModalFooter>
             <Button className={buttonStyles.secondary} isDisabled={isDeleting} variant="bordered" onPress={() => setDeleteTarget(null)}>
@@ -127,13 +129,23 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
   function renderCard(m: MockExamListItem) {
     const isAnswered = m.attemptCount > 0;
     const isInProgress = m.openAttemptId != null;
+    const isStarting = startingId === m.id;
     const attempts =
       m.attemptCount === 1
         ? t('simulado.attempt', { count: m.attemptCount })
         : t('simulado.attempts', { count: m.attemptCount });
 
     return (
-      <div key={m.id} className="bg-content1 border border-default-200 rounded-xl p-4 flex flex-col">
+      <div
+        key={m.id}
+        className={`bg-content1 border rounded-xl p-4 flex flex-col transition-all duration-300 ${
+          isStarting
+            ? 'border-primary shadow-[0_0_0_1px] shadow-primary/20'
+            : startingId !== null
+              ? 'border-default-200 opacity-40'
+              : 'border-default-200'
+        }`}
+      >
         <div className="flex items-start justify-between gap-2">
           <p className="font-semibold">{m.name ?? m.publicExam.name}</p>
 
@@ -153,31 +165,38 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
             {m.bestScore !== null && ` · ${t('simulado.bestScore', { score: m.bestScore, total: m.totalQuestions })}`}
           </p>
         </div>
-        <div className="flex flex-wrap justify-between mt-4">
-          <div className="flex gap-2">
-            <Button
-              className={buttonStyles.primarySm}
-              isDisabled={startingId !== null}
-              isLoading={startingId === m.id}
-              size="sm"
-              onPress={() => handleStart(m)}
-            >
-              {isInProgress ? t('simulado.continue') : isAnswered ? t('simulado.tryAgain') : t('simulado.respond')}
-            </Button>
-            {isAnswered && (
-              <Button className={buttonStyles.secondary} size="sm" variant="bordered" onPress={() => setHistoryTarget(m)}>
-                {t('simulado.viewResults')}
-              </Button>
-            )}
+
+        {isStarting ? (
+          <div className="mt-6 flex flex-col gap-2">
+            <p className="text-xs text-primary font-medium">{t('simulado.preparingAttempt')}</p>
+            <Progress isIndeterminate aria-label={t('simulado.preparingAttempt')} color="primary" size="sm" />
           </div>
-          <Button
-            className="p-1.5 text-default-400 hover:text-danger hover:bg-danger/10 transition-colors"
-            variant="light"
-            onPress={() => setDeleteTarget(m)}
-          >
-            <FontAwesomeIcon className="w-5 h-5" icon={faTrash} />
-          </Button>
-        </div>
+        ) : (
+          <div className="flex flex-wrap justify-between mt-4">
+            <div className="flex gap-2">
+              <Button
+                className={buttonStyles.primarySm}
+                isDisabled={startingId !== null}
+                size="sm"
+                onPress={() => handleStart(m)}
+              >
+                {isInProgress ? t('simulado.continue') : isAnswered ? t('simulado.tryAgain') : t('simulado.respond')}
+              </Button>
+              {isAnswered && (
+                <Button className={buttonStyles.secondary} size="sm" variant="bordered" onPress={() => setHistoryTarget(m)}>
+                  {t('simulado.viewResults')}
+                </Button>
+              )}
+            </div>
+            <Button
+              className="p-1.5 text-default-400 hover:text-danger hover:bg-danger/10 transition-colors"
+              variant="light"
+              onPress={() => setDeleteTarget(m)}
+            >
+              <FontAwesomeIcon className="w-5 h-5" icon={faTrash} />
+            </Button>
+          </div>
+        )}
       </div>
     );
   }
