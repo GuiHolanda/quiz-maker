@@ -10,9 +10,10 @@ interface CertificationDraft {
   provider: string;
   topics: CertificationTopic[];
   topicName: string;
+  step: 1 | 2 | 3;
 }
 
-const EMPTY_DRAFT: CertificationDraft = { title: '', code: '', provider: '', topics: [], topicName: '' };
+const EMPTY_DRAFT: CertificationDraft = { title: '', code: '', provider: '', topics: [], topicName: '', step: 1 };
 
 function readFromStorage(): CertificationDraft {
   try {
@@ -53,6 +54,7 @@ export function useCertificationDraft() {
   const [provider, setProvider] = useState('');
   const [topics, setTopics] = useState<CertificationTopic[]>([]);
   const [topicName, setTopicName] = useState('');
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   useEffect(() => {
     const draft = readFromStorage();
@@ -62,13 +64,14 @@ export function useCertificationDraft() {
     setProvider(draft.provider);
     setTopics(draft.topics);
     setTopicName(draft.topicName);
+    setStep(draft.step ?? 1);
     setHydrated(true);
   }, []);
 
   useEffect(() => {
     if (!hydrated) return;
-    writeToStorage({ title, code, provider, topics, topicName });
-  }, [hydrated, title, code, provider, topics, topicName]);
+    writeToStorage({ title, code, provider, topics, topicName, step });
+  }, [hydrated, title, code, provider, topics, topicName, step]);
 
   const addTopic = (topic: CertificationTopic) => {
     setTopics((prev) => [...prev, topic]);
@@ -97,6 +100,7 @@ export function useCertificationDraft() {
     setProvider('');
     setTopics([]);
     setTopicName('');
+    setStep(1);
     removeFromStorage();
   };
 
@@ -110,6 +114,8 @@ export function useCertificationDraft() {
     topics,
     topicName,
     setTopicName,
+    step,
+    setStep,
     addTopic,
     addEmptyTopic,
     updateTopic,

@@ -54,7 +54,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       question: { text: question.text, options, correctOptions },
     });
 
-    const { explanations } = JSON.parse(llmResponse) as { explanations: Record<string, string> };
+    const { explanations } = JSON.parse(llmResponse.text) as { explanations: Record<string, string> };
 
     await questionService.saveExplanations(question.answer.id, explanations);
 

@@ -1,5 +1,7 @@
 'use client';
 import { useState } from 'react';
+import { Button } from '@heroui/button';
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
 
 import { Step1BasicInfo } from './Step1BasicInfo';
 import { Step2DefineSubjects } from './Step2DefineSubjects';
@@ -11,6 +13,7 @@ import { usePublicExamDraft } from '@/features/hooks/usePublicExamDraft.hook';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface NewPublicExamTabProps {
   readonly onBackToLibrary: () => void;
@@ -21,7 +24,7 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
   const { loading, request } = useRequest(savePublicExam);
   const draft = usePublicExamDraft();
   const { t } = useTranslation();
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [isDiscardOpen, setIsDiscardOpen] = useState(false);
 
   const handleSave = async () => {
     const name = draft.name.trim();
@@ -54,31 +57,37 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
     if (saved) {
       addPublicExam(saved);
       draft.reset();
-      setStep(1);
       notify.success(t('toast.success'), t('toast.savedSuccessfully', { title: name }));
       onBackToLibrary();
     }
   };
 
-  if (step === 1) {
-    return (
+  const handleConfirmDiscard = () => {
+    draft.reset();
+    setIsDiscardOpen(false);
+    onBackToLibrary();
+  };
+
+  if (draft.step === 1) {
+    return renderStep(
       <Step1BasicInfo
         examBoardName={draft.examBoardName}
         name={draft.name}
         role={draft.role}
         year={draft.year}
         onBack={onBackToLibrary}
+        onDiscard={() => setIsDiscardOpen(true)}
         onExamBoardChange={draft.setExamBoardName}
         onNameChange={draft.setName}
-        onNext={() => setStep(2)}
+        onNext={() => draft.setStep(2)}
         onRoleChange={draft.setRole}
         onYearChange={draft.setYear}
       />
     );
   }
 
-  if (step === 2) {
-    return (
+  if (draft.step === 2) {
+    return renderStep(
       <Step2DefineSubjects
         examBoardName={draft.examBoardName}
         name={draft.name}
@@ -86,16 +95,16 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
         subjects={draft.subjects}
         year={draft.year}
         onAddEmptySubject={draft.addEmptySubject}
-        onBack={() => setStep(1)}
-        onNext={() => setStep(3)}
+        onBack={() => draft.setStep(1)}
+        onDiscard={() => setIsDiscardOpen(true)}
+        onNext={() => draft.setStep(3)}
         onRemoveSubject={draft.removeSubject}
-        onSaveDraft={onBackToLibrary}
         onUpdateSubject={draft.updateSubject}
       />
     );
   }
 
-  return (
+  return renderStep(
     <Step3Review
       examBoardName={draft.examBoardName}
       isLoading={loading}
@@ -103,8 +112,33 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
       role={draft.role}
       subjects={draft.subjects}
       year={draft.year}
-      onBack={() => setStep(2)}
+      onBack={() => draft.setStep(2)}
+      onDiscard={() => setIsDiscardOpen(true)}
       onSave={handleSave}
     />
   );
+
+  function renderStep(step: React.ReactNode) {
+    return (
+      <>
+        {step}
+        <Modal isOpen={isDiscardOpen} size="sm" onClose={() => setIsDiscardOpen(false)}>
+          <ModalContent>
+            <ModalHeader>{t('concurso.discardDraftTitle')}</ModalHeader>
+            <ModalBody>
+              <p className="text-sm text-default-600">{t('concurso.discardDraftBody')}</p>
+            </ModalBody>
+            <ModalFooter>
+              <Button className={buttonStyles.secondary} variant="bordered" onPress={() => setIsDiscardOpen(false)}>
+                {t('common.cancel')}
+              </Button>
+              <Button className={buttonStyles.danger} onPress={handleConfirmDiscard}>
+                {t('concurso.discardDraft')}
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      </>
+    );
+  }
 }

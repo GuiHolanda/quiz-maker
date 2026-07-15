@@ -22,7 +22,7 @@ interface Step2DefineTopicsProps {
   readonly onRemoveTopic: (index: number) => void;
   readonly onBack: () => void;
   readonly onNext: () => void;
-  readonly onSaveDraft: () => void;
+  readonly onDiscard: () => void;
 }
 
 export function Step2DefineTopics({
@@ -35,12 +35,14 @@ export function Step2DefineTopics({
   onRemoveTopic,
   onBack,
   onNext,
-  onSaveDraft,
+  onDiscard,
 }: Step2DefineTopicsProps) {
   const { t } = useTranslation();
   const totalWeightage = topics.reduce((sum, topic) => sum + Number(topic.maxQuestions), 0);
   const isWeightageValid = totalWeightage === 100;
   const allTopicsNamed = topics.length > 0 && topics.every((t) => t.name.trim().length > 0);
+  const isMinMaxValid = topics.every((t) => t.minQuestions <= t.maxQuestions);
+  const hasDraft = !!(title || code || provider || topics.length > 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -98,82 +100,84 @@ export function Step2DefineTopics({
             {topics.length === 0 && (
               <p className="text-sm text-default-400 text-center py-10">{t('certification.noTopics')}</p>
             )}
-            {topics.map((topic, index) => (
-              <div key={index} className="bg-content1 rounded-lg flex flex-col sm:flex-row gap-4 sm:items-end">
-                <div className="w-1/2">
-                  <Input
-                    {...inputProperties.input}
-                    label={t('certification.domainName')}
-                    placeholder={t('certification.topicNamePlaceholder')}
-                    value={topic.name}
-                    onChange={(e) => onUpdateTopic(index, e.target.value, topic.minQuestions, topic.maxQuestions)}
-                  />
+            {topics.map((topic, index) => {
+              const hasMinMaxError = topic.minQuestions > topic.maxQuestions;
+
+              return (
+                <div
+                  key={index}
+                  className={`rounded-lg flex flex-col gap-3 ${hasMinMaxError ? 'border border-danger/50 bg-danger/5 p-3' : 'bg-content1'}`}
+                >
+                  <div className="flex flex-col sm:flex-row gap-4 sm:items-end">
+                    <div className="w-1/2">
+                      <Input
+                        {...inputProperties.input}
+                        label={t('certification.domainName')}
+                        placeholder={t('certification.topicNamePlaceholder')}
+                        value={topic.name}
+                        onChange={(e) => onUpdateTopic(index, e.target.value, topic.minQuestions, topic.maxQuestions)}
+                      />
+                    </div>
+                    <div className="w-1/4 flex flex-col gap-1">
+                      <Input
+                        {...inputProperties.input}
+                        endContent={<span className="text-default-400 text-sm">%</span>}
+                        label={t('certification.minQuestions')}
+                        max={100}
+                        min={0}
+                        type="number"
+                        value={String(topic.minQuestions)}
+                        onChange={(e) => {
+                          const newMin = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+                          onUpdateTopic(index, topic.name, newMin, topic.maxQuestions);
+                        }}
+                      />
+                    </div>
+                    <div className="w-1/4 flex flex-col gap-1">
+                      <Input
+                        {...inputProperties.input}
+                        endContent={<span className="text-default-400 text-sm">%</span>}
+                        label={t('certification.maxQuestions')}
+                        max={100}
+                        min={0}
+                        type="number"
+                        value={String(topic.maxQuestions)}
+                        onChange={(e) => {
+                          const newMax = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+                          onUpdateTopic(index, topic.name, topic.minQuestions, newMax);
+                        }}
+                      />
+                    </div>
+                    <div className="shrink-0 pb-1">
+                      <Button
+                        isIconOnly
+                        aria-label={t('common.remove')}
+                        className={buttonStyles.iconOnly.danger}
+                        size="sm"
+                        variant="light"
+                        onPress={() => onRemoveTopic(index)}
+                      >
+                        <FontAwesomeIcon className="text-xs" icon={faTrash} />
+                      </Button>
+                    </div>
+                  </div>
+                  {hasMinMaxError && (
+                    <p className="text-xs text-danger font-medium">{t('certification.minGreaterThanMax')}</p>
+                  )}
                 </div>
-                <div className="w-1/4 flex flex-col gap-1">
-                  <Input
-                    {...inputProperties.input}
-                    endContent={<span className="text-default-400 text-sm">%</span>}
-                    label={t('certification.minQuestions')}
-                    max={100}
-                    min={0}
-                    type="number"
-                    value={String(topic.minQuestions)}
-                    onChange={(e) =>
-                      onUpdateTopic(
-                        index,
-                        topic.name,
-                        Math.min(100, Math.max(0, Number(e.target.value) || 0)),
-                        topic.maxQuestions
-                      )
-                    }
-                  />
-                </div>
-                <div className="w-1/4 flex flex-col gap-1">
-                  <Input
-                    {...inputProperties.input}
-                    endContent={<span className="text-default-400 text-sm">%</span>}
-                    label={t('certification.maxQuestions')}
-                    max={100}
-                    min={0}
-                    type="number"
-                    value={String(topic.maxQuestions)}
-                    onChange={(e) =>
-                      onUpdateTopic(
-                        index,
-                        topic.name,
-                        topic.minQuestions,
-                        Math.min(100, Math.max(0, Number(e.target.value) || 0))
-                      )
-                    }
-                  />
-                </div>
-                <div className="shrink-0 pb-1">
-                  <Button
-                    isIconOnly
-                    aria-label={t('common.remove')}
-                    className={buttonStyles.iconOnly.danger}
-                    size="sm"
-                    variant="light"
-                    onPress={() => onRemoveTopic(index)}
-                  >
-                    <FontAwesomeIcon className="text-xs" icon={faTrash} />
-                  </Button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 px-6 py-5 border-t border-default-200">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-6 py-5 border-t border-default-200">
+            {hasDraft && (
+              <Button className={buttonStyles.dangerFlat} onPress={onDiscard}>
+                {t('certification.discardDraft')}
+              </Button>
+            )}
             <Button
-              className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 rounded-lg transition-colors duration-200 text-sm font-semibold"
-              variant="flat"
-              onPress={onSaveDraft}
-            >
-              {t('certification.saveAsDraft')}
-            </Button>
-            <Button
-              className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
-              isDisabled={!allTopicsNamed || !isWeightageValid}
+              className={buttonStyles.primary}
+              isDisabled={!allTopicsNamed || !isWeightageValid || !isMinMaxValid}
               onPress={onNext}
             >
               {t('certification.finalizeCertification')}

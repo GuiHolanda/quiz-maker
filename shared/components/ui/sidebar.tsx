@@ -1,7 +1,5 @@
 'use client';
 
-import type { UsageStats } from '@/shared/types';
-
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody } from '@heroui/drawer';
 import { Avatar } from '@heroui/avatar';
 import NextLink from 'next/link';
@@ -22,8 +20,8 @@ import {
   faHouse,
 } from '@fortawesome/free-solid-svg-icons';
 
-import { getBillingUsage } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 
 const CERTIFICATION_ITEMS = [
   { labelKey: 'nav.configureCertification', href: '/certifications/configure', icon: faGear },
@@ -64,6 +62,7 @@ function subItemClass(isActive: boolean) {
 export function Sidebar() {
   const { data: session, status } = useSession();
   const { t } = useTranslation();
+  const { usage } = useUsageContext();
   const pathname = usePathname() ?? '';
   const isCertificationsScope = pathname.startsWith('/certifications');
   const isConcursosScope = pathname.startsWith('/public-exams');
@@ -71,22 +70,11 @@ export function Sidebar() {
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [expandedSection, setExpandedSection] = useState<ExpandedSection>(null);
-  const [usage, setUsage] = useState<UsageStats | null>(null);
 
   useEffect(() => {
     if (isCertificationsScope) setExpandedSection('certifications');
     else if (isConcursosScope) setExpandedSection('public-exams');
   }, []);
-
-  useEffect(() => {
-    if (status === 'authenticated') {
-      getBillingUsage()
-        .then(setUsage)
-        .catch(() => {});
-    } else {
-      setUsage(null);
-    }
-  }, [status]);
 
   const showConcursos = !usage || usage.publicExamsLimit !== 0;
 
@@ -276,6 +264,10 @@ export function Sidebar() {
               />
             </div>
           )}
+          <div className="flex items-center justify-between mt-0.5">
+            <span className="text-xs text-default-400">{t('sidebar.questionsGenerated', { count: usage.questionsUsed })}</span>
+            <span className="text-xs text-default-400">{t('sidebar.questionsSavedInLibrary', { count: usage.questionsSavedInLibrary })}</span>
+          </div>
         </div>
 
         {/* Certifications counter */}

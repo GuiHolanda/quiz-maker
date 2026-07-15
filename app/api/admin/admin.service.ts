@@ -5,9 +5,18 @@ import { PLAN_LIMITS } from '@/config/constants';
 
 export class AdminService {
   async getOverview(): Promise<AdminOverviewStats> {
-    const [allUsers, usageLogs] = await Promise.all([
+    const [allUsers, usageLogs, tokenAgg, allTokensByUser] = await Promise.all([
       prisma.user.findMany({ select: { plan: true, questionsGeneratedThisPeriod: true, subscriptionStatus: true } }),
       prisma.usageLog.aggregate({ _sum: { count: true }, where: { action: 'generate_questions' } }),
+      prisma.usageLog.aggregate({
+        _sum: { inputTokens: true, outputTokens: true },
+        where: { action: 'generate_questions' },
+      }),
+      prisma.usageLog.groupBy({
+        by: ['userId'],
+        _sum: { inputTokens: true, outputTokens: true, count: true },
+        where: { action: 'generate_questions' },
+      }),
     ]);
 
     const byPlan: Record<UserPlan, number> = { free: 0, pro: 0, pro_ai: 0, tester: 0, admin: 0 };
@@ -35,12 +44,47 @@ export class AdminService {
           }, 0) / usersWithFiniteLimit.length
         : 0;
 
+    const totalQuestionsGenerated = usageLogs._sum.count ?? 0;
+    const totalInputTokens = tokenAgg._sum.inputTokens ?? 0;
+    const totalOutputTokens = tokenAgg._sum.outputTokens ?? 0;
+    const avgTokensPerQuestion =
+      totalQuestionsGenerated > 0
+        ? Math.round((totalInputTokens + totalOutputTokens) / totalQuestionsGenerated)
+        : 0;
+
+    const allUserPlans = await prisma.user.findMany({
+      where: { id: { in: allTokensByUser.map((t) => t.userId) } },
+      select: { id: true, plan: true },
+    });
+    const planById = new Map(allUserPlans.map((u) => [u.id, u.plan as UserPlan]));
+
+    const emptyPlanStats = () => ({ inputTokens: 0, outputTokens: 0, questionsGenerated: 0 });
+    const tokensByPlan: Record<UserPlan, { inputTokens: number; outputTokens: number; questionsGenerated: number }> = {
+      free: emptyPlanStats(),
+      pro: emptyPlanStats(),
+      pro_ai: emptyPlanStats(),
+      tester: emptyPlanStats(),
+      admin: emptyPlanStats(),
+    };
+    for (const row of allTokensByUser) {
+      const plan = planById.get(row.userId);
+      if (plan && plan in tokensByPlan) {
+        tokensByPlan[plan].inputTokens += row._sum.inputTokens ?? 0;
+        tokensByPlan[plan].outputTokens += row._sum.outputTokens ?? 0;
+        tokensByPlan[plan].questionsGenerated += row._sum.count ?? 0;
+      }
+    }
+
     return {
       totalUsers: allUsers.length,
       byPlan,
       activeSubscriptions,
-      totalQuestionsGenerated: usageLogs._sum.count ?? 0,
+      totalQuestionsGenerated,
       avgUsagePercent: Math.round(avgUsagePercent),
+      totalInputTokens,
+      totalOutputTokens,
+      avgTokensPerQuestion,
+      tokensByPlan,
     };
   }
 
@@ -88,12 +132,23 @@ export class AdminService {
       prisma.user.count({ where }),
     ]);
 
+    const userIds = users.map((u) => u.id);
+    const tokensByUser = await prisma.usageLog.groupBy({
+      by: ['userId'],
+      _sum: { inputTokens: true, outputTokens: true, count: true },
+      where: { userId: { in: userIds }, action: 'generate_questions' },
+    });
+    const tokenMap = new Map(tokensByUser.map((t) => [t.userId, t._sum]));
+
     return {
       users: users.map((u) => ({
         ...u,
         plan: u.plan as UserPlan,
         periodStartDate: u.periodStartDate.toISOString(),
         createdAt: u.createdAt.toISOString(),
+        totalInputTokens: tokenMap.get(u.id)?.inputTokens ?? 0,
+        totalOutputTokens: tokenMap.get(u.id)?.outputTokens ?? 0,
+        totalQuestionsGeneratedAllTime: tokenMap.get(u.id)?.count ?? 0,
       })),
       total,
       page,

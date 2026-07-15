@@ -1,6 +1,6 @@
 # MyQuiz
 
-> AI-powered certification exam prep platform. Generate practice questions, manage certifications and topics, and run configurable quizzes — all backed by a persistent question bank.
+> AI-powered certification and concursos públicos prep platform. Generate practice questions for any domain (IT, healthcare, finance, law, engineering), manage certifications and topics, run configurable quizzes — all backed by a persistent question bank.
 
 ---
 
@@ -73,10 +73,26 @@ npm install
 Create a `.env` file in the project root:
 
 ```env
+# Required
 OPENAI_API_KEY=sk-...
-PROMPT_ID=<your-openai-prompt-id>
-PROMPT_VERSION=<your-openai-prompt-version>
+OPENAI_MODEL=gpt-5.4              # model used for all non-streaming generation
+AI_CHAT_MODEL=gpt-5.4-mini        # model used for the AI chat feature
+
 DATABASE_URL="file:./prisma/dev.db"
+
+NEXTAUTH_SECRET=<your-secret>
+NEXTAUTH_URL=http://localhost:3000
+
+# Stripe (billing)
+STRIPE_SECRET_KEY=sk_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PRICE_ID_PRO_MONTHLY=price_...
+STRIPE_PRICE_ID_PRO_YEARLY=price_...
+STRIPE_PRICE_ID_PRO_AI_MONTHLY=price_...
+STRIPE_PRICE_ID_PRO_AI_YEARLY=price_...
+
+# Email (password reset)
+RESEND_API_KEY=re_...
 ```
 
 > Never commit `.env` to source control.
@@ -194,20 +210,25 @@ npx playwright show-report
 
 ---
 
-## OpenAI Prompt Setup
+## OpenAI Prompt Management
 
-The question generator uses a stored prompt in the OpenAI dashboard.
+All LLM prompts live in `config/prompts/` as TypeScript files — **no prompts are stored in the OpenAI dashboard**. Each file exports a `PromptDefinition<TInput>` object with a `build(input)` method.
 
-1. Go to [platform.openai.com](https://platform.openai.com/) and create a new prompt in the **Prompts** editor.
-2. The prompt template uses three variables: `{{certification_name}}`, `{{topic_name}}`, `{{num_questions}}`.
-3. After saving, copy the `prompt id` and `version` into your `.env`:
+Calling the LLM always goes through `OpenAIService.call(prompt, input)`:
+- Uses the Responses API with `web_search_preview` enabled
+- Returns `{ text: string; inputTokens: number; outputTokens: number }`
+- Model controlled by `OPENAI_MODEL` env var (default `gpt-5.4`)
 
-```env
-PROMPT_ID=pmpt_...
-PROMPT_VERSION=7
-```
+Token counts are recorded to `UsageLog` after each generation call. See [Admin Dashboard](#admin-dashboard) for cost analytics.
 
-The JSON output schema for the prompt is kept at `config/promptSchemas/questionSchema.json`.
+| File | Domain |
+|---|---|
+| `certification-questions.prompt.ts` | Generate cert questions |
+| `certification-answers.prompt.ts` | Validate cert answers |
+| `certification-explanations.prompt.ts` | Explain cert options |
+| `public-exam-questions.prompt.ts` | Generate concurso questions |
+| `public-exam-answers.prompt.ts` | Validate concurso answers |
+| `public-exam-explanations.prompt.ts` | Explain concurso options |
 
 ---
 
@@ -218,7 +239,9 @@ The JSON output schema for the prompt is kept at `config/promptSchemas/questionS
 | Concern | Where |
 |---|---|
 | Certifications list + selected cert | `CertificationsProvider` (Context + Reducer) |
+| Public exams list + selected exam | `PublicExamsProvider` (Context + Reducer) |
 | Quiz state (questions, answers) | `QuizProvider` (Context + Reducer) |
+| Billing usage (quota counters) | `UsageProvider` — wraps the workspace layout; exposes `usage` and `refreshUsage()` via `useUsageContext()` hook. `Sidebar` and `WorkspaceHeader` consume this instead of fetching independently. `refreshUsage()` is called after questions are saved so the counter updates instantly. |
 | UI-only state (active tab, etc.) | `localStorage` |
 | Domain data | Database (source of truth) via API |
 
@@ -244,7 +267,41 @@ Two environments, two schemas:
 | Dev | `prisma/dev/schema.prisma` | SQLite (`prisma/dev.db`) |
 | Prod | `prisma/prod/schema.prisma` | LibSQL (Turso) |
 
-Key dev models: `Certification`, `CertificationTopic`, `Question`, `Option`, `Answer`, `Explanation`.
+Key models: `Certification`, `CertificationTopic`, `Question`, `Option`, `Answer`, `Explanation`, `PublicExam`, `PublicExamSubject`, `MockExam`, `CertificationSimulado`, `UsageLog`.
+
+### `UsageLog`
+
+Records every question-generation call for quota enforcement and cost analytics:
+
+```
+UsageLog { id, userId, action, count, inputTokens, outputTokens, createdAt }
+```
+
+- `count` — number of questions requested in the call
+- `inputTokens` / `outputTokens` — token usage from the OpenAI Responses API, recorded asynchronously (fire-and-forget) after the response is returned to the client
+- Used by the Admin analytics page to compute per-user and per-plan token costs in BRL
+
+## Admin Dashboard
+
+`/admin` is a separate route group with its own layout and sidebar. Access is restricted to `plan === 'admin'` (checked server-side).
+
+| Page | Content |
+|---|---|
+| `overview` | KPI cards: total users, active subscriptions, questions generated, avg usage % |
+| `users` | Paginated user table with inline plan/quota editing + per-user token cost columns |
+| `analytics` | Plan distribution, top 10 users (with token + cost columns), token KPIs, **Margem por Plano** |
+| `audit-log` | Paginated history of admin plan/quota changes |
+
+### Analytics — Margem por Plano
+
+The analytics page includes a margin analysis table comparing estimated monthly revenue vs. accumulated token costs per plan:
+
+- **Receita est./mês** = `userCount × PLAN_PRICES_BRL_MONTHLY[plan]`
+- **Custo Tokens** = `(inputTokens × $2.50 + outputTokens × $15.00) / 1M × exchangeRate`
+- **Margem** = Receita - Custo (green when positive, red when negative)
+- **Break-even** = `planPrice / avgCostPerQuestion` — how many questions exhaust a month's revenue for that plan
+
+Plan prices are defined in `config/constants/index.ts → PLAN_PRICES_BRL_MONTHLY`. The USD/BRL exchange rate is fetched live from `economia.awesomeapi.com.br` (1-hour ISR cache; fallback `USD_TO_BRL_FALLBACK = 5.70`). gpt-5.4 pricing is in `GPT_54_PRICING_USD` in the same file.
 
 ---
 

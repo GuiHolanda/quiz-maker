@@ -9,7 +9,7 @@ import { SimuladoQuestionList } from '@/shared/components/SimuladoQuestionList';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useAttemptProgress } from '@/features/hooks/useAttemptProgress.hook';
 import { useNavigationGuard } from '@/features/hooks/useNavigationGuard.hook';
-import { getMockExam, getMockExamAnswers, finishMockExamAttempt, discardMockExamAttempt } from '@/features/connectors';
+import { getMockExam, finishMockExamAttempt, discardMockExamAttempt } from '@/features/connectors';
 import { MockExam, MockExamAttemptAnswer } from '@/shared/types';
 import { BusyDialog } from '@/shared/components/ui/BusyDialog';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
@@ -100,27 +100,7 @@ export default function SimuladoTentativaPage() {
   async function handleFinish() {
     setIsFinishing(true);
     try {
-      const questionsNeedingAnswers = mockExam!.questions
-        .filter((mq) => !mq.publicExamQuestion.answer)
-        .map((mq) => ({
-          id: mq.publicExamQuestion.id,
-          publicExamName: mq.publicExamQuestion.publicExamName,
-          examBoardName: mq.publicExamQuestion.examBoardName,
-          subject: mq.publicExamQuestion.subject,
-          topic: mq.publicExamQuestion.topic,
-          text: mq.publicExamQuestion.text,
-          correctCount: mq.publicExamQuestion.correctCount,
-          difficulty: mq.publicExamQuestion.difficulty,
-          options: mq.publicExamQuestion.options,
-        }));
-
-      if (questionsNeedingAnswers.length > 0) {
-        await getMockExamAnswers(questionsNeedingAnswers as Parameters<typeof getMockExamAnswers>[0]);
-      }
-
-      const updatedExam = await getMockExam(Number(params.id));
-
-      const attemptAnswers: MockExamAttemptAnswer[] = updatedExam.questions.map((mq) => {
+      const attemptAnswers: MockExamAttemptAnswer[] = mockExam!.questions.map((mq) => {
         const selected = answers[mq.publicExamQuestion.id] ?? [];
 
         return { mockExamQuestionId: mq.id, selectedOptions: selected };

@@ -31,10 +31,11 @@ export async function GET(request: NextRequest) {
   const count = parseInt(questionParams.num_questions, 10) || 1;
 
   try {
-    await quotaService.checkAndRecordQuestions(session.user.id, count);
+    const { logId } = await quotaService.checkAndRecordQuestions(session.user.id, count);
 
     const rawResponse = await openAIService.call(publicExamQuestionsPrompt, questionParams);
-    const questionsFromAi = validateAiQuestions(JSON.parse(extractJson(rawResponse)));
+    void quotaService.recordTokens(logId, { inputTokens: rawResponse.inputTokens, outputTokens: rawResponse.outputTokens });
+    const questionsFromAi = validateAiQuestions(JSON.parse(extractJson(rawResponse.text)));
 
     return NextResponse.json(questionsFromAi, { status: 200 });
   } catch (err: any) {

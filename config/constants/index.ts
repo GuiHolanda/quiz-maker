@@ -169,6 +169,20 @@ export const PLAN_LIMITS = {
 export const ADMIN_USERS_URL = '/admin/users';
 export const ADMIN_OVERVIEW_URL = '/admin/overview';
 export const ADMIN_AUDIT_LOG_URL = '/admin/audit-log';
+export const ADMIN_EXCHANGE_RATE_URL = '/admin/exchange-rate';
+
+export const GPT_54_PRICING_USD = {
+  inputPerMillion: 2.50,
+  outputPerMillion: 15.00,
+} as const;
+
+export const USD_TO_BRL_FALLBACK = 5.70;
+
+export const PLAN_PRICES_BRL_MONTHLY: Record<string, number> = {
+  free: 0,
+  pro: 19.80,
+  pro_ai: 39.80,
+};
 
 export const BROWSE_SUMMARY_URL = '/certification/browse-questions/summary';
 export const BROWSE_QUESTIONS_URL = '/certification/browse-questions/questions';

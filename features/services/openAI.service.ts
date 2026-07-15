@@ -16,7 +16,10 @@ export class OpenAIService {
     })
   ) {}
 
-  async call<TInput>(prompt: PromptDefinition<TInput>, input: TInput): Promise<string> {
+  async call<TInput>(
+    prompt: PromptDefinition<TInput>,
+    input: TInput
+  ): Promise<{ text: string; inputTokens: number; outputTokens: number }> {
     const apiKey = process.env.OPENAI_API_KEY;
 
     if (!apiKey) throw new Error('API key not configured');
@@ -29,6 +32,10 @@ export class OpenAIService {
       max_output_tokens: 16000,
     });
 
-    return response?.output_text ?? '';
+    return {
+      text: response?.output_text ?? '',
+      inputTokens: response?.usage?.input_tokens ?? 0,
+      outputTokens: response?.usage?.output_tokens ?? 0,
+    };
   }
 }

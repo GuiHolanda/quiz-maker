@@ -1,11 +1,9 @@
 'use client';
 
-import type { UsageStats } from '@/shared/types';
-
 import { Avatar } from '@heroui/avatar';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSection } from '@heroui/dropdown';
 import NextLink from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBell, faMagnifyingGlass, faArrowUp, faUser, faArrowRightFromBracket } from '@fortawesome/free-solid-svg-icons';
@@ -14,25 +12,15 @@ import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
 import { UsageBadge } from '@/shared/components/ui/UsageBadge';
 import { ThemeSwitch } from '@/shared/components/ui/theme-switch';
 import { LanguageSwitch } from '@/shared/components/ui/language-switch';
-import { getBillingUsage } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 
 export function WorkspaceHeader() {
   const { data: session, status } = useSession();
   const { t } = useTranslation();
-  const [usage, setUsage] = useState<UsageStats | null>(null);
+  const { usage } = useUsageContext();
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-  useEffect(() => {
-    if (status === 'authenticated') {
-      getBillingUsage()
-        .then(setUsage)
-        .catch(() => {});
-    } else {
-      setUsage(null);
-    }
-  }, [status]);
 
   return (
     <>

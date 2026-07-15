@@ -23,7 +23,7 @@ interface Step2DefineSubjectsProps {
   readonly onRemoveSubject: (index: number) => void;
   readonly onBack: () => void;
   readonly onNext: () => void;
-  readonly onSaveDraft: () => void;
+  readonly onDiscard: () => void;
 }
 
 export function Step2DefineSubjects({
@@ -37,12 +37,14 @@ export function Step2DefineSubjects({
   onRemoveSubject,
   onBack,
   onNext,
-  onSaveDraft,
+  onDiscard,
 }: Step2DefineSubjectsProps) {
   const { t } = useTranslation();
   const totalWeightage = subjects.reduce((sum, subject) => sum + Number(subject.maxQuestions), 0);
   const isWeightageValid = totalWeightage === 100;
   const allSubjectsNamed = subjects.length > 0 && subjects.every((s) => s.name.trim().length > 0);
+  const isMinMaxValid = subjects.every((s) => s.minQuestions <= s.maxQuestions);
+  const hasDraft = !!(name || examBoardName || role || year || subjects.length > 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -104,82 +106,84 @@ export function Step2DefineSubjects({
             {subjects.length === 0 && (
               <p className="text-sm text-default-400 text-center py-10">{t('concurso.noSubjects')}</p>
             )}
-            {subjects.map((subject, index) => (
-              <div key={index} className="bg-content1 rounded-lg flex flex-col sm:flex-row gap-4 sm:items-end">
-                <div className="w-1/2">
-                  <Input
-                    {...inputProperties.input}
-                    label={t('concurso.subjectName')}
-                    placeholder={t('concurso.subjectNamePlaceholder')}
-                    value={subject.name}
-                    onChange={(e) => onUpdateSubject(index, e.target.value, subject.minQuestions, subject.maxQuestions)}
-                  />
+            {subjects.map((subject, index) => {
+              const hasMinMaxError = subject.minQuestions > subject.maxQuestions;
+
+              return (
+                <div
+                  key={index}
+                  className={`rounded-lg flex flex-col gap-3 ${hasMinMaxError ? 'border border-danger/50 bg-danger/5 p-3' : 'bg-content1'}`}
+                >
+                  <div className="flex flex-col sm:flex-row gap-4 sm:items-end">
+                    <div className="w-1/2">
+                      <Input
+                        {...inputProperties.input}
+                        label={t('concurso.subjectName')}
+                        placeholder={t('concurso.subjectNamePlaceholder')}
+                        value={subject.name}
+                        onChange={(e) => onUpdateSubject(index, e.target.value, subject.minQuestions, subject.maxQuestions)}
+                      />
+                    </div>
+                    <div className="w-1/4 flex flex-col gap-1">
+                      <Input
+                        {...inputProperties.input}
+                        endContent={<span className="text-default-400 text-sm">%</span>}
+                        label={t('concurso.minQuestions')}
+                        max={100}
+                        min={0}
+                        type="number"
+                        value={String(subject.minQuestions)}
+                        onChange={(e) => {
+                          const newMin = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+                          onUpdateSubject(index, subject.name, newMin, subject.maxQuestions);
+                        }}
+                      />
+                    </div>
+                    <div className="w-1/4 flex flex-col gap-1">
+                      <Input
+                        {...inputProperties.input}
+                        endContent={<span className="text-default-400 text-sm">%</span>}
+                        label={t('concurso.maxQuestions')}
+                        max={100}
+                        min={0}
+                        type="number"
+                        value={String(subject.maxQuestions)}
+                        onChange={(e) => {
+                          const newMax = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+                          onUpdateSubject(index, subject.name, subject.minQuestions, newMax);
+                        }}
+                      />
+                    </div>
+                    <div className="shrink-0 pb-1">
+                      <Button
+                        isIconOnly
+                        aria-label={t('common.remove')}
+                        className={buttonStyles.iconOnly.danger}
+                        size="sm"
+                        variant="light"
+                        onPress={() => onRemoveSubject(index)}
+                      >
+                        <FontAwesomeIcon className="text-xs" icon={faTrash} />
+                      </Button>
+                    </div>
+                  </div>
+                  {hasMinMaxError && (
+                    <p className="text-xs text-danger font-medium">{t('concurso.minGreaterThanMax')}</p>
+                  )}
                 </div>
-                <div className="w-1/4 flex flex-col gap-1">
-                  <Input
-                    {...inputProperties.input}
-                    endContent={<span className="text-default-400 text-sm">%</span>}
-                    label={t('concurso.minQuestions')}
-                    max={100}
-                    min={0}
-                    type="number"
-                    value={String(subject.minQuestions)}
-                    onChange={(e) =>
-                      onUpdateSubject(
-                        index,
-                        subject.name,
-                        Math.min(100, Math.max(0, Number(e.target.value) || 0)),
-                        subject.maxQuestions
-                      )
-                    }
-                  />
-                </div>
-                <div className="w-1/4 flex flex-col gap-1">
-                  <Input
-                    {...inputProperties.input}
-                    endContent={<span className="text-default-400 text-sm">%</span>}
-                    label={t('concurso.maxQuestions')}
-                    max={100}
-                    min={0}
-                    type="number"
-                    value={String(subject.maxQuestions)}
-                    onChange={(e) =>
-                      onUpdateSubject(
-                        index,
-                        subject.name,
-                        subject.minQuestions,
-                        Math.min(100, Math.max(0, Number(e.target.value) || 0))
-                      )
-                    }
-                  />
-                </div>
-                <div className="shrink-0 pb-1">
-                  <Button
-                    isIconOnly
-                    aria-label={t('common.remove')}
-                    className={buttonStyles.iconOnly.danger}
-                    size="sm"
-                    variant="light"
-                    onPress={() => onRemoveSubject(index)}
-                  >
-                    <FontAwesomeIcon className="text-xs" icon={faTrash} />
-                  </Button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 px-6 py-5 border-t border-default-200">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-6 py-5 border-t border-default-200">
+            {hasDraft && (
+              <Button className={buttonStyles.dangerFlat} onPress={onDiscard}>
+                {t('concurso.discardDraft')}
+              </Button>
+            )}
             <Button
-              className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 rounded-lg transition-colors duration-200 text-sm font-semibold"
-              variant="flat"
-              onPress={onSaveDraft}
-            >
-              {t('concurso.saveAsDraft')}
-            </Button>
-            <Button
-              className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
-              isDisabled={!allSubjectsNamed || !isWeightageValid}
+              className={buttonStyles.primary}
+              isDisabled={!allSubjectsNamed || !isWeightageValid || !isMinMaxValid}
               onPress={onNext}
             >
               {t('concurso.finalizePublicExam')}

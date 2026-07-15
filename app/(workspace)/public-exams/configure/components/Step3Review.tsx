@@ -8,6 +8,7 @@ import { Button } from '@heroui/button';
 import { StepHeader } from './StepHeader';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface Step3ReviewProps {
   readonly name: string;
@@ -18,6 +19,7 @@ interface Step3ReviewProps {
   readonly isLoading: boolean;
   readonly onBack: () => void;
   readonly onSave: () => void;
+  readonly onDiscard: () => void;
 }
 
 export function Step3Review({
@@ -29,8 +31,10 @@ export function Step3Review({
   isLoading,
   onBack,
   onSave,
+  onDiscard,
 }: Step3ReviewProps) {
   const { t } = useTranslation();
+  const hasDraft = !!(name || examBoardName || role || year || subjects.length > 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -104,11 +108,16 @@ export function Step3Review({
         </div>
       </div>
 
-      <div className="flex items-center justify-end gap-4 pt-6 border-t border-default-200">
+      <div className="flex items-center justify-between gap-4 pt-6 border-t border-default-200">
+        {hasDraft && (
+          <Button className={buttonStyles.dangerFlat} isDisabled={isLoading} onPress={onDiscard}>
+            {t('concurso.discardDraft')}
+          </Button>
+        )}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <p className="text-xs text-default-400 text-center sm:text-left">{t('concurso.readyToDeploy')}</p>
           <Button
-            className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
+            className={buttonStyles.primary}
             endContent={!isLoading ? <FontAwesomeIcon className="text-xs" icon={faRocket} /> : undefined}
             isDisabled={isLoading}
             isLoading={isLoading}

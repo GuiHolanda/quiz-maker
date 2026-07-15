@@ -11,6 +11,7 @@ interface PublicExamDraft {
   examBoardName: string;
   subjects: PublicExamSubject[];
   subjectName: string;
+  step: 1 | 2 | 3;
 }
 
 const EMPTY_DRAFT: PublicExamDraft = {
@@ -20,6 +21,7 @@ const EMPTY_DRAFT: PublicExamDraft = {
   examBoardName: '',
   subjects: [],
   subjectName: '',
+  step: 1,
 };
 
 function readFromStorage(): PublicExamDraft {
@@ -62,6 +64,7 @@ export function usePublicExamDraft() {
   const [examBoardName, setExamBoardName] = useState('');
   const [subjects, setSubjects] = useState<PublicExamSubject[]>([]);
   const [subjectName, setSubjectName] = useState('');
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   useEffect(() => {
     const draft = readFromStorage();
@@ -72,13 +75,14 @@ export function usePublicExamDraft() {
     setExamBoardName(draft.examBoardName);
     setSubjects(draft.subjects);
     setSubjectName(draft.subjectName);
+    setStep(draft.step ?? 1);
     setHydrated(true);
   }, []);
 
   useEffect(() => {
     if (!hydrated) return;
-    writeToStorage({ name, role, year, examBoardName, subjects, subjectName });
-  }, [hydrated, name, role, year, examBoardName, subjects, subjectName]);
+    writeToStorage({ name, role, year, examBoardName, subjects, subjectName, step });
+  }, [hydrated, name, role, year, examBoardName, subjects, subjectName, step]);
 
   const addSubject = (subject: PublicExamSubject) => {
     setSubjects((prev) => [...prev, subject]);
@@ -104,6 +108,7 @@ export function usePublicExamDraft() {
     setExamBoardName('');
     setSubjects([]);
     setSubjectName('');
+    setStep(1);
     removeFromStorage();
   };
 
@@ -119,6 +124,8 @@ export function usePublicExamDraft() {
     subjects,
     subjectName,
     setSubjectName,
+    step,
+    setStep,
     addSubject,
     addEmptySubject,
     updateSubject,

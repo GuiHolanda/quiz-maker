@@ -523,9 +523,9 @@ Componente `'use client'` `hidden md:flex` que ocupa a faixa `h-14` do topo da c
   - Theme switch + Language switch (read-only items)
   - Sign out
 - `UpgradeModal` (controlado por `isUpgradeOpen` local)
-- Faz fetch próprio de `getBillingUsage()` para popular o dropdown e o `UsageBadge`
+- Consome `useUsageContext()` do `UsageProvider` — **não faz fetch direto de `getBillingUsage()`**
 
-**Nota:** O sidebar e o WorkspaceHeader fazem fetches independentes de `getBillingUsage()`. Isso é intencional para manter os componentes desacoplados — ambos usam `useEffect` com dependência em `status`.
+**Nota:** O sidebar e o WorkspaceHeader consomem o mesmo `UsageProvider` via `useUsageContext()`. O provider é montado no `app/(workspace)/layout.tsx` e faz um único fetch ao montar. `refreshUsage()` é chamado nas páginas de questões após salvar para atualizar os contadores sem reload de página.
 
 Route groups (`(name)`) são transparentes na URL — `app/(marketing)/page.tsx` continua servindo `/`. Para criar uma página nova:
 - **Pública sem login (marketing)** → `app/(marketing)/<rota>/page.tsx` e adicionar em `publicRoutePrefixes` de `auth.config.ts` (ou tratamento exato para `/`).
@@ -635,11 +635,18 @@ Layout completamente separado do `(workspace)` — usa sidebar própria, sem o n
 | `layout.tsx` | Server component: auth guard + sidebar com links de navegação |
 | `page.tsx` | Redirect para `/admin/overview` |
 | `overview/page.tsx` | KPIs (total users, assinaturas, questões geradas, uso médio) + distribuição por plano |
-| `users/page.tsx` | Tabela de usuários com edição inline de plano e `customQuotaOverride` |
-| `analytics/page.tsx` | Barras de distribuição de planos + top 10 usuários por questões geradas |
+| `users/page.tsx` | Tabela com edição inline de plano e `customQuotaOverride`; colunas: Tokens (total/avg/in·out), Custo Total (BRL), Custo/questão — cotação buscada via `getExchangeRate()` |
+| `analytics/page.tsx` | Server component com 4 seções: Distribuição de Planos, Top 10 Usuários (tokens + custo por user), Consumo de Tokens (5 KPI cards), **Margem por Plano** (receita estimada vs custo tokens, margem colorida, break-even) |
 | `audit-log/page.tsx` | Histórico paginado de ações administrativas |
 
 **Padrão de dados nas páginas admin:** `overview/page.tsx` e `analytics/page.tsx` são server components que chamam `AdminService` diretamente (não usam `features/connectors.ts`). `users/page.tsx` e `audit-log/page.tsx` são client components que usam os connectors admin via axios normalmente.
+
+**Constantes de custo** (todas em `config/constants/index.ts`):
+- `GPT_54_PRICING_USD = { inputPerMillion: 2.50, outputPerMillion: 15.00 }` — preço do modelo
+- `USD_TO_BRL_FALLBACK = 5.70` — fallback quando a AwesomeAPI falhar
+- `PLAN_PRICES_BRL_MONTHLY = { free: 0, pro: 19.80, pro_ai: 39.80 }` — usado na tabela de margem
+
+**Cotação USD/BRL:** buscada em runtime de `economia.awesomeapi.com.br` com `next: { revalidate: 3600 }`. Em `analytics/page.tsx` (server component) o fetch é direto. Em `users/page.tsx` (client component) é feito via `getExchangeRate()` connector que chama `GET /api/admin/exchange-rate`.
 
 ---
 
@@ -690,6 +697,7 @@ Layout completamente separado do `(workspace)` — usa sidebar própria, sem o n
 |---|---|
 | `useRequest.hook.ts` | Wrapper de chamadas HTTP: loading, error, toast automático de erro |
 | `useTranslation.hook.ts` | `{ t, language, setLanguage }` — acesso às strings i18n |
+| `useUsageContext.hook.ts` | `{ usage: UsageStats \| null, refreshUsage: () => void }` — acesso ao `UsageProvider`. Chame `refreshUsage()` após salvar questões para atualizar contadores em tempo real. |
 | `useCertificationsContext.hook.ts` | Acesso ao estado de certificações do `CertificationsProvider` |
 | `usePublicExamsContext.hook.ts` | Acesso ao estado de concursos do `PublicExamsProvider` |
 | `useQuizContext.hook.ts` | Acesso ao estado do quiz do `QuizProvider` |
@@ -960,5 +968,5 @@ Para verificar plano no server component, leia direto do banco:
 const dbUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { plan: true } });
 ```
 
-Para verificar limites de quota no client, use `getBillingUsage()` → `UsageStats`. O campo `publicExamsLimit === 0` indica que o plano não tem acesso a concursos.
+Para verificar limites de quota no client, use `useUsageContext()` → `usage: UsageStats`. O campo `publicExamsLimit === 0` indica que o plano não tem acesso a concursos. Não chame `getBillingUsage()` diretamente em componentes — consuma o `UsageProvider` via hook.
 

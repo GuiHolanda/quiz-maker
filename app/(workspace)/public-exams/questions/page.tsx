@@ -25,6 +25,7 @@ import { AIPublicExamQuestion, PublicExamQuestionParams } from '@/shared/types';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { useTwoPhaseGeneration } from '@/features/hooks/useTwoPhaseGeneration.hook';
 import { getPublicExamQuestions } from '@/features/connectors';
+import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { notify } from '@/shared/lib/notify';
 
 function PublicExamsQuestionsPageContent() {
@@ -33,6 +34,7 @@ function PublicExamsQuestionsPageContent() {
   const [selectedTab, setSelectedTab] = useState<Key>(searchParams.get('tab') ?? 'browse');
   const [questions, setQuestions] = useState<AIPublicExamQuestion[]>([]);
   const { publicExams, isLoading } = usePublicExamsContext();
+  const { refreshUsage } = useUsageContext();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingCount, setGeneratingCount] = useState(5);
   const [progress, setProgress] = useState(0);
@@ -203,6 +205,7 @@ function PublicExamsQuestionsPageContent() {
             setQuestions={setQuestions}
             onSaved={() => {
               abort();
+              refreshUsage();
               setShowSimuladosBanner(true);
               setSelectedTab('browse');
             }}
