@@ -129,14 +129,15 @@ Admin dashboard API. All routes verify `plan === 'admin'` via a direct DB lookup
 
 | Route | Method | Description |
 |---|---|---|
-| `admin/overview` | GET | Aggregate metrics: total users, by-plan breakdown, active subscriptions, total questions generated, avg usage % |
-| `admin/users` | GET | Paginated user list with search, plan filter, subscriptionStatus filter |
+| `admin/overview` | GET | Aggregate metrics including `tokensByPlan` (per-plan input/output token sums and question counts, joined from `UsageLog` + `User` in application code) |
+| `admin/users` | GET | Paginated user list; each row includes `totalInputTokens`, `totalOutputTokens`, `totalQuestionsGeneratedAllTime` from a `usageLog.groupBy(['userId'])` scoped to the current page |
 | `admin/users/[id]` | PATCH | Update a user's `plan` and/or `customQuotaOverride` (-1 = ∞, null = remove override). Writes to `AdminAuditLog`. |
 | `admin/audit-log` | GET | Paginated history of admin actions with admin/target user details |
+| `admin/exchange-rate` | GET | Returns `{ rate: number }` — live USD/BRL rate from `economia.awesomeapi.com.br` with `next: { revalidate: 3600 }` (1h ISR cache). Falls back to `USD_TO_BRL_FALLBACK` (5.70) on error. Used by the client-side users page. |
 
 Service: `app/api/admin/admin.service.ts` (`AdminService`).
 
-**Important:** The `AdminService` can also be called directly from server components (e.g. `app/admin/overview/page.tsx`). Do NOT use `features/connectors.ts` in server components — the axios client uses a relative `baseURL` and will fail server-side.
+**Important:** The `AdminService` can also be called directly from server components (e.g. `app/admin/analytics/page.tsx`). Do NOT use `features/connectors.ts` in server components — the axios client uses a relative `baseURL` and will fail server-side.
 
 ---
 
@@ -162,14 +163,34 @@ Route handlers never contain business logic — they delegate to services.
 
 | File | Responsibility |
 |---|---|
-| `openAI.service.ts` | OpenAI client wrapper — single `call(prompt, input)` method using Responses API with `web_search_preview` |
-| `quota.service.ts` | Check and record usage quota per user per period. Supports `customQuotaOverride` (sentinel `-1` = ∞). Actions: `generate_questions`, `create_certification`, `create_public_exam`. |
+| `openAI.service.ts` | OpenAI client wrapper — single `call(prompt, input)` method using Responses API with `web_search_preview`. Returns `{ text: string; inputTokens: number; outputTokens: number }`. Never returns a plain string. |
+| `quota.service.ts` | Check and record usage quota per user per period. Supports `customQuotaOverride` (sentinel `-1` = ∞). Key methods: `checkAndRecordQuestions(userId, count)` returns `{ logId }` for later token recording; `recordTokens(logId, { inputTokens, outputTokens })` patches the `UsageLog` row after the LLM call completes. |
 | `certification.service.ts` | CRUD for certifications and topics |
 | `public-exam.service.ts` | CRUD for public exams, subjects, and topics |
 | `question.service.ts` | `validateAiQuestions` (shared), `CertificationQuestionService` (with `saveExplanations`), `PublicExamQuestionService` |
 | `browse.service.ts` | `BrowseQuestionsService`, `PublicExamBrowseQuestionsService`, `BrowseSummaryService`, `PublicExamBrowseSummaryService` |
 | `quiz-generator.service.ts` | Parse params, distribute questions across topics, fetch stored questions |
 | `aiChat.service.ts` | Validate chat messages, select prompt, stream OpenAI response |
+
+### Token recording pattern (question-generator routes)
+
+The two generator routes (`certification/question-generator` and `public-exam/question-generator`) follow a two-step pattern to record token usage without blocking the response:
+
+```ts
+// 1. Atomic quota check + UsageLog row creation (before LLM call)
+const { logId } = await quotaService.checkAndRecordQuestions(session.user.id, count);
+
+// 2. LLM call — returns { text, inputTokens, outputTokens }
+const rawResponse = await openAIService.call(prompt, params);
+
+// 3. Patch token counts — fire-and-forget (void) so response is not delayed
+void quotaService.recordTokens(logId, {
+  inputTokens: rawResponse.inputTokens,
+  outputTokens: rawResponse.outputTokens,
+});
+```
+
+The `void` is intentional: `recordTokens` is a best-effort DB update that should not delay or fail the response to the user. If it fails silently, the `UsageLog` row will have `inputTokens = 0` and `outputTokens = 0` (the schema defaults).
 
 Admin service is co-located in `app/api/admin/admin.service.ts` (not in `features/services/`) because it is not shared with client code.
 

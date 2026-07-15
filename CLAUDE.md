@@ -523,6 +523,24 @@ Não use: `.click({ force: true })`, `.check({ force: true })`, `page.mouse.clic
 
 ---
 
+## Usage Provider
+
+`UsageProvider` (`features/providers/usage.provider.tsx`) wraps the entire workspace layout and provides billing usage state to all workspace pages without redundant fetches.
+
+```tsx
+// features/hooks/useUsageContext.hook.ts
+const { usage, refreshUsage } = useUsageContext();
+```
+
+- `usage` — `UsageStats | null`, fetched once when `status === 'authenticated'`
+- `refreshUsage()` — refetches `getBillingUsage()` and updates state; call it after the user saves questions so the sidebar/header counters update instantly without a page reload
+
+**Wiring:** `sidebar.tsx` and `workspace-header.tsx` consume `useUsageContext()` instead of fetching independently. Pages that generate + save questions call `refreshUsage()` inside the `onSaved` callback.
+
+**Do not** call `getBillingUsage()` directly in components — use `useUsageContext()` instead.
+
+---
+
 ## Plans and Quotas
 
 ### `UserPlan` type
@@ -542,6 +560,16 @@ type UserPlan = 'free' | 'pro' | 'pro_ai' | 'tester' | 'admin';
 | `admin` | ∞ | ∞ | ∞ | ✓ | ✓ |
 
 `tester` and `admin` are assigned manually (no Stripe product). `pro_ai` is a Stripe add-on differentiated by price ID (`STRIPE_PRICE_ID_PRO_AI_MONTHLY/YEARLY`).
+
+### Plan prices (`config/constants/index.ts` → `PLAN_PRICES_BRL_MONTHLY`)
+
+Monthly prices in BRL used for admin margin analysis:
+
+```ts
+PLAN_PRICES_BRL_MONTHLY = { free: 0, pro: 19.80, pro_ai: 39.80 }
+```
+
+Yearly plans have ~25% discount (R$14,85 and R$29,85/month). `tester` and `admin` have no price.
 
 ### `customQuotaOverride` (User field)
 
@@ -565,17 +593,20 @@ type QuotaAction = 'generate_questions' | 'create_certification' | 'create_publi
 ```ts
 interface UsageStats {
   plan: UserPlan;
-  questionsUsed: number;
-  questionsLimit: number;      // -1 means unlimited
+  questionsUsed: number;           // questões geradas no período atual (reseta a cada 30 dias)
+  questionsLimit: number;          // -1 means unlimited
+  questionsSavedInLibrary: number; // questões salvas pelo user (count de Question + PublicExamQuestion)
   certificationsUsed: number;
-  certificationsLimit: number; // -1 means unlimited
+  certificationsLimit: number;     // -1 means unlimited
   publicExamsUsed: number;
-  publicExamsLimit: number;    // -1 means unlimited, 0 means no access
+  publicExamsLimit: number;        // -1 means unlimited, 0 means no access
   periodStartDate: string;
 }
 ```
 
 `-1` is the "unlimited" sentinel throughout the UI. The `UsageBadge` hides itself when `questionsLimit === -1`.
+
+`questionsUsed` e `questionsSavedInLibrary` medem coisas diferentes: o primeiro rastreia **chamadas à LLM** (para controle de quota e custo); o segundo conta **questões que o usuário efetivamente salvou na biblioteca**. A sidebar exibe ambos lado a lado para transparência.
 
 ---
 
@@ -614,9 +645,43 @@ app/api/admin/
   users/route.ts            ← GET → AdminUsersResponse (paginated, searchable, filterable)
   users/[id]/route.ts       ← PATCH → update plan and/or customQuotaOverride
   audit-log/route.ts        ← GET → AdminAuditLogResponse (paginated)
+  exchange-rate/route.ts    ← GET → { rate: number } — fetches live USD/BRL from AwesomeAPI (1h cache), fallback USD_TO_BRL_FALLBACK
 ```
 
 **Important:** Admin server components (`overview/page.tsx`, `analytics/page.tsx`) call `AdminService` **directly** — they do NOT use `features/connectors.ts` (which uses the relative-URL axios instance and would fail server-side).
+
+### Analytics page — sections
+
+`app/admin/analytics/page.tsx` is a **server component** that calls `AdminService` directly and fetches the exchange rate from AwesomeAPI at render time.
+
+| Section | Content |
+|---|---|
+| Distribuição de Planos | User count + progress bar per plan |
+| Top 10 Usuários | Sorted by `questionsGeneratedThisPeriod`; columns: #, Usuário, Plano, Questões no Período, Total Tokens (in/out), Avg/questão, Custo Total (BRL), Custo/questão (BRL) |
+| Consumo de Tokens | 5 KPI cards: Input Tokens, Output Tokens, Média tokens/questão (with formula), Custo Total (BRL), Custo Médio/questão (BRL) |
+| Margem por Plano | Table for `free`, `pro`, `pro_ai`: Usuários, Receita est./mês, Custo Tokens, Margem, % Margem, Break-even |
+
+### `AdminOverviewStats` shape
+
+```ts
+interface AdminOverviewStats {
+  totalUsers: number;
+  byPlan: Record<UserPlan, number>;
+  activeSubscriptions: number;
+  totalQuestionsGenerated: number;   // all-time, from UsageLog._sum.count
+  avgUsagePercent: number;           // avg questionsGeneratedThisPeriod / limit for finite-limit users
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  avgTokensPerQuestion: number;      // (input + output) / totalQuestionsGenerated
+  tokensByPlan: Record<UserPlan, {   // per-plan token aggregation (application-side join of UsageLog + User)
+    inputTokens: number;
+    outputTokens: number;
+    questionsGenerated: number;
+  }>;
+}
+```
+
+`tokensByPlan` is computed in `getOverview()` with two queries: `usageLog.groupBy(['userId'])` then `user.findMany` to resolve plan per userId, aggregated in memory.
 
 ### Audit log
 
