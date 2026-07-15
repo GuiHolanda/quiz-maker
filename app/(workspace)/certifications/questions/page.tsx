@@ -28,6 +28,7 @@ import { buttonStyles } from '@/config/constants/buttonStyles';
 import { useTwoPhaseGeneration } from '@/features/hooks/useTwoPhaseGeneration.hook';
 import { getQuestions } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
+import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 
 function CertificationsQuestionsPageContent() {
   const { t } = useTranslation();
@@ -35,6 +36,7 @@ function CertificationsQuestionsPageContent() {
   const [selectedTab, setSelectedTab] = useState<Key>(searchParams.get('tab') ?? 'browse');
   const { state, replaceQuiz, setAIquestions } = useQuizContext();
   const { certifications, isLoading } = useCertificationsContext();
+  const { refreshUsage } = useUsageContext();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingCount, setGeneratingCount] = useState(5);
   const [progress, setProgress] = useState(0);
@@ -222,6 +224,7 @@ function CertificationsQuestionsPageContent() {
             remainingCount={remainingCount}
             onSaved={() => {
               abort();
+              refreshUsage();
               setShowSimuladosBanner(true);
               setSelectedTab('browse');
             }}

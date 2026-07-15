@@ -22,6 +22,7 @@ import {
   ADMIN_USERS_URL,
   ADMIN_OVERVIEW_URL,
   ADMIN_AUDIT_LOG_URL,
+  ADMIN_EXCHANGE_RATE_URL,
   CERT_SIMULADOS_URL,
   CERT_QUESTION_EXPLANATION_URL,
 } from '@/config/constants';
@@ -422,6 +423,12 @@ export async function getAdminAuditLog(params: {
   targetId?: string;
 }): Promise<AdminAuditLogResponse> {
   const { data } = await api.get<AdminAuditLogResponse>(ADMIN_AUDIT_LOG_URL, { params });
+
+  return data;
+}
+
+export async function getExchangeRate(): Promise<{ rate: number }> {
+  const { data } = await api.get<{ rate: number }>(ADMIN_EXCHANGE_RATE_URL);
 
   return data;
 }
