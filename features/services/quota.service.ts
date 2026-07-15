@@ -100,21 +100,22 @@ export class QuotaService {
 
   // Atomically check and record question usage in a single DB write, preventing
   // TOCTOU race conditions where concurrent requests all pass the check before
-  // any of them records usage.
-  async checkAndRecordQuestions(userId: string, count: number): Promise<void> {
+  // any of them records usage. Returns the usageLog id so callers can update
+  // token counts after the LLM call completes.
+  async checkAndRecordQuestions(userId: string, count: number): Promise<{ logId: string }> {
     const user = await this.getUserWithPeriodReset(userId);
     const plan = this.resolvePlan(user.plan);
     const limit = this.resolveQuestionsLimit(user);
 
     if (limit === Infinity) {
-      await Promise.all([
+      const [, log] = await Promise.all([
         prisma.user.update({
           where: { id: userId },
           data: { questionsGeneratedThisPeriod: { increment: count } },
         }),
         prisma.usageLog.create({ data: { userId, action: 'generate_questions', count } }),
       ]);
-      return;
+      return { logId: log.id };
     }
 
     // Atomic conditional increment: only succeeds if used + count <= limit.
@@ -141,7 +142,15 @@ export class QuotaService {
       throw err;
     }
 
-    await prisma.usageLog.create({ data: { userId, action: 'generate_questions', count } });
+    const log = await prisma.usageLog.create({ data: { userId, action: 'generate_questions', count } });
+    return { logId: log.id };
+  }
+
+  async recordTokens(logId: string, tokens: { inputTokens: number; outputTokens: number }): Promise<void> {
+    await prisma.usageLog.update({
+      where: { id: logId },
+      data: { inputTokens: tokens.inputTokens, outputTokens: tokens.outputTokens },
+    });
   }
 
   async record(userId: string, action: QuotaAction, count: number): Promise<void> {
@@ -160,14 +169,19 @@ export class QuotaService {
     const user = await this.getUserWithPeriodReset(userId);
     const plan = this.resolvePlan(user.plan);
     const limits = PLAN_LIMITS[plan];
-    const certCount = await prisma.certification.count({ where: { userId } });
-    const examCount = await prisma.publicExam.count({ where: { userId } });
+    const [certCount, examCount, savedCert, savedExam] = await Promise.all([
+      prisma.certification.count({ where: { userId } }),
+      prisma.publicExam.count({ where: { userId } }),
+      prisma.question.count({ where: { userId } }),
+      prisma.publicExamQuestion.count({ where: { userId } }),
+    ]);
     const questionsLimit = this.resolveQuestionsLimit(user);
 
     return {
       plan,
       questionsUsed: user.questionsGeneratedThisPeriod,
       questionsLimit: questionsLimit === Infinity ? -1 : questionsLimit,
+      questionsSavedInLibrary: savedCert + savedExam,
       certificationsUsed: certCount,
       certificationsLimit: limits.maxCertifications === Infinity ? -1 : limits.maxCertifications,
       publicExamsUsed: examCount,

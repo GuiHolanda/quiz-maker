@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       questions: JSON.stringify(questions),
     });
 
-    const formattedAnswers = JSON.parse(llmResponse);
+    const formattedAnswers = JSON.parse(llmResponse.text);
 
     await questionService.saveAnswers(formattedAnswers.answers);
 

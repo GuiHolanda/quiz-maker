@@ -334,7 +334,7 @@ export class MockExamService {
           questions: payload,
         });
 
-        const parsed = JSON.parse(llmResponse) as {
+        const parsed = JSON.parse(llmResponse.text) as {
           answers?: { questionId: number; correctOptions: string[] }[];
         };
 

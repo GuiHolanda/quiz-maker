@@ -167,9 +167,9 @@ describe('QuotaService', () => {
         makeUser({ plan: 'free', questionsGeneratedThisPeriod: 100 }),
       );
       prismaMock.user.updateMany.mockResolvedValue({ count: 1 });
-      prismaMock.usageLog.create.mockResolvedValue({} as any);
+      prismaMock.usageLog.create.mockResolvedValue({ id: 'log-1' } as any);
 
-      await expect(service.checkAndRecordQuestions('user-1', 10)).resolves.toBeUndefined();
+      await expect(service.checkAndRecordQuestions('user-1', 10)).resolves.toMatchObject({ logId: 'log-1' });
 
       expect(prismaMock.user.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -200,9 +200,9 @@ describe('QuotaService', () => {
         makeUser({ plan: 'tester', questionsGeneratedThisPeriod: 99999, customQuotaOverride: null }),
       );
       prismaMock.user.update.mockResolvedValue({} as any);
-      prismaMock.usageLog.create.mockResolvedValue({} as any);
+      prismaMock.usageLog.create.mockResolvedValue({ id: 'log-2' } as any);
 
-      await expect(service.checkAndRecordQuestions('user-1', 50)).resolves.toBeUndefined();
+      await expect(service.checkAndRecordQuestions('user-1', 50)).resolves.toMatchObject({ logId: 'log-2' });
 
       expect(prismaMock.user.updateMany).not.toHaveBeenCalled();
       expect(prismaMock.user.update).toHaveBeenCalledWith(

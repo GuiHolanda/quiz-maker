@@ -306,8 +306,8 @@ describe('MockExamService', () => {
       } as any);
 
       openAICallMock
-        .mockResolvedValueOnce(JSON.stringify({ answers: [{ questionId: 100, correctOptions: ['A'] }] }))
-        .mockResolvedValueOnce(JSON.stringify({ answers: [{ questionId: 200, correctOptions: ['B'] }] }));
+        .mockResolvedValueOnce({ text: JSON.stringify({ answers: [{ questionId: 100, correctOptions: ['A'] }] }), inputTokens: 0, outputTokens: 0 })
+        .mockResolvedValueOnce({ text: JSON.stringify({ answers: [{ questionId: 200, correctOptions: ['B'] }] }), inputTokens: 0, outputTokens: 0 });
       prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
 
       const result = await service.ensureAnswers(1, 'user-1');
@@ -362,9 +362,11 @@ describe('MockExamService', () => {
         ],
       } as any);
 
-      openAICallMock.mockResolvedValueOnce(
-        JSON.stringify({ answers: [{ questionId: 101, correctOptions: ['A'] }] })
-      );
+      openAICallMock.mockResolvedValueOnce({
+        text: JSON.stringify({ answers: [{ questionId: 101, correctOptions: ['A'] }] }),
+        inputTokens: 0,
+        outputTokens: 0,
+      });
       prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
 
       const result = await service.ensureAnswers(1, 'user-1');

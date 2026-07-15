@@ -213,7 +213,7 @@ export class CertificationSimuladosService {
           questions: JSON.stringify(slice),
         });
 
-        const parsed = JSON.parse(llmResponse) as {
+        const parsed = JSON.parse(llmResponse.text) as {
           answers?: { questionId: number; correctOptions: string[] }[];
         };
 

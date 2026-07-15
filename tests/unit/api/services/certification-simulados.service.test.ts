@@ -310,19 +310,23 @@ describe('CertificationSimuladosService', () => {
       prismaMock.certification.findFirst.mockResolvedValue({ label: 'AWS Solutions Architect' } as any);
 
       openAICallMock
-        .mockResolvedValueOnce(
-          JSON.stringify({
+        .mockResolvedValueOnce({
+          text: JSON.stringify({
             answers: [
               { questionId: 100, correctOptions: ['A'] },
               { questionId: 101, correctOptions: ['B'] },
             ],
-          })
-        )
-        .mockResolvedValueOnce(
-          JSON.stringify({
+          }),
+          inputTokens: 0,
+          outputTokens: 0,
+        })
+        .mockResolvedValueOnce({
+          text: JSON.stringify({
             answers: [{ questionId: 200, correctOptions: ['C'] }],
-          })
-        );
+          }),
+          inputTokens: 0,
+          outputTokens: 0,
+        });
 
       prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
 
@@ -371,9 +375,11 @@ describe('CertificationSimuladosService', () => {
       } as any);
       prismaMock.certification.findFirst.mockResolvedValue({ label: 'AWS Solutions Architect' } as any);
 
-      openAICallMock.mockResolvedValueOnce(
-        JSON.stringify({ answers: [{ questionId: 101, correctOptions: ['A'] }] })
-      );
+      openAICallMock.mockResolvedValueOnce({
+        text: JSON.stringify({ answers: [{ questionId: 101, correctOptions: ['A'] }] }),
+        inputTokens: 0,
+        outputTokens: 0,
+      });
       prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
 
       const result = await service.ensureAnswers(1, 'user1');
@@ -404,9 +410,11 @@ describe('CertificationSimuladosService', () => {
       } as any);
       prismaMock.certification.findFirst.mockResolvedValue(null);
 
-      openAICallMock.mockResolvedValueOnce(
-        JSON.stringify({ answers: [{ questionId: 100, correctOptions: ['A'] }] })
-      );
+      openAICallMock.mockResolvedValueOnce({
+        text: JSON.stringify({ answers: [{ questionId: 100, correctOptions: ['A'] }] }),
+        inputTokens: 0,
+        outputTokens: 0,
+      });
       prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
 
       const result = await service.ensureAnswers(1, 'user1');

@@ -31,14 +31,15 @@ export async function GET(request: NextRequest) {
   const count = parseInt(questionParams.num_questions, 10) || 1;
 
   try {
-    await quotaService.checkAndRecordQuestions(session.user.id, count);
+    const { logId } = await quotaService.checkAndRecordQuestions(session.user.id, count);
 
     const rawResponse = await openAIService.call(certificationQuestionsPrompt, {
       certification_name: questionParams.certification_name,
       topic_name: questionParams.topic_name,
       num_questions: questionParams.num_questions,
     });
-    const questionsFromAi = validateAiQuestions(JSON.parse(extractJson(rawResponse)));
+    void quotaService.recordTokens(logId, { inputTokens: rawResponse.inputTokens, outputTokens: rawResponse.outputTokens });
+    const questionsFromAi = validateAiQuestions(JSON.parse(extractJson(rawResponse.text)));
 
     return NextResponse.json(questionsFromAi, { status: 200 });
   } catch (err: any) {
