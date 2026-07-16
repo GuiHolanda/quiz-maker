@@ -32,7 +32,7 @@ export class EditalExtractorService {
         : 'Extraia dados do cargo principal mencionado no edital, se houver apenas um.';
 
       const response = await this.openai.responses.create({
-        model: process.env.OPENAI_MODEL || 'gpt-4o',
+        model: process.env.OPENAI_MODEL || 'gpt-5.4-mini',
         input: [
           {
             role: 'user',

@@ -171,9 +171,9 @@ export const ADMIN_OVERVIEW_URL = '/admin/overview';
 export const ADMIN_AUDIT_LOG_URL = '/admin/audit-log';
 export const ADMIN_EXCHANGE_RATE_URL = '/admin/exchange-rate';
 
-export const GPT_54_PRICING_USD = {
-  inputPerMillion: 2.50,
-  outputPerMillion: 15.00,
+export const ACTIVE_MODEL_PRICING_USD = {
+  inputPerMillion: 0.75,
+  outputPerMillion: 4.50,
 } as const;
 
 export const USD_TO_BRL_FALLBACK = 5.70;
