@@ -54,6 +54,9 @@ prisma/dev.db
 
 .superpowers/
 
+# Eval benchmark results (contain real API costs and generated content)
+scripts/eval/results/*.json
+
 # E2E
 tests/e2e/auth/storageState.json
 .env.test
