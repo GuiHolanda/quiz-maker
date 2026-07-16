@@ -2,7 +2,7 @@ import { Progress } from '@heroui/progress';
 
 import { AdminService } from '@/app/api/admin/admin.service';
 import type { UserPlan } from '@/shared/types';
-import { GPT_54_PRICING_USD, USD_TO_BRL_FALLBACK, PLAN_PRICES_BRL_MONTHLY, PLAN_LIMITS } from '@/config/constants';
+import { ACTIVE_MODEL_PRICING_USD, USD_TO_BRL_FALLBACK, PLAN_PRICES_BRL_MONTHLY, PLAN_LIMITS } from '@/config/constants';
 
 const adminService = new AdminService();
 
@@ -14,8 +14,8 @@ const brlFormatter = new Intl.NumberFormat('pt-BR', {
 
 function computeCostBRL(inputTokens: number, outputTokens: number, usdToBrl: number): number {
   const usd =
-    (inputTokens * GPT_54_PRICING_USD.inputPerMillion) / 1_000_000 +
-    (outputTokens * GPT_54_PRICING_USD.outputPerMillion) / 1_000_000;
+    (inputTokens * ACTIVE_MODEL_PRICING_USD.inputPerMillion) / 1_000_000 +
+    (outputTokens * ACTIVE_MODEL_PRICING_USD.outputPerMillion) / 1_000_000;
   return usd * usdToBrl;
 }
 
@@ -177,7 +177,7 @@ export default async function AdminAnalyticsPage() {
                   : '—'}
               </p>
               <p className="text-xs text-default-400">
-                ({GPT_54_PRICING_USD.inputPerMillion.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/M in · {GPT_54_PRICING_USD.outputPerMillion.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/M out)
+                ({ACTIVE_MODEL_PRICING_USD.inputPerMillion.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/M in · {ACTIVE_MODEL_PRICING_USD.outputPerMillion.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/M out)
               </p>
             </div>
           </div>

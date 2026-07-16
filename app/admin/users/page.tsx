@@ -11,7 +11,7 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
 import type { UserAdminRow, UserPlan, AdminUsersResponse } from '@/shared/types';
 import { inputProperties } from '@/config/constants/inputStyles';
-import { GPT_54_PRICING_USD, USD_TO_BRL_FALLBACK } from '@/config/constants';
+import { ACTIVE_MODEL_PRICING_USD, USD_TO_BRL_FALLBACK } from '@/config/constants';
 
 const PLAN_OPTIONS: UserPlan[] = ['free', 'pro', 'pro_ai', 'tester', 'admin'];
 const STATUS_OPTIONS = ['active', 'canceled'];
@@ -25,8 +25,8 @@ const brlFormatter = new Intl.NumberFormat('pt-BR', {
 
 function computeCostBRL(inputTokens: number, outputTokens: number, usdToBrl: number): number {
   const usd =
-    (inputTokens * GPT_54_PRICING_USD.inputPerMillion) / 1_000_000 +
-    (outputTokens * GPT_54_PRICING_USD.outputPerMillion) / 1_000_000;
+    (inputTokens * ACTIVE_MODEL_PRICING_USD.inputPerMillion) / 1_000_000 +
+    (outputTokens * ACTIVE_MODEL_PRICING_USD.outputPerMillion) / 1_000_000;
   return usd * usdToBrl;
 }
 
