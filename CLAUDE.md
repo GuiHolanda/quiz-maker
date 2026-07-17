@@ -828,3 +828,14 @@ Common labels: `bug`, `feature`, `enhancement`, `backlog`.
 - An inconsistency between certifications and public-exams flows that should be unified
 
 The question should be brief and specific — name the problem, then ask: *"Quer que eu crie uma issue para isso?"*. Do **not** create issues silently without asking.
+
+---
+
+## Design Context
+
+Strategic and visual context for this product lives in two files at the project root:
+
+- **[PRODUCT.md](PRODUCT.md)** — register (`brand`), platform (`web`), users, positioning, brand personality, anti-references, and design principles. Read this before any marketing/landing page work or brand-level decisions.
+- **[DESIGN.MD](app/DESIGN.MD)** — visual system: color tokens, typography scale, spacing, elevation, component specs. Read this before any UI work.
+
+Register is **brand** (the marketing landing page is the primary surface). The product workspace is the secondary surface. When working on `app/(marketing)/`, treat brand register as primary.
