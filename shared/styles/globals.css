@@ -94,6 +94,12 @@
 
 .marquee-track { animation: marquee 30s linear infinite; }
 
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track { animation-play-state: paused; }
+  .scan-line { animation: none; opacity: 0; }
+  .animate-pulse { animation: none !important; }
+}
+
 .scan-line {
   position: absolute;
   left: 0;
