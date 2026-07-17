@@ -33,47 +33,65 @@ export default function AdminAuditLogPage() {
   useEffect(() => { fetchLog(); }, [fetchLog]);
 
   return (
-    <div>
-      <h1 className="text-2xl font-extrabold text-foreground mb-6">Audit Log</h1>
+    <div style={{ minHeight: '100%' }}>
+      <div className="flex items-center gap-3 mb-8">
+        <div style={{ width: '2px', height: '20px', background: '#00d4ff', borderRadius: '1px', flexShrink: 0 }} />
+        <h1 className="font-sora font-extrabold text-white text-2xl">Audit Log</h1>
+      </div>
 
-      <div className="bg-content1 border border-default-200 rounded-xl overflow-hidden mb-4">
-        <table className="w-full text-sm">
+      <div className="rounded-lg overflow-hidden mb-4" style={{ border: '1px solid rgba(42,79,122,0.4)' }}>
+        <table className="w-full">
           <thead>
-            <tr className="border-b border-divider">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Data</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Admin</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Usuário afetado</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Ação</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Antes → Depois</th>
+            <tr style={{ background: 'rgba(7,14,32,0.8)', borderBottom: '1px solid rgba(42,79,122,0.4)' }}>
+              <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Data</th>
+              <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Admin</th>
+              <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Usuário afetado</th>
+              <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Ação</th>
+              <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Antes → Depois</th>
             </tr>
           </thead>
           <tbody>
             {(data?.entries ?? []).map((entry) => (
-              <tr key={entry.id} className="border-b border-divider last:border-0">
-                <td className="px-4 py-3 text-xs text-default-400 whitespace-nowrap">
+              <tr
+                key={entry.id}
+                className="last:border-0"
+                style={{ background: 'rgba(15,27,61,0.3)', borderBottom: '1px solid rgba(30,58,95,0.4)' }}
+              >
+                <td className="px-4 py-3 font-mono text-xs whitespace-nowrap" style={{ color: '#4d87bc' }}>
                   {new Date(entry.createdAt).toLocaleString('pt-BR')}
                 </td>
                 <td className="px-4 py-3">
-                  <p className="text-sm font-semibold text-foreground">{entry.adminName ?? '—'}</p>
-                  <p className="text-xs text-default-400">{entry.adminEmail}</p>
+                  <p className="font-sora font-semibold text-white text-sm">{entry.adminName ?? '—'}</p>
+                  <p className="font-mono text-xs" style={{ color: '#6a9fc8' }}>{entry.adminEmail}</p>
                 </td>
                 <td className="px-4 py-3">
-                  <p className="text-sm font-semibold text-foreground">{entry.targetName ?? '—'}</p>
-                  <p className="text-xs text-default-400">{entry.targetEmail}</p>
+                  <p className="font-sora font-semibold text-white text-sm">{entry.targetName ?? '—'}</p>
+                  <p className="font-mono text-xs" style={{ color: '#6a9fc8' }}>{entry.targetEmail}</p>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="text-xs bg-default-100 px-2 py-0.5 rounded">
+                  <span
+                    className="font-mono text-xs px-2 py-0.5 rounded"
+                    style={{
+                      background: 'rgba(0,212,255,0.08)',
+                      border: '1px solid rgba(0,212,255,0.15)',
+                      color: '#00d4ff',
+                    }}
+                  >
                     {ACTION_LABELS[entry.action] ?? entry.action}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-xs text-default-500 font-mono">
+                <td className="px-4 py-3 font-mono text-xs" style={{ color: '#6a9fc8' }}>
                   {entry.before} → {entry.after}
                 </td>
               </tr>
             ))}
             {data?.entries.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-sm text-default-400">
+                <td
+                  colSpan={5}
+                  className="px-4 py-10 text-center font-mono text-sm"
+                  style={{ color: '#4d87bc' }}
+                >
                   Nenhuma ação registrada ainda.
                 </td>
               </tr>
