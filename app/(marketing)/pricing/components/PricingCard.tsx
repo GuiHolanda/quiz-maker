@@ -44,38 +44,36 @@ export function PricingCard({
     <div
       className={`relative flex flex-col gap-6 rounded-lg p-7 transition-colors duration-200 ${
         isProAi
-          ? 'bg-navy-950/60 border-2 border-navy-600'
+          ? 'bg-navy-950/60 border-2 border-accent/40'
           : 'bg-navy-950/40 border border-navy-700/60'
       }`}
     >
       {isPopular && (
         <div className="absolute top-4 right-4">
-          <span
-            className="font-mono text-xs px-2 py-1 rounded tracking-wider uppercase"
-            style={{ background: 'rgba(0,212,255,0.1)', color: '#00d4ff', border: '1px solid rgba(0,212,255,0.2)' }}
-          >
+          <span className="text-xs px-2 py-1 rounded bg-accent/10 text-accent border border-accent/20">
             {t('pricing.plan.mostPopular')}
           </span>
         </div>
       )}
 
-      <div className="flex flex-col gap-2 min-h-[6rem]">
-        <span className={`font-mono text-xs uppercase tracking-widest ${isProAi ? 'text-accent' : 'text-navy-500'}`}>
+      <div className="flex flex-col gap-1">
+        <p className={`text-xs font-medium ${isProAi ? 'text-accent' : 'text-navy-400'}`}>
           {t(nameKey)}
-        </span>
+        </p>
         <div className="flex items-end gap-2">
           <span className="font-sora font-extrabold text-white text-3xl">{t(priceKey)}</span>
-          <span className="font-mono text-xs text-navy-500 mb-1.5">{t('pricing.plan.perMonth')}</span>
+          <span className="text-xs text-navy-400 mb-1.5">{t('pricing.plan.perMonth')}</span>
         </div>
-        <p className="font-mono text-xs text-navy-500 min-h-[1rem]">
+        <p className="text-xs text-navy-400 min-h-[1rem]">
           {sublineKey ? t(sublineKey) : ''}
         </p>
       </div>
 
       {isCurrent ? (
         <button
+          type="button"
           disabled
-          className="w-full font-mono text-xs text-navy-600 py-3 rounded border border-navy-800/40 cursor-default"
+          className="w-full text-xs text-navy-600 py-3 rounded border border-navy-800/40 cursor-default"
         >
           {t(ctaLabelKey)}
         </button>
@@ -83,7 +81,7 @@ export function PricingCard({
         <Button
           className={`w-full font-sans font-semibold text-sm rounded tracking-wide ${
             isProAi
-              ? 'bg-navy-600 hover:bg-navy-500 text-white border border-navy-500'
+              ? 'bg-accent hover:bg-electric text-navy-950 transition-colors duration-200'
               : 'text-navy-400 hover:text-white border border-navy-700 hover:border-navy-500'
           }`}
           isLoading={isLoading}
@@ -105,7 +103,7 @@ export function PricingCard({
               className={`text-xs w-4 shrink-0 ${feature.included ? 'text-accent' : 'text-navy-700'}`}
               icon={feature.included ? faCheck : faXmark}
             />
-            <span className={`text-sm ${feature.included ? 'text-[#e8edf3]' : 'text-navy-600'}`}>
+            <span className={`text-sm ${feature.included ? 'text-foreground' : 'text-navy-400'}`}>
               {feature.value ? (
                 <>
                   <span className="font-semibold">{feature.value}</span>{' '}
