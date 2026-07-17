@@ -47,7 +47,8 @@ yarn.lock
 package-lock.json
 bun.lockb.env
 prisma/dev.db
-.worktrees/
+.worktrees
+.superpowers
 
 # MCP local config (contains API keys)
 .mcp.json
@@ -63,3 +64,10 @@ tests/e2e/auth/storageState.json
 playwright-report/
 test-results/
 prisma/dev/prisma/
+
+#Skils
+.agents/
+.codex/
+.github/
+.impeccable/
+.claude

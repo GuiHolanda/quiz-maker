@@ -22,7 +22,6 @@ const NAV_LINKS = [
   { labelKey: 'nav.certificates', href: '/certifications/simulados' },
   { labelKey: 'nav.concursos', href: '/public-exams/simulados' },
   { labelKey: 'nav.pricing', href: '/pricing' },
-  { labelKey: 'nav.docs', href: '#' },
 ] as const;
 
 export function MarketingNavbar() {
@@ -44,101 +43,96 @@ export function MarketingNavbar() {
 
   return (
     <>
-      <header
-        className="fixed top-0 left-0 right-0 z-50 border-b border-navy-800/60"
-        style={{ background: 'rgba(15,27,61,0.95)', backdropFilter: 'blur(8px)' }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14">
-            {/* Logo */}
-            <NextLink className="flex items-center gap-3" href="/">
-              <div
-                className="w-7 h-7 rounded flex items-center justify-center"
-                style={{ background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)' }}
-              >
-                <FontAwesomeIcon className="text-accent text-xs" icon={faMicrochip} />
-              </div>
-              <span className="font-sora font-bold text-white text-sm tracking-tight">Certifique AI</span>
-              <span className="hidden sm:block w-px h-4 bg-navy-700 mx-1" />
-              <span className="hidden sm:block font-mono text-xs text-navy-400 tracking-wider">EXAM PLATFORM</span>
-            </NextLink>
+      <div className="fixed top-3 left-4 right-4 z-50 max-w-6xl mx-auto">
+        <header className="rounded-xl border border-navy-700/60 bg-navy-950/90 backdrop-blur-md overflow-hidden">
+          <div className="px-4 sm:px-6">
+            <div className="flex items-center justify-between h-14">
+              {/* Logo */}
+              <NextLink className="flex items-center gap-2.5" href="/">
+                <div className="w-7 h-7 rounded flex items-center justify-center bg-accent/10 border border-accent/30">
+                  <FontAwesomeIcon className="text-accent text-xs" icon={faMicrochip} />
+                </div>
+                <span className="font-sora font-bold text-white text-sm tracking-tight">CertifiqueAI</span>
+              </NextLink>
 
-            {/* Nav links — desktop */}
-            <nav className="hidden md:flex items-center gap-6">
-              {NAV_LINKS.map((item) => (
-                <NextLink
-                  key={item.href}
-                  className="font-sans text-xs font-medium text-navy-400 hover:text-white transition-colors tracking-wide uppercase"
-                  href={item.href}
-                >
-                  {t(item.labelKey)}
-                </NextLink>
-              ))}
-            </nav>
-
-            {/* Right side */}
-            <div className="flex items-center gap-4">
-              {/* Auth state */}
-              {status === 'authenticated' && session?.user ? (
-                renderUserDropdown()
-              ) : (
-                <>
+              {/* Nav links — desktop */}
+              <nav className="hidden md:flex items-center gap-6">
+                {NAV_LINKS.map((item) => (
                   <NextLink
-                    className="font-sans text-xs font-medium text-navy-400 hover:text-white transition-colors tracking-wide hidden sm:block"
+                    key={item.href}
+                    className="text-sm font-medium text-navy-400 hover:text-white transition-colors duration-150"
+                    href={item.href}
+                  >
+                    {t(item.labelKey)}
+                  </NextLink>
+                ))}
+              </nav>
+
+              {/* Right side */}
+              <div className="flex items-center gap-3">
+                {status === 'authenticated' && session?.user ? (
+                  renderUserDropdown()
+                ) : (
+                  <>
+                    <NextLink
+                      className="text-sm font-medium text-navy-400 hover:text-white transition-colors duration-150 hidden sm:block"
+                      href="/login"
+                    >
+                      {t('nav.logIn')}
+                    </NextLink>
+                    <Button
+                      as={NextLink}
+                      className="font-sans text-xs font-semibold bg-accent hover:bg-electric text-navy-950 rounded-lg tracking-wide transition-colors duration-200"
+                      href="/register"
+                      size="sm"
+                    >
+                      {t('nav.startFreeTrial')}
+                    </Button>
+                  </>
+                )}
+
+                {/* Mobile hamburger */}
+                <button
+                  type="button"
+                  aria-label={t('nav.toggleMenu')}
+                  aria-expanded={menuOpen}
+                  className="md:hidden text-navy-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
+                  onClick={() => setMenuOpen((o) => !o)}
+                >
+                  <FontAwesomeIcon icon={menuOpen ? faXmark : faBars} className="text-sm" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile menu */}
+          {menuOpen && (
+            <div className="md:hidden border-t border-navy-800/60 bg-navy-950/98 px-4 py-4">
+              <nav className="flex flex-col gap-1">
+                {NAV_LINKS.map((item) => (
+                  <NextLink
+                    key={item.href}
+                    className="text-sm text-navy-400 hover:text-white transition-colors py-2.5 border-b border-navy-800/40 last:border-0"
+                    href={item.href}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {t(item.labelKey)}
+                  </NextLink>
+                ))}
+                {!(status === 'authenticated' && session?.user) && (
+                  <NextLink
+                    className="text-sm text-navy-400 hover:text-white transition-colors py-2.5"
                     href="/login"
+                    onClick={() => setMenuOpen(false)}
                   >
                     {t('nav.logIn')}
                   </NextLink>
-                  <Button
-                    as={NextLink}
-                    className="font-sans text-xs font-semibold bg-navy-600 hover:bg-navy-500 text-white border border-navy-500 rounded tracking-wide"
-                    href="/login"
-                    size="sm"
-                  >
-                    {t('nav.startFreeTrial')}
-                  </Button>
-                </>
-              )}
-
-              {/* Mobile hamburger */}
-              <button
-                aria-label="Toggle menu"
-                className="md:hidden text-navy-400 hover:text-white transition-colors"
-                onClick={() => setMenuOpen((o) => !o)}
-              >
-                <FontAwesomeIcon icon={menuOpen ? faXmark : faBars} className="text-sm" />
-              </button>
+                )}
+              </nav>
             </div>
-          </div>
-        </div>
-
-        {/* Mobile menu */}
-        {menuOpen && (
-          <div className="md:hidden border-t border-navy-800/60 bg-navy-950/98 px-4 py-4">
-            <nav className="flex flex-col gap-1">
-              {NAV_LINKS.map((item) => (
-                <NextLink
-                  key={item.href}
-                  className="font-sans text-sm text-navy-400 hover:text-white transition-colors py-2.5 border-b border-navy-800/40 last:border-0"
-                  href={item.href}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {t(item.labelKey)}
-                </NextLink>
-              ))}
-              {!(status === 'authenticated' && session?.user) && (
-                <NextLink
-                  className="font-sans text-sm text-navy-400 hover:text-white transition-colors py-2.5"
-                  href="/login"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {t('nav.logIn')}
-                </NextLink>
-              )}
-            </nav>
-          </div>
-        )}
-      </header>
+          )}
+        </header>
+      </div>
       <UpgradeModal isOpen={isUpgradeOpen} onClose={() => setIsUpgradeOpen(false)} />
     </>
   );

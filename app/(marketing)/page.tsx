@@ -11,9 +11,10 @@ import {
   faCheck,
   faXmark,
   faRobot,
-  faDatabase,
   faLandmark,
   faFileLines,
+  faBuilding,
+  faScaleBalanced,
 } from '@fortawesome/free-solid-svg-icons';
 import { faAws, faMicrosoft } from '@fortawesome/free-brands-svg-icons';
 import { useSession } from 'next-auth/react';
@@ -22,13 +23,14 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 /* ── Data ───────────────────────────────────────────────── */
 
-const EXAM_TRACKS = [
+const IT_TRACKS = [
   {
     icon: faAws,
     provider: 'Amazon Web Services',
     title: 'AWS',
     tracks: ['SAA-C03 · Solutions Architect', 'DVA-C02 · Developer', 'SOA-C02 · SysOps Admin', '+ 8 more tracks'],
     count: '340K+ questions',
+    href: '/register',
   },
   {
     icon: faMicrosoft,
@@ -36,21 +38,32 @@ const EXAM_TRACKS = [
     title: 'Azure',
     tracks: ['AZ-900 · Fundamentals', 'AZ-104 · Administrator', 'AZ-305 · Solutions Expert', '+ 6 more tracks'],
     count: '280K+ questions',
+    href: '/register',
   },
   {
-    icon: faDatabase,
+    icon: faBuilding,
     provider: 'SAP Enterprise',
     title: 'SAP',
     tracks: ['C_HANATEC · Technology', 'C_S4FTR · Finance', 'P_SAPEA · Enterprise Arch', '+ 5 more tracks'],
     count: '190K+ questions',
+    href: '/register',
   },
-  {
-    icon: faLandmark,
-    provider: 'Setor Público · Brasil',
-    title: 'Concursos Públicos',
-    tracks: ['CESPE/CEBRASPE · Edital', 'FCC · Federal Courts', 'IBFC · INSS · PRF', '+ 12 more bancas'],
-    count: '390K+ questions',
-  },
+] as const;
+
+const CONCURSO_BANCAS = [
+  { name: 'CESPE / CEBRASPE', note: 'Federal — INSS, PRF, PF, TCU' },
+  { name: 'FCC', note: 'Tribunais, Receita Federal' },
+  { name: 'FGV', note: 'Judiciário, Prefeituras' },
+  { name: 'IBFC', note: 'Saúde, Segurança, Educação' },
+  { name: 'VUNESP', note: 'SP — TJ, Câmaras, SABESP' },
+  { name: 'CEBRASPE · Delegado', note: 'PC, Civil, Federal' },
+] as const;
+
+const CONCURSO_AREAS = [
+  { icon: faScaleBalanced, label: 'Direito e OAB' },
+  { icon: faLandmark, label: 'Administrativo' },
+  { icon: faBuilding, label: 'Saúde · COREN · CRM' },
+  { icon: faFileLines, label: 'Contabilidade · CFC' },
 ] as const;
 
 const STATS = [
@@ -113,10 +126,10 @@ const PRO_AI_FEATURES: PricingFeature[] = [
   { labelKey: 'pricing.features.aiChat', included: true },
 ];
 
-const TERMINAL_QUESTION =
+const TERMINAL_AWS_QUESTION =
   'A company is designing a highly available web application on AWS. The application requires session persistence, automatic failover across Availability Zones, and the ability to handle traffic spikes of up to 10x normal load within 60 seconds. Which combination of services BEST meets these requirements?';
 
-const TERMINAL_OPTIONS = [
+const TERMINAL_AWS_OPTIONS = [
   {
     label: 'A',
     text: 'Use Amazon S3 Cross-Region Replication with S3-IA storage class for infrequent access patterns',
@@ -137,6 +150,14 @@ const TERMINAL_OPTIONS = [
     text: 'Implement AWS Direct Connect with a VPN backup and Transit Gateway for hybrid connectivity',
     selected: false,
   },
+] as const;
+
+const TERMINAL_CESPE_QUESTION =
+  'Acerca dos princípios da Administração Pública previstos no art. 37 da Constituição Federal de 1988, julgue o item a seguir. O princípio da eficiência, introduzido pela Emenda Constitucional n.º 19/1998, impõe ao agente público o dever de realizar suas atribuições com presteza, perfeição e rendimento funcional, podendo a Administração demitir servidor estável por insuficiência de desempenho mediante processo administrativo.';
+
+const TERMINAL_CESPE_OPTIONS = [
+  { label: 'C', text: 'Certo', selected: true },
+  { label: 'E', text: 'Errado', selected: false },
 ] as const;
 
 /* ── Page ───────────────────────────────────────────────── */
@@ -190,32 +211,40 @@ function MarqueeDataStrip() {
 function HeroSection() {
   const { t } = useTranslation();
   const { data: session } = useSession();
+  const [terminalTab, setTerminalTab] = useState<'aws' | 'cespe'>('aws');
   const [displayedText, setDisplayedText] = useState('');
   const [showOptions, setShowOptions] = useState(false);
 
+  const activeQuestion = terminalTab === 'aws' ? TERMINAL_AWS_QUESTION : TERMINAL_CESPE_QUESTION;
+  const activeOptions = terminalTab === 'aws' ? TERMINAL_AWS_OPTIONS : TERMINAL_CESPE_OPTIONS;
+
   useEffect(() => {
+    setDisplayedText('');
+    setShowOptions(false);
+    let interval: ReturnType<typeof setInterval>;
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      setDisplayedText(activeQuestion);
+      setShowOptions(true);
+      return;
+    }
     let i = 0;
     const timeout = setTimeout(() => {
-      const interval = setInterval(() => {
-        if (i < TERMINAL_QUESTION.length) {
-          setDisplayedText(TERMINAL_QUESTION.slice(0, i + 1));
+      interval = setInterval(() => {
+        if (i < activeQuestion.length) {
+          setDisplayedText(activeQuestion.slice(0, i + 1));
           i++;
         } else {
           clearInterval(interval);
           setTimeout(() => setShowOptions(true), 300);
         }
-      }, 22);
-      return () => clearInterval(interval);
-    }, 1200);
-    return () => clearTimeout(timeout);
-  }, []);
+      }, 18);
+    }, 600);
+    return () => { clearTimeout(timeout); clearInterval(interval); };
+  }, [terminalTab, activeQuestion]);
 
   return (
     <section className="pt-16 pb-24 relative overflow-hidden grid-bg">
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: 'linear-gradient(135deg, #070e20 0%, #0f1b3d 50%, rgba(30,58,95,0.2) 100%)' }}
-      />
       <div
         className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] rounded-full pointer-events-none"
         style={{ background: 'rgba(0,212,255,0.04)', filter: 'blur(60px)' }}
@@ -236,7 +265,7 @@ function HeroSection() {
             <div className="flex flex-col sm:flex-row gap-3 mb-10">
               <Button
                 as={NextLink}
-                className="font-semibold text-sm bg-navy-600 hover:bg-navy-500 text-white border border-navy-500 rounded tracking-wide"
+                className="font-semibold text-sm bg-accent hover:bg-electric text-navy-950 rounded tracking-wide transition-colors duration-200"
                 href={session?.user ? '/certifications/simulados' : '/register'}
                 size="lg"
               >
@@ -246,7 +275,7 @@ function HeroSection() {
               <Button
                 as={NextLink}
                 className="font-medium text-sm text-navy-400 hover:text-white border border-navy-700 hover:border-navy-600 rounded tracking-wide"
-                href="/certifications/questions"
+                href={session?.user ? '/certifications/questions' : '#demo-terminal'}
                 size="lg"
                 variant="bordered"
               >
@@ -280,7 +309,7 @@ function HeroSection() {
           </div>
 
           {/* Right: Terminal */}
-          <div className="relative">
+          <div className="relative" id="demo-terminal">
             <div className="border border-navy-700 rounded-lg overflow-hidden bg-navy-950/80">
               {/* Terminal header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-navy-800 bg-navy-900/60">
@@ -290,10 +319,27 @@ function HeroSection() {
                   <div className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent" />
                   <span className="font-mono text-xs text-navy-400">certifyai · question-generator</span>
                 </div>
-                <span className="font-mono text-xs text-green-400">● LIVE</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    aria-pressed={terminalTab === 'aws'}
+                    onClick={() => setTerminalTab('aws')}
+                    className={`font-mono text-xs px-2 py-0.5 rounded transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent ${terminalTab === 'aws' ? 'bg-navy-700 text-white' : 'text-navy-500 hover:text-navy-300'}`}
+                  >
+                    IT
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={terminalTab === 'cespe'}
+                    onClick={() => setTerminalTab('cespe')}
+                    className={`font-mono text-xs px-2 py-0.5 rounded transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent ${terminalTab === 'cespe' ? 'bg-navy-700 text-white' : 'text-navy-500 hover:text-navy-300'}`}
+                  >
+                    Concurso
+                  </button>
+                </div>
               </div>
 
               {/* Terminal body */}
@@ -301,28 +347,32 @@ function HeroSection() {
                 <div className="mb-3">
                   <span className="font-mono text-xs text-navy-600">$</span>
                   <span className="font-mono text-xs text-navy-400 ml-2">
-                    generate --exam aws-saa-c03 --difficulty hard --topic &quot;architecture&quot;
+                    {terminalTab === 'aws'
+                      ? 'generate --exam aws-saa-c03 --difficulty hard --topic "architecture"'
+                      : 'generate --banca cespe --cargo "Analista Judiciário" --disciplina "Direito Administrativo"'}
                   </span>
                 </div>
                 <div className="font-mono text-xs text-accent mb-2">
-                  ✓ Generating AWS Solutions Architect question...
+                  {terminalTab === 'aws'
+                    ? '✓ Generating AWS Solutions Architect question...'
+                    : '✓ Gerando questão CESPE · Direito Administrativo...'}
                 </div>
 
-                <div className="border-l-2 border-accent/40 pl-4 mt-4">
+                <div className="bg-accent/5 rounded px-4 py-3 mt-4">
                   <p className="font-mono text-xs text-navy-400 mb-2 uppercase tracking-widest">
-                    QUESTION #4,891 · AWS-SAA-C03 · HARD
+                    {terminalTab === 'aws' ? 'QUESTION #4,891 · AWS-SAA-C03 · HARD' : 'QUESTÃO #2,107 · CESPE/CEBRASPE · DIR. ADMINISTRATIVO'}
                   </p>
-                  <p className="font-mono text-sm text-white leading-relaxed">
+                  <p className="font-mono text-sm text-white leading-relaxed break-words">
                     {displayedText}
-                    {displayedText.length < TERMINAL_QUESTION.length && (
-                      <span className="text-accent animate-pulse">▌</span>
+                    {displayedText.length < activeQuestion.length && (
+                      <span className="text-accent">▌</span>
                     )}
                   </p>
                 </div>
 
                 {showOptions && (
                   <div className="mt-5 space-y-2">
-                    {TERMINAL_OPTIONS.map((opt) => (
+                    {activeOptions.map((opt) => (
                       <div
                         key={opt.label}
                         className={`flex items-start gap-3 p-2.5 border rounded transition-colors ${
@@ -341,10 +391,21 @@ function HeroSection() {
                     ))}
 
                     <div className="mt-4 pt-3 border-t border-navy-800 flex items-center gap-4">
-                      <span className="font-mono text-xs text-navy-600">Difficulty:</span>
-                      <span className="font-mono text-xs text-orange-400">HARD</span>
-                      <span className="font-mono text-xs text-navy-600">Domain:</span>
-                      <span className="font-mono text-xs text-navy-300">High Availability</span>
+                      {terminalTab === 'aws' ? (
+                        <>
+                          <span className="font-mono text-xs text-navy-600">Difficulty:</span>
+                          <span className="font-mono text-xs text-orange-400">HARD</span>
+                          <span className="font-mono text-xs text-navy-600">Domain:</span>
+                          <span className="font-mono text-xs text-navy-300">High Availability</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="font-mono text-xs text-navy-600">Banca:</span>
+                          <span className="font-mono text-xs text-orange-400">CESPE</span>
+                          <span className="font-mono text-xs text-navy-600">Matéria:</span>
+                          <span className="font-mono text-xs text-navy-300">Dir. Administrativo</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
@@ -373,7 +434,7 @@ function StatsStrip() {
           {STATS.map((stat) => (
             <div key={stat.label} className="text-center sm:px-6">
               <p className="font-mono text-xl sm:text-2xl font-medium text-white">{stat.value}</p>
-              <p className="font-mono text-xs text-navy-500 mt-0.5 uppercase tracking-widest">{t(stat.label)}</p>
+              <p className="text-xs text-navy-400 mt-0.5">{t(stat.label)}</p>
             </div>
           ))}
         </div>
@@ -401,43 +462,96 @@ function ExamGridSection() {
           <p className="text-navy-400 text-base max-w-xl">{t('homepage.examGrid.subtitle')}</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {EXAM_TRACKS.map((track) => (
-            <div
-              key={track.title}
-              className="group border border-navy-700/60 rounded-lg p-6 bg-navy-950/40 hover:bg-navy-950/70 cursor-pointer relative overflow-hidden transition-all duration-200"
-              style={{ '--tw-border-opacity': '1' } as React.CSSProperties}
-            >
-              <div
-                className="absolute top-0 right-0 w-16 h-16 rounded-bl-full pointer-events-none"
-                style={{ background: 'rgba(0,212,255,0.03)' }}
-              />
-              <div className="w-12 h-12 border border-navy-700 group-hover:border-accent/40 rounded flex items-center justify-center mb-5 transition-colors duration-200">
-                <FontAwesomeIcon
-                  className="text-navy-400 group-hover:text-accent text-xl transition-colors duration-200"
-                  icon={track.icon}
-                />
-              </div>
-              <div className="mb-2">
-                <span className="font-mono text-xs text-navy-500 uppercase tracking-widest">{track.provider}</span>
-              </div>
-              <h3 className="font-sora font-semibold text-white text-lg mb-3">{track.title}</h3>
-              <div className="space-y-1.5 mb-5">
-                {track.tracks.map((name) => (
-                  <div key={name} className="flex items-center gap-2">
-                    <span className="w-1 h-1 rounded-full bg-navy-600" />
-                    <span className="font-mono text-xs text-navy-400">{name}</span>
+        {/* Featured: Concursos Públicos */}
+        <NextLink href="/register" className="block group mb-4">
+          <div className="border border-accent/20 rounded-lg p-6 bg-navy-950/60 hover:bg-navy-950/80 transition-colors duration-200 relative overflow-hidden">
+            <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(0,212,255,0.02)' }} />
+            <div className="relative z-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+              {/* Left: identity */}
+              <div className="lg:col-span-1">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 border border-accent/30 group-hover:border-accent/60 rounded flex items-center justify-center transition-colors duration-200 shrink-0">
+                    <FontAwesomeIcon className="text-accent text-lg" icon={faLandmark} />
                   </div>
-                ))}
+                  <div>
+                    <span className="font-mono text-xs text-navy-400 uppercase tracking-widest block">{t('homepage.examGrid.concursoProvider')}</span>
+                    <h3 className="font-sora font-bold text-white text-xl leading-tight">Concursos Públicos</h3>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="font-mono text-sm text-accent font-medium">{t('homepage.examGrid.concursoQuestions')}</span>
+                  <span className="font-mono text-xs text-navy-600">· {t('homepage.examGrid.concursoBancas')}</span>
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-xs text-accent">{track.count}</span>
-                <FontAwesomeIcon
-                  className="text-xs text-navy-600 group-hover:text-accent transition-colors duration-200"
-                  icon={faArrowRight}
-                />
+
+              {/* Middle: bancas */}
+              <div className="lg:col-span-1">
+                <p className="font-mono text-xs text-navy-500 uppercase tracking-widest mb-3">{t('homepage.examGrid.concursoBancasLabel')}</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                  {CONCURSO_BANCAS.map((b) => (
+                    <div key={b.name}>
+                      <span className="font-mono text-xs text-navy-300 block leading-snug">{b.name}</span>
+                      <span className="font-mono text-xs text-navy-600 block leading-snug">{b.note}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right: areas */}
+              <div className="lg:col-span-1">
+                <p className="font-mono text-xs text-navy-500 uppercase tracking-widest mb-3">{t('homepage.examGrid.concursoAreasLabel')}</p>
+                <div className="space-y-2">
+                  {CONCURSO_AREAS.map((area) => (
+                    <div key={area.label} className="flex items-center gap-2">
+                      <FontAwesomeIcon className="text-navy-500 text-xs w-3 shrink-0" icon={area.icon} />
+                      <span className="text-sm text-navy-300">{area.label}</span>
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-2 pt-1">
+                    <span className="text-sm text-navy-500">+ Informática, Raciocínio Lógico, Português...</span>
+                  </div>
+                </div>
               </div>
             </div>
+            <div className="relative z-10 mt-5 pt-4 border-t border-navy-800/60 flex items-center justify-between">
+              <span className="text-xs text-navy-500">{t('homepage.examGrid.concursoCta')}</span>
+              <FontAwesomeIcon className="text-xs text-accent group-hover:translate-x-1 transition-transform duration-200" icon={faArrowRight} />
+            </div>
+          </div>
+        </NextLink>
+
+        {/* IT certifications row */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {IT_TRACKS.map((track) => (
+            <NextLink key={track.title} href={track.href} className="block group">
+              <div className="border border-navy-700/60 rounded-lg p-5 bg-navy-950/40 hover:bg-navy-950/70 transition-colors duration-200 relative overflow-hidden h-full">
+                <div className="w-10 h-10 border border-navy-700 group-hover:border-accent/40 rounded flex items-center justify-center mb-4 transition-colors duration-200">
+                  <FontAwesomeIcon
+                    className="text-navy-400 group-hover:text-accent text-lg transition-colors duration-200"
+                    icon={track.icon}
+                  />
+                </div>
+                <div className="mb-1">
+                  <span className="font-mono text-xs text-navy-500 uppercase tracking-widest">{track.provider}</span>
+                </div>
+                <h3 className="font-sora font-semibold text-white text-base mb-3">{track.title}</h3>
+                <div className="space-y-1 mb-4">
+                  {track.tracks.map((name) => (
+                    <div key={name} className="flex items-center gap-2">
+                      <span className="w-1 h-1 rounded-full bg-navy-600 shrink-0" />
+                      <span className="font-mono text-xs text-navy-400">{name}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between mt-auto">
+                  <span className="font-mono text-xs text-accent">{track.count}</span>
+                  <FontAwesomeIcon
+                    className="text-xs text-navy-600 group-hover:text-accent transition-colors duration-200"
+                    icon={faArrowRight}
+                  />
+                </div>
+              </div>
+            </NextLink>
           ))}
         </div>
       </div>
@@ -454,15 +568,9 @@ function FeaturesSection() {
     <section className="py-20 bg-navy-950 border-t border-navy-800/40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-14">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-px h-4 bg-accent" />
-            <span className="font-mono text-xs text-navy-400 tracking-widest uppercase">
-              {t('homepage.features.sectionLabel')}
-            </span>
-          </div>
           <h2 className="font-sora font-bold text-white text-2xl sm:text-3xl mb-3">
             {t('homepage.features.title.before')}{' '}
-            <span style={{ color: '#00d4ff' }}>{t('homepage.features.title.highlight')}</span>
+            <span className="text-accent">{t('homepage.features.title.highlight')}</span>
           </h2>
           <p className="text-navy-400 text-base max-w-2xl">{t('homepage.features.subtitle')}</p>
         </div>
@@ -478,9 +586,6 @@ function FeaturesSection() {
     return (
       <div className="grid lg:grid-cols-2 gap-10 items-center mb-16 pb-16 border-b border-navy-800/40">
         <div className="order-2 lg:order-1">
-          <span className="font-mono text-xs text-accent tracking-widest uppercase block mb-4">
-            {t('homepage.features.feature1.label')}
-          </span>
           <h3 className="font-sora font-bold text-white text-xl sm:text-2xl mb-4">
             {t('homepage.features.ai.heading')}
           </h3>
@@ -568,8 +673,7 @@ function FeaturesSection() {
                   {t('homepage.features.mockup.yourAnswer')}
                 </p>
                 <div
-                  className="rounded p-3"
-                  style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }}
+                  className="rounded p-3 bg-danger/10 border border-danger/30"
                 >
                   <div className="flex items-start gap-2">
                     <FontAwesomeIcon className="text-red-400 text-xs mt-0.5 shrink-0" icon={faXmark} />
@@ -584,8 +688,7 @@ function FeaturesSection() {
                   {t('homepage.features.mockup.correctAnswer')}
                 </p>
                 <div
-                  className="rounded p-3"
-                  style={{ background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)' }}
+                  className="rounded p-3 bg-success/10 border border-success/30"
                 >
                   <div className="flex items-start gap-2">
                     <FontAwesomeIcon className="text-green-400 text-xs mt-0.5 shrink-0" icon={faCheck} />
@@ -597,8 +700,7 @@ function FeaturesSection() {
             <div className="p-4">
               <div className="flex items-center gap-2 mb-3">
                 <div
-                  className="w-5 h-5 rounded flex items-center justify-center shrink-0"
-                  style={{ background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)' }}
+                  className="w-5 h-5 rounded flex items-center justify-center shrink-0 bg-accent/10 border border-accent/30"
                 >
                   <FontAwesomeIcon className="text-accent text-xs" icon={faRobot} />
                 </div>
@@ -613,9 +715,6 @@ function FeaturesSection() {
           </div>
         </div>
         <div>
-          <span className="font-mono text-xs text-accent tracking-widest uppercase block mb-4">
-            {t('homepage.features.feature2.label')}
-          </span>
           <h3 className="font-sora font-bold text-white text-xl sm:text-2xl mb-4">
             {t('homepage.features.answers.heading')}
           </h3>
@@ -667,9 +766,6 @@ function FeaturesSection() {
     return (
       <div className="grid lg:grid-cols-2 gap-10 items-center">
         <div className="order-2 lg:order-1">
-          <span className="font-mono text-xs text-accent tracking-widest uppercase block mb-4">
-            {t('homepage.features.feature3.label')}
-          </span>
           <h3 className="font-sora font-bold text-white text-xl sm:text-2xl mb-4">
             {t('homepage.features.feature3.heading')}
           </h3>
@@ -699,7 +795,13 @@ function FeaturesSection() {
             </div>
 
             {/* SVG chart */}
-            <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 200 }}>
+            <svg
+              viewBox={`0 0 ${W} ${H}`}
+              className="w-full"
+              style={{ height: 200 }}
+              role="img"
+              aria-label={t('homepage.features.chart.ariaLabel')}
+            >
               {/* Grid lines + Y ticks */}
               {yTicks.map((v) => (
                 <g key={v}>
@@ -772,13 +874,13 @@ function FeaturesSection() {
                 <span className="font-mono text-xs text-navy-500">{t('homepage.features.chart.yourScore')}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <svg width="20" height="2">
+                <svg width="20" height="2" aria-hidden="true">
                   <line x1="0" y1="1" x2="20" y2="1" stroke="#3b6fa0" strokeWidth="1.5" strokeDasharray="4,3" />
                 </svg>
                 <span className="font-mono text-xs text-navy-500">{t('homepage.features.chart.avgCohort')}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <svg width="20" height="2">
+                <svg width="20" height="2" aria-hidden="true">
                   <line x1="0" y1="1" x2="20" y2="1" stroke="#4ade80" strokeWidth="1.5" strokeDasharray="5,4" />
                 </svg>
                 <span className="font-mono text-xs text-navy-500">{t('homepage.features.chart.passThreshold')}</span>
@@ -815,14 +917,7 @@ function TestimonialsStrip() {
   return (
     <div className="border-y border-navy-800/40 py-14" style={{ background: 'rgba(30,58,95,0.3)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section header */}
         <div className="mb-10">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-px h-4 bg-accent" />
-            <span className="font-mono text-xs text-navy-400 tracking-widest uppercase">
-              {t('homepage.testimonials.sectionLabel')}
-            </span>
-          </div>
           <h2 className="font-sora font-bold text-white text-2xl sm:text-3xl">{t('homepage.testimonials.title')}</h2>
         </div>
 
@@ -838,8 +933,8 @@ function TestimonialsStrip() {
               </div>
               <div>
                 <p className="text-sm text-navy-300 leading-relaxed mb-2">&ldquo;{t(item.quote)}&rdquo;</p>
-                <p className="font-mono text-xs text-navy-500">
-                  {item.name} — {t(item.role)}
+                <p className="text-xs text-navy-400">
+                  {item.name} · {t(item.role)}
                 </p>
               </div>
             </div>
@@ -894,13 +989,17 @@ function PricingSection() {
           {/* Toggle */}
           <div className="inline-flex items-center border border-navy-700 rounded p-1 mt-6">
             <button
-              className={`font-mono text-xs px-4 py-2 rounded transition-all ${period === 'monthly' ? 'bg-navy-800 text-[#e8edf3]' : 'text-navy-500 hover:text-navy-300'}`}
+              className={`text-sm px-4 py-2 rounded transition-all min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${period === 'monthly' ? 'bg-navy-800 text-[#e8edf3]' : 'text-navy-400 hover:text-navy-200'}`}
+              type="button"
+              aria-pressed={period === 'monthly'}
               onClick={() => setPeriod('monthly')}
             >
               {t('pricing.toggle.monthly')}
             </button>
             <button
-              className={`font-mono text-xs px-4 py-2 rounded transition-all flex items-center gap-2 ${period === 'yearly' ? 'bg-navy-800 text-[#e8edf3]' : 'text-navy-500 hover:text-navy-300'}`}
+              className={`text-sm px-4 py-2 rounded transition-all flex items-center gap-2 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${period === 'yearly' ? 'bg-navy-800 text-[#e8edf3]' : 'text-navy-400 hover:text-navy-200'}`}
+              type="button"
+              aria-pressed={period === 'yearly'}
               onClick={() => setPeriod('yearly')}
             >
               {t('pricing.toggle.yearly')}
@@ -942,6 +1041,11 @@ function PricingSection() {
             isHighlighted: true,
           })}
         </div>
+
+        {/* Risk reduction */}
+        <p className="text-center text-xs text-navy-400 mt-6">
+          {t('pricing.trust.noCardRequired')}
+        </p>
       </div>
     </section>
   );
@@ -969,34 +1073,26 @@ function PricingSection() {
       <div
         key={planLabel}
         className={`rounded-lg p-7 relative ${
-          isHighlighted ? 'bg-navy-950/60 border-2 border-navy-600' : 'bg-navy-950/40 border border-navy-700/60'
+          isHighlighted ? 'bg-navy-950/60 border-2 border-accent/40' : 'bg-navy-950/40 border border-navy-700/60'
         }`}
       >
         {isHighlighted && (
           <div className="absolute top-4 right-4">
-            <span
-              className="font-mono text-xs px-2 py-1 rounded tracking-wider uppercase"
-              style={{ background: 'rgba(0,212,255,0.1)', color: '#00d4ff', border: '1px solid rgba(0,212,255,0.2)' }}
-            >
+            <span className="text-xs px-2 py-1 rounded bg-accent/10 text-accent border border-accent/20">
               {t('pricing.plan.mostPopular')}
             </span>
           </div>
         )}
 
         <div className="mb-6">
-          <span
-            className={`font-mono text-xs uppercase tracking-widest block mb-2 ${isHighlighted ? 'text-accent' : 'text-navy-500'}`}
-          >
-            {planLabel}
-          </span>
           <div className="flex items-end gap-2">
             <h3 className="font-sora font-extrabold text-white text-3xl">{price}</h3>
-            <span className="font-mono text-xs text-navy-500 mb-1.5">{t('pricing.plan.perMonth')}</span>
+            <span className="text-xs text-navy-400 mb-1.5">{t('pricing.plan.perMonth')}</span>
           </div>
           {subline ? (
-            <p className="font-mono text-xs text-navy-500 mt-1">{subline}</p>
+            <p className="text-xs text-navy-400 mt-1">{subline}</p>
           ) : (
-            <p className="font-mono text-xs text-navy-600 mt-1">&nbsp;</p>
+            <p className="text-xs text-navy-600 mt-1">&nbsp;</p>
           )}
         </div>
 
@@ -1019,7 +1115,7 @@ function PricingSection() {
             as={NextLink}
             className={`w-full font-sans font-semibold text-sm rounded tracking-wide ${
               isHighlighted
-                ? 'bg-navy-600 hover:bg-navy-500 text-white border border-navy-500'
+                ? 'bg-accent hover:bg-electric text-navy-950 transition-colors duration-200'
                 : 'text-navy-400 hover:text-white border border-navy-700 hover:border-navy-500'
             }`}
             href={ctaHref}
@@ -1031,7 +1127,7 @@ function PricingSection() {
         ) : (
           <button
             disabled
-            className="w-full font-mono text-xs text-navy-600 py-3 rounded border border-navy-800/40 cursor-default"
+            className="w-full text-xs text-navy-600 py-3 rounded border border-navy-800/40 cursor-default"
           >
             {ctaLabel}
           </button>
@@ -1045,6 +1141,7 @@ function PricingSection() {
 
 function CtaSection() {
   const { t } = useTranslation();
+  const { data: session } = useSession();
 
   return (
     <div className="bg-navy-950 border-t border-navy-800/40 py-14">
@@ -1054,24 +1151,26 @@ function CtaSection() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Button
             as={NextLink}
-            className="font-semibold text-sm bg-navy-600 hover:bg-navy-500 text-white border border-navy-500 rounded tracking-wide w-full sm:w-auto"
-            href="/certifications/simulados"
+            className="font-semibold text-sm bg-accent hover:bg-electric text-navy-950 rounded tracking-wide w-full sm:w-auto transition-colors duration-200"
+            href={session?.user ? '/certifications/simulados' : '/register'}
             size="lg"
           >
             {t('homepage.cta2.generateQuiz')}
             <FontAwesomeIcon className="ml-2 text-xs" icon={faArrowRight} />
           </Button>
-          <Button
-            as={NextLink}
-            className="font-medium text-sm text-navy-400 hover:text-white tracking-wide"
-            href="/certifications/configure"
-            size="lg"
-            variant="light"
-          >
-            {t('homepage.cta2.setupCertification')}
-          </Button>
+          {session?.user && (
+            <Button
+              as={NextLink}
+              className="font-medium text-sm text-navy-400 hover:text-white tracking-wide"
+              href="/certifications/configure"
+              size="lg"
+              variant="light"
+            >
+              {t('homepage.cta2.setupCertification')}
+            </Button>
+          )}
         </div>
-        <p className="font-mono text-xs text-navy-600 mt-4">{t('homepage.hero.disclaimer')}</p>
+        <p className="text-xs text-navy-400 mt-4">{t('homepage.hero.disclaimer')}</p>
       </div>
     </div>
   );

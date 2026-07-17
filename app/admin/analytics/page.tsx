@@ -1,4 +1,5 @@
 import { Progress } from '@heroui/progress';
+import { Chip } from '@heroui/chip';
 
 import { AdminService } from '@/app/api/admin/admin.service';
 import type { UserPlan } from '@/shared/types';
@@ -51,21 +52,27 @@ export default async function AdminAnalyticsPage() {
   const rateLabel = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(exchangeRate);
 
   return (
-    <div>
-      <h1 className="text-2xl font-extrabold text-foreground mb-6">Analytics</h1>
+    <div style={{ background: '#070e20', minHeight: '100%' }} className="px-6 py-8">
+      <h1 className="font-sora font-extrabold text-white text-2xl mb-8">Analytics</h1>
 
       {overview && (
         <>
-          <h2 className="text-lg font-bold text-foreground mb-4">Distribuição de Planos</h2>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+          {renderSectionLabel('Distribuição de Planos')}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-10">
             {(Object.entries(overview.byPlan) as [UserPlan, number][]).map(([plan, count]) => {
               const pct = overview.totalUsers > 0 ? Math.round((count / overview.totalUsers) * 100) : 0;
               return (
-                <div key={plan} className="bg-content1 border border-default-200 rounded-xl p-4">
-                  <p className="text-xs font-semibold text-primary mb-2">{planLabels[plan]}</p>
-                  <p className="text-2xl font-extrabold text-foreground mb-2">{count}</p>
+                <div
+                  key={plan}
+                  className="rounded-lg p-4"
+                  style={{ background: 'rgba(7,14,32,0.6)', border: '1px solid rgba(42,79,122,0.4)' }}
+                >
+                  <p className="font-mono text-xs uppercase tracking-widest mb-2" style={{ color: '#6a9fc8' }}>
+                    {planLabels[plan]}
+                  </p>
+                  <p className="font-sora font-extrabold text-white text-2xl mb-2">{count}</p>
                   <Progress color={planColors[plan]} value={pct} size="sm" />
-                  <p className="text-xs text-default-400 mt-1">{pct}% do total</p>
+                  <p className="font-mono text-xs mt-1" style={{ color: '#4d87bc' }}>{pct}% do total</p>
                 </div>
               );
             })}
@@ -75,19 +82,19 @@ export default async function AdminAnalyticsPage() {
 
       {usersData && (
         <>
-          <h2 className="text-lg font-bold text-foreground mb-4">Top 10 Usuários — Questões Geradas</h2>
-          <div className="bg-content1 border border-default-200 rounded-xl overflow-hidden mb-8">
-            <table className="w-full text-sm">
+          {renderSectionLabel('Top 10 Usuários')}
+          <div className="rounded-lg overflow-hidden mb-10" style={{ border: '1px solid rgba(42,79,122,0.4)' }}>
+            <table className="w-full">
               <thead>
-                <tr className="border-b border-divider">
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">#</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Usuário</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Plano</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Questões no Período</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Total Tokens</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Avg/questão</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Custo Total</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Custo/questão</th>
+                <tr style={{ background: 'rgba(7,14,32,0.8)', borderBottom: '1px solid rgba(42,79,122,0.4)' }}>
+                  <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>#</th>
+                  <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Usuário</th>
+                  <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Plano</th>
+                  <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Questões no Período</th>
+                  <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Total Tokens</th>
+                  <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Avg/questão</th>
+                  <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Custo Total</th>
+                  <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Custo/questão</th>
                 </tr>
               </thead>
               <tbody>
@@ -103,32 +110,50 @@ export default async function AdminAnalyticsPage() {
                       ? totalCostBRL / user.totalQuestionsGeneratedAllTime
                       : null;
                     return (
-                      <tr key={user.id} className="border-b border-divider last:border-0">
-                        <td className="px-4 py-3 text-default-400 text-xs">{i + 1}</td>
+                      <tr
+                        key={user.id}
+                        className="last:border-0"
+                        style={{ background: 'rgba(15,27,61,0.3)', borderBottom: '1px solid rgba(30,58,95,0.4)' }}
+                      >
+                        <td className="px-4 py-3 font-mono text-xs" style={{ color: '#4d87bc' }}>{i + 1}</td>
                         <td className="px-4 py-3">
-                          <p className="font-semibold text-foreground text-sm">{user.name ?? '—'}</p>
-                          <p className="text-xs text-default-400">{user.email}</p>
+                          <p className="font-sora font-semibold text-white text-sm">{user.name ?? '—'}</p>
+                          <p className="font-mono text-xs" style={{ color: '#6a9fc8' }}>{user.email}</p>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-xs bg-default-100 px-2 py-0.5 rounded">{user.plan}</span>
+                          <Chip size="sm" variant="flat" color={planColors[user.plan]}>
+                            {planLabels[user.plan]}
+                          </Chip>
                         </td>
-                        <td className="px-4 py-3 font-semibold text-foreground">{user.questionsGeneratedThisPeriod}</td>
+                        <td className="px-4 py-3 font-mono text-sm text-white font-semibold">
+                          {user.questionsGeneratedThisPeriod}
+                        </td>
                         <td className="px-4 py-3">
                           {totalTokens > 0 ? (
                             <div className="flex flex-col gap-0.5">
-                              <span className="text-xs font-semibold text-foreground">{totalTokens.toLocaleString('pt-BR')}</span>
-                              <span className="text-xs text-default-400">{user.totalInputTokens.toLocaleString('pt-BR')} in / {user.totalOutputTokens.toLocaleString('pt-BR')} out</span>
+                              <span className="font-mono text-sm text-white font-semibold">{totalTokens.toLocaleString('pt-BR')}</span>
+                              <span className="font-mono text-xs" style={{ color: '#6a9fc8' }}>
+                                {user.totalInputTokens.toLocaleString('pt-BR')} in / {user.totalOutputTokens.toLocaleString('pt-BR')} out
+                              </span>
                             </div>
-                          ) : <span className="text-xs text-default-400">—</span>}
+                          ) : (
+                            <span className="font-mono text-xs" style={{ color: '#4d87bc' }}>—</span>
+                          )}
                         </td>
-                        <td className="px-4 py-3 text-xs text-default-500">
-                          {avgPerQ !== null ? `${avgPerQ.toLocaleString('pt-BR')}` : '—'}
+                        <td className="px-4 py-3 font-mono text-xs" style={{ color: '#6a9fc8' }}>
+                          {avgPerQ !== null ? avgPerQ.toLocaleString('pt-BR') : (
+                            <span style={{ color: '#4d87bc' }}>—</span>
+                          )}
                         </td>
-                        <td className="px-4 py-3 text-xs font-semibold text-foreground">
-                          {totalTokens > 0 ? brlFormatter.format(totalCostBRL) : '—'}
+                        <td className="px-4 py-3 font-mono text-sm text-white font-semibold">
+                          {totalTokens > 0 ? brlFormatter.format(totalCostBRL) : (
+                            <span className="font-mono text-xs" style={{ color: '#4d87bc' }}>—</span>
+                          )}
                         </td>
-                        <td className="px-4 py-3 text-xs text-default-500">
-                          {costPerQBRL !== null ? brlFormatter.format(costPerQBRL) : '—'}
+                        <td className="px-4 py-3 font-mono text-xs" style={{ color: '#6a9fc8' }}>
+                          {costPerQBRL !== null ? brlFormatter.format(costPerQBRL) : (
+                            <span style={{ color: '#4d87bc' }}>—</span>
+                          )}
                         </td>
                       </tr>
                     );
@@ -141,34 +166,34 @@ export default async function AdminAnalyticsPage() {
 
       {overview && (
         <>
-          <h2 className="text-lg font-bold text-foreground mb-4">Consumo de Tokens</h2>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="bg-content1 border border-default-200 rounded-xl p-4">
-              <p className="text-xs font-semibold text-primary mb-2">Input Tokens (total)</p>
-              <p className="text-2xl font-extrabold text-foreground">{overview.totalInputTokens.toLocaleString('pt-BR')}</p>
+          {renderSectionLabel('Consumo de Tokens')}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10">
+            <div className="rounded-lg p-4" style={{ background: 'rgba(7,14,32,0.6)', border: '1px solid rgba(42,79,122,0.4)' }}>
+              <p className="font-mono text-xs uppercase tracking-widest mb-2" style={{ color: '#6a9fc8' }}>Input Tokens (total)</p>
+              <p className="font-sora font-extrabold text-white text-2xl">{overview.totalInputTokens.toLocaleString('pt-BR')}</p>
             </div>
-            <div className="bg-content1 border border-default-200 rounded-xl p-4">
-              <p className="text-xs font-semibold text-primary mb-2">Output Tokens (total)</p>
-              <p className="text-2xl font-extrabold text-foreground">{overview.totalOutputTokens.toLocaleString('pt-BR')}</p>
+            <div className="rounded-lg p-4" style={{ background: 'rgba(7,14,32,0.6)', border: '1px solid rgba(42,79,122,0.4)' }}>
+              <p className="font-mono text-xs uppercase tracking-widest mb-2" style={{ color: '#6a9fc8' }}>Output Tokens (total)</p>
+              <p className="font-sora font-extrabold text-white text-2xl">{overview.totalOutputTokens.toLocaleString('pt-BR')}</p>
             </div>
-            <div className="bg-content1 border border-default-200 rounded-xl p-4">
-              <p className="text-xs font-semibold text-primary mb-2">Média de tokens por questão</p>
-              <p className="text-2xl font-extrabold text-foreground mb-1">{overview.avgTokensPerQuestion.toLocaleString('pt-BR')}</p>
-              <p className="text-xs text-default-400">
+            <div className="rounded-lg p-4" style={{ background: 'rgba(7,14,32,0.6)', border: '1px solid rgba(42,79,122,0.4)' }}>
+              <p className="font-mono text-xs uppercase tracking-widest mb-2" style={{ color: '#6a9fc8' }}>Media tokens/questão</p>
+              <p className="font-sora font-extrabold text-white text-2xl mb-1">{overview.avgTokensPerQuestion.toLocaleString('pt-BR')}</p>
+              <p className="font-mono text-xs" style={{ color: '#4d87bc' }}>
                 ({overview.totalInputTokens.toLocaleString('pt-BR')} in + {overview.totalOutputTokens.toLocaleString('pt-BR')} out)
-                {' '}÷ {overview.totalQuestionsGenerated.toLocaleString('pt-BR')} questões
+                {' '}/ {overview.totalQuestionsGenerated.toLocaleString('pt-BR')} questões
               </p>
             </div>
-            <div className="bg-content1 border border-default-200 rounded-xl p-4">
-              <p className="text-xs font-semibold text-primary mb-2">Custo Total (BRL)</p>
-              <p className="text-2xl font-extrabold text-foreground mb-1">
+            <div className="rounded-lg p-4" style={{ background: 'rgba(7,14,32,0.6)', border: '1px solid rgba(42,79,122,0.4)' }}>
+              <p className="font-mono text-xs uppercase tracking-widest mb-2" style={{ color: '#6a9fc8' }}>Custo Total (BRL)</p>
+              <p className="font-sora font-extrabold text-white text-2xl mb-1">
                 {brlFormatter.format(computeCostBRL(overview.totalInputTokens, overview.totalOutputTokens, exchangeRate))}
               </p>
-              <p className="text-xs text-default-400">Cotação: {rateLabel}/USD</p>
+              <p className="font-mono text-xs" style={{ color: '#4d87bc' }}>Cotação: {rateLabel}/USD</p>
             </div>
-            <div className="bg-content1 border border-default-200 rounded-xl p-4">
-              <p className="text-xs font-semibold text-primary mb-2">Custo Médio/questão (BRL)</p>
-              <p className="text-2xl font-extrabold text-foreground mb-1">
+            <div className="rounded-lg p-4" style={{ background: 'rgba(7,14,32,0.6)', border: '1px solid rgba(42,79,122,0.4)' }}>
+              <p className="font-mono text-xs uppercase tracking-widest mb-2" style={{ color: '#6a9fc8' }}>Custo Medio/questão</p>
+              <p className="font-sora font-extrabold text-white text-2xl mb-1">
                 {overview.totalQuestionsGenerated > 0
                   ? brlFormatter.format(
                       computeCostBRL(overview.totalInputTokens, overview.totalOutputTokens, exchangeRate) /
@@ -176,8 +201,9 @@ export default async function AdminAnalyticsPage() {
                     )
                   : '—'}
               </p>
-              <p className="text-xs text-default-400">
-                ({ACTIVE_MODEL_PRICING_USD.inputPerMillion.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/M in · {ACTIVE_MODEL_PRICING_USD.outputPerMillion.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/M out)
+              <p className="font-mono text-xs" style={{ color: '#4d87bc' }}>
+                ({ACTIVE_MODEL_PRICING_USD.inputPerMillion.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/M in
+                {' '} {ACTIVE_MODEL_PRICING_USD.outputPerMillion.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/M out)
               </p>
             </div>
           </div>
@@ -186,23 +212,22 @@ export default async function AdminAnalyticsPage() {
 
       {overview && (
         <>
-          <h2 className="text-lg font-bold text-foreground mb-4 mt-8">Margem por Plano</h2>
-          <div className="bg-content1 border border-default-200 rounded-xl overflow-hidden mb-2">
-            <table className="w-full text-sm">
+          {renderSectionLabel('Margem por Plano')}
+          <div className="rounded-lg overflow-hidden mb-2" style={{ border: '1px solid rgba(42,79,122,0.4)' }}>
+            <table className="w-full">
               <thead>
-                <tr className="border-b border-divider">
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Plano</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Usuários</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Receita est./mês *</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Custo Tokens</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Margem</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">% Margem</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Break-even</th>
+                <tr style={{ background: 'rgba(7,14,32,0.8)', borderBottom: '1px solid rgba(42,79,122,0.4)' }}>
+                  <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Plano</th>
+                  <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Usuários</th>
+                  <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Receita est./mês *</th>
+                  <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Custo Tokens</th>
+                  <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Margem</th>
+                  <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>% Margem</th>
+                  <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Break-even</th>
                 </tr>
               </thead>
               <tbody>
                 {(['free', 'pro', 'pro_ai'] as UserPlan[]).map((plan) => {
-                  const planLabelsRow: Record<string, string> = { free: 'Free', pro: 'Pro', pro_ai: 'Pro AI' };
                   const userCount = overview.byPlan[plan] ?? 0;
                   const planPrice = PLAN_PRICES_BRL_MONTHLY[plan] ?? 0;
                   const revenue = userCount * planPrice;
@@ -220,47 +245,68 @@ export default async function AdminAnalyticsPage() {
                     : null;
 
                   const marginColor =
-                    margin === null ? 'text-default-400' :
+                    margin === null ? '' :
                     margin >= 0 ? 'text-success font-semibold' : 'text-danger font-semibold';
 
+                  const rowBg =
+                    margin === null
+                      ? 'rgba(15,27,61,0.3)'
+                      : margin >= 0
+                      ? 'rgba(52,211,153,0.05)'
+                      : 'rgba(248,113,113,0.05)';
+
                   return (
-                    <tr key={plan} className="border-b border-divider last:border-0">
+                    <tr
+                      key={plan}
+                      className="last:border-0"
+                      style={{ background: rowBg, borderBottom: '1px solid rgba(30,58,95,0.4)' }}
+                    >
                       <td className="px-4 py-3">
-                        <span className="text-xs bg-default-100 px-2 py-0.5 rounded font-medium">{planLabelsRow[plan]}</span>
+                        <Chip size="sm" variant="flat" color={planColors[plan]}>
+                          {planLabels[plan]}
+                        </Chip>
                       </td>
-                      <td className="px-4 py-3 text-sm font-semibold text-foreground">{userCount}</td>
-                      <td className="px-4 py-3 text-xs text-foreground">
-                        {hasRevenue ? brlFormatter.format(revenue) : <span className="text-default-400">—</span>}
+                      <td className="px-4 py-3 font-mono text-sm text-white font-semibold">{userCount}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-white">
+                        {hasRevenue ? brlFormatter.format(revenue) : (
+                          <span style={{ color: '#4d87bc' }}>—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         {tokenCost > 0 ? (
                           <div className="flex flex-col gap-0.5">
-                            <span className="text-xs text-foreground">{brlFormatter.format(tokenCost)}</span>
+                            <span className="font-mono text-xs text-white">{brlFormatter.format(tokenCost)}</span>
                             {userCount > 0 && (
-                              <span className="text-xs text-default-400">
+                              <span className="font-mono text-xs" style={{ color: '#6a9fc8' }}>
                                 {brlFormatter.format(tokenCost / userCount)}/user
                               </span>
                             )}
                           </div>
-                        ) : <span className="text-xs text-default-400">—</span>}
+                        ) : (
+                          <span className="font-mono text-xs" style={{ color: '#4d87bc' }}>—</span>
+                        )}
                       </td>
-                      <td className={`px-4 py-3 text-xs ${marginColor}`}>
-                        {margin !== null ? brlFormatter.format(margin) : <span className="text-default-400">—</span>}
+                      <td className={`px-4 py-3 font-mono text-xs ${marginColor}`}>
+                        {margin !== null ? brlFormatter.format(margin) : (
+                          <span style={{ color: '#4d87bc' }}>—</span>
+                        )}
                       </td>
-                      <td className={`px-4 py-3 text-xs ${marginColor}`}>
+                      <td className={`px-4 py-3 font-mono text-xs ${marginColor}`}>
                         {marginPct !== null
                           ? `${marginPct.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`
-                          : <span className="text-default-400">—</span>}
+                          : <span style={{ color: '#4d87bc' }}>—</span>}
                       </td>
-                      <td className="px-4 py-3 text-xs text-default-500">
+                      <td className="px-4 py-3 font-mono text-xs" style={{ color: '#6a9fc8' }}>
                         {breakEven !== null ? (
                           <div className="flex flex-col gap-0.5">
-                            <span>{breakEven.toLocaleString('pt-BR')} q</span>
-                            <span className="text-default-400">
+                            <span className="text-white font-semibold">{breakEven.toLocaleString('pt-BR')} q</span>
+                            <span style={{ color: '#4d87bc' }}>
                               de {(PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS]?.questionsPerPeriod ?? 0).toLocaleString('pt-BR')} disponíveis
                             </span>
                           </div>
-                        ) : <span className="text-default-400">—</span>}
+                        ) : (
+                          <span style={{ color: '#4d87bc' }}>—</span>
+                        )}
                       </td>
                     </tr>
                   );
@@ -268,9 +314,20 @@ export default async function AdminAnalyticsPage() {
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-default-400">* Receita estimada considera 100% assinaturas mensais. Planos anuais têm desconto de ~25%.</p>
+          <p className="font-mono text-xs mt-2" style={{ color: '#4d87bc' }}>
+            * Receita estimada considera 100% assinaturas mensais. Planos anuais têm desconto de ~25%.
+          </p>
         </>
       )}
     </div>
   );
+
+  function renderSectionLabel(text: string) {
+    return (
+      <div className="flex items-center gap-3 mb-4">
+        <div style={{ width: '2px', height: '16px', background: '#00d4ff', borderRadius: '1px', flexShrink: 0 }} />
+        <h2 className="font-sora font-bold text-white text-lg">{text}</h2>
+      </div>
+    );
+  }
 }

@@ -14,18 +14,19 @@ const PLATFORM_LINKS = [
   { labelKey: 'nav.pricing', href: '/pricing' },
 ] as const;
 
+// Not yet live — rendered as disabled text, not clickable anchors
 const COMPANY_LINKS = [
-  { labelKey: 'footer.about', href: '#' },
-  { labelKey: 'footer.blog', href: '#' },
-  { labelKey: 'footer.careers', href: '#' },
-  { labelKey: 'footer.status', href: '#' },
+  { labelKey: 'footer.about' },
+  { labelKey: 'footer.blog' },
+  { labelKey: 'footer.careers' },
+  { labelKey: 'footer.status' },
 ] as const;
 
 const LEGAL_LINKS = [
-  { labelKey: 'footer.privacy', href: '#' },
-  { labelKey: 'footer.terms', href: '#' },
-  { labelKey: 'footer.lgpd', href: '#' },
-  { labelKey: 'footer.security', href: '#' },
+  { labelKey: 'footer.privacy' },
+  { labelKey: 'footer.terms' },
+  { labelKey: 'footer.lgpd' },
+  { labelKey: 'footer.security' },
 ] as const;
 
 export function MarketingFooter() {
@@ -38,25 +39,22 @@ export function MarketingFooter() {
           {/* Brand column */}
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <div
-                className="w-6 h-6 rounded flex items-center justify-center"
-                style={{ background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)' }}
-              >
+              <div className="w-6 h-6 rounded flex items-center justify-center bg-accent/10 border border-accent/30">
                 <FontAwesomeIcon className="text-accent text-xs" icon={faMicrochip} />
               </div>
               <span className="font-sora font-bold text-white text-sm">{t('footer.brand')}</span>
             </div>
-            <p className="font-sans text-xs text-navy-500 leading-relaxed mb-4 max-w-52">{t('footer.description')}</p>
+            <p className="text-xs text-navy-500 leading-relaxed mb-4 max-w-52">{t('footer.description')}</p>
           </div>
 
           {/* Platform column */}
           <div>
-            <p className="font-mono text-xs text-navy-500 uppercase tracking-widest mb-4">{t('footer.platform')}</p>
+            <p className="text-xs font-medium text-navy-400 mb-4">{t('footer.platform')}</p>
             <ul className="space-y-2.5">
               {PLATFORM_LINKS.map((item) => (
                 <li key={item.labelKey}>
                   <NextLink
-                    className="font-sans text-xs text-navy-400 hover:text-white transition-colors duration-200"
+                    className="text-xs text-navy-400 hover:text-white transition-colors duration-200"
                     href={item.href}
                   >
                     {t(item.labelKey)}
@@ -66,35 +64,37 @@ export function MarketingFooter() {
             </ul>
           </div>
 
-          {/* Company column */}
+          {/* Company column — not yet live */}
           <div>
-            <p className="font-mono text-xs text-navy-500 uppercase tracking-widest mb-4">{t('footer.company')}</p>
+            <p className="text-xs font-medium text-navy-400 mb-4">{t('footer.company')}</p>
             <ul className="space-y-2.5">
               {COMPANY_LINKS.map((item) => (
                 <li key={item.labelKey}>
-                  <NextLink
-                    className="font-sans text-xs text-navy-400 hover:text-white transition-colors duration-200"
-                    href={item.href}
+                  <span
+                    className="text-xs text-navy-700 cursor-default select-none"
+                    title={t('footer.comingSoon')}
+                    aria-disabled="true"
                   >
                     {t(item.labelKey)}
-                  </NextLink>
+                  </span>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Legal column */}
+          {/* Legal column — not yet live */}
           <div>
-            <p className="font-mono text-xs text-navy-500 uppercase tracking-widest mb-4">{t('footer.legal')}</p>
+            <p className="text-xs font-medium text-navy-400 mb-4">{t('footer.legal')}</p>
             <ul className="space-y-2.5">
               {LEGAL_LINKS.map((item) => (
                 <li key={item.labelKey}>
-                  <NextLink
-                    className="font-sans text-xs text-navy-400 hover:text-white transition-colors duration-200"
-                    href={item.href}
+                  <span
+                    className="text-xs text-navy-700 cursor-default select-none"
+                    title={t('footer.comingSoon')}
+                    aria-disabled="true"
                   >
                     {t(item.labelKey)}
-                  </NextLink>
+                  </span>
                 </li>
               ))}
             </ul>
@@ -103,8 +103,8 @@ export function MarketingFooter() {
 
         {/* Bottom bar */}
         <div className="pt-6 border-t border-navy-800/40 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="font-mono text-xs text-navy-600">{t('footer.copyright')}</p>
-          <p className="font-mono text-xs text-navy-600">{t('footer.tagline')}</p>
+          <p className="text-xs text-navy-600">{t('footer.copyright')}</p>
+          <p className="text-xs text-navy-600">{t('footer.tagline')}</p>
         </div>
       </div>
     </footer>
