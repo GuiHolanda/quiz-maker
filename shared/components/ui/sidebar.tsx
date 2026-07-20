@@ -4,13 +4,14 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerBody } from '@heroui/drawer'
 import { Avatar } from '@heroui/avatar';
 import NextLink from 'next/link';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faChevronDown,
   faChevronLeft,
+  faChevronRight,
   faGear,
   faGraduationCap,
   faClipboard,
@@ -23,7 +24,7 @@ import {
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
-import { SIDEBAR_COLLAPSED_LOCAL_STORAGE_KEY } from '@/config/constants';
+import { SIDEBAR_COLLAPSED_LOCAL_STORAGE_KEY, SIDEBAR_COLLAPSED_COOKIE_KEY } from '@/config/constants';
 
 const CERTIFICATION_ITEMS = [
   { labelKey: 'nav.configureCertification', href: '/certifications/configure', icon: faGear },
@@ -59,7 +60,7 @@ function subItemClass(isActive: boolean) {
   }`;
 }
 
-export function Sidebar() {
+export function Sidebar({ defaultCollapsed = false }: { readonly defaultCollapsed?: boolean }) {
   const { data: session, status } = useSession();
   const { t } = useTranslation();
   const { usage } = useUsageContext();
@@ -69,13 +70,8 @@ export function Sidebar() {
   const isAdminScope = pathname.startsWith('/admin');
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
-  useEffect(() => {
-    setIsCollapsed(localStorage.getItem(SIDEBAR_COLLAPSED_LOCAL_STORAGE_KEY) === 'true');
-    setIsMounted(true);
-  }, []);
   const [expandedSection, setExpandedSection] = useState<ExpandedSection>(() => {
     if (isCertificationsScope) return 'certifications';
     if (isConcursosScope) return 'public-exams';
@@ -88,6 +84,7 @@ export function Sidebar() {
     setIsCollapsed((prev) => {
       const next = !prev;
       localStorage.setItem(SIDEBAR_COLLAPSED_LOCAL_STORAGE_KEY, String(next));
+      document.cookie = `${SIDEBAR_COLLAPSED_COOKIE_KEY}=${next}; path=/; max-age=31536000; SameSite=Lax`;
       return next;
     });
   };
@@ -99,7 +96,7 @@ export function Sidebar() {
         className={`hidden md:flex shrink-0 h-screen sticky top-0 flex-col bg-background border-r border-divider overflow-hidden transition-[width] duration-200 ease-out ${isCollapsed ? 'w-16' : 'w-64'}`}
       >
         {renderBrand()}
-        <div className={`flex-1 overflow-y-auto py-3 ${isCollapsed ? 'px-3 flex flex-col items-center' : 'px-3'}`}>
+        <div className={`flex-1 py-3 ${isCollapsed ? 'px-3 flex flex-col items-center overflow-hidden' : 'px-3 overflow-y-auto'}`}>
           {renderNav()}
         </div>
         {renderUsageCounters()}
@@ -152,41 +149,33 @@ export function Sidebar() {
   );
 
   function renderBrand() {
-    return (
-      <div className={`h-14 flex items-center border-b border-divider shrink-0 ${isCollapsed ? 'justify-center' : 'px-4'}`}>
-        {isCollapsed ? (
-          <NextLink href="/">
-            <Image alt="CertifiqueAI" className="rounded-md" height={22} src="/icon.svg" width={22} />
-          </NextLink>
-        ) : (
-          <>
-            <NextLink className="flex items-center gap-2 flex-1 min-w-0" href="/">
-              <Image alt="CertifiqueAI" className="rounded-md shrink-0" height={22} src="/icon.svg" width={22} />
-              <p className="font-sora font-semibold text-foreground tracking-wide text-sm truncate">Certifique AI</p>
-            </NextLink>
-            <button
-              aria-label={t('nav.collapseSidebar')}
-              className="p-1.5 text-default-400 hover:text-foreground transition-colors rounded-lg hover:bg-default-100 shrink-0 ml-auto"
-              onClick={toggleCollapsed}
-            >
-              <FontAwesomeIcon className="w-3.5 h-3.5" icon={faChevronLeft} />
-            </button>
-          </>
-        )}
-      </div>
-    );
-  }
+    if (isCollapsed) {
+      return (
+        <button
+          aria-label={t('nav.expandSidebar')}
+          className="h-14 flex items-center justify-center gap-2 border-b border-divider shrink-0 w-full text-default-400 hover:text-foreground hover:bg-default-100 transition-colors duration-200"
+          onClick={toggleCollapsed}
+        >
+          <Image alt="CertifiqueAI" className="rounded-md shrink-0" height={18} src="/icon.svg" width={18} />
+          <FontAwesomeIcon className="w-2.5 h-2.5" icon={faChevronRight} />
+        </button>
+      );
+    }
 
-  function renderExpandButton() {
-    if (!isCollapsed) return null;
     return (
-      <button
-        aria-label={t('nav.expandSidebar')}
-        className="w-10 h-10 flex items-center justify-center rounded-lg text-default-400 hover:text-foreground hover:bg-default-100 transition-colors duration-200"
-        onClick={toggleCollapsed}
-      >
-        <FontAwesomeIcon className="w-3.5 h-3.5 rotate-180" icon={faChevronLeft} />
-      </button>
+      <div className="h-14 flex items-center px-4 border-b border-divider shrink-0">
+        <NextLink className="flex items-center gap-2 flex-1 min-w-0" href="/">
+          <Image alt="CertifiqueAI" className="rounded-md shrink-0" height={22} src="/icon.svg" width={22} />
+          <p className="font-sora font-semibold text-foreground tracking-wide text-sm truncate">Certifique AI</p>
+        </NextLink>
+        <button
+          aria-label={t('nav.collapseSidebar')}
+          className="p-1.5 text-default-400 hover:text-foreground transition-colors rounded-lg hover:bg-default-100 shrink-0 ml-auto"
+          onClick={toggleCollapsed}
+        >
+          <FontAwesomeIcon className="w-3.5 h-3.5" icon={faChevronLeft} />
+        </button>
+      </div>
     );
   }
 
@@ -196,7 +185,6 @@ export function Sidebar() {
 
     return (
       <nav className={`flex flex-col ${collapsed ? 'items-center gap-1' : 'gap-0.5'}`}>
-        {collapsed && renderExpandButton()}
         {/* Dashboard */}
         <NextLink
           className={navLinkClass(pathname === '/dashboard', collapsed)}
@@ -318,14 +306,14 @@ export function Sidebar() {
   }
 
   function renderUsageCounters() {
-    if (!usage || !isMounted || isCollapsed) return null;
+    if (!usage) return null;
 
     const questionsUnlimited = usage.questionsLimit === -1;
     const certsUnlimited = usage.certificationsLimit === -1;
     const examsUnlimited = usage.publicExamsLimit === -1;
 
     return (
-      <div className="border-t border-divider px-4 py-4 flex flex-col gap-3 shrink-0">
+      <div className={`border-t border-divider px-4 py-4 flex flex-col gap-3 shrink-0 ${isCollapsed ? 'hidden' : ''}`}>
         {/* Questions counter */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center justify-between">

@@ -13,6 +13,7 @@ export const CERTIFICATIONS_LOCAL_STORAGE_KEY = 'CERTIFICATIONS';
 export const PUBLIC_EXAMS_LOCAL_STORAGE_KEY = 'PUBLIC_EXAMS';
 export const LANGUAGE_LOCAL_STORAGE_KEY = 'app-language';
 export const SIDEBAR_COLLAPSED_LOCAL_STORAGE_KEY = 'certifiqueai_sidebar_collapsed';
+export const SIDEBAR_COLLAPSED_COOKIE_KEY = 'certifiqueai_sidebar_collapsed';
 export const AI_CHAT_LOCAL_STORAGE_KEY = (userId: string) => `AI_CHAT_MESSAGES_${userId}`;
 export const AI_CHAT_FOLLOWUP_TIMESTAMP_KEY = (userId: string) => `AI_CHAT_FOLLOWUP_TS_${userId}`;
 export const SIMULADO_ATTEMPT_PROGRESS_KEY = (attemptId: number) =>
