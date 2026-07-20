@@ -70,9 +70,11 @@ export function Sidebar() {
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsCollapsed(localStorage.getItem(SIDEBAR_COLLAPSED_LOCAL_STORAGE_KEY) === 'true');
+    setIsMounted(true);
   }, []);
   const [expandedSection, setExpandedSection] = useState<ExpandedSection>(() => {
     if (isCertificationsScope) return 'certifications';
@@ -152,23 +154,39 @@ export function Sidebar() {
   function renderBrand() {
     return (
       <div className={`h-14 flex items-center border-b border-divider shrink-0 ${isCollapsed ? 'justify-center' : 'px-4'}`}>
-        {!isCollapsed && (
-          <NextLink className="flex items-center gap-2 flex-1 min-w-0" href="/">
-            <Image alt="CertifiqueAI" className="rounded-md shrink-0" height={22} src="/icon.svg" width={22} />
-            <p className="font-sora font-semibold text-foreground tracking-wide text-sm truncate">Certifique AI</p>
+        {isCollapsed ? (
+          <NextLink href="/">
+            <Image alt="CertifiqueAI" className="rounded-md" height={22} src="/icon.svg" width={22} />
           </NextLink>
+        ) : (
+          <>
+            <NextLink className="flex items-center gap-2 flex-1 min-w-0" href="/">
+              <Image alt="CertifiqueAI" className="rounded-md shrink-0" height={22} src="/icon.svg" width={22} />
+              <p className="font-sora font-semibold text-foreground tracking-wide text-sm truncate">Certifique AI</p>
+            </NextLink>
+            <button
+              aria-label={t('nav.collapseSidebar')}
+              className="p-1.5 text-default-400 hover:text-foreground transition-colors rounded-lg hover:bg-default-100 shrink-0 ml-auto"
+              onClick={toggleCollapsed}
+            >
+              <FontAwesomeIcon className="w-3.5 h-3.5" icon={faChevronLeft} />
+            </button>
+          </>
         )}
-        <button
-          aria-label={isCollapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
-          className={`p-1.5 text-default-400 hover:text-foreground transition-colors rounded-lg hover:bg-default-100 shrink-0 ${isCollapsed ? '' : 'ml-auto'}`}
-          onClick={toggleCollapsed}
-        >
-          <FontAwesomeIcon
-            className={`w-3.5 h-3.5 transition-transform duration-200 ${isCollapsed ? 'rotate-180' : ''}`}
-            icon={faChevronLeft}
-          />
-        </button>
       </div>
+    );
+  }
+
+  function renderExpandButton() {
+    if (!isCollapsed) return null;
+    return (
+      <button
+        aria-label={t('nav.expandSidebar')}
+        className="w-10 h-10 flex items-center justify-center rounded-lg text-default-400 hover:text-foreground hover:bg-default-100 transition-colors duration-200"
+        onClick={toggleCollapsed}
+      >
+        <FontAwesomeIcon className="w-3.5 h-3.5 rotate-180" icon={faChevronLeft} />
+      </button>
     );
   }
 
@@ -178,6 +196,7 @@ export function Sidebar() {
 
     return (
       <nav className={`flex flex-col ${collapsed ? 'items-center gap-1' : 'gap-0.5'}`}>
+        {collapsed && renderExpandButton()}
         {/* Dashboard */}
         <NextLink
           className={navLinkClass(pathname === '/dashboard', collapsed)}
@@ -299,7 +318,7 @@ export function Sidebar() {
   }
 
   function renderUsageCounters() {
-    if (!usage || isCollapsed) return null;
+    if (!usage || !isMounted || isCollapsed) return null;
 
     const questionsUnlimited = usage.questionsLimit === -1;
     const certsUnlimited = usage.certificationsLimit === -1;
