@@ -282,7 +282,6 @@ export function Sidebar() {
                 </p>
               </div>
             )}
-            {collapsed && <div className="pt-3" />}
             <NextLink
               className={navLinkClass(isAdminScope, collapsed)}
               href="/admin"
