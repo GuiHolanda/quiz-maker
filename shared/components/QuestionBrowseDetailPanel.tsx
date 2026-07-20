@@ -125,7 +125,7 @@ export function QuestionBrowseDetailPanel({
           className={
             isCorrect
               ? 'flex-shrink-0 h-6 w-6 grid place-items-center rounded-full bg-success-100 text-success-700 text-xs font-bold'
-              : 'flex-shrink-0 h-6 w-6 grid place-items-center rounded-full bg-default-100 text-default-500 text-xs font-bold'
+              : 'flex-shrink-0 h-6 w-6 grid place-items-center rounded-full bg-content2 text-default-400 text-xs font-bold'
           }
         >
           {label}

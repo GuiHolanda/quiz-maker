@@ -37,7 +37,7 @@ const SLIDER_CLASS_NAMES = {
   thumb: 'h-3 w-4',
 };
 
-const TH = 'text-left text-xs font-semibold text-default-400 px-4 py-3 border-b border-default-200';
+const TH = 'text-left font-mono text-[11px] text-default-400 uppercase tracking-widest px-4 py-3 border-b border-default-200';
 const TD = 'px-4 py-3 text-sm text-foreground border-b border-default-200';
 const TD_LAST = 'px-4 py-3 text-sm text-foreground';
 
@@ -190,7 +190,7 @@ export function SectionsTable({
     <>
       <div className="w-full overflow-x-auto rounded-xl border border-default-200">
         <table className="w-full border-collapse">
-          <thead className="bg-default-100">
+          <thead className="bg-content2">
             <tr>
               <th className={TH}>{t('certification.topicName')}</th>
               <th className={TH}>{t('certification.minQuestions')}</th>
@@ -205,7 +205,7 @@ export function SectionsTable({
               const tdClass = isLast ? TD_LAST : TD;
 
               return (
-                <tr key={topic.id ?? topic.name} className={index % 2 === 0 ? 'bg-content1' : 'bg-default-50'}>
+                <tr key={topic.id ?? topic.name} className="bg-content1 hover:bg-content2 transition-colors duration-150">
                   <td className={tdClass}>
                     {isEditing ? (
                       <Input
@@ -313,7 +313,7 @@ export function SectionsTable({
                       <div className="flex gap-2">
                         {onTopicUpdated && topic.id && (
                           <Button
-                            className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
+                            className="bg-content2 border border-default-200 text-default-500 hover:bg-primary/10 hover:text-primary hover:border-primary/30 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
                             size="sm"
                             variant="flat"
                             onPress={() => startEdit(topic)}

@@ -34,7 +34,7 @@ interface PublicExamSubjectsTableProps {
   readonly onDeletePublicExam?: () => void;
 }
 
-const TH = 'text-left text-xs font-semibold text-default-400 px-4 py-3 border-b border-default-200';
+const TH = 'text-left font-mono text-[11px] text-default-400 uppercase tracking-widest px-4 py-3 border-b border-default-200';
 
 export function PublicExamSubjectsTable({
   selectedPublicExam,
@@ -178,7 +178,7 @@ export function PublicExamSubjectsTable({
       <>
         <div className="w-full overflow-x-auto rounded-xl border border-default-200">
           <table className="w-full border-collapse">
-            <thead className="bg-default-100">
+            <thead className="bg-content2">
               <tr>
                 <th className={TH}>{t('concurso.subjectName')}</th>
                 <th className={TH}>{t('concurso.minQuestions')}</th>
