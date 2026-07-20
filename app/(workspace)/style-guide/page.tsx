@@ -153,14 +153,14 @@ function StyleGuideContent() {
   // ── Color Palette ──────────────────────────────────────────────────────────
   function renderColors() {
     const swatches = [
-      { label: 'Primary', cls: 'bg-primary', text: 'text-primary-foreground', hex: '#4f46e5' },
+      { label: 'Primary', cls: 'bg-primary', text: 'text-primary-foreground', hex: '#e07820' },
       { label: 'Secondary', cls: 'bg-secondary', text: 'text-secondary-foreground', hex: '#f59e0b' },
-      { label: 'Success', cls: 'bg-success', text: 'text-success-foreground', hex: '#17c964' },
-      { label: 'Warning', cls: 'bg-warning', text: 'text-warning-foreground', hex: '#f5a524' },
-      { label: 'Danger', cls: 'bg-danger', text: 'text-danger-foreground', hex: '#f31260' },
+      { label: 'Success', cls: 'bg-success', text: 'text-success-foreground', hex: '#3db87a' },
+      { label: 'Warning', cls: 'bg-warning', text: 'text-warning-foreground', hex: '#d4a012' },
+      { label: 'Danger', cls: 'bg-danger', text: 'text-danger-foreground', hex: '#e05252' },
       { label: 'Default', cls: 'bg-default', text: 'text-default-foreground', hex: 'semantic' },
-      { label: 'Content 1', cls: 'bg-content1', text: 'text-foreground', hex: 'surface' },
-      { label: 'Content 2', cls: 'bg-content2', text: 'text-foreground', hex: 'subtle' },
+      { label: 'Content 1', cls: 'bg-content1', text: 'text-foreground', hex: '#0c1832' },
+      { label: 'Content 2', cls: 'bg-content2', text: 'text-foreground', hex: '#10203c' },
     ];
 
     return (
