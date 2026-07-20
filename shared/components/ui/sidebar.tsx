@@ -55,7 +55,7 @@ function sectionHeaderClass(isActive: boolean) {
 
 function subItemClass(isActive: boolean) {
   return `flex items-center gap-3 pl-9 pr-3 py-1.5 rounded-lg text-xs transition-colors duration-200 ${
-    isActive ? 'text-primary font-semibold' : 'text-default-400 hover:text-foreground hover:bg-default-100'
+    isActive ? 'text-primary font-semibold bg-primary/10' : 'text-default-400 hover:text-foreground hover:bg-default-100'
   }`;
 }
 
@@ -69,19 +69,18 @@ export function Sidebar() {
   const isAdminScope = pathname.startsWith('/admin');
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [expandedSection, setExpandedSection] = useState<ExpandedSection>(null);
-
-  useEffect(() => {
-    if (isCertificationsScope) setExpandedSection('certifications');
-    else if (isConcursosScope) setExpandedSection('public-exams');
-  }, []);
+  const [expandedSection, setExpandedSection] = useState<ExpandedSection>(() => {
+    if (isCertificationsScope) return 'certifications';
+    if (isConcursosScope) return 'public-exams';
+    return null;
+  });
 
   const showConcursos = !usage || usage.publicExamsLimit !== 0;
 
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-64 shrink-0 h-screen sticky top-0 flex-col bg-background2 border-r border-divider overflow-y-auto">
+      <aside className="hidden md:flex w-64 shrink-0 h-screen sticky top-0 flex-col bg-background border-r border-divider overflow-y-auto">
         {renderBrand()}
         <div className="flex-1 overflow-y-auto py-3 px-3">{renderNav()}</div>
         {renderUsageCounters()}
@@ -98,10 +97,10 @@ export function Sidebar() {
         </button>
         <NextLink className="flex items-center gap-2" href="/">
           <Image alt="CertifiqueAI" className="rounded-md" height={22} src="/icon.svg" width={22} />
-          <p className="font-bold text-foreground tracking-wide text-sm">Certifique AI</p>
+          <p className="font-sora font-semibold text-foreground tracking-wide text-sm">Certifique AI</p>
         </NextLink>
         <Avatar
-          classNames={{ base: 'ring-2 ring-primary/40 ring-offset-1 ring-offset-transparent cursor-pointer' }}
+          classNames={{ base: 'ring-2 ring-primary/40 ring-offset-1 ring-offset-transparent' }}
           name={session?.user?.name ?? session?.user?.email ?? undefined}
           size="sm"
           src={session?.user?.image ?? undefined}
@@ -114,7 +113,7 @@ export function Sidebar() {
           <DrawerHeader className="flex items-center justify-between border-b border-divider px-4 py-3">
             <NextLink className="flex items-center gap-2" href="/" onClick={() => setIsMobileOpen(false)}>
               <Image alt="CertifiqueAI" className="rounded-md" height={22} src="/icon.svg" width={22} />
-              <p className="font-bold text-foreground tracking-wide text-sm">Certifique AI</p>
+              <p className="font-sora font-semibold text-foreground tracking-wide text-sm">Certifique AI</p>
             </NextLink>
             <button
               aria-label={t('nav.closeSidebar')}
@@ -138,7 +137,7 @@ export function Sidebar() {
       <div className="h-14 flex items-center gap-3 px-4 border-b border-divider shrink-0">
         <NextLink className="flex items-center gap-2" href="/">
           <Image alt="CertifiqueAI" className="rounded-md" height={22} src="/icon.svg" width={22} />
-          <p className="font-bold text-foreground tracking-wide text-sm">Certifique AI</p>
+          <p className="font-sora font-semibold text-foreground tracking-wide text-sm">Certifique AI</p>
         </NextLink>
       </div>
     );
@@ -219,7 +218,7 @@ export function Sidebar() {
         {status === 'authenticated' && session?.user?.plan === 'admin' && (
           <>
             <div className="pt-4 pb-1">
-              <p className="px-3 text-xs font-semibold text-default-400 uppercase tracking-wider">
+              <p className="px-3 font-mono text-xs text-default-400 uppercase tracking-widest">
                 {t('nav.settings')}
               </p>
             </div>

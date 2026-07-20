@@ -6,7 +6,7 @@ import { UsageProvider } from '@/features/providers/usage.provider';
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   return (
     <UsageProvider>
-      <div className="flex min-h-screen bg-background">
+      <div className="flex min-h-screen bg-background2">
         <Sidebar />
         <div className="flex flex-col flex-1 min-w-0">
           <WorkspaceHeader />
