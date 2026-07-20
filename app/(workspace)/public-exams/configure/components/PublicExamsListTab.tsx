@@ -1,13 +1,16 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Button } from '@heroui/button';
+import { Chip } from '@heroui/chip';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
+import { faPen, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { EditPublicExamModal } from './EditPublicExamModal';
 
 import { buttonStyles } from '@/config/constants/buttonStyles';
-import { PublicExamSubjectsTable } from '@/shared/components/PublicExamSubjectsTable';
+import { PublicExamSubjectsTable, PublicExamSubjectsTableHandle } from '@/shared/components/PublicExamSubjectsTable';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
@@ -26,6 +29,7 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
   const [editingExam, setEditingExam] = useState<PublicExam | null>(null);
   const [deletingExam, setDeletingExam] = useState<PublicExam | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const tableRefs = useRef<Record<string, PublicExamSubjectsTableHandle | null>>({});
 
   const handleSubjectUpdated = useCallback(
     (publicExam: PublicExam, subjectId: string, newName: string, minQuestions: number, maxQuestions: number) => {
@@ -140,51 +144,88 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
             content: 'px-6 pb-6',
             indicator: 'text-default-400',
           }}
+          showDivider={false}
         >
-          {publicExams.map((publicExam) => (
-            <AccordionItem
-              key={publicExam.id ?? publicExam.name}
-              aria-label={publicExam.name}
-              title={
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-sm font-semibold text-foreground truncate flex-1 min-w-0">
-                    {publicExam.name}
-                  </span>
-                  <span className="text-xs text-default-400 shrink-0">·</span>
-                  <span className="text-xs text-default-500 shrink-0">{publicExam.examBoard?.name}</span>
-                  {publicExam.role && (
-                    <>
-                      <span className="text-xs text-default-400 shrink-0">·</span>
-                      <span className="text-xs text-default-500 shrink-0">{publicExam.role}</span>
-                    </>
-                  )}
-                  {publicExam.year != null && (
-                    <>
-                      <span className="text-xs text-default-400 shrink-0">·</span>
-                      <span className="text-xs text-default-500 shrink-0">{publicExam.year}</span>
-                    </>
-                  )}
+          {publicExams.map((publicExam) => {
+            const examKey = publicExam.id ?? publicExam.name;
+
+            return (
+              <AccordionItem
+                key={examKey}
+                aria-label={publicExam.name}
+                title={
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-sm font-semibold text-foreground truncate flex-1 min-w-0">
+                      {publicExam.name}
+                    </span>
+                    {publicExam.examBoard?.name && (
+                      <span className="text-xs text-default-500 shrink-0 max-w-[120px] truncate">
+                        {publicExam.examBoard.name}
+                      </span>
+                    )}
+                    {publicExam.year != null && (
+                      <span className="text-xs font-mono text-default-400 shrink-0">{publicExam.year}</span>
+                    )}
+                    {publicExam.subjects.length === 0 ? (
+                      <Chip color="warning" size="sm" variant="flat">
+                        {t('concurso.noSubjects')}
+                      </Chip>
+                    ) : (
+                      <span className="text-xs font-mono text-default-400 shrink-0">
+                        {publicExam.subjects.length === 1
+                          ? t('concurso.subjectCount1')
+                          : t('concurso.subjectCountN', { count: String(publicExam.subjects.length) })}
+                      </span>
+                    )}
+                  </div>
+                }
+              >
+                <PublicExamSubjectsTable
+                  ref={(el) => { tableRefs.current[examKey] = el; }}
+                  selectedPublicExam={publicExam}
+                  subjectsList={publicExam.subjects}
+                  onSubjectAdded={(subject) => handleSubjectAdded(publicExam, subject)}
+                  onSubjectRemoved={(subjectId) => handleSubjectRemoved(publicExam, subjectId)}
+                  onSubjectUpdated={(subjectId, newName, min, max) =>
+                    handleSubjectUpdated(publicExam, subjectId, newName, min, max)
+                  }
+                  onTopicAdded={(subjectId, topic) => handleTopicAdded(publicExam, subjectId, topic)}
+                  onTopicRemoved={(subjectId, topicId) => handleTopicRemoved(publicExam, subjectId, topicId)}
+                  onTopicUpdated={(subjectId, topicId, newName) =>
+                    handleTopicUpdated(publicExam, subjectId, topicId, newName)
+                  }
+                />
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-default-200">
+                  <Button
+                    className={buttonStyles.primarySm}
+                    size="sm"
+                    startContent={<FontAwesomeIcon className="text-[10px]" icon={faPlus} />}
+                    onPress={() => tableRefs.current[examKey]?.startAdd()}
+                  >
+                    {t('concurso.addSubject')}
+                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      className={buttonStyles.flat}
+                      size="sm"
+                      startContent={<FontAwesomeIcon className="text-xs" icon={faPen} />}
+                      onPress={() => setEditingExam(publicExam)}
+                    >
+                      {t('concurso.editPublicExam')}
+                    </Button>
+                    <Button
+                      className={buttonStyles.dangerFlat}
+                      size="sm"
+                      startContent={<FontAwesomeIcon className="text-xs" icon={faTrash} />}
+                      onPress={() => setDeletingExam(publicExam)}
+                    >
+                      {t('concurso.deleteExamTitle')}
+                    </Button>
+                  </div>
                 </div>
-              }
-            >
-              <PublicExamSubjectsTable
-                selectedPublicExam={publicExam}
-                subjectsList={publicExam.subjects}
-                onDeletePublicExam={() => setDeletingExam(publicExam)}
-                onEditPublicExam={() => setEditingExam(publicExam)}
-                onSubjectAdded={(subject) => handleSubjectAdded(publicExam, subject)}
-                onSubjectRemoved={(subjectId) => handleSubjectRemoved(publicExam, subjectId)}
-                onSubjectUpdated={(subjectId, newName, min, max) =>
-                  handleSubjectUpdated(publicExam, subjectId, newName, min, max)
-                }
-                onTopicAdded={(subjectId, topic) => handleTopicAdded(publicExam, subjectId, topic)}
-                onTopicRemoved={(subjectId, topicId) => handleTopicRemoved(publicExam, subjectId, topicId)}
-                onTopicUpdated={(subjectId, topicId, newName) =>
-                  handleTopicUpdated(publicExam, subjectId, topicId, newName)
-                }
-              />
-            </AccordionItem>
-          ))}
+              </AccordionItem>
+            );
+          })}
         </Accordion>
       )}
 
