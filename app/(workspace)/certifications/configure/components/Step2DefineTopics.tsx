@@ -1,10 +1,11 @@
 'use client';
 import type { CertificationTopic } from '@/shared/types';
 
-import { faCircleInfo, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faCircleCheck, faCircleInfo, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
+import { AnimatePresence, motion } from 'framer-motion';
 
 import { StepHeader } from './StepHeader';
 
@@ -68,15 +69,42 @@ export function Step2DefineTopics({
             </div>
           </div>
 
-          <div className="bg-primary/10 border border-primary/30 rounded-xl p-4 flex gap-3">
-            <FontAwesomeIcon className="text-primary mt-0.5 shrink-0 text-base" icon={faCircleInfo} />
+          <div
+            className={`rounded-xl p-4 flex gap-3 transition-colors duration-300 ${
+              isWeightageValid
+                ? 'bg-success/10 border border-success/30'
+                : 'bg-primary/10 border border-primary/30'
+            }`}
+          >
+            <AnimatePresence initial={false} mode="wait">
+              <motion.span
+                key={isWeightageValid ? 'check' : 'info'}
+                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                exit={{ opacity: 0, scale: 0.5 }}
+                initial={{ opacity: 0, scale: 0.5 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <FontAwesomeIcon
+                  className={`mt-0.5 shrink-0 text-base ${isWeightageValid ? 'text-success' : 'text-primary'}`}
+                  icon={isWeightageValid ? faCircleCheck : faCircleInfo}
+                />
+              </motion.span>
+            </AnimatePresence>
             <div className="flex flex-col gap-1">
-              <p className="text-sm font-semibold text-primary">{t('certification.systemLogic')}</p>
+              <p className={`text-sm font-semibold transition-colors duration-300 ${isWeightageValid ? 'text-success' : 'text-primary'}`}>
+                {t('certification.systemLogic')}
+              </p>
               <p className="text-sm text-default-500">
                 {t('certification.weightageInfoBase')}{' '}
-                <span className={`font-bold ${isWeightageValid ? 'text-success' : 'text-warning'}`}>
+                <motion.span
+                  animate={{ scale: 1 }}
+                  className={`font-bold inline-block ${isWeightageValid ? 'text-success' : 'text-warning'}`}
+                  key={totalWeightage}
+                  transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                  initial={{ scale: 1.25 }}
+                >
                   {totalWeightage}%
-                </span>
+                </motion.span>
                 .
               </p>
             </div>
@@ -100,15 +128,20 @@ export function Step2DefineTopics({
             {topics.length === 0 && (
               <p className="text-sm text-default-400 text-center py-10">{t('certification.noTopics')}</p>
             )}
-            {topics.map((topic, index) => {
-              const hasMinMaxError = topic.minQuestions > topic.maxQuestions;
+            <AnimatePresence initial={false}>
+              {topics.map((topic, index) => {
+                const hasMinMaxError = topic.minQuestions > topic.maxQuestions;
 
-              return (
-                <div
-                  key={index}
-                  className={`rounded-lg flex flex-col gap-3 ${hasMinMaxError ? 'border border-danger/50 bg-danger/5 p-3' : 'bg-content1'}`}
-                >
-                <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_auto] gap-4 sm:items-end">
+                return (
+                  <motion.div
+                    key={index}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`rounded-lg flex flex-col gap-3 ${hasMinMaxError ? 'border border-danger/50 bg-danger/5 p-3' : 'bg-content1'}`}
+                    exit={{ opacity: 0, y: -8 }}
+                    initial={{ opacity: 0, y: 12 }}
+                    transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_auto] gap-4 sm:items-end">
                       <Input
                         {...inputProperties.input}
                         label={t('certification.domainName')}
@@ -155,12 +188,13 @@ export function Step2DefineTopics({
                         </Button>
                       </div>
                     </div>
-                  {hasMinMaxError && (
-                    <p className="text-xs text-danger font-medium">{t('certification.minGreaterThanMax')}</p>
-                  )}
-                </div>
-              );
-            })}
+                    {hasMinMaxError && (
+                      <p className="text-xs text-danger font-medium">{t('certification.minGreaterThanMax')}</p>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-6 py-5 border-t border-default-200">
