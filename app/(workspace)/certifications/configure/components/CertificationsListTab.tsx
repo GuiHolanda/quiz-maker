@@ -1,15 +1,15 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
-import { faPen, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faPen, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { EditCertificationModal } from './EditCertificationModal';
 
-import { SectionsTable } from '@/shared/components/SectionsTable';
+import { SectionsTable, SectionsTableHandle } from '@/shared/components/SectionsTable';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
@@ -29,6 +29,7 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
   const [editingCert, setEditingCert] = useState<Certification | null>(null);
   const [deletingCert, setDeletingCert] = useState<Certification | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const tableRefs = useRef<Record<string, SectionsTableHandle | null>>({});
 
   const handleTopicUpdated = useCallback(
     (certification: Certification, topicId: string, newName: string, minQuestions: number, maxQuestions: number) => {
@@ -136,6 +137,7 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
               }
             >
               <SectionsTable
+                ref={(el) => { tableRefs.current[certification.key] = el; }}
                 selectedCertification={certification}
                 topicsList={certification.topics}
                 onTopicAdded={(topic) => handleTopicAdded(certification, topic)}
@@ -146,21 +148,31 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
               />
               <div className="flex items-center justify-between mt-4 pt-4 border-t border-default-200">
                 <Button
-                  className={buttonStyles.flat}
+                  className={buttonStyles.primarySm}
                   size="sm"
-                  startContent={<FontAwesomeIcon className="text-xs" icon={faPen} />}
-                  onPress={() => setEditingCert(certification)}
+                  startContent={<FontAwesomeIcon className="text-[10px]" icon={faPlus} />}
+                  onPress={() => tableRefs.current[certification.key]?.startAdd()}
                 >
-                  {t('certification.editCertification')}
+                  {t('certification.addTopic')}
                 </Button>
-                <Button
-                  className={buttonStyles.dangerFlat}
-                  size="sm"
-                  startContent={<FontAwesomeIcon className="text-xs" icon={faTrash} />}
-                  onPress={() => setDeletingCert(certification)}
-                >
-                  {t('certification.deleteCertificationTitle')}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    className={buttonStyles.flat}
+                    size="sm"
+                    startContent={<FontAwesomeIcon className="text-xs" icon={faPen} />}
+                    onPress={() => setEditingCert(certification)}
+                  >
+                    {t('certification.editCertification')}
+                  </Button>
+                  <Button
+                    className={buttonStyles.dangerFlat}
+                    size="sm"
+                    startContent={<FontAwesomeIcon className="text-xs" icon={faTrash} />}
+                    onPress={() => setDeletingCert(certification)}
+                  >
+                    {t('certification.deleteCertificationTitle')}
+                  </Button>
+                </div>
               </div>
             </AccordionItem>
           ))}

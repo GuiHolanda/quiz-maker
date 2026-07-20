@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useRef, useState } from 'react';
+import React, { forwardRef, useCallback, useImperativeHandle, useRef, useState } from 'react';
 import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
 import { Slider } from '@heroui/slider';
@@ -11,6 +11,10 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+
+export interface SectionsTableHandle {
+  startAdd: () => void;
+}
 
 interface SectionsTableProps {
   selectedCertification: Certification | null;
@@ -39,7 +43,7 @@ const TH = 'text-left text-xs font-medium text-default-400 px-4 py-3 border-b bo
 const TD = 'px-4 py-3 text-sm text-foreground border-b border-default-200';
 const TD_LAST = 'px-4 py-3 text-sm text-foreground';
 
-export function SectionsTable({
+export const SectionsTable = forwardRef<SectionsTableHandle, SectionsTableProps>(function SectionsTable({
   selectedCertification,
   topicsList,
   editable = false,
@@ -47,7 +51,7 @@ export function SectionsTable({
   onTopicUpdated,
   onTopicRemoved,
   onTopicAdded,
-}: SectionsTableProps) {
+}, ref) {
   const { t } = useTranslation();
   const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
   const [editingTopicId, setEditingTopicId] = useState<string | null>(null);
@@ -58,6 +62,8 @@ export function SectionsTable({
   const [addState, setAddState] = useState<EditState>({ name: '', min: 0, max: 0 });
   const [adding, setAdding] = useState(false);
   const [addNameTouched, setAddNameTouched] = useState(false);
+
+  useImperativeHandle(ref, () => ({ startAdd: () => setIsAddingTopic(true) }));
 
   const topics = selectedCertification?.topics ?? topicsList ?? [];
 
@@ -400,13 +406,6 @@ export function SectionsTable({
           </tbody>
         </table>
       </div>
-      {!isAddingTopic && onTopicAdded && (
-        <div className="mt-4 flex">
-          <Button className={buttonStyles.primarySm} size="sm" onPress={() => setIsAddingTopic(true)}>
-            {t('certification.addTopic')}
-          </Button>
-        </div>
-      )}
     </>
   );
-}
+});
