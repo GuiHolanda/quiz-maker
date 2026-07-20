@@ -93,7 +93,7 @@ export function Sidebar() {
     <>
       {/* Desktop sidebar */}
       <aside
-        className={`hidden md:flex shrink-0 h-screen sticky top-0 flex-col bg-background border-r border-divider overflow-y-auto transition-[width] duration-200 ease-out ${isCollapsed ? 'w-16' : 'w-64'}`}
+        className={`hidden md:flex shrink-0 h-screen sticky top-0 flex-col bg-background border-r border-divider overflow-hidden transition-[width] duration-200 ease-out ${isCollapsed ? 'w-16' : 'w-64'}`}
       >
         {renderBrand()}
         <div className={`flex-1 overflow-y-auto py-3 ${isCollapsed ? 'px-3 flex flex-col items-center' : 'px-3'}`}>
@@ -150,21 +150,16 @@ export function Sidebar() {
 
   function renderBrand() {
     return (
-      <div className={`h-14 flex items-center border-b border-divider shrink-0 ${isCollapsed ? 'justify-center px-2' : 'px-4'}`}>
+      <div className={`h-14 flex items-center border-b border-divider shrink-0 ${isCollapsed ? 'justify-center' : 'px-4'}`}>
         {!isCollapsed && (
           <NextLink className="flex items-center gap-2 flex-1 min-w-0" href="/">
             <Image alt="CertifiqueAI" className="rounded-md shrink-0" height={22} src="/icon.svg" width={22} />
             <p className="font-sora font-semibold text-foreground tracking-wide text-sm truncate">Certifique AI</p>
           </NextLink>
         )}
-        {isCollapsed && (
-          <NextLink href="/">
-            <Image alt="CertifiqueAI" className="rounded-md" height={22} src="/icon.svg" width={22} />
-          </NextLink>
-        )}
         <button
           aria-label={isCollapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
-          className={`p-1.5 text-default-400 hover:text-foreground transition-colors rounded-lg hover:bg-default-100 shrink-0 ${isCollapsed ? 'mt-0' : 'ml-auto'}`}
+          className={`p-1.5 text-default-400 hover:text-foreground transition-colors rounded-lg hover:bg-default-100 shrink-0 ${isCollapsed ? '' : 'ml-auto'}`}
           onClick={toggleCollapsed}
         >
           <FontAwesomeIcon
