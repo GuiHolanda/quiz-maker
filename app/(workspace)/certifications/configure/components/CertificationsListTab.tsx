@@ -3,7 +3,10 @@
 import { useState, useCallback } from 'react';
 import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Button } from '@heroui/button';
+import { Chip } from '@heroui/chip';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
+import { faPen, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { EditCertificationModal } from './EditCertificationModal';
 
 import { SectionsTable } from '@/shared/components/SectionsTable';
@@ -114,16 +117,45 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
                     {certification.label}
                   </span>
                   {certification.provider && (
-                    <span className="text-xs text-default-500 shrink-0">{certification.provider}</span>
+                    <span className="text-xs text-default-500 shrink-0 max-w-[160px] truncate">
+                      {certification.provider}
+                    </span>
+                  )}
+                  {certification.topics.length === 0 ? (
+                    <Chip color="warning" size="sm" variant="flat">
+                      {t('certification.noTopics')}
+                    </Chip>
+                  ) : (
+                    <span className="text-xs font-mono text-default-400 shrink-0">
+                      {certification.topics.length === 1
+                        ? t('certification.topicCount1')
+                        : t('certification.topicCountN', { count: String(certification.topics.length) })}
+                    </span>
                   )}
                 </div>
               }
             >
+              <div className="flex items-center justify-between pb-4 mb-4 border-b border-default-200">
+                <Button
+                  className={buttonStyles.flat}
+                  size="sm"
+                  startContent={<FontAwesomeIcon className="text-xs" icon={faPen} />}
+                  onPress={() => setEditingCert(certification)}
+                >
+                  {t('certification.editCertification')}
+                </Button>
+                <Button
+                  className={buttonStyles.dangerFlat}
+                  size="sm"
+                  startContent={<FontAwesomeIcon className="text-xs" icon={faTrash} />}
+                  onPress={() => setDeletingCert(certification)}
+                >
+                  {t('certification.deleteCertificationTitle')}
+                </Button>
+              </div>
               <SectionsTable
                 selectedCertification={certification}
                 topicsList={certification.topics}
-                onDeleteCertification={() => setDeletingCert(certification)}
-                onEditCertification={() => setEditingCert(certification)}
                 onTopicAdded={(topic) => handleTopicAdded(certification, topic)}
                 onTopicRemoved={(topicId) => handleTopicRemoved(certification, topicId)}
                 onTopicUpdated={(topicId, newName, min, max) =>

@@ -10,6 +10,7 @@ import { updateCertificationMeta } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
 import { inputProperties } from '@/config/constants/inputStyles';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface EditCertificationModalProps {
   certification: Certification | null;
@@ -64,6 +65,7 @@ export function EditCertificationModal({ certification, isOpen, onClose, onSaved
           <Input
             {...inputProperties.input}
             label={t('certification.certificationTitle')}
+            placeholder={t('certification.certificationTitlePlaceholder')}
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
@@ -71,6 +73,7 @@ export function EditCertificationModal({ certification, isOpen, onClose, onSaved
           <Input
             {...inputProperties.input}
             label={t('certification.certificationCode')}
+            placeholder={t('certification.certificationCodePlaceholder')}
             value={certKey}
             onChange={(e) => setCertKey(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
@@ -85,18 +88,10 @@ export function EditCertificationModal({ certification, isOpen, onClose, onSaved
           />
         </ModalBody>
         <ModalFooter>
-          <Button
-            className="border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold transition-colors duration-200"
-            variant="bordered"
-            onPress={onClose}
-          >
+          <Button className={buttonStyles.secondary} variant="bordered" onPress={onClose}>
             {t('common.cancel')}
           </Button>
-          <Button
-            className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
-            isLoading={saving}
-            onPress={handleSave}
-          >
+          <Button className={buttonStyles.primary} isLoading={saving} onPress={handleSave}>
             {t('common.save')}
           </Button>
         </ModalFooter>
