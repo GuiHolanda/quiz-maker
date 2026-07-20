@@ -4,12 +4,14 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerBody } from '@heroui/drawer'
 import { Avatar } from '@heroui/avatar';
 import NextLink from 'next/link';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faChevronDown,
+  faChevronLeft,
+  faChevronRight,
   faGear,
   faGraduationCap,
   faClipboard,
@@ -22,6 +24,7 @@ import {
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
+import { SIDEBAR_COLLAPSED_LOCAL_STORAGE_KEY, SIDEBAR_COLLAPSED_COOKIE_KEY } from '@/config/constants';
 
 const CERTIFICATION_ITEMS = [
   { labelKey: 'nav.configureCertification', href: '/certifications/configure', icon: faGear },
@@ -37,29 +40,27 @@ const CONCURSO_ITEMS = [
 
 type ExpandedSection = 'certifications' | 'public-exams' | null;
 
-function navLinkClass(isActive: boolean) {
-  return `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors duration-200 ${
-    isActive
-      ? 'bg-primary/10 text-primary font-semibold'
-      : 'text-default-500 hover:text-foreground hover:bg-default-100'
-  }`;
+function navLinkClass(isActive: boolean, collapsed = false) {
+  const base = collapsed
+    ? 'flex items-center justify-center w-10 h-10 rounded-lg transition-colors duration-200'
+    : 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors duration-200';
+  return `${base} ${isActive ? 'bg-primary/10 text-primary font-semibold' : 'text-default-500 hover:text-foreground hover:bg-default-100'}`;
 }
 
-function sectionHeaderClass(isActive: boolean) {
-  return `w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors duration-200 ${
-    isActive
-      ? 'bg-primary/10 text-primary font-semibold'
-      : 'text-default-500 hover:text-foreground hover:bg-default-100'
-  }`;
+function sectionHeaderClass(isActive: boolean, collapsed = false) {
+  const base = collapsed
+    ? 'flex items-center justify-center w-10 h-10 rounded-lg transition-colors duration-200'
+    : 'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors duration-200';
+  return `${base} ${isActive ? 'bg-primary/10 text-primary font-semibold' : 'text-default-500 hover:text-foreground hover:bg-default-100'}`;
 }
 
 function subItemClass(isActive: boolean) {
   return `flex items-center gap-3 pl-9 pr-3 py-1.5 rounded-lg text-xs transition-colors duration-200 ${
-    isActive ? 'text-primary font-semibold' : 'text-default-400 hover:text-foreground hover:bg-default-100'
+    isActive ? 'text-primary font-semibold bg-primary/10' : 'text-default-400 hover:text-foreground hover:bg-default-100'
   }`;
 }
 
-export function Sidebar() {
+export function Sidebar({ defaultCollapsed = false }: { readonly defaultCollapsed?: boolean }) {
   const { data: session, status } = useSession();
   const { t } = useTranslation();
   const { usage } = useUsageContext();
@@ -69,21 +70,35 @@ export function Sidebar() {
   const isAdminScope = pathname.startsWith('/admin');
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [expandedSection, setExpandedSection] = useState<ExpandedSection>(null);
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
-  useEffect(() => {
-    if (isCertificationsScope) setExpandedSection('certifications');
-    else if (isConcursosScope) setExpandedSection('public-exams');
-  }, []);
+  const [expandedSection, setExpandedSection] = useState<ExpandedSection>(() => {
+    if (isCertificationsScope) return 'certifications';
+    if (isConcursosScope) return 'public-exams';
+    return null;
+  });
 
   const showConcursos = !usage || usage.publicExamsLimit !== 0;
+
+  const toggleCollapsed = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem(SIDEBAR_COLLAPSED_LOCAL_STORAGE_KEY, String(next));
+      document.cookie = `${SIDEBAR_COLLAPSED_COOKIE_KEY}=${next}; path=/; max-age=31536000; SameSite=Lax`;
+      return next;
+    });
+  };
 
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-64 shrink-0 h-screen sticky top-0 flex-col bg-background2 border-r border-divider overflow-y-auto">
+      <aside
+        className={`hidden md:flex shrink-0 h-screen sticky top-0 flex-col bg-background border-r border-divider overflow-hidden transition-[width] duration-200 ease-out ${isCollapsed ? 'w-16' : 'w-64'}`}
+      >
         {renderBrand()}
-        <div className="flex-1 overflow-y-auto py-3 px-3">{renderNav()}</div>
+        <div className={`flex-1 py-3 ${isCollapsed ? 'px-3 flex flex-col items-center overflow-hidden' : 'px-3 overflow-y-auto'}`}>
+          {renderNav()}
+        </div>
         {renderUsageCounters()}
       </aside>
 
@@ -98,10 +113,10 @@ export function Sidebar() {
         </button>
         <NextLink className="flex items-center gap-2" href="/">
           <Image alt="CertifiqueAI" className="rounded-md" height={22} src="/icon.svg" width={22} />
-          <p className="font-bold text-foreground tracking-wide text-sm">Certifique AI</p>
+          <p className="font-sora font-semibold text-foreground tracking-wide text-sm">Certifique AI</p>
         </NextLink>
         <Avatar
-          classNames={{ base: 'ring-2 ring-primary/40 ring-offset-1 ring-offset-transparent cursor-pointer' }}
+          classNames={{ base: 'ring-2 ring-primary/40 ring-offset-1 ring-offset-transparent' }}
           name={session?.user?.name ?? session?.user?.email ?? undefined}
           size="sm"
           src={session?.user?.image ?? undefined}
@@ -114,7 +129,7 @@ export function Sidebar() {
           <DrawerHeader className="flex items-center justify-between border-b border-divider px-4 py-3">
             <NextLink className="flex items-center gap-2" href="/" onClick={() => setIsMobileOpen(false)}>
               <Image alt="CertifiqueAI" className="rounded-md" height={22} src="/icon.svg" width={22} />
-              <p className="font-bold text-foreground tracking-wide text-sm">Certifique AI</p>
+              <p className="font-sora font-semibold text-foreground tracking-wide text-sm">Certifique AI</p>
             </NextLink>
             <button
               aria-label={t('nav.closeSidebar')}
@@ -134,40 +149,78 @@ export function Sidebar() {
   );
 
   function renderBrand() {
+    if (isCollapsed) {
+      return (
+        <button
+          aria-label={t('nav.expandSidebar')}
+          className="h-14 flex items-center justify-center gap-2 border-b border-divider shrink-0 w-full text-default-400 hover:text-foreground hover:bg-default-100 transition-colors duration-200"
+          onClick={toggleCollapsed}
+        >
+          <Image alt="CertifiqueAI" className="rounded-md shrink-0" height={18} src="/icon.svg" width={18} />
+          <FontAwesomeIcon className="w-2.5 h-2.5" icon={faChevronRight} />
+        </button>
+      );
+    }
+
     return (
-      <div className="h-14 flex items-center gap-3 px-4 border-b border-divider shrink-0">
-        <NextLink className="flex items-center gap-2" href="/">
-          <Image alt="CertifiqueAI" className="rounded-md" height={22} src="/icon.svg" width={22} />
-          <p className="font-bold text-foreground tracking-wide text-sm">Certifique AI</p>
+      <div className="h-14 flex items-center px-4 border-b border-divider shrink-0">
+        <NextLink className="flex items-center gap-2 flex-1 min-w-0" href="/">
+          <Image alt="CertifiqueAI" className="rounded-md shrink-0" height={22} src="/icon.svg" width={22} />
+          <p className="font-sora font-semibold text-foreground tracking-wide text-sm truncate">Certifique AI</p>
         </NextLink>
+        <button
+          aria-label={t('nav.collapseSidebar')}
+          className="p-1.5 text-default-400 hover:text-foreground transition-colors rounded-lg hover:bg-default-100 shrink-0 ml-auto"
+          onClick={toggleCollapsed}
+        >
+          <FontAwesomeIcon className="w-3.5 h-3.5" icon={faChevronLeft} />
+        </button>
       </div>
     );
   }
 
   function renderNav(isMobile = false) {
     const closeDrawer = isMobile ? () => setIsMobileOpen(false) : undefined;
+    const collapsed = !isMobile && isCollapsed;
 
     return (
-      <nav className="flex flex-col gap-0.5">
+      <nav className={`flex flex-col ${collapsed ? 'items-center gap-1' : 'gap-0.5'}`}>
         {/* Dashboard */}
-        <NextLink className={navLinkClass(pathname === '/dashboard')} href="/dashboard" onClick={closeDrawer}>
+        <NextLink
+          className={navLinkClass(pathname === '/dashboard', collapsed)}
+          href="/dashboard"
+          title={collapsed ? t('nav.dashboard') : undefined}
+          onClick={closeDrawer}
+        >
           <FontAwesomeIcon className="w-4 h-4 shrink-0" icon={faHouse} />
-          {t('nav.dashboard')}
+          {!collapsed && t('nav.dashboard')}
         </NextLink>
 
         {/* Certifications section */}
         <button
-          className={sectionHeaderClass(isCertificationsScope)}
-          onClick={() => setExpandedSection((prev) => (prev === 'certifications' ? null : 'certifications'))}
+          className={sectionHeaderClass(isCertificationsScope, collapsed)}
+          title={collapsed ? t('nav.certificates') : undefined}
+          onClick={() => {
+            if (collapsed) {
+              toggleCollapsed();
+              setExpandedSection('certifications');
+            } else {
+              setExpandedSection((prev) => (prev === 'certifications' ? null : 'certifications'));
+            }
+          }}
         >
           <FontAwesomeIcon className="w-4 h-4 shrink-0" icon={faGraduationCap} />
-          <span className="flex-1 text-left">{t('nav.certificates')}</span>
-          <FontAwesomeIcon
-            className={`w-3 h-3 transition-transform duration-200 ${expandedSection === 'certifications' ? 'rotate-180' : ''}`}
-            icon={faChevronDown}
-          />
+          {!collapsed && (
+            <>
+              <span className="flex-1 text-left">{t('nav.certificates')}</span>
+              <FontAwesomeIcon
+                className={`w-3 h-3 transition-transform duration-200 ${expandedSection === 'certifications' ? 'rotate-180' : ''}`}
+                icon={faChevronDown}
+              />
+            </>
+          )}
         </button>
-        {expandedSection === 'certifications' && (
+        {!collapsed && expandedSection === 'certifications' && (
           <div className="flex flex-col gap-0.5 mt-0.5">
             {CERTIFICATION_ITEMS.map((item) => (
               <NextLink
@@ -187,17 +240,29 @@ export function Sidebar() {
         {showConcursos && (
           <>
             <button
-              className={sectionHeaderClass(isConcursosScope)}
-              onClick={() => setExpandedSection((prev) => (prev === 'public-exams' ? null : 'public-exams'))}
+              className={sectionHeaderClass(isConcursosScope, collapsed)}
+              title={collapsed ? t('nav.concursos') : undefined}
+              onClick={() => {
+                if (collapsed) {
+                  toggleCollapsed();
+                  setExpandedSection('public-exams');
+                } else {
+                  setExpandedSection((prev) => (prev === 'public-exams' ? null : 'public-exams'));
+                }
+              }}
             >
               <FontAwesomeIcon className="w-4 h-4 shrink-0" icon={faClipboard} />
-              <span className="flex-1 text-left">{t('nav.concursos')}</span>
-              <FontAwesomeIcon
-                className={`w-3 h-3 transition-transform duration-200 ${expandedSection === 'public-exams' ? 'rotate-180' : ''}`}
-                icon={faChevronDown}
-              />
+              {!collapsed && (
+                <>
+                  <span className="flex-1 text-left">{t('nav.concursos')}</span>
+                  <FontAwesomeIcon
+                    className={`w-3 h-3 transition-transform duration-200 ${expandedSection === 'public-exams' ? 'rotate-180' : ''}`}
+                    icon={faChevronDown}
+                  />
+                </>
+              )}
             </button>
-            {expandedSection === 'public-exams' && (
+            {!collapsed && expandedSection === 'public-exams' && (
               <div className="flex flex-col gap-0.5 mt-0.5">
                 {CONCURSO_ITEMS.map((item) => (
                   <NextLink
@@ -218,14 +283,21 @@ export function Sidebar() {
         {/* Admin */}
         {status === 'authenticated' && session?.user?.plan === 'admin' && (
           <>
-            <div className="pt-4 pb-1">
-              <p className="px-3 text-xs font-semibold text-default-400 uppercase tracking-wider">
-                {t('nav.settings')}
-              </p>
-            </div>
-            <NextLink className={navLinkClass(isAdminScope)} href="/admin" onClick={closeDrawer}>
+            {!collapsed && (
+              <div className="pt-4 pb-1">
+                <p className="px-3 font-mono text-xs text-default-400 uppercase tracking-widest">
+                  {t('nav.settings')}
+                </p>
+              </div>
+            )}
+            <NextLink
+              className={navLinkClass(isAdminScope, collapsed)}
+              href="/admin"
+              title={collapsed ? 'Admin' : undefined}
+              onClick={closeDrawer}
+            >
               <FontAwesomeIcon className="w-4 h-4 shrink-0" icon={faGear} />
-              Admin
+              {!collapsed && 'Admin'}
             </NextLink>
           </>
         )}
@@ -241,7 +313,7 @@ export function Sidebar() {
     const examsUnlimited = usage.publicExamsLimit === -1;
 
     return (
-      <div className="border-t border-divider px-4 py-4 flex flex-col gap-3 shrink-0">
+      <div className={`border-t border-divider px-4 py-4 flex flex-col gap-3 shrink-0 ${isCollapsed ? 'hidden' : ''}`}>
         {/* Questions counter */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center justify-between">

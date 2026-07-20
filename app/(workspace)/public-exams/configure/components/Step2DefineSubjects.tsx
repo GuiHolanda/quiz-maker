@@ -1,10 +1,11 @@
 'use client';
 import type { PublicExamSubject } from '@/shared/types';
 
-import { faCircleInfo, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faCircleCheck, faCircleInfo, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
+import { AnimatePresence, motion } from 'framer-motion';
 
 import { StepHeader } from './StepHeader';
 
@@ -74,15 +75,42 @@ export function Step2DefineSubjects({
             </div>
           </div>
 
-          <div className="bg-primary/10 border border-primary/30 rounded-xl p-4 flex gap-3">
-            <FontAwesomeIcon className="text-primary mt-0.5 shrink-0 text-base" icon={faCircleInfo} />
+          <div
+            className={`rounded-xl p-4 flex gap-3 transition-colors duration-300 ${
+              isWeightageValid
+                ? 'bg-success/10 border border-success/30'
+                : 'bg-primary/10 border border-primary/30'
+            }`}
+          >
+            <AnimatePresence initial={false} mode="wait">
+              <motion.span
+                key={isWeightageValid ? 'check' : 'info'}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5 }}
+                initial={{ opacity: 0, scale: 0.5 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <FontAwesomeIcon
+                  className={`mt-0.5 shrink-0 text-base ${isWeightageValid ? 'text-success' : 'text-primary'}`}
+                  icon={isWeightageValid ? faCircleCheck : faCircleInfo}
+                />
+              </motion.span>
+            </AnimatePresence>
             <div className="flex flex-col gap-1">
-              <p className="text-sm font-extrabold text-primary">{t('concurso.systemLogic')}</p>
+              <p className={`text-sm font-semibold transition-colors duration-300 ${isWeightageValid ? 'text-success' : 'text-primary'}`}>
+                {t('concurso.systemLogic')}
+              </p>
               <p className="text-sm text-default-500">
                 {t('concurso.weightageInfoBase')}{' '}
-                <span className={`font-bold ${isWeightageValid ? 'text-success' : 'text-warning'}`}>
+                <motion.span
+                  key={totalWeightage}
+                  animate={{ scale: 1 }}
+                  className={`font-bold inline-block ${isWeightageValid ? 'text-success' : 'text-warning'}`}
+                  initial={{ scale: 1.25 }}
+                  transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                >
                   {totalWeightage}%
-                </span>
+                </motion.span>
                 .
               </p>
             </div>
@@ -93,7 +121,7 @@ export function Step2DefineSubjects({
           <div className="flex items-center justify-between px-6 py-5 border-b border-default-200">
             <h3 className="text-lg font-bold text-foreground">{t('concurso.subjectsTitle')}</h3>
             <Button
-              className="bg-primary text-primary-foreground text-xs font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200 h-8 px-4"
+              className={buttonStyles.primarySm}
               size="sm"
               startContent={<FontAwesomeIcon className="text-[10px]" icon={faPlus} />}
               onPress={onAddEmptySubject}
@@ -106,16 +134,20 @@ export function Step2DefineSubjects({
             {subjects.length === 0 && (
               <p className="text-sm text-default-400 text-center py-10">{t('concurso.noSubjects')}</p>
             )}
-            {subjects.map((subject, index) => {
-              const hasMinMaxError = subject.minQuestions > subject.maxQuestions;
+            <AnimatePresence initial={false}>
+              {subjects.map((subject, index) => {
+                const hasMinMaxError = subject.minQuestions > subject.maxQuestions;
 
-              return (
-                <div
-                  key={index}
-                  className={`rounded-lg flex flex-col gap-3 ${hasMinMaxError ? 'border border-danger/50 bg-danger/5 p-3' : 'bg-content1'}`}
-                >
-                  <div className="flex flex-col sm:flex-row gap-4 sm:items-end">
-                    <div className="w-1/2">
+                return (
+                  <motion.div
+                    key={index}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`rounded-lg flex flex-col gap-3 ${hasMinMaxError ? 'border border-danger/50 bg-danger/5 p-3' : 'bg-content1'}`}
+                    exit={{ opacity: 0, y: -8 }}
+                    initial={{ opacity: 0, y: 12 }}
+                    transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_auto] gap-4 sm:items-end">
                       <Input
                         {...inputProperties.input}
                         label={t('concurso.subjectName')}
@@ -123,8 +155,6 @@ export function Step2DefineSubjects({
                         value={subject.name}
                         onChange={(e) => onUpdateSubject(index, e.target.value, subject.minQuestions, subject.maxQuestions)}
                       />
-                    </div>
-                    <div className="w-1/4 flex flex-col gap-1">
                       <Input
                         {...inputProperties.input}
                         endContent={<span className="text-default-400 text-sm">%</span>}
@@ -138,8 +168,6 @@ export function Step2DefineSubjects({
                           onUpdateSubject(index, subject.name, newMin, subject.maxQuestions);
                         }}
                       />
-                    </div>
-                    <div className="w-1/4 flex flex-col gap-1">
                       <Input
                         {...inputProperties.input}
                         endContent={<span className="text-default-400 text-sm">%</span>}
@@ -153,26 +181,26 @@ export function Step2DefineSubjects({
                           onUpdateSubject(index, subject.name, subject.minQuestions, newMax);
                         }}
                       />
+                      <div className="pb-1">
+                        <Button
+                          isIconOnly
+                          aria-label={t('common.remove')}
+                          className={buttonStyles.iconOnly.danger}
+                          size="sm"
+                          variant="light"
+                          onPress={() => onRemoveSubject(index)}
+                        >
+                          <FontAwesomeIcon className="text-xs" icon={faTrash} />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="shrink-0 pb-1">
-                      <Button
-                        isIconOnly
-                        aria-label={t('common.remove')}
-                        className={buttonStyles.iconOnly.danger}
-                        size="sm"
-                        variant="light"
-                        onPress={() => onRemoveSubject(index)}
-                      >
-                        <FontAwesomeIcon className="text-xs" icon={faTrash} />
-                      </Button>
-                    </div>
-                  </div>
-                  {hasMinMaxError && (
-                    <p className="text-xs text-danger font-medium">{t('concurso.minGreaterThanMax')}</p>
-                  )}
-                </div>
-              );
-            })}
+                    {hasMinMaxError && (
+                      <p className="text-xs text-danger font-medium">{t('concurso.minGreaterThanMax')}</p>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-6 py-5 border-t border-default-200">

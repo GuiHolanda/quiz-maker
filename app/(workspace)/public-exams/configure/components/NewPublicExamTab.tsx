@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@heroui/button';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
 
@@ -19,12 +20,26 @@ interface NewPublicExamTabProps {
   readonly onBackToLibrary: () => void;
 }
 
+const variants = {
+  enter: (dir: number) => ({ x: dir > 0 ? 40 : -40, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (dir: number) => ({ x: dir > 0 ? -40 : 40, opacity: 0 }),
+};
+
 export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
   const { addPublicExam, publicExams } = usePublicExamsContext();
   const { loading, request } = useRequest(savePublicExam);
   const draft = usePublicExamDraft();
   const { t } = useTranslation();
   const [isDiscardOpen, setIsDiscardOpen] = useState(false);
+  const prevStep = useRef(draft.step);
+
+  const direction = draft.step > prevStep.current ? 1 : -1;
+
+  const goToStep = (next: 1 | 2 | 3) => {
+    prevStep.current = draft.step;
+    draft.setStep(next);
+  };
 
   const handleSave = async () => {
     const name = draft.name.trim();
@@ -32,7 +47,6 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
 
     if (!name || !examBoardName) {
       notify.error(t('toast.validationError'), t('error.nameAndBancaRequired'));
-
       return;
     }
 
@@ -40,7 +54,6 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
 
     if (publicExams.some((p) => p.name === name && p.year === yearNum)) {
       notify.error(t('toast.duplicatePublicExam'), t('error.duplicatePublicExam', { name }));
-
       return;
     }
 
@@ -68,8 +81,8 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
     onBackToLibrary();
   };
 
-  if (draft.step === 1) {
-    return renderStep(
+  const stepContent =
+    draft.step === 1 ? (
       <Step1BasicInfo
         examBoardName={draft.examBoardName}
         name={draft.name}
@@ -79,15 +92,11 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
         onDiscard={() => setIsDiscardOpen(true)}
         onExamBoardChange={draft.setExamBoardName}
         onNameChange={draft.setName}
-        onNext={() => draft.setStep(2)}
+        onNext={() => goToStep(2)}
         onRoleChange={draft.setRole}
         onYearChange={draft.setYear}
       />
-    );
-  }
-
-  if (draft.step === 2) {
-    return renderStep(
+    ) : draft.step === 2 ? (
       <Step2DefineSubjects
         examBoardName={draft.examBoardName}
         name={draft.name}
@@ -95,50 +104,60 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
         subjects={draft.subjects}
         year={draft.year}
         onAddEmptySubject={draft.addEmptySubject}
-        onBack={() => draft.setStep(1)}
+        onBack={() => goToStep(1)}
         onDiscard={() => setIsDiscardOpen(true)}
-        onNext={() => draft.setStep(3)}
+        onNext={() => goToStep(3)}
         onRemoveSubject={draft.removeSubject}
         onUpdateSubject={draft.updateSubject}
       />
+    ) : (
+      <Step3Review
+        examBoardName={draft.examBoardName}
+        isLoading={loading}
+        name={draft.name}
+        role={draft.role}
+        subjects={draft.subjects}
+        year={draft.year}
+        onBack={() => goToStep(2)}
+        onDiscard={() => setIsDiscardOpen(true)}
+        onSave={handleSave}
+      />
     );
-  }
 
-  return renderStep(
-    <Step3Review
-      examBoardName={draft.examBoardName}
-      isLoading={loading}
-      name={draft.name}
-      role={draft.role}
-      subjects={draft.subjects}
-      year={draft.year}
-      onBack={() => draft.setStep(2)}
-      onDiscard={() => setIsDiscardOpen(true)}
-      onSave={handleSave}
-    />
+  return (
+    <>
+      <div className="overflow-hidden">
+        <AnimatePresence custom={direction} initial={false} mode="wait">
+          <motion.div
+            key={draft.step}
+            animate="center"
+            custom={direction}
+            exit="exit"
+            initial="enter"
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            variants={variants}
+          >
+            {stepContent}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      <Modal isOpen={isDiscardOpen} size="sm" onClose={() => setIsDiscardOpen(false)}>
+        <ModalContent>
+          <ModalHeader>{t('concurso.discardDraftTitle')}</ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-default-600">{t('concurso.discardDraftBody')}</p>
+          </ModalBody>
+          <ModalFooter>
+            <Button className={buttonStyles.secondary} variant="bordered" onPress={() => setIsDiscardOpen(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button className={buttonStyles.danger} onPress={handleConfirmDiscard}>
+              {t('concurso.discardDraft')}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </>
   );
-
-  function renderStep(step: React.ReactNode) {
-    return (
-      <>
-        {step}
-        <Modal isOpen={isDiscardOpen} size="sm" onClose={() => setIsDiscardOpen(false)}>
-          <ModalContent>
-            <ModalHeader>{t('concurso.discardDraftTitle')}</ModalHeader>
-            <ModalBody>
-              <p className="text-sm text-default-600">{t('concurso.discardDraftBody')}</p>
-            </ModalBody>
-            <ModalFooter>
-              <Button className={buttonStyles.secondary} variant="bordered" onPress={() => setIsDiscardOpen(false)}>
-                {t('common.cancel')}
-              </Button>
-              <Button className={buttonStyles.danger} onPress={handleConfirmDiscard}>
-                {t('concurso.discardDraft')}
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      </>
-    );
-  }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useRef, useState } from 'react';
+import React, { forwardRef, useCallback, useImperativeHandle, useRef, useState } from 'react';
 import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
 import { Slider } from '@heroui/slider';
@@ -12,6 +12,10 @@ import { notify } from '@/shared/lib/notify';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 
+export interface SectionsTableHandle {
+  startAdd: () => void;
+}
+
 interface SectionsTableProps {
   selectedCertification: Certification | null;
   topicsList?: CertificationTopic[];
@@ -20,8 +24,6 @@ interface SectionsTableProps {
   onTopicUpdated?: (topicId: string, newName: string, minQuestions: number, maxQuestions: number) => void;
   onTopicRemoved?: (topicId: string) => void;
   onTopicAdded?: (topic: CertificationTopic) => void;
-  onEditCertification?: () => void;
-  onDeleteCertification?: () => void;
 }
 
 interface EditState {
@@ -37,11 +39,11 @@ const SLIDER_CLASS_NAMES = {
   thumb: 'h-3 w-4',
 };
 
-const TH = 'text-left text-xs font-semibold text-default-400 px-4 py-3 border-b border-default-200';
+const TH = 'text-left text-xs font-medium text-default-400 px-4 py-3 border-b border-default-200';
 const TD = 'px-4 py-3 text-sm text-foreground border-b border-default-200';
 const TD_LAST = 'px-4 py-3 text-sm text-foreground';
 
-export function SectionsTable({
+export const SectionsTable = forwardRef<SectionsTableHandle, SectionsTableProps>(function SectionsTable({
   selectedCertification,
   topicsList,
   editable = false,
@@ -49,9 +51,7 @@ export function SectionsTable({
   onTopicUpdated,
   onTopicRemoved,
   onTopicAdded,
-  onEditCertification,
-  onDeleteCertification,
-}: SectionsTableProps) {
+}, ref) {
   const { t } = useTranslation();
   const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
   const [editingTopicId, setEditingTopicId] = useState<string | null>(null);
@@ -61,6 +61,9 @@ export function SectionsTable({
   const [isAddingTopic, setIsAddingTopic] = useState(false);
   const [addState, setAddState] = useState<EditState>({ name: '', min: 0, max: 0 });
   const [adding, setAdding] = useState(false);
+  const [addNameTouched, setAddNameTouched] = useState(false);
+
+  useImperativeHandle(ref, () => ({ startAdd: () => setIsAddingTopic(true) }));
 
   const topics = selectedCertification?.topics ?? topicsList ?? [];
 
@@ -133,7 +136,10 @@ export function SectionsTable({
   };
 
   const handleAdd = async () => {
-    if (!selectedCertification?.key || !addState.name.trim()) return;
+    if (!selectedCertification?.key || !addState.name.trim()) {
+      setAddNameTouched(true);
+      return;
+    }
     setAdding(true);
     try {
       const topic = await addCertificationTopic(
@@ -146,6 +152,7 @@ export function SectionsTable({
       onTopicAdded?.(topic);
       setIsAddingTopic(false);
       setAddState({ name: '', min: 0, max: 0 });
+      setAddNameTouched(false);
       notify.success(t('toast.success'), t('toast.topicAdded', { name: addState.name }));
     } catch {
       notify.error(t('toast.error'), t('toast.failedToUpdate', { name: addState.name }));
@@ -158,29 +165,10 @@ export function SectionsTable({
     return (
       <div className="flex flex-col items-center gap-3">
         <p className="text-sm text-default-400 text-center py-4">{t('certification.noTopics')}</p>
-        {(onTopicAdded || onEditCertification) && (
-          <div className="flex gap-2">
-            {onEditCertification && (
-              <Button
-                className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
-                size="sm"
-                variant="flat"
-                onPress={onEditCertification}
-              >
-                {t('certification.editCertification')}
-              </Button>
-            )}
-            {onTopicAdded && (
-              <Button
-                className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
-                size="sm"
-                variant="flat"
-                onPress={() => setIsAddingTopic(true)}
-              >
-                {t('certification.addTopic')}
-              </Button>
-            )}
-          </div>
+        {onTopicAdded && (
+          <Button className={buttonStyles.primarySm} size="sm" onPress={() => setIsAddingTopic(true)}>
+            {t('certification.addTopic')}
+          </Button>
         )}
       </div>
     );
@@ -190,11 +178,11 @@ export function SectionsTable({
     <>
       <div className="w-full overflow-x-auto rounded-xl border border-default-200">
         <table className="w-full border-collapse">
-          <thead className="bg-default-100">
+          <thead className="bg-content2">
             <tr>
               <th className={TH}>{t('certification.topicName')}</th>
-              <th className={TH}>{t('certification.minQuestions')}</th>
-              <th className={TH}>{t('certification.maxQuestions')}</th>
+              <th className={TH}>{t('certification.minQuestionsHeader')}</th>
+              <th className={TH}>{t('certification.maxQuestionsHeader')}</th>
               <th className={TH}>{t('certification.actions')}</th>
             </tr>
           </thead>
@@ -205,7 +193,7 @@ export function SectionsTable({
               const tdClass = isLast ? TD_LAST : TD;
 
               return (
-                <tr key={topic.id ?? topic.name} className={index % 2 === 0 ? 'bg-content1' : 'bg-default-50'}>
+                <tr key={topic.id ?? topic.name} className="bg-content1 hover:bg-content2 transition-colors duration-150">
                   <td className={tdClass}>
                     {isEditing ? (
                       <Input
@@ -251,7 +239,12 @@ export function SectionsTable({
                         onChange={(val) => handleSliderChange(topic, 'minQuestions', val as number)}
                       />
                     ) : (
-                      `${Math.round(topic.minQuestions ?? 0)}%`
+                      <div className="flex items-center gap-1.5">
+                        <span>{`${Math.round(topic.minQuestions ?? 0)}%`}</span>
+                        {topic.minQuestions === 0 && topic.maxQuestions === 0 && (
+                          <span className="text-warning text-xs">⚠</span>
+                        )}
+                      </div>
                     )}
                   </td>
 
@@ -293,7 +286,7 @@ export function SectionsTable({
                     {isEditing ? (
                       <div className="flex gap-2">
                         <Button
-                          className="bg-primary text-primary-foreground text-xs font-semibold rounded-lg hover:opacity-90 h-8 px-3 transition-opacity duration-200"
+                          className={buttonStyles.primarySm}
                           isLoading={saving}
                           size="sm"
                           onPress={() => saveEdit(topic.id!)}
@@ -301,7 +294,7 @@ export function SectionsTable({
                           {t('common.save')}
                         </Button>
                         <Button
-                          className="border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold h-8 px-3 transition-colors duration-200"
+                          className={buttonStyles.secondary}
                           size="sm"
                           variant="bordered"
                           onPress={cancelEdit}
@@ -313,7 +306,7 @@ export function SectionsTable({
                       <div className="flex gap-2">
                         {onTopicUpdated && topic.id && (
                           <Button
-                            className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
+                            className={buttonStyles.flat}
                             size="sm"
                             variant="flat"
                             onPress={() => startEdit(topic)}
@@ -323,11 +316,9 @@ export function SectionsTable({
                         )}
                         {onTopicRemoved && topic.id && (
                           <Button
-                            className="text-xs font-semibold rounded-lg h-8 px-3"
-                            color="danger"
+                            className={buttonStyles.dangerFlat}
                             isLoading={removingId === topic.id}
                             size="sm"
-                            variant="flat"
                             onPress={() => handleRemove(topic.id!, topic.name)}
                           >
                             {t('common.remove')}
@@ -345,6 +336,8 @@ export function SectionsTable({
                   <Input
                     {...inputProperties.input}
                     className="w-48"
+                    errorMessage={addNameTouched && !addState.name.trim() ? t('error.nameRequired') : undefined}
+                    isInvalid={addNameTouched && !addState.name.trim()}
                     placeholder={t('certification.topicNamePlaceholder')}
                     size="sm"
                     value={addState.name}
@@ -387,7 +380,7 @@ export function SectionsTable({
                 <td className={TD_LAST}>
                   <div className="flex gap-2">
                     <Button
-                      className="bg-primary text-primary-foreground text-xs font-semibold rounded-lg hover:opacity-90 h-8 px-3 transition-opacity duration-200"
+                      className={buttonStyles.primarySm}
                       isLoading={adding}
                       size="sm"
                       onPress={handleAdd}
@@ -395,12 +388,13 @@ export function SectionsTable({
                       {t('common.save')}
                     </Button>
                     <Button
-                      className="border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold h-8 px-3 transition-colors duration-200"
+                      className={buttonStyles.secondary}
                       size="sm"
                       variant="bordered"
                       onPress={() => {
                         setIsAddingTopic(false);
                         setAddState({ name: '', min: 0, max: 0 });
+                        setAddNameTouched(false);
                       }}
                     >
                       {t('common.cancel')}
@@ -412,37 +406,6 @@ export function SectionsTable({
           </tbody>
         </table>
       </div>
-      {(!isAddingTopic && onTopicAdded) || onEditCertification || onDeleteCertification ? (
-        <div className="mt-8 flex items-center justify-between gap-2">
-          <div className="flex gap-2">
-            {onEditCertification && (
-              <Button
-                className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
-                size="sm"
-                variant="flat"
-                onPress={onEditCertification}
-              >
-                {t('certification.editCertification')}
-              </Button>
-            )}
-            {!isAddingTopic && onTopicAdded && (
-              <Button
-                className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
-                size="sm"
-                variant="flat"
-                onPress={() => setIsAddingTopic(true)}
-              >
-                {t('certification.addTopic')}
-              </Button>
-            )}
-          </div>
-          {onDeleteCertification && (
-            <Button className={buttonStyles.danger} size="sm" onPress={onDeleteCertification}>
-              {t('certification.deleteCertificationTitle')}
-            </Button>
-          )}
-        </div>
-      ) : null}
     </>
   );
-}
+});

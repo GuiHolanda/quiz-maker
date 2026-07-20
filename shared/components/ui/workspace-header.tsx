@@ -6,7 +6,7 @@ import NextLink from 'next/link';
 import { useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBell, faMagnifyingGlass, faArrowUp, faUser, faArrowRightFromBracket } from '@fortawesome/free-solid-svg-icons';
+import { faBell, faMagnifyingGlass, faArrowUp, faUser } from '@fortawesome/free-solid-svg-icons';
 
 import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
 import { UsageBadge } from '@/shared/components/ui/UsageBadge';
@@ -24,7 +24,7 @@ export function WorkspaceHeader() {
 
   return (
     <>
-      <header className="hidden md:flex shrink-0 bg-background2 border-b border-divider px-6 py-3 items-center gap-4 z-20 h-14">
+      <header className="hidden md:flex shrink-0 bg-background border-b border-divider px-6 py-3 items-center gap-4 z-20 h-14">
         {/* Search */}
         <div className="flex-1 max-w-lg relative">
           <FontAwesomeIcon
@@ -32,15 +32,10 @@ export function WorkspaceHeader() {
             icon={faMagnifyingGlass}
           />
           <input
-            className="w-full text-xs text-foreground bg-content1 border border-default-200 rounded-lg px-3 py-2 pl-8 placeholder:text-default-400 transition-colors duration-200 focus:outline-none focus:border-primary"
+            className="w-full text-xs text-foreground bg-content1 border border-default-200 rounded-lg px-3 py-2 pl-8 placeholder:text-default-400 transition-colors duration-200 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
             placeholder={t('header.searchPlaceholder')}
             type="text"
           />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-            <span className="font-mono text-default-400 border border-default-200 rounded px-1 text-[9px]">
-              ⌘K
-            </span>
-          </div>
         </div>
 
         <div className="flex items-center gap-3 ml-auto">
@@ -53,7 +48,6 @@ export function WorkspaceHeader() {
             className="relative w-8 h-8 flex items-center justify-center border border-default-200 rounded-lg hover:border-default-300 transition-colors bg-content1"
           >
             <FontAwesomeIcon className="text-default-400 w-3 h-3" icon={faBell} />
-            <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-danger rounded-full" />
           </button>
 
           {/* User dropdown */}
@@ -71,7 +65,9 @@ export function WorkspaceHeader() {
               <DropdownMenu aria-label={t('aria.userMenu')} className="min-w-[200px]" closeOnSelect={false}>
                 <DropdownSection showDivider>
                   <DropdownItem key="user-info" isReadOnly className="opacity-100 cursor-default">
-                    <p className="text-sm font-semibold text-foreground">{session.user.name}</p>
+                    <p className="text-sm font-semibold text-foreground">
+                      {session.user.name ?? session.user.email ?? 'Account'}
+                    </p>
                     <p className="text-xs text-default-400">{session.user.email}</p>
                   </DropdownItem>
                   <DropdownItem

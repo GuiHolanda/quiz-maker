@@ -1,12 +1,15 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Button } from '@heroui/button';
+import { Chip } from '@heroui/chip';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
+import { faPen, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { EditCertificationModal } from './EditCertificationModal';
 
-import { SectionsTable } from '@/shared/components/SectionsTable';
+import { SectionsTable, SectionsTableHandle } from '@/shared/components/SectionsTable';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
@@ -26,6 +29,7 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
   const [editingCert, setEditingCert] = useState<Certification | null>(null);
   const [deletingCert, setDeletingCert] = useState<Certification | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const tableRefs = useRef<Record<string, SectionsTableHandle | null>>({});
 
   const handleTopicUpdated = useCallback(
     (certification: Certification, topicId: string, newName: string, minQuestions: number, maxQuestions: number) => {
@@ -96,10 +100,10 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
           className="mt-2 flex flex-col gap-2 px-0"
           itemClasses={{
             base: 'bg-content1 border border-default-200 rounded-xl',
-            title: 'text-sm text-foreground font-semibold',
+            title: 'text-sm font-bold text-foreground',
             titleWrapper: 'flex-1 flex flex-col text-start min-w-0 overflow-hidden',
-            trigger: 'px-4 py-3 hover:bg-default-100 rounded-xl transition-colors duration-200',
-            content: 'px-4 pb-4 mt-4',
+            trigger: 'px-6 py-4 hover:bg-content2 rounded-xl transition-colors duration-200',
+            content: 'px-6 pb-6',
             indicator: 'text-default-400',
           }}
           showDivider={false}
@@ -114,22 +118,62 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
                     {certification.label}
                   </span>
                   {certification.provider && (
-                    <span className="text-xs text-default-500 shrink-0">{certification.provider}</span>
+                    <span className="text-xs text-default-500 shrink-0 max-w-[160px] truncate">
+                      {certification.provider}
+                    </span>
+                  )}
+                  {certification.topics.length === 0 ? (
+                    <Chip color="warning" size="sm" variant="flat">
+                      {t('certification.noTopics')}
+                    </Chip>
+                  ) : (
+                    <span className="text-xs font-mono text-default-400 shrink-0">
+                      {certification.topics.length === 1
+                        ? t('certification.topicCount1')
+                        : t('certification.topicCountN', { count: String(certification.topics.length) })}
+                    </span>
                   )}
                 </div>
               }
             >
               <SectionsTable
+                ref={(el) => { tableRefs.current[certification.key] = el; }}
                 selectedCertification={certification}
                 topicsList={certification.topics}
-                onDeleteCertification={() => setDeletingCert(certification)}
-                onEditCertification={() => setEditingCert(certification)}
                 onTopicAdded={(topic) => handleTopicAdded(certification, topic)}
                 onTopicRemoved={(topicId) => handleTopicRemoved(certification, topicId)}
                 onTopicUpdated={(topicId, newName, min, max) =>
                   handleTopicUpdated(certification, topicId, newName, min, max)
                 }
               />
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-default-200">
+                <Button
+                  className={buttonStyles.primarySm}
+                  size="sm"
+                  startContent={<FontAwesomeIcon className="text-[10px]" icon={faPlus} />}
+                  onPress={() => tableRefs.current[certification.key]?.startAdd()}
+                >
+                  {t('certification.addTopic')}
+                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    className={buttonStyles.flat}
+                    size="sm"
+                    startContent={<FontAwesomeIcon className="text-xs" icon={faPen} />}
+                    onPress={() => setEditingCert(certification)}
+                  >
+                    {t('certification.editCertification')}
+                  </Button>
+                  <Button
+                    className={buttonStyles.dangerFlat}
+                    size="sm"
+                    startContent={<FontAwesomeIcon className="text-xs" icon={faTrash} />}
+                    onPress={() => setDeletingCert(certification)}
+                  >
+                    {t('certification.deleteCertificationTitle')}
+                  </Button>
+                </div>
+              </div>
             </AccordionItem>
           ))}
         </Accordion>

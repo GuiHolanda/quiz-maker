@@ -20,7 +20,7 @@ interface ExamDraftReviewModalProps {
   readonly onSaved: (savedDraft: PublicExam) => void;
 }
 
-const TH = 'text-left text-xs font-semibold text-default-400 px-4 py-3 border-b border-default-200';
+const TH = 'text-left font-mono text-[11px] text-default-400 uppercase tracking-widest px-4 py-3 border-b border-default-200';
 const TD = 'px-4 py-3 text-sm text-foreground border-b border-default-200';
 const TD_LAST = 'px-4 py-3 text-sm text-foreground';
 
@@ -140,7 +140,7 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
         <p className="text-xs font-semibold text-default-500 uppercase tracking-wide mb-3">{t('chat.subjects')}</p>
         <div className="w-full rounded-xl border border-default-200">
           <table className="w-full border-collapse">
-            <thead className="bg-default-100">
+            <thead className="bg-content2">
               <tr>
                 <th className={TH}>{t('chat.subjectName')}</th>
                 <th className={TH}>{t('chat.minQuestions')}</th>
@@ -160,7 +160,7 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
     const isExpanded = !!expandedSubjects[si];
     const isLast = si === draft.subjects.length - 1 && !isExpanded;
     const tdClass = isLast ? TD_LAST : TD;
-    const rowBg = si % 2 === 0 ? 'bg-content1' : 'bg-default-50';
+    const rowBg = 'bg-content1 hover:bg-content2 transition-colors duration-150';
     const topicCount = (subject.topics ?? []).length;
 
     return (
@@ -202,7 +202,7 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
           </td>
           <td className={tdClass}>
             <button
-              className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-default-100 hover:bg-default-200 transition-colors text-xs text-default-600 font-medium"
+              className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-content2 hover:bg-primary/10 hover:text-primary transition-colors text-xs text-default-400 font-medium"
               type="button"
               onClick={() => setExpandedSubjects((prev) => ({ ...prev, [si]: !prev[si] }))}
             >
@@ -296,7 +296,7 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
               return (
                 <div
                   key={ti}
-                  className="flex items-center justify-between gap-2 rounded-md px-3 py-2 bg-default-50 hover:bg-default-100 border border-transparent hover:border-default-200 transition-colors group"
+                  className="flex items-center justify-between gap-2 rounded-md px-3 py-2 bg-content1 hover:bg-content2 border border-transparent hover:border-default-200 transition-colors group"
                 >
                   <span className="text-xs text-default-700 leading-relaxed flex-1">{topic.name}</span>
                   <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">

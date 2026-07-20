@@ -71,7 +71,7 @@ export function SubjectRow({
   const [expanded, setExpanded] = useState(false);
 
   const tdClass = isLast ? TD_LAST : TD;
-  const rowBg = index % 2 === 0 ? 'bg-content1' : 'bg-default-50';
+  const rowBg = 'bg-content1 hover:bg-content2 transition-colors duration-150';
 
   const startEdit = () => {
     setEditState({ name: subject.name, min: subject.minQuestions, max: subject.maxQuestions });
@@ -221,7 +221,7 @@ export function SubjectRow({
       <td className={tdClass}>
         {subject.id ? (
           <button
-            className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-default-100 hover:bg-default-200 transition-colors text-xs text-default-600 font-medium"
+            className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-content2 hover:bg-primary/10 hover:text-primary transition-colors text-xs text-default-400 font-medium"
             type="button"
             onClick={() => setExpanded((v) => !v)}
           >
@@ -270,7 +270,7 @@ export function SubjectRow({
       <div className="flex gap-2">
         {onUpdate && subject.id && (
           <Button
-            className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
+            className="bg-content2 border border-default-200 text-default-500 hover:bg-primary/10 hover:text-primary hover:border-primary/30 text-xs font-semibold rounded-lg h-8 px-3 transition-colors duration-200"
             size="sm"
             variant="flat"
             onPress={startEdit}

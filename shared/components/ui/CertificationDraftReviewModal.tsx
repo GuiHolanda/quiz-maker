@@ -19,7 +19,7 @@ interface CertificationDraftReviewModalProps {
   readonly onSaved: (savedDraft: Certification) => void;
 }
 
-const TH = 'text-left text-xs font-semibold text-default-400 px-4 py-3 border-b border-default-200';
+const TH = 'text-left font-mono text-[11px] text-default-400 uppercase tracking-widest px-4 py-3 border-b border-default-200';
 const TD = 'px-4 py-3 text-sm text-foreground border-b border-default-200';
 const TD_LAST = 'px-4 py-3 text-sm text-foreground';
 
@@ -60,7 +60,7 @@ export function CertificationDraftReviewModal({
         <ModalFooter>
           <div className="flex gap-2 w-full">
             <Button
-              className="bg-default-100 border border-default-200 text-default-600 hover:bg-default-200 text-xs font-semibold rounded-lg"
+              className="bg-content2 border border-default-200 text-default-500 hover:bg-primary/10 hover:text-primary hover:border-primary/30 text-xs font-semibold rounded-lg"
               isDisabled={isSaving}
               size="sm"
               startContent={<FontAwesomeIcon className="w-3 h-3" icon={faPlus} />}
@@ -122,7 +122,7 @@ export function CertificationDraftReviewModal({
         <p className="text-xs font-semibold text-default-500 uppercase tracking-wide mb-3">{t('chat.topics')}</p>
         <div className="w-full rounded-xl border border-default-200">
           <table className="w-full border-collapse">
-            <thead className="bg-default-100">
+            <thead className="bg-content2">
               <tr>
                 <th className={TH}>{t('chat.topicName')}</th>
                 <th className={TH}>{t('chat.minPercent')}</th>
@@ -140,7 +140,7 @@ export function CertificationDraftReviewModal({
   function renderTopicRow(topic: CertificationTopic, ti: number) {
     const isLast = ti === draft.topics.length - 1;
     const tdClass = isLast ? TD_LAST : TD;
-    const rowBg = ti % 2 === 0 ? 'bg-content1' : 'bg-default-50';
+    const rowBg = 'bg-content1 hover:bg-content2 transition-colors duration-150';
     const minPctValue = Math.round(topic.minQuestions ?? 0);
     const maxPctValue = Math.round(topic.maxQuestions ?? 0);
 

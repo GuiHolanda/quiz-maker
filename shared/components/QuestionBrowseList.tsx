@@ -84,7 +84,6 @@ export function QuestionBrowseList({
     const isChecked = selectedIds.has(q.id);
     const correctOptions = q.answer?.correctOptions ?? [];
     const explanations = q.answer?.explanations ?? {};
-    const hasAnswer = correctOptions.length > 0;
     const detailId = `${detailBaseId}-${q.id}`;
     const rowBg = isExpanded
       ? 'bg-primary/10 border-l-2 border-l-primary'
@@ -129,12 +128,6 @@ export function QuestionBrowseList({
             onClick={() => setExpandedId(isExpanded ? null : q.id)}
           >
             <div className="flex items-center gap-2 mb-2 min-w-0">
-              <Chip className="flex-shrink-0" color={hasAnswer ? 'success' : 'warning'} size="sm" variant="flat">
-                {hasAnswer ? t('browse.hasAnswer') : t('browse.noAnswer')}
-              </Chip>
-              <Chip className="flex-shrink-0 capitalize" color="default" size="sm" variant="flat">
-                {q.difficulty}
-              </Chip>
               {q.topicBadge && (
                 <Chip
                   className="flex-shrink-0 max-w-[16rem]"
@@ -186,6 +179,7 @@ export function QuestionBrowseList({
                 correctOptions={correctOptions}
                 difficulty={q.difficulty}
                 explanations={explanations}
+                hasAnswer={correctOptions.length > 0}
                 options={q.options}
                 questionText={q.text}
                 onClose={() => setExpandedId(null)}

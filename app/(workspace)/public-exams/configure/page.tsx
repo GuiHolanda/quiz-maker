@@ -17,12 +17,12 @@ export default function ConfigurePublicExamPage() {
 
   return (
     <PublicExamsProvider>
-      <PageHeader maxWidth="7xl" subtitle={t('concurso.pageSubtitle')} title={t('concurso.pageTitle')}>
+      <PageHeader subtitle={t('concurso.pageSubtitle')} title={t('concurso.pageTitle')}>
         <div className="flex w-full flex-col">
           <Tabs
             aria-label={t('aria.tabOptions')}
             classNames={{
-              tabList: 'bg-content1 border border-default-200 rounded-xl gap-1',
+              tabList: 'bg-content2 border border-default-200 rounded-xl p-1 gap-1',
               tab: 'rounded-xl text-default-400 data-[selected=true]:text-foreground data-[selected=true]:font-semibold transition-colors duration-200',
               tabContent: 'group-data-[selected=true]:text-foreground',
               cursor: 'bg-primary rounded-xl',

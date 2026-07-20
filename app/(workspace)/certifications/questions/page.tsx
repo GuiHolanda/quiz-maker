@@ -29,11 +29,10 @@ import { useTwoPhaseGeneration } from '@/features/hooks/useTwoPhaseGeneration.ho
 import { getQuestions } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
-
 function CertificationsQuestionsPageContent() {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
-  const [selectedTab, setSelectedTab] = useState<Key>(searchParams.get('tab') ?? 'browse');
+  const [selectedTab, setSelectedTab] = useState<Key>(searchParams.get('tab') ?? 'generate');
   const { state, replaceQuiz, setAIquestions } = useQuizContext();
   const { certifications, isLoading } = useCertificationsContext();
   const { refreshUsage } = useUsageContext();
@@ -128,7 +127,7 @@ function CertificationsQuestionsPageContent() {
         <Tabs
           aria-label={t('certification.questionsPageTitle')}
           classNames={{
-            tabList: 'bg-content1 border border-default-200 rounded-xl gap-1',
+            tabList: 'bg-content2 border border-default-200 rounded-xl p-1 gap-1',
             tab: 'rounded-xl text-default-400 data-[selected=true]:text-foreground data-[selected=true]:font-semibold transition-colors duration-200',
             tabContent: 'group-data-[selected=true]:text-foreground',
             cursor: 'bg-primary rounded-xl',
@@ -259,13 +258,16 @@ function CertificationsQuestionsPageContent() {
         <CardBody className="flex flex-row items-center gap-3 py-3 px-4">
           <FontAwesomeIcon className="text-primary mt-0.5 shrink-0" icon={faCircleInfo} />
           <p className="text-xs text-default-700 flex-1">{t('generate.selectionHint')}</p>
-          <button
+          <Button
+            isIconOnly
             aria-label={t('common.dismiss')}
-            className="text-default-400 hover:text-default-600 shrink-0"
-            onClick={() => setShowHint(false)}
+            className={buttonStyles.iconOnly.neutral}
+            size="sm"
+            variant="light"
+            onPress={() => setShowHint(false)}
           >
             <FontAwesomeIcon icon={faXmark} />
-          </button>
+          </Button>
         </CardBody>
       </Card>
     );

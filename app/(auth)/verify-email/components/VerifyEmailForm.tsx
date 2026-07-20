@@ -81,7 +81,7 @@ export function VerifyEmailForm({ email }: VerifyEmailFormProps) {
               segment: [
                 'w-11 h-12 rounded-lg border border-default-200 bg-background',
                 'text-base font-semibold text-foreground',
-                'data-[active=true]:border-primary data-[active=true]:shadow-[0_0_0_3px_rgb(79_70_229_/_0.1)]',
+                'data-[active=true]:border-primary data-[active=true]:shadow-[0_0_0_3px_rgb(224_120_32_/_0.12)]',
                 'transition-all duration-200',
               ].join(' '),
             }}

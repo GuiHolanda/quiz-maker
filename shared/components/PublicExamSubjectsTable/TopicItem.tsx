@@ -47,7 +47,7 @@ export function TopicItem({ topic, onRemove, onUpdate }: TopicItemProps) {
 
   function renderViewMode() {
     return (
-      <div className="flex items-center justify-between gap-2 rounded-md px-3 py-2 bg-default-50 hover:bg-default-100 border border-transparent hover:border-default-200 transition-colors group">
+      <div className="flex items-center justify-between gap-2 rounded-md px-3 py-2 bg-content1 hover:bg-content2 border border-transparent hover:border-default-200 transition-colors group">
         <span className="text-xs text-default-700 leading-relaxed flex-1">{topic.name}</span>
         <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
           {onUpdate && topic.id && (

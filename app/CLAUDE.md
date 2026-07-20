@@ -4,34 +4,41 @@ Guia de referência para padronização de páginas e componentes. Todas as deci
 
 ---
 
-## Design System — Flat Indigo + Amber
+## Design System — Navy + Amber-Orange
 
 O estilo da aplicação é **flat design**: superfícies sólidas, bordas simples, sem gradientes, sem blur, sem glassmorphism. Usa tokens semânticos do HeroUI para suporte automático a dark/light mode.
 
-### Paleta de cores (configurada em `tailwind.config.js`)
+### Paleta de cores (configurada em `tailwind.config.mjs`)
 
 | Token | Dark | Light |
 |---|---|---|
-| `background` | `#0f172a` (Slate-900) | `#f8fafc` (Slate-50) |
-| `foreground` | `#f8fafc` | `#0f172a` |
-| `content1` (surface) | `#1e293b` (Slate-800) | `#ffffff` |
-| `content2` | `#334155` (Slate-700) | `#f1f5f9` (Slate-100) |
-| `primary` (accent) | `#4f46e5` (Indigo-600) | `#4f46e5` |
+| `background` | `#09112a` (Navy-900) | `#f8fafc` (Slate-50) |
+| `background2` | `#070e20` (Navy-950) | `#eef2f6` |
+| `foreground` | `#e8edf3` | `#0f172a` |
+| `content1` (surface) | `#0c1832` (Navy-800) | `#ffffff` |
+| `content2` | `#10203c` (Navy-700) | `#f1f5f9` (Slate-100) |
+| `primary` (accent) | `#e07820` (Amber-Orange) | `#4f46e5` (Indigo-600) |
 | `secondary` | `#f59e0b` (Amber-500) | `#f59e0b` |
+| `danger` | `#e05252` (Muted Red) | `#e05252` |
+| `success` | `#3db87a` (Sage Green) | `#3db87a` |
+| `warning` | `#d4a012` (Golden Amber) | `#d4a012` |
 
 ### Tokens semânticos (use estes, nunca cores hard-coded)
 
 ```
-bg-background       → fundo da página
+bg-background       → fundo da página (navy profundo)
+bg-background2      → sidebar e header (navy mais escuro)
 bg-content1         → superfícies (cards, seções)
-text-foreground      → texto principal
-text-default-500     → texto secundário
-text-default-400     → texto terciário / muted
-text-primary         → texto de acento (links, labels de seção)
-border-divider       → separadores
-border-default-200   → bordas de cards/inputs
-bg-default-100       → backgrounds sutis (hover, tabs inativos)
+bg-content2         → superfícies aninhadas, cabeçalhos de tabela
+text-foreground     → texto principal
+text-default-500    → texto secundário
+text-default-400    → texto terciário / muted
+text-primary        → texto de acento amber (links, labels de seção, active nav)
+border-divider      → separadores
+border-default-200  → bordas de cards/inputs
 ```
+
+**Atenção:** `bg-default-100` não deve ser usado como superfície — use `bg-content2` no lugar. `bg-default-100` pode aparecer apenas como `hover:bg-default-100` em tabs inativos (HeroUI interno).
 
 ### Fundos de página
 
@@ -39,7 +46,7 @@ bg-default-100       → backgrounds sutis (hover, tabs inativos)
 |---|---|
 | `.app-bg` | Páginas autenticadas com `PageHeader` (quiz, generate, configure) |
 
-> **Nota:** `.app-bg` usa `min-height: 100%` (antes era `calc(100vh - 4rem)`, que compensava a antiga navbar). Com o app shell lateral, o `<main>` é `flex-grow` e o `100%` funciona corretamente. A página `/dashboard` não usa `.app-bg` — aplica `min-h-full bg-default-100/50` diretamente para o fundo levemente cinza do painel.
+> **Nota:** `.app-bg` usa `min-height: 100%`. A página `/dashboard` usa `bg-background` diretamente (não `bg-default-100/50`).
 
 As páginas de auth (login, register, forgot-password, reset-password) usam um layout próprio em duas colunas (`AuthSplitLayout` em `app/(auth)/components/AuthSplitLayout.tsx`) e **não** dependem de `.auth-bg`. Veja `app/(auth)/layout.tsx`.
 
@@ -236,11 +243,11 @@ import { inputProperties } from '@/config/constants/inputStyles';
 | Raio | `rounded-lg` (8px) — via `inputWrapper` / `trigger` |
 | Altura | 40px — HeroUI `size="md"` padrão |
 | Borda resting | `border-default-300` |
-| Borda focus | `border-primary` (Indigo 600) |
+| Borda focus | `border-primary` (Amber-Orange dark / Indigo light) |
 | Label | `text-xs font-normal text-default-400` |
 | Transição | `transition-colors duration-200` |
 
-O `bordered` usa fundo transparente + borda semântica, com foco mudando para indigo. Funciona em dark e light mode automaticamente.
+O `bordered` usa fundo `bg-background` + borda semântica, com foco mudando para amber-orange (dark) ou indigo (light). Funciona em dark e light mode automaticamente.
 
 ### Regra obrigatória: `label` exige `placeholder`
 
@@ -299,7 +306,7 @@ function PageContent() {
 ```tsx
 <Tabs
   classNames={{
-    tabList: 'bg-default-100 border border-default-200 rounded-xl p-1 gap-1',
+    tabList: 'bg-content2 border border-default-200 rounded-xl p-1 gap-1',
     tab: 'text-default-400 data-[selected=true]:text-foreground data-[selected=true]:font-semibold',
     cursor: 'bg-primary rounded-xl',
   }}
@@ -315,7 +322,7 @@ function PageContent() {
   itemClasses={{
     base: 'bg-content1 border border-default-200 rounded-xl',
     title: 'text-sm font-bold text-foreground',
-    trigger: 'px-6 py-4 hover:bg-default-100 transition-colors duration-200',
+    trigger: 'px-6 py-4 hover:bg-content2 transition-colors duration-200',
     content: 'px-6 pb-6',
     indicator: 'text-default-400',
   }}
@@ -448,9 +455,9 @@ Cada `BrowseDomainConfig` declara `i18nPrefix: 'browse' | 'concurso.browse'`. O 
 
 ### Regras visuais reforçadas
 
-- Row hover: `bg-primary/5` (indigo sutil) — nunca `bg-content2` (colide com chips `default flat`).
+- Row hover: `hover:bg-content2` — nunca `bg-primary/5` ou `bg-content2` estático (colide com chips `default flat`).
 - Row selecionada / expandida: `bg-primary/10 border-l-2 border-l-primary`.
-- Row com checkbox marcado (não expandida): `bg-primary/5`.
+- Row com checkbox marcado (não expandida): `bg-primary/10`.
 - Tags padronizadas: todas usam `<Chip size="sm" variant="flat">`; a hierarquia visual vem da cor (colorido = status; default = neutros como difficulty/topic).
 - Search input sticky no topo, com filtro case+diacritic-insensitive (`.normalize('NFD')`) e `useDeferredValue` para não travar a árvore em queries longas.
 
@@ -540,7 +547,7 @@ Route groups (`(name)`) são transparentes na URL — `app/(marketing)/page.tsx`
 
 A página é **100% mock por enquanto** — todos os dados são constantes estáticas. Quando o backend de métricas for implementado, substituir as constantes `MOCK_*` por chamadas via `features/connectors.ts`. A estrutura de componentes usa renderer functions (`renderKpi`) seguindo o padrão do projeto.
 
-Não usa `<PageHeader>` — aplica seu próprio fundo `bg-default-100/50` para o estilo de painel/dashboard.
+Não usa `<PageHeader>` — aplica seu próprio fundo `bg-background` para alinhar com o sistema de cores navy.
 
 ### Domínio: Certifications (`app/(workspace)/certifications/`)
 
@@ -613,7 +620,7 @@ Página unificada (HeroUI Tabs) com aba **Gerar** e aba **Biblioteca**, mesmo pa
 
 ### Login / Auth (`app/(auth)/`)
 
-Grupo de rotas com layout próprio (`app/(auth)/layout.tsx`) **sem** Navbar/Footer/AiChat — apenas uma top bar discreta com a chip da marca e o `LanguageSwitch`. O conteúdo das páginas usa `AuthSplitLayout` (painel indigo à esquerda + form à direita).
+Grupo de rotas com layout próprio (`app/(auth)/layout.tsx`) **sem** Navbar/Footer/AiChat — apenas uma top bar discreta com a chip da marca e o `LanguageSwitch`. O conteúdo das páginas usa `AuthSplitLayout` (painel navy/amber à esquerda + form à direita).
 
 | Arquivo | Papel |
 |---|---|
@@ -912,7 +919,7 @@ Container:   max-w-7xl mx-auto px-6
 
 ```
 Hover:       hover:opacity-90 (botões primários)
-Hover:       hover:bg-default-100 (cards, items)
+Hover:       hover:bg-content2 (cards, items)
 Transição:   transition-opacity duration-200 (botões)
 Transição:   transition-colors duration-200 (cards, inputs)
 ```

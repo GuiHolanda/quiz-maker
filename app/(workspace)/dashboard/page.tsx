@@ -138,7 +138,7 @@ export default function DashboardPage() {
   const greeting = getGreeting(session?.user?.name);
 
   return (
-    <div className="min-h-full bg-default-100/50 px-6 py-6 space-y-5">
+    <div className="min-h-full bg-background2 px-6 py-6 space-y-5">
       <div className="container mx-auto pt-8 px-4 pb-12 space-y-5">
         {/* ── PERFORMANCE HEADER ── */}
         <section className="bg-content1 border border-default-200 rounded-xl overflow-hidden">
@@ -146,7 +146,7 @@ export default function DashboardPage() {
             {/* Greeting + CTAs */}
             <div className="flex-1 p-6 lg:p-8">
               <div className="flex items-center gap-2 mb-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
                 <span className="font-mono text-[9px] text-default-400 tracking-widest uppercase">AWS SAA-C03</span>
               </div>
               <h1 className="font-bold text-foreground text-2xl lg:text-3xl mb-2 leading-snug">
@@ -161,7 +161,7 @@ export default function DashboardPage() {
                   className="flex items-center gap-2 bg-foreground text-background font-semibold text-xs py-2.5 px-4 rounded-lg transition-opacity hover:opacity-80"
                   href="/certifications/questions"
                 >
-                  <FontAwesomeIcon className="text-accent text-xs" icon={faBolt} />
+                  <FontAwesomeIcon className="text-primary text-xs" icon={faBolt} />
                   {t('dashboard.quickPractice')}
                 </NextLink>
                 <NextLink
@@ -191,8 +191,8 @@ export default function DashboardPage() {
                 <svg className="overflow-visible" height="100" viewBox="0 0 160 100" width="160">
                   <defs>
                     <linearGradient id="gaugeGrad" x1="0%" x2="100%" y1="0%" y2="0%">
-                      <stop offset="0%" stopColor="#4fc3f7" />
-                      <stop offset="100%" stopColor="#00d4ff" />
+                      <stop offset="0%" stopColor="#c4641a" />
+                      <stop offset="100%" stopColor="#e07820" />
                     </linearGradient>
                   </defs>
                   <path
@@ -235,7 +235,7 @@ export default function DashboardPage() {
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-end pb-2">
                   <span className="font-bold text-white text-3xl leading-none">
-                    78<span className="text-accent text-xl">%</span>
+                    78<span className="text-primary text-xl">%</span>
                   </span>
                   <span className="font-mono text-[9px] text-navy-400 mt-0.5">↑ 5.2% this week</span>
                 </div>
@@ -247,7 +247,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="w-px h-6 bg-navy-800" />
                 <div className="text-center">
-                  <p className="font-mono text-xs text-accent font-semibold">Top 12%</p>
+                  <p className="font-mono text-xs text-primary font-semibold">Top 12%</p>
                   <p className="font-mono text-[9px] text-navy-500">{t('dashboard.peerRank')}</p>
                 </div>
               </div>
@@ -259,10 +259,10 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {renderKpi(
             <div
-              className="w-8 h-8 border border-accent/20 rounded-lg flex items-center justify-center"
+              className="w-8 h-8 border border-primary/20 rounded-lg flex items-center justify-center"
               style={{ background: 'rgba(0,212,255,0.07)' }}
             >
-              <FontAwesomeIcon className="text-accent text-xs" icon={faBullseye} />
+              <FontAwesomeIcon className="text-primary text-xs" icon={faBullseye} />
             </div>,
             <span
               className="font-mono text-[9px] text-success border border-success/20 rounded px-1.5 py-0.5"
@@ -384,7 +384,7 @@ export default function DashboardPage() {
                       </span>
                     )}
                     <button className="ml-auto flex items-center gap-1.5 font-semibold text-xs text-background bg-foreground hover:opacity-80 px-3 py-1.5 rounded-lg transition-opacity">
-                      <FontAwesomeIcon className="text-accent text-xs" icon={faBolt} />
+                      <FontAwesomeIcon className="text-primary text-xs" icon={faBolt} />
                       {t('dashboard.studyNow')}
                     </button>
                   </div>
@@ -410,8 +410,8 @@ export default function DashboardPage() {
               <svg className="w-full" height="80" viewBox="0 0 300 80" preserveAspectRatio="none">
                 <defs>
                   <linearGradient id="sparkGrad" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="#4f46e5" stopOpacity="0.15" />
-                    <stop offset="100%" stopColor="#4f46e5" stopOpacity="0" />
+                    <stop offset="0%" stopColor="#e07820" stopOpacity="0.18" />
+                    <stop offset="100%" stopColor="#e07820" stopOpacity="0" />
                   </linearGradient>
                 </defs>
                 <polygon
@@ -421,7 +421,7 @@ export default function DashboardPage() {
                 <polyline
                   fill="none"
                   points="0,55 20,52 40,58 60,50 80,45 100,48 120,42 140,38 160,35 180,30 200,28 220,25 240,22 260,18 280,15 300,12"
-                  stroke="#4f46e5"
+                  stroke="#e07820"
                   strokeWidth="2"
                 />
               </svg>
@@ -442,10 +442,10 @@ export default function DashboardPage() {
                 {MOCK_SESSIONS.map((session) => (
                   <div
                     key={session.id}
-                    className="flex items-center gap-3 px-5 py-3 hover:bg-default-50 transition-colors cursor-pointer"
+                    className="flex items-center gap-3 px-5 py-3 hover:bg-content2 transition-colors cursor-pointer"
                   >
                     <div className="w-8 h-8 rounded-lg bg-navy-900 flex items-center justify-center shrink-0">
-                      <FontAwesomeIcon className="text-accent text-xs" icon={faPlay} />
+                      <FontAwesomeIcon className="text-primary text-xs" icon={faPlay} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-foreground text-xs truncate">{session.title}</p>
@@ -513,7 +513,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2">
             <div
               className="w-5 h-5 border border-primary/30 rounded flex items-center justify-center"
-              style={{ background: 'rgba(79,70,229,0.07)' }}
+              style={{ background: 'rgba(0,212,255,0.07)' }}
             >
               <FontAwesomeIcon className="text-primary" icon={faMicrochip} style={{ fontSize: '8px' }} />
             </div>
