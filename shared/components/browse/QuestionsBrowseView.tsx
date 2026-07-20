@@ -203,13 +203,13 @@ export function QuestionsBrowseView<T>({ config, embedded, onGenerateClick }: Qu
   function renderCategoryAccordion() {
     return (
       <Accordion
-        className="flex flex-col gap-3 p-0 shadow-none"
+        className="flex flex-col gap-4 p-0 shadow-none"
         itemClasses={{
           base: 'bg-content1 border border-default-200 rounded-xl overflow-hidden',
           title: 'font-semibold text-foreground',
           titleWrapper: 'overflow-hidden min-w-0',
-          trigger: 'px-4 py-3 hover:bg-primary/5 transition-colors duration-200',
-          content: 'px-3 pb-3',
+          trigger: 'px-4 py-3 hover:bg-content2 transition-colors duration-200',
+          content: 'px-4 pb-3',
           indicator: 'text-default-400',
         }}
         selectedKeys={openCategoryId ? [openCategoryId] : []}
@@ -258,7 +258,7 @@ export function QuestionsBrowseView<T>({ config, embedded, onGenerateClick }: Qu
           base: 'bg-content1 border border-default-100 rounded-lg overflow-hidden',
           title: 'font-medium text-foreground text-sm',
           titleWrapper: 'overflow-hidden min-w-0',
-          trigger: 'px-4 py-2.5 hover:bg-primary/5 transition-colors duration-200',
+          trigger: 'px-4 py-2.5 hover:bg-content2 transition-colors duration-200',
           content: 'p-0',
           indicator: 'text-default-400',
         }}
