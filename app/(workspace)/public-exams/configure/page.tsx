@@ -17,7 +17,7 @@ export default function ConfigurePublicExamPage() {
 
   return (
     <PublicExamsProvider>
-      <PageHeader maxWidth="7xl" subtitle={t('concurso.pageSubtitle')} title={t('concurso.pageTitle')}>
+      <PageHeader subtitle={t('concurso.pageSubtitle')} title={t('concurso.pageTitle')}>
         <div className="flex w-full flex-col">
           <Tabs
             aria-label={t('aria.tabOptions')}
