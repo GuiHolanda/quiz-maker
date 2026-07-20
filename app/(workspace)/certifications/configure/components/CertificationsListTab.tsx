@@ -135,7 +135,16 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
                 </div>
               }
             >
-              <div className="flex items-center justify-end gap-2 pt-1 pb-4 mb-4 border-b border-default-200">
+              <SectionsTable
+                selectedCertification={certification}
+                topicsList={certification.topics}
+                onTopicAdded={(topic) => handleTopicAdded(certification, topic)}
+                onTopicRemoved={(topicId) => handleTopicRemoved(certification, topicId)}
+                onTopicUpdated={(topicId, newName, min, max) =>
+                  handleTopicUpdated(certification, topicId, newName, min, max)
+                }
+              />
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-default-200">
                 <Button
                   className={buttonStyles.flat}
                   size="sm"
@@ -153,15 +162,6 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
                   {t('certification.deleteCertificationTitle')}
                 </Button>
               </div>
-              <SectionsTable
-                selectedCertification={certification}
-                topicsList={certification.topics}
-                onTopicAdded={(topic) => handleTopicAdded(certification, topic)}
-                onTopicRemoved={(topicId) => handleTopicRemoved(certification, topicId)}
-                onTopicUpdated={(topicId, newName, min, max) =>
-                  handleTopicUpdated(certification, topicId, newName, min, max)
-                }
-              />
             </AccordionItem>
           ))}
         </Accordion>
