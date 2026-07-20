@@ -26,7 +26,7 @@ export function StepProgress({ currentStep }: StepProgressProps) {
           </span>
         </Chip>
       </div>
-      <div className="w-full h-1.5 bg-default-100 rounded-full overflow-hidden">
+      <div className="w-full h-1.5 bg-content2 rounded-full overflow-hidden">
         <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${percent}%` }} />
       </div>
     </div>

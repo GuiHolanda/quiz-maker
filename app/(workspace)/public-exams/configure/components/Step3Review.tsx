@@ -61,7 +61,7 @@ export function Step3Review({
             </div>
             <div className="flex flex-col gap-2">
               <p className="text-xs font-medium text-default-400">{t('concurso.yearLabel')}</p>
-              <span className="inline-flex w-fit bg-default-100 border border-default-200 rounded px-3 py-1 font-mono text-primary text-sm">
+              <span className="inline-flex w-fit bg-content2 border border-default-200 rounded px-3 py-1 font-mono text-primary text-sm">
                 {year || '—'}
               </span>
             </div>
@@ -92,7 +92,7 @@ export function Step3Review({
                     <p className="text-sm font-medium text-foreground">{subject.name}</p>
                     <p className="text-sm font-bold font-mono text-primary">{subject.maxQuestions}%</p>
                   </div>
-                  <div className="w-full h-2 bg-default-100 rounded-full overflow-hidden">
+                  <div className="w-full h-2 bg-content2 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-primary rounded-full transition-all duration-500"
                       style={{ width: `${subject.minQuestions}%` }}

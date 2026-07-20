@@ -46,7 +46,7 @@ export function Step3Review({ title, code, provider, topics, isLoading, onBack, 
             </div>
             <div className="flex flex-col gap-2">
               <p className="text-xs font-medium  text-default-400">{t('certification.examCodeLabel')}</p>
-              <span className="inline-flex w-fit bg-default-100 border border-default-200 rounded px-3 py-1 font-mono text-primary text-sm">
+              <span className="inline-flex w-fit bg-content2 border border-default-200 rounded px-3 py-1 font-mono text-primary text-sm">
                 {code || '—'}
               </span>
             </div>
@@ -77,7 +77,7 @@ export function Step3Review({ title, code, provider, topics, isLoading, onBack, 
                     <p className="text-sm font-medium text-foreground">{topic.name}</p>
                     <p className="text-sm font-bold font-mono text-primary">{topic.maxQuestions}%</p>
                   </div>
-                  <div className="w-full h-2 bg-default-100 rounded-full overflow-hidden">
+                  <div className="w-full h-2 bg-content2 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-primary rounded-full transition-all duration-500"
                       style={{ width: `${topic.minQuestions}%` }}
