@@ -135,7 +135,7 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
                 </div>
               }
             >
-              <div className="flex items-center justify-between pb-4 mb-4 border-b border-default-200">
+              <div className="flex items-center justify-end gap-2 pt-1 pb-4 mb-4 border-b border-default-200">
                 <Button
                   className={buttonStyles.flat}
                   size="sm"
