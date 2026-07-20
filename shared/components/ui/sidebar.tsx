@@ -4,7 +4,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerBody } from '@heroui/drawer'
 import { Avatar } from '@heroui/avatar';
 import NextLink from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -69,10 +69,11 @@ export function Sidebar() {
   const isAdminScope = pathname.startsWith('/admin');
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem(SIDEBAR_COLLAPSED_LOCAL_STORAGE_KEY) === 'true';
-  });
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useEffect(() => {
+    setIsCollapsed(localStorage.getItem(SIDEBAR_COLLAPSED_LOCAL_STORAGE_KEY) === 'true');
+  }, []);
   const [expandedSection, setExpandedSection] = useState<ExpandedSection>(() => {
     if (isCertificationsScope) return 'certifications';
     if (isConcursosScope) return 'public-exams';
