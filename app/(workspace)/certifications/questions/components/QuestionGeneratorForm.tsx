@@ -8,6 +8,7 @@ import { QuizFormErrors, QuestionParams } from '@/shared/types';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
 import { CertificationManager } from '@/shared/components/CertificationManager';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 import { inputProperties } from '@/config/constants/inputStyles';
 
 interface QuestionGeneratorFormProps {
@@ -65,7 +66,7 @@ export function QuestionGeneratorForm({ onGenerationStart }: Readonly<QuestionGe
             />
           </div>
           <Button
-            className="ml-auto bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
+            className={`${buttonStyles.primary} ml-auto`}
             type="submit"
           >
             {t('common.generate')}

@@ -77,7 +77,7 @@ export function Step2DefineSubjects({
           <div className="bg-primary/10 border border-primary/30 rounded-xl p-4 flex gap-3">
             <FontAwesomeIcon className="text-primary mt-0.5 shrink-0 text-base" icon={faCircleInfo} />
             <div className="flex flex-col gap-1">
-              <p className="text-sm font-extrabold text-primary">{t('concurso.systemLogic')}</p>
+              <p className="text-sm font-semibold text-primary">{t('concurso.systemLogic')}</p>
               <p className="text-sm text-default-500">
                 {t('concurso.weightageInfoBase')}{' '}
                 <span className={`font-bold ${isWeightageValid ? 'text-success' : 'text-warning'}`}>
@@ -93,7 +93,7 @@ export function Step2DefineSubjects({
           <div className="flex items-center justify-between px-6 py-5 border-b border-default-200">
             <h3 className="text-lg font-bold text-foreground">{t('concurso.subjectsTitle')}</h3>
             <Button
-              className="bg-primary text-primary-foreground text-xs font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200 h-8 px-4"
+              className={buttonStyles.primarySm}
               size="sm"
               startContent={<FontAwesomeIcon className="text-[10px]" icon={faPlus} />}
               onPress={onAddEmptySubject}
@@ -114,8 +114,7 @@ export function Step2DefineSubjects({
                   key={index}
                   className={`rounded-lg flex flex-col gap-3 ${hasMinMaxError ? 'border border-danger/50 bg-danger/5 p-3' : 'bg-content1'}`}
                 >
-                  <div className="flex flex-col sm:flex-row gap-4 sm:items-end">
-                    <div className="w-1/2">
+                <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_auto] gap-4 sm:items-end">
                       <Input
                         {...inputProperties.input}
                         label={t('concurso.subjectName')}
@@ -123,8 +122,6 @@ export function Step2DefineSubjects({
                         value={subject.name}
                         onChange={(e) => onUpdateSubject(index, e.target.value, subject.minQuestions, subject.maxQuestions)}
                       />
-                    </div>
-                    <div className="w-1/4 flex flex-col gap-1">
                       <Input
                         {...inputProperties.input}
                         endContent={<span className="text-default-400 text-sm">%</span>}
@@ -138,8 +135,6 @@ export function Step2DefineSubjects({
                           onUpdateSubject(index, subject.name, newMin, subject.maxQuestions);
                         }}
                       />
-                    </div>
-                    <div className="w-1/4 flex flex-col gap-1">
                       <Input
                         {...inputProperties.input}
                         endContent={<span className="text-default-400 text-sm">%</span>}
@@ -153,20 +148,19 @@ export function Step2DefineSubjects({
                           onUpdateSubject(index, subject.name, subject.minQuestions, newMax);
                         }}
                       />
+                      <div className="pb-1">
+                        <Button
+                          isIconOnly
+                          aria-label={t('common.remove')}
+                          className={buttonStyles.iconOnly.danger}
+                          size="sm"
+                          variant="light"
+                          onPress={() => onRemoveSubject(index)}
+                        >
+                          <FontAwesomeIcon className="text-xs" icon={faTrash} />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="shrink-0 pb-1">
-                      <Button
-                        isIconOnly
-                        aria-label={t('common.remove')}
-                        className={buttonStyles.iconOnly.danger}
-                        size="sm"
-                        variant="light"
-                        onPress={() => onRemoveSubject(index)}
-                      >
-                        <FontAwesomeIcon className="text-xs" icon={faTrash} />
-                      </Button>
-                    </div>
-                  </div>
                   {hasMinMaxError && (
                     <p className="text-xs text-danger font-medium">{t('concurso.minGreaterThanMax')}</p>
                   )}

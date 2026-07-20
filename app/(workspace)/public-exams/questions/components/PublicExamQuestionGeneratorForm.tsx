@@ -8,6 +8,7 @@ import { PublicExamFormErrors, PublicExamQuestionParams } from '@/shared/types';
 import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
 import { PublicExamManager } from '@/shared/components/PublicExamManager';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 import { inputProperties } from '@/config/constants/inputStyles';
 
 interface PublicExamQuestionGeneratorFormProps {
@@ -67,7 +68,7 @@ export function PublicExamQuestionGeneratorForm({ onGenerationStart }: Readonly<
             />
           </div>
           <Button
-            className="ml-auto bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
+            className={`${buttonStyles.primary} ml-auto`}
             type="submit"
           >
             {t('common.generate')}

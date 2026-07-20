@@ -96,10 +96,10 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
           className="mt-2 flex flex-col gap-2 px-0"
           itemClasses={{
             base: 'bg-content1 border border-default-200 rounded-xl',
-            title: 'text-sm text-foreground font-semibold',
+            title: 'text-sm font-bold text-foreground',
             titleWrapper: 'flex-1 flex flex-col text-start min-w-0 overflow-hidden',
-            trigger: 'px-4 py-3 hover:bg-default-100 rounded-xl transition-colors duration-200',
-            content: 'px-4 pb-4 mt-4',
+            trigger: 'px-6 py-4 hover:bg-content2 rounded-xl transition-colors duration-200',
+            content: 'px-6 pb-6',
             indicator: 'text-default-400',
           }}
           showDivider={false}
