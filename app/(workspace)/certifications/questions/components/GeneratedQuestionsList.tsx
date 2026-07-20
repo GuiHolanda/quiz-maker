@@ -83,12 +83,11 @@ export function GeneratedQuestionsList({
 
   return (
     <div className="flex flex-col gap-4 mt-8">
-      <div className="flex items-end justify-between">
-        <div className="flex items-center font-bold text-sm">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3 font-bold text-sm">
           {!isLoadingMore && (
             <>
               <Checkbox
-                className="ml-auto mr-4"
                 isSelected={allSelected}
                 onChange={(e) => onToggleSelectAll(e.target.checked)}
                 classNames={{ label: 'text-xs' }}
@@ -103,7 +102,20 @@ export function GeneratedQuestionsList({
             </>
           )}
         </div>
-        <ItemsPerPageSelect value={questionsPerPage} onChange={onItemsPerPageChange} isDisabled={isLoadingMore} />
+
+        <div className="flex items-center gap-2 ml-auto">
+          <ItemsPerPageSelect value={questionsPerPage} onChange={onItemsPerPageChange} isDisabled={isLoadingMore} />
+          {!isLoadingMore && (
+            <Button className={buttonStyles.dangerFlat} size="sm" onPress={onDiscardQuestions}>
+              {selectedCount > 0 ? t('common.discardSelected') : t('common.discardAll')}
+            </Button>
+          )}
+          {selectedCount > 0 && !isLoadingMore && (
+            <Button className={buttonStyles.primarySm} size="sm" onPress={onSaveSelectedQuestions}>
+              {t('common.saveSelected')}
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -126,7 +138,7 @@ export function GeneratedQuestionsList({
 
         {isLoadingMore && remainingCount > 0 && (
           <Alert
-            color="warning"
+            color="default"
             variant="flat"
             title={t('generate.loadingMoreQuestions', { count: remainingCount })}
             description={t('generate.loadingMoreQuestionsHint')}
@@ -134,24 +146,6 @@ export function GeneratedQuestionsList({
             classNames={{ base: 'w-full mt-2', title: 'text-xs font-semibold', description: 'text-xs font-semibold' }}
           />
         )}
-
-        <Button
-          className={`${buttonStyles.dangerFlat} ml-auto`}
-          size="sm"
-          onPress={onDiscardQuestions}
-          hidden={isLoadingMore}
-        >
-          {selectedCount > 0 ? t('common.discardSelected') : t('common.discardAll')}
-        </Button>
-
-        <Button
-          className={buttonStyles.primarySm}
-          hidden={selectedCount === 0 || isLoadingMore}
-          size="sm"
-          onPress={onSaveSelectedQuestions}
-        >
-          {t('common.saveSelected')}
-        </Button>
       </div>
 
       <BusyDialog isOpen={loading} />

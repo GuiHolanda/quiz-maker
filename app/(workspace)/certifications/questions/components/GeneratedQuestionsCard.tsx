@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { Checkbox } from '@heroui/checkbox';
-import { Listbox, ListboxItem } from '@heroui/listbox';
 
 import { AIQuestion } from '@/shared/types';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
@@ -23,7 +22,7 @@ export function GeneratedQuestionsCard({ question, index }: QuestionCardProps) {
       return;
     }
     setIsSelected(state.selectedAIQuestions.includes(question.id));
-  }, [state?.selectedAIQuestions, index]);
+  }, [state?.selectedAIQuestions, question.id]);
 
   const onCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { checked } = event.target;
@@ -32,10 +31,10 @@ export function GeneratedQuestionsCard({ question, index }: QuestionCardProps) {
     const selected = new Set(state.selectedAIQuestions);
 
     if (checked) {
-      selected.add(index + 1);
+      selected.add(question.id);
       setIsSelected(true);
     } else {
-      selected.delete(index + 1);
+      selected.delete(question.id);
       setIsSelected(false);
     }
     setSelectedAIquestions(Array.from(selected));
@@ -58,25 +57,14 @@ export function GeneratedQuestionsCard({ question, index }: QuestionCardProps) {
             count: question.correctCount,
           })}
         </p>
-        <Listbox
-          aria-label={t('aria.options')}
-          classNames={{
-            base: 'p-0',
-            list: 'gap-1',
-          }}
-        >
+        <ul className="flex flex-col gap-1 p-0 list-none">
           {Object.entries(question.options).map(([key, val]) => (
-            <ListboxItem
-              key={key}
-              classNames={{
-                base: 'rounded-lg px-3 py-2 text-default-600 hover:text-foreground hover:bg-default-100 data-[hover=true]:bg-default-100 transition-colors',
-                title: 'text-sm',
-              }}
-            >
-              <strong className="mr-2 text-primary">{key}.</strong> {val}
-            </ListboxItem>
+            <li key={key} className="rounded-lg px-3 py-2 text-sm text-default-600">
+              <strong className="mr-2 text-primary">{key}.</strong>
+              {val}
+            </li>
           ))}
-        </Listbox>
+        </ul>
       </div>
     </div>
   );
