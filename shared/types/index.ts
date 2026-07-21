@@ -571,3 +571,5 @@ export interface QuestionBankResponse {
   page: number;
   pageSize: number;
 }
+
+export type SimuladoType = 'certification' | 'concurso';
