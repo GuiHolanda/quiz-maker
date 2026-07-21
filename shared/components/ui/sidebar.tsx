@@ -20,6 +20,7 @@ import {
   faXmark,
   faHouse,
   faLayerGroup,
+  faWandMagicSparkles,
 } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -28,11 +29,13 @@ import { SIDEBAR_COLLAPSED_LOCAL_STORAGE_KEY, SIDEBAR_COLLAPSED_COOKIE_KEY } fro
 
 const CERTIFICATION_ITEMS = [
   { labelKey: 'nav.configureCertification', href: '/certifications/configure', icon: faGear },
+  { labelKey: 'nav.generateQuestions', href: '/certifications/questions', icon: faWandMagicSparkles },
   { labelKey: 'nav.simulados', href: '/certifications/simulados', icon: faPlay },
 ] as const;
 
 const CONCURSO_ITEMS = [
   { labelKey: 'nav.configureConcurso', href: '/public-exams/configure', icon: faGear },
+  { labelKey: 'nav.generateQuestions', href: '/public-exams/questions', icon: faWandMagicSparkles },
   { labelKey: 'nav.simulados', href: '/public-exams/simulados', icon: faPlay },
 ] as const;
 
