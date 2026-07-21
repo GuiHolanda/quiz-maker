@@ -5,8 +5,10 @@ import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@heroui/modal';
 import { Progress } from '@heroui/progress';
-import { Tab, Tabs } from '@heroui/tabs';
+import { Select, SelectItem } from '@heroui/select';
 import { useRouter } from 'next/navigation';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSliders, faXmark } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useCertSimuladosContext } from '@/features/providers/certSimulados.provider';
@@ -25,6 +27,7 @@ import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { notify } from '@/shared/lib/notify';
 import { CertSimuladoListItem, MockExamListItem } from '@/shared/types';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+import { inputProperties } from '@/config/constants/inputStyles';
 
 type SimuladoType = 'certification' | 'concurso';
 type TypeFilter = 'all' | SimuladoType;
@@ -208,21 +211,39 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
 
   function renderFilter() {
     return (
-      <Tabs
-        aria-label={t('simulado.filterAll')}
-        classNames={{
-          tabList: 'bg-content2 border border-default-200 rounded-xl p-1 gap-1',
-          tab: 'text-default-400 data-[selected=true]:text-foreground data-[selected=true]:font-semibold',
-          cursor: 'bg-primary rounded-xl',
-        }}
-        selectedKey={typeFilter}
-        size="sm"
-        onSelectionChange={(key) => setTypeFilter(key as TypeFilter)}
-      >
-        <Tab key="all" title={t('simulado.filterAll')} />
-        <Tab key="certification" title={t('simulado.filterCertifications')} />
-        <Tab key="concurso" title={t('simulado.filterConcursos')} />
-      </Tabs>
+      <div className="bg-content1 border border-default-200 rounded-xl p-4 flex flex-col gap-3">
+        <div className="flex items-center gap-3">
+          <FontAwesomeIcon className="w-3.5 h-3.5 text-default-400 shrink-0" icon={faSliders} />
+          <span className="text-xs font-semibold text-default-500">{t('simulado.filters')}</span>
+          {typeFilter !== 'all' && (
+            <Button
+              className={`${buttonStyles.flat} ml-auto h-7 px-3 text-xs`}
+              size="sm"
+              startContent={<FontAwesomeIcon className="w-3 h-3" icon={faXmark} />}
+              onPress={() => setTypeFilter('all')}
+            >
+              {t('simulado.clearFilter')}
+            </Button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <Select
+            {...inputProperties.select}
+            label={t('simulado.filterByType')}
+            placeholder={t('simulado.filterAll')}
+            selectedKeys={typeFilter !== 'all' ? new Set([typeFilter]) : new Set([])}
+            onSelectionChange={(keys) => {
+              const val = Array.from(keys)[0] as TypeFilter | undefined;
+
+              setTypeFilter(val ?? 'all');
+            }}
+          >
+            <SelectItem key="certification">{t('simulado.filterCertifications')}</SelectItem>
+            <SelectItem key="concurso">{t('simulado.filterConcursos')}</SelectItem>
+          </Select>
+        </div>
+      </div>
     );
   }
 
