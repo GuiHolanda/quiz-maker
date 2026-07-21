@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useDeferredValue, useEffect, useId, useRef, useState } from 'react';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
 import { Button } from '@heroui/button';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -17,7 +17,11 @@ import { notify } from '@/shared/lib/notify';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import type { UnifiedQuestion, QuestionBankResponse } from '@/shared/types';
 import { QuestionBankCard } from './components/QuestionBankCard';
-import { QuestionBankFiltersBar, EMPTY_FILTERS } from './components/QuestionBankFiltersBar';
+import {
+  QuestionBankFiltersBar,
+  EMPTY_FILTERS,
+  hasActiveFilters,
+} from './components/QuestionBankFiltersBar';
 import type { QuestionBankFilters } from './components/QuestionBankFiltersBar';
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -26,13 +30,20 @@ type DeleteTarget = { id: number; type: 'certification' | 'public_exam' } | null
 
 export default function QuestionBankPage() {
   const { t } = useTranslation();
+  const deleteModalTitleId = useId();
+
   const [filters, setFilters] = useState<QuestionBankFilters>(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [result, setResult] = useState<QuestionBankResponse | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Debounce search: defer only the search string so dropdowns remain instant
+  const deferredSearch = useDeferredValue(filters.search);
+  const debouncedFilters: QuestionBankFilters = { ...filters, search: deferredSearch };
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -42,12 +53,14 @@ export default function QuestionBankPage() {
       abortRef.current = new AbortController();
 
       setIsLoading(true);
+      setLoadError(false);
       try {
         const data = await getQuestionBank({
           type: currentFilters.type === 'all' ? undefined : currentFilters.type,
           search: currentFilters.search || undefined,
-          topic: currentFilters.topic || undefined,
-          difficulty: currentFilters.difficulty || undefined,
+          source: currentFilters.source.length > 0 ? currentFilters.source : undefined,
+          topic: currentFilters.topic.length > 0 ? currentFilters.topic : undefined,
+          difficulty: currentFilters.difficulty.length > 0 ? currentFilters.difficulty : undefined,
           hasAnswer:
             currentFilters.hasAnswer === 'true'
               ? true
@@ -66,19 +79,19 @@ export default function QuestionBankPage() {
         setResult(data);
       } catch (e: unknown) {
         const err = e as { message?: string };
-        if (err?.message === 'canceled') return;
-        notify.error(t('questionBank.loadError'));
+        if (err?.message === 'canceled' || err?.message === 'Request aborted' || (err as { code?: string })?.code === 'ERR_CANCELED') return;
+        setLoadError(true);
       } finally {
         setIsLoading(false);
       }
     },
-    [t],
+    [],
   );
 
   useEffect(() => {
-    load(filters, page, pageSize);
+    load(debouncedFilters, page, pageSize);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, page, pageSize]);
+  }, [debouncedFilters.search, filters.type, filters.source.join(','), filters.topic.join(','), filters.difficulty.join(','), filters.hasAnswer, filters.hasExplanation, page, pageSize]);
 
   function handleFilterChange<K extends keyof QuestionBankFilters>(
     key: K,
@@ -107,11 +120,15 @@ export default function QuestionBankPage() {
       } else {
         await deletePublicExamBrowseQuestion(deleteTarget.id);
       }
-      notify.success(t('browse.deleteSuccess'));
+      notify.success(t('questionBank.deleteSuccess'));
       setDeleteTarget(null);
-      load(filters, page, pageSize);
+      // If deleted item was the last on a page > 1, go back one page
+      const isLastOnPage = result?.questions.length === 1;
+      const nextPage = isLastOnPage && page > 1 ? page - 1 : page;
+      if (nextPage !== page) setPage(nextPage);
+      else load(debouncedFilters, page, pageSize);
     } catch {
-      notify.error(t('browse.deleteError'));
+      notify.error(t('questionBank.deleteError'));
     } finally {
       setIsDeleting(false);
     }
@@ -119,6 +136,7 @@ export default function QuestionBankPage() {
 
   const totalPages = result ? Math.max(1, Math.ceil(result.total / pageSize)) : 1;
   const questions: UnifiedQuestion[] = result?.questions ?? [];
+  const activeFilters = hasActiveFilters(filters);
 
   return (
     <PageHeader subtitle={t('questionBank.subtitle')} title={t('questionBank.title')}>
@@ -153,19 +171,24 @@ export default function QuestionBankPage() {
 
   function renderContent() {
     if (isLoading) {
-      return <SkeletonListLoader count={5} height="h-64" />;
+      return <SkeletonListLoader count={5} height="h-[480px]" />;
+    }
+
+    if (loadError) {
+      return (
+        <EmptyState
+          title={t('questionBank.loadErrorTitle')}
+          description={t('questionBank.loadErrorDescription')}
+          action={{
+            label: t('common.retry'),
+            onPress: () => load(debouncedFilters, page, pageSize),
+          }}
+        />
+      );
     }
 
     if (questions.length === 0) {
-      const hasActiveFilters =
-        filters.search !== '' ||
-        filters.type !== 'all' ||
-        filters.topic !== '' ||
-        filters.difficulty !== '' ||
-        filters.hasAnswer !== '' ||
-        filters.hasExplanation !== '';
-
-      if (hasActiveFilters) {
+      if (activeFilters) {
         return (
           <EmptyState
             title={t('questionBank.noResultsTitle')}
@@ -207,12 +230,15 @@ export default function QuestionBankPage() {
   function renderDeleteModal() {
     return (
       <Modal
+        aria-labelledby={deleteModalTitleId}
         isOpen={deleteTarget !== null}
         size="sm"
         onClose={() => !isDeleting && setDeleteTarget(null)}
       >
         <ModalContent>
-          <ModalHeader className="text-sm font-semibold">{t('browse.singleDeleteConfirmTitle')}</ModalHeader>
+          <ModalHeader id={deleteModalTitleId} className="text-sm font-semibold">
+            {t('browse.singleDeleteConfirmTitle')}
+          </ModalHeader>
           <ModalBody>
             <p className="text-sm text-default-500">{t('browse.singleDeleteConfirmBody')}</p>
           </ModalBody>

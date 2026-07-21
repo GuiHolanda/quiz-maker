@@ -19,8 +19,9 @@ export interface QuestionBankParams {
   userId: string;
   type?: 'certification' | 'public_exam' | 'all';
   search?: string;
-  topic?: string;
-  difficulty?: string;
+  source?: string[];
+  topic?: string[];
+  difficulty?: string[];
   hasAnswer?: boolean;
   hasExplanation?: boolean;
   page: number;
@@ -36,15 +37,15 @@ export interface QuestionBankResponse {
 
 export class QuestionBankService {
   async getQuestions(params: QuestionBankParams): Promise<QuestionBankResponse> {
-    const { userId, type = 'all', search, topic, difficulty, hasAnswer, hasExplanation, page, pageSize } = params;
+    const { userId, type = 'all', search, source, topic, difficulty, hasAnswer, hasExplanation, page, pageSize } = params;
     const skip = (page - 1) * pageSize;
 
     const certResults = type === 'all' || type === 'certification'
-      ? await this.fetchCertificationQuestions({ userId, search, topic, difficulty, hasAnswer, hasExplanation })
+      ? await this.fetchCertificationQuestions({ userId, search, source, topic, difficulty, hasAnswer, hasExplanation })
       : [];
 
     const examResults = type === 'all' || type === 'public_exam'
-      ? await this.fetchPublicExamQuestions({ userId, search, topic, difficulty, hasAnswer, hasExplanation })
+      ? await this.fetchPublicExamQuestions({ userId, search, source, topic, difficulty, hasAnswer, hasExplanation })
       : [];
 
     const combined = [...certResults, ...examResults].sort(
@@ -60,17 +61,19 @@ export class QuestionBankService {
   private async fetchCertificationQuestions(filters: {
     userId: string;
     search?: string;
-    topic?: string;
-    difficulty?: string;
+    source?: string[];
+    topic?: string[];
+    difficulty?: string[];
     hasAnswer?: boolean;
     hasExplanation?: boolean;
   }): Promise<UnifiedQuestion[]> {
-    const { userId, search, topic, difficulty, hasAnswer, hasExplanation } = filters;
+    const { userId, search, source, topic, difficulty, hasAnswer, hasExplanation } = filters;
 
     const where: Record<string, unknown> = { userId };
     if (search) where['text'] = { contains: search, mode: 'insensitive' };
-    if (topic) where['topic'] = { contains: topic, mode: 'insensitive' };
-    if (difficulty) where['difficulty'] = { equals: difficulty, mode: 'insensitive' };
+    if (source && source.length > 0) where['certificationTitle'] = { in: source };
+    if (topic && topic.length > 0) where['topic'] = { in: topic };
+    if (difficulty && difficulty.length > 0) where['difficulty'] = { in: difficulty };
     if (hasAnswer === true) where['answer'] = { isNot: null };
     if (hasAnswer === false) where['answer'] = { is: null };
 
@@ -114,17 +117,19 @@ export class QuestionBankService {
   private async fetchPublicExamQuestions(filters: {
     userId: string;
     search?: string;
-    topic?: string;
-    difficulty?: string;
+    source?: string[];
+    topic?: string[];
+    difficulty?: string[];
     hasAnswer?: boolean;
     hasExplanation?: boolean;
   }): Promise<UnifiedQuestion[]> {
-    const { userId, search, topic, difficulty, hasAnswer, hasExplanation } = filters;
+    const { userId, search, source, topic, difficulty, hasAnswer, hasExplanation } = filters;
 
     const where: Record<string, unknown> = { userId };
     if (search) where['text'] = { contains: search, mode: 'insensitive' };
-    if (topic) where['subject'] = { contains: topic, mode: 'insensitive' };
-    if (difficulty) where['difficulty'] = { equals: difficulty, mode: 'insensitive' };
+    if (source && source.length > 0) where['publicExamName'] = { in: source };
+    if (topic && topic.length > 0) where['subject'] = { in: topic };
+    if (difficulty && difficulty.length > 0) where['difficulty'] = { in: difficulty };
     if (hasAnswer === true) where['answer'] = { isNot: null };
     if (hasAnswer === false) where['answer'] = { is: null };
 

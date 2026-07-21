@@ -16,8 +16,12 @@ export async function GET(request: NextRequest) {
 
   const type = searchParams.get('type') ?? 'all';
   const search = searchParams.get('search')?.trim() || undefined;
-  const topic = searchParams.get('topic')?.trim() || undefined;
-  const difficulty = searchParams.get('difficulty')?.trim() || undefined;
+  const sourceRaw = searchParams.getAll('source').map((s) => s.trim()).filter(Boolean);
+  const source = sourceRaw.length > 0 ? sourceRaw : undefined;
+  const topicRaw = searchParams.getAll('topic').map((t) => t.trim()).filter(Boolean);
+  const topic = topicRaw.length > 0 ? topicRaw : undefined;
+  const difficultyRaw = searchParams.getAll('difficulty').map((d) => d.trim()).filter(Boolean);
+  const difficulty = difficultyRaw.length > 0 ? difficultyRaw : undefined;
   const hasAnswerRaw = searchParams.get('hasAnswer');
   const hasExplanationRaw = searchParams.get('hasExplanation');
   const page = parseInt(searchParams.get('page') ?? '1', 10);
@@ -38,6 +42,7 @@ export async function GET(request: NextRequest) {
       userId: session.user.id,
       type: type as 'all' | 'certification' | 'public_exam',
       search,
+      source,
       topic,
       difficulty,
       hasAnswer,

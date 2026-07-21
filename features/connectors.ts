@@ -26,6 +26,8 @@ import {
   CERT_SIMULADOS_URL,
   CERT_QUESTION_EXPLANATION_URL,
   QUESTION_BANK_URL,
+  QUESTION_BANK_TOPICS_URL,
+  QUESTION_BANK_SOURCES_URL,
 } from '@/config/constants';
 import {
   AIQuestion,
@@ -493,4 +495,18 @@ export async function getCertSimuladoResult(simuladoId: number, attemptId: numbe
 export async function getQuestionBank(params: QuestionBankParams): Promise<QuestionBankResponse> {
   const { data } = await api.get<QuestionBankResponse>(QUESTION_BANK_URL, { params });
   return data;
+}
+
+export async function getQuestionBankTopics(type?: 'all' | 'certification' | 'public_exam'): Promise<string[]> {
+  const { data } = await api.get<{ topics: string[] }>(QUESTION_BANK_TOPICS_URL, {
+    params: type && type !== 'all' ? { type } : undefined,
+  });
+  return data.topics;
+}
+
+export async function getQuestionBankSources(type?: 'all' | 'certification' | 'public_exam'): Promise<string[]> {
+  const { data } = await api.get<{ sources: string[] }>(QUESTION_BANK_SOURCES_URL, {
+    params: type && type !== 'all' ? { type } : undefined,
+  });
+  return data.sources;
 }

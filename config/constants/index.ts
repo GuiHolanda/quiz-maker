@@ -219,6 +219,8 @@ export const CERT_SIMULADOS_URL = '/certification-simulados';
 export const CERT_SIMULADOS_LOCAL_STORAGE_KEY = 'CERT_SIMULADOS';
 export const CERT_QUESTION_EXPLANATION_URL = '/certification/questions';
 export const QUESTION_BANK_URL = '/question-bank';
+export const QUESTION_BANK_TOPICS_URL = '/question-bank/topics';
+export const QUESTION_BANK_SOURCES_URL = '/question-bank/sources';
 
 export const INITIAL_CERT_SIMULADOS_STATE: CertSimuladosState = {
   simulados: [],

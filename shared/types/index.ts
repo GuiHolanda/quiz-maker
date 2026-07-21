@@ -556,8 +556,9 @@ export interface UnifiedQuestion {
 export interface QuestionBankParams {
   type?: 'certification' | 'public_exam' | 'all';
   search?: string;
-  topic?: string;
-  difficulty?: string;
+  source?: string[];
+  topic?: string[];
+  difficulty?: string[];
   hasAnswer?: boolean;
   hasExplanation?: boolean;
   page: number;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -32,6 +32,7 @@ function difficultyColor(d: string): 'success' | 'warning' | 'danger' | 'default
 
 export function QuestionBankCard({ question, onDeleteRequest }: QuestionBankCardProps) {
   const { t } = useTranslation();
+  const explanationsPanelId = useId();
   const [showExplanations, setShowExplanations] = useState(false);
 
   const hasAnswer = !!question.answer && question.answer.correctOptions.length > 0;
@@ -58,6 +59,7 @@ export function QuestionBankCard({ question, onDeleteRequest }: QuestionBankCard
         <div className="flex items-center gap-2 flex-wrap min-w-0">
           <span className="flex items-center gap-1.5 text-xs font-semibold text-primary shrink-0">
             <FontAwesomeIcon
+              aria-hidden="true"
               className="w-3 h-3"
               icon={question.type === 'certification' ? faGraduationCap : faClipboardList}
             />
@@ -65,7 +67,7 @@ export function QuestionBankCard({ question, onDeleteRequest }: QuestionBankCard
           </span>
           {question.topic && (
             <>
-              <span className="text-default-300 text-xs shrink-0">·</span>
+              <span aria-hidden="true" className="text-default-300 text-xs shrink-0">·</span>
               <span className="text-xs text-default-500 truncate">{question.topic}</span>
             </>
           )}
@@ -78,7 +80,7 @@ export function QuestionBankCard({ question, onDeleteRequest }: QuestionBankCard
           variant="light"
           onPress={() => onDeleteRequest(question.id, question.type)}
         >
-          <FontAwesomeIcon className="w-3.5 h-3.5" icon={faTrash} />
+          <FontAwesomeIcon aria-hidden="true" className="w-3.5 h-3.5" icon={faTrash} />
         </Button>
       </div>
     );
@@ -87,14 +89,14 @@ export function QuestionBankCard({ question, onDeleteRequest }: QuestionBankCard
   function renderQuestionText() {
     return (
       <div className="px-5 pt-4 pb-3">
-        <p className="text-sm text-foreground leading-relaxed">{question.text}</p>
+        <p className="text-sm font-semibold text-foreground leading-relaxed">{question.text}</p>
       </div>
     );
   }
 
   function renderOptions() {
     return (
-      <ul className="px-5 pb-4 flex flex-col gap-2">
+      <ul aria-label={t('browse.optionsSectionLabel')} className="px-5 pb-4 flex flex-col gap-2">
         {Object.entries(question.options).map(([label, text]) => renderOption(label, text))}
       </ul>
     );
@@ -106,6 +108,7 @@ export function QuestionBankCard({ question, onDeleteRequest }: QuestionBankCard
     return (
       <li
         key={label}
+        aria-label={isCorrect ? t('questionBank.optionCorrect', { label }) : t('questionBank.optionLabel', { label })}
         className={
           isCorrect
             ? 'flex gap-3 items-start p-3 rounded-lg border border-success-500/60 bg-success-100 dark:bg-success-500/15 dark:border-success-500/40'
@@ -113,6 +116,7 @@ export function QuestionBankCard({ question, onDeleteRequest }: QuestionBankCard
         }
       >
         <span
+          aria-hidden="true"
           className={
             isCorrect
               ? 'flex-shrink-0 h-5 w-5 grid place-items-center rounded-full bg-success-500/20 text-success-700 dark:text-success-400 text-xs font-bold'
@@ -139,11 +143,7 @@ export function QuestionBankCard({ question, onDeleteRequest }: QuestionBankCard
         <Chip className="capitalize" color={difficultyColor(question.difficulty)} size="sm" variant="flat">
           {question.difficulty}
         </Chip>
-        <Chip
-          color={hasAnswer ? 'success' : 'warning'}
-          size="sm"
-          variant="flat"
-        >
+        <Chip color={hasAnswer ? 'success' : 'warning'} size="sm" variant="flat">
           {hasAnswer ? t('browse.hasAnswer') : t('browse.noAnswer')}
         </Chip>
         {hasExplanations && (
@@ -158,8 +158,12 @@ export function QuestionBankCard({ question, onDeleteRequest }: QuestionBankCard
 
   function renderNoAnswerNote() {
     return (
-      <div className="w-full mt-2 flex items-start gap-2 rounded-lg border border-warning-300 bg-warning-100 dark:bg-warning-500/15 dark:border-warning-500/40 p-3">
+      <div
+        role="status"
+        className="w-full mt-2 flex items-start gap-2 rounded-lg border border-warning-300 bg-warning-100 dark:bg-warning-500/15 dark:border-warning-500/40 p-3"
+      >
         <FontAwesomeIcon
+          aria-hidden="true"
           className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-warning-600 dark:text-warning-300"
           icon={faTriangleExclamation}
         />
@@ -171,13 +175,15 @@ export function QuestionBankCard({ question, onDeleteRequest }: QuestionBankCard
   function renderExplanationsToggle() {
     return (
       <div className="px-5 pb-4">
-        <button
-          type="button"
-          className="text-xs font-semibold text-primary hover:opacity-80 transition-opacity duration-200"
-          onClick={() => setShowExplanations((v) => !v)}
+        <Button
+          aria-controls={explanationsPanelId}
+          aria-expanded={showExplanations}
+          className={`${buttonStyles.flat} h-7 px-3 text-xs`}
+          size="sm"
+          onPress={() => setShowExplanations((v) => !v)}
         >
           {showExplanations ? t('questionBank.hideExplanations') : t('questionBank.showExplanations')}
-        </button>
+        </Button>
       </div>
     );
   }
@@ -186,6 +192,7 @@ export function QuestionBankCard({ question, onDeleteRequest }: QuestionBankCard
     return (
       <motion.div
         key="explanations"
+        id={explanationsPanelId}
         initial={{ height: 0, opacity: 0 }}
         animate={{ height: 'auto', opacity: 1 }}
         exit={{ height: 0, opacity: 0 }}
