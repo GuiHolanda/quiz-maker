@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
+import { Input } from '@heroui/input';
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@heroui/modal';
 import { Progress } from '@heroui/progress';
 import { Select, SelectItem } from '@heroui/select';
 import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSliders, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faSliders, faXmark, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useCertSimuladosContext } from '@/features/providers/certSimulados.provider';
@@ -31,6 +32,8 @@ import { inputProperties } from '@/config/constants/inputStyles';
 
 type SimuladoType = 'certification' | 'concurso';
 type TypeFilter = 'all' | SimuladoType;
+type StatusFilter = 'all' | 'answered' | 'pending' | 'in_progress';
+type CountFilter = 'all' | 'upTo10' | '11to20' | '21to40' | '41plus';
 
 interface AttemptRow {
   id: number;
@@ -49,13 +52,39 @@ interface UnifiedSimulado {
   bestScore: number | null;
   openAttemptId: number | null;
   attempts: AttemptRow[];
+  status: 'answered' | 'pending' | 'in_progress';
 }
+
+interface Filters {
+  search: string;
+  type: TypeFilter;
+  sources: string[];
+  count: CountFilter;
+  status: StatusFilter;
+}
+
+const EMPTY_FILTERS: Filters = { search: '', type: 'all', sources: [], count: 'all', status: 'all' };
 
 function scoreColor(percent: number): 'success' | 'warning' | 'danger' {
   if (percent >= 70) return 'success';
   if (percent >= 50) return 'warning';
 
   return 'danger';
+}
+
+function matchesCount(total: number, filter: CountFilter): boolean {
+  switch (filter) {
+    case 'upTo10':
+      return total <= 10;
+    case '11to20':
+      return total >= 11 && total <= 20;
+    case '21to40':
+      return total >= 21 && total <= 40;
+    case '41plus':
+      return total >= 41;
+    default:
+      return true;
+  }
 }
 
 function basePath(type: SimuladoType): string {
@@ -73,7 +102,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
   const mock = useMockExamsContext();
   const router = useRouter();
 
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
+  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [deleteTarget, setDeleteTarget] = useState<UnifiedSimulado | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [startingKey, setStartingKey] = useState<string | null>(null);
@@ -87,6 +116,9 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
   const hasConcursoAccess = !usage || usage.publicExamsLimit !== 0;
   const isLoading = cert.isLoading || mock.isLoading;
 
+  // Type filter only has meaning when both verticals can appear in the list
+  const showTypeFilter = hasConcursoAccess;
+
   const simulados = useMemo<UnifiedSimulado[]>(() => {
     const fromCert: UnifiedSimulado[] = cert.simulados.map((s) => normalizeCert(s));
     const fromMock: UnifiedSimulado[] = mock.mockExams.map((m) => normalizeMock(m));
@@ -94,10 +126,48 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
     return [...fromCert, ...fromMock].sort((a, b) => b.id - a.id || a.key.localeCompare(b.key));
   }, [cert.simulados, mock.mockExams]);
 
-  const filtered = useMemo(
-    () => (typeFilter === 'all' ? simulados : simulados.filter((s) => s.type === typeFilter)),
-    [simulados, typeFilter],
-  );
+  const sourceOptions = useMemo(() => {
+    const relevant = filters.type === 'all' ? simulados : simulados.filter((s) => s.type === filters.type);
+    const labels = new Set(relevant.map((s) => s.sourceLabel));
+
+    return Array.from(labels).sort((a, b) => a.localeCompare(b));
+  }, [simulados, filters.type]);
+
+  const activeFilterCount =
+    (filters.search.trim() !== '' ? 1 : 0) +
+    (filters.type !== 'all' ? 1 : 0) +
+    (filters.sources.length > 0 ? 1 : 0) +
+    (filters.count !== 'all' ? 1 : 0) +
+    (filters.status !== 'all' ? 1 : 0);
+
+  const filtered = useMemo(() => {
+    const query = filters.search.trim().toLowerCase();
+
+    return simulados.filter((s) => {
+      if (filters.type !== 'all' && s.type !== filters.type) return false;
+      if (filters.sources.length > 0 && !filters.sources.includes(s.sourceLabel)) return false;
+      if (filters.status !== 'all' && s.status !== filters.status) return false;
+      if (!matchesCount(s.totalQuestions, filters.count)) return false;
+      if (query) {
+        const haystack = `${s.name ?? ''} ${s.sourceLabel}`.toLowerCase();
+
+        if (!haystack.includes(query)) return false;
+      }
+
+      return true;
+    });
+  }, [simulados, filters]);
+
+  function updateFilter<K extends keyof Filters>(key: K, value: Filters[K]) {
+    setFilters((prev) => {
+      const next = { ...prev, [key]: value };
+
+      // Changing type invalidates source selections that no longer apply
+      if (key === 'type') next.sources = [];
+
+      return next;
+    });
+  }
 
   async function handleStart(s: UnifiedSimulado) {
     setStartingKey(s.key);
@@ -167,11 +237,11 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
 
   return (
     <div className="flex flex-col gap-4">
-      {hasConcursoAccess && renderFilter()}
+      {renderFilter()}
 
       {filtered.length === 0 ? (
         <EmptyState
-          action={{ label: t('simulado.filterAll'), onPress: () => setTypeFilter('all') }}
+          action={{ label: t('simulado.clearFilter'), onPress: () => setFilters(EMPTY_FILTERS) }}
           description={t('simulado.noResultsForFilterDescription')}
           title={t('simulado.noResultsForFilter')}
         />
@@ -215,32 +285,93 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
         <div className="flex items-center gap-3">
           <FontAwesomeIcon className="w-3.5 h-3.5 text-default-400 shrink-0" icon={faSliders} />
           <span className="text-xs font-semibold text-default-500">{t('simulado.filters')}</span>
-          {typeFilter !== 'all' && (
+          {activeFilterCount > 0 && (
             <Button
               className={`${buttonStyles.flat} ml-auto h-7 px-3 text-xs`}
               size="sm"
               startContent={<FontAwesomeIcon className="w-3 h-3" icon={faXmark} />}
-              onPress={() => setTypeFilter('all')}
+              onPress={() => setFilters(EMPTY_FILTERS)}
             >
               {t('simulado.clearFilter')}
             </Button>
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Row 1: search + source */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Input
+            {...inputProperties.input}
+            label={t('simulado.filterSearchLabel')}
+            placeholder={t('simulado.filterSearchPlaceholder')}
+            startContent={<FontAwesomeIcon className="w-3.5 h-3.5 text-default-400" icon={faMagnifyingGlass} />}
+            value={filters.search}
+            onValueChange={(v) => updateFilter('search', v)}
+          />
           <Select
             {...inputProperties.select}
-            label={t('simulado.filterByType')}
-            placeholder={t('simulado.filterAll')}
-            selectedKeys={typeFilter !== 'all' ? new Set([typeFilter]) : new Set([])}
-            onSelectionChange={(keys) => {
-              const val = Array.from(keys)[0] as TypeFilter | undefined;
+            isDisabled={sourceOptions.length === 0}
+            label={t('simulado.filterSourceLabel')}
+            placeholder={t('simulado.filterSourcePlaceholder')}
+            selectionMode="multiple"
+            selectedKeys={new Set(filters.sources)}
+            onSelectionChange={(keys) => updateFilter('sources', Array.from(keys) as string[])}
+          >
+            {sourceOptions.map((src) => (
+              <SelectItem key={src}>{src}</SelectItem>
+            ))}
+          </Select>
+        </div>
 
-              setTypeFilter(val ?? 'all');
+        {/* Row 2: type + count + status */}
+        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${showTypeFilter ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
+          {showTypeFilter && (
+            <Select
+              {...inputProperties.select}
+              label={t('simulado.filterByType')}
+              placeholder={t('simulado.filterAll')}
+              selectedKeys={filters.type !== 'all' ? new Set([filters.type]) : new Set([])}
+              onSelectionChange={(keys) => {
+                const val = Array.from(keys)[0] as TypeFilter | undefined;
+
+                updateFilter('type', val ?? 'all');
+              }}
+            >
+              <SelectItem key="certification">{t('simulado.filterCertifications')}</SelectItem>
+              <SelectItem key="concurso">{t('simulado.filterConcursos')}</SelectItem>
+            </Select>
+          )}
+
+          <Select
+            {...inputProperties.select}
+            label={t('simulado.filterCountLabel')}
+            placeholder={t('simulado.filterCountPlaceholder')}
+            selectedKeys={filters.count !== 'all' ? new Set([filters.count]) : new Set([])}
+            onSelectionChange={(keys) => {
+              const val = Array.from(keys)[0] as CountFilter | undefined;
+
+              updateFilter('count', val ?? 'all');
             }}
           >
-            <SelectItem key="certification">{t('simulado.filterCertifications')}</SelectItem>
-            <SelectItem key="concurso">{t('simulado.filterConcursos')}</SelectItem>
+            <SelectItem key="upTo10">{t('simulado.filterCountUpTo')}</SelectItem>
+            <SelectItem key="11to20">{t('simulado.filterCount11to20')}</SelectItem>
+            <SelectItem key="21to40">{t('simulado.filterCount21to40')}</SelectItem>
+            <SelectItem key="41plus">{t('simulado.filterCount41plus')}</SelectItem>
+          </Select>
+
+          <Select
+            {...inputProperties.select}
+            label={t('simulado.filterStatusLabel')}
+            placeholder={t('simulado.filterStatusPlaceholder')}
+            selectedKeys={filters.status !== 'all' ? new Set([filters.status]) : new Set([])}
+            onSelectionChange={(keys) => {
+              const val = Array.from(keys)[0] as StatusFilter | undefined;
+
+              updateFilter('status', val ?? 'all');
+            }}
+          >
+            <SelectItem key="pending">{t('simulado.statusPending')}</SelectItem>
+            <SelectItem key="in_progress">{t('simulado.statusInProgress')}</SelectItem>
+            <SelectItem key="answered">{t('simulado.statusAnswered')}</SelectItem>
           </Select>
         </div>
       </div>
@@ -405,6 +536,7 @@ function normalizeCert(s: CertSimuladoListItem): UnifiedSimulado {
     bestScore: s.bestScore,
     openAttemptId: s.openAttemptId,
     attempts: s.attempts.map((a) => ({ id: a.id, score: a.score, finishedAt: a.finishedAt })),
+    status: deriveStatus(s.openAttemptId, s.attemptCount),
   };
 }
 
@@ -420,5 +552,13 @@ function normalizeMock(m: MockExamListItem): UnifiedSimulado {
     bestScore: m.bestScore,
     openAttemptId: m.openAttemptId,
     attempts: m.attempts.map((a) => ({ id: a.id, score: a.score, finishedAt: a.finishedAt })),
+    status: deriveStatus(m.openAttemptId, m.attemptCount),
   };
+}
+
+function deriveStatus(openAttemptId: number | null, attemptCount: number): UnifiedSimulado['status'] {
+  if (openAttemptId != null) return 'in_progress';
+  if (attemptCount > 0) return 'answered';
+
+  return 'pending';
 }
