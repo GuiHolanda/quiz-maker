@@ -94,9 +94,20 @@ test('public exam full flow: configure → questions → simulado → answer →
 
   // ── Step 3: Create a simulado ─────────────────────────────────────────────
 
-  await page.goto('/public-exams/simulados');
+  await page.goto('/simulados');
 
   await page.getByRole('tab', { name: /Novo Simulado|New Mock Exam/i }).click();
+
+  // Wait for the "Novo Simulado" tab panel to be fully loaded
+  await expect(page.getByText(/Que tipo de simulado\?|What kind of mock exam\?/i)).toBeVisible({ timeout: 5_000 });
+
+  // Click the Concurso type option
+  await page.getByTestId('type-option-concurso').click();
+
+  // Confirm the mock exam form has mounted
+  await expect(page.getByRole('button', { name: /Selecione um Concurso|Select.*exam/i })).toBeVisible({
+    timeout: 8_000,
+  });
 
   // Wait for form to be ready (skeleton hides while provider loads)
   await expect(page.getByLabel(/Total de quest[oõ]es|Total questions/i)).toBeVisible({ timeout: 10_000 });
@@ -138,7 +149,10 @@ test('public exam full flow: configure → questions → simulado → answer →
 
   // ── Step 4: Answer the simulado ───────────────────────────────────────────
 
-  const respondButton = page.getByRole('button', { name: /Responder|Continuar|Answer/i }).first();
+  const respondButton = page
+    .locator('[data-testid="simulado-card"]', { hasText: E2E_PUBLIC_EXAM_NAME })
+    .getByRole('button', { name: /Responder|Continuar|Answer/i })
+    .first();
   await expect(respondButton).toBeVisible({ timeout: 10_000 });
   await respondButton.click();
 
@@ -197,7 +211,7 @@ test('public exam full flow: configure → questions → simulado → answer →
 
   await page.getByRole('button', { name: /Descartar tentativa|Discard attempt/i }).click();
 
-  await expect(page).toHaveURL(/\/public-exams\/simulados/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/simulados/, { timeout: 10_000 });
   await expect(page.getByRole('tab', { name: /Meus Simulados|My Mock Exams/i })).toBeVisible({ timeout: 10_000 });
 });
 
