@@ -73,12 +73,12 @@ test('full certification journey: configure → questions → simulado → answe
   // Wait for the list to disappear (questions cleared after save)
   await expect(page.getByText(/E2E Question/i).first()).not.toBeVisible({ timeout: 15_000 });
 
-  // ─── Step 2b: Verify the Library tab becomes selected after save ─────────
+  // ─── Step 2b: Verify the success banner appears after save ───────────────
 
-  // After save, the page auto-switches to the "Minhas Questões" / "My questions" tab
+  // After save, the simulados banner appears confirming questions were saved
   await expect(
-    page.getByRole('tab', { name: /Minhas Questões|My questions/i }),
-  ).toHaveAttribute('aria-selected', 'true', { timeout: 5_000 });
+    page.getByText(/Questões salvas|Questions saved/i),
+  ).toBeVisible({ timeout: 5_000 });
 
   // ─── Step 3: Create a simulado ────────────────────────────────────────────
 
