@@ -102,6 +102,7 @@ export class CertificationSimuladosService {
       attemptCount: 0,
       bestScore: null,
       lastAttemptId: null,
+      openAttemptId: null,
       attempts: [],
       createdAt: simulado.createdAt.toISOString(),
     };

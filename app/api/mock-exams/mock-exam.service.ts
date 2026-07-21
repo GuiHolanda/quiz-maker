@@ -134,6 +134,8 @@ export class MockExamService {
       attemptCount: 0,
       bestScore: null,
       lastAttemptId: null,
+      openAttemptId: null,
+      attempts: [],
       createdAt: mockExam.createdAt.toISOString(),
     };
   }
