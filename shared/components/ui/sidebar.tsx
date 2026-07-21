@@ -15,11 +15,11 @@ import {
   faGear,
   faGraduationCap,
   faClipboard,
-  faListUl,
   faPlay,
   faBars,
   faXmark,
   faHouse,
+  faLayerGroup,
 } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -28,13 +28,11 @@ import { SIDEBAR_COLLAPSED_LOCAL_STORAGE_KEY, SIDEBAR_COLLAPSED_COOKIE_KEY } fro
 
 const CERTIFICATION_ITEMS = [
   { labelKey: 'nav.configureCertification', href: '/certifications/configure', icon: faGear },
-  { labelKey: 'nav.questions', href: '/certifications/questions', icon: faListUl },
   { labelKey: 'nav.simulados', href: '/certifications/simulados', icon: faPlay },
 ] as const;
 
 const CONCURSO_ITEMS = [
   { labelKey: 'nav.configureConcurso', href: '/public-exams/configure', icon: faGear },
-  { labelKey: 'nav.questions', href: '/public-exams/questions', icon: faListUl },
   { labelKey: 'nav.simulados', href: '/public-exams/simulados', icon: faPlay },
 ] as const;
 
@@ -194,6 +192,17 @@ export function Sidebar({ defaultCollapsed = false }: { readonly defaultCollapse
         >
           <FontAwesomeIcon className="w-4 h-4 shrink-0" icon={faHouse} />
           {!collapsed && t('nav.dashboard')}
+        </NextLink>
+
+        {/* Question Bank */}
+        <NextLink
+          className={navLinkClass(pathname === '/question-bank', collapsed)}
+          href="/question-bank"
+          title={collapsed ? t('nav.questionBank') : undefined}
+          onClick={closeDrawer}
+        >
+          <FontAwesomeIcon className="w-4 h-4 shrink-0" icon={faLayerGroup} />
+          {!collapsed && t('nav.questionBank')}
         </NextLink>
 
         {/* Certifications section */}
