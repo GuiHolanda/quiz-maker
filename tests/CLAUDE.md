@@ -110,8 +110,10 @@ tests/e2e/
     auth.fixture.ts          ← estende o test base com mocks das rotas OpenAI
     mock-data.ts             ← questões estáticas retornadas pelos mocks
   tests/
-    certification-flow.spec.ts   ← jornada completa de certificações (6 steps)
-    public-exam-flow.spec.ts     ← jornada completa de concursos (6 steps)
+    certification-flow.spec.ts     ← jornada completa de certificações (6 steps)
+    public-exam-flow.spec.ts       ← jornada completa de concursos (6 steps)
+    question-bank-flow.spec.ts     ← banco de questões: geração, filtros, deleção
+    simulados-management.spec.ts   ← deleção de simulado + histórico de tentativas/resultado
   global-setup.ts            ← cria usuário tester, login UI, salva sessão
   global-teardown.ts         ← deleta todos os dados do usuário E2E
 ```
@@ -141,14 +143,23 @@ npx playwright install chromium
 
 ### Jornadas cobertas
 
-Ambos os specs cobrem 6 steps:
+**`certification-flow.spec.ts`** e **`public-exam-flow.spec.ts`** — 6 steps cada:
 
 1. Configurar (cert ou concurso) via wizard
 2. Gerar questões (mockado) → selecionar todas → salvar
-3. Criar simulado
+3. Criar simulado em `/simulados` (rota unificada) — inclui clique no type picker para selecionar o tipo correto
 4. Responder todas as questões → finalizar
-5. Analisar resultado
-6. Iniciar nova tentativa → cancelar → voltar para lista
+5. Analisar resultado (score, breakdown, %)
+6. Iniciar nova tentativa → cancelar → voltar para `/simulados`
+
+**`simulados-management.spec.ts`** — 2 testes independentes de gestão:
+
+1. **Deleção**: cria simulado → navega para `/simulados` → trash icon → modal de confirmação → verifica que o count de cards diminuiu
+2. **Histórico / resultado**: cria simulado → inicia tentativa → captura `attemptId` da URL → navega diretamente para `/resultado/` → verifica score e breakdown
+
+> **Nota sobre mocks de `finishAttempt`:** o PATCH `.../attempts/:id` é interceptado pelo fixture e retorna `{}` sem persistir no banco. Por isso o fluxo de histórico (`isAnswered = true` na lista) **não é testável via mock** — o teste de histórico bypassa o modal e navega diretamente para a URL de resultado com o ID real capturado.
+
+**`question-bank-flow.spec.ts`** — 1 jornada: geração de questões → verificação no banco → filtros → busca → deleção.
 
 ### Como adicionar um novo spec
 
@@ -177,6 +188,16 @@ await page.getByRole('option', { name: /opção/i }).click();
 ```typescript
 page.getByRole('button', { name: /Finalizar Simulado|Finish Exam/i })
 ```
+
+**`data-testid` em componentes de lista:** elementos cujo `aria-label` ou texto não é único (ex.: múltiplos cards com o mesmo label) usam `data-testid` para escopo preciso nos testes:
+
+| `data-testid` | Componente | Uso |
+|---|---|---|
+| `simulado-card` | `SimuladosListTab` — cada card da lista | `page.locator('[data-testid="simulado-card"]', { hasText: '...' })` |
+| `type-option-certification` | `NewSimuladoTab` — botão Certificação | `page.getByTestId('type-option-certification')` |
+| `type-option-concurso` | `NewSimuladoTab` — botão Concurso | `page.getByTestId('type-option-concurso')` |
+
+Ao adicionar novos componentes de lista ou pickers com múltiplos itens ambíguos, adicionar `data-testid` preventivamente.
 
 ### CI
 

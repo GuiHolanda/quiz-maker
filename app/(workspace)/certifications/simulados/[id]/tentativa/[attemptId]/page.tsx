@@ -69,7 +69,7 @@ export default function CertSimuladoTentativaPage() {
       clearProgress();
       setShowDiscardConfirm(false);
       bypassNext();
-      router.push('/certifications/simulados');
+      router.push('/simulados');
     } catch (e: unknown) {
       notify.error(
         t('toast.error'),
@@ -94,7 +94,7 @@ export default function CertSimuladoTentativaPage() {
       return;
     }
     bypassNext();
-    router.push('/certifications/simulados');
+    router.push('/simulados');
   }
 
   async function handleFinish() {

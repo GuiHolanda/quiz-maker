@@ -1,91 +1,88 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
+import { Select, SelectItem } from '@heroui/select';
 import { Divider } from '@heroui/divider';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark, faCheck, faRotateLeft } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
-import { useMockExamsContext } from '@/features/providers/mockExams.provider';
+import { useCertSimuladosContext } from '@/features/providers/certSimulados.provider';
+import { useCertificationsContext } from '@/features/hooks/useCertificationsContext.hook';
 import { useRequest } from '@/features/hooks/useRequest.hook';
-import { createMockExam, getPublicExamBrowseSummary } from '@/features/connectors';
-import { PublicExamManager } from '@/shared/components/PublicExamManager';
+import { createCertSimulado, getBrowseSummary } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { buttonStyles } from '@/config/constants/buttonStyles';
-import { MockExamSubjectConfig, PublicExamBrowseSummary } from '@/shared/types';
+import { CertSimuladoTopicConfig, Certification, BrowseSummary } from '@/shared/types';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
-import { PUBLIC_EXAMS_LOCAL_STORAGE_KEY } from '@/config/constants';
+import { CERTIFICATIONS_LOCAL_STORAGE_KEY } from '@/config/constants';
 
-interface NewSimuladoTabProps {
+interface NewCertSimuladoFormProps {
   readonly onCreated: () => void;
 }
 
-interface LocalSubjectEntry extends MockExamSubjectConfig {
+interface LocalTopicEntry extends CertSimuladoTopicConfig {
   isTemporary?: boolean;
 }
 
-export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
+export function NewCertSimuladoForm({ onCreated }: NewCertSimuladoFormProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const {
-    publicExams,
-    isLoading: isExamsLoading,
-    selectedPublicExam,
-  } = usePublicExamsContext();
-  const { addMockExam } = useMockExamsContext();
+  const { certifications, isLoading: isCertsLoading } = useCertificationsContext();
+  const { addSimulado } = useCertSimuladosContext();
+  const [selectedCert, setSelectedCert] = useState<Certification | null>(null);
   const [name, setName] = useState('');
   const [totalQuestions, setTotalQuestions] = useState('');
-  const [distribution, setDistribution] = useState<LocalSubjectEntry[]>([]);
-  const [originalDistribution, setOriginalDistribution] = useState<LocalSubjectEntry[]>([]);
+  const [distribution, setDistribution] = useState<LocalTopicEntry[]>([]);
   const [totalSavedQuestions, setTotalSavedQuestions] = useState<number | null>(null);
-  const [browseSummary, setBrowseSummary] = useState<PublicExamBrowseSummary | null>(null);
+  const [browseSummary, setBrowseSummary] = useState<BrowseSummary | null>(null);
   const [availableCounts, setAvailableCounts] = useState<Record<string, number>>({});
+  const [originalDistribution, setOriginalDistribution] = useState<LocalTopicEntry[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newSubjectName, setNewSubjectName] = useState('');
-  const [newSubjectCount, setNewSubjectCount] = useState('');
-  const { loading, request } = useRequest(createMockExam);
+  const [newTopicName, setNewTopicName] = useState('');
+  const [newTopicCount, setNewTopicCount] = useState('');
+  const { loading, request } = useRequest(createCertSimulado);
 
   useEffect(() => {
-    if (isExamsLoading || publicExams.length === 0) return;
-    getPublicExamBrowseSummary()
+    if (isCertsLoading || certifications.length === 0) return;
+    getBrowseSummary()
       .then((data) => {
-        const total = data.publicExams.reduce((acc, e) => acc + e.totalCount, 0);
+        const total = data.certifications.reduce((acc, c) => acc + c.totalCount, 0);
 
         setTotalSavedQuestions(total);
         setBrowseSummary(data);
       })
       .catch(() => setTotalSavedQuestions(0));
-  }, [isExamsLoading, publicExams.length]);
+  }, [isCertsLoading, certifications.length]);
 
   useEffect(() => {
-    if (!selectedPublicExam || !browseSummary) {
+    if (!selectedCert || !browseSummary) {
       setAvailableCounts({});
 
       return;
     }
-    const examData = browseSummary.publicExams.find((e) => e.id === selectedPublicExam.id);
+    const certData = browseSummary.certifications.find((c) => c.key === selectedCert.key);
 
-    if (!examData) {
+    if (!certData) {
       setAvailableCounts({});
 
       return;
     }
     const counts: Record<string, number> = {};
 
-    examData.subjects.forEach((s) => {
-      counts[s.name] = s.questionCount;
+    certData.topics.forEach((topic) => {
+      counts[topic.name] = topic.questionCount;
     });
     setAvailableCounts(counts);
-  }, [selectedPublicExam, browseSummary]);
+  }, [selectedCert, browseSummary]);
 
   useEffect(() => {
-    if (!selectedPublicExam || !totalQuestions) {
+    if (!selectedCert || !totalQuestions) {
       setDistribution([]);
 
       return;
@@ -94,31 +91,31 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
 
     if (isNaN(total) || total <= 0) return;
 
-    const totalMax = selectedPublicExam.subjects.reduce((acc, s) => acc + s.maxQuestions, 0);
-    const suggested: LocalSubjectEntry[] = selectedPublicExam.subjects.map((s) => ({
-      subjectName: s.name,
-      questionCount: Math.round((s.maxQuestions / totalMax) * total),
+    const totalMax = selectedCert.topics.reduce((acc, topic) => acc + topic.maxQuestions, 0);
+    const suggested: LocalTopicEntry[] = selectedCert.topics.map((topic) => ({
+      topicName: topic.name,
+      questionCount: totalMax > 0 ? Math.round((topic.maxQuestions / totalMax) * total) : 0,
     }));
 
-    const sum = suggested.reduce((acc, s) => acc + s.questionCount, 0);
+    const sum = suggested.reduce((acc, entry) => acc + entry.questionCount, 0);
 
     if (suggested.length > 0) suggested[suggested.length - 1].questionCount += total - sum;
 
     setDistribution(suggested);
     setOriginalDistribution(suggested.map((entry) => ({ ...entry })));
     setShowAddForm(false);
-  }, [selectedPublicExam, totalQuestions]);
+  }, [selectedCert, totalQuestions]);
 
-  if (isExamsLoading || (publicExams.length > 0 && totalSavedQuestions === null)) {
+  if (isCertsLoading || (certifications.length > 0 && totalSavedQuestions === null)) {
     return <SkeletonListLoader count={3} height="h-12" />;
   }
 
-  if (publicExams.length === 0) {
+  if (certifications.length === 0) {
     return (
       <EmptyState
-        action={{ href: '/public-exams/configure', label: t('concurso.tabNew') }}
-        description={t('concurso.noExamsDescription')}
-        title={t('concurso.noExamsTitle')}
+        action={{ href: '/certifications/configure', label: t('certification.tabNew') }}
+        description={t('certification.noCertificationsDescription')}
+        title={t('certification.noCertificationsTitle')}
       />
     );
   }
@@ -126,85 +123,99 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
   if (totalSavedQuestions === 0) {
     return (
       <EmptyState
-        action={{ href: '/public-exams/questions', label: t('simulado.noQuestionsGoToQuestions') }}
+        action={{ href: '/certifications/questions', label: t('simulado.noQuestionsGoToQuestions') }}
         description={t('simulado.noQuestionsDescription')}
         title={t('simulado.noQuestionsTitle')}
       />
     );
   }
 
-  const distributedTotal = distribution.reduce((acc, s) => acc + s.questionCount, 0);
+  const distributedTotal = distribution.reduce((acc, entry) => acc + entry.questionCount, 0);
   const total = Number(totalQuestions) || 0;
   const isDistributionValid = distribution.length > 0 && distributedTotal === total;
   const isDistributionModified =
     distribution.length !== originalDistribution.length ||
     distribution.some((entry, i) => {
       const original = originalDistribution[i];
-      return !original || original.subjectName !== entry.subjectName || original.questionCount !== entry.questionCount;
+
+      return !original || original.topicName !== entry.topicName || original.questionCount !== entry.questionCount;
     });
+
+  async function handleCreate() {
+    if (!selectedCert) return;
+    const saved = await request({
+      certKey: selectedCert.key,
+      name: name.trim() || undefined,
+      topics: distribution.map(({ topicName, questionCount }) => ({ topicName, questionCount })),
+    });
+
+    if (saved) {
+      addSimulado(saved);
+      notify.success(
+        t('simulado.created'),
+        t('simulado.createdDescription', { name: saved.name ?? selectedCert.label }),
+      );
+      onCreated();
+    }
+  }
 
   function handleResetDistribution() {
     setDistribution(originalDistribution.map((entry) => ({ ...entry })));
     setShowAddForm(false);
   }
 
-  function handleSubjectChange(subjectName: string, value: string) {
+  function handleTopicChange(topicName: string, value: string) {
     setDistribution((prev) =>
-      prev.map((s) => (s.subjectName === subjectName ? { ...s, questionCount: Number(value) || 0 } : s))
+      prev.map((entry) => (entry.topicName === topicName ? { ...entry, questionCount: Number(value) || 0 } : entry)),
     );
   }
 
-  function handleRemoveSubject(subjectName: string) {
-    setDistribution((prev) => prev.filter((s) => s.subjectName !== subjectName));
+  function handleRemoveTopic(topicName: string) {
+    setDistribution((prev) => prev.filter((entry) => entry.topicName !== topicName));
   }
 
-  function handleAddSubject() {
-    const name = newSubjectName.trim();
-    const count = Number(newSubjectCount) || 0;
+  function handleAddTopic() {
+    const topicName = newTopicName.trim();
+    const count = Number(newTopicCount) || 0;
 
-    if (!name) return;
-    setDistribution((prev) => [...prev, { subjectName: name, questionCount: count, isTemporary: true }]);
-    setNewSubjectName('');
-    setNewSubjectCount('');
+    if (!topicName) return;
+    setDistribution((prev) => [...prev, { topicName, questionCount: count, isTemporary: true }]);
+    setNewTopicName('');
+    setNewTopicCount('');
     setShowAddForm(false);
-  }
-
-  async function handleCreate() {
-    if (!selectedPublicExam?.id) return;
-    const saved = await request({
-      publicExamId: selectedPublicExam.id,
-      name: name.trim() || undefined,
-      totalQuestions: total,
-      subjects: distribution.map(({ subjectName, questionCount }) => ({ subjectName, questionCount })),
-    });
-
-    if (saved) {
-      addMockExam(saved);
-      notify.success(
-        t('simulado.created'),
-        t('simulado.createdDescription', { name: saved.name ?? selectedPublicExam.name })
-      );
-      onCreated();
-    }
   }
 
   return (
     <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6">
-      <PublicExamManager noSubjects className="w-full" />
+      <Select
+        label={t('certification.selectCertification')}
+        placeholder={t('certification.selectCertificationPlaceholder')}
+        selectedKeys={selectedCert ? [selectedCert.key] : []}
+        onSelectionChange={(keys) => {
+          const key = Array.from(keys)[0] as string;
+
+          setSelectedCert(certifications.find((c) => c.key === key) ?? null);
+        }}
+        {...inputProperties.select}
+      >
+        {certifications.map((c) => (
+          <SelectItem key={c.key}>{c.label}</SelectItem>
+        ))}
+      </Select>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Input
           autoComplete="off"
           label={t('simulado.nameLabel')}
           placeholder={
-            selectedPublicExam
-              ? t('simulado.namePlaceholder', { examName: selectedPublicExam.name, count: totalQuestions || '?' })
+            selectedCert
+              ? t('simulado.namePlaceholder', { examName: selectedCert.label, count: totalQuestions || '?' })
               : t('simulado.nameFallbackPlaceholder')
           }
           value={name}
           onValueChange={setName}
           {...inputProperties.input}
         />
-
         <Input
           label={t('simulado.totalQuestions')}
           min={1}
@@ -221,7 +232,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
       <div className="flex justify-end pt-2">
         <Button
           className={buttonStyles.primary}
-          isDisabled={!selectedPublicExam || !isDistributionValid}
+          isDisabled={!selectedCert || !isDistributionValid}
           isLoading={loading}
           onPress={handleCreate}
         >
@@ -237,14 +248,10 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
         <div className="flex flex-col">
           <Divider />
           <div className="flex items-center justify-between mt-4">
-            <p className="text-xs font-semibold">{t('simulado.distribution')}</p>
+            <p className="text-xs font-semibold">{t('simulado.distributionByTopic')}</p>
             <div className="flex items-center gap-3">
               {isDistributionModified && (
-                <Button
-                  className={buttonStyles.flat}
-                  size="sm"
-                  onPress={handleResetDistribution}
-                >
+                <Button className={buttonStyles.flat} size="sm" onPress={handleResetDistribution}>
                   <FontAwesomeIcon icon={faRotateLeft} />
                   {t('simulado.resetDistribution')}
                 </Button>
@@ -256,34 +263,42 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
           </div>
         </div>
         <div className="bg-content1 border border-default-200 rounded-xl overflow-hidden">
-          {distribution.map((s, i) => {
-            const available = s.isTemporary ? undefined : availableCounts[s.subjectName];
-            const isInsufficient = !s.isTemporary && (available === undefined || s.questionCount > available);
+          {distribution.map((entry, i) => {
+            const available = entry.isTemporary ? undefined : availableCounts[entry.topicName];
+            const isInsufficient = !entry.isTemporary && (available === undefined || entry.questionCount > available);
             const isLast = i === distribution.length - 1;
 
             return (
               <div
-                key={s.subjectName}
-                className={`flex items-center gap-3 px-4 py-3 ${!isLast ? 'border-b border-default-200' : ''} ${isInsufficient ? 'border-l-2 border-l-danger bg-danger/5' : ''}`}
+                key={entry.topicName}
+                className={`flex items-center gap-3 px-4 py-3 ${!isLast ? 'border-b border-default-200' : ''} ${isInsufficient ? 'border border-danger bg-danger/5 rounded-lg' : ''}`}
               >
-                <span className="text-sm text-foreground flex-1 min-w-0 truncate">{s.subjectName}</span>
-                <span className={`text-xs shrink-0 ${isInsufficient ? 'text-danger' : 'text-default-400'}`}>
-                  {t('simulado.availableQuestions', { count: available ?? 0 })}
-                </span>
+                <div className="flex flex-col flex-1 min-w-0">
+                  <span className="text-sm text-foreground truncate">{entry.topicName}</span>
+                  {!entry.isTemporary && (
+                    <span className={`text-xs ${isInsufficient ? 'text-danger' : 'text-default-400'}`}>
+                      {t('simulado.availableQuestions', { count: available ?? 0 })}
+                    </span>
+                  )}
+                </div>
                 {isInsufficient && (
                   <Button
                     className={buttonStyles.primarySm}
                     size="sm"
                     onPress={() => {
                       try {
-                        const current = JSON.parse(localStorage.getItem(PUBLIC_EXAMS_LOCAL_STORAGE_KEY) ?? '{}');
+                        const current = JSON.parse(localStorage.getItem(CERTIFICATIONS_LOCAL_STORAGE_KEY) ?? '{}');
 
                         localStorage.setItem(
-                          PUBLIC_EXAMS_LOCAL_STORAGE_KEY,
-                          JSON.stringify({ ...current, selectedPublicExam, selectedSubjects: [s.subjectName] })
+                          CERTIFICATIONS_LOCAL_STORAGE_KEY,
+                          JSON.stringify({
+                            ...current,
+                            selectedCertification: selectedCert,
+                            selectedTopics: [entry.topicName],
+                          }),
                         );
                       } catch {}
-                      router.push('/public-exams/questions?tab=generate');
+                      router.push('/certifications/questions?tab=generate');
                     }}
                   >
                     {t('simulado.generateMissing')}
@@ -295,9 +310,9 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
                   min={0}
                   size="sm"
                   type="number"
-                  value={String(s.questionCount)}
+                  value={String(entry.questionCount)}
                   variant="bordered"
-                  onValueChange={(v) => handleSubjectChange(s.subjectName, v)}
+                  onValueChange={(v) => handleTopicChange(entry.topicName, v)}
                 />
                 <Button
                   isIconOnly
@@ -306,20 +321,20 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
                   isDisabled={distribution.length <= 1}
                   size="sm"
                   variant="light"
-                  onPress={() => handleRemoveSubject(s.subjectName)}
+                  onPress={() => handleRemoveTopic(entry.topicName)}
                 >
                   <FontAwesomeIcon icon={faXmark} />
                 </Button>
               </div>
             );
           })}
-          {renderAddSubjectRow()}
+          {renderAddTopicRow()}
         </div>
       </div>
     );
   }
 
-  function renderAddSubjectRow() {
+  function renderAddTopicRow() {
     if (!showAddForm) {
       return (
         <div className="px-4 py-3 border-t border-default-200">
@@ -337,8 +352,8 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
           label={t('simulado.temporaryTopicName')}
           placeholder={t('simulado.temporaryTopicNamePlaceholder')}
           size="sm"
-          value={newSubjectName}
-          onValueChange={setNewSubjectName}
+          value={newTopicName}
+          onValueChange={setNewTopicName}
           {...inputProperties.input}
         />
         <Input
@@ -348,8 +363,8 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
           placeholder={t('simulado.temporaryTopicCountPlaceholder')}
           size="sm"
           type="number"
-          value={newSubjectCount}
-          onValueChange={setNewSubjectCount}
+          value={newTopicCount}
+          onValueChange={setNewTopicCount}
           {...inputProperties.input}
         />
         <div className="flex gap-1 shrink-0 pb-1">
@@ -358,7 +373,7 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
             aria-label={t('common.save')}
             className={buttonStyles.iconOnly.primary}
             size="sm"
-            onPress={handleAddSubject}
+            onPress={handleAddTopic}
           >
             <FontAwesomeIcon icon={faCheck} />
           </Button>
@@ -370,8 +385,8 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
             variant="light"
             onPress={() => {
               setShowAddForm(false);
-              setNewSubjectName('');
-              setNewSubjectCount('');
+              setNewTopicName('');
+              setNewTopicCount('');
             }}
           >
             <FontAwesomeIcon icon={faXmark} />

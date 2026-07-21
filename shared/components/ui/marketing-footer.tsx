@@ -7,10 +7,10 @@ import { faMicrochip } from '@fortawesome/free-solid-svg-icons';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 const PLATFORM_LINKS = [
-  { labelKey: 'footer.awsExams', href: '/certifications/simulados' },
-  { labelKey: 'footer.azureExams', href: '/certifications/simulados' },
-  { labelKey: 'footer.sapExams', href: '/certifications/simulados' },
-  { labelKey: 'footer.concursosLink', href: '/public-exams/simulados' },
+  { labelKey: 'footer.awsExams', href: '/simulados' },
+  { labelKey: 'footer.azureExams', href: '/simulados' },
+  { labelKey: 'footer.sapExams', href: '/simulados' },
+  { labelKey: 'footer.concursosLink', href: '/simulados' },
   { labelKey: 'nav.pricing', href: '/pricing' },
 ] as const;
 

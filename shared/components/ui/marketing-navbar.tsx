@@ -19,8 +19,8 @@ import { LanguageSwitch } from '@/shared/components/ui/language-switch';
 import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
 
 const NAV_LINKS = [
-  { labelKey: 'nav.certificates', href: '/certifications/simulados' },
-  { labelKey: 'nav.concursos', href: '/public-exams/simulados' },
+  { labelKey: 'nav.certificates', href: '/simulados' },
+  { labelKey: 'nav.concursos', href: '/simulados' },
   { labelKey: 'nav.pricing', href: '/pricing' },
 ] as const;
 
@@ -59,7 +59,7 @@ export function MarketingNavbar() {
               <nav className="hidden md:flex items-center gap-6">
                 {NAV_LINKS.map((item) => (
                   <NextLink
-                    key={item.href}
+                    key={item.labelKey}
                     className="text-sm font-medium text-navy-400 hover:text-white transition-colors duration-150"
                     href={item.href}
                   >
@@ -111,7 +111,7 @@ export function MarketingNavbar() {
               <nav className="flex flex-col gap-1">
                 {NAV_LINKS.map((item) => (
                   <NextLink
-                    key={item.href}
+                    key={item.labelKey}
                     className="text-sm text-navy-400 hover:text-white transition-colors py-2.5 border-b border-navy-800/40 last:border-0"
                     href={item.href}
                     onClick={() => setMenuOpen(false)}

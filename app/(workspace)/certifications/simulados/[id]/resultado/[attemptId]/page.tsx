@@ -205,7 +205,7 @@ export default function CertSimuladoResultadoPage() {
           <Button className={buttonStyles.primary} isLoading={isStarting} onPress={handleTryAgain}>
             {t('simulado.tryAgain')}
           </Button>
-          <Button variant="bordered" onPress={() => router.push('/certifications/simulados')}>
+          <Button variant="bordered" onPress={() => router.push('/simulados')}>
             {t('simulado.backToList')}
           </Button>
         </div>

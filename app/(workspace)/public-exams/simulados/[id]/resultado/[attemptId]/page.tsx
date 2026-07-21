@@ -209,7 +209,7 @@ export default function SimuladoResultadoPage() {
           <Button className={buttonStyles.primary} isLoading={isStarting} onPress={handleTryAgain}>
             {t('simulado.tryAgain')}
           </Button>
-          <Button variant="bordered" onPress={() => router.push('/public-exams/simulados')}>
+          <Button variant="bordered" onPress={() => router.push('/simulados')}>
             {t('simulado.backToList')}
           </Button>
         </div>

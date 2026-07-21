@@ -82,9 +82,19 @@ test('full certification journey: configure → questions → simulado → answe
 
   // ─── Step 3: Create a simulado ────────────────────────────────────────────
 
-  await page.goto('/certifications/simulados');
+  await page.goto('/simulados');
 
   await page.getByRole('tab', { name: /Novo Simulado|New Mock Exam/i }).click();
+
+  // Certification is the default selection in the type picker.
+  // If the picker is present, just wait for the cert form to mount.
+  const typePicker = page.getByRole('group', { name: /Que tipo de simulado\?|What kind of mock exam\?/i });
+  const hasPicker = await typePicker.isVisible().catch(() => false);
+  if (hasPicker) {
+    await expect(page.getByRole('button', { name: /Selecione uma Certificação|Select a Certification/i })).toBeVisible({
+      timeout: 8_000,
+    });
+  }
 
   // Select certification
   await page.getByRole('button', { name: /Selecione uma Certificação|Select a Certification/i }).click();
