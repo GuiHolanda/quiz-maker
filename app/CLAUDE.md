@@ -390,14 +390,14 @@ interface EmptyStateProps {
 
 ### Propagação do callback entre páginas/abas
 
-Quando o `EmptyState` está dentro de um filho (ex.: `<BrowseCategoriesView>`, `SimuladosListTab`) cuja página pai controla as abas, o filho expõe uma prop opcional (`onGenerateClick?`, `onCreateNew?`) e a página pai passa o setter de aba como callback. Filho sem callback → `EmptyState` aparece sem CTA.
+Quando o `EmptyState` está dentro de um filho (ex.: `SimuladosListTab`) cuja página pai controla as abas, o filho expõe uma prop opcional (`onGenerateClick?`, `onCreateNew?`) e a página pai passa o setter de aba como callback. Filho sem callback → `EmptyState` aparece sem CTA.
 
 ### Onde já é usado
 
 - `CertificationsListTab` / `PublicExamsListTab` — "sem certificações/concursos" com `onPress` para a aba "New"
-- Cert e concurso `questions/page.tsx` Generate tab — guard com `href` para `/.../configure`
-- `BrowseCategoriesView` (usado nas duas rotas de `questions/`) — "sem questões salvas" com `onPress` para a aba "Gerar"
+- Cert e concurso `questions/page.tsx` — guard com `href` para `/.../configure`
 - Cert e concurso `SimuladosListTab` — "sem simulados" com `onPress` para a aba "New"
+- `question-bank/page.tsx` — estado vazio (sem questões) e "filtros sem resultado"
 
 ### Copy
 
@@ -405,63 +405,71 @@ Toda i18n: `title`, `description` e `action.label` sempre via `t('chave')`. Para
 
 ---
 
-## Padrão de browse — accordion aninhado genérico
+## Banco de Questões (`app/(workspace)/question-bank/`)
 
-Para bibliotecas de questões (certificações e concursos) o padrão é **accordion aninhado em coluna única com search** parametrizado por um único componente `<BrowseCategoriesView>` que recebe um `BrowseDomainConfig`. Categoria expande subcategoria, subcategoria expande a lista de questões, que ocupa toda a largura da página. Nunca criar wrappers de accordion aninhado por domínio — o generic já cobre.
+Página unificada que agrega **todas** as questões salvas do usuário — certificações e concursos — em uma lista paginada com busca e filtros multi-select.
 
 ### Arquitetura
 
 ```
-shared/components/browse/
-├── BrowseCategoriesView.tsx          ← orchestrator: search + accordion aninhado + estado
-├── BrowseQuestionsToolbar.tsx        ← counter + select-all + trash bulk (dentro de cada subcategoria)
-└── types.ts                          ← BrowseCategoryNode, BrowseDomainConfig<T>
+app/(workspace)/question-bank/
+├── page.tsx                          ← página principal (client component)
+└── components/
+    ├── QuestionBankCard.tsx          ← card sempre expandido: enunciado + opções + chips + toggle de explicações
+    └── QuestionBankFiltersBar.tsx    ← barra de filtros em 2 linhas + hasActiveFilters + EMPTY_FILTERS
 
-shared/browse-configs/
-├── certificationBrowseConfig.ts      ← adapter para BrowseSummary + endpoints de certs
-└── publicExamBrowseConfig.ts         ← adapter para PublicExamBrowseSummary + endpoints de concursos
+app/api/question-bank/
+├── route.ts                          ← GET: busca unificada com todos os filtros + paginação
+├── topics/route.ts                   ← GET: tópicos/matérias distintos do usuário (para o select)
+└── sources/route.ts                  ← GET: certificações/concursos distintos do usuário (para o select)
+
+features/services/question-bank.service.ts   ← QuestionBankService: queries Question + PublicExamQuestion
 ```
 
-### Como consumir
+### Filtros disponíveis
 
-Diretamente da `page.tsx`:
+| Filtro | Tipo | Campo DB |
+|---|---|---|
+| `search` | texto livre (debounced via `useDeferredValue`) | `text CONTAINS` |
+| `source` | multi-select (nomes de certif./concurso) | `certificationTitle IN` / `publicExamName IN` |
+| `type` | single-select (`certification` / `public_exam`) | filtro de tabela |
+| `topic` | multi-select (tópicos/matérias) | `topic IN` / `subject IN` |
+| `difficulty` | multi-select (`easy`, `medium`, `hard`) | `difficulty IN` |
+| `hasAnswer` + `hasExplanation` | single-select combinado | `answer isNot null` / `explanations count > 0` |
 
-```tsx
-'use client';
-import { BrowseCategoriesView } from '@/shared/components/browse/BrowseCategoriesView';
-import { certificationBrowseConfig } from '@/shared/browse-configs/certificationBrowseConfig';
+### Serialização de arrays (Axios)
 
-// dentro do JSX da aba Browse:
-<BrowseCategoriesView
-  config={certificationBrowseConfig}
-  embedded
-  onGenerateClick={() => setSelectedTab('generate')}
-/>
+`lib/bff.api.ts` configura `paramsSerializer: { indexes: null }` para que arrays sejam serializados sem colchetes (`difficulty=easy&difficulty=hard`). O route handler usa `searchParams.getAll('difficulty')` para ler múltiplos valores. **Não remover o `paramsSerializer`** — sem ele os arrays chegam como `difficulty[]=easy` e o `getAll` retorna vazio.
+
+### Delete de questões (`BrowseQuestionsService`)
+
+`features/services/browse.service.ts` — o método `deleteQuestion` deleta dependências antes de deletar a questão, porque o schema SQLite não tem `onDelete: Cascade` em `Option`, `Answer` e `Explanation`:
+
+```ts
+// Ordem obrigatória para evitar FK constraint:
+await prisma.explanation.deleteMany({ where: { answer: { questionId: id } } });
+await prisma.answer.deleteMany({ where: { questionId: id } });
+await prisma.option.deleteMany({ where: { questionId: id } });
+await prisma.question.delete({ where: { id } });
 ```
 
-Para adicionar um terceiro domínio (ex.: cursos livres): criar um novo `BrowseDomainConfig` mapeando `fetchSummary`, `mapSummary`, `fetchQuestions`, `deleteQuestion` e `i18nPrefix`. Nenhum componente novo é necessário.
+O mesmo padrão existe para `PublicExamBrowseQuestionsService` com `publicExamExplanation`, `publicExamAnswer`, `publicExamOption`.
 
-### Delete (single + bulk)
+### Navegação
 
-A lógica de delete está no hook `features/hooks/useBrowseQuestionsDelete.hook.ts`. Ele encapsula estado do modal, `Promise.allSettled` para partial-failures, e toasts. `CategoryQuestionsPanel` já o consome. **Nunca duplicar essa lógica em outros componentes.**
+O item **Banco de Questões** (`faLayerGroup`) está no sidebar como item de topo-level, entre Dashboard e a seção Certificações. As páginas `/certifications/questions` e `/public-exams/questions` foram simplificadas para **somente geração** — a aba "Biblioteca" foi removida, e a navegação para ver questões salvas passa pelo Banco de Questões.
 
-Comportamento:
-- **Single delete** — cada linha tem um trash inline (visível no hover no desktop, sempre visível no mobile). Clique → modal `browse.singleDeleteConfirm{Title,Body}`.
-- **Bulk delete** — checkbox por linha (Gmail-style, aparece no hover) + toolbar com trash. Clique → modal `browse.bulkDeleteConfirm{Title,Body}`.
+### API connectors
 
-### i18n prefix
-
-Cada `BrowseDomainConfig` declara `i18nPrefix: 'browse' | 'concurso.browse'`. O view resolve `${prefix}.title`, `${prefix}.subtitle`, `${prefix}.searchPlaceholder`, `${prefix}.noQuestions*`, `${prefix}.generateCta`, `${prefix}.searchNoResults`. Chaves de baixo-nível (`browse.hasAnswer`, `browse.optionsSectionLabel`, `browse.bulkDeleteConfirm*`, etc.) são **compartilhadas** entre os domínios e ficam no namespace `browse.*`.
-
-### Regras visuais reforçadas
-
-- Row hover: `hover:bg-content2` — nunca `bg-primary/5` ou `bg-content2` estático (colide com chips `default flat`).
-- Row selecionada / expandida: `bg-primary/10 border-l-2 border-l-primary`.
-- Row com checkbox marcado (não expandida): `bg-primary/10`.
-- Tags padronizadas: todas usam `<Chip size="sm" variant="flat">`; a hierarquia visual vem da cor (colorido = status; default = neutros como difficulty/topic).
-- Search input sticky no topo, com filtro case+diacritic-insensitive (`.normalize('NFD')`) e `useDeferredValue` para não travar a árvore em queries longas.
+```ts
+getQuestionBank(params: QuestionBankParams): Promise<QuestionBankResponse>
+getQuestionBankTopics(type?): Promise<string[]>
+getQuestionBankSources(type?): Promise<string[]>
+```
 
 ---
+
+## Padrão de browse — REMOVIDO
 
 ## Estrutura de páginas e componentes
 
@@ -553,13 +561,13 @@ Não usa `<PageHeader>` — aplica seu próprio fundo `bg-background` para alinh
 
 #### Questions (`certifications/questions/`)
 
-Página unificada (HeroUI Tabs) com aba **Gerar** (form + lista de questões geradas) e aba **Biblioteca** (browse das questões salvas). Estado da aba persiste em `?tab=generate|browse` para deep-link.
+Página de **geração de questões** — sem aba de biblioteca (a biblioteca passou para o Banco de Questões em `/question-bank`).
 
 | Arquivo | Papel |
 |---|---|
-| `page.tsx` | Providers (`CertificationsProvider` + `QuizProvider`) + Tabs + sync com `?tab=`. Aba Browse renderiza `<BrowseCategoriesView config={certificationBrowseConfig} embedded onGenerateClick={...} />` diretamente |
+| `page.tsx` | Providers (`CertificationsProvider` + `QuizProvider`) + layout direto (sem tabs). `onSaved` mostra banner com link para Simulados e chama `refreshUsage()` |
 | `components/QuestionGeneratorForm.tsx` | Form de configuração (certification, topic, count) |
-| `components/GeneratedQuestionsList.tsx` | Lista com select-all, salvar/descartar; `onSaved` auto-troca para Biblioteca |
+| `components/GeneratedQuestionsList.tsx` | Lista com select-all, salvar/descartar |
 | `components/GeneratedQuestionsCard.tsx` | Card individual: texto + opções (Listbox) + checkbox |
 
 #### Configure Certification (`certifications/configure/`)
@@ -599,13 +607,13 @@ Página unificada (HeroUI Tabs) com aba **Gerar** (form + lista de questões ger
 
 #### Questions (`public-exams/questions/`)
 
-Página unificada (HeroUI Tabs) com aba **Gerar** e aba **Biblioteca**, mesmo padrão do escopo de certificações.
+Página de **geração de questões** — sem aba de biblioteca (a biblioteca passou para o Banco de Questões em `/question-bank`). Mesmo padrão do escopo de certificações.
 
 | Arquivo | Papel |
 |---|---|
-| `page.tsx` | `PublicExamsProvider` + Tabs + sync com `?tab=`. Aba Browse renderiza `<BrowseCategoriesView config={publicExamBrowseConfig} embedded onGenerateClick={...} />` diretamente |
+| `page.tsx` | `PublicExamsProvider` + layout direto (sem tabs). `onSaved` mostra banner com link para Simulados |
 | `components/PublicExamQuestionGeneratorForm.tsx` | Form de configuração (concurso, assunto, count) |
-| `components/GeneratedPublicExamQuestionsList.tsx` | Lista com select-all, salvar/descartar; `onSaved` auto-troca para Biblioteca |
+| `components/GeneratedPublicExamQuestionsList.tsx` | Lista com select-all, salvar/descartar |
 | `components/GeneratedPublicExamQuestionsCard.tsx` | Card individual de questão de concurso |
 
 #### Simulados (`public-exams/simulados/`)
