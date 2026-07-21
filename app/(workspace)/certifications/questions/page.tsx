@@ -1,8 +1,6 @@
 'use client';
 
-import { Key, Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Tab, Tabs } from '@heroui/tabs';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Progress } from '@heroui/progress';
 import { Card, CardBody } from '@heroui/card';
 import { Button } from '@heroui/button';
@@ -10,8 +8,6 @@ import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleCheck, faCircleInfo, faXmark } from '@fortawesome/free-solid-svg-icons';
 
-import { QuestionsBrowseView } from '@/shared/components/browse/QuestionsBrowseView';
-import { certificationBrowseConfig } from '@/shared/browse-configs/certificationBrowseConfig';
 import { GeneratedQuestionsList } from './components/GeneratedQuestionsList';
 import { QuestionGeneratorForm } from './components/QuestionGeneratorForm';
 
@@ -29,10 +25,9 @@ import { useTwoPhaseGeneration } from '@/features/hooks/useTwoPhaseGeneration.ho
 import { getQuestions } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
+
 function CertificationsQuestionsPageContent() {
   const { t } = useTranslation();
-  const searchParams = useSearchParams();
-  const [selectedTab, setSelectedTab] = useState<Key>(searchParams.get('tab') ?? 'generate');
   const { state, replaceQuiz, setAIquestions } = useQuizContext();
   const { certifications, isLoading } = useCertificationsContext();
   const { refreshUsage } = useUsageContext();
@@ -63,10 +58,7 @@ function CertificationsQuestionsPageContent() {
       setProgress(100);
       setTimeout(() => {
         replaceQuiz({
-          meta: {
-            topic: questions[0]?.topic ?? '',
-            num_questions: generatingCount,
-          },
+          meta: { topic: questions[0]?.topic ?? '', num_questions: generatingCount },
           questions: [],
           answers: {},
           isFinished: false,
@@ -81,9 +73,7 @@ function CertificationsQuestionsPageContent() {
   );
 
   const onSecondBatch = useCallback(
-    (allQuestions: AIQuestion[]) => {
-      setAIquestions(allQuestions, null);
-    },
+    (allQuestions: AIQuestion[]) => { setAIquestions(allQuestions, null); },
     [setAIquestions],
   );
 
@@ -115,47 +105,49 @@ function CertificationsQuestionsPageContent() {
   };
 
   useEffect(() => {
-    if (generationParams && isGenerating) {
-      generate();
-    }
+    if (generationParams && isGenerating) generate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [generationParams]);
 
   return (
     <PageHeader subtitle={t('certification.questionsPageSubtitle')} title={t('certification.questionsPageTitle')}>
-      <div className="flex w-full flex-col">
-        <Tabs
-          aria-label={t('certification.questionsPageTitle')}
-          classNames={{
-            tabList: 'bg-content2 border border-default-200 rounded-xl p-1 gap-1',
-            tab: 'rounded-xl text-default-400 data-[selected=true]:text-foreground data-[selected=true]:font-semibold transition-colors duration-200',
-            tabContent: 'group-data-[selected=true]:text-foreground',
-            cursor: 'bg-primary rounded-xl',
-            panel: 'pt-4',
-          }}
-          selectedKey={selectedTab as string}
-          onSelectionChange={setSelectedTab}
-        >
-          <Tab key="browse" title={t('certification.questionsTabLibrary')}>
-            {renderBrowseTab()}
-          </Tab>
-          <Tab key="generate" title={t('certification.questionsTabGenerate')}>
-            {renderGenerateTab()}
-          </Tab>
-        </Tabs>
+      <div className="flex w-full flex-col gap-4">
+        {renderSimuladosBanner()}
+        {renderContent()}
       </div>
     </PageHeader>
   );
 
-  function renderBrowseTab() {
+  function renderContent() {
+    if (isLoading) return <SkeletonListLoader />;
+
+    if (certifications.length === 0) {
+      return (
+        <EmptyState
+          action={{ href: '/certifications/configure', label: t('certification.tabNew') }}
+          description={t('certification.noCertificationsDescription')}
+          title={t('certification.noCertificationsTitle')}
+        />
+      );
+    }
+
     return (
       <>
-        {renderSimuladosBanner()}
-        <QuestionsBrowseView
-          config={certificationBrowseConfig}
-          embedded
-          onGenerateClick={() => setSelectedTab('generate')}
-        />
+        <QuestionGeneratorForm onGenerationStart={onGenerationStart} />
+        {(isGenerating || (state?.aiQuestions?.length ?? 0) > 0) && renderSelectionHint()}
+        {isGenerating && renderGenerationProgress()}
+        {!isGenerating && (state?.aiQuestions?.length ?? 0) > 0 && (
+          <GeneratedQuestionsList
+            isLoadingMore={isSecondPhaseLoading}
+            questions={state?.aiQuestions ?? []}
+            remainingCount={remainingCount}
+            onSaved={() => {
+              abort();
+              refreshUsage();
+              setShowSimuladosBanner(true);
+            }}
+          />
+        )}
       </>
     );
   }
@@ -163,20 +155,14 @@ function CertificationsQuestionsPageContent() {
   function renderSimuladosBanner() {
     if (!showSimuladosBanner) return null;
     return (
-      <Card className="border border-success-200 bg-success-50 dark:bg-success-900/20 shadow-none mb-4">
+      <Card className="border border-success-200 bg-success-50 dark:bg-success-900/20 shadow-none">
         <CardBody className="flex flex-row items-center justify-between gap-3 py-3 px-4">
           <div className="flex items-center gap-2">
             <FontAwesomeIcon className="text-success shrink-0" icon={faCircleCheck} />
             <p className="text-sm text-default-700">{t('generate.questionsReadyHint')}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Button
-              as={Link}
-              href="/certifications/simulados"
-              size="sm"
-              variant="bordered"
-              className={buttonStyles.secondary}
-            >
+            <Button as={Link} className={buttonStyles.secondary} href="/certifications/simulados" size="sm" variant="bordered">
               {t('generate.goToSimulados')}
             </Button>
             <Button
@@ -195,55 +181,17 @@ function CertificationsQuestionsPageContent() {
     );
   }
 
-  function renderGenerateTab() {
-    if (isLoading) return <SkeletonListLoader />;
-
-    if (certifications.length === 0) {
-      return (
-        <EmptyState
-          action={{
-            href: '/certifications/configure',
-            label: t('certification.tabNew'),
-          }}
-          description={t('certification.noCertificationsDescription')}
-          title={t('certification.noCertificationsTitle')}
-        />
-      );
-    }
-
-    return (
-      <>
-        <QuestionGeneratorForm onGenerationStart={onGenerationStart} />
-        {(isGenerating || (state?.aiQuestions?.length ?? 0) > 0) && renderSelectionHint()}
-        {isGenerating && renderGenerationProgress()}
-        {!isGenerating && (state?.aiQuestions?.length ?? 0) > 0 && (
-          <GeneratedQuestionsList
-            questions={state?.aiQuestions ?? []}
-            isLoadingMore={isSecondPhaseLoading}
-            remainingCount={remainingCount}
-            onSaved={() => {
-              abort();
-              refreshUsage();
-              setShowSimuladosBanner(true);
-              setSelectedTab('browse');
-            }}
-          />
-        )}
-      </>
-    );
-  }
-
   function renderGenerationProgress() {
     return (
-      <div className="flex flex-col gap-4 mt-8">
+      <div className="flex flex-col gap-4 mt-4">
         <Progress
           aria-label={t('busy.generating')}
           classNames={{ label: 'text-xs font-extrabold', value: 'text-xs font-extrabold' }}
           color="primary"
           label={progress < 75 ? t('busy.generating') : t('busy.almostDone')}
           showValueLabel
+          size="sm"
           value={progress}
-          size='sm'
         />
         {progress >= 75 && <SkeletonListLoader count={Math.min(5, generatingCount)} height="h-24" />}
       </div>
@@ -252,9 +200,8 @@ function CertificationsQuestionsPageContent() {
 
   function renderSelectionHint() {
     if (!showHint) return null;
-
     return (
-      <Card className="bg-primary-50/60 dark:bg-primary-900/20 shadow-none mt-4">
+      <Card className="bg-primary-50/60 dark:bg-primary-900/20 shadow-none">
         <CardBody className="flex flex-row items-center gap-3 py-3 px-4">
           <FontAwesomeIcon className="text-primary mt-0.5 shrink-0" icon={faCircleInfo} />
           <p className="text-xs text-default-700 flex-1">{t('generate.selectionHint')}</p>

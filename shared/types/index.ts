@@ -537,3 +537,37 @@ export interface CertSimuladoResult {
   questions: CertSimuladoQuestion[];
   topicBreakdown: { topicName: string; correct: number; total: number }[];
 }
+
+export interface UnifiedQuestion {
+  id: number;
+  type: 'certification' | 'public_exam';
+  text: string;
+  difficulty: string;
+  topic: string;
+  sourceLabel: string;
+  options: Record<string, string>;
+  answer: {
+    correctOptions: string[];
+    explanations: Record<string, string>;
+  } | null;
+  createdAt: string;
+}
+
+export interface QuestionBankParams {
+  type?: 'certification' | 'public_exam' | 'all';
+  search?: string;
+  source?: string[];
+  topic?: string[];
+  difficulty?: string[];
+  hasAnswer?: boolean;
+  hasExplanation?: boolean;
+  page: number;
+  pageSize: number;
+}
+
+export interface QuestionBankResponse {
+  questions: UnifiedQuestion[];
+  total: number;
+  page: number;
+  pageSize: number;
+}

@@ -1,8 +1,6 @@
 'use client';
 
-import { Key, Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Tab, Tabs } from '@heroui/tabs';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Progress } from '@heroui/progress';
 import { Card, CardBody } from '@heroui/card';
 import { Button } from '@heroui/button';
@@ -10,8 +8,6 @@ import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleCheck, faCircleInfo, faXmark } from '@fortawesome/free-solid-svg-icons';
 
-import { QuestionsBrowseView } from '@/shared/components/browse/QuestionsBrowseView';
-import { publicExamBrowseConfig } from '@/shared/browse-configs/publicExamBrowseConfig';
 import { GeneratedPublicExamQuestionsList } from './components/GeneratedPublicExamQuestionsList';
 import { PublicExamQuestionGeneratorForm } from './components/PublicExamQuestionGeneratorForm';
 
@@ -30,8 +26,6 @@ import { notify } from '@/shared/lib/notify';
 
 function PublicExamsQuestionsPageContent() {
   const { t } = useTranslation();
-  const searchParams = useSearchParams();
-  const [selectedTab, setSelectedTab] = useState<Key>(searchParams.get('tab') ?? 'browse');
   const [questions, setQuestions] = useState<AIPublicExamQuestion[]>([]);
   const { publicExams, isLoading } = usePublicExamsContext();
   const { refreshUsage } = useUsageContext();
@@ -80,12 +74,7 @@ function PublicExamsQuestionsPageContent() {
 
   const { isSecondPhaseLoading, generate, abort } = useTwoPhaseGeneration<PublicExamQuestionParams, AIPublicExamQuestion>({
     generateFn: getPublicExamQuestions,
-    params: generationParams ?? {
-      public_exam_name: '',
-      exam_board_name: '',
-      subject_name: '',
-      num_questions: '5',
-    },
+    params: generationParams ?? { public_exam_name: '', exam_board_name: '', subject_name: '', num_questions: '5' },
     totalCount: generatingCount,
     onFirstBatch,
     onSecondBatch,
@@ -102,47 +91,50 @@ function PublicExamsQuestionsPageContent() {
   };
 
   useEffect(() => {
-    if (generationParams && isGenerating) {
-      generate();
-    }
+    if (generationParams && isGenerating) generate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [generationParams]);
 
   return (
     <PageHeader subtitle={t('concurso.questionsPageSubtitle')} title={t('concurso.questionsPageTitle')}>
-      <div className="flex w-full flex-col">
-        <Tabs
-          aria-label={t('concurso.questionsPageTitle')}
-          classNames={{
-            tabList: 'bg-content2 border border-default-200 rounded-xl p-1 gap-1',
-            tab: 'rounded-xl text-default-400 data-[selected=true]:text-foreground data-[selected=true]:font-semibold transition-colors duration-200',
-            tabContent: 'group-data-[selected=true]:text-foreground',
-            cursor: 'bg-primary rounded-xl',
-            panel: 'pt-4',
-          }}
-          selectedKey={selectedTab as string}
-          onSelectionChange={setSelectedTab}
-        >
-          <Tab key="browse" title={t('concurso.questionsTabLibrary')}>
-            {renderBrowseTab()}
-          </Tab>
-          <Tab key="generate" title={t('concurso.questionsTabGenerate')}>
-            {renderGenerateTab()}
-          </Tab>
-        </Tabs>
+      <div className="flex w-full flex-col gap-4">
+        {renderSimuladosBanner()}
+        {renderContent()}
       </div>
     </PageHeader>
   );
 
-  function renderBrowseTab() {
+  function renderContent() {
+    if (isLoading) return <SkeletonListLoader />;
+
+    if (publicExams.length === 0) {
+      return (
+        <EmptyState
+          action={{ href: '/public-exams/configure', label: t('concurso.tabNew') }}
+          description={t('concurso.noExamsDescription')}
+          title={t('concurso.noExamsTitle')}
+        />
+      );
+    }
+
     return (
       <>
-        {renderSimuladosBanner()}
-        <QuestionsBrowseView
-          config={publicExamBrowseConfig}
-          embedded
-          onGenerateClick={() => setSelectedTab('generate')}
-        />
+        <PublicExamQuestionGeneratorForm onGenerationStart={onGenerationStart} />
+        {(isGenerating || questions.length > 0) && renderSelectionHint()}
+        {isGenerating && renderGenerationProgress()}
+        {!isGenerating && questions.length > 0 && (
+          <GeneratedPublicExamQuestionsList
+            isLoadingMore={isSecondPhaseLoading}
+            questions={questions}
+            remainingCount={remainingCount}
+            setQuestions={setQuestions}
+            onSaved={() => {
+              abort();
+              refreshUsage();
+              setShowSimuladosBanner(true);
+            }}
+          />
+        )}
       </>
     );
   }
@@ -150,7 +142,7 @@ function PublicExamsQuestionsPageContent() {
   function renderSimuladosBanner() {
     if (!showSimuladosBanner) return null;
     return (
-      <Card className="border border-success-200 bg-success-50 dark:bg-success-900/20 shadow-none mb-4">
+      <Card className="border border-success-200 bg-success-50 dark:bg-success-900/20 shadow-none">
         <CardBody className="flex flex-row items-center justify-between gap-3 py-3 px-4">
           <div className="flex items-center gap-2">
             <FontAwesomeIcon className="text-success shrink-0" icon={faCircleCheck} />
@@ -176,45 +168,6 @@ function PublicExamsQuestionsPageContent() {
     );
   }
 
-  function renderGenerateTab() {
-    if (isLoading) return <SkeletonListLoader />;
-
-    if (publicExams.length === 0) {
-      return (
-        <EmptyState
-          action={{
-            href: '/public-exams/configure',
-            label: t('concurso.tabNew'),
-          }}
-          description={t('concurso.noExamsDescription')}
-          title={t('concurso.noExamsTitle')}
-        />
-      );
-    }
-
-    return (
-      <>
-        <PublicExamQuestionGeneratorForm onGenerationStart={onGenerationStart} />
-        {(isGenerating || questions.length > 0) && renderSelectionHint()}
-        {isGenerating && renderGenerationProgress()}
-        {!isGenerating && questions.length > 0 && (
-          <GeneratedPublicExamQuestionsList
-            isLoadingMore={isSecondPhaseLoading}
-            questions={questions}
-            remainingCount={remainingCount}
-            setQuestions={setQuestions}
-            onSaved={() => {
-              abort();
-              refreshUsage();
-              setShowSimuladosBanner(true);
-              setSelectedTab('browse');
-            }}
-          />
-        )}
-      </>
-    );
-  }
-
   function renderGenerationProgress() {
     return (
       <div className="flex flex-col gap-4 mt-4">
@@ -233,9 +186,8 @@ function PublicExamsQuestionsPageContent() {
 
   function renderSelectionHint() {
     if (!showHint) return null;
-
     return (
-      <Card className="border border-primary-100 bg-primary-50/60 dark:bg-primary-900/20 shadow-none mt-4">
+      <Card className="border border-primary-100 bg-primary-50/60 dark:bg-primary-900/20 shadow-none">
         <CardBody className="flex flex-row items-start gap-3 py-3 px-4">
           <FontAwesomeIcon className="text-primary mt-0.5 shrink-0" icon={faCircleInfo} />
           <p className="text-sm text-default-700 flex-1">{t('generate.selectionHint')}</p>

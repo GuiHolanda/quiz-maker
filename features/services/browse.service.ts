@@ -15,6 +15,7 @@ interface OwnerCheckDelegate {
 
 abstract class BaseBrowseService {
   protected abstract getDelegate(): OwnerCheckDelegate;
+  protected abstract deleteRelated(id: number): Promise<void>;
 
   async deleteQuestion(id: number, userId: string): Promise<void> {
     const question = await this.getDelegate().findUnique({ where: { id } });
@@ -25,6 +26,7 @@ abstract class BaseBrowseService {
     if (question.userId !== userId) {
       throw Object.assign(new Error('Forbidden'), { status: 403 });
     }
+    await this.deleteRelated(id);
     await this.getDelegate().delete({ where: { id } });
   }
 }
@@ -34,6 +36,12 @@ abstract class BaseBrowseService {
 export class BrowseQuestionsService extends BaseBrowseService {
   protected getDelegate(): OwnerCheckDelegate {
     return prisma.question as unknown as OwnerCheckDelegate;
+  }
+
+  protected async deleteRelated(id: number): Promise<void> {
+    await prisma.explanation.deleteMany({ where: { answer: { questionId: id } } });
+    await prisma.answer.deleteMany({ where: { questionId: id } });
+    await prisma.option.deleteMany({ where: { questionId: id } });
   }
 
   async getQuestions(params: {
@@ -96,6 +104,12 @@ export class BrowseQuestionsService extends BaseBrowseService {
 export class PublicExamBrowseQuestionsService extends BaseBrowseService {
   protected getDelegate(): OwnerCheckDelegate {
     return prisma.publicExamQuestion as unknown as OwnerCheckDelegate;
+  }
+
+  protected async deleteRelated(id: number): Promise<void> {
+    await prisma.publicExamExplanation.deleteMany({ where: { answer: { questionId: id } } });
+    await prisma.publicExamAnswer.deleteMany({ where: { questionId: id } });
+    await prisma.publicExamOption.deleteMany({ where: { questionId: id } });
   }
 
   async getQuestions(params: {
