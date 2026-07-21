@@ -21,7 +21,7 @@ function SimuladosPageContent() {
     <PageHeader subtitle={t('simulado.pageSubtitle')} title={t('simulado.pageTitle')}>
       <div className="flex w-full flex-col">
         <Tabs
-          aria-label={t('simulado.pageTitle')}
+          aria-label="Simulados tabs"
           classNames={{
             tabList: 'bg-content2 border border-default-200 rounded-xl p-1 gap-1',
             tab: 'text-default-400 data-[selected=true]:text-foreground data-[selected=true]:font-semibold',

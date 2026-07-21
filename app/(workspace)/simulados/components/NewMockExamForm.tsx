@@ -257,12 +257,16 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
             return (
               <div
                 key={entry.subjectName}
-                className={`flex items-center gap-3 px-4 py-3 ${!isLast ? 'border-b border-default-200' : ''} ${isInsufficient ? 'border-l-2 border-l-danger bg-danger/5' : ''}`}
+                className={`flex items-center gap-3 px-4 py-3 ${!isLast ? 'border-b border-default-200' : ''} ${isInsufficient ? 'border border-danger bg-danger/5 rounded-lg' : ''}`}
               >
-                <span className="text-sm text-foreground flex-1 min-w-0 truncate">{entry.subjectName}</span>
-                <span className={`text-xs shrink-0 ${isInsufficient ? 'text-danger' : 'text-default-400'}`}>
-                  {t('simulado.availableQuestions', { count: available ?? 0 })}
-                </span>
+                <div className="flex flex-col flex-1 min-w-0">
+                  <span className="text-sm text-foreground truncate">{entry.subjectName}</span>
+                  {!entry.isTemporary && (
+                    <span className={`text-xs ${isInsufficient ? 'text-danger' : 'text-default-400'}`}>
+                      {t('simulado.availableQuestions', { count: available ?? 0 })}
+                    </span>
+                  )}
+                </div>
                 {isInsufficient && (
                   <Button
                     className={buttonStyles.primarySm}

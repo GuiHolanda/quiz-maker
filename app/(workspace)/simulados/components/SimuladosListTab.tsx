@@ -9,7 +9,7 @@ import { Progress } from '@heroui/progress';
 import { Select, SelectItem } from '@heroui/select';
 import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSliders, faXmark, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+import { faSliders, faXmark, faMagnifyingGlass, faTrash } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useCertSimuladosContext } from '@/features/providers/certSimulados.provider';
@@ -26,11 +26,10 @@ import {
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { notify } from '@/shared/lib/notify';
-import { CertSimuladoListItem, MockExamListItem } from '@/shared/types';
+import { CertSimuladoListItem, MockExamListItem, SimuladoType } from '@/shared/types';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { inputProperties } from '@/config/constants/inputStyles';
 
-type SimuladoType = 'certification' | 'concurso';
 type TypeFilter = 'all' | SimuladoType;
 type StatusFilter = 'all' | 'answered' | 'pending' | 'in_progress';
 type CountFilter = 'all' | 'upTo10' | '11to20' | '21to40' | '41plus';
@@ -192,7 +191,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
     } catch (e: unknown) {
       notify.error(
         t('toast.error'),
-        (e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t('toast.somethingWrong'),
+        (e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t('toast.somethingWrong')
       );
       setStartingKey(null);
     }
@@ -216,7 +215,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
     } catch (e: unknown) {
       notify.error(
         t('toast.error'),
-        (e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t('toast.somethingWrong'),
+        (e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t('toast.somethingWrong')
       );
     } finally {
       setIsDeleting(false);
@@ -323,7 +322,9 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
         </div>
 
         {/* Row 2: type + count + status */}
-        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${showTypeFilter ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
+        <div
+          className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${showTypeFilter ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}
+        >
           {showTypeFilter && (
             <Select
               {...inputProperties.select}
@@ -390,12 +391,9 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
     return (
       <div
         key={s.key}
+        data-testid="simulado-card"
         className={`bg-content1 border rounded-xl p-4 flex flex-col transition-all duration-300 ${
-          isStarting
-            ? 'border-primary'
-            : startingKey !== null
-              ? 'border-default-200 opacity-40'
-              : 'border-default-200'
+          isStarting ? 'border-primary' : startingKey !== null ? 'border-default-200 opacity-40' : 'border-default-200'
         }`}
       >
         <div className="flex items-start justify-between gap-2">
@@ -406,7 +404,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
             <Chip color={s.type === 'certification' ? 'primary' : 'secondary'} size="sm" variant="flat">
               {s.type === 'certification' ? t('simulado.typeCertification') : t('simulado.typeConcurso')}
             </Chip>
-            <Chip color={isInProgress ? 'warning' : isAnswered ? 'success' : 'warning'} size="sm" variant="flat">
+            <Chip color={isInProgress ? 'warning' : isAnswered ? 'success' : 'default'} size="sm" variant="flat">
               {isInProgress
                 ? t('simulado.statusInProgress')
                 : isAnswered
@@ -430,7 +428,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
             <Progress isIndeterminate aria-label={t('simulado.preparingAttempt')} color="primary" size="sm" />
           </div>
         ) : (
-          <div className="flex flex-wrap justify-between gap-2 mt-8">
+          <div className="flex flex-wrap justify-between gap-2 border-t border-default-100 mt-4 pt-4">
             <div className="flex gap-2">
               <Button
                 className={buttonStyles.primarySm}
@@ -451,8 +449,15 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
                 </Button>
               )}
             </div>
-            <Button className={buttonStyles.danger} size="sm" onPress={() => setDeleteTarget(s)}>
-              {t('simulado.delete')}
+            <Button
+              isIconOnly
+              aria-label={t('simulado.delete')}
+              className={buttonStyles.iconOnly.danger}
+              size="sm"
+              variant="light"
+              onPress={() => setDeleteTarget(s)}
+            >
+              <FontAwesomeIcon icon={faTrash} />
             </Button>
           </div>
         )}
@@ -469,7 +474,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
         </ModalHeader>
         <ModalBody>
           {s.attempts.length === 0 ? (
-            <p className="text-default-400 text-sm">{t('simulado.noSimulados')}</p>
+            <p className="text-default-400 text-sm">{t('simulado.noAttempts')}</p>
           ) : (
             <div className="flex flex-col gap-2">{s.attempts.map((a, i) => renderAttemptRow(s, a, i))}</div>
           )}
