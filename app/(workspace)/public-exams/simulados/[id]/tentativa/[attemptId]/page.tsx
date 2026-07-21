@@ -69,7 +69,7 @@ export default function SimuladoTentativaPage() {
       clearProgress();
       setShowDiscardConfirm(false);
       bypassNext();
-      router.push('/public-exams/simulados');
+      router.push('/simulados');
     } catch (e: unknown) {
       notify.error(
         t('toast.error'),
@@ -94,7 +94,7 @@ export default function SimuladoTentativaPage() {
       return;
     }
     bypassNext();
-    router.push('/public-exams/simulados');
+    router.push('/simulados');
   }
 
   async function handleFinish() {

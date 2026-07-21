@@ -149,7 +149,7 @@ function PublicExamsQuestionsPageContent() {
             <p className="text-sm text-default-700">{t('generate.questionsReadyHint')}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Button as={Link} className={buttonStyles.secondary} href="/public-exams/simulados" size="sm" variant="bordered">
+            <Button as={Link} className={buttonStyles.secondary} href="/simulados" size="sm" variant="bordered">
               {t('generate.goToSimulados')}
             </Button>
             <Button

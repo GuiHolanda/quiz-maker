@@ -166,7 +166,7 @@ export default function DashboardPage() {
                 </NextLink>
                 <NextLink
                   className="flex items-center gap-2 border border-default-200 text-foreground hover:border-default-400 font-semibold text-xs py-2.5 px-4 rounded-lg transition-colors"
-                  href="/certifications/simulados"
+                  href="/simulados"
                 >
                   <FontAwesomeIcon className="text-default-400 text-xs" icon={faFileContract} />
                   {t('dashboard.mockExam')}

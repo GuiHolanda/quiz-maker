@@ -30,13 +30,11 @@ import { SIDEBAR_COLLAPSED_LOCAL_STORAGE_KEY, SIDEBAR_COLLAPSED_COOKIE_KEY } fro
 const CERTIFICATION_ITEMS = [
   { labelKey: 'nav.configureCertification', href: '/certifications/configure', icon: faGear },
   { labelKey: 'nav.generateQuestions', href: '/certifications/questions', icon: faWandMagicSparkles },
-  { labelKey: 'nav.simulados', href: '/certifications/simulados', icon: faPlay },
 ] as const;
 
 const CONCURSO_ITEMS = [
   { labelKey: 'nav.configureConcurso', href: '/public-exams/configure', icon: faGear },
   { labelKey: 'nav.generateQuestions', href: '/public-exams/questions', icon: faWandMagicSparkles },
-  { labelKey: 'nav.simulados', href: '/public-exams/simulados', icon: faPlay },
 ] as const;
 
 type ExpandedSection = 'certifications' | 'public-exams' | null;
@@ -206,6 +204,17 @@ export function Sidebar({ defaultCollapsed = false }: { readonly defaultCollapse
         >
           <FontAwesomeIcon className="w-4 h-4 shrink-0" icon={faLayerGroup} />
           {!collapsed && t('nav.questionBank')}
+        </NextLink>
+
+        {/* Mock Exams */}
+        <NextLink
+          className={navLinkClass(pathname.startsWith('/simulados'), collapsed)}
+          href="/simulados"
+          title={collapsed ? t('nav.simulados') : undefined}
+          onClick={closeDrawer}
+        >
+          <FontAwesomeIcon className="w-4 h-4 shrink-0" icon={faPlay} />
+          {!collapsed && t('nav.simulados')}
         </NextLink>
 
         {/* Certifications section */}

@@ -15,13 +15,13 @@ export const siteConfig = {
     },
     {
       label: 'nav.makeYourOwnQuiz',
-      href: '/certifications/simulados',
+      href: '/simulados',
     },
   ],
   navMenuItems: [
     {
       label: 'nav.quiz',
-      href: '/certifications/simulados',
+      href: '/simulados',
     },
     {
       label: 'nav.questions',

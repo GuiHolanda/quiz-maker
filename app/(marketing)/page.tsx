@@ -266,7 +266,7 @@ function HeroSection() {
               <Button
                 as={NextLink}
                 className="font-semibold text-sm bg-accent hover:bg-electric text-navy-950 rounded tracking-wide transition-colors duration-200"
-                href={session?.user ? '/certifications/simulados' : '/register'}
+                href={session?.user ? '/simulados' : '/register'}
                 size="lg"
               >
                 {t('homepage.cta.startFreeTrial')}
@@ -1152,7 +1152,7 @@ function CtaSection() {
           <Button
             as={NextLink}
             className="font-semibold text-sm bg-accent hover:bg-electric text-navy-950 rounded tracking-wide w-full sm:w-auto transition-colors duration-200"
-            href={session?.user ? '/certifications/simulados' : '/register'}
+            href={session?.user ? '/simulados' : '/register'}
             size="lg"
           >
             {t('homepage.cta2.generateQuiz')}

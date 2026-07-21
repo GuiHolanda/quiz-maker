@@ -34,13 +34,13 @@ import { buttonStyles } from '@/config/constants/buttonStyles';
 const PRODUCT_ITEMS = [
   { label: 'nav.configureCertification', href: '/certifications/configure' },
   { label: 'nav.questions', href: '/certifications/questions' },
-  { label: 'nav.simulados', href: '/certifications/simulados' },
+  { label: 'nav.simulados', href: '/simulados' },
 ] as const;
 
 const CONCURSO_ITEMS = [
   { label: 'nav.configureConcurso', href: '/public-exams/configure' },
   { label: 'nav.questions', href: '/public-exams/questions' },
-  { label: 'nav.simulados', href: '/public-exams/simulados' },
+  { label: 'nav.simulados', href: '/simulados' },
 ] as const;
 
 const NAV_LINKS = [
