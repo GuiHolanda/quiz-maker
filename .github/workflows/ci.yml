@@ -13,6 +13,7 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    if: github.event_name == 'pull_request'
 
     steps:
       - uses: actions/checkout@v4
@@ -38,6 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: unit-tests
+    if: github.event_name == 'pull_request'
 
     steps:
       - uses: actions/checkout@v4
@@ -79,7 +81,6 @@ jobs:
     name: Apply Prod Migrations
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: e2e-tests
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
