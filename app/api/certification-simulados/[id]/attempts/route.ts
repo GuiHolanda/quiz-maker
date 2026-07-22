@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { CertificationSimuladosService } from '../../certification-simulados.service';
 
 import { auth } from '@/auth';
+import { toApiErrorResponse } from '@/lib/api-error';
 
 const service = new CertificationSimuladosService();
 
@@ -18,8 +19,8 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
     return NextResponse.json({ attempt }, { status: 201 });
   } catch (e: unknown) {
-    const status = (e as { status?: number }).status ?? 500;
+    const { status, ...body } = toApiErrorResponse(e);
 
-    return NextResponse.json({ error: 'Internal Server Error', message: (e as Error).message }, { status });
+    return NextResponse.json(body, { status });
   }
 }

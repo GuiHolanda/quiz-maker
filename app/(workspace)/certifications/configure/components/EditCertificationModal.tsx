@@ -16,7 +16,7 @@ interface EditCertificationModalProps {
   certification: Certification | null;
   isOpen: boolean;
   onClose: () => void;
-  onSaved: (oldKey: string, updated: { label: string; key: string; provider?: string }) => void;
+  onSaved: (oldKey: string, updated: { label: string; key: string; provider?: string; totalQuestions: number; examDurationMinutes?: number; passingScore?: number }) => void;
 }
 
 export function EditCertificationModal({ certification, isOpen, onClose, onSaved }: EditCertificationModalProps) {
@@ -24,6 +24,9 @@ export function EditCertificationModal({ certification, isOpen, onClose, onSaved
   const [label, setLabel] = useState('');
   const [certKey, setCertKey] = useState('');
   const [provider, setProvider] = useState('');
+  const [totalQuestions, setTotalQuestions] = useState('');
+  const [examDurationMinutes, setExamDurationMinutes] = useState('');
+  const [passingScore, setPassingScore] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -31,23 +34,42 @@ export function EditCertificationModal({ certification, isOpen, onClose, onSaved
       setLabel(certification.label);
       setCertKey(certification.key);
       setProvider(certification.provider ?? '');
+      setTotalQuestions(String(certification.totalQuestions));
+      setExamDurationMinutes(certification.examDurationMinutes != null ? String(certification.examDurationMinutes) : '');
+      setPassingScore(certification.passingScore != null ? String(certification.passingScore) : '');
     }
   }, [certification]);
 
   const handleSave = async () => {
     if (!certification || !label.trim() || !certKey.trim()) return;
+    const totalQuestionsNum = parseInt(totalQuestions, 10);
+
+    if (!totalQuestionsNum || totalQuestionsNum < 1) {
+      notify.error(t('toast.validationError'), t('error.totalQuestionsRequired'));
+      return;
+    }
     setSaving(true);
     try {
       await updateCertificationMeta(certification.key, {
         newLabel: label.trim(),
         newKey: certKey.trim(),
         newProvider: provider || null,
+        newTotalQuestions: totalQuestionsNum,
+        newExamDurationMinutes: parseInt(examDurationMinutes, 10) || null,
+        newPassingScore: parseFloat(passingScore) || null,
       });
-      onSaved(certification.key, { label: label.trim(), key: certKey.trim(), provider: provider || undefined });
+      onSaved(certification.key, {
+        label: label.trim(),
+        key: certKey.trim(),
+        provider: provider || undefined,
+        totalQuestions: totalQuestionsNum,
+        examDurationMinutes: parseInt(examDurationMinutes, 10) || undefined,
+        passingScore: parseFloat(passingScore) || undefined,
+      });
       notify.success(t('toast.success'), t('toast.savedSuccessfully', { title: label.trim() }));
       onClose();
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message;
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
 
       notify.error(t('toast.error'), msg || t('toast.failedToUpdate', { name: label.trim() }));
     } finally {
@@ -86,6 +108,42 @@ export function EditCertificationModal({ certification, isOpen, onClose, onSaved
             onChange={(e) => setProvider(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
           />
+          <div className="grid grid-cols-3 gap-4">
+            <Input
+              isRequired
+              {...inputProperties.input}
+              label={t('certification.totalQuestions')}
+              min={1}
+              placeholder="e.g. 65"
+              type="number"
+              value={totalQuestions}
+              onChange={(e) => setTotalQuestions(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+            />
+            <Input
+              {...inputProperties.input}
+              endContent={<span className="text-xs text-default-400 self-center">{t('certification.examDurationUnit')}</span>}
+              label={t('certification.examDuration')}
+              min={1}
+              placeholder="e.g. 130"
+              type="number"
+              value={examDurationMinutes}
+              onChange={(e) => setExamDurationMinutes(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+            />
+            <Input
+              {...inputProperties.input}
+              endContent={<span className="text-xs text-default-400 self-center">%</span>}
+              label={t('certification.passingScore')}
+              max={100}
+              min={0}
+              placeholder="e.g. 72"
+              type="number"
+              value={passingScore}
+              onChange={(e) => setPassingScore(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+            />
+          </div>
         </ModalBody>
         <ModalFooter>
           <Button className={buttonStyles.secondary} variant="bordered" onPress={onClose}>

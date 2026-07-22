@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { MockExamService } from '../../mock-exam.service';
 
 import { auth } from '@/auth';
+import { toApiErrorResponse } from '@/lib/api-error';
 
 export const maxDuration = 300;
 
@@ -20,13 +21,9 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
     return NextResponse.json(result);
   } catch (e: unknown) {
-    const err = e as Error & { status?: number };
+    console.error('mock-exams/[id]/answers failed:', e);
+    const { status, ...body } = toApiErrorResponse(e);
 
-    console.error('mock-exams/[id]/answers failed:', err);
-
-    return NextResponse.json(
-      { error: 'Internal Server Error', message: err.message ?? 'Failed to generate answers' },
-      { status: err.status ?? 500 }
-    );
+    return NextResponse.json(body, { status });
   }
 }

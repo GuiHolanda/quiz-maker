@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
+import { toApiErrorResponse } from '@/lib/api-error';
 import { auth } from '@/auth';
 
 export async function GET() {
@@ -35,9 +36,10 @@ export async function GET() {
     }));
 
     return NextResponse.json({ publicExams });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('Failed to fetch public exams:', err);
+    const { status, ...body } = toApiErrorResponse(err);
 
-    return NextResponse.json({ error: 'Failed to fetch public exams' }, { status: 500 });
+    return NextResponse.json(body, { status });
   }
 }
