@@ -20,7 +20,7 @@ export async function GET() {
       },
     });
 
-    const publicExams = records.map(({ id, name, role, year, totalQuestions, examDurationMinutes, passingScore, examBoard, subjects }) => ({
+    const publicExams = records.map(({ id, name, role, year, totalQuestions, examDurationMinutes, passingScore, createdAt, updatedAt, examBoard, subjects }) => ({
       id,
       name,
       role: role ?? undefined,
@@ -28,6 +28,8 @@ export async function GET() {
       totalQuestions,
       examDurationMinutes: examDurationMinutes ?? undefined,
       passingScore: passingScore ?? undefined,
+      createdAt: createdAt.toISOString(),
+      updatedAt: updatedAt.toISOString(),
       examBoard: { id: examBoard.id, name: examBoard.name, fullName: examBoard.fullName ?? undefined },
       subjects: subjects.map(({ id: sid, name: sname, minQuestions, maxQuestions, topics }) => ({
         id: sid,

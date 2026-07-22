@@ -17,13 +17,15 @@ export async function GET() {
       include: { topics: true },
     });
 
-    const certifications = records.map(({ label, key, provider, totalQuestions, examDurationMinutes, passingScore, topics }) => ({
+    const certifications = records.map(({ label, key, provider, totalQuestions, examDurationMinutes, passingScore, createdAt, updatedAt, topics }) => ({
       label,
       key,
       provider: provider ?? undefined,
       totalQuestions,
       examDurationMinutes: examDurationMinutes ?? undefined,
       passingScore: passingScore ?? undefined,
+      createdAt: createdAt.toISOString(),
+      updatedAt: updatedAt.toISOString(),
       topics: topics.map(({ id, name, minQuestions, maxQuestions }) => ({ id, name, minQuestions, maxQuestions })),
     }));
 
