@@ -1301,6 +1301,7 @@ async function main() {
         data: {
           label: cert.certificationTitle,
           key: cert.certificationKey,
+          totalQuestions: 0,
           topics: {
             create: cert.topics.map((t) => ({
               name: t.name,

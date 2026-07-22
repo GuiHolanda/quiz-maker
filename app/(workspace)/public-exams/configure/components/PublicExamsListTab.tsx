@@ -5,7 +5,16 @@ import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
-import { faPen, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
+import {
+  faBullseye,
+  faCalendar,
+  faClock,
+  faHashtag,
+  faLayerGroup,
+  faPen,
+  faPlus,
+  faTrash,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { EditPublicExamModal } from './EditPublicExamModal';
 
@@ -18,6 +27,7 @@ import { deletePublicExam } from '@/features/connectors';
 import { PublicExam, PublicExamSubject, PublicExamTopic, ExamBoard } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
+import { RelativeDate } from '@/shared/components/ui/RelativeDate';
 
 interface PublicExamsListTabProps {
   readonly onCreateNew: () => void;
@@ -94,12 +104,26 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
   );
 
   const handleExamSaved = useCallback(
-    (id: string, updated: { name: string; role?: string; year?: number; examBoard: ExamBoard }) => {
+    (
+      id: string,
+      updated: {
+        name: string;
+        role?: string;
+        year?: number;
+        examBoard: ExamBoard;
+        totalQuestions: number;
+        examDurationMinutes?: number;
+        passingScore?: number;
+      }
+    ) => {
       updatePublicExam(id, {
         name: updated.name,
         role: updated.role,
         year: updated.year,
         examBoard: updated.examBoard,
+        totalQuestions: updated.totalQuestions,
+        examDurationMinutes: updated.examDurationMinutes,
+        passingScore: updated.passingScore,
       });
     },
     [updatePublicExam]
@@ -120,11 +144,13 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
     }
   }, [deletingExam, removePublicExam, t]);
 
+  if (isLoading) {
+    return <SkeletonListLoader />;
+  }
+
   return (
     <>
-      {isLoading ? (
-        <SkeletonListLoader />
-      ) : publicExams.length === 0 ? (
+      {publicExams.length === 0 ? (
         <EmptyState
           action={{
             label: t('concurso.tabNew'),
@@ -140,8 +166,8 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
             base: 'bg-content1 border border-default-200 rounded-xl',
             title: 'text-sm font-bold text-foreground',
             titleWrapper: 'flex-1 flex flex-col text-start min-w-0 overflow-hidden',
-            trigger: 'px-6 py-4 hover:bg-content2 rounded-xl transition-colors duration-200',
-            content: 'px-6 pb-6',
+            trigger: 'px-5 py-3 hover:bg-content2 rounded-xl transition-colors duration-200',
+            content: 'px-5 pb-4',
             indicator: 'text-default-400',
           }}
           showDivider={false}
@@ -150,38 +176,11 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
             const examKey = publicExam.id ?? publicExam.name;
 
             return (
-              <AccordionItem
-                key={examKey}
-                aria-label={publicExam.name}
-                title={
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-sm font-semibold text-foreground truncate flex-1 min-w-0">
-                      {publicExam.name}
-                    </span>
-                    {publicExam.examBoard?.name && (
-                      <span className="text-xs text-default-500 shrink-0 max-w-[120px] truncate">
-                        {publicExam.examBoard.name}
-                      </span>
-                    )}
-                    {publicExam.year != null && (
-                      <span className="text-xs font-mono text-default-400 shrink-0">{publicExam.year}</span>
-                    )}
-                    {publicExam.subjects.length === 0 ? (
-                      <Chip color="warning" size="sm" variant="flat">
-                        {t('concurso.noSubjects')}
-                      </Chip>
-                    ) : (
-                      <span className="text-xs font-mono text-default-400 shrink-0">
-                        {publicExam.subjects.length === 1
-                          ? t('concurso.subjectCount1')
-                          : t('concurso.subjectCountN', { count: String(publicExam.subjects.length) })}
-                      </span>
-                    )}
-                  </div>
-                }
-              >
+              <AccordionItem key={examKey} aria-label={publicExam.name} title={renderTriggerTitle(publicExam)}>
                 <PublicExamSubjectsTable
-                  ref={(el) => { tableRefs.current[examKey] = el; }}
+                  ref={(el) => {
+                    tableRefs.current[examKey] = el;
+                  }}
                   selectedPublicExam={publicExam}
                   subjectsList={publicExam.subjects}
                   onSubjectAdded={(subject) => handleSubjectAdded(publicExam, subject)}
@@ -195,7 +194,7 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
                     handleTopicUpdated(publicExam, subjectId, topicId, newName)
                   }
                 />
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-default-200">
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-default-200">
                   <Button
                     className={buttonStyles.primarySm}
                     size="sm"
@@ -261,4 +260,96 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
       </Modal>
     </>
   );
+
+  function renderTriggerTitle(publicExam: PublicExam) {
+    const subjectStatus =
+      publicExam.subjects.length === 0 ? (
+        <Chip color="warning" size="sm" variant="flat">
+          {t('concurso.noSubjects')}
+        </Chip>
+      ) : (
+        <span
+          aria-label={t('concurso.subjectsAriaLabel', { count: String(publicExam.subjects.length) })}
+          className="flex items-center gap-1 text-xs text-default-400"
+        >
+          <FontAwesomeIcon className="text-[10px]" icon={faLayerGroup} />
+          {publicExam.subjects.length === 1
+            ? t('concurso.subjectCount1')
+            : t('concurso.subjectCountN', { count: String(publicExam.subjects.length) })}
+        </span>
+      );
+
+    const isEdited = publicExam.createdAt && publicExam.updatedAt
+      ? publicExam.updatedAt !== publicExam.createdAt
+      : false;
+
+    return (
+      <div className="flex flex-col gap-0.5 min-w-0">
+        <div className="flex items-center justify-between gap-2 min-w-0">
+          <span className="text-sm font-semibold text-foreground truncate min-w-0">{publicExam.name}</span>
+          <div className="flex items-center gap-2 shrink-0">
+            {publicExam.year != null && (
+              <span
+                aria-label={t('concurso.yearAriaLabel', { year: String(publicExam.year) })}
+                className="flex items-center gap-1 text-xs text-default-400"
+              >
+                <FontAwesomeIcon className="text-[10px]" icon={faCalendar} />
+                {publicExam.year}
+              </span>
+            )}
+            {publicExam.examBoard?.name && (
+              <span className="text-xs text-default-400 truncate max-w-[160px]">{publicExam.examBoard.name}</span>
+            )}
+            {subjectStatus}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3">
+            {publicExam.totalQuestions > 0 && (
+              <span
+                aria-label={t('concurso.totalQuestionsAriaLabel', { count: String(publicExam.totalQuestions) })}
+                className="flex items-center gap-1 text-xs text-default-400"
+              >
+                <FontAwesomeIcon className="text-[10px]" icon={faHashtag} />
+                {t('concurso.questionsCount', { count: String(publicExam.totalQuestions) })}
+              </span>
+            )}
+            {publicExam.examDurationMinutes && (
+              <span
+                aria-label={t('concurso.durationAriaLabel', { minutes: String(publicExam.examDurationMinutes) })}
+                className="flex items-center gap-1 text-xs text-default-400"
+              >
+                <FontAwesomeIcon className="text-[10px]" icon={faClock} />
+                {t('concurso.durationValue', { minutes: String(publicExam.examDurationMinutes) })}
+              </span>
+            )}
+            {publicExam.passingScore != null && (
+              <span
+                aria-label={t('concurso.passingScoreAriaLabel', { score: String(publicExam.passingScore) })}
+                className="flex items-center gap-1 text-xs text-primary font-medium"
+              >
+                <FontAwesomeIcon className="text-[10px]" icon={faBullseye} />
+                {t('concurso.passingScoreValue', { score: String(publicExam.passingScore) })}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-xs text-default-400 shrink-0">
+            {publicExam.createdAt && (
+              <span>
+                {t('common.createdAt', { date: '' }).replace('{date}', '')}
+                <RelativeDate date={publicExam.createdAt} />
+              </span>
+            )}
+            {isEdited && publicExam.updatedAt && (
+              <span>
+                {t('common.updatedAt', { date: '' }).replace('{date}', '')}
+                <RelativeDate date={publicExam.updatedAt} />
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 }

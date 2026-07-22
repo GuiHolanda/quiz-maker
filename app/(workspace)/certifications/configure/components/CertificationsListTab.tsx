@@ -5,11 +5,20 @@ import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
-import { faPen, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
+import {
+  faBullseye,
+  faClock,
+  faHashtag,
+  faLayerGroup,
+  faPen,
+  faPlus,
+  faTrash,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { EditCertificationModal } from './EditCertificationModal';
 
 import { SectionsTable, SectionsTableHandle } from '@/shared/components/SectionsTable';
+import { RelativeDate } from '@/shared/components/ui/RelativeDate';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
@@ -59,8 +68,25 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
   );
 
   const handleCertSaved = useCallback(
-    (oldKey: string, updated: { label: string; key: string; provider?: string }) => {
-      updateCertification(oldKey, { label: updated.label, key: updated.key, provider: updated.provider });
+    (
+      oldKey: string,
+      updated: {
+        label: string;
+        key: string;
+        provider?: string;
+        totalQuestions: number;
+        examDurationMinutes?: number;
+        passingScore?: number;
+      }
+    ) => {
+      updateCertification(oldKey, {
+        label: updated.label,
+        key: updated.key,
+        provider: updated.provider,
+        totalQuestions: updated.totalQuestions,
+        examDurationMinutes: updated.examDurationMinutes,
+        passingScore: updated.passingScore,
+      });
     },
     [updateCertification]
   );
@@ -102,8 +128,8 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
             base: 'bg-content1 border border-default-200 rounded-xl',
             title: 'text-sm font-bold text-foreground',
             titleWrapper: 'flex-1 flex flex-col text-start min-w-0 overflow-hidden',
-            trigger: 'px-6 py-4 hover:bg-content2 rounded-xl transition-colors duration-200',
-            content: 'px-6 pb-6',
+            trigger: 'px-5 py-3 hover:bg-content2 rounded-xl transition-colors duration-200',
+            content: 'px-5 pb-4',
             indicator: 'text-default-400',
           }}
           showDivider={false}
@@ -112,32 +138,12 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
             <AccordionItem
               key={certification.key}
               aria-label={certification.label}
-              title={
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-sm font-semibold text-foreground truncate flex-1 min-w-0">
-                    {certification.label}
-                  </span>
-                  {certification.provider && (
-                    <span className="text-xs text-default-500 shrink-0 max-w-[160px] truncate">
-                      {certification.provider}
-                    </span>
-                  )}
-                  {certification.topics.length === 0 ? (
-                    <Chip color="warning" size="sm" variant="flat">
-                      {t('certification.noTopics')}
-                    </Chip>
-                  ) : (
-                    <span className="text-xs font-mono text-default-400 shrink-0">
-                      {certification.topics.length === 1
-                        ? t('certification.topicCount1')
-                        : t('certification.topicCountN', { count: String(certification.topics.length) })}
-                    </span>
-                  )}
-                </div>
-              }
+              title={renderTriggerTitle(certification)}
             >
               <SectionsTable
-                ref={(el) => { tableRefs.current[certification.key] = el; }}
+                ref={(el) => {
+                  tableRefs.current[certification.key] = el;
+                }}
                 selectedCertification={certification}
                 topicsList={certification.topics}
                 onTopicAdded={(topic) => handleTopicAdded(certification, topic)}
@@ -146,7 +152,7 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
                   handleTopicUpdated(certification, topicId, newName, min, max)
                 }
               />
-              <div className="flex items-center justify-between mt-4 pt-4 border-t border-default-200">
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-default-200">
                 <Button
                   className={buttonStyles.primarySm}
                   size="sm"
@@ -211,4 +217,91 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
       </Modal>
     </>
   );
+
+  function renderTriggerTitle(certification: Certification) {
+    const topicStatus =
+      certification.topics.length === 0 ? (
+        <Chip color="warning" size="sm" variant="flat">
+          {t('certification.noTopics')}
+        </Chip>
+      ) : (
+        <span
+          aria-label={t('certification.topicsAriaLabel', { count: String(certification.topics.length) })}
+          className="flex items-center gap-1 text-xs text-default-400"
+        >
+          <FontAwesomeIcon className="text-[10px]" icon={faLayerGroup} />
+          {certification.topics.length === 1
+            ? t('certification.topicCount1')
+            : t('certification.topicCountN', { count: String(certification.topics.length) })}
+        </span>
+      );
+
+    const isEdited = certification.createdAt && certification.updatedAt
+    ? certification.updatedAt !== certification.createdAt
+    : false;
+
+    return (
+      <div className="flex flex-col gap-0.5 min-w-0">
+        <div className="flex items-center justify-between gap-2 min-w-0">
+          <span className="text-sm font-semibold text-foreground truncate min-w-0">{certification.label}</span>
+          <div className="flex items-center gap-2 shrink-0">
+            {certification.provider && (
+              <span className="text-xs text-default-400 truncate max-w-[160px]">{certification.provider}</span>
+            )}
+            {topicStatus}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3">
+            {certification.totalQuestions > 0 && (
+              <span
+                aria-label={t('certification.totalQuestionsAriaLabel', {
+                  count: String(certification.totalQuestions),
+                })}
+                className="flex items-center gap-1 text-xs text-default-400"
+              >
+                <FontAwesomeIcon className="text-[10px]" icon={faHashtag} />
+                {t('certification.questionsCount', { count: String(certification.totalQuestions) })}
+              </span>
+            )}
+            {certification.examDurationMinutes && (
+              <span
+                aria-label={t('certification.durationAriaLabel', {
+                  minutes: String(certification.examDurationMinutes),
+                })}
+                className="flex items-center gap-1 text-xs text-default-400"
+              >
+                <FontAwesomeIcon className="text-[10px]" icon={faClock} />
+                {t('certification.durationValue', { minutes: String(certification.examDurationMinutes) })}
+              </span>
+            )}
+            {certification.passingScore != null && (
+              <span
+                aria-label={t('certification.passingScoreAriaLabel', { score: String(certification.passingScore) })}
+                className="flex items-center gap-1 text-xs text-primary font-medium"
+              >
+                <FontAwesomeIcon className="text-[10px]" icon={faBullseye} />
+                {t('certification.passingScoreValue', { score: String(certification.passingScore) })}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-xs text-default-400 shrink-0">
+            {certification.createdAt && (
+              <span>
+                {t('common.createdAt', { date: '' }).replace('{date}', '')}
+                <RelativeDate date={certification.createdAt} />
+              </span>
+            )}
+            {isEdited && certification.updatedAt && (
+              <span>
+                {t('common.updatedAt', { date: '' }).replace('{date}', '')}
+                <RelativeDate date={certification.updatedAt} />
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 }

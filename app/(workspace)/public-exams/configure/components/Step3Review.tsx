@@ -16,6 +16,9 @@ interface Step3ReviewProps {
   readonly role: string;
   readonly year: string;
   readonly examBoardName: string;
+  readonly totalQuestions: number;
+  readonly examDurationMinutes?: number;
+  readonly passingScore?: number;
   readonly subjects: PublicExamSubject[];
   readonly isLoading: boolean;
   readonly onBack: () => void;
@@ -28,6 +31,9 @@ export function Step3Review({
   role,
   year,
   examBoardName,
+  totalQuestions,
+  examDurationMinutes,
+  passingScore,
   subjects,
   isLoading,
   onBack,
@@ -67,6 +73,22 @@ export function Step3Review({
                 {year || '—'}
               </span>
             </div>
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-medium text-default-400">{t('certification.totalQuestions')}</p>
+              <p className="text-base text-foreground">{totalQuestions}</p>
+            </div>
+            {examDurationMinutes && (
+              <div className="flex flex-col gap-2">
+                <p className="text-xs font-medium text-default-400">{t('certification.examDuration')}</p>
+                <p className="text-base text-foreground">{examDurationMinutes} {t('certification.examDurationUnit')}</p>
+              </div>
+            )}
+            {passingScore !== undefined && (
+              <div className="flex flex-col gap-2">
+                <p className="text-xs font-medium text-default-400">{t('certification.passingScore')}</p>
+                <p className="text-base text-foreground">{passingScore}%</p>
+              </div>
+            )}
           </div>
         </div>
 

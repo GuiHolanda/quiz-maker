@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { CertificationSimuladosService } from '../../../certification-simulados.service';
 
 import { auth } from '@/auth';
+import { toApiErrorResponse } from '@/lib/api-error';
 
 const service = new CertificationSimuladosService();
 
@@ -23,9 +24,9 @@ export async function PATCH(
 
     return NextResponse.json({ message: 'Attempt finished' });
   } catch (e: unknown) {
-    const status = (e as { status?: number }).status ?? 500;
+    const { status, ...body } = toApiErrorResponse(e);
 
-    return NextResponse.json({ error: 'Internal Server Error', message: (e as Error).message }, { status });
+    return NextResponse.json(body, { status });
   }
 }
 
@@ -44,9 +45,9 @@ export async function GET(
 
     return NextResponse.json(result);
   } catch (e: unknown) {
-    const status = (e as { status?: number }).status ?? 500;
+    const { status, ...body } = toApiErrorResponse(e);
 
-    return NextResponse.json({ error: 'Internal Server Error', message: (e as Error).message }, { status });
+    return NextResponse.json(body, { status });
   }
 }
 
@@ -65,8 +66,8 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'Attempt discarded' });
   } catch (e: unknown) {
-    const status = (e as { status?: number }).status ?? 500;
+    const { status, ...body } = toApiErrorResponse(e);
 
-    return NextResponse.json({ error: 'Internal Server Error', message: (e as Error).message }, { status });
+    return NextResponse.json(body, { status });
   }
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { CertificationService } from '@/features/services/certification.service';
 import { QuotaService } from '@/features/services/quota.service';
+import { toApiErrorResponse } from '@/lib/api-error';
 import { auth } from '@/auth';
 
 const certificationService = new CertificationService();
@@ -24,11 +25,11 @@ export async function POST(request: NextRequest) {
     await quotaService.record(session.user.id, 'create_certification', 1);
 
     return NextResponse.json({ message: 'Certification saved successfully', certification: created }, { status: 201 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to save certification:', err);
-    const body = err.body ?? { error: err, message: err.message || 'Failed to save certification' };
+    const { status, ...body } = toApiErrorResponse(err);
 
-    return NextResponse.json(body, { status: err.status || 500 });
+    return NextResponse.json(body, { status });
   }
 }
 
@@ -57,10 +58,11 @@ export async function DELETE(request: NextRequest) {
     await certificationService.deleteTopic(topicId, session.user.id);
 
     return NextResponse.json({ message: 'Topic deleted successfully' }, { status: 200 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to delete:', err);
+    const { status, ...body } = toApiErrorResponse(err);
 
-    return NextResponse.json({ error: err.message || 'Failed to delete' }, { status: err.status || 500 });
+    return NextResponse.json(body, { status });
   }
 }
 
@@ -94,10 +96,11 @@ export async function PUT(request: NextRequest) {
     );
 
     return NextResponse.json({ message: 'Topic added successfully', topic }, { status: 201 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to add topic:', err);
+    const { status, ...body } = toApiErrorResponse(err);
 
-    return NextResponse.json({ error: err.message || 'Failed to add topic' }, { status: err.status || 500 });
+    return NextResponse.json(body, { status });
   }
 }
 
@@ -119,7 +122,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (body?.certificationKey) {
-      const { certificationKey, newLabel, newKey, newProvider } = (body ?? {}) as Record<string, unknown>;
+      const { certificationKey, newLabel, newKey, newProvider, newTotalQuestions, newExamDurationMinutes, newPassingScore } = (body ?? {}) as Record<string, unknown>;
 
       if (typeof certificationKey !== 'string') {
         return NextResponse.json({ error: 'certificationKey must be a string' }, { status: 400 });
@@ -130,6 +133,9 @@ export async function PATCH(request: NextRequest) {
           newLabel: typeof newLabel === 'string' ? newLabel : undefined,
           newKey: typeof newKey === 'string' ? newKey : undefined,
           newProvider: newProvider === null ? null : typeof newProvider === 'string' ? newProvider : undefined,
+          newTotalQuestions: typeof newTotalQuestions === 'number' && newTotalQuestions > 0 ? Math.round(newTotalQuestions) : undefined,
+          newExamDurationMinutes: newExamDurationMinutes === null ? null : typeof newExamDurationMinutes === 'number' && newExamDurationMinutes > 0 ? Math.round(newExamDurationMinutes) : undefined,
+          newPassingScore: newPassingScore === null ? null : typeof newPassingScore === 'number' && newPassingScore >= 0 && newPassingScore <= 100 ? newPassingScore : undefined,
         },
         session.user.id
       );
@@ -141,9 +147,10 @@ export async function PATCH(request: NextRequest) {
     }
 
     return NextResponse.json({ error: 'Missing topicId or certificationKey' }, { status: 400 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to update:', err);
+    const { status, ...body } = toApiErrorResponse(err);
 
-    return NextResponse.json({ error: err, message: err.message || 'Failed to update' }, { status: err.status || 500 });
+    return NextResponse.json(body, { status });
   }
 }

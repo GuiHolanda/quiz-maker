@@ -15,6 +15,9 @@ interface Step3ReviewProps {
   readonly title: string;
   readonly code: string;
   readonly provider: string;
+  readonly totalQuestions: number;
+  readonly examDurationMinutes?: number;
+  readonly passingScore?: number;
   readonly topics: CertificationTopic[];
   readonly isLoading: boolean;
   readonly onBack: () => void;
@@ -22,7 +25,7 @@ interface Step3ReviewProps {
   readonly onDiscard: () => void;
 }
 
-export function Step3Review({ title, code, provider, topics, isLoading, onBack, onSave, onDiscard }: Step3ReviewProps) {
+export function Step3Review({ title, code, provider, totalQuestions, examDurationMinutes, passingScore, topics, isLoading, onBack, onSave, onDiscard }: Step3ReviewProps) {
   const { t } = useTranslation();
   const hasDraft = !!(title || code || provider || topics.length > 0);
   const visibleTopics = topics.filter((topic) => topic.name && topic.maxQuestions);
@@ -52,6 +55,22 @@ export function Step3Review({ title, code, provider, topics, isLoading, onBack, 
                 {code || '—'}
               </span>
             </div>
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-medium text-default-400">{t('certification.totalQuestions')}</p>
+              <p className="text-base text-foreground">{totalQuestions}</p>
+            </div>
+            {examDurationMinutes && (
+              <div className="flex flex-col gap-2">
+                <p className="text-xs font-medium text-default-400">{t('certification.examDuration')}</p>
+                <p className="text-base text-foreground">{examDurationMinutes} {t('certification.examDurationUnit')}</p>
+              </div>
+            )}
+            {passingScore !== undefined && (
+              <div className="flex flex-col gap-2">
+                <p className="text-xs font-medium text-default-400">{t('certification.passingScore')}</p>
+                <p className="text-base text-foreground">{passingScore}%</p>
+              </div>
+            )}
           </div>
         </div>
 

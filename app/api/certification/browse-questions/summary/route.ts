@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { auth } from '@/auth';
 import { BrowseSummaryService } from '@/features/services/browse.service';
+import { toApiErrorResponse } from '@/lib/api-error';
 
 const service = new BrowseSummaryService();
 
@@ -16,9 +17,10 @@ export async function GET() {
     const summary = await service.getSummary(session.user.id);
 
     return NextResponse.json(summary, { status: 200 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('browse-summary error:', err);
+    const { status, ...body } = toApiErrorResponse(err);
 
-    return NextResponse.json({ error: err, message: err.message || 'Failed to load summary' }, { status: 500 });
+    return NextResponse.json(body, { status });
   }
 }

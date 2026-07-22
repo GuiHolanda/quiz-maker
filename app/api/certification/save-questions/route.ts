@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { CertificationQuestionService, validateAiQuestions } from '@/features/services/question.service';
 import { AIQuestion } from '@/shared/types';
+import { toApiErrorResponse } from '@/lib/api-error';
 import { auth } from '@/auth';
 
 const questionService = new CertificationQuestionService();
@@ -21,12 +22,10 @@ export async function POST(request: NextRequest) {
     await questionService.createFromPayload(questions, session.user.id);
 
     return NextResponse.json({ message: 'Questions saved successfully', count: questions.length }, { status: 200 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to process request:', err);
+    const { status, ...body } = toApiErrorResponse(err);
 
-    return NextResponse.json(
-      { error: err, message: err.message || 'Failed to process request' },
-      { status: err.status || 500 }
-    );
+    return NextResponse.json(body, { status });
   }
 }

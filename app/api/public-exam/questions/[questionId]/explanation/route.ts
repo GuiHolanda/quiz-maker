@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { PublicExamQuestionService } from '@/features/services/question.service';
 import { publicExamExplanationsPrompt } from '@/config/prompts/public-exam-explanations.prompt';
+import { toApiErrorResponse } from '@/lib/api-error';
 
 export const maxDuration = 300;
 
@@ -59,9 +60,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     await questionService.saveExplanations(question.answer.id, explanations);
 
     return NextResponse.json({ explanations });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to get explanation:', err);
+    const { status, ...body } = toApiErrorResponse(err);
 
-    return NextResponse.json({ error: 'Internal Server Error', message: err.message }, { status: err.status || 500 });
+    return NextResponse.json(body, { status });
   }
 }

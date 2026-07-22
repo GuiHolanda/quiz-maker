@@ -18,7 +18,7 @@ describe('CertificationService', () => {
 
   // Behaviour 2: validate() throws on empty topics array
   it('validate() throws when topics array is empty', () => {
-    expect(() => service.validate({ label: 'L', key: 'K', topics: [] })).toThrow(
+    expect(() => service.validate({ label: 'L', key: 'K', totalQuestions: 65, topics: [] })).toThrow(
       'At least one topic is required',
     );
   });
@@ -29,6 +29,7 @@ describe('CertificationService', () => {
       label: '  AWS SAA  ',
       key: '  aws-saa  ',
       provider: '  Amazon  ',
+      totalQuestions: 65,
       topics: [{ name: 'IAM', minQuestions: 5, maxQuestions: 20 }],
     });
 
@@ -170,5 +171,56 @@ describe('CertificationService', () => {
     await expect(
       service.updateCertificationMeta('aws-saa', { newKey: 'aws-saa-new' }, 'user-1'),
     ).rejects.toMatchObject({ status: 409 });
+  });
+
+  // Behaviour 12: addTopic() touches parent updatedAt on success
+  it('addTopic() calls certification.update with updatedAt after creating the topic', async () => {
+    prismaMock.certification.findFirst.mockResolvedValue({ id: 'cert-1', userId: 'user-1' } as any);
+    prismaMock.certificationTopic.findUnique.mockResolvedValue(null);
+    prismaMock.certificationTopic.create.mockResolvedValue({ id: 'topic-1', name: 'IAM' } as any);
+    prismaMock.certification.update.mockResolvedValue({} as any);
+
+    await service.addTopic('aws-saa', 'IAM', 5, 20, 'user-1');
+
+    expect(prismaMock.certification.update).toHaveBeenCalledWith({
+      where: { id: 'cert-1' },
+      data: { updatedAt: expect.any(Date) },
+    });
+  });
+
+  // Behaviour 13: updateTopic() touches parent updatedAt on success
+  it('updateTopic() calls certification.update with updatedAt after updating the topic', async () => {
+    prismaMock.certificationTopic.findUnique.mockResolvedValue({
+      id: 'topic-1',
+      name: 'IAM',
+      certification: { id: 'cert-1', userId: 'user-1' },
+    } as any);
+    prismaMock.certificationTopic.update.mockResolvedValue({ id: 'topic-1', name: 'IAM v2' } as any);
+    prismaMock.certification.update.mockResolvedValue({} as any);
+
+    await service.updateTopic({ topicId: 'topic-1', newName: 'IAM v2', minQuestions: 5, maxQuestions: 20 }, 'user-1');
+
+    expect(prismaMock.certification.update).toHaveBeenCalledWith({
+      where: { id: 'cert-1' },
+      data: { updatedAt: expect.any(Date) },
+    });
+  });
+
+  // Behaviour 14: deleteTopic() touches parent updatedAt on success
+  it('deleteTopic() calls certification.update with updatedAt after deleting the topic', async () => {
+    prismaMock.certificationTopic.findUnique.mockResolvedValue({
+      id: 'topic-1',
+      name: 'IAM',
+      certification: { id: 'cert-1', userId: 'user-1' },
+    } as any);
+    prismaMock.certificationTopic.delete.mockResolvedValue({} as any);
+    prismaMock.certification.update.mockResolvedValue({} as any);
+
+    await service.deleteTopic('topic-1', 'user-1');
+
+    expect(prismaMock.certification.update).toHaveBeenCalledWith({
+      where: { id: 'cert-1' },
+      data: { updatedAt: expect.any(Date) },
+    });
   });
 });

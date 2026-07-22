@@ -10,7 +10,7 @@ export class PublicExamService {
       throw new Error('Invalid request body');
     }
 
-    const { name, role, year, examBoard, subjects } = body as Record<string, unknown>;
+    const { name, role, year, totalQuestions, examDurationMinutes, passingScore, examBoard, subjects } = body as Record<string, unknown>;
 
     if (!name || typeof name !== 'string') {
       throw new Error('Public exam name is required');
@@ -24,6 +24,10 @@ export class PublicExamService {
 
     if (!board.name || typeof board.name !== 'string') {
       throw new Error('Exam board name is required');
+    }
+
+    if (!totalQuestions || typeof totalQuestions !== 'number' || totalQuestions < 1) {
+      throw Object.assign(new Error('totalQuestions is required and must be a positive integer'), { status: 400 });
     }
 
     if (!Array.isArray(subjects) || subjects.length === 0) {
@@ -43,6 +47,13 @@ export class PublicExamService {
       name: normalizeName(name),
       role: typeof role === 'string' && role.trim() ? normalizeName(role) : undefined,
       year: typeof year === 'number' ? year : undefined,
+      totalQuestions: Math.round(totalQuestions),
+      examDurationMinutes:
+        typeof examDurationMinutes === 'number' && examDurationMinutes > 0
+          ? Math.round(examDurationMinutes)
+          : undefined,
+      passingScore:
+        typeof passingScore === 'number' && passingScore >= 0 && passingScore <= 100 ? passingScore : undefined,
       examBoard: {
         name: normalizeName(board.name as string),
         fullName:
@@ -53,7 +64,7 @@ export class PublicExamService {
   }
 
   public async save(publicExam: PublicExam, userId: string) {
-    const { name, role, year, examBoard, subjects } = publicExam;
+    const { name, role, year, totalQuestions, examDurationMinutes, passingScore, examBoard, subjects } = publicExam;
 
     return this.prismaService.$transaction(async (tx) => {
       // Resolve or create exam board (by name).
@@ -79,6 +90,9 @@ export class PublicExamService {
           name,
           role: role ?? null,
           year: year ?? null,
+          totalQuestions,
+          examDurationMinutes: examDurationMinutes ?? null,
+          passingScore: passingScore ?? null,
           examBoardId: board.id,
           userId,
           subjects: {
@@ -159,7 +173,7 @@ export class PublicExamService {
         });
       }
 
-      return tx.publicExamSubject.update({
+      const updated = await tx.publicExamSubject.update({
         where: { id: subjectId },
         data: {
           ...(normalizedNewName !== undefined && { name: normalizedNewName }),
@@ -167,6 +181,13 @@ export class PublicExamService {
           maxQuestions,
         },
       });
+
+      await tx.publicExam.update({
+        where: { id: subject.publicExam.id },
+        data: { updatedAt: new Date() },
+      });
+
+      return updated;
     });
   }
 
@@ -193,6 +214,11 @@ export class PublicExamService {
     }
 
     await this.prismaService.publicExamSubject.delete({ where: { id: subjectId } });
+
+    await this.prismaService.publicExam.update({
+      where: { id: subject.publicExam.id },
+      data: { updatedAt: new Date() },
+    });
   }
 
   public async addSubject(
@@ -224,9 +250,16 @@ export class PublicExamService {
       throw Object.assign(new Error(`Subject "${normalizedName}" already exists`), { status: 409 });
     }
 
-    return this.prismaService.publicExamSubject.create({
+    const subject = await this.prismaService.publicExamSubject.create({
       data: { name: normalizedName, minQuestions, maxQuestions, publicExamId: exam.id },
     });
+
+    await this.prismaService.publicExam.update({
+      where: { id: exam.id },
+      data: { updatedAt: new Date() },
+    });
+
+    return subject;
   }
 
   public async addTopic(subjectId: string, name: string, userId: string) {
@@ -253,9 +286,16 @@ export class PublicExamService {
       throw Object.assign(new Error(`Topic "${normalizedName}" already exists`), { status: 409 });
     }
 
-    return this.prismaService.publicExamTopic.create({
+    const topic = await this.prismaService.publicExamTopic.create({
       data: { name: normalizedName, subjectId },
     });
+
+    await this.prismaService.publicExam.update({
+      where: { id: subject.publicExam.id },
+      data: { updatedAt: new Date() },
+    });
+
+    return topic;
   }
 
   public async updateTopic(topicId: string, newName: string, userId: string) {
@@ -305,10 +345,17 @@ export class PublicExamService {
         });
       }
 
-      return tx.publicExamTopic.update({
+      const updated = await tx.publicExamTopic.update({
         where: { id: topicId },
         data: { name: normalizedNewName },
       });
+
+      await tx.publicExam.update({
+        where: { id: topic.subject.publicExam.id },
+        data: { updatedAt: new Date() },
+      });
+
+      return updated;
     });
   }
 
@@ -327,11 +374,24 @@ export class PublicExamService {
     }
 
     await this.prismaService.publicExamTopic.delete({ where: { id: topicId } });
+
+    await this.prismaService.publicExam.update({
+      where: { id: topic.subject.publicExam.id },
+      data: { updatedAt: new Date() },
+    });
   }
 
   public async updatePublicExamMeta(
     publicExamId: string,
-    updates: { newName?: string; newRole?: string | null; newYear?: number | null; newExamBoardName?: string },
+    updates: {
+      newName?: string;
+      newRole?: string | null;
+      newYear?: number | null;
+      newExamBoardName?: string;
+      newTotalQuestions?: number;
+      newExamDurationMinutes?: number | null;
+      newPassingScore?: number | null;
+    },
     userId: string
   ) {
     const exam = await this.prismaService.publicExam.findUnique({ where: { id: publicExamId } });
@@ -396,6 +456,9 @@ export class PublicExamService {
           ...(normalizedNewRole !== undefined && { role: normalizedNewRole }),
           ...(updates.newYear !== undefined && { year: updates.newYear }),
           ...(newExamBoardId && { examBoardId: newExamBoardId }),
+          ...(updates.newTotalQuestions !== undefined && { totalQuestions: updates.newTotalQuestions }),
+          ...(updates.newExamDurationMinutes !== undefined && { examDurationMinutes: updates.newExamDurationMinutes }),
+          ...(updates.newPassingScore !== undefined && { passingScore: updates.newPassingScore }),
         },
         include: {
           examBoard: true,

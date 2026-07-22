@@ -55,7 +55,15 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
       return;
     }
 
-    const certification = { label, key, provider: draft.provider || undefined, topics: draft.topics };
+    const certification = {
+      label,
+      key,
+      provider: draft.provider || undefined,
+      totalQuestions: parseInt(draft.totalQuestions, 10),
+      examDurationMinutes: parseInt(draft.examDurationMinutes, 10) || undefined,
+      passingScore: parseFloat(draft.passingScore) || undefined,
+      topics: draft.topics,
+    };
     const saved = await request(certification);
 
     if (saved) {
@@ -76,14 +84,20 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
     draft.step === 1 ? (
       <Step1BasicInfo
         code={draft.code}
+        examDurationMinutes={draft.examDurationMinutes}
+        passingScore={draft.passingScore}
         provider={draft.provider}
         title={draft.title}
+        totalQuestions={draft.totalQuestions}
         onBack={onBackToLibrary}
         onCodeChange={draft.setCode}
         onDiscard={() => setIsDiscardOpen(true)}
+        onExamDurationMinutesChange={draft.setExamDurationMinutes}
         onNext={() => goToStep(2)}
+        onPassingScoreChange={draft.setPassingScore}
         onProviderChange={draft.setProvider}
         onTitleChange={draft.setTitle}
+        onTotalQuestionsChange={draft.setTotalQuestions}
       />
     ) : draft.step === 2 ? (
       <Step2DefineTopics
@@ -101,10 +115,13 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
     ) : (
       <Step3Review
         code={draft.code}
+        examDurationMinutes={parseInt(draft.examDurationMinutes, 10) || undefined}
         isLoading={loading}
+        passingScore={parseFloat(draft.passingScore) || undefined}
         provider={draft.provider}
         title={draft.title}
         topics={draft.topics}
+        totalQuestions={parseInt(draft.totalQuestions, 10) || 0}
         onBack={() => goToStep(2)}
         onDiscard={() => setIsDiscardOpen(true)}
         onSave={handleSave}

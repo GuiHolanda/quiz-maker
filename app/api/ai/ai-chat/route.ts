@@ -4,6 +4,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import type { UserPlan } from '@/shared/types';
 import { AiChatService } from '@/features/services/aiChat.service';
+import { toApiErrorResponse } from '@/lib/api-error';
 
 const aiChatService = new AiChatService();
 
@@ -39,12 +40,10 @@ export async function POST(request: NextRequest) {
         Connection: 'keep-alive',
       },
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to stream chat:', err);
+    const { status, ...body } = toApiErrorResponse(err);
 
-    return NextResponse.json(
-      { error: err, message: err.message || 'Failed to stream chat' },
-      { status: err.status || 500 }
-    );
+    return NextResponse.json(body, { status });
   }
 }

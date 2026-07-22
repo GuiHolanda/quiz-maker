@@ -9,7 +9,7 @@ export class CertificationService {
       throw new Error('Invalid request body');
     }
 
-    const { label, key, provider, topics } = body as Record<string, unknown>;
+    const { label, key, provider, totalQuestions, examDurationMinutes, passingScore, topics } = body as Record<string, unknown>;
 
     if (!label || typeof label !== 'string') {
       throw new Error('Certification label is required');
@@ -17,6 +17,10 @@ export class CertificationService {
 
     if (!key || typeof key !== 'string') {
       throw new Error('Certification key is required');
+    }
+
+    if (!totalQuestions || typeof totalQuestions !== 'number' || totalQuestions < 1) {
+      throw Object.assign(new Error('totalQuestions is required and must be a positive integer'), { status: 400 });
     }
 
     if (!Array.isArray(topics) || topics.length === 0) {
@@ -36,12 +40,19 @@ export class CertificationService {
       label: label.trim(),
       key: key.trim(),
       provider: typeof provider === 'string' && provider.trim() ? provider.trim() : undefined,
+      totalQuestions: Math.round(totalQuestions),
+      examDurationMinutes:
+        typeof examDurationMinutes === 'number' && examDurationMinutes > 0
+          ? Math.round(examDurationMinutes)
+          : undefined,
+      passingScore:
+        typeof passingScore === 'number' && passingScore >= 0 && passingScore <= 100 ? passingScore : undefined,
       topics,
     };
   }
 
   public async save(certification: Certification, userId: string) {
-    const { label, key, provider, topics } = certification;
+    const { label, key, provider, totalQuestions, examDurationMinutes, passingScore, topics } = certification;
 
     return this.prismaService.$transaction(async (tx) => {
       const existing = await tx.certification.findFirst({ where: { key, userId } });
@@ -55,6 +66,9 @@ export class CertificationService {
           label,
           key,
           provider: provider ?? null,
+          totalQuestions,
+          examDurationMinutes: examDurationMinutes ?? null,
+          passingScore: passingScore ?? null,
           userId,
           topics: {
             create: topics.map((topic) => ({
@@ -107,7 +121,7 @@ export class CertificationService {
       throw Object.assign(new Error('Forbidden'), { status: 403 });
     }
 
-    return this.prismaService.certificationTopic.update({
+    const updated = await this.prismaService.certificationTopic.update({
       where: { id: topicId },
       data: {
         ...(newName !== undefined && { name: newName }),
@@ -115,6 +129,13 @@ export class CertificationService {
         maxQuestions,
       },
     });
+
+    await this.prismaService.certification.update({
+      where: { id: topic.certification.id },
+      data: { updatedAt: new Date() },
+    });
+
+    return updated;
   }
 
   public async deleteTopic(topicId: string, userId: string) {
@@ -132,6 +153,11 @@ export class CertificationService {
     }
 
     await this.prismaService.certificationTopic.delete({ where: { id: topicId } });
+
+    await this.prismaService.certification.update({
+      where: { id: topic.certification.id },
+      data: { updatedAt: new Date() },
+    });
   }
 
   public async deleteCertification(certificationKey: string, userId: string) {
@@ -169,14 +195,28 @@ export class CertificationService {
       throw Object.assign(new Error(`Topic "${name}" already exists`), { status: 409 });
     }
 
-    return this.prismaService.certificationTopic.create({
+    const topic = await this.prismaService.certificationTopic.create({
       data: { name, minQuestions, maxQuestions, certificationId: certification.id },
     });
+
+    await this.prismaService.certification.update({
+      where: { id: certification.id },
+      data: { updatedAt: new Date() },
+    });
+
+    return topic;
   }
 
   public async updateCertificationMeta(
     certKey: string,
-    updates: { newLabel?: string; newKey?: string; newProvider?: string | null },
+    updates: {
+      newLabel?: string;
+      newKey?: string;
+      newProvider?: string | null;
+      newTotalQuestions?: number;
+      newExamDurationMinutes?: number | null;
+      newPassingScore?: number | null;
+    },
     userId: string
   ) {
     const cert = await this.prismaService.certification.findFirst({ where: { key: certKey, userId } });
@@ -199,6 +239,9 @@ export class CertificationService {
         ...(updates.newLabel !== undefined && { label: updates.newLabel }),
         ...(updates.newKey !== undefined && { key: updates.newKey }),
         ...(updates.newProvider !== undefined && { provider: updates.newProvider }),
+        ...(updates.newTotalQuestions !== undefined && { totalQuestions: updates.newTotalQuestions }),
+        ...(updates.newExamDurationMinutes !== undefined && { examDurationMinutes: updates.newExamDurationMinutes }),
+        ...(updates.newPassingScore !== undefined && { passingScore: updates.newPassingScore }),
       },
       include: { topics: true },
     });

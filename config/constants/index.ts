@@ -32,6 +32,7 @@ export const INITIAL_CERTIFICATIONS_STATE: CertificationsState = {
     {
       label: 'SAP Certified Associate - Business User - SAP Commerce Cloud',
       key: '(C_C4H32_2411)',
+      totalQuestions: 0,
       topics: [
         { name: 'Product Content Management', maxQuestions: 0.2, minQuestions: 0.11 },
         { name: 'Web Content Management', maxQuestions: 0.2, minQuestions: 0.11 },
@@ -44,6 +45,7 @@ export const INITIAL_CERTIFICATIONS_STATE: CertificationsState = {
     {
       label: 'SAP Certified Application Associate - SAP S/4HANA Cloud (public) - Implementation',
       key: '(S4C-IMP)',
+      totalQuestions: 0,
       topics: [
         { name: 'Introduction to Cloud Computing and SAP Cloud ERP Basics', maxQuestions: 0.2, minQuestions: 0.11 },
         {
@@ -60,6 +62,7 @@ export const INITIAL_CERTIFICATIONS_STATE: CertificationsState = {
     {
       label: 'SAP Certified Application Associate - SAP S/4HANA (on-premise) - Professional',
       key: '(S4H-ASSOC)',
+      totalQuestions: 0,
       topics: [
         { name: 'S/4HANA Architecture and System Landscape', maxQuestions: 0.2, minQuestions: 0.11 },
         { name: 'Finance (GL/AP/AR)', maxQuestions: 0.2, minQuestions: 0.11 },
@@ -72,6 +75,7 @@ export const INITIAL_CERTIFICATIONS_STATE: CertificationsState = {
     {
       label: 'SAP Certified Application Associate - SAP S/4HANA Financial Accounting',
       key: '(S4H-FA)',
+      totalQuestions: 0,
       topics: [
         { name: 'General Ledger (GL) Fundamentals', maxQuestions: 0.2, minQuestions: 0.11 },
         { name: 'Accounts Payable / Accounts Receivable Processes', maxQuestions: 0.2, minQuestions: 0.11 },
@@ -83,6 +87,7 @@ export const INITIAL_CERTIFICATIONS_STATE: CertificationsState = {
     {
       label: 'SAP Certified Development Associate - ABAP with SAP NetWeaver',
       key: '(ABAP-AA)',
+      totalQuestions: 0,
       topics: [
         { name: 'ABAP Programming Models and Syntax', maxQuestions: 0.2, minQuestions: 0.11 },
         { name: 'Data Dictionary and Database Access', maxQuestions: 0.2, minQuestions: 0.11 },
@@ -94,6 +99,7 @@ export const INITIAL_CERTIFICATIONS_STATE: CertificationsState = {
     {
       label: 'SAP Certified Development Associate - SAP Fiori Application Developer',
       key: '(FIORI-DEV)',
+      totalQuestions: 0,
       topics: [
         { name: 'SAPUI5 and Fiori Design Principles', maxQuestions: 0.2, minQuestions: 0.11 },
         { name: 'Fiori Elements and Smart Templates', maxQuestions: 0.2, minQuestions: 0.11 },
@@ -105,6 +111,7 @@ export const INITIAL_CERTIFICATIONS_STATE: CertificationsState = {
     {
       label: 'SAP Certified Application Associate - SAP SuccessFactors Employee Central',
       key: '(SF-EC)',
+      totalQuestions: 0,
       topics: [
         { name: 'Employee Central Core Concepts and Data Model', maxQuestions: 0.2, minQuestions: 0.11 },
         { name: 'Organizational Management and Employment Information', maxQuestions: 0.2, minQuestions: 0.11 },
@@ -116,6 +123,7 @@ export const INITIAL_CERTIFICATIONS_STATE: CertificationsState = {
     {
       label: 'SAP Certified Application Associate - SAP Integration Suite (CPI)',
       key: '(CPI-ASSOC)',
+      totalQuestions: 0,
       topics: [
         { name: 'SAP Cloud Integration (CPI) Concepts and Architecture', maxQuestions: 0.2, minQuestions: 0.11 },
         { name: 'Designing and Configuring iFlows', maxQuestions: 0.2, minQuestions: 0.11 },
@@ -127,6 +135,7 @@ export const INITIAL_CERTIFICATIONS_STATE: CertificationsState = {
     {
       label: 'SAP Certified Application Associate - SAP BW/4HANA & Analytics',
       key: '(BW4HANA)',
+      totalQuestions: 0,
       topics: [
         { name: 'BW/4HANA Data Modeling and InfoProviders', maxQuestions: 0.2, minQuestions: 0.11 },
         { name: 'Data Acquisition and ETL (ODS/PSA)', maxQuestions: 0.2, minQuestions: 0.11 },
@@ -138,6 +147,7 @@ export const INITIAL_CERTIFICATIONS_STATE: CertificationsState = {
     {
       label: 'SAP Certified Technology Associate - SAP BASIS / Administration',
       key: '(BASIS-ASSOC)',
+      totalQuestions: 0,
       topics: [
         { name: 'System Administration and Landscape Management', maxQuestions: 0.2, minQuestions: 0.11 },
         { name: 'Installation, Updates and Transport Management', maxQuestions: 0.2, minQuestions: 0.11 },

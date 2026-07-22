@@ -165,8 +165,8 @@ Route handlers never contain business logic — they delegate to services.
 |---|---|
 | `openAI.service.ts` | OpenAI client wrapper — single `call(prompt, input)` method using Responses API with `web_search_preview`. Returns `{ text: string; inputTokens: number; outputTokens: number }`. Never returns a plain string. |
 | `quota.service.ts` | Check and record usage quota per user per period. Supports `customQuotaOverride` (sentinel `-1` = ∞). Key methods: `checkAndRecordQuestions(userId, count)` returns `{ logId }` for later token recording; `recordTokens(logId, { inputTokens, outputTokens })` patches the `UsageLog` row after the LLM call completes. |
-| `certification.service.ts` | CRUD for certifications and topics |
-| `public-exam.service.ts` | CRUD for public exams, subjects, and topics |
+| `certification.service.ts` | CRUD for certifications and topics. Child mutations (addTopic, updateTopic, deleteTopic) call `certification.update({ data: { updatedAt: new Date() } })` after the main operation to propagate the timestamp to the parent. |
+| `public-exam.service.ts` | CRUD for public exams, subjects, and topics. Same parent-touch pattern: all 6 child mutation methods (add/update/delete subject and topic) call `publicExam.update({ data: { updatedAt: new Date() } })`. For methods using `$transaction`, the touch runs inside the same transaction. |
 | `question.service.ts` | `validateAiQuestions` (shared), `CertificationQuestionService` (with `saveExplanations`), `PublicExamQuestionService` |
 | `browse.service.ts` | `BrowseQuestionsService`, `PublicExamBrowseQuestionsService`, `BrowseSummaryService`, `PublicExamBrowseSummaryService` |
 | `quiz-generator.service.ts` | Parse params, distribute questions across topics, fetch stored questions |
@@ -203,9 +203,21 @@ Simulado services (`app/api/certification-simulados/certification-simulados.serv
 ## Conventions
 
 - Route handler pattern: `auth check → quota check (if needed) → service call → NextResponse.json()`
-- Error shape: `{ error, message }` with `status: err.status || 500`
+- Error shape: always produced by `toApiErrorResponse(err)` from `lib/api-error.ts` — never hand-rolled `{ error, message }` in a catch block
 - All imports use `@/` absolute paths — no relative `../../` across directories
 - No barrel `index.ts` files
+
+### Catch block pattern (all route handlers)
+
+```ts
+} catch (err: unknown) {
+  console.error('Failed to ...:', err);
+  const { status, ...body } = toApiErrorResponse(err);
+  return NextResponse.json(body, { status });
+}
+```
+
+`toApiErrorResponse` strips the `message` field for Prisma/unexpected errors so raw schema details never reach the client. Business-logic errors (thrown with `.status` by service layer) pass their message through unchanged. Full classification table is in the root `CLAUDE.md` → **Error sanitization** section.
 
 ---
 

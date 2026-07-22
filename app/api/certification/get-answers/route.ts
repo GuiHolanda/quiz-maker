@@ -4,6 +4,7 @@ import { CertificationQuestionService, validateAiQuestions } from '@/features/se
 import { AIQuestion } from '@/shared/types';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { certificationAnswersPrompt } from '@/config/prompts/certification-answers.prompt';
+import { toApiErrorResponse } from '@/lib/api-error';
 import { auth } from '@/auth';
 
 export const maxDuration = 300;
@@ -41,12 +42,10 @@ export async function POST(request: NextRequest) {
       },
       { status: 200 }
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to process request:', err);
+    const { status, ...body } = toApiErrorResponse(err);
 
-    return NextResponse.json(
-      { error: err, message: err.message || 'Failed to process request' },
-      { status: err.status || 500 }
-    );
+    return NextResponse.json(body, { status });
   }
 }

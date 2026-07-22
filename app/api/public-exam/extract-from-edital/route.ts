@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { auth } from '@/auth';
 import { EditalExtractorService } from '@/features/services/edital-extractor.service';
+import { toApiErrorResponse } from '@/lib/api-error';
 
 const editalExtractorService = new EditalExtractorService();
 
@@ -34,12 +35,10 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json({ publicExam }, { status: 200 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to extract edital:', err);
+    const { status, ...body } = toApiErrorResponse(err);
 
-    return NextResponse.json(
-      { error: err, message: err.message || 'Failed to extract edital' },
-      { status: err.status || 500 }
-    );
+    return NextResponse.json(body, { status });
   }
 }

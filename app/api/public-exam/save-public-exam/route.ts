@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { PublicExamService } from '@/features/services/public-exam.service';
 import { QuotaService } from '@/features/services/quota.service';
+import { toApiErrorResponse } from '@/lib/api-error';
 import { auth } from '@/auth';
 
 const publicExamService = new PublicExamService();
@@ -24,11 +25,11 @@ export async function POST(request: NextRequest) {
     await quotaService.record(session.user.id, 'create_public_exam', 1);
 
     return NextResponse.json({ message: 'Public exam saved successfully', publicExam: created }, { status: 201 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to save public exam:', err);
-    const body = err.body ?? { error: err, message: err.message || 'Failed to save public exam' };
+    const { status, ...body } = toApiErrorResponse(err);
 
-    return NextResponse.json(body, { status: err.status || 500 });
+    return NextResponse.json(body, { status });
   }
 }
 
@@ -64,10 +65,11 @@ export async function DELETE(request: NextRequest) {
     }
 
     return NextResponse.json({ error: 'subjectId, topicId or examId is required' }, { status: 400 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to delete:', err);
+    const { status, ...body } = toApiErrorResponse(err);
 
-    return NextResponse.json({ error: err.message || 'Failed to delete' }, { status: err.status || 500 });
+    return NextResponse.json(body, { status });
   }
 }
 
@@ -118,10 +120,11 @@ export async function PUT(request: NextRequest) {
     }
 
     return NextResponse.json({ error: 'publicExamId or subjectId is required' }, { status: 400 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to add:', err);
+    const { status, ...body } = toApiErrorResponse(err);
 
-    return NextResponse.json({ error: err.message || 'Failed to add' }, { status: err.status || 500 });
+    return NextResponse.json(body, { status });
   }
 }
 
@@ -157,7 +160,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (body?.publicExamId) {
-      const { publicExamId, newName, newRole, newYear, newExamBoardName } = (body ?? {}) as Record<string, unknown>;
+      const { publicExamId, newName, newRole, newYear, newExamBoardName, newTotalQuestions, newExamDurationMinutes, newPassingScore } = (body ?? {}) as Record<string, unknown>;
 
       if (typeof publicExamId !== 'string') {
         return NextResponse.json({ error: 'publicExamId must be a string' }, { status: 400 });
@@ -169,6 +172,9 @@ export async function PATCH(request: NextRequest) {
           newRole: newRole === null ? null : typeof newRole === 'string' ? newRole : undefined,
           newYear: newYear === null ? null : typeof newYear === 'number' ? newYear : undefined,
           newExamBoardName: typeof newExamBoardName === 'string' ? newExamBoardName : undefined,
+          newTotalQuestions: typeof newTotalQuestions === 'number' && newTotalQuestions > 0 ? Math.round(newTotalQuestions) : undefined,
+          newExamDurationMinutes: newExamDurationMinutes === null ? null : typeof newExamDurationMinutes === 'number' && newExamDurationMinutes > 0 ? Math.round(newExamDurationMinutes) : undefined,
+          newPassingScore: newPassingScore === null ? null : typeof newPassingScore === 'number' && newPassingScore >= 0 && newPassingScore <= 100 ? newPassingScore : undefined,
         },
         session.user.id
       );
@@ -177,9 +183,10 @@ export async function PATCH(request: NextRequest) {
     }
 
     return NextResponse.json({ error: 'Missing subjectId or publicExamId' }, { status: 400 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to update:', err);
+    const { status, ...body } = toApiErrorResponse(err);
 
-    return NextResponse.json({ error: err, message: err.message || 'Failed to update' }, { status: err.status || 500 });
+    return NextResponse.json(body, { status });
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
+import { toApiErrorResponse } from '@/lib/api-error';
 import { auth } from '@/auth';
 
 export async function GET() {
@@ -19,10 +20,11 @@ export async function GET() {
     }));
 
     return NextResponse.json({ examBoards });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('Failed to fetch exam boards:', err);
+    const { status, ...body } = toApiErrorResponse(err);
 
-    return NextResponse.json({ error: 'Failed to fetch exam boards' }, { status: 500 });
+    return NextResponse.json(body, { status });
   }
 }
 
@@ -57,9 +59,10 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to save exam board:', err);
+    const { status, ...body } = toApiErrorResponse(err);
 
-    return NextResponse.json({ error: err.message || 'Failed to save exam board' }, { status: err.status || 500 });
+    return NextResponse.json(body, { status });
   }
 }

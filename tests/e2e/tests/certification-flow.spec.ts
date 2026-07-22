@@ -15,6 +15,11 @@ test('full certification journey: configure → questions → simulado → answe
   // "Código da Certificação" in PT / "Certification Code" in EN
   await page.getByLabel(/Código da Certificação|Certification Code/i).fill(E2E_CERT_KEY);
 
+  // Fill required totalQuestions field
+  const totalQuestionsInput = page.getByLabel(/Total de Quest|Total Questions/i);
+  await expect(totalQuestionsInput).toBeVisible({ timeout: 8_000 });
+  await totalQuestionsInput.fill('65');
+
   // Advance to Step 2
   await page.getByRole('button', { name: /Definir Tópicos|Define Topics/i }).click();
 

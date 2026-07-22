@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { QuizGeneratorService } from '@/features/services/quiz-generator.service';
 import { prisma } from '@/lib/prisma';
 import { INITIAL_CERTIFICATIONS_STATE } from '@/config/constants';
+import { toApiErrorResponse } from '@/lib/api-error';
 import { auth } from '@/auth';
 
 const service = new QuizGeneratorService();
@@ -77,12 +78,10 @@ export async function GET(request: NextRequest) {
     const all = perTopicResults.flatMap((r) => r.questions);
 
     return NextResponse.json(shuffleArray(all), { status: 200 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('quiz-generator error:', err);
+    const { status, ...body } = toApiErrorResponse(err);
 
-    return NextResponse.json(
-      { error: err, message: err.message || 'Failed to process request' },
-      { status: err.status || 500 }
-    );
+    return NextResponse.json(body, { status });
   }
 }

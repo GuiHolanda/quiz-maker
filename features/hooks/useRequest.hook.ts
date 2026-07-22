@@ -26,7 +26,7 @@ export function useRequest(requestMethod: (args: any) => Promise<any>) {
         error?.code === 'ECONNABORTED' || (typeof error?.message === 'string' && error.message.includes('timeout'));
 
       notify.error(
-        t('toast.failedToLoad'),
+        t('toast.error'),
         isTimeout ? t('toast.requestTimeout') : error?.response?.data?.message || t('toast.somethingWrong')
       );
     } finally {

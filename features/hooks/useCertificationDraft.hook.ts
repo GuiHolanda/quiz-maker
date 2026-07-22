@@ -8,12 +8,25 @@ interface CertificationDraft {
   title: string;
   code: string;
   provider: string;
+  totalQuestions: string;
+  examDurationMinutes: string;
+  passingScore: string;
   topics: CertificationTopic[];
   topicName: string;
   step: 1 | 2 | 3;
 }
 
-const EMPTY_DRAFT: CertificationDraft = { title: '', code: '', provider: '', topics: [], topicName: '', step: 1 };
+const EMPTY_DRAFT: CertificationDraft = {
+  title: '',
+  code: '',
+  provider: '',
+  totalQuestions: '',
+  examDurationMinutes: '',
+  passingScore: '',
+  topics: [],
+  topicName: '',
+  step: 1,
+};
 
 function readFromStorage(): CertificationDraft {
   try {
@@ -52,6 +65,9 @@ export function useCertificationDraft() {
   const [title, setTitle] = useState('');
   const [code, setCode] = useState('');
   const [provider, setProvider] = useState('');
+  const [totalQuestions, setTotalQuestions] = useState('');
+  const [examDurationMinutes, setExamDurationMinutes] = useState('');
+  const [passingScore, setPassingScore] = useState('');
   const [topics, setTopics] = useState<CertificationTopic[]>([]);
   const [topicName, setTopicName] = useState('');
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -62,6 +78,9 @@ export function useCertificationDraft() {
     setTitle(draft.title);
     setCode(draft.code);
     setProvider(draft.provider);
+    setTotalQuestions(draft.totalQuestions ?? '');
+    setExamDurationMinutes(draft.examDurationMinutes ?? '');
+    setPassingScore(draft.passingScore ?? '');
     setTopics(draft.topics);
     setTopicName(draft.topicName);
     setStep(draft.step ?? 1);
@@ -70,8 +89,8 @@ export function useCertificationDraft() {
 
   useEffect(() => {
     if (!hydrated) return;
-    writeToStorage({ title, code, provider, topics, topicName, step });
-  }, [hydrated, title, code, provider, topics, topicName, step]);
+    writeToStorage({ title, code, provider, totalQuestions, examDurationMinutes, passingScore, topics, topicName, step });
+  }, [hydrated, title, code, provider, totalQuestions, examDurationMinutes, passingScore, topics, topicName, step]);
 
   const addTopic = (topic: CertificationTopic) => {
     setTopics((prev) => [...prev, topic]);
@@ -98,6 +117,9 @@ export function useCertificationDraft() {
     setTitle('');
     setCode('');
     setProvider('');
+    setTotalQuestions('');
+    setExamDurationMinutes('');
+    setPassingScore('');
     setTopics([]);
     setTopicName('');
     setStep(1);
@@ -111,6 +133,12 @@ export function useCertificationDraft() {
     setCode,
     provider,
     setProvider,
+    totalQuestions,
+    setTotalQuestions,
+    examDurationMinutes,
+    setExamDurationMinutes,
+    passingScore,
+    setPassingScore,
     topics,
     topicName,
     setTopicName,

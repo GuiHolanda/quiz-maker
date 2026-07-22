@@ -77,6 +77,11 @@ export interface Certification {
   label: string;
   key: string;
   provider?: string;
+  totalQuestions: number;
+  examDurationMinutes?: number;
+  passingScore?: number;
+  createdAt?: string;
+  updatedAt?: string;
   topics: CertificationTopic[];
 }
 
@@ -229,6 +234,11 @@ export interface PublicExam {
   name: string;
   role?: string;
   year?: number;
+  totalQuestions: number;
+  examDurationMinutes?: number;
+  passingScore?: number;
+  createdAt?: string;
+  updatedAt?: string;
   examBoard: ExamBoard;
   subjects: PublicExamSubject[];
 }

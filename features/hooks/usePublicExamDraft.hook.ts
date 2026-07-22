@@ -9,6 +9,9 @@ interface PublicExamDraft {
   role: string;
   year: string;
   examBoardName: string;
+  totalQuestions: string;
+  examDurationMinutes: string;
+  passingScore: string;
   subjects: PublicExamSubject[];
   subjectName: string;
   step: 1 | 2 | 3;
@@ -19,6 +22,9 @@ const EMPTY_DRAFT: PublicExamDraft = {
   role: '',
   year: '',
   examBoardName: '',
+  totalQuestions: '',
+  examDurationMinutes: '',
+  passingScore: '',
   subjects: [],
   subjectName: '',
   step: 1,
@@ -62,6 +68,9 @@ export function usePublicExamDraft() {
   const [role, setRole] = useState('');
   const [year, setYear] = useState('');
   const [examBoardName, setExamBoardName] = useState('');
+  const [totalQuestions, setTotalQuestions] = useState('');
+  const [examDurationMinutes, setExamDurationMinutes] = useState('');
+  const [passingScore, setPassingScore] = useState('');
   const [subjects, setSubjects] = useState<PublicExamSubject[]>([]);
   const [subjectName, setSubjectName] = useState('');
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -73,6 +82,9 @@ export function usePublicExamDraft() {
     setRole(draft.role);
     setYear(draft.year);
     setExamBoardName(draft.examBoardName);
+    setTotalQuestions(draft.totalQuestions ?? '');
+    setExamDurationMinutes(draft.examDurationMinutes ?? '');
+    setPassingScore(draft.passingScore ?? '');
     setSubjects(draft.subjects);
     setSubjectName(draft.subjectName);
     setStep(draft.step ?? 1);
@@ -81,8 +93,8 @@ export function usePublicExamDraft() {
 
   useEffect(() => {
     if (!hydrated) return;
-    writeToStorage({ name, role, year, examBoardName, subjects, subjectName, step });
-  }, [hydrated, name, role, year, examBoardName, subjects, subjectName, step]);
+    writeToStorage({ name, role, year, examBoardName, totalQuestions, examDurationMinutes, passingScore, subjects, subjectName, step });
+  }, [hydrated, name, role, year, examBoardName, totalQuestions, examDurationMinutes, passingScore, subjects, subjectName, step]);
 
   const addSubject = (subject: PublicExamSubject) => {
     setSubjects((prev) => [...prev, subject]);
@@ -106,6 +118,9 @@ export function usePublicExamDraft() {
     setRole('');
     setYear('');
     setExamBoardName('');
+    setTotalQuestions('');
+    setExamDurationMinutes('');
+    setPassingScore('');
     setSubjects([]);
     setSubjectName('');
     setStep(1);
@@ -121,6 +136,12 @@ export function usePublicExamDraft() {
     setYear,
     examBoardName,
     setExamBoardName,
+    totalQuestions,
+    setTotalQuestions,
+    examDurationMinutes,
+    setExamDurationMinutes,
+    passingScore,
+    setPassingScore,
     subjects,
     subjectName,
     setSubjectName,

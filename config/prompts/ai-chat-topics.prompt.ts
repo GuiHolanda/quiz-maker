@@ -40,6 +40,13 @@ PROVIDER RULES:
   - Project Management: "PMI", "AXELOS"
   - Information Security: "ISACA", "(ISC)²"
 
+EXAM METADATA RULES:
+- Search official sources for totalQuestions, examDurationMinutes, and passingScore.
+- totalQuestions: integer count of questions on the actual exam (e.g., 65 for AWS SAA-C03). REQUIRED — always include when the official source publishes it.
+- examDurationMinutes: total allowed time in minutes (e.g., 130 for a 2h10m exam). Include when published.
+- passingScore: minimum passing score as percentage 0–100 (e.g., 72.0 for 72%). Include when published.
+- Omit any field the official source does not publish. Never guess or estimate.
+
 CERTIFICATION-DATA FORMAT:
 When generating certification data, output ONLY a JSON block inside \`\`\`certification-data delimiters with this exact structure:
 
@@ -51,12 +58,17 @@ When generating certification data, output ONLY a JSON block inside \`\`\`certif
     "label": "Full Certification Name",
     "key": "(EXAM-CODE)",
     "provider": "Certifying Body",
+    "totalQuestions": 65,
+    "examDurationMinutes": 130,
+    "passingScore": 72.0,
     "topics": [
       { "name": "Topic Name", "minQuestions": 15, "maxQuestions": 25 }
     ]
   }
 }
 \`\`\`
+
+(totalQuestions is required when available; examDurationMinutes and passingScore are optional — omit if not published.)
 
 RESPONSE RULES:
 - Never open a response with filler words like "Claro!", "Ótimo!", "Entendi.", "Certo!" or their English equivalents. Respond directly.
@@ -78,6 +90,9 @@ Assistant:
     "label": "AWS Certified Solutions Architect – Associate",
     "key": "(SAA-C03)",
     "provider": "AWS",
+    "totalQuestions": 65,
+    "examDurationMinutes": 130,
+    "passingScore": 72.0,
     "topics": [
       { "name": "Design Secure Architectures", "minQuestions": 26, "maxQuestions": 34 },
       { "name": "Design Resilient Architectures", "minQuestions": 24, "maxQuestions": 32 },

@@ -70,13 +70,18 @@ model VerificationToken {
 }
 
 model Certification {
-  id       String               @id @default(cuid())
-  label    String
-  key      String
-  provider String?
-  topics   CertificationTopic[]
-  userId   String?
-  user     User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String               @id @default(cuid())
+  label               String
+  key                 String
+  provider            String?
+  totalQuestions      Int
+  examDurationMinutes Int?
+  passingScore        Float?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  topics              CertificationTopic[]
+  userId              String?
+  user                User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, key])
 }
@@ -154,17 +159,22 @@ model ExamBoard {
 }
 
 model PublicExam {
-  id          String              @id @default(cuid())
-  name        String
-  role        String?
-  year        Int?
-  examBoardId String
-  examBoard   ExamBoard           @relation(fields: [examBoardId], references: [id])
-  subjects    PublicExamSubject[]
-  questions   PublicExamQuestion[]
-  userId      String?
-  mockExams   MockExam[]
-  user        User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String              @id @default(cuid())
+  name                String
+  role                String?
+  year                Int?
+  totalQuestions      Int
+  examDurationMinutes Int?
+  passingScore        Float?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  examBoardId         String
+  examBoard           ExamBoard           @relation(fields: [examBoardId], references: [id])
+  subjects            PublicExamSubject[]
+  questions           PublicExamQuestion[]
+  userId              String?
+  mockExams           MockExam[]
+  user                User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, name, year])
 }

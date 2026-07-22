@@ -4,6 +4,7 @@ import { PublicExamQuestionService, validateAiQuestions } from '@/features/servi
 import { AIPublicExamQuestion } from '@/shared/types';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { publicExamAnswersPrompt } from '@/config/prompts/public-exam-answers.prompt';
+import { toApiErrorResponse } from '@/lib/api-error';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
@@ -50,12 +51,10 @@ export async function POST(request: NextRequest) {
       },
       { status: 200 }
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to process request:', err);
+    const { status, ...body } = toApiErrorResponse(err);
 
-    return NextResponse.json(
-      { error: 'Internal Server Error', message: err.message || 'Failed to process request' },
-      { status: err.status || 500 }
-    );
+    return NextResponse.json(body, { status });
   }
 }
