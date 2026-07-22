@@ -42,7 +42,7 @@ export function QuestionGeneratorForm({ onGenerationStart }: Readonly<QuestionGe
     const requestPayload: QuestionParams = {
       certification_name: selectedCertification?.label || '',
       topic_name: selectedTopic,
-      num_questions: num_questions,
+      num_questions,
     };
 
     onGenerationStart(requestPayload);

@@ -169,10 +169,11 @@ export function PublicExamQuestionsContent() {
       <div className="flex flex-col gap-4 mt-4">
         <Progress
           aria-label={t('busy.generating')}
-          classNames={{ label: 'text-xs', value: 'text-xs' }}
+          classNames={{ label: 'text-xs font-extrabold', value: 'text-xs font-extrabold' }}
           color="primary"
           label={progress < 75 ? t('busy.generating') : t('busy.almostDone')}
           showValueLabel
+          size="sm"
           value={progress}
         />
         {progress >= 75 && <SkeletonListLoader count={Math.min(5, generatingCount)} height="h-24" />}
@@ -186,7 +187,7 @@ export function PublicExamQuestionsContent() {
       <Card className="border border-primary-100 bg-primary-50/60 dark:bg-primary-900/20 shadow-none">
         <CardBody className="flex flex-row items-start gap-3 py-3 px-4">
           <FontAwesomeIcon className="text-primary mt-0.5 shrink-0" icon={faCircleInfo} />
-          <p className="text-sm text-default-700 flex-1">{t('generate.selectionHint')}</p>
+          <p className="text-xs text-default-700 flex-1">{t('generate.selectionHint')}</p>
           <Button
             isIconOnly
             aria-label={t('common.dismiss')}

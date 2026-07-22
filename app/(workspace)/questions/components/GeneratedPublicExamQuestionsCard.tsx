@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect } from 'react';
 import { Checkbox } from '@heroui/checkbox';
 import { Listbox, ListboxItem } from '@heroui/listbox';
