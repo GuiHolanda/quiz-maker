@@ -48,6 +48,58 @@ describe('migration completeness', () => {
     expect(empty).toEqual([]);
   });
 
+  it('every prod migration folder name uses the Prisma 14-digit timestamp format', () => {
+    const folders = getMigrationFolders(PROD_MIGRATIONS_DIR);
+    const invalid = folders.filter((f) => !/^\d{14}_/.test(f));
+
+    if (invalid.length > 0) {
+      throw new Error(
+        `Prod migration folders with invalid name format (expected YYYYMMDDHHMMSS_name):\n` +
+          invalid.map((f) => `  - ${f}`).join('\n') +
+          `\n\nRename each folder so the timestamp prefix has exactly 14 digits (e.g. 20260722100000_name). ` +
+          `Prisma silently ignores folders that don't match this pattern and will never apply them.`,
+      );
+    }
+
+    expect(invalid).toEqual([]);
+  });
+
+  it('prod migration SQL does not use SQLite-only syntax', () => {
+    const folders = getMigrationFolders(PROD_MIGRATIONS_DIR);
+    const violations: string[] = [];
+
+    const SQLITE_PATTERNS: Array<{ pattern: RegExp; hint: string }> = [
+      { pattern: /\bDATETIME\b/i, hint: 'use TIMESTAMP(3) instead of DATETIME' },
+      { pattern: /\bPRAGMA\b/i, hint: 'PRAGMA is SQLite-only' },
+      { pattern: /AUTOINCREMENT/i, hint: 'use SERIAL or GENERATED ALWAYS AS IDENTITY for PostgreSQL' },
+    ];
+
+    for (const folder of folders) {
+      const sqlPath = path.join(PROD_MIGRATIONS_DIR, folder, 'migration.sql');
+      let sql: string;
+      try {
+        sql = readFileSync(sqlPath, 'utf-8');
+      } catch {
+        continue;
+      }
+
+      for (const { pattern, hint } of SQLITE_PATTERNS) {
+        if (pattern.test(sql)) {
+          violations.push(`${folder}/migration.sql — ${hint}`);
+        }
+      }
+    }
+
+    if (violations.length > 0) {
+      throw new Error(
+        `Prod migrations contain SQLite-only syntax (prod uses PostgreSQL):\n` +
+          violations.map((v) => `  - ${v}`).join('\n'),
+      );
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it('every dev migration newer than the latest prod migration also exists in prod', () => {
     // Dev and prod have intentionally different migration histories for older entries
     // (prod was bootstrapped from a consolidated init). The invariant that matters
