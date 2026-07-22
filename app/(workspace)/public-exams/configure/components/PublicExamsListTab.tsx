@@ -279,7 +279,9 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
         </span>
       );
 
-    const isEdited = publicExam.updatedAt !== publicExam.createdAt;
+    const isEdited = publicExam.createdAt && publicExam.updatedAt
+      ? publicExam.updatedAt !== publicExam.createdAt
+      : false;
 
     return (
       <div className="flex flex-col gap-0.5 min-w-0">
@@ -333,11 +335,13 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
             )}
           </div>
           <div className="flex items-center gap-2 text-xs text-default-400 shrink-0">
-            <span>
-              {t('common.createdAt', { date: '' }).replace('{date}', '')}
-              <RelativeDate date={publicExam.createdAt} />
-            </span>
-            {isEdited && (
+            {publicExam.createdAt && (
+              <span>
+                {t('common.createdAt', { date: '' }).replace('{date}', '')}
+                <RelativeDate date={publicExam.createdAt} />
+              </span>
+            )}
+            {isEdited && publicExam.updatedAt && (
               <span>
                 {t('common.updatedAt', { date: '' }).replace('{date}', '')}
                 <RelativeDate date={publicExam.updatedAt} />

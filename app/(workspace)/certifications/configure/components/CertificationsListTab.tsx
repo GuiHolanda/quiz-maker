@@ -236,7 +236,9 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
         </span>
       );
 
-    const isEdited = certification.updatedAt !== certification.createdAt;
+    const isEdited = certification.createdAt && certification.updatedAt
+    ? certification.updatedAt !== certification.createdAt
+    : false;
 
     return (
       <div className="flex flex-col gap-0.5 min-w-0">
@@ -285,11 +287,13 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
             )}
           </div>
           <div className="flex items-center gap-2 text-xs text-default-400 shrink-0">
-            <span>
-              {t('common.createdAt', { date: '' }).replace('{date}', '')}
-              <RelativeDate date={certification.createdAt} />
-            </span>
-            {isEdited && (
+            {certification.createdAt && (
+              <span>
+                {t('common.createdAt', { date: '' }).replace('{date}', '')}
+                <RelativeDate date={certification.createdAt} />
+              </span>
+            )}
+            {isEdited && certification.updatedAt && (
               <span>
                 {t('common.updatedAt', { date: '' }).replace('{date}', '')}
                 <RelativeDate date={certification.updatedAt} />
