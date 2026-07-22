@@ -75,12 +75,12 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-  migrate-prod:
-    name: Apply Prod Migrations
+  migrate-and-deploy:
+    name: Migrate + Deploy
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     needs: e2e-tests
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - uses: actions/checkout@v4
@@ -99,3 +99,6 @@ jobs:
         run: npm run prisma:migrate:prod
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+
+      - name: Trigger Vercel deploy
+        run: curl -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}"
