@@ -79,7 +79,7 @@ jobs:
     name: Apply Prod Migrations
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: e2e-tests
+    needs: unit-tests
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
