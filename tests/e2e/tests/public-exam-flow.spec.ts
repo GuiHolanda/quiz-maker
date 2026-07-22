@@ -23,7 +23,7 @@ test('public exam full flow: configure → questions → simulado → answer →
   await expect(bancaInput).toHaveValue(E2E_EXAM_BOARD);
 
   // Fill required totalQuestions field
-  await page.getByLabel(/Total de Questões|Total Questions/i).fill('60');
+  await page.getByLabel(/Total de Quest|Total Questions/i).fill('60');
 
   // Advance to Step 2 — "Próximo: Definir Matérias" (PT) / "Next: Define Subjects" (EN)
   await page.getByRole('button', { name: /Pr[oó]ximo.*Mat[eé]rias|Next.*Subject/i }).click();
