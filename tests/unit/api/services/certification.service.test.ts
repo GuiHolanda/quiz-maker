@@ -18,7 +18,7 @@ describe('CertificationService', () => {
 
   // Behaviour 2: validate() throws on empty topics array
   it('validate() throws when topics array is empty', () => {
-    expect(() => service.validate({ label: 'L', key: 'K', topics: [] })).toThrow(
+    expect(() => service.validate({ label: 'L', key: 'K', totalQuestions: 65, topics: [] })).toThrow(
       'At least one topic is required',
     );
   });
@@ -29,6 +29,7 @@ describe('CertificationService', () => {
       label: '  AWS SAA  ',
       key: '  aws-saa  ',
       provider: '  Amazon  ',
+      totalQuestions: 65,
       topics: [{ name: 'IAM', minQuestions: 5, maxQuestions: 20 }],
     });
 

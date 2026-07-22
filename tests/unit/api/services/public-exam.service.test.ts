@@ -24,6 +24,7 @@ describe('PublicExamService', () => {
     expect(() =>
       service.validate({
         name: 'Concurso ABC',
+        totalQuestions: 60,
         examBoard: { name: 'CESGRANRIO' },
         subjects: [],
       }),
@@ -49,7 +50,8 @@ describe('PublicExamService', () => {
     await service.save(
       {
         name: 'Concurso ABC',
-        examBoard: { name: 'CESGRANRIO', fullName: null },
+        totalQuestions: 60,
+        examBoard: { name: 'CESGRANRIO', fullName: undefined },
         subjects: [{ name: 'Math', minQuestions: 0.2, maxQuestions: 0.4 }],
       },
       'user-1',
