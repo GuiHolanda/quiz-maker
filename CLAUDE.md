@@ -444,8 +444,8 @@ import bcrypt from 'bcryptjs';
 
 | Arquivo de teste | O que cobre |
 |---|---|
-| `services/certification.service.test.ts` | CRUD de certificações e tópicos |
-| `services/public-exam.service.test.ts` | CRUD de concursos, assuntos e tópicos |
+| `services/certification.service.test.ts` | CRUD de certificações e tópicos; propagação de `updatedAt` ao pai em add/update/deleteTopic |
+| `services/public-exam.service.test.ts` | CRUD de concursos, assuntos e tópicos; propagação de `updatedAt` ao pai em add/update/delete de subjects e topics |
 | `services/quota.service.test.ts` | Verificação e registro de quota |
 | `services/quiz-generator.service.test.ts` | Distribuição de questões por tópico |
 | `services/register.service.test.ts` | Registro de usuário |

@@ -165,8 +165,8 @@ Route handlers never contain business logic — they delegate to services.
 |---|---|
 | `openAI.service.ts` | OpenAI client wrapper — single `call(prompt, input)` method using Responses API with `web_search_preview`. Returns `{ text: string; inputTokens: number; outputTokens: number }`. Never returns a plain string. |
 | `quota.service.ts` | Check and record usage quota per user per period. Supports `customQuotaOverride` (sentinel `-1` = ∞). Key methods: `checkAndRecordQuestions(userId, count)` returns `{ logId }` for later token recording; `recordTokens(logId, { inputTokens, outputTokens })` patches the `UsageLog` row after the LLM call completes. |
-| `certification.service.ts` | CRUD for certifications and topics |
-| `public-exam.service.ts` | CRUD for public exams, subjects, and topics |
+| `certification.service.ts` | CRUD for certifications and topics. Child mutations (addTopic, updateTopic, deleteTopic) call `certification.update({ data: { updatedAt: new Date() } })` after the main operation to propagate the timestamp to the parent. |
+| `public-exam.service.ts` | CRUD for public exams, subjects, and topics. Same parent-touch pattern: all 6 child mutation methods (add/update/delete subject and topic) call `publicExam.update({ data: { updatedAt: new Date() } })`. For methods using `$transaction`, the touch runs inside the same transaction. |
 | `question.service.ts` | `validateAiQuestions` (shared), `CertificationQuestionService` (with `saveExplanations`), `PublicExamQuestionService` |
 | `browse.service.ts` | `BrowseQuestionsService`, `PublicExamBrowseQuestionsService`, `BrowseSummaryService`, `PublicExamBrowseSummaryService` |
 | `quiz-generator.service.ts` | Parse params, distribute questions across topics, fetch stored questions |

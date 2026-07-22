@@ -713,6 +713,7 @@ Layout completamente separado do `(workspace)` — usa sidebar própria, sem o n
 | `EmptyState.tsx` | Card padrão de "sem dados" — título obrigatório, descrição opcional, e CTA opcional via `action: { label, href?, onPress?, icon? }`. `href` renderiza com `NextLink`; `onPress` é callback. Ícone padrão `faPlus`. Ver seção dedicada abaixo. |
 | `FormAccordion.tsx` | Accordion com `<Form>` integrado, BusyDialog e footer de ações |
 | `PasswordInput.tsx` | Wrapper de `<Input>` com toggle olho/olho-cortado (`faEye`/`faEyeSlash`). Gerencia `type=password\|text` internamente, spread de `inputProperties.input` por padrão. Botão `tabIndex={-1}` + `onMouseDown.preventDefault()` para não roubar foco. `aria-label` via `aria.showPassword`/`aria.hidePassword`. **Sempre passar `placeholder` quando usar `labelPlacement="outside"` — ver seção "Padrão de inputs".** |
+| `RelativeDate.tsx` | Exibe uma data em formato relativo (ex.: "há 3 meses") via `Intl.RelativeTimeFormat`, com a data absoluta no hover via `title`. Recebe `date: string` (ISO). Usa `useTranslation()` para adaptar o locale (pt-BR / en-US). Inclui `suppressHydrationWarning` para evitar mismatch de SSR. |
 | `PaginationControls.tsx` | Botões prev/next reutilizáveis |
 | `ItemsPerPageSelect.tsx` | Select de itens por página |
 | `PlanBadge.tsx` | Chip de plano do usuário (Free/Pro) com link para billing |

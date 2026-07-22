@@ -176,4 +176,144 @@ describe('PublicExamService', () => {
       data: { publicExamName: 'Concurso XYZ' },
     });
   });
+
+  // Behaviour 8: updateSubject() touches parent updatedAt inside transaction
+  it('updateSubject() calls publicExam.update with updatedAt inside the transaction', async () => {
+    prismaMock.publicExamSubject.findUnique.mockResolvedValue({
+      id: 'sub-1',
+      name: 'Matemática',
+      publicExamId: 'exam-1',
+      minQuestions: 0.2,
+      maxQuestions: 0.4,
+      publicExam: { id: 'exam-1', name: 'Concurso ABC', userId: 'user-1' },
+    } as any);
+    prismaMock.publicExamQuestion.updateMany.mockResolvedValue({ count: 0 } as any);
+    prismaMock.publicExamSubject.update.mockResolvedValue({ id: 'sub-1', name: 'Matemática e Lógica' } as any);
+    prismaMock.publicExam.update.mockResolvedValue({} as any);
+
+    await service.updateSubject(
+      { subjectId: 'sub-1', newName: 'Matemática e Lógica', minQuestions: 0.2, maxQuestions: 0.4 },
+      'user-1',
+    );
+
+    expect(prismaMock.publicExam.update).toHaveBeenCalledWith({
+      where: { id: 'exam-1' },
+      data: { updatedAt: expect.any(Date) },
+    });
+  });
+
+  // Behaviour 9: deleteSubject() touches parent updatedAt on success
+  it('deleteSubject() calls publicExam.update with updatedAt after deleting the subject', async () => {
+    prismaMock.publicExamSubject.findUnique.mockResolvedValue({
+      id: 'sub-1',
+      name: 'Matemática',
+      publicExamId: 'exam-1',
+      minQuestions: 0.2,
+      maxQuestions: 0.4,
+      publicExam: { id: 'exam-1', name: 'Concurso ABC', userId: 'user-1' },
+    } as any);
+    prismaMock.publicExamSubject.delete.mockResolvedValue({} as any);
+    prismaMock.publicExam.update.mockResolvedValue({} as any);
+
+    await service.deleteSubject('sub-1', 'user-1');
+
+    expect(prismaMock.publicExam.update).toHaveBeenCalledWith({
+      where: { id: 'exam-1' },
+      data: { updatedAt: expect.any(Date) },
+    });
+  });
+
+  // Behaviour 10: addSubject() touches parent updatedAt on success
+  it('addSubject() calls publicExam.update with updatedAt after creating the subject', async () => {
+    prismaMock.publicExam.findUnique.mockResolvedValue({ id: 'exam-1', userId: 'user-1' } as any);
+    prismaMock.publicExamSubject.findUnique.mockResolvedValue(null);
+    prismaMock.publicExamSubject.create.mockResolvedValue({ id: 'sub-2', name: 'Português' } as any);
+    prismaMock.publicExam.update.mockResolvedValue({} as any);
+
+    await service.addSubject('exam-1', 'Português', 0.2, 0.4, 'user-1');
+
+    expect(prismaMock.publicExam.update).toHaveBeenCalledWith({
+      where: { id: 'exam-1' },
+      data: { updatedAt: expect.any(Date) },
+    });
+  });
+
+  // Behaviour 11: addTopic() touches parent updatedAt on success
+  it('addTopic() calls publicExam.update with updatedAt after creating the topic', async () => {
+    prismaMock.publicExamSubject.findUnique.mockResolvedValue({
+      id: 'sub-1',
+      name: 'Matemática',
+      publicExamId: 'exam-1',
+      publicExam: { id: 'exam-1', userId: 'user-1' },
+    } as any);
+    prismaMock.publicExamTopic.findUnique.mockResolvedValue(null);
+    prismaMock.publicExamTopic.create.mockResolvedValue({ id: 'topic-1', name: 'Álgebra' } as any);
+    prismaMock.publicExam.update.mockResolvedValue({} as any);
+
+    await service.addTopic('sub-1', 'Álgebra', 'user-1');
+
+    expect(prismaMock.publicExam.update).toHaveBeenCalledWith({
+      where: { id: 'exam-1' },
+      data: { updatedAt: expect.any(Date) },
+    });
+  });
+
+  // Behaviour 12: updateTopic() touches parent updatedAt inside transaction
+  it('updateTopic() calls publicExam.update with updatedAt inside the transaction', async () => {
+    prismaMock.publicExamTopic.findUnique.mockResolvedValue({
+      id: 'topic-1',
+      name: 'Álgebra',
+      subjectId: 'sub-1',
+      subject: {
+        id: 'sub-1',
+        name: 'Matemática',
+        publicExam: { id: 'exam-1', name: 'Concurso ABC', userId: 'user-1' },
+      },
+    } as any);
+    prismaMock.publicExamTopic.findUnique
+      .mockResolvedValueOnce({
+        id: 'topic-1',
+        name: 'Álgebra',
+        subjectId: 'sub-1',
+        subject: {
+          id: 'sub-1',
+          name: 'Matemática',
+          publicExam: { id: 'exam-1', name: 'Concurso ABC', userId: 'user-1' },
+        },
+      } as any)
+      .mockResolvedValueOnce(null);
+    prismaMock.publicExamQuestion.updateMany.mockResolvedValue({ count: 0 } as any);
+    prismaMock.publicExamTopic.update.mockResolvedValue({ id: 'topic-1', name: 'Geometria' } as any);
+    prismaMock.publicExam.update.mockResolvedValue({} as any);
+
+    await service.updateTopic('topic-1', 'Geometria', 'user-1');
+
+    expect(prismaMock.publicExam.update).toHaveBeenCalledWith({
+      where: { id: 'exam-1' },
+      data: { updatedAt: expect.any(Date) },
+    });
+  });
+
+  // Behaviour 13: deleteTopic() touches parent updatedAt on success
+  it('deleteTopic() calls publicExam.update with updatedAt after deleting the topic', async () => {
+    prismaMock.publicExamTopic.findUnique.mockResolvedValue({
+      id: 'topic-1',
+      name: 'Álgebra',
+      subjectId: 'sub-1',
+      subject: {
+        id: 'sub-1',
+        name: 'Matemática',
+        publicExam: { id: 'exam-1', userId: 'user-1' },
+      },
+    } as any);
+    prismaMock.publicExamTopic.delete.mockResolvedValue({} as any);
+    prismaMock.publicExam.update.mockResolvedValue({} as any);
+
+    await service.deleteTopic('topic-1', 'user-1');
+
+    expect(prismaMock.publicExam.update).toHaveBeenCalledWith({
+      where: { id: 'exam-1' },
+      data: { updatedAt: expect.any(Date) },
+    });
+  });
 });
