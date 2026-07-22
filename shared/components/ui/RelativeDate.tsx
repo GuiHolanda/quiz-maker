@@ -14,7 +14,7 @@ export function RelativeDate({ date }: RelativeDateProps) {
   const relative = formatRelative(d, locale);
 
   return (
-    <time dateTime={date} title={absolute}>
+    <time dateTime={date} suppressHydrationWarning title={absolute}>
       {relative}
     </time>
   );
