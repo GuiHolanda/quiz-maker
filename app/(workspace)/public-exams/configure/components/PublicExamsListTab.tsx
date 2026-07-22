@@ -27,6 +27,7 @@ import { deletePublicExam } from '@/features/connectors';
 import { PublicExam, PublicExamSubject, PublicExamTopic, ExamBoard } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
+import { RelativeDate } from '@/shared/components/ui/RelativeDate';
 
 interface PublicExamsListTabProps {
   readonly onCreateNew: () => void;
@@ -278,51 +279,12 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
         </span>
       );
 
-    const hasSecondRow =
-      publicExam.totalQuestions > 0 ||
-      publicExam.examDurationMinutes ||
-      publicExam.passingScore != null ||
-      publicExam.year != null;
+    const isEdited = publicExam.updatedAt !== publicExam.createdAt;
 
     return (
       <div className="flex flex-col gap-0.5 min-w-0">
         <div className="flex items-center justify-between gap-2 min-w-0">
-          <div className="flex flex-col gap-2">
-            <span className="text-sm font-semibold text-foreground truncate min-w-0">{publicExam.name}</span>
-            {hasSecondRow && (
-              <div className="flex items-center gap-3">
-                {publicExam.totalQuestions > 0 && (
-                  <span
-                    aria-label={t('concurso.totalQuestionsAriaLabel', { count: String(publicExam.totalQuestions) })}
-                    className="flex items-center gap-1 text-xs text-default-400"
-                  >
-                    <FontAwesomeIcon className="text-[10px]" icon={faHashtag} />
-                    {t('concurso.questionsCount', { count: String(publicExam.totalQuestions) })}
-                  </span>
-                )}
-                {publicExam.examDurationMinutes && (
-                  <span
-                    aria-label={t('concurso.durationAriaLabel', {
-                      minutes: String(publicExam.examDurationMinutes),
-                    })}
-                    className="flex items-center gap-1 text-xs text-default-400"
-                  >
-                    <FontAwesomeIcon className="text-[10px]" icon={faClock} />
-                    {t('concurso.durationValue', { minutes: String(publicExam.examDurationMinutes) })}
-                  </span>
-                )}
-                {publicExam.passingScore != null && (
-                  <span
-                    aria-label={t('concurso.passingScoreAriaLabel', { score: String(publicExam.passingScore) })}
-                    className="flex items-center gap-1 text-xs text-primary font-medium"
-                  >
-                    <FontAwesomeIcon className="text-[10px]" icon={faBullseye} />
-                    {t('concurso.passingScoreValue', { score: String(publicExam.passingScore) })}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
+          <span className="text-sm font-semibold text-foreground truncate min-w-0">{publicExam.name}</span>
           <div className="flex items-center gap-2 shrink-0">
             {publicExam.year != null && (
               <span
@@ -337,6 +299,50 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
               <span className="text-xs text-default-400 truncate max-w-[160px]">{publicExam.examBoard.name}</span>
             )}
             {subjectStatus}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3">
+            {publicExam.totalQuestions > 0 && (
+              <span
+                aria-label={t('concurso.totalQuestionsAriaLabel', { count: String(publicExam.totalQuestions) })}
+                className="flex items-center gap-1 text-xs text-default-400"
+              >
+                <FontAwesomeIcon className="text-[10px]" icon={faHashtag} />
+                {t('concurso.questionsCount', { count: String(publicExam.totalQuestions) })}
+              </span>
+            )}
+            {publicExam.examDurationMinutes && (
+              <span
+                aria-label={t('concurso.durationAriaLabel', { minutes: String(publicExam.examDurationMinutes) })}
+                className="flex items-center gap-1 text-xs text-default-400"
+              >
+                <FontAwesomeIcon className="text-[10px]" icon={faClock} />
+                {t('concurso.durationValue', { minutes: String(publicExam.examDurationMinutes) })}
+              </span>
+            )}
+            {publicExam.passingScore != null && (
+              <span
+                aria-label={t('concurso.passingScoreAriaLabel', { score: String(publicExam.passingScore) })}
+                className="flex items-center gap-1 text-xs text-primary font-medium"
+              >
+                <FontAwesomeIcon className="text-[10px]" icon={faBullseye} />
+                {t('concurso.passingScoreValue', { score: String(publicExam.passingScore) })}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-xs text-default-400 shrink-0">
+            <span>
+              {t('common.createdAt', { date: '' }).replace('{date}', '')}
+              <RelativeDate date={publicExam.createdAt} />
+            </span>
+            {isEdited && (
+              <span>
+                {t('common.updatedAt', { date: '' }).replace('{date}', '')}
+                <RelativeDate date={publicExam.updatedAt} />
+              </span>
+            )}
           </div>
         </div>
       </div>
