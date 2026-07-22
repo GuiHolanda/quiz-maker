@@ -80,6 +80,8 @@ export interface Certification {
   totalQuestions: number;
   examDurationMinutes?: number;
   passingScore?: number;
+  createdAt: string;
+  updatedAt: string;
   topics: CertificationTopic[];
 }
 
@@ -235,6 +237,8 @@ export interface PublicExam {
   totalQuestions: number;
   examDurationMinutes?: number;
   passingScore?: number;
+  createdAt: string;
+  updatedAt: string;
   examBoard: ExamBoard;
   subjects: PublicExamSubject[];
 }
