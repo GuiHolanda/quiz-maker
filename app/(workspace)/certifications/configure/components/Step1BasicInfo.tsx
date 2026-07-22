@@ -15,9 +15,15 @@ interface Step1BasicInfoProps {
   readonly title: string;
   readonly code: string;
   readonly provider: string;
+  readonly totalQuestions: string;
+  readonly examDurationMinutes: string;
+  readonly passingScore: string;
   readonly onTitleChange: (v: string) => void;
   readonly onCodeChange: (v: string) => void;
   readonly onProviderChange: (v: string) => void;
+  readonly onTotalQuestionsChange: (v: string) => void;
+  readonly onExamDurationMinutesChange: (v: string) => void;
+  readonly onPassingScoreChange: (v: string) => void;
   readonly onBack: () => void;
   readonly onNext: () => void;
   readonly onDiscard: () => void;
@@ -27,19 +33,30 @@ export function Step1BasicInfo({
   title,
   code,
   provider,
+  totalQuestions,
+  examDurationMinutes,
+  passingScore,
   onTitleChange,
   onCodeChange,
   onProviderChange,
+  onTotalQuestionsChange,
+  onExamDurationMinutesChange,
+  onPassingScoreChange,
   onBack,
   onNext,
   onDiscard,
 }: Step1BasicInfoProps) {
   const { t } = useTranslation();
-  const hasDraft = !!(title || code || provider);
+  const hasDraft = !!(title || code || provider || totalQuestions);
 
   const handleNext = () => {
     if (!title.trim() || !code.trim()) {
       notify.error(t('toast.validationError'), t('error.titleCodeRequired'));
+
+      return;
+    }
+    if (!totalQuestions.trim() || isNaN(parseInt(totalQuestions, 10)) || parseInt(totalQuestions, 10) < 1) {
+      notify.error(t('toast.validationError'), t('error.totalQuestionsRequired'));
 
       return;
     }
@@ -86,6 +103,40 @@ export function Step1BasicInfo({
               <span className="text-sm font-semibold text-foreground">{t('certification.tipTitle')}</span>
               <p className="text-xs text-default-500">{t('certification.tipDescription')}</p>
             </div>
+          </div>
+
+          <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Input
+              isRequired
+              label={t('certification.totalQuestions')}
+              min={1}
+              placeholder="e.g. 65"
+              type="number"
+              value={totalQuestions}
+              onChange={(e) => onTotalQuestionsChange(e.target.value)}
+              {...inputProperties.input}
+            />
+            <Input
+              endContent={<span className="text-xs text-default-400 self-center">{t('certification.examDurationUnit')}</span>}
+              label={t('certification.examDuration')}
+              min={1}
+              placeholder="e.g. 130"
+              type="number"
+              value={examDurationMinutes}
+              onChange={(e) => onExamDurationMinutesChange(e.target.value)}
+              {...inputProperties.input}
+            />
+            <Input
+              endContent={<span className="text-xs text-default-400 self-center">%</span>}
+              label={t('certification.passingScore')}
+              max={100}
+              min={0}
+              placeholder="e.g. 72"
+              type="number"
+              value={passingScore}
+              onChange={(e) => onPassingScoreChange(e.target.value)}
+              {...inputProperties.input}
+            />
           </div>
         </div>
 

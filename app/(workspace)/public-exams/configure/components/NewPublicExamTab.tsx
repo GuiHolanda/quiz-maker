@@ -61,6 +61,9 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
       name,
       role: draft.role.trim() || undefined,
       year: yearNum,
+      totalQuestions: parseInt(draft.totalQuestions, 10),
+      examDurationMinutes: parseInt(draft.examDurationMinutes, 10) || undefined,
+      passingScore: parseFloat(draft.passingScore) || undefined,
       examBoard: { name: examBoardName },
       subjects: draft.subjects,
     };
@@ -85,15 +88,21 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
     draft.step === 1 ? (
       <Step1BasicInfo
         examBoardName={draft.examBoardName}
+        examDurationMinutes={draft.examDurationMinutes}
         name={draft.name}
+        passingScore={draft.passingScore}
         role={draft.role}
+        totalQuestions={draft.totalQuestions}
         year={draft.year}
         onBack={onBackToLibrary}
         onDiscard={() => setIsDiscardOpen(true)}
         onExamBoardChange={draft.setExamBoardName}
+        onExamDurationMinutesChange={draft.setExamDurationMinutes}
         onNameChange={draft.setName}
         onNext={() => goToStep(2)}
+        onPassingScoreChange={draft.setPassingScore}
         onRoleChange={draft.setRole}
+        onTotalQuestionsChange={draft.setTotalQuestions}
         onYearChange={draft.setYear}
       />
     ) : draft.step === 2 ? (
@@ -113,10 +122,13 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
     ) : (
       <Step3Review
         examBoardName={draft.examBoardName}
+        examDurationMinutes={parseInt(draft.examDurationMinutes, 10) || undefined}
         isLoading={loading}
         name={draft.name}
+        passingScore={parseFloat(draft.passingScore) || undefined}
         role={draft.role}
         subjects={draft.subjects}
+        totalQuestions={parseInt(draft.totalQuestions, 10) || 0}
         year={draft.year}
         onBack={() => goToStep(2)}
         onDiscard={() => setIsDiscardOpen(true)}
