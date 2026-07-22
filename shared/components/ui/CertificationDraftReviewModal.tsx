@@ -30,7 +30,7 @@ export function CertificationDraftReviewModal({
   onSaved,
 }: CertificationDraftReviewModalProps) {
   const { t } = useTranslation();
-  const { draft, status, updateField, updateTopic, addTopic, removeTopic, handleSave } =
+  const { draft, status, updateField, updateNumericField, updateTopic, addTopic, removeTopic, handleSave } =
     useCertificationDraftCard(certification);
 
   const isSaving = status === 'saving';
@@ -108,6 +108,45 @@ export function CertificationDraftReviewModal({
             label={t('chat.certificationProvider')}
             value={draft.provider ?? ''}
             onValueChange={(v) => updateField('provider', v)}
+          />
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <Input
+            isRequired
+            {...inputProperties.input}
+            isDisabled={isSaving}
+            label={t('certification.totalQuestions')}
+            min={1}
+            placeholder="e.g. 65"
+            size="sm"
+            type="number"
+            value={draft.totalQuestions ? String(draft.totalQuestions) : ''}
+            onValueChange={(v) => updateNumericField('totalQuestions', parseInt(v, 10) || undefined)}
+          />
+          <Input
+            {...inputProperties.input}
+            endContent={<span className="text-xs text-default-400 self-center">{t('certification.examDurationUnit')}</span>}
+            isDisabled={isSaving}
+            label={t('certification.examDuration')}
+            min={1}
+            placeholder="e.g. 130"
+            size="sm"
+            type="number"
+            value={draft.examDurationMinutes != null ? String(draft.examDurationMinutes) : ''}
+            onValueChange={(v) => updateNumericField('examDurationMinutes', parseInt(v, 10) || undefined)}
+          />
+          <Input
+            {...inputProperties.input}
+            endContent={<span className="text-xs text-default-400 self-center">%</span>}
+            isDisabled={isSaving}
+            label={t('certification.passingScore')}
+            max={100}
+            min={0}
+            placeholder="e.g. 72"
+            size="sm"
+            type="number"
+            value={draft.passingScore != null ? String(draft.passingScore) : ''}
+            onValueChange={(v) => updateNumericField('passingScore', parseFloat(v) || undefined)}
           />
         </div>
       </div>

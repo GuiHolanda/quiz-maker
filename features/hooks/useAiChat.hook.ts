@@ -53,7 +53,12 @@ function parseCertificationData(text: string): ParsedCertResponse | null {
     return {
       context: typeof parsed.context === 'string' ? parsed.context : '',
       sources: Array.isArray(parsed.sources) ? parsed.sources : [],
-      certificationData: cert as Certification,
+      certificationData: {
+        ...cert,
+        totalQuestions: typeof cert.totalQuestions === 'number' ? cert.totalQuestions : 0,
+        examDurationMinutes: typeof cert.examDurationMinutes === 'number' ? cert.examDurationMinutes : undefined,
+        passingScore: typeof cert.passingScore === 'number' ? cert.passingScore : undefined,
+      } as Certification,
     };
   } catch {
     return null;
