@@ -77,6 +77,8 @@ model Certification {
   totalQuestions      Int
   examDurationMinutes Int?
   passingScore        Float?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
   topics              CertificationTopic[]
   userId              String?
   user                User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -164,6 +166,8 @@ model PublicExam {
   totalQuestions      Int
   examDurationMinutes Int?
   passingScore        Float?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
   examBoardId         String
   examBoard           ExamBoard           @relation(fields: [examBoardId], references: [id])
   subjects            PublicExamSubject[]
