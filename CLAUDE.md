@@ -202,8 +202,28 @@ Note: `setIsBusy(false)` goes in the `catch` only — on success the user naviga
 - Each route lives in its own folder under `app/api/`
 - Business logic in a co-located `.service.ts` file, not in the route handler
 - Route handlers: validate → call service → return `NextResponse.json()`
-- Error responses: `{ error, message }` with appropriate HTTP status
+- Error responses: always go through `toApiErrorResponse(err)` from `lib/api-error.ts` — never construct `{ error, message }` manually in a catch block
 - Validation errors throw with a `.status` property: `Object.assign(new Error(...), { status: 409 })`
+
+### Error sanitization (`lib/api-error.ts`)
+
+`toApiErrorResponse(err: unknown): { error: string; message?: string; status: number }` classifies every thrown value before it leaves the API layer:
+
+| Error type | `message` in response | `status` |
+|---|---|---|
+| Service business-logic error (has `.status`) | present — the service message, user-facing | from `.status` |
+| `PrismaClientValidationError` | absent | 500 |
+| `PrismaClientKnownRequestError` P2002 | absent | 409 |
+| Other `PrismaClientKnownRequestError` | absent | 500 |
+| Any other `Error` | present (for server logs) | 500 |
+
+When `message` is absent in the response, `useRequest` falls back to `t('toast.somethingWrong')` and components with manual catches fall back to `t('toast.failedToUpdate', ...)`.
+
+**Rules:**
+- Every catch block in every route handler must use `toApiErrorResponse` — no raw `err.message` in `NextResponse.json()`
+- Never log the raw Prisma message to the response body — it exposes schema details. It is logged server-side via `console.error` (visible in Vercel Function Logs)
+- Components that use `useRequest` get error toasts automatically — do not add a second `catch`
+- Components with manual `try/catch` must read `err?.response?.data?.message` and fall back to an i18n key — never use `err?.message` (that is the axios transport error, not a domain message)
 
 ### HTTP timeouts (request chain)
 
@@ -419,6 +439,20 @@ import bcrypt from 'bcryptjs';
 - Webhooks Stripe (requer assinatura real)
 - Route handlers (integração — próxima iteração)
 - Componentes React (sem infra de UI testing)
+
+### Cobertura atual
+
+| Arquivo de teste | O que cobre |
+|---|---|
+| `services/certification.service.test.ts` | CRUD de certificações e tópicos |
+| `services/public-exam.service.test.ts` | CRUD de concursos, assuntos e tópicos |
+| `services/quota.service.test.ts` | Verificação e registro de quota |
+| `services/quiz-generator.service.test.ts` | Distribuição de questões por tópico |
+| `services/register.service.test.ts` | Registro de usuário |
+| `services/reset-password.service.test.ts` | Reset de senha |
+| `services/mock-exam.service.test.ts` | Simulados de concurso |
+| `services/certification-simulados.service.test.ts` | Simulados de certificação |
+| `api-error.test.ts` | `toApiErrorResponse` — todos os ramos: erros de negócio, `PrismaClientValidationError`, `PrismaClientKnownRequestError` (P2002 e outros), `Error` genérico, non-`Error` |
 
 ---
 

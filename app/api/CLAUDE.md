@@ -203,9 +203,21 @@ Simulado services (`app/api/certification-simulados/certification-simulados.serv
 ## Conventions
 
 - Route handler pattern: `auth check → quota check (if needed) → service call → NextResponse.json()`
-- Error shape: `{ error, message }` with `status: err.status || 500`
+- Error shape: always produced by `toApiErrorResponse(err)` from `lib/api-error.ts` — never hand-rolled `{ error, message }` in a catch block
 - All imports use `@/` absolute paths — no relative `../../` across directories
 - No barrel `index.ts` files
+
+### Catch block pattern (all route handlers)
+
+```ts
+} catch (err: unknown) {
+  console.error('Failed to ...:', err);
+  const { status, ...body } = toApiErrorResponse(err);
+  return NextResponse.json(body, { status });
+}
+```
+
+`toApiErrorResponse` strips the `message` field for Prisma/unexpected errors so raw schema details never reach the client. Business-logic errors (thrown with `.status` by service layer) pass their message through unchanged. Full classification table is in the root `CLAUDE.md` → **Error sanitization** section.
 
 ---
 
