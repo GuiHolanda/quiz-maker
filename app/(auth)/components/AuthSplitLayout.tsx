@@ -60,10 +60,10 @@ function CertBadgesIllustration() {
 
 interface AuthSplitLayoutProps {
   readonly children: React.ReactNode;
-  readonly page: 'login' | 'register';
+  readonly page?: 'login' | 'register';
 }
 
-export function AuthSplitLayout({ children, page }: AuthSplitLayoutProps) {
+export function AuthSplitLayout({ children, page = 'login' }: AuthSplitLayoutProps) {
   return (
     <MotionConfig reducedMotion="user">
       <div className="grid lg:grid-cols-2 min-h-screen">
