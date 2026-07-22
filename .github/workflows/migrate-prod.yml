@@ -1,0 +1,30 @@
+name: Migrate Prod
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  migrate-and-deploy:
+    name: Apply Prod Migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate Prisma client (prod)
+        run: npm run prisma:generate:prod
+
+      - name: Apply prod migrations
+        run: npm run prisma:migrate:prod
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
