@@ -121,7 +121,7 @@ export class CertificationService {
       throw Object.assign(new Error('Forbidden'), { status: 403 });
     }
 
-    return this.prismaService.certificationTopic.update({
+    const updated = await this.prismaService.certificationTopic.update({
       where: { id: topicId },
       data: {
         ...(newName !== undefined && { name: newName }),
@@ -129,6 +129,13 @@ export class CertificationService {
         maxQuestions,
       },
     });
+
+    await this.prismaService.certification.update({
+      where: { id: topic.certification.id },
+      data: { updatedAt: new Date() },
+    });
+
+    return updated;
   }
 
   public async deleteTopic(topicId: string, userId: string) {
@@ -146,6 +153,11 @@ export class CertificationService {
     }
 
     await this.prismaService.certificationTopic.delete({ where: { id: topicId } });
+
+    await this.prismaService.certification.update({
+      where: { id: topic.certification.id },
+      data: { updatedAt: new Date() },
+    });
   }
 
   public async deleteCertification(certificationKey: string, userId: string) {
@@ -183,9 +195,16 @@ export class CertificationService {
       throw Object.assign(new Error(`Topic "${name}" already exists`), { status: 409 });
     }
 
-    return this.prismaService.certificationTopic.create({
+    const topic = await this.prismaService.certificationTopic.create({
       data: { name, minQuestions, maxQuestions, certificationId: certification.id },
     });
+
+    await this.prismaService.certification.update({
+      where: { id: certification.id },
+      data: { updatedAt: new Date() },
+    });
+
+    return topic;
   }
 
   public async updateCertificationMeta(
