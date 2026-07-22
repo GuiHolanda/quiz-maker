@@ -18,6 +18,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { EditCertificationModal } from './EditCertificationModal';
 
 import { SectionsTable, SectionsTableHandle } from '@/shared/components/SectionsTable';
+import { RelativeDate } from '@/shared/components/ui/RelativeDate';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
@@ -235,55 +236,65 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
         </span>
       );
 
-    const hasSecondRow =
-      certification.totalQuestions > 0 || certification.examDurationMinutes || certification.passingScore != null;
+    const isEdited = certification.updatedAt !== certification.createdAt;
 
     return (
       <div className="flex flex-col gap-0.5 min-w-0">
         <div className="flex items-center justify-between gap-2 min-w-0">
-          <div className="flex flex-col gap-2">
-            <span className="text-sm font-semibold text-foreground truncate min-w-0">{certification.label}</span>
-            {hasSecondRow && (
-              <div className="flex items-center gap-3">
-                {certification.totalQuestions > 0 && (
-                  <span
-                    aria-label={t('certification.totalQuestionsAriaLabel', {
-                      count: String(certification.totalQuestions),
-                    })}
-                    className="flex items-center gap-1 text-xs text-default-400"
-                  >
-                    <FontAwesomeIcon className="text-[10px]" icon={faHashtag} />
-                    {t('certification.questionsCount', { count: String(certification.totalQuestions) })}
-                  </span>
-                )}
-                {certification.examDurationMinutes && (
-                  <span
-                    aria-label={t('certification.durationAriaLabel', {
-                      minutes: String(certification.examDurationMinutes),
-                    })}
-                    className="flex items-center gap-1 text-xs text-default-400"
-                  >
-                    <FontAwesomeIcon className="text-[10px]" icon={faClock} />
-                    {t('certification.durationValue', { minutes: String(certification.examDurationMinutes) })}
-                  </span>
-                )}
-                {certification.passingScore != null && (
-                  <span
-                    aria-label={t('certification.passingScoreAriaLabel', { score: String(certification.passingScore) })}
-                    className="flex items-center gap-1 text-xs text-primary font-medium"
-                  >
-                    <FontAwesomeIcon className="text-[10px]" icon={faBullseye} />
-                    {t('certification.passingScoreValue', { score: String(certification.passingScore) })}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
+          <span className="text-sm font-semibold text-foreground truncate min-w-0">{certification.label}</span>
           <div className="flex items-center gap-2 shrink-0">
             {certification.provider && (
               <span className="text-xs text-default-400 truncate max-w-[160px]">{certification.provider}</span>
             )}
             {topicStatus}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3">
+            {certification.totalQuestions > 0 && (
+              <span
+                aria-label={t('certification.totalQuestionsAriaLabel', {
+                  count: String(certification.totalQuestions),
+                })}
+                className="flex items-center gap-1 text-xs text-default-400"
+              >
+                <FontAwesomeIcon className="text-[10px]" icon={faHashtag} />
+                {t('certification.questionsCount', { count: String(certification.totalQuestions) })}
+              </span>
+            )}
+            {certification.examDurationMinutes && (
+              <span
+                aria-label={t('certification.durationAriaLabel', {
+                  minutes: String(certification.examDurationMinutes),
+                })}
+                className="flex items-center gap-1 text-xs text-default-400"
+              >
+                <FontAwesomeIcon className="text-[10px]" icon={faClock} />
+                {t('certification.durationValue', { minutes: String(certification.examDurationMinutes) })}
+              </span>
+            )}
+            {certification.passingScore != null && (
+              <span
+                aria-label={t('certification.passingScoreAriaLabel', { score: String(certification.passingScore) })}
+                className="flex items-center gap-1 text-xs text-primary font-medium"
+              >
+                <FontAwesomeIcon className="text-[10px]" icon={faBullseye} />
+                {t('certification.passingScoreValue', { score: String(certification.passingScore) })}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-xs text-default-400 shrink-0">
+            <span>
+              {t('common.createdAt', { date: '' }).replace('{date}', '')}
+              <RelativeDate date={certification.createdAt} />
+            </span>
+            {isEdited && (
+              <span>
+                {t('common.updatedAt', { date: '' }).replace('{date}', '')}
+                <RelativeDate date={certification.updatedAt} />
+              </span>
+            )}
           </div>
         </div>
       </div>
