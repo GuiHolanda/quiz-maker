@@ -1,3 +1,5 @@
+'use client';
+
 import { Suspense } from 'react';
 import { QuestionsPageContent } from './components/QuestionsPageContent';
 import { CertificationsProvider } from '@/features/providers/certifications.provider';
