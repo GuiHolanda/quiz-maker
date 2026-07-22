@@ -173,7 +173,7 @@ export class PublicExamService {
         });
       }
 
-      return tx.publicExamSubject.update({
+      const updated = await tx.publicExamSubject.update({
         where: { id: subjectId },
         data: {
           ...(normalizedNewName !== undefined && { name: normalizedNewName }),
@@ -181,6 +181,13 @@ export class PublicExamService {
           maxQuestions,
         },
       });
+
+      await tx.publicExam.update({
+        where: { id: subject.publicExam.id },
+        data: { updatedAt: new Date() },
+      });
+
+      return updated;
     });
   }
 
@@ -207,6 +214,11 @@ export class PublicExamService {
     }
 
     await this.prismaService.publicExamSubject.delete({ where: { id: subjectId } });
+
+    await this.prismaService.publicExam.update({
+      where: { id: subject.publicExam.id },
+      data: { updatedAt: new Date() },
+    });
   }
 
   public async addSubject(
@@ -238,9 +250,16 @@ export class PublicExamService {
       throw Object.assign(new Error(`Subject "${normalizedName}" already exists`), { status: 409 });
     }
 
-    return this.prismaService.publicExamSubject.create({
+    const subject = await this.prismaService.publicExamSubject.create({
       data: { name: normalizedName, minQuestions, maxQuestions, publicExamId: exam.id },
     });
+
+    await this.prismaService.publicExam.update({
+      where: { id: exam.id },
+      data: { updatedAt: new Date() },
+    });
+
+    return subject;
   }
 
   public async addTopic(subjectId: string, name: string, userId: string) {
@@ -267,9 +286,16 @@ export class PublicExamService {
       throw Object.assign(new Error(`Topic "${normalizedName}" already exists`), { status: 409 });
     }
 
-    return this.prismaService.publicExamTopic.create({
+    const topic = await this.prismaService.publicExamTopic.create({
       data: { name: normalizedName, subjectId },
     });
+
+    await this.prismaService.publicExam.update({
+      where: { id: subject.publicExam.id },
+      data: { updatedAt: new Date() },
+    });
+
+    return topic;
   }
 
   public async updateTopic(topicId: string, newName: string, userId: string) {
@@ -319,10 +345,17 @@ export class PublicExamService {
         });
       }
 
-      return tx.publicExamTopic.update({
+      const updated = await tx.publicExamTopic.update({
         where: { id: topicId },
         data: { name: normalizedNewName },
       });
+
+      await tx.publicExam.update({
+        where: { id: topic.subject.publicExam.id },
+        data: { updatedAt: new Date() },
+      });
+
+      return updated;
     });
   }
 
@@ -341,6 +374,11 @@ export class PublicExamService {
     }
 
     await this.prismaService.publicExamTopic.delete({ where: { id: topicId } });
+
+    await this.prismaService.publicExam.update({
+      where: { id: topic.subject.publicExam.id },
+      data: { updatedAt: new Date() },
+    });
   }
 
   public async updatePublicExamMeta(
