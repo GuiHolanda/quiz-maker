@@ -55,12 +55,19 @@ INSTRUÇÕES:
 3. Se o edital apresentar provas separadas (ex: Prova Objetiva, Prova Discursiva, Prova de Títulos), inclua apenas as matérias da prova objetiva. Se não houver distinção, inclua todas.
 4. Para minQuestions e maxQuestions: se o edital informar a quantidade de questões por matéria, converta para percentual do total (ex: 10 de 50 questões = 20%). Se não informar, distribua igualmente entre as matérias (100 / número de matérias, arredondado).
 5. A soma de todos os maxQuestions deve ser igual a 100.
+6. Se o edital informar o número total de questões da prova objetiva, registre em totalQuestions (inteiro).
+7. Se o edital informar a duração da prova, registre em examDurationMinutes (inteiro em minutos, ex: 4 horas = 240).
+8. Se o edital informar a nota mínima de aprovação, registre em passingScore como percentual 0–100 (ex: 72.0 para 72%). Se expressa em nota absoluta (ex: 56 de 80), converta para percentual.
+9. Se qualquer desses campos não constar no edital, omita-o do JSON.
 
 Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, sem texto extra, sem comentários:
 {
   "name": "string (nome completo do concurso, ex: 'Concurso Público TRF 1ª Região 2024')",
   "role": "string ou null (nome exato do cargo conforme o edital, ex: 'Analista Judiciário — Área Judiciária')",
   "year": number ou null,
+  "totalQuestions": number ou null (total de questões da prova objetiva, se informado),
+  "examDurationMinutes": number ou null (duração em minutos, se informado),
+  "passingScore": number ou null (nota mínima como percentual 0–100, se informado),
   "examBoard": {
     "name": "string (sigla da banca, ex: 'CESPE', 'FCC', 'VUNESP', 'CESGRANRIO')",
     "fullName": "string ou null (nome completo da banca se disponível)"
@@ -124,6 +131,11 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
       throw Object.assign(new Error('Extracted data missing required field: subjects'), { status: 502 });
     }
 
-    return data as PublicExam;
+    return {
+      ...(data as PublicExam),
+      totalQuestions: typeof d.totalQuestions === 'number' && d.totalQuestions > 0 ? d.totalQuestions : 0,
+      examDurationMinutes: typeof d.examDurationMinutes === 'number' && d.examDurationMinutes > 0 ? d.examDurationMinutes : undefined,
+      passingScore: typeof d.passingScore === 'number' && d.passingScore >= 0 && d.passingScore <= 100 ? d.passingScore : undefined,
+    };
   }
 }

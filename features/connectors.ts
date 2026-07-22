@@ -112,7 +112,14 @@ export async function updateCertificationTopic(payload: TopicUpdatePayload): Pro
 
 export async function updateCertificationMeta(
   certKey: string,
-  updates: { newLabel?: string; newKey?: string; newProvider?: string | null }
+  updates: {
+    newLabel?: string;
+    newKey?: string;
+    newProvider?: string | null;
+    newTotalQuestions?: number;
+    newExamDurationMinutes?: number | null;
+    newPassingScore?: number | null;
+  }
 ): Promise<Certification> {
   const { data } = await api.patch<{ certification: Certification }>(SAVE_CERTIFICATION_URL, {
     certificationKey: certKey,
@@ -233,7 +240,15 @@ export async function updatePublicExamSubject(payload: PublicExamSubjectUpdatePa
 
 export async function updatePublicExamMeta(
   publicExamId: string,
-  updates: { newName?: string; newRole?: string | null; newYear?: number | null; newExamBoardName?: string }
+  updates: {
+    newName?: string;
+    newRole?: string | null;
+    newYear?: number | null;
+    newExamBoardName?: string;
+    newTotalQuestions?: number;
+    newExamDurationMinutes?: number | null;
+    newPassingScore?: number | null;
+  }
 ): Promise<PublicExam> {
   const { data } = await api.patch<{ publicExam: PublicExam }>(SAVE_PUBLIC_EXAM_URL, {
     publicExamId,
