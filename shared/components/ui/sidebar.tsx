@@ -9,7 +9,6 @@ import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faChevronDown,
   faChevronLeft,
   faChevronRight,
   faGear,
@@ -27,18 +26,6 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { SIDEBAR_COLLAPSED_LOCAL_STORAGE_KEY, SIDEBAR_COLLAPSED_COOKIE_KEY } from '@/config/constants';
 
-const CERTIFICATION_ITEMS = [
-  { labelKey: 'nav.configureCertification', href: '/certifications/configure', icon: faGear },
-  { labelKey: 'nav.generateQuestions', href: '/certifications/questions', icon: faWandMagicSparkles },
-] as const;
-
-const CONCURSO_ITEMS = [
-  { labelKey: 'nav.configureConcurso', href: '/public-exams/configure', icon: faGear },
-  { labelKey: 'nav.generateQuestions', href: '/public-exams/questions', icon: faWandMagicSparkles },
-] as const;
-
-type ExpandedSection = 'certifications' | 'public-exams' | null;
-
 function navLinkClass(isActive: boolean, collapsed = false) {
   const base = collapsed
     ? 'flex items-center justify-center w-10 h-10 rounded-lg transition-colors duration-200'
@@ -46,36 +33,15 @@ function navLinkClass(isActive: boolean, collapsed = false) {
   return `${base} ${isActive ? 'bg-primary/10 text-primary font-semibold' : 'text-default-500 hover:text-foreground hover:bg-default-100'}`;
 }
 
-function sectionHeaderClass(isActive: boolean, collapsed = false) {
-  const base = collapsed
-    ? 'flex items-center justify-center w-10 h-10 rounded-lg transition-colors duration-200'
-    : 'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors duration-200';
-  return `${base} ${isActive ? 'bg-primary/10 text-primary font-semibold' : 'text-default-500 hover:text-foreground hover:bg-default-100'}`;
-}
-
-function subItemClass(isActive: boolean) {
-  return `flex items-center gap-3 pl-9 pr-3 py-1.5 rounded-lg text-xs transition-colors duration-200 ${
-    isActive ? 'text-primary font-semibold bg-primary/10' : 'text-default-400 hover:text-foreground hover:bg-default-100'
-  }`;
-}
-
 export function Sidebar({ defaultCollapsed = false }: { readonly defaultCollapsed?: boolean }) {
   const { data: session, status } = useSession();
   const { t } = useTranslation();
   const { usage } = useUsageContext();
   const pathname = usePathname() ?? '';
-  const isCertificationsScope = pathname.startsWith('/certifications');
-  const isConcursosScope = pathname.startsWith('/public-exams');
   const isAdminScope = pathname.startsWith('/admin');
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
-
-  const [expandedSection, setExpandedSection] = useState<ExpandedSection>(() => {
-    if (isCertificationsScope) return 'certifications';
-    if (isConcursosScope) return 'public-exams';
-    return null;
-  });
 
   const showConcursos = !usage || usage.publicExamsLimit !== 0;
 
@@ -206,6 +172,17 @@ export function Sidebar({ defaultCollapsed = false }: { readonly defaultCollapse
           {!collapsed && t('nav.questionBank')}
         </NextLink>
 
+        {/* Generate Questions */}
+        <NextLink
+          className={navLinkClass(pathname.startsWith('/questions'), collapsed)}
+          href="/questions"
+          title={collapsed ? t('nav.generateQuestions') : undefined}
+          onClick={closeDrawer}
+        >
+          <FontAwesomeIcon className="w-4 h-4 shrink-0" icon={faWandMagicSparkles} />
+          {!collapsed && t('nav.generateQuestions')}
+        </NextLink>
+
         {/* Mock Exams */}
         <NextLink
           className={navLinkClass(pathname.startsWith('/simulados'), collapsed)}
@@ -217,88 +194,28 @@ export function Sidebar({ defaultCollapsed = false }: { readonly defaultCollapse
           {!collapsed && t('nav.simulados')}
         </NextLink>
 
-        {/* Certifications section */}
-        <button
-          className={sectionHeaderClass(isCertificationsScope, collapsed)}
+        {/* Certifications */}
+        <NextLink
+          className={navLinkClass(pathname.startsWith('/certifications'), collapsed)}
+          href="/certifications/configure"
           title={collapsed ? t('nav.certificates') : undefined}
-          onClick={() => {
-            if (collapsed) {
-              toggleCollapsed();
-              setExpandedSection('certifications');
-            } else {
-              setExpandedSection((prev) => (prev === 'certifications' ? null : 'certifications'));
-            }
-          }}
+          onClick={closeDrawer}
         >
           <FontAwesomeIcon className="w-4 h-4 shrink-0" icon={faGraduationCap} />
-          {!collapsed && (
-            <>
-              <span className="flex-1 text-left">{t('nav.certificates')}</span>
-              <FontAwesomeIcon
-                className={`w-3 h-3 transition-transform duration-200 ${expandedSection === 'certifications' ? 'rotate-180' : ''}`}
-                icon={faChevronDown}
-              />
-            </>
-          )}
-        </button>
-        {!collapsed && expandedSection === 'certifications' && (
-          <div className="flex flex-col gap-0.5 mt-0.5">
-            {CERTIFICATION_ITEMS.map((item) => (
-              <NextLink
-                key={item.href}
-                className={subItemClass(pathname === item.href)}
-                href={item.href}
-                onClick={closeDrawer}
-              >
-                <FontAwesomeIcon className="w-3 h-3 shrink-0" icon={item.icon} />
-                {t(item.labelKey)}
-              </NextLink>
-            ))}
-          </div>
-        )}
+          {!collapsed && t('nav.certificates')}
+        </NextLink>
 
-        {/* Concursos section */}
+        {/* Concursos */}
         {showConcursos && (
-          <>
-            <button
-              className={sectionHeaderClass(isConcursosScope, collapsed)}
-              title={collapsed ? t('nav.concursos') : undefined}
-              onClick={() => {
-                if (collapsed) {
-                  toggleCollapsed();
-                  setExpandedSection('public-exams');
-                } else {
-                  setExpandedSection((prev) => (prev === 'public-exams' ? null : 'public-exams'));
-                }
-              }}
-            >
-              <FontAwesomeIcon className="w-4 h-4 shrink-0" icon={faClipboard} />
-              {!collapsed && (
-                <>
-                  <span className="flex-1 text-left">{t('nav.concursos')}</span>
-                  <FontAwesomeIcon
-                    className={`w-3 h-3 transition-transform duration-200 ${expandedSection === 'public-exams' ? 'rotate-180' : ''}`}
-                    icon={faChevronDown}
-                  />
-                </>
-              )}
-            </button>
-            {!collapsed && expandedSection === 'public-exams' && (
-              <div className="flex flex-col gap-0.5 mt-0.5">
-                {CONCURSO_ITEMS.map((item) => (
-                  <NextLink
-                    key={item.href}
-                    className={subItemClass(pathname === item.href)}
-                    href={item.href}
-                    onClick={closeDrawer}
-                  >
-                    <FontAwesomeIcon className="w-3 h-3 shrink-0" icon={item.icon} />
-                    {t(item.labelKey)}
-                  </NextLink>
-                ))}
-              </div>
-            )}
-          </>
+          <NextLink
+            className={navLinkClass(pathname.startsWith('/public-exams'), collapsed)}
+            href="/public-exams/configure"
+            title={collapsed ? t('nav.concursos') : undefined}
+            onClick={closeDrawer}
+          >
+            <FontAwesomeIcon className="w-4 h-4 shrink-0" icon={faClipboard} />
+            {!collapsed && t('nav.concursos')}
+          </NextLink>
         )}
 
         {/* Admin */}
