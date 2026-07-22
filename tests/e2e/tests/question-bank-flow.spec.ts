@@ -108,7 +108,7 @@ test('question bank: generate questions → verify in bank → filter → search
 
   // ── Step 2: Generate and save 3 BANK questions ───────────────────────────
 
-  await page.goto('/certifications/questions');
+  await page.goto('/questions?type=certification');
 
   await page.getByRole('button', { name: /Selecione uma Certificação|Select a Certification/i }).click();
   await expect(page.getByRole('option', { name: E2E_CERT_LABEL })).toBeVisible({ timeout: 8_000 });

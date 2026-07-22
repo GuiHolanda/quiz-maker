@@ -39,7 +39,7 @@ const PRODUCT_ITEMS = [
 
 const CONCURSO_ITEMS = [
   { label: 'nav.configureConcurso', href: '/public-exams/configure' },
-  { label: 'nav.questions', href: '/questions' },
+  { label: 'nav.questions', href: '/questions?type=public_exam' },
   { label: 'nav.simulados', href: '/simulados' },
 ] as const;
 
