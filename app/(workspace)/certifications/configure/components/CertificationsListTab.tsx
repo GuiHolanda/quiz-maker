@@ -59,8 +59,15 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
   );
 
   const handleCertSaved = useCallback(
-    (oldKey: string, updated: { label: string; key: string; provider?: string }) => {
-      updateCertification(oldKey, { label: updated.label, key: updated.key, provider: updated.provider });
+    (oldKey: string, updated: { label: string; key: string; provider?: string; totalQuestions: number; examDurationMinutes?: number; passingScore?: number }) => {
+      updateCertification(oldKey, {
+        label: updated.label,
+        key: updated.key,
+        provider: updated.provider,
+        totalQuestions: updated.totalQuestions,
+        examDurationMinutes: updated.examDurationMinutes,
+        passingScore: updated.passingScore,
+      });
     },
     [updateCertification]
   );
@@ -120,6 +127,21 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
                   {certification.provider && (
                     <span className="text-xs text-default-500 shrink-0 max-w-[160px] truncate">
                       {certification.provider}
+                    </span>
+                  )}
+                  {certification.totalQuestions > 0 && (
+                    <span className="text-xs font-mono text-default-400 shrink-0">
+                      {certification.totalQuestions}Q
+                    </span>
+                  )}
+                  {certification.examDurationMinutes && (
+                    <span className="text-xs font-mono text-default-400 shrink-0">
+                      {certification.examDurationMinutes}min
+                    </span>
+                  )}
+                  {certification.passingScore != null && (
+                    <span className="text-xs font-mono text-default-400 shrink-0">
+                      {certification.passingScore}%
                     </span>
                   )}
                   {certification.topics.length === 0 ? (

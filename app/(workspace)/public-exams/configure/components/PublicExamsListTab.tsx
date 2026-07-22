@@ -94,12 +94,15 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
   );
 
   const handleExamSaved = useCallback(
-    (id: string, updated: { name: string; role?: string; year?: number; examBoard: ExamBoard }) => {
+    (id: string, updated: { name: string; role?: string; year?: number; examBoard: ExamBoard; totalQuestions: number; examDurationMinutes?: number; passingScore?: number }) => {
       updatePublicExam(id, {
         name: updated.name,
         role: updated.role,
         year: updated.year,
         examBoard: updated.examBoard,
+        totalQuestions: updated.totalQuestions,
+        examDurationMinutes: updated.examDurationMinutes,
+        passingScore: updated.passingScore,
       });
     },
     [updatePublicExam]
@@ -165,6 +168,21 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
                     )}
                     {publicExam.year != null && (
                       <span className="text-xs font-mono text-default-400 shrink-0">{publicExam.year}</span>
+                    )}
+                    {publicExam.totalQuestions > 0 && (
+                      <span className="text-xs font-mono text-default-400 shrink-0">
+                        {publicExam.totalQuestions}Q
+                      </span>
+                    )}
+                    {publicExam.examDurationMinutes && (
+                      <span className="text-xs font-mono text-default-400 shrink-0">
+                        {publicExam.examDurationMinutes}min
+                      </span>
+                    )}
+                    {publicExam.passingScore != null && (
+                      <span className="text-xs font-mono text-default-400 shrink-0">
+                        {publicExam.passingScore}%
+                      </span>
                     )}
                     {publicExam.subjects.length === 0 ? (
                       <Chip color="warning" size="sm" variant="flat">
