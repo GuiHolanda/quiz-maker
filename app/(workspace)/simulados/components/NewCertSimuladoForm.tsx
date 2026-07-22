@@ -123,7 +123,7 @@ export function NewCertSimuladoForm({ onCreated }: NewCertSimuladoFormProps) {
   if (totalSavedQuestions === 0) {
     return (
       <EmptyState
-        action={{ href: '/certifications/questions', label: t('simulado.noQuestionsGoToQuestions') }}
+        action={{ href: '/questions?type=certification', label: t('simulado.noQuestionsGoToQuestions') }}
         description={t('simulado.noQuestionsDescription')}
         title={t('simulado.noQuestionsTitle')}
       />
@@ -298,7 +298,7 @@ export function NewCertSimuladoForm({ onCreated }: NewCertSimuladoFormProps) {
                           }),
                         );
                       } catch {}
-                      router.push('/certifications/questions?tab=generate');
+                      router.push('/questions?type=certification');
                     }}
                   >
                     {t('simulado.generateMissing')}

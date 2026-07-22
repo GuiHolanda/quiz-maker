@@ -204,7 +204,7 @@ export default function QuestionBankPage() {
           description={t('questionBank.emptyDescription')}
           action={{
             label: t('questionBank.emptyCta'),
-            href: '/certifications/questions',
+            href: '/questions?type=certification',
             icon: faLayerGroup,
           }}
         />
