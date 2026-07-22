@@ -76,9 +76,9 @@ jobs:
           retention-days: 7
 
   migrate-and-deploy:
-    name: Migrate + Deploy
+    name: Apply Prod Migrations
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     needs: e2e-tests
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
@@ -99,6 +99,3 @@ jobs:
         run: npm run prisma:migrate:prod
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
-
-      - name: Trigger Vercel deploy
-        run: curl -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}"
