@@ -61,7 +61,9 @@ export function Sidebar({ defaultCollapsed = false }: { readonly defaultCollapse
         className={`hidden md:flex shrink-0 h-screen sticky top-0 flex-col bg-background border-r border-divider overflow-hidden transition-[width] duration-200 ease-out ${isCollapsed ? 'w-16' : 'w-64'}`}
       >
         {renderBrand()}
-        <div className={`flex-1 py-3 ${isCollapsed ? 'px-3 flex flex-col items-center overflow-hidden' : 'px-3 overflow-y-auto'}`}>
+        <div
+          className={`flex-1 py-3 ${isCollapsed ? 'px-3 flex flex-col items-center overflow-hidden' : 'px-3 overflow-y-auto'}`}
+        >
           {renderNav()}
         </div>
         {renderUsageCounters()}
@@ -161,39 +163,6 @@ export function Sidebar({ defaultCollapsed = false }: { readonly defaultCollapse
           {!collapsed && t('nav.dashboard')}
         </NextLink>
 
-        {/* Question Bank */}
-        <NextLink
-          className={navLinkClass(pathname === '/question-bank', collapsed)}
-          href="/question-bank"
-          title={collapsed ? t('nav.questionBank') : undefined}
-          onClick={closeDrawer}
-        >
-          <FontAwesomeIcon className="w-4 h-4 shrink-0" icon={faLayerGroup} />
-          {!collapsed && t('nav.questionBank')}
-        </NextLink>
-
-        {/* Generate Questions */}
-        <NextLink
-          className={navLinkClass(pathname.startsWith('/questions'), collapsed)}
-          href="/questions"
-          title={collapsed ? t('nav.generateQuestions') : undefined}
-          onClick={closeDrawer}
-        >
-          <FontAwesomeIcon className="w-4 h-4 shrink-0" icon={faWandMagicSparkles} />
-          {!collapsed && t('nav.generateQuestions')}
-        </NextLink>
-
-        {/* Mock Exams */}
-        <NextLink
-          className={navLinkClass(pathname.startsWith('/simulados'), collapsed)}
-          href="/simulados"
-          title={collapsed ? t('nav.simulados') : undefined}
-          onClick={closeDrawer}
-        >
-          <FontAwesomeIcon className="w-4 h-4 shrink-0" icon={faPlay} />
-          {!collapsed && t('nav.simulados')}
-        </NextLink>
-
         {/* Certifications */}
         <NextLink
           className={navLinkClass(pathname.startsWith('/certifications'), collapsed)}
@@ -218,14 +187,45 @@ export function Sidebar({ defaultCollapsed = false }: { readonly defaultCollapse
           </NextLink>
         )}
 
+        {/* Generate Questions */}
+        <NextLink
+          className={navLinkClass(pathname.startsWith('/questions'), collapsed)}
+          href="/questions"
+          title={collapsed ? t('nav.generateQuestions') : undefined}
+          onClick={closeDrawer}
+        >
+          <FontAwesomeIcon className="w-4 h-4 shrink-0" icon={faWandMagicSparkles} />
+          {!collapsed && t('nav.generateQuestions')}
+        </NextLink>
+
+        {/* Question Bank */}
+        <NextLink
+          className={navLinkClass(pathname === '/question-bank', collapsed)}
+          href="/question-bank"
+          title={collapsed ? t('nav.questionBank') : undefined}
+          onClick={closeDrawer}
+        >
+          <FontAwesomeIcon className="w-4 h-4 shrink-0" icon={faLayerGroup} />
+          {!collapsed && t('nav.questionBank')}
+        </NextLink>
+
+        {/* Mock Exams */}
+        <NextLink
+          className={navLinkClass(pathname.startsWith('/simulados'), collapsed)}
+          href="/simulados"
+          title={collapsed ? t('nav.simulados') : undefined}
+          onClick={closeDrawer}
+        >
+          <FontAwesomeIcon className="w-4 h-4 shrink-0" icon={faPlay} />
+          {!collapsed && t('nav.simulados')}
+        </NextLink>
+
         {/* Admin */}
         {status === 'authenticated' && session?.user?.plan === 'admin' && (
           <>
             {!collapsed && (
               <div className="pt-4 pb-1">
-                <p className="px-3 font-mono text-xs text-default-400 uppercase tracking-widest">
-                  {t('nav.settings')}
-                </p>
+                <p className="px-3 font-mono text-xs text-default-400 uppercase tracking-widest">{t('nav.settings')}</p>
               </div>
             )}
             <NextLink
@@ -275,8 +275,12 @@ export function Sidebar({ defaultCollapsed = false }: { readonly defaultCollapse
             </div>
           )}
           <div className="flex items-center justify-between mt-0.5">
-            <span className="text-xs text-default-400">{t('sidebar.questionsGenerated', { count: usage.questionsUsed })}</span>
-            <span className="text-xs text-default-400">{t('sidebar.questionsSavedInLibrary', { count: usage.questionsSavedInLibrary })}</span>
+            <span className="text-xs text-default-400">
+              {t('sidebar.questionsGenerated', { count: usage.questionsUsed })}
+            </span>
+            <span className="text-xs text-default-400">
+              {t('sidebar.questionsSavedInLibrary', { count: usage.questionsSavedInLibrary })}
+            </span>
           </div>
         </div>
 
