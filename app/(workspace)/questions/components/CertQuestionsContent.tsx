@@ -248,8 +248,8 @@ export function CertQuestionsContent() {
     if (!showHint) return null;
     return (
       <Card className="border border-primary-100 bg-primary-50/60 dark:bg-primary-900/20 shadow-none">
-        <CardBody className="flex flex-row items-start gap-3 py-3 px-4">
-          <FontAwesomeIcon className="text-primary mt-0.5 shrink-0" icon={faCircleInfo} />
+        <CardBody className="flex flex-row items-center gap-3 py-3 px-4">
+          <FontAwesomeIcon className="text-primary shrink-0" icon={faCircleInfo} />
           <p className="text-xs text-default-700 flex-1">{t('generate.selectionHint')}</p>
           <Button
             isIconOnly
