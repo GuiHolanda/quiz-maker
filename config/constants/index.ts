@@ -8,6 +8,7 @@ export const GET_CERTIFICATION_ANSWERS_URL = '/certification/get-answers';
 export const SAVE_QUESTIONS_URL = '/certification/save-questions';
 export const SAVE_CERTIFICATION_URL = '/certification/save-certification';
 export const QUIZ_GENERATOR_URL = '/certification/quiz-generator';
+export const FULL_EXAM_JOB_URL = '/full-exam-job';
 export const QUIZ_LOCAL_STORAGE_KEY = 'QUIZ';
 export const CERTIFICATIONS_LOCAL_STORAGE_KEY = 'CERTIFICATIONS';
 export const PUBLIC_EXAMS_LOCAL_STORAGE_KEY = 'PUBLIC_EXAMS';

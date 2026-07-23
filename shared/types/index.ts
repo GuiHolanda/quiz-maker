@@ -593,3 +593,13 @@ export interface AppNotification {
   createdAt: string;
   read: boolean;
 }
+
+export interface FullExamJobStatus {
+  id: string;
+  status: 'running' | 'done' | 'error';
+  totalTopics: number;
+  doneTopics: number;
+  savedCount: number;
+  type: 'certification' | 'public_exam';
+  refKey: string;
+}
