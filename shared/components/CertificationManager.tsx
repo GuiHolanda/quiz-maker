@@ -10,9 +10,10 @@ import { inputProperties } from '@/config/constants/inputStyles';
 interface CertificationManagerProps extends React.HTMLAttributes<HTMLDivElement> {
   isMultiple?: boolean;
   noTopics?: boolean;
+  topicOnly?: boolean;
 }
 
-export const CertificationManager = ({ isMultiple, noTopics, ...props }: CertificationManagerProps) => {
+export const CertificationManager = ({ isMultiple, noTopics, topicOnly, ...props }: CertificationManagerProps) => {
   const { t } = useTranslation();
   const { certifications, selectedCertification, selectedTopics, setSelectedCertification, setSelectedTopics } =
     useCertificationsContext();
@@ -29,6 +30,27 @@ export const CertificationManager = ({ isMultiple, noTopics, ...props }: Certifi
     if (keys === 'all') return;
     setSelectedTopics(Array.from(keys as Set<React.Key>).map(String));
   };
+
+  if (topicOnly) {
+    return (
+      <div className={props.className} {...props}>
+        <Select
+          className="w-full"
+          label={t('certification.selectTopic')}
+          name="topic"
+          placeholder={t('certification.selectTopicPlaceholder')}
+          selectedKeys={selectedTopics}
+          selectionMode={isMultiple ? 'multiple' : 'single'}
+          onSelectionChange={onTopicsChange}
+          {...inputProperties.select}
+        >
+          {selectedCertification
+            ? selectedCertification.topics.map((topic) => <SelectItem key={topic.name}>{topic.name}</SelectItem>)
+            : []}
+        </Select>
+      </div>
+    );
+  }
 
   return (
     <div className={props.className} {...props}>

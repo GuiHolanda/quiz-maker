@@ -181,11 +181,11 @@ export function CertQuestionsContent() {
   }, [generationParams]);
 
   useEffect(() => {
-    if (!isFullExamMode || !selectedCertification) return;
+    if (!selectedCertification) return;
     getBrowseSummary()
       .then(setBrowseSummary)
       .catch(() => {});
-  }, [isFullExamMode, selectedCertification]);
+  }, [selectedCertification]);
 
   const onSave = async () => {
     const questionsToSave = selectedIds
@@ -233,12 +233,16 @@ export function CertQuestionsContent() {
       );
     }
 
+    const isFullExamModeDisabled = !selectedCertification || selectedCertification.totalQuestions === 0;
+
     return (
       <>
         <QuestionGeneratorForm
           fullExamSlot={renderFullExamSlot()}
           isFullExamMode={isFullExamMode}
-          managerSlot={<CertificationManager className="flex w-full gap-4 items-end" />}
+          isFullExamModeDisabled={isFullExamModeDisabled}
+          managerSlot={<CertificationManager noTopics className="w-full" />}
+          topicSlot={<CertificationManager topicOnly className="w-full" />}
           onFullExamModeChange={(enabled) => {
             setIsFullExamMode(enabled);
             setBatchDone(false);
@@ -325,11 +329,22 @@ export function CertQuestionsContent() {
       return <p className="text-xs text-default-400 py-2">{t('simulado.noQuestionsTitle')}</p>;
     }
 
+    const totalTarget = selectedCertification.totalQuestions;
+    const totalMaxWeight = selectedCertification.topics.reduce((acc, topic) => acc + topic.maxQuestions, 0);
+
+    const distributedItems = topics.map((topic) => {
+      const certTopic = selectedCertification.topics.find((ct) => ct.name === topic.name);
+      const weight = certTopic?.maxQuestions ?? 0;
+      const count = totalMaxWeight > 0 ? Math.round((weight / totalMaxWeight) * totalTarget) : 0;
+
+      return { name: topic.name, available: topic.questionCount, count: Math.min(count, topic.questionCount) };
+    });
+
     return (
       <FullExamDistributionTable
         key={certData?.key ?? selectedCertification.key}
         isGenerating={isBatchGenerating}
-        items={topics.map((topic) => ({ name: topic.name, available: topic.questionCount, count: topic.questionCount }))}
+        items={distributedItems}
         onGenerate={handleFullExamGenerate}
       />
     );

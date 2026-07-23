@@ -128,11 +128,11 @@ export function PublicExamQuestionsContent() {
   }, [generationParams]);
 
   useEffect(() => {
-    if (!isFullExamMode || !selectedPublicExam) return;
+    if (!selectedPublicExam) return;
     getPublicExamBrowseSummary()
       .then(setPubBrowseSummary)
       .catch(() => {});
-  }, [isFullExamMode, selectedPublicExam]);
+  }, [selectedPublicExam]);
 
   async function handleFullExamGenerate(subjectDistribution: Array<{ topicName: string; questionCount: number }>) {
     if (!selectedPublicExam) return;
@@ -231,8 +231,10 @@ export function PublicExamQuestionsContent() {
         <QuestionGeneratorForm
           fullExamSlot={renderFullExamSlot()}
           isFullExamMode={isFullExamMode}
-          managerSlot={<PublicExamManager showTopic className="flex w-full gap-4 items-end" />}
+          isFullExamModeDisabled={!selectedPublicExam || selectedPublicExam.totalQuestions === 0}
+          managerSlot={<PublicExamManager noSubjects className="w-full" />}
           numQuestionsPlaceholderKey="concurso.numQuestionsPlaceholder"
+          topicSlot={<PublicExamManager subjectOnly showTopic className="flex w-full gap-4 items-end" />}
           onFullExamModeChange={(enabled) => {
             setIsFullExamMode(enabled);
             setBatchDone(false);
@@ -319,11 +321,22 @@ export function PublicExamQuestionsContent() {
       return <p className="text-xs text-default-400 py-2">{t('simulado.noQuestionsTitle')}</p>;
     }
 
+    const totalTarget = selectedPublicExam.totalQuestions;
+    const totalMaxWeight = selectedPublicExam.subjects.reduce((acc, s) => acc + s.maxQuestions, 0);
+
+    const distributedItems = subjects.map((subject) => {
+      const examSubject = selectedPublicExam.subjects.find((s) => s.name === subject.name);
+      const weight = examSubject?.maxQuestions ?? 0;
+      const count = totalMaxWeight > 0 ? Math.round((weight / totalMaxWeight) * totalTarget) : 0;
+
+      return { name: subject.name, available: subject.questionCount, count: Math.min(count, subject.questionCount) };
+    });
+
     return (
       <FullExamDistributionTable
         key={examData?.id ?? selectedPublicExam.id}
         isGenerating={isBatchGenerating}
-        items={subjects.map((s) => ({ name: s.name, available: s.questionCount, count: s.questionCount }))}
+        items={distributedItems}
         onGenerate={handleFullExamGenerate}
       />
     );

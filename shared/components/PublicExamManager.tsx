@@ -11,9 +11,10 @@ interface PublicExamManagerProps extends React.HTMLAttributes<HTMLDivElement> {
   isMultiple?: boolean;
   noSubjects?: boolean;
   showTopic?: boolean;
+  subjectOnly?: boolean;
 }
 
-export const PublicExamManager = ({ isMultiple, noSubjects, showTopic, ...props }: PublicExamManagerProps) => {
+export const PublicExamManager = ({ isMultiple, noSubjects, showTopic, subjectOnly, ...props }: PublicExamManagerProps) => {
   const { t } = useTranslation();
   const {
     publicExams,
@@ -50,12 +51,32 @@ export const PublicExamManager = ({ isMultiple, noSubjects, showTopic, ...props 
     setSelectedTopic(key ? String(key) : null);
   };
 
-  // Topics for the currently selected single subject (only when not multi-subject).
   const currentSubject =
     !isMultiple && selectedSubjects[0]
       ? selectedPublicExam?.subjects.find((s) => s.name === selectedSubjects[0])
       : null;
   const topicsForCurrentSubject = currentSubject?.topics ?? [];
+
+  if (subjectOnly) {
+    return (
+      <div className={props.className} {...props}>
+        <Select
+          className="w-full"
+          label={t('concurso.selectSubject')}
+          name="subject"
+          placeholder={t('concurso.selectSubjectPlaceholder')}
+          selectedKeys={selectedSubjects}
+          selectionMode={isMultiple ? 'multiple' : 'single'}
+          onSelectionChange={onSubjectsChange}
+          {...inputProperties.select}
+        >
+          {selectedPublicExam
+            ? selectedPublicExam.subjects.map((subject) => <SelectItem key={subject.name}>{subject.name}</SelectItem>)
+            : []}
+        </Select>
+      </div>
+    );
+  }
 
   const baseColWidth = noSubjects ? 'w-full' : showTopic ? 'w-1/2' : 'w-2/3';
   const subjectColWidth = showTopic ? 'w-1/4' : 'w-1/3';
