@@ -84,14 +84,13 @@ export function GeneratedQuestionsList({
         </div>
 
         <div className="flex items-center gap-2 ml-auto">
-          <ItemsPerPageSelect isDisabled={isLoadingMore} value={questionsPerPage} onChange={onItemsPerPageChange} />
           {!isLoadingMore && (
-            <Button className={buttonStyles.dangerFlat} onPress={onDiscard}>
+            <Button className={buttonStyles.dangerFlat} size="sm" onPress={onDiscard}>
               {selectedCount > 0 ? t('common.discardSelected') : t('common.discardAll')}
             </Button>
           )}
           {selectedCount > 0 && !isLoadingMore && (
-            <Button className={buttonStyles.primary} onPress={onSave}>
+            <Button className={buttonStyles.primary} size="sm" onPress={onSave}>
               {t('common.saveSelected')}
             </Button>
           )}
@@ -115,8 +114,9 @@ export function GeneratedQuestionsList({
           })}
       </div>
 
-      <div className="flex gap-2 items-center flex-wrap">
+      <div className="flex gap-2 items-center flex-wrap px-4">
         <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
+        <ItemsPerPageSelect isDisabled={isLoadingMore} value={questionsPerPage} onChange={onItemsPerPageChange} />
 
         {isLoadingMore && remainingCount > 0 && (
           <Alert
