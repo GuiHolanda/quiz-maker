@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
+import { Switch } from '@heroui/switch';
 import { Form } from '@heroui/form';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -13,6 +14,9 @@ interface QuestionGeneratorFormProps {
   readonly onGenerationStart: (numQuestions: string) => void;
   readonly numQuestionsError?: string;
   readonly numQuestionsPlaceholderKey?: string;
+  readonly fullExamSlot?: React.ReactNode;
+  readonly isFullExamMode?: boolean;
+  readonly onFullExamModeChange?: (enabled: boolean) => void;
 }
 
 export function QuestionGeneratorForm({
@@ -20,6 +24,9 @@ export function QuestionGeneratorForm({
   onGenerationStart,
   numQuestionsError,
   numQuestionsPlaceholderKey,
+  fullExamSlot,
+  isFullExamMode = false,
+  onFullExamModeChange,
 }: Readonly<QuestionGeneratorFormProps>) {
   const [error, setError] = useState<{ num_questions?: string }>({});
   const { t } = useTranslation();
@@ -31,6 +38,7 @@ export function QuestionGeneratorForm({
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isFullExamMode) return;
     const form = event.currentTarget;
     const formData = new FormData(form);
     const num_questions = formData.get('num_questions')?.toString().trim() ?? '';
@@ -48,27 +56,47 @@ export function QuestionGeneratorForm({
   return (
     <Form validationErrors={formErrors} onSubmit={handleSubmit}>
       <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6 w-full">
-        {managerSlot}
         <div className="flex w-full items-end gap-4">
-          <div className="no-number-spinners w-1/4">
-            <Input
-              id="num_questions"
-              label={t('common.numberOfQuestions')}
-              max={20}
-              min={1}
-              name="num_questions"
-              placeholder={t(numQuestionsPlaceholderKey ?? 'generate.numQuestionsPlaceholder')}
-              type="number"
-              {...inputProperties.input}
-            />
+          <div className="flex-1">
+            {managerSlot}
           </div>
-          <Button
-            className={`${buttonStyles.primary} ml-auto`}
-            type="submit"
-          >
-            {t('common.generate')}
-          </Button>
+          {onFullExamModeChange && (
+            <div className="flex flex-col gap-1 shrink-0">
+              <span className="text-xs font-normal text-default-400">{t('generate.fullExamMode')}</span>
+              <div className="h-10 flex items-center">
+                <Switch
+                  isSelected={isFullExamMode}
+                  size="sm"
+                  onValueChange={onFullExamModeChange}
+                />
+              </div>
+            </div>
+          )}
         </div>
+        {isFullExamMode && fullExamSlot ? (
+          fullExamSlot
+        ) : (
+          <div className="flex w-full items-end gap-4">
+            <div className="no-number-spinners w-1/4">
+              <Input
+                id="num_questions"
+                label={t('common.numberOfQuestions')}
+                max={20}
+                min={1}
+                name="num_questions"
+                placeholder={t(numQuestionsPlaceholderKey ?? 'generate.numQuestionsPlaceholder')}
+                type="number"
+                {...inputProperties.input}
+              />
+            </div>
+            <Button
+              className={`${buttonStyles.primary} ml-auto`}
+              type="submit"
+            >
+              {t('common.generate')}
+            </Button>
+          </div>
+        )}
       </div>
     </Form>
   );
