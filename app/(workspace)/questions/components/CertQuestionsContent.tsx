@@ -133,7 +133,7 @@ export function CertQuestionsContent() {
   async function handleFullExamGenerate(topicDistribution: Array<{ topicName: string; questionCount: number }>) {
     if (!selectedCertification) return;
 
-    const validTopics = topicDistribution.filter((t) => t.questionCount > 0);
+    const validTopics = topicDistribution.filter((entry) => entry.questionCount > 0);
     if (validTopics.length === 0) return;
 
     setIsBatchGenerating(true);
