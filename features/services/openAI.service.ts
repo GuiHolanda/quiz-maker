@@ -2,6 +2,12 @@ import OpenAI from 'openai';
 
 import type { PromptDefinition } from '@/config/prompts/types';
 
+export interface OpenAICallOptions {
+  webSearch?: boolean;
+  jsonMode?: boolean;
+  model?: string;
+}
+
 export class OpenAIService {
   // Single attempt with a generous 280s timeout. The earlier 90s + 1 retry
   // pattern produced ~180s spent on stacked timeouts — exactly the failure
@@ -18,16 +24,22 @@ export class OpenAIService {
 
   async call<TInput>(
     prompt: PromptDefinition<TInput>,
-    input: TInput
+    input: TInput,
+    options?: OpenAICallOptions
   ): Promise<{ text: string; inputTokens: number; outputTokens: number }> {
     const apiKey = process.env.OPENAI_API_KEY;
 
     if (!apiKey) throw new Error('API key not configured');
     this.openAIClient.apiKey = apiKey;
 
+    const webSearch = options?.webSearch ?? true;
+    const jsonMode = options?.jsonMode ?? false;
+    const model = options?.model ?? process.env.OPENAI_MODEL ?? 'gpt-4o';
+
     const response = await (this.openAIClient.responses.create as Function)({
-      model: process.env.OPENAI_MODEL ?? 'gpt-5.4',
-      tools: [{ type: 'web_search_preview' }],
+      model,
+      ...(webSearch ? { tools: [{ type: 'web_search_preview' }] } : {}),
+      ...(jsonMode ? { text: { format: { type: 'json_object' } } } : {}),
       input: prompt.build(input),
       max_output_tokens: 16000,
     });
