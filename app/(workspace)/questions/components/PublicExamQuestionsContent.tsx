@@ -329,7 +329,7 @@ export function PublicExamQuestionsContent() {
       const weight = examSubject?.maxQuestions ?? 0;
       const count = totalMaxWeight > 0 ? Math.round((weight / totalMaxWeight) * totalTarget) : 0;
 
-      return { name: subject.name, available: subject.questionCount, count };
+      return { name: subject.name, count };
     });
 
     return (

@@ -337,7 +337,7 @@ export function CertQuestionsContent() {
       const weight = certTopic?.maxQuestions ?? 0;
       const count = totalMaxWeight > 0 ? Math.round((weight / totalMaxWeight) * totalTarget) : 0;
 
-      return { name: topic.name, available: topic.questionCount, count };
+      return { name: topic.name, count };
     });
 
     return (

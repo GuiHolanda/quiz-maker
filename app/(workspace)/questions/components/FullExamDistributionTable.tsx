@@ -9,7 +9,6 @@ import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface DistributionItem {
   readonly name: string;
-  readonly available: number;
   readonly count: number;
 }
 
@@ -48,18 +47,14 @@ export function FullExamDistributionTable({ items, onGenerate, isGenerating = fa
         {items.map((item, i) => {
           const isLast = i === items.length - 1;
           const currentCount = counts[item.name] ?? 0;
-          const isInsufficient = currentCount > item.available;
 
           return (
             <div
               key={item.name}
-              className={`flex items-center gap-3 px-4 py-3 ${!isLast ? 'border-b border-default-200' : ''} ${isInsufficient ? 'border border-danger bg-danger/5 rounded-lg' : ''}`}
+              className={`flex items-center gap-3 px-4 py-3 ${!isLast ? 'border-b border-default-200' : ''}`}
             >
               <div className="flex flex-col flex-1 min-w-0">
                 <span className="text-sm text-foreground truncate">{item.name}</span>
-                <span className={`text-xs ${isInsufficient ? 'text-danger' : 'text-default-400'}`}>
-                  {t('simulado.availableQuestions', { count: item.available })}
-                </span>
               </div>
               <Input
                 className="w-20 shrink-0"
