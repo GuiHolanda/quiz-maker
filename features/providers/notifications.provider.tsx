@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useReducer, useEffect, type ReactNode } from 'react';
+import { createContext, useReducer, useEffect, type ReactNode } from 'react';
 
 import type { AppNotification } from '@/shared/types';
 import { notificationsReducer, type NotificationsState } from '@/features/reducers/notifications.reducer';
