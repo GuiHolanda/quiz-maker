@@ -22,7 +22,14 @@ import { AIPublicExamQuestion, FullExamJobTopicStatus, PublicExamBrowseSummary, 
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { SIMULADO_NEW_PREFILL_KEY } from '@/config/constants';
 import { useTwoPhaseGeneration } from '@/features/hooks/useTwoPhaseGeneration.hook';
-import { getPublicExamBrowseSummary, getPublicExamQuestions, savePublicExamQuestions, createFullExamJob, getActiveFullExamJob } from '@/features/connectors';
+import {
+  getPublicExamBrowseSummary,
+  getPublicExamQuestions,
+  savePublicExamQuestions,
+  createFullExamJob,
+  getActiveFullExamJob,
+  cancelFullExamJob,
+} from '@/features/connectors';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { useNotificationsContext } from '@/features/hooks/useNotificationsContext.hook';
@@ -242,6 +249,17 @@ export function PublicExamQuestionsContent() {
     } catch {
       setIsBatchGenerating(false);
     }
+  }
+
+  async function handleCancelBatch() {
+    if (!batchJobId) return;
+    eventSourceRef.current?.close();
+    eventSourceRef.current = null;
+    setIsBatchGenerating(false);
+    try {
+      await cancelFullExamJob(batchJobId);
+    } catch {}
+    setBatchJobId(null);
   }
 
   const onSave = async () => {
@@ -469,7 +487,18 @@ export function PublicExamQuestionsContent() {
           completed: batchProgress.completed,
           total: batchProgress.total,
         })}
-        endContent={topicList}
+        endContent={
+          <>
+            {topicList}
+            <Button
+              className={`${buttonStyles.dangerFlat} mt-2`}
+              size="sm"
+              onPress={handleCancelBatch}
+            >
+              {t('common.cancel')}
+            </Button>
+          </>
+        }
       />
     );
   }

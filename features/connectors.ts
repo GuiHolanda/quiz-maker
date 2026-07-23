@@ -528,8 +528,7 @@ export async function getQuestionBankSources(type?: 'all' | 'certification' | 'p
   return data.sources;
 }
 
-export const createFullExamJob = (payload: {
-  type: 'certification' | 'public_exam';
+export const createFullExamJob = (payload: {  type: 'certification' | 'public_exam';
   refKey: string;
   refName: string;
   examBoardName?: string;
@@ -548,3 +547,6 @@ export const getActiveFullExamJob = (params: {
 
 export const getFullExamJob = (jobId: string): Promise<FullExamJobStatus> =>
   api.get<FullExamJobStatus>(`${FULL_EXAM_JOB_URL}/${jobId}`).then((r) => r.data);
+
+export const cancelFullExamJob = (jobId: string): Promise<void> =>
+  api.delete(`${FULL_EXAM_JOB_URL}/${jobId}`).then(() => undefined);

@@ -22,7 +22,7 @@ import { AIQuestion, BrowseSummary, FullExamJobTopicStatus, QuestionParams } fro
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { SIMULADO_NEW_PREFILL_KEY } from '@/config/constants';
 import { useTwoPhaseGeneration } from '@/features/hooks/useTwoPhaseGeneration.hook';
-import { getQuestions, saveQuestions, getBrowseSummary, createFullExamJob, getActiveFullExamJob } from '@/features/connectors';
+import { getQuestions, saveQuestions, getBrowseSummary, createFullExamJob, getActiveFullExamJob, cancelFullExamJob } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { useRequest } from '@/features/hooks/useRequest.hook';
@@ -214,6 +214,17 @@ export function CertQuestionsContent() {
     } catch {
       setIsBatchGenerating(false);
     }
+  }
+
+  async function handleCancelBatch() {
+    if (!batchJobId) return;
+    eventSourceRef.current?.close();
+    eventSourceRef.current = null;
+    setIsBatchGenerating(false);
+    try {
+      await cancelFullExamJob(batchJobId);
+    } catch {}
+    setBatchJobId(null);
   }
 
   useEffect(() => {
@@ -474,7 +485,18 @@ export function CertQuestionsContent() {
           completed: batchProgress.completed,
           total: batchProgress.total,
         })}
-        endContent={topicList}
+        endContent={
+          <>
+            {topicList}
+            <Button
+              className={`${buttonStyles.dangerFlat} mt-2`}
+              size="sm"
+              onPress={handleCancelBatch}
+            >
+              {t('common.cancel')}
+            </Button>
+          </>
+        }
       />
     );
   }
