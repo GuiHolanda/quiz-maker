@@ -28,6 +28,7 @@ import {
   QUESTION_BANK_URL,
   QUESTION_BANK_TOPICS_URL,
   QUESTION_BANK_SOURCES_URL,
+  FULL_EXAM_JOB_URL,
 } from '@/config/constants';
 import {
   AIQuestion,
@@ -69,6 +70,7 @@ import {
   CertFinishAttemptPayload,
   QuestionBankParams,
   QuestionBankResponse,
+  FullExamJobStatus,
 } from '@/shared/types';
 import api from '@/lib/bff.api';
 
@@ -525,3 +527,24 @@ export async function getQuestionBankSources(type?: 'all' | 'certification' | 'p
   });
   return data.sources;
 }
+
+export const createFullExamJob = (payload: {
+  type: 'certification' | 'public_exam';
+  refKey: string;
+  refName: string;
+  examBoardName?: string;
+  distribution: Array<{ topicName: string; questionCount: number }>;
+}): Promise<{ jobId: string }> =>
+  api.post<{ jobId: string }>(FULL_EXAM_JOB_URL, payload).then((r) => r.data);
+
+export const getActiveFullExamJob = (params: {
+  type: 'certification' | 'public_exam';
+  refKey: string;
+}): Promise<FullExamJobStatus | null> =>
+  api
+    .get<FullExamJobStatus | null>(FULL_EXAM_JOB_URL, { params })
+    .then((r) => r.data)
+    .catch(() => null);
+
+export const getFullExamJob = (jobId: string): Promise<FullExamJobStatus> =>
+  api.get<FullExamJobStatus>(`${FULL_EXAM_JOB_URL}/${jobId}`).then((r) => r.data);
