@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     const reviewResponse = await openAIService.call(
       certificationQuestionsReviewPrompt,
       { certification_name, topic_name, draft_questions: researchResponse.text },
-      { webSearch: false, model: process.env.OPENAI_MODEL_REVIEW ?? 'gpt-4.5' }
+      { webSearch: false, model: process.env.OPENAI_MODEL_REVIEW ?? process.env.OPENAI_MODEL ?? 'gpt-4o' }
     );
 
     const formatResponse = await openAIService.call(
