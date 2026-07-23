@@ -594,6 +594,15 @@ export interface AppNotification {
   read: boolean;
 }
 
+export interface FullExamJobTopicStatus {
+  id: string;
+  topicName: string;
+  questionCount: number;
+  status: 'pending' | 'running' | 'done' | 'error';
+  savedCount: number;
+  errorMessage: string | null;
+}
+
 export interface FullExamJobStatus {
   id: string;
   status: 'running' | 'done' | 'error';
@@ -602,4 +611,5 @@ export interface FullExamJobStatus {
   savedCount: number;
   type: 'certification' | 'public_exam';
   refKey: string;
+  topics: FullExamJobTopicStatus[];
 }

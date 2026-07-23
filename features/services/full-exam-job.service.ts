@@ -23,6 +23,11 @@ function extractJson(raw: string): string {
   return raw.trim();
 }
 
+function sanitizeError(err: unknown): string {
+  if (err instanceof Error) return err.message.slice(0, 500);
+  return String(err).slice(0, 500);
+}
+
 export async function processFullExamJob(
   jobId: string,
   userId: string,
@@ -36,7 +41,21 @@ export async function processFullExamJob(
 
   const CONCURRENCY = 5;
 
-  async function processTopic(topicName: string, questionCount: number): Promise<void> {
+  // Create a FullExamJobTopic row for each topic upfront
+  const topicRows = await Promise.all(
+    distribution.map(({ topicName, questionCount }) =>
+      prisma.fullExamJobTopic.create({
+        data: { jobId, topicName, questionCount, status: 'pending' },
+      }),
+    ),
+  );
+
+  async function processTopic(topicId: string, topicName: string, questionCount: number): Promise<void> {
+    await prisma.fullExamJobTopic.update({
+      where: { id: topicId },
+      data: { status: 'running' },
+    });
+
     const numStr = String(questionCount);
     const { logId } = await quotaService.checkAndRecordQuestions(userId, questionCount);
 
@@ -90,6 +109,11 @@ export async function processFullExamJob(
       await examService.createFromPayload(questions as AIPublicExamQuestion[], userId);
     }
 
+    await prisma.fullExamJobTopic.update({
+      where: { id: topicId },
+      data: { status: 'done', savedCount: questions.length },
+    });
+
     await prisma.fullExamJob.update({
       where: { id: jobId },
       data: { doneTopics: { increment: 1 }, savedCount: { increment: questions.length } },
@@ -97,14 +121,19 @@ export async function processFullExamJob(
   }
 
   try {
-    for (let i = 0; i < distribution.length; i += CONCURRENCY) {
-      const batch = distribution.slice(i, i + CONCURRENCY);
+    for (let i = 0; i < topicRows.length; i += CONCURRENCY) {
+      const batch = topicRows.slice(i, i + CONCURRENCY);
       await Promise.allSettled(
-        batch.map(async ({ topicName, questionCount }) => {
+        batch.map(async ({ id: topicId, topicName, questionCount }) => {
           try {
-            await processTopic(topicName, questionCount);
+            await processTopic(topicId, topicName, questionCount);
           } catch (topicErr) {
+            const errorMessage = sanitizeError(topicErr);
             console.error(`[full-exam-job] Topic "${topicName}" failed:`, topicErr);
+            await prisma.fullExamJobTopic.update({
+              where: { id: topicId },
+              data: { status: 'error', errorMessage },
+            });
             await prisma.fullExamJob.update({
               where: { id: jobId },
               data: { doneTopics: { increment: 1 } },

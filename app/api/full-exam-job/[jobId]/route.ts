@@ -17,6 +17,7 @@ export async function GET(
     const { jobId } = await params;
     const job = await prisma.fullExamJob.findFirst({
       where: { id: jobId, userId: session.user.id },
+      include: { topics: { orderBy: { createdAt: 'asc' } } },
     });
 
     if (!job) {
@@ -32,6 +33,14 @@ export async function GET(
         savedCount: job.savedCount,
         type: job.type,
         refKey: job.refKey,
+        topics: job.topics.map((t) => ({
+          id: t.id,
+          topicName: t.topicName,
+          questionCount: t.questionCount,
+          status: t.status,
+          savedCount: t.savedCount,
+          errorMessage: t.errorMessage,
+        })),
       },
       { status: 200 },
     );

@@ -8,6 +8,27 @@ import { processFullExamJob } from '@/features/services/full-exam-job.service';
 
 export const maxDuration = 30;
 
+function shapeJob(job: Awaited<ReturnType<typeof prisma.fullExamJob.findFirst>> & { topics?: { id: string; topicName: string; questionCount: number; status: string; savedCount: number; errorMessage: string | null }[] }) {
+  if (!job) return null;
+  return {
+    id: job.id,
+    status: job.status,
+    totalTopics: job.totalTopics,
+    doneTopics: job.doneTopics,
+    savedCount: job.savedCount,
+    type: job.type,
+    refKey: job.refKey,
+    topics: (job.topics ?? []).map((t) => ({
+      id: t.id,
+      topicName: t.topicName,
+      questionCount: t.questionCount,
+      status: t.status,
+      savedCount: t.savedCount,
+      errorMessage: t.errorMessage,
+    })),
+  };
+}
+
 export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -77,22 +98,12 @@ export async function GET(request: NextRequest) {
     const job = await prisma.fullExamJob.findFirst({
       where: { userId: session.user.id, type, refKey, status: 'running' },
       orderBy: { createdAt: 'desc' },
+      include: { topics: { orderBy: { createdAt: 'asc' } } },
     });
 
     if (!job) return NextResponse.json(null, { status: 200 });
 
-    return NextResponse.json(
-      {
-        id: job.id,
-        status: job.status,
-        totalTopics: job.totalTopics,
-        doneTopics: job.doneTopics,
-        savedCount: job.savedCount,
-        type: job.type,
-        refKey: job.refKey,
-      },
-      { status: 200 },
-    );
+    return NextResponse.json(shapeJob(job), { status: 200 });
   } catch (err: unknown) {
     const { status, ...body } = toApiErrorResponse(err);
     return NextResponse.json(body, { status });

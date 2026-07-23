@@ -5,7 +5,8 @@ import { Progress } from '@heroui/progress';
 import { Button } from '@heroui/button';
 import { Spinner } from '@heroui/spinner';
 import Link from 'next/link';
-import { faCircleCheck, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
+import { faCircleCheck, faCircleInfo, faCircleXmark, faCircleNotch } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import { GeneratedQuestionsList } from './GeneratedQuestionsList';
 import { QuestionGeneratorForm } from './QuestionGeneratorForm';
@@ -17,7 +18,7 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { InlineAlert } from '@/shared/components/ui/InlineAlert';
-import { AIPublicExamQuestion, PublicExamBrowseSummary, PublicExamQuestionParams } from '@/shared/types';
+import { AIPublicExamQuestion, FullExamJobTopicStatus, PublicExamBrowseSummary, PublicExamQuestionParams } from '@/shared/types';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { SIMULADO_NEW_PREFILL_KEY } from '@/config/constants';
 import { useTwoPhaseGeneration } from '@/features/hooks/useTwoPhaseGeneration.hook';
@@ -43,6 +44,7 @@ export function PublicExamQuestionsContent() {
   const [batchDone, setBatchDone] = useState(false);
   const [batchResult, setBatchResult] = useState({ saved: 0, successfulTopics: 0 });
   const [batchJobId, setBatchJobId] = useState<string | null>(null);
+  const [batchTopics, setBatchTopics] = useState<FullExamJobTopicStatus[]>([]);
   const eventSourceRef = useRef<EventSource | null>(null);
   const [generatingCount, setGeneratingCount] = useState(5);
   const [progress, setProgress] = useState(0);
@@ -144,6 +146,7 @@ export function PublicExamQuestionsContent() {
       if (job && job.status === 'running') {
         setIsBatchGenerating(true);
         setBatchProgress({ completed: job.doneTopics, total: job.totalTopics });
+        if (job.topics) setBatchTopics(job.topics);
         setBatchJobId(job.id);
         connectToJobStream(job.id);
       }
@@ -165,17 +168,24 @@ export function PublicExamQuestionsContent() {
       eventSourceRef.current = es;
 
       es.addEventListener('progress', (e) => {
-        const data = JSON.parse(e.data) as { doneTopics: number; totalTopics: number };
+        const data = JSON.parse(e.data) as { doneTopics: number; totalTopics: number; topics?: FullExamJobTopicStatus[] };
         setBatchProgress({ completed: data.doneTopics, total: data.totalTopics });
+        if (data.topics) setBatchTopics(data.topics);
       });
 
       es.addEventListener('done', (e) => {
-        const data = JSON.parse(e.data) as { doneTopics: number; totalTopics: number; savedCount: number };
+        const data = JSON.parse(e.data) as {
+          doneTopics: number;
+          totalTopics: number;
+          savedCount: number;
+          topics?: FullExamJobTopicStatus[];
+        };
         es.close();
         eventSourceRef.current = null;
         setIsBatchGenerating(false);
         setBatchDone(true);
         setBatchResult({ saved: data.savedCount, successfulTopics: data.doneTopics });
+        if (data.topics) setBatchTopics(data.topics);
         refreshUsage();
         if (selectedPublicExam) {
           try {
@@ -398,6 +408,43 @@ export function PublicExamQuestionsContent() {
   }
 
   function renderBatchProgress() {
+    const topicList = batchTopics.length > 0 ? (
+      <div className="flex flex-col gap-1 mt-2">
+        {batchTopics.map((topic) => {
+          const icon =
+            topic.status === 'done' ? faCircleCheck :
+            topic.status === 'error' ? faCircleXmark :
+            topic.status === 'running' ? faCircleNotch :
+            null;
+          const color =
+            topic.status === 'done' ? 'text-success' :
+            topic.status === 'error' ? 'text-danger' :
+            topic.status === 'running' ? 'text-warning' :
+            'text-default-400';
+
+          return (
+            <div key={topic.id} className="flex items-start gap-2 text-xs">
+              {icon ? (
+                <FontAwesomeIcon
+                  className={`w-3 h-3 mt-0.5 shrink-0 ${color} ${topic.status === 'running' ? 'animate-spin' : ''}`}
+                  icon={icon}
+                />
+              ) : (
+                <span className="w-3 h-3 mt-0.5 shrink-0 rounded-full border border-default-300 inline-block" />
+              )}
+              <span className={topic.status === 'error' ? 'text-danger' : 'text-default-500'}>
+                {topic.topicName}
+                {topic.status === 'done' && <span className="text-default-400 ml-1">({topic.savedCount}q)</span>}
+                {topic.status === 'error' && topic.errorMessage && (
+                  <span className="text-default-400 ml-1">— {topic.errorMessage}</span>
+                )}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    ) : null;
+
     if (batchDone) {
       return (
         <InlineAlert
@@ -408,6 +455,7 @@ export function PublicExamQuestionsContent() {
             total: batchResult.saved,
             topics: batchResult.successfulTopics,
           })}
+          endContent={topicList}
         />
       );
     }
@@ -421,6 +469,7 @@ export function PublicExamQuestionsContent() {
           completed: batchProgress.completed,
           total: batchProgress.total,
         })}
+        endContent={topicList}
       />
     );
   }

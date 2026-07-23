@@ -5,6 +5,26 @@ import { prisma } from '@/lib/prisma';
 
 export const maxDuration = 300;
 
+type TopicShape = {
+  id: string;
+  topicName: string;
+  questionCount: number;
+  status: string;
+  savedCount: number;
+  errorMessage: string | null;
+};
+
+function shapeTopics(topics: TopicShape[]) {
+  return topics.map((t) => ({
+    id: t.id,
+    topicName: t.topicName,
+    questionCount: t.questionCount,
+    status: t.status,
+    savedCount: t.savedCount,
+    errorMessage: t.errorMessage,
+  }));
+}
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ jobId: string }> },
@@ -18,6 +38,7 @@ export async function GET(
 
   const job = await prisma.fullExamJob.findFirst({
     where: { id: jobId, userId: session.user.id },
+    include: { topics: { orderBy: { createdAt: 'asc' } } },
   });
 
   if (!job) {
@@ -33,22 +54,35 @@ export async function GET(
       }
 
       if (job.status === 'done') {
-        send('done', { doneTopics: job.doneTopics, totalTopics: job.totalTopics, savedCount: job.savedCount });
+        send('done', {
+          doneTopics: job.doneTopics,
+          totalTopics: job.totalTopics,
+          savedCount: job.savedCount,
+          topics: shapeTopics(job.topics),
+        });
         controller.close();
         return;
       }
 
       if (job.status === 'error') {
-        send('error', { message: 'Job failed' });
+        send('error', { message: 'Job failed', topics: shapeTopics(job.topics) });
         controller.close();
         return;
       }
 
-      send('progress', { doneTopics: job.doneTopics, totalTopics: job.totalTopics, savedCount: job.savedCount });
+      send('progress', {
+        doneTopics: job.doneTopics,
+        totalTopics: job.totalTopics,
+        savedCount: job.savedCount,
+        topics: shapeTopics(job.topics),
+      });
 
       const pollInterval = setInterval(async () => {
         try {
-          const current = await prisma.fullExamJob.findUnique({ where: { id: jobId } });
+          const current = await prisma.fullExamJob.findUnique({
+            where: { id: jobId },
+            include: { topics: { orderBy: { createdAt: 'asc' } } },
+          });
           if (!current) {
             clearInterval(pollInterval);
             controller.close();
@@ -61,17 +95,19 @@ export async function GET(
               doneTopics: current.doneTopics,
               totalTopics: current.totalTopics,
               savedCount: current.savedCount,
+              topics: shapeTopics(current.topics),
             });
             controller.close();
           } else if (current.status === 'error') {
             clearInterval(pollInterval);
-            send('error', { message: 'Job failed' });
+            send('error', { message: 'Job failed', topics: shapeTopics(current.topics) });
             controller.close();
           } else {
             send('progress', {
               doneTopics: current.doneTopics,
               totalTopics: current.totalTopics,
               savedCount: current.savedCount,
+              topics: shapeTopics(current.topics),
             });
           }
         } catch {
