@@ -22,7 +22,14 @@ import { AIQuestion, BrowseSummary, FullExamJobTopicStatus, QuestionParams } fro
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { SIMULADO_NEW_PREFILL_KEY } from '@/config/constants';
 import { useTwoPhaseGeneration } from '@/features/hooks/useTwoPhaseGeneration.hook';
-import { getQuestions, saveQuestions, getBrowseSummary, createFullExamJob, getActiveFullExamJob, cancelFullExamJob } from '@/features/connectors';
+import {
+  getQuestions,
+  saveQuestions,
+  getBrowseSummary,
+  createFullExamJob,
+  getActiveFullExamJob,
+  cancelFullExamJob,
+} from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { useRequest } from '@/features/hooks/useRequest.hook';
@@ -83,12 +90,14 @@ export function CertQuestionsContent() {
         setIsGenerating(false);
       }, 350);
     },
-    [replaceQuiz, setAIquestions, generatingCount],
+    [replaceQuiz, setAIquestions, generatingCount]
   );
 
   const onSecondBatch = useCallback(
-    (allQuestions: AIQuestion[]) => { setAIquestions(allQuestions, null); },
-    [setAIquestions],
+    (allQuestions: AIQuestion[]) => {
+      setAIquestions(allQuestions, null);
+    },
+    [setAIquestions]
   );
 
   const onGenerationError = useCallback(
@@ -97,7 +106,7 @@ export function CertQuestionsContent() {
       const err = error as { response?: { data?: { message?: string } } };
       notify.error(t('toast.failedToLoad'), err?.response?.data?.message ?? t('toast.somethingWrong'));
     },
-    [t],
+    [t]
   );
 
   const { isSecondPhaseLoading, generate, abort } = useTwoPhaseGeneration<QuestionParams, AIQuestion>({
@@ -146,13 +155,22 @@ export function CertQuestionsContent() {
       eventSourceRef.current = es;
 
       es.addEventListener('progress', (e) => {
-        const data = JSON.parse(e.data) as { doneTopics: number; totalTopics: number; topics?: FullExamJobTopicStatus[] };
+        const data = JSON.parse(e.data) as {
+          doneTopics: number;
+          totalTopics: number;
+          topics?: FullExamJobTopicStatus[];
+        };
         setBatchProgress({ completed: data.doneTopics, total: data.totalTopics });
         if (data.topics) setBatchTopics(data.topics);
       });
 
       es.addEventListener('done', (e) => {
-        const data = JSON.parse(e.data) as { doneTopics: number; totalTopics: number; savedCount: number; topics?: FullExamJobTopicStatus[] };
+        const data = JSON.parse(e.data) as {
+          doneTopics: number;
+          totalTopics: number;
+          savedCount: number;
+          topics?: FullExamJobTopicStatus[];
+        };
         es.close();
         eventSourceRef.current = null;
         setIsBatchGenerating(false);
@@ -168,7 +186,7 @@ export function CertQuestionsContent() {
                 type: 'certification',
                 certKey: selectedCertification.key,
                 totalQuestions: selectedCertification.totalQuestions,
-              }),
+              })
             );
           } catch {}
           addNotification({
@@ -190,7 +208,7 @@ export function CertQuestionsContent() {
         setIsBatchGenerating(false);
       });
     },
-    [selectedCertification, addNotification, t, refreshUsage],
+    [selectedCertification, addNotification, t, refreshUsage]
   );
 
   async function handleFullExamGenerate(topicDistribution: Array<{ topicName: string; questionCount: number }>) {
@@ -387,29 +405,32 @@ export function CertQuestionsContent() {
   }
 
   function renderFullExamSlot() {
-    if (!selectedCertification || !browseSummary) {
-      return (
-        <p className="text-xs text-default-400 py-2">{t('certification.selectCertificationPlaceholder')}</p>
-      );
-    }
-
-    const certData = browseSummary.certifications.find((c) => c.key === selectedCertification.key);
-    const topics = certData?.topics ?? [];
-
-    if (topics.length === 0) {
-      return <p className="text-xs text-default-400 py-2">{t('simulado.noQuestionsTitle')}</p>;
+    if (!selectedCertification) {
+      return <p className="text-xs text-default-400 py-2">{t('certification.selectCertificationPlaceholder')}</p>;
     }
 
     const totalTarget = selectedCertification.totalQuestions;
     const totalMaxWeight = selectedCertification.topics.reduce((acc, topic) => acc + topic.maxQuestions, 0);
 
-    const distributedItems = topics.map((topic) => {
-      const certTopic = selectedCertification.topics.find((ct) => ct.name === topic.name);
-      const weight = certTopic?.maxQuestions ?? 0;
-      const count = totalMaxWeight > 0 ? Math.round((weight / totalMaxWeight) * totalTarget) : 0;
+    // Use saved-questions data if available, otherwise fall back to the cert's configured topics
+    const certData = browseSummary?.certifications.find((c) => c.key === selectedCertification.key);
+    const hasSavedTopics = (certData?.topics.length ?? 0) > 0;
 
-      return { name: topic.name, count };
-    });
+    const distributedItems = hasSavedTopics
+      ? certData!.topics.map((topic) => {
+          const certTopic = selectedCertification.topics.find((ct) => ct.name === topic.name);
+          const weight = certTopic?.maxQuestions ?? 0;
+          const count = totalMaxWeight > 0 ? Math.round((weight / totalMaxWeight) * totalTarget) : 0;
+          return { name: topic.name, count };
+        })
+      : selectedCertification.topics.map((topic) => {
+          const count = totalMaxWeight > 0 ? Math.round((topic.maxQuestions / totalMaxWeight) * totalTarget) : 0;
+          return { name: topic.name, count };
+        });
+
+    if (distributedItems.length === 0) {
+      return <p className="text-xs text-default-400 py-2">{t('simulado.noQuestionsTitle')}</p>;
+    }
 
     return (
       <FullExamDistributionTable
@@ -422,44 +443,49 @@ export function CertQuestionsContent() {
   }
 
   function renderBatchProgress() {
-    const topicList = batchTopics.length > 0 ? (
-      <div className="flex flex-col gap-1 mt-2">
-        {batchTopics.map((topic) => {
-          const icon =
-            topic.status === 'done' ? faCircleCheck :
-            topic.status === 'error' ? faCircleXmark :
-            topic.status === 'running' ? faCircleNotch :
-            null;
-          const color =
-            topic.status === 'done' ? 'text-success' :
-            topic.status === 'error' ? 'text-danger' :
-            topic.status === 'running' ? 'text-warning' :
-            'text-default-400';
+    const topicList =
+      batchTopics.length > 0 ? (
+        <div className="flex flex-col gap-1 mt-2">
+          {batchTopics.map((topic) => {
+            const icon =
+              topic.status === 'done'
+                ? faCircleCheck
+                : topic.status === 'error'
+                  ? faCircleXmark
+                  : topic.status === 'running'
+                    ? faCircleNotch
+                    : null;
+            const color =
+              topic.status === 'done'
+                ? 'text-success'
+                : topic.status === 'error'
+                  ? 'text-danger'
+                  : topic.status === 'running'
+                    ? 'text-warning'
+                    : 'text-default-400';
 
-          return (
-            <div key={topic.id} className="flex items-start gap-2 text-xs">
-              {icon ? (
-                <FontAwesomeIcon
-                  className={`w-3 h-3 mt-0.5 shrink-0 ${color} ${topic.status === 'running' ? 'animate-spin' : ''}`}
-                  icon={icon}
-                />
-              ) : (
-                <span className="w-3 h-3 mt-0.5 shrink-0 rounded-full border border-default-300 inline-block" />
-              )}
-              <span className={topic.status === 'error' ? 'text-danger' : 'text-default-500'}>
-                {topic.topicName}
-                {topic.status === 'done' && (
-                  <span className="text-default-400 ml-1">({topic.savedCount}q)</span>
+            return (
+              <div key={topic.id} className="flex items-start gap-2 text-xs">
+                {icon ? (
+                  <FontAwesomeIcon
+                    className={`w-3 h-3 mt-0.5 shrink-0 ${color} ${topic.status === 'running' ? 'animate-spin' : ''}`}
+                    icon={icon}
+                  />
+                ) : (
+                  <span className="w-3 h-3 mt-0.5 shrink-0 rounded-full border border-default-300 inline-block" />
                 )}
-                {topic.status === 'error' && topic.errorMessage && (
-                  <span className="text-default-400 ml-1">— {topic.errorMessage}</span>
-                )}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    ) : null;
+                <span className={topic.status === 'error' ? 'text-danger' : 'text-default-500'}>
+                  {topic.topicName}
+                  {topic.status === 'done' && <span className="text-default-400 ml-1">({topic.savedCount}q)</span>}
+                  {topic.status === 'error' && topic.errorMessage && (
+                    <span className="text-default-400 ml-1">— {topic.errorMessage}</span>
+                  )}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      ) : null;
 
     if (batchDone) {
       return (
@@ -488,11 +514,7 @@ export function CertQuestionsContent() {
         endContent={
           <>
             {topicList}
-            <Button
-              className={`${buttonStyles.dangerFlat} mt-2`}
-              size="sm"
-              onPress={handleCancelBatch}
-            >
+            <Button className={`${buttonStyles.dangerFlat} mt-2`} size="sm" onPress={handleCancelBatch}>
               {t('common.cancel')}
             </Button>
           </>

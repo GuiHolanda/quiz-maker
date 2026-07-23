@@ -391,29 +391,34 @@ export function PublicExamQuestionsContent() {
   }
 
   function renderFullExamSlot() {
-    if (!selectedPublicExam || !pubBrowseSummary) {
+    if (!selectedPublicExam) {
       return (
         <p className="text-xs text-default-400 py-2">{t('concurso.selectPublicExamPlaceholder')}</p>
       );
     }
 
-    const examData = pubBrowseSummary.publicExams.find((e) => e.id === selectedPublicExam.id);
-    const subjects = examData?.subjects ?? [];
-
-    if (subjects.length === 0) {
-      return <p className="text-xs text-default-400 py-2">{t('simulado.noQuestionsTitle')}</p>;
-    }
-
     const totalTarget = selectedPublicExam.totalQuestions;
     const totalMaxWeight = selectedPublicExam.subjects.reduce((acc, s) => acc + s.maxQuestions, 0);
 
-    const distributedItems = subjects.map((subject) => {
-      const examSubject = selectedPublicExam.subjects.find((s) => s.name === subject.name);
-      const weight = examSubject?.maxQuestions ?? 0;
-      const count = totalMaxWeight > 0 ? Math.round((weight / totalMaxWeight) * totalTarget) : 0;
+    // Use saved-questions data if available, otherwise fall back to the exam's configured subjects
+    const examData = pubBrowseSummary?.publicExams.find((e) => e.id === selectedPublicExam.id);
+    const hasSavedSubjects = (examData?.subjects.length ?? 0) > 0;
 
-      return { name: subject.name, count };
-    });
+    const distributedItems = hasSavedSubjects
+      ? examData!.subjects.map((subject) => {
+          const examSubject = selectedPublicExam.subjects.find((s) => s.name === subject.name);
+          const weight = examSubject?.maxQuestions ?? 0;
+          const count = totalMaxWeight > 0 ? Math.round((weight / totalMaxWeight) * totalTarget) : 0;
+          return { name: subject.name, count };
+        })
+      : selectedPublicExam.subjects.map((subject) => {
+          const count = totalMaxWeight > 0 ? Math.round((subject.maxQuestions / totalMaxWeight) * totalTarget) : 0;
+          return { name: subject.name, count };
+        });
+
+    if (distributedItems.length === 0) {
+      return <p className="text-xs text-default-400 py-2">{t('simulado.noQuestionsTitle')}</p>;
+    }
 
     return (
       <FullExamDistributionTable
