@@ -38,6 +38,7 @@ export function CertQuestionsContent() {
   const [isBatchGenerating, setIsBatchGenerating] = useState(false);
   const [batchProgress, setBatchProgress] = useState({ completed: 0, total: 0 });
   const [batchDone, setBatchDone] = useState(false);
+  const [batchResult, setBatchResult] = useState({ saved: 0, successfulTopics: 0 });
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingCount, setGeneratingCount] = useState(5);
   const [progress, setProgress] = useState(0);
@@ -160,6 +161,7 @@ export function CertQuestionsContent() {
 
     setIsBatchGenerating(false);
     setBatchDone(true);
+    setBatchResult({ saved: totalSaved, successfulTopics });
     refreshUsage();
     addNotification({
       title: t('notification.fullExamTitle'),
@@ -326,6 +328,7 @@ export function CertQuestionsContent() {
     return (
       <FullExamDistributionTable
         key={certData?.key ?? selectedCertification.key}
+        isGenerating={isBatchGenerating}
         items={topics.map((topic) => ({ name: topic.name, available: topic.questionCount, count: topic.questionCount }))}
         onGenerate={handleFullExamGenerate}
       />
@@ -340,8 +343,8 @@ export function CertQuestionsContent() {
           icon={faCircleCheck}
           title={t('generate.fullExamComplete')}
           description={t('generate.fullExamCompleteDescription', {
-            total: batchProgress.completed,
-            topics: batchProgress.total,
+            total: batchResult.saved,
+            topics: batchResult.successfulTopics,
           })}
         />
       );

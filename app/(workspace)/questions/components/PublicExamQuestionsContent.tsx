@@ -39,6 +39,7 @@ export function PublicExamQuestionsContent() {
   const [isBatchGenerating, setIsBatchGenerating] = useState(false);
   const [batchProgress, setBatchProgress] = useState({ completed: 0, total: 0 });
   const [batchDone, setBatchDone] = useState(false);
+  const [batchResult, setBatchResult] = useState({ saved: 0, successfulTopics: 0 });
   const [generatingCount, setGeneratingCount] = useState(5);
   const [progress, setProgress] = useState(0);
   const [showSimuladosBanner, setShowSimuladosBanner] = useState(false);
@@ -136,7 +137,7 @@ export function PublicExamQuestionsContent() {
   async function handleFullExamGenerate(subjectDistribution: Array<{ topicName: string; questionCount: number }>) {
     if (!selectedPublicExam) return;
 
-    const validSubjects = subjectDistribution.filter((s) => s.questionCount > 0);
+    const validSubjects = subjectDistribution.filter((entry) => entry.questionCount > 0);
     if (validSubjects.length === 0) return;
 
     setIsBatchGenerating(true);
@@ -164,6 +165,7 @@ export function PublicExamQuestionsContent() {
 
     setIsBatchGenerating(false);
     setBatchDone(true);
+    setBatchResult({ saved: totalSaved, successfulTopics: successfulSubjects });
     refreshUsage();
     addNotification({
       title: t('notification.fullExamTitle'),
@@ -320,6 +322,7 @@ export function PublicExamQuestionsContent() {
     return (
       <FullExamDistributionTable
         key={examData?.id ?? selectedPublicExam.id}
+        isGenerating={isBatchGenerating}
         items={subjects.map((s) => ({ name: s.name, available: s.questionCount, count: s.questionCount }))}
         onGenerate={handleFullExamGenerate}
       />
@@ -334,8 +337,8 @@ export function PublicExamQuestionsContent() {
           icon={faCircleCheck}
           title={t('generate.fullExamComplete')}
           description={t('generate.fullExamCompleteDescription', {
-            total: batchProgress.completed,
-            topics: batchProgress.total,
+            total: batchResult.saved,
+            topics: batchResult.successfulTopics,
           })}
         />
       );

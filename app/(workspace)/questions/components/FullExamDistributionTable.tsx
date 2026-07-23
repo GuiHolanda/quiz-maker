@@ -14,11 +14,12 @@ interface DistributionItem {
 }
 
 interface FullExamDistributionTableProps {
-  readonly items: DistributionItem[];
+  readonly items: ReadonlyArray<DistributionItem>;
   readonly onGenerate: (distribution: Array<{ topicName: string; questionCount: number }>) => void;
+  readonly isGenerating?: boolean;
 }
 
-export function FullExamDistributionTable({ items, onGenerate }: Readonly<FullExamDistributionTableProps>) {
+export function FullExamDistributionTable({ items, onGenerate, isGenerating = false }: Readonly<FullExamDistributionTableProps>) {
   const { t } = useTranslation();
   const [counts, setCounts] = useState<Record<string, number>>(
     () => Object.fromEntries(items.map((item) => [item.name, item.count])),
@@ -75,7 +76,7 @@ export function FullExamDistributionTable({ items, onGenerate }: Readonly<FullEx
         })}
       </div>
       <div className="flex justify-end">
-        <Button className={buttonStyles.primary} isDisabled={total === 0} onPress={handleGenerate}>
+        <Button className={buttonStyles.primary} isDisabled={total === 0 || isGenerating} onPress={handleGenerate}>
           {t('generate.generateFullExam')}
         </Button>
       </div>
