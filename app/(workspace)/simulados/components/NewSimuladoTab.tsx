@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGraduationCap, faClipboardList } from '@fortawesome/free-solid-svg-icons';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
@@ -11,6 +11,7 @@ import { NewMockExamForm } from './NewMockExamForm';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { SimuladoType } from '@/shared/types';
+import { SIMULADO_NEW_PREFILL_KEY } from '@/config/constants';
 
 interface NewSimuladoTabProps {
   readonly onCreated: () => void;
@@ -20,6 +21,16 @@ export function NewSimuladoTab({ onCreated }: NewSimuladoTabProps) {
   const { t } = useTranslation();
   const { usage } = useUsageContext();
   const [type, setType] = useState<SimuladoType>('certification');
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SIMULADO_NEW_PREFILL_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { type?: string };
+        if (parsed.type === 'public_exam') setType('concurso');
+      }
+    } catch {}
+  }, []);
 
   const hasConcursoAccess = !usage || usage.publicExamsLimit !== 0;
 
