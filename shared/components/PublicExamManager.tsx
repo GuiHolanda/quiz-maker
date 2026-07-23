@@ -14,7 +14,13 @@ interface PublicExamManagerProps extends React.HTMLAttributes<HTMLDivElement> {
   subjectOnly?: boolean;
 }
 
-export const PublicExamManager = ({ isMultiple, noSubjects, showTopic, subjectOnly, ...props }: PublicExamManagerProps) => {
+export const PublicExamManager = ({
+  isMultiple,
+  noSubjects,
+  showTopic,
+  subjectOnly,
+  ...props
+}: PublicExamManagerProps) => {
   const { t } = useTranslation();
   const {
     publicExams,

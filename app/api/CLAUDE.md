@@ -157,6 +157,29 @@ Service: `features/services/aiChat.service.ts`.
 
 ---
 
+### `full-exam-job/`
+
+Server-side batch generation (Prova Completa). Accepts a distribution of topics/subjects, creates a `FullExamJob` + `FullExamJobTopic` rows, fires the processing via `after()` (Next.js 15 background task), and returns `{ jobId }` immediately. The client then streams progress via SSE.
+
+| Route | Method | Description |
+|---|---|---|
+| `full-exam-job` | POST | Create job + fire `processFullExamJob` via `after()`. Returns `{ jobId }`. Body: `{ type, refKey, refName, examBoardName?, distribution[] }` |
+| `full-exam-job` | GET | Get active `running` job for `?type=&refKey=` (used for reconnect on page reload). Returns `null` if none. |
+| `full-exam-job/[jobId]` | GET | Polling fallback — returns current job status + topics array. |
+| `full-exam-job/[jobId]` | DELETE | Cancel a running job: sets `status: 'error'`, marks all `pending/running` topics as `error` with `errorMessage: 'Cancelled by user'`. |
+| `full-exam-job/[jobId]/stream` | GET | SSE stream. Polls DB every 1.5s, emits `progress`/`done`/`error` events (each with `topics[]`). `maxDuration = 300`. |
+| `cron/cleanup-stale-jobs` | GET | Marks as `error` all `FullExamJob` rows stuck in `running` for > 30 min. Protected by `CRON_SECRET` bearer token. Scheduled via `vercel.json` at `0 3 * * *`. |
+
+Service: `features/services/full-exam-job.service.ts` (`processFullExamJob`). Processes distribution in batches of 5 (parallel within batch, sequential between batches). Uses same 3-step OpenAI pipeline as `certification/question-generator` and `public-exam/question-generator`. Per-topic status tracked in `FullExamJobTopic` — errors in one topic don't abort the rest.
+
+SSE event shape:
+```ts
+// progress / done / error
+{ doneTopics: number; totalTopics: number; savedCount: number; topics: FullExamJobTopicStatus[] }
+```
+
+---
+
 ## Service layer (`features/services/`)
 
 Route handlers never contain business logic — they delegate to services.
@@ -171,6 +194,7 @@ Route handlers never contain business logic — they delegate to services.
 | `browse.service.ts` | `BrowseQuestionsService`, `PublicExamBrowseQuestionsService`, `BrowseSummaryService`, `PublicExamBrowseSummaryService` |
 | `quiz-generator.service.ts` | Parse params, distribute questions across topics, fetch stored questions |
 | `aiChat.service.ts` | Validate chat messages, select prompt, stream OpenAI response |
+| `full-exam-job.service.ts` | `processFullExamJob(jobId, userId, type, refName, examBoardName, distribution)` — server-side batch generation. Creates `FullExamJobTopic` rows upfront, processes batches of 5 in parallel, updates `status`/`savedCount`/`errorMessage` per topic. Uses the same 3-step OpenAI pipeline as the question-generator routes. Lazy-init pattern NOT needed here (called only via `after()`, no unit test coverage). |
 
 ### Token recording pattern (question-generator routes)
 

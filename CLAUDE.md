@@ -799,6 +799,60 @@ A historical mixed-unit window (fractional rows from old AI chat saves) was norm
 
 ---
 
+## Prova Completa (Full Exam Job)
+
+Modo que gera questões para **todos os tópicos/matérias de uma vez** em um job server-side, com progresso via SSE e persistência que sobrevive a reloads do browser.
+
+### Fluxo
+
+1. Usuário ativa o toggle "Prova Completa" no `QuestionGeneratorForm` (`data-testid="full-exam-toggle"`)
+2. Tabela `FullExamDistributionTable` aparece com distribuição proporcional calculada via **largest remainder method** (garante soma exata = `totalQuestions`)
+3. `POST /api/full-exam-job` cria `FullExamJob` + `FullExamJobTopic` (uma linha por tópico com `status: 'pending'`) e dispara `processFullExamJob` via `after()` — retorna `{ jobId }` em < 1s
+4. Front conecta `EventSource` a `GET /api/full-exam-job/:jobId/stream` e recebe eventos `progress`/`done`/`error` com array `topics[]`
+5. Ao concluir: `InlineAlert` fica verde, badge vermelho no sino, notificação no dropdown com CTA → `/simulados?tab=new`
+6. Ao recarregar a página: `useEffect` faz `GET /api/full-exam-job?type=&refKey=` e reconecta ao stream se job ainda está `running`
+
+### Modelos de banco
+
+```prisma
+model FullExamJob {
+  id, userId, type ("certification"|"public_exam"), refKey, refName,
+  examBoardName?, status ("running"|"done"|"error"),
+  totalTopics, doneTopics, savedCount, topics FullExamJobTopic[]
+}
+
+model FullExamJobTopic {
+  id, jobId, topicName, questionCount,
+  status ("pending"|"running"|"done"|"error"),
+  savedCount, errorMessage?
+}
+```
+
+### Processamento
+
+`processFullExamJob` em `features/services/full-exam-job.service.ts`:
+- Cria todas as linhas `FullExamJobTopic` com `status: 'pending'` antes de começar
+- Processa em **batches de 5** tópicos em paralelo (`Promise.allSettled`); batches são sequenciais
+- Cada tópico: `pending → running → done/error` com `savedCount` e `errorMessage` atualizados
+- Um tópico que falha não cancela os demais — job termina `done` mesmo com erros parciais
+- Usa o mesmo pipeline 3 etapas OpenAI (research → review → format) dos routes individuais
+
+### Cancelamento e cleanup
+
+- `DELETE /api/full-exam-job/[jobId]` — cancela manualmente, seta `error` no job e tópicos `pending/running`
+- `GET /api/cron/cleanup-stale-jobs` — limpa jobs `running` com `updatedAt > 30min`. Configurado em `vercel.json` para rodar às 3h UTC diariamente (`0 3 * * *`). Requer `CRON_SECRET` env var (bearer token)
+- Para destravar job preso em dev: `sqlite3 prisma/dev.db "UPDATE FullExamJob SET status='error' WHERE status='running';"`
+
+### `vercel.json`
+
+```json
+{ "crons": [{ "path": "/api/cron/cleanup-stale-jobs", "schedule": "0 3 * * *" }] }
+```
+
+Hobby plan: máximo 2 cron jobs, frequência mínima 1x/dia — está dentro do limite.
+
+---
+
 ## Git Workflow
 
 ### Branch creation

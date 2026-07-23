@@ -63,9 +63,7 @@ export function QuestionGeneratorForm({
       <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6 w-full">
         {/* Row 1: cert/exam selector + full exam toggle */}
         <div className="flex w-full items-end gap-4">
-          <div className="flex-1">
-            {managerSlot}
-          </div>
+          <div className="flex-1">{managerSlot}</div>
           {onFullExamModeChange && (
             <div className="flex flex-col gap-1 shrink-0">
               <span className="text-xs font-normal text-default-400">{t('generate.fullExamMode')}</span>
@@ -77,11 +75,7 @@ export function QuestionGeneratorForm({
                     </span>
                   </Tooltip>
                 ) : (
-                  <Switch
-                    isSelected={isFullExamMode}
-                    size="sm"
-                    onValueChange={onFullExamModeChange}
-                  />
+                  <Switch data-testid="full-exam-toggle" isSelected={isFullExamMode} size="sm" onValueChange={onFullExamModeChange} />
                 )}
               </div>
             </div>
@@ -105,10 +99,7 @@ export function QuestionGeneratorForm({
                 {...inputProperties.input}
               />
             </div>
-            <Button
-              className={`${buttonStyles.primary} ml-auto`}
-              type="submit"
-            >
+            <Button className={`${buttonStyles.primary} ml-auto`} type="submit">
               {t('common.generate')}
             </Button>
           </div>
