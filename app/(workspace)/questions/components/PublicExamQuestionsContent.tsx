@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Progress } from '@heroui/progress';
 import { Button } from '@heroui/button';
+import { Spinner } from '@heroui/spinner';
 import Link from 'next/link';
 import { faCircleCheck, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
 
@@ -20,7 +21,7 @@ import { AIPublicExamQuestion, PublicExamBrowseSummary, PublicExamQuestionParams
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { SIMULADO_NEW_PREFILL_KEY } from '@/config/constants';
 import { useTwoPhaseGeneration } from '@/features/hooks/useTwoPhaseGeneration.hook';
-import { getPublicExamBrowseSummary, getPublicExamQuestions, savePublicExamQuestions } from '@/features/connectors';
+import { getPublicExamBrowseSummary, getPublicExamQuestions, savePublicExamQuestions, createFullExamJob, getActiveFullExamJob } from '@/features/connectors';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { useNotificationsContext } from '@/features/hooks/useNotificationsContext.hook';
@@ -41,6 +42,8 @@ export function PublicExamQuestionsContent() {
   const [batchProgress, setBatchProgress] = useState({ completed: 0, total: 0 });
   const [batchDone, setBatchDone] = useState(false);
   const [batchResult, setBatchResult] = useState({ saved: 0, successfulTopics: 0 });
+  const [batchJobId, setBatchJobId] = useState<string | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
   const [generatingCount, setGeneratingCount] = useState(5);
   const [progress, setProgress] = useState(0);
   const [showSimuladosBanner, setShowSimuladosBanner] = useState(false);
@@ -135,9 +138,80 @@ export function PublicExamQuestionsContent() {
       .catch(() => {});
   }, [selectedPublicExam]);
 
+  useEffect(() => {
+    if (!selectedPublicExam?.id) return;
+    getActiveFullExamJob({ type: 'public_exam', refKey: selectedPublicExam.id }).then((job) => {
+      if (job && job.status === 'running') {
+        setIsBatchGenerating(true);
+        setBatchProgress({ completed: job.doneTopics, total: job.totalTopics });
+        setBatchJobId(job.id);
+        connectToJobStream(job.id);
+      }
+    });
+  }, [selectedPublicExam?.id]);
+
+  useEffect(() => {
+    return () => {
+      eventSourceRef.current?.close();
+    };
+  }, []);
+
+  const connectToJobStream = useCallback(
+    (jobId: string) => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+      const es = new EventSource(`/api/full-exam-job/${jobId}/stream`);
+      eventSourceRef.current = es;
+
+      es.addEventListener('progress', (e) => {
+        const data = JSON.parse(e.data) as { doneTopics: number; totalTopics: number };
+        setBatchProgress({ completed: data.doneTopics, total: data.totalTopics });
+      });
+
+      es.addEventListener('done', (e) => {
+        const data = JSON.parse(e.data) as { doneTopics: number; totalTopics: number; savedCount: number };
+        es.close();
+        eventSourceRef.current = null;
+        setIsBatchGenerating(false);
+        setBatchDone(true);
+        setBatchResult({ saved: data.savedCount, successfulTopics: data.doneTopics });
+        refreshUsage();
+        if (selectedPublicExam) {
+          try {
+            localStorage.setItem(
+              SIMULADO_NEW_PREFILL_KEY,
+              JSON.stringify({
+                type: 'public_exam',
+                examId: selectedPublicExam.id,
+                totalQuestions: selectedPublicExam.totalQuestions,
+              }),
+            );
+          } catch {}
+          addNotification({
+            title: t('notification.fullExamTitle'),
+            description: t('notification.fullExamDescription', {
+              certName: selectedPublicExam.name,
+              total: data.savedCount,
+              topics: data.doneTopics,
+            }),
+            ctaLabel: t('generate.createSimulado'),
+            ctaHref: '/simulados?tab=new',
+          });
+        }
+      });
+
+      es.addEventListener('error', () => {
+        es.close();
+        eventSourceRef.current = null;
+        setIsBatchGenerating(false);
+      });
+    },
+    [selectedPublicExam, addNotification, t, refreshUsage],
+  );
+
   async function handleFullExamGenerate(subjectDistribution: Array<{ topicName: string; questionCount: number }>) {
     if (!selectedPublicExam) return;
-
     const validSubjects = subjectDistribution.filter((entry) => entry.questionCount > 0);
     if (validSubjects.length === 0) return;
 
@@ -145,46 +219,19 @@ export function PublicExamQuestionsContent() {
     setBatchDone(false);
     setBatchProgress({ completed: 0, total: validSubjects.length });
 
-    const results = await Promise.allSettled(
-      validSubjects.map(({ topicName: subjectName, questionCount }) =>
-        getPublicExamQuestions({
-          public_exam_name: selectedPublicExam.name,
-          exam_board_name: selectedPublicExam.examBoard?.name ?? '',
-          subject_name: subjectName,
-          num_questions: String(questionCount),
-        })
-          .then((qs) => savePublicExamQuestions(qs).then(() => ({ subjectName, count: qs.length, ok: true as const })))
-          .catch(() => ({ subjectName, count: 0, ok: false as const }))
-          .finally(() => setBatchProgress((prev) => ({ ...prev, completed: prev.completed + 1 })))
-      ),
-    );
-
-    const totalSaved = results
-      .map((r) => (r.status === 'fulfilled' ? r.value.count : 0))
-      .reduce((acc, c) => acc + c, 0);
-    const successfulSubjects = results.filter((r) => r.status === 'fulfilled' && r.value.ok).length;
-
-    setIsBatchGenerating(false);
-    setBatchDone(true);
-    setBatchResult({ saved: totalSaved, successfulTopics: successfulSubjects });
-    refreshUsage();
     try {
-      localStorage.setItem(SIMULADO_NEW_PREFILL_KEY, JSON.stringify({
+      const { jobId } = await createFullExamJob({
         type: 'public_exam',
-        examId: selectedPublicExam.id,
-        totalQuestions: selectedPublicExam.totalQuestions,
-      }));
-    } catch {}
-    addNotification({
-      title: t('notification.fullExamTitle'),
-      description: t('notification.fullExamDescription', {
-        certName: selectedPublicExam.name,
-        total: totalSaved,
-        topics: successfulSubjects,
-      }),
-      ctaLabel: t('generate.createSimulado'),
-      ctaHref: '/simulados?tab=new',
-    });
+        refKey: selectedPublicExam.id!,
+        refName: selectedPublicExam.name,
+        examBoardName: selectedPublicExam.examBoard?.name,
+        distribution: validSubjects,
+      });
+      setBatchJobId(jobId);
+      connectToJobStream(jobId);
+    } catch {
+      setIsBatchGenerating(false);
+    }
   }
 
   const onSave = async () => {
@@ -368,8 +415,9 @@ export function PublicExamQuestionsContent() {
     return (
       <InlineAlert
         color="warning"
+        startContent={<Spinner color="warning" size="sm" />}
         title={t('generate.generatingFullExam')}
-        description={t('generate.generatingProgress', {
+        description={t('generate.generatingProgressNotify', {
           completed: batchProgress.completed,
           total: batchProgress.total,
         })}
