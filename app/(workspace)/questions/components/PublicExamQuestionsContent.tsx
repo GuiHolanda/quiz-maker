@@ -319,6 +319,7 @@ export function PublicExamQuestionsContent() {
 
     return (
       <FullExamDistributionTable
+        key={examData?.id ?? selectedPublicExam.id}
         items={subjects.map((s) => ({ name: s.name, available: s.questionCount, count: s.questionCount }))}
         onGenerate={handleFullExamGenerate}
       />

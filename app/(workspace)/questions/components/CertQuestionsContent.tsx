@@ -325,6 +325,7 @@ export function CertQuestionsContent() {
 
     return (
       <FullExamDistributionTable
+        key={certData?.key ?? selectedCertification.key}
         items={topics.map((topic) => ({ name: topic.name, available: topic.questionCount, count: topic.questionCount }))}
         onGenerate={handleFullExamGenerate}
       />

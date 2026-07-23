@@ -18,7 +18,7 @@ interface FullExamDistributionTableProps {
   readonly onGenerate: (distribution: Array<{ topicName: string; questionCount: number }>) => void;
 }
 
-export function FullExamDistributionTable({ items, onGenerate }: FullExamDistributionTableProps) {
+export function FullExamDistributionTable({ items, onGenerate }: Readonly<FullExamDistributionTableProps>) {
   const { t } = useTranslation();
   const [counts, setCounts] = useState<Record<string, number>>(
     () => Object.fromEntries(items.map((item) => [item.name, item.count])),
