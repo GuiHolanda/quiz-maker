@@ -16,13 +16,15 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { InlineAlert } from '@/shared/components/ui/InlineAlert';
-import { AIQuestion, QuestionParams } from '@/shared/types';
+import { AIQuestion, BrowseSummary, QuestionParams } from '@/shared/types';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { useTwoPhaseGeneration } from '@/features/hooks/useTwoPhaseGeneration.hook';
-import { getQuestions, saveQuestions } from '@/features/connectors';
+import { getQuestions, saveQuestions, getBrowseSummary } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { useRequest } from '@/features/hooks/useRequest.hook';
+import { useNotificationsContext } from '@/features/hooks/useNotificationsContext.hook';
+import { FullExamDistributionTable } from './FullExamDistributionTable';
 
 export function CertQuestionsContent() {
   const { t } = useTranslation();
@@ -30,6 +32,12 @@ export function CertQuestionsContent() {
   const { certifications, selectedCertification, selectedTopics, isLoading } = useCertificationsContext();
   const { refreshUsage } = useUsageContext();
   const { loading: isSaving, request: requestSave } = useRequest(saveQuestions);
+  const { addNotification } = useNotificationsContext();
+  const [isFullExamMode, setIsFullExamMode] = useState(false);
+  const [browseSummary, setBrowseSummary] = useState<BrowseSummary | null>(null);
+  const [isBatchGenerating, setIsBatchGenerating] = useState(false);
+  const [batchProgress, setBatchProgress] = useState({ completed: 0, total: 0 });
+  const [batchDone, setBatchDone] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingCount, setGeneratingCount] = useState(5);
   const [progress, setProgress] = useState(0);
@@ -122,10 +130,60 @@ export function CertQuestionsContent() {
     setShowHint(true);
   };
 
+  async function handleFullExamGenerate(topicDistribution: Array<{ topicName: string; questionCount: number }>) {
+    if (!selectedCertification) return;
+
+    const validTopics = topicDistribution.filter((t) => t.questionCount > 0);
+    if (validTopics.length === 0) return;
+
+    setIsBatchGenerating(true);
+    setBatchDone(false);
+    setBatchProgress({ completed: 0, total: validTopics.length });
+
+    const results = await Promise.allSettled(
+      validTopics.map(({ topicName, questionCount }) =>
+        getQuestions({
+          certification_name: selectedCertification.label,
+          topic_name: topicName,
+          num_questions: String(questionCount),
+        })
+          .then((questions) => saveQuestions(questions).then(() => ({ topicName, count: questions.length, ok: true as const })))
+          .catch(() => ({ topicName, count: 0, ok: false as const }))
+          .finally(() => setBatchProgress((prev) => ({ ...prev, completed: prev.completed + 1 })))
+      ),
+    );
+
+    const totalSaved = results
+      .map((r) => (r.status === 'fulfilled' ? r.value.count : 0))
+      .reduce((acc, c) => acc + c, 0);
+    const successfulTopics = results.filter((r) => r.status === 'fulfilled' && r.value.ok).length;
+
+    setIsBatchGenerating(false);
+    setBatchDone(true);
+    refreshUsage();
+    addNotification({
+      title: t('notification.fullExamTitle'),
+      description: t('notification.fullExamDescription', {
+        certName: selectedCertification.label,
+        total: totalSaved,
+        topics: successfulTopics,
+      }),
+      ctaLabel: t('generate.createSimulado'),
+      ctaHref: '/simulados',
+    });
+  }
+
   useEffect(() => {
     if (generationParams && isGenerating) generate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [generationParams]);
+
+  useEffect(() => {
+    if (!isFullExamMode || !selectedCertification) return;
+    getBrowseSummary()
+      .then(setBrowseSummary)
+      .catch(() => {});
+  }, [isFullExamMode, selectedCertification]);
 
   const onSave = async () => {
     const questionsToSave = selectedIds
@@ -176,9 +234,17 @@ export function CertQuestionsContent() {
     return (
       <>
         <QuestionGeneratorForm
+          fullExamSlot={renderFullExamSlot()}
+          isFullExamMode={isFullExamMode}
           managerSlot={<CertificationManager className="flex w-full gap-4 items-end" />}
+          onFullExamModeChange={(enabled) => {
+            setIsFullExamMode(enabled);
+            setBatchDone(false);
+            setBatchProgress({ completed: 0, total: 0 });
+          }}
           onGenerationStart={handleFormSubmit}
         />
+        {(isBatchGenerating || batchDone) && renderBatchProgress()}
         {(isGenerating || aiQuestions.length > 0) && renderSelectionHint()}
         {isGenerating && renderGenerationProgress()}
         {!isGenerating && aiQuestions.length > 0 && (
@@ -239,6 +305,55 @@ export function CertQuestionsContent() {
         icon={faCircleInfo}
         title={t('generate.selectionHint')}
         onDismiss={() => setShowHint(false)}
+      />
+    );
+  }
+
+  function renderFullExamSlot() {
+    if (!selectedCertification || !browseSummary) {
+      return (
+        <p className="text-xs text-default-400 py-2">{t('certification.selectCertificationPlaceholder')}</p>
+      );
+    }
+
+    const certData = browseSummary.certifications.find((c) => c.key === selectedCertification.key);
+    const topics = certData?.topics ?? [];
+
+    if (topics.length === 0) {
+      return <p className="text-xs text-default-400 py-2">{t('simulado.noQuestionsTitle')}</p>;
+    }
+
+    return (
+      <FullExamDistributionTable
+        items={topics.map((topic) => ({ name: topic.name, available: topic.questionCount, count: topic.questionCount }))}
+        onGenerate={handleFullExamGenerate}
+      />
+    );
+  }
+
+  function renderBatchProgress() {
+    if (batchDone) {
+      return (
+        <InlineAlert
+          color="success"
+          icon={faCircleCheck}
+          title={t('generate.fullExamComplete')}
+          description={t('generate.fullExamCompleteDescription', {
+            total: batchProgress.completed,
+            topics: batchProgress.total,
+          })}
+        />
+      );
+    }
+
+    return (
+      <InlineAlert
+        color="warning"
+        title={t('generate.generatingFullExam')}
+        description={t('generate.generatingProgress', {
+          completed: batchProgress.completed,
+          total: batchProgress.total,
+        })}
       />
     );
   }
