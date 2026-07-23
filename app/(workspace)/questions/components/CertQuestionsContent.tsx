@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Progress } from '@heroui/progress';
 import { Button } from '@heroui/button';
+import { Spinner } from '@heroui/spinner';
 import Link from 'next/link';
 import { faCircleCheck, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
 
@@ -20,7 +21,7 @@ import { AIQuestion, BrowseSummary, QuestionParams } from '@/shared/types';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { SIMULADO_NEW_PREFILL_KEY } from '@/config/constants';
 import { useTwoPhaseGeneration } from '@/features/hooks/useTwoPhaseGeneration.hook';
-import { getQuestions, saveQuestions, getBrowseSummary } from '@/features/connectors';
+import { getQuestions, saveQuestions, getBrowseSummary, createFullExamJob, getActiveFullExamJob } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { useRequest } from '@/features/hooks/useRequest.hook';
@@ -40,6 +41,8 @@ export function CertQuestionsContent() {
   const [batchProgress, setBatchProgress] = useState({ completed: 0, total: 0 });
   const [batchDone, setBatchDone] = useState(false);
   const [batchResult, setBatchResult] = useState({ saved: 0, successfulTopics: 0 });
+  const [batchJobId, setBatchJobId] = useState<string | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingCount, setGeneratingCount] = useState(5);
   const [progress, setProgress] = useState(0);
@@ -132,9 +135,62 @@ export function CertQuestionsContent() {
     setShowHint(true);
   };
 
+  const connectToJobStream = useCallback(
+    (jobId: string) => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+      const es = new EventSource(`/api/full-exam-job/${jobId}/stream`);
+      eventSourceRef.current = es;
+
+      es.addEventListener('progress', (e) => {
+        const data = JSON.parse(e.data) as { doneTopics: number; totalTopics: number };
+        setBatchProgress({ completed: data.doneTopics, total: data.totalTopics });
+      });
+
+      es.addEventListener('done', (e) => {
+        const data = JSON.parse(e.data) as { doneTopics: number; totalTopics: number; savedCount: number };
+        es.close();
+        eventSourceRef.current = null;
+        setIsBatchGenerating(false);
+        setBatchDone(true);
+        setBatchResult({ saved: data.savedCount, successfulTopics: data.doneTopics });
+        refreshUsage();
+        if (selectedCertification) {
+          try {
+            localStorage.setItem(
+              SIMULADO_NEW_PREFILL_KEY,
+              JSON.stringify({
+                type: 'certification',
+                certKey: selectedCertification.key,
+                totalQuestions: selectedCertification.totalQuestions,
+              }),
+            );
+          } catch {}
+          addNotification({
+            title: t('notification.fullExamTitle'),
+            description: t('notification.fullExamDescription', {
+              certName: selectedCertification.label,
+              total: data.savedCount,
+              topics: data.doneTopics,
+            }),
+            ctaLabel: t('generate.createSimulado'),
+            ctaHref: '/simulados?tab=new',
+          });
+        }
+      });
+
+      es.addEventListener('error', () => {
+        es.close();
+        eventSourceRef.current = null;
+        setIsBatchGenerating(false);
+      });
+    },
+    [selectedCertification, addNotification, t, refreshUsage],
+  );
+
   async function handleFullExamGenerate(topicDistribution: Array<{ topicName: string; questionCount: number }>) {
     if (!selectedCertification) return;
-
     const validTopics = topicDistribution.filter((entry) => entry.questionCount > 0);
     if (validTopics.length === 0) return;
 
@@ -142,45 +198,18 @@ export function CertQuestionsContent() {
     setBatchDone(false);
     setBatchProgress({ completed: 0, total: validTopics.length });
 
-    const results = await Promise.allSettled(
-      validTopics.map(({ topicName, questionCount }) =>
-        getQuestions({
-          certification_name: selectedCertification.label,
-          topic_name: topicName,
-          num_questions: String(questionCount),
-        })
-          .then((questions) => saveQuestions(questions).then(() => ({ topicName, count: questions.length, ok: true as const })))
-          .catch(() => ({ topicName, count: 0, ok: false as const }))
-          .finally(() => setBatchProgress((prev) => ({ ...prev, completed: prev.completed + 1 })))
-      ),
-    );
-
-    const totalSaved = results
-      .map((r) => (r.status === 'fulfilled' ? r.value.count : 0))
-      .reduce((acc, c) => acc + c, 0);
-    const successfulTopics = results.filter((r) => r.status === 'fulfilled' && r.value.ok).length;
-
-    setIsBatchGenerating(false);
-    setBatchDone(true);
-    setBatchResult({ saved: totalSaved, successfulTopics });
-    refreshUsage();
     try {
-      localStorage.setItem(SIMULADO_NEW_PREFILL_KEY, JSON.stringify({
+      const { jobId } = await createFullExamJob({
         type: 'certification',
-        certKey: selectedCertification.key,
-        totalQuestions: selectedCertification.totalQuestions,
-      }));
-    } catch {}
-    addNotification({
-      title: t('notification.fullExamTitle'),
-      description: t('notification.fullExamDescription', {
-        certName: selectedCertification.label,
-        total: totalSaved,
-        topics: successfulTopics,
-      }),
-      ctaLabel: t('generate.createSimulado'),
-      ctaHref: '/simulados?tab=new',
-    });
+        refKey: selectedCertification.key,
+        refName: selectedCertification.label,
+        distribution: validTopics,
+      });
+      setBatchJobId(jobId);
+      connectToJobStream(jobId);
+    } catch {
+      setIsBatchGenerating(false);
+    }
   }
 
   useEffect(() => {
@@ -194,6 +223,24 @@ export function CertQuestionsContent() {
       .then(setBrowseSummary)
       .catch(() => {});
   }, [selectedCertification]);
+
+  useEffect(() => {
+    if (!selectedCertification) return;
+    getActiveFullExamJob({ type: 'certification', refKey: selectedCertification.key }).then((job) => {
+      if (job && job.status === 'running') {
+        setIsBatchGenerating(true);
+        setBatchProgress({ completed: job.doneTopics, total: job.totalTopics });
+        setBatchJobId(job.id);
+        connectToJobStream(job.id);
+      }
+    });
+  }, [selectedCertification?.key]);
+
+  useEffect(() => {
+    return () => {
+      eventSourceRef.current?.close();
+    };
+  }, []);
 
   const onSave = async () => {
     const questionsToSave = selectedIds
@@ -376,8 +423,9 @@ export function CertQuestionsContent() {
     return (
       <InlineAlert
         color="warning"
+        startContent={<Spinner color="warning" size="sm" />}
         title={t('generate.generatingFullExam')}
-        description={t('generate.generatingProgress', {
+        description={t('generate.generatingProgressNotify', {
           completed: batchProgress.completed,
           total: batchProgress.total,
         })}
