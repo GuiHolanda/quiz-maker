@@ -41,13 +41,23 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     const correctOptions = question.answer.correctOptions as string[];
     const options = Object.fromEntries(question.options.map((o) => [o.label, o.text]));
 
-    const llmResponse = await openAIService.call(certificationExplanationsPrompt, {
-      certification_name: question.certificationTitle,
-      topic: question.topic,
-      question: { text: question.text, options, correctOptions },
-    });
+    const llmResponse = await openAIService.call(
+      certificationExplanationsPrompt,
+      {
+        certification_name: question.certificationTitle,
+        topic: question.topic,
+        question: { text: question.text, options, correctOptions },
+      },
+      { webSearch: false, jsonMode: true }
+    );
 
-    const { explanations } = JSON.parse(llmResponse.text) as { explanations: Record<string, string> };
+    let explanations: Record<string, string>;
+    try {
+      ({ explanations } = JSON.parse(llmResponse.text) as { explanations: Record<string, string> });
+    } catch {
+      console.error('[certification/explanation] JSON parse failed. Raw snippet:', llmResponse.text.slice(0, 300));
+      throw Object.assign(new Error('AI returned malformed JSON — please retry'), { status: 502 });
+    }
 
     await questionService.saveExplanations(question.answer.id, explanations);
 

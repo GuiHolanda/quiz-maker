@@ -25,13 +25,19 @@ export async function POST(request: NextRequest) {
     const questions: AIQuestion[] = validateAiQuestions(payload) as AIQuestion[];
     const { certificationTitle: certification_name, topic } = questions[0];
 
-    const llmResponse = await openAIService.call(certificationAnswersPrompt, {
-      certification_name,
-      topic,
-      questions: JSON.stringify(questions),
-    });
+    const llmResponse = await openAIService.call(
+      certificationAnswersPrompt,
+      { certification_name, topic, questions: JSON.stringify(questions) },
+      { webSearch: false, jsonMode: true }
+    );
 
-    const formattedAnswers = JSON.parse(llmResponse.text);
+    let formattedAnswers;
+    try {
+      formattedAnswers = JSON.parse(llmResponse.text);
+    } catch {
+      console.error('[certification/get-answers] JSON parse failed. Raw snippet:', llmResponse.text.slice(0, 300));
+      throw Object.assign(new Error('AI returned malformed JSON — please retry'), { status: 502 });
+    }
 
     await questionService.saveAnswers(formattedAnswers.answers);
 

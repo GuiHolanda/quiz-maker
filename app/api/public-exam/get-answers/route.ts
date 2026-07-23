@@ -31,16 +31,26 @@ export async function POST(request: NextRequest) {
       select: { role: true },
     });
 
-    const llmResponse = await openAIService.call(publicExamAnswersPrompt, {
-      public_exam_name: publicExamName,
-      exam_board_name: examBoardName,
-      role: publicExam?.role ?? undefined,
-      subject_name: subject,
-      topic_name: topic,
-      questions,
-    });
+    const llmResponse = await openAIService.call(
+      publicExamAnswersPrompt,
+      {
+        public_exam_name: publicExamName,
+        exam_board_name: examBoardName,
+        role: publicExam?.role ?? undefined,
+        subject_name: subject,
+        topic_name: topic,
+        questions,
+      },
+      { webSearch: false, jsonMode: true }
+    );
 
-    const formattedAnswers = JSON.parse(llmResponse.text);
+    let formattedAnswers;
+    try {
+      formattedAnswers = JSON.parse(llmResponse.text);
+    } catch {
+      console.error('[public-exam/get-answers] JSON parse failed. Raw snippet:', llmResponse.text.slice(0, 300));
+      throw Object.assign(new Error('AI returned malformed JSON — please retry'), { status: 502 });
+    }
 
     await questionService.saveAnswers(formattedAnswers.answers);
 
