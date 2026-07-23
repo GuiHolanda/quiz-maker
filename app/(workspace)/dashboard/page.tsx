@@ -159,7 +159,7 @@ export default function DashboardPage() {
               <div className="flex gap-3 max-w-xs">
                 <NextLink
                   className="flex items-center gap-2 bg-foreground text-background font-semibold text-xs py-2.5 px-4 rounded-lg transition-opacity hover:opacity-80"
-                  href="/certifications/questions"
+                  href="/questions"
                 >
                   <FontAwesomeIcon className="text-primary text-xs" icon={faBolt} />
                   {t('dashboard.quickPractice')}

@@ -54,7 +54,7 @@ test('public exam full flow: configure → questions → simulado → answer →
 
   // ── Step 2: Generate questions ────────────────────────────────────────────
 
-  await page.goto('/public-exams/questions?tab=generate');
+  await page.goto('/questions?type=public_exam');
 
   // Select exam
   const examSelect = page.getByRole('button', { name: /Selecione um Concurso|Select.*exam/i }).first();

@@ -1,36 +1,35 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Progress } from '@heroui/progress';
-import { Card, CardBody } from '@heroui/card';
 import { Button } from '@heroui/button';
 import Link from 'next/link';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCircleCheck, faCircleInfo, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faCircleCheck, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
 
-import { GeneratedQuestionsList } from './components/GeneratedQuestionsList';
-import { QuestionGeneratorForm } from './components/QuestionGeneratorForm';
+import { GeneratedQuestionsList } from './GeneratedQuestionsList';
+import { QuestionGeneratorForm } from './QuestionGeneratorForm';
 
-import { CertificationsProvider } from '@/features/providers/certifications.provider';
-import { QuizProvider } from '@/features/providers/quiz.provider';
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
+import { CertificationManager } from '@/shared/components/CertificationManager';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { InlineAlert } from '@/shared/components/ui/InlineAlert';
 import { AIQuestion, QuestionParams } from '@/shared/types';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { useTwoPhaseGeneration } from '@/features/hooks/useTwoPhaseGeneration.hook';
-import { getQuestions } from '@/features/connectors';
+import { getQuestions, saveQuestions } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
+import { useRequest } from '@/features/hooks/useRequest.hook';
 
-function CertificationsQuestionsPageContent() {
+export function CertQuestionsContent() {
   const { t } = useTranslation();
-  const { state, replaceQuiz, setAIquestions } = useQuizContext();
-  const { certifications, isLoading } = useCertificationsContext();
+  const { state, replaceQuiz, setAIquestions, setSelectedAIquestions } = useQuizContext();
+  const { certifications, selectedCertification, selectedTopics, isLoading } = useCertificationsContext();
   const { refreshUsage } = useUsageContext();
+  const { loading: isSaving, request: requestSave } = useRequest(saveQuestions);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingCount, setGeneratingCount] = useState(5);
   const [progress, setProgress] = useState(0);
@@ -95,10 +94,29 @@ function CertificationsQuestionsPageContent() {
     onError: onGenerationError,
   });
 
-  const remainingCount = Math.max(0, generatingCount - (state?.aiQuestions?.length ?? 0));
+  const aiQuestions = state?.aiQuestions ?? [];
+  const selectedIds = state?.selectedAIQuestions ?? [];
+  const remainingCount = Math.max(0, generatingCount - aiQuestions.length);
 
-  const onGenerationStart = (params: QuestionParams) => {
-    setGeneratingCount(parseInt(params.num_questions, 10) || 5);
+  const handleFormSubmit = (numQuestions: string) => {
+    const selectedTopic = selectedTopics[0];
+
+    if (!selectedCertification) {
+      notify.warning(t('toast.validationError'), t('error.certificationTitleRequired'));
+      return;
+    }
+    if (!selectedTopic) {
+      notify.warning(t('toast.validationError'), t('error.topicRequired'));
+      return;
+    }
+
+    const params: QuestionParams = {
+      certification_name: selectedCertification.label,
+      topic_name: selectedTopic,
+      num_questions: numQuestions,
+    };
+
+    setGeneratingCount(parseInt(numQuestions, 10) || 5);
     setGenerationParams(params);
     setIsGenerating(true);
     setShowHint(true);
@@ -109,13 +127,37 @@ function CertificationsQuestionsPageContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [generationParams]);
 
+  const onSave = async () => {
+    const questionsToSave = selectedIds
+      .map((id) => aiQuestions.find((q) => q.id === id))
+      .filter(Boolean) as AIQuestion[];
+
+    await requestSave(questionsToSave, () => {
+      setSelectedAIquestions([]);
+      setAIquestions([], null);
+      abort();
+      refreshUsage();
+      setShowSimuladosBanner(true);
+    });
+  };
+
+  const onDiscard = () => {
+    if (selectedIds.length > 0) {
+      const remaining = aiQuestions.filter((q) => !selectedIds.includes(q.id));
+
+      setSelectedAIquestions([]);
+      setAIquestions(remaining, null);
+    } else {
+      setSelectedAIquestions([]);
+      setAIquestions([], null);
+    }
+  };
+
   return (
-    <PageHeader subtitle={t('certification.questionsPageSubtitle')} title={t('certification.questionsPageTitle')}>
-      <div className="flex w-full flex-col gap-4">
-        {renderSimuladosBanner()}
-        {renderContent()}
-      </div>
-    </PageHeader>
+    <div className="flex w-full flex-col gap-4">
+      {renderSimuladosBanner()}
+      {renderContent()}
+    </div>
   );
 
   function renderContent() {
@@ -133,19 +175,22 @@ function CertificationsQuestionsPageContent() {
 
     return (
       <>
-        <QuestionGeneratorForm onGenerationStart={onGenerationStart} />
-        {(isGenerating || (state?.aiQuestions?.length ?? 0) > 0) && renderSelectionHint()}
+        <QuestionGeneratorForm
+          managerSlot={<CertificationManager className="flex w-full gap-4 items-end" />}
+          onGenerationStart={handleFormSubmit}
+        />
+        {(isGenerating || aiQuestions.length > 0) && renderSelectionHint()}
         {isGenerating && renderGenerationProgress()}
-        {!isGenerating && (state?.aiQuestions?.length ?? 0) > 0 && (
+        {!isGenerating && aiQuestions.length > 0 && (
           <GeneratedQuestionsList
             isLoadingMore={isSecondPhaseLoading}
-            questions={state?.aiQuestions ?? []}
+            isSaving={isSaving}
+            questions={aiQuestions}
             remainingCount={remainingCount}
-            onSaved={() => {
-              abort();
-              refreshUsage();
-              setShowSimuladosBanner(true);
-            }}
+            selectedIds={selectedIds}
+            setSelectedIds={setSelectedAIquestions}
+            onDiscard={onDiscard}
+            onSave={onSave}
           />
         )}
       </>
@@ -155,29 +200,17 @@ function CertificationsQuestionsPageContent() {
   function renderSimuladosBanner() {
     if (!showSimuladosBanner) return null;
     return (
-      <Card className="border border-success-200 bg-success-50 dark:bg-success-900/20 shadow-none">
-        <CardBody className="flex flex-row items-center justify-between gap-3 py-3 px-4">
-          <div className="flex items-center gap-2">
-            <FontAwesomeIcon className="text-success shrink-0" icon={faCircleCheck} />
-            <p className="text-sm text-default-700">{t('generate.questionsReadyHint')}</p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Button as={Link} className={buttonStyles.secondary} href="/simulados" size="sm" variant="bordered">
-              {t('generate.goToSimulados')}
-            </Button>
-            <Button
-              isIconOnly
-              aria-label={t('common.dismiss')}
-              className={buttonStyles.iconOnly.neutral}
-              size="sm"
-              variant="light"
-              onPress={() => setShowSimuladosBanner(false)}
-            >
-              <FontAwesomeIcon icon={faXmark} />
-            </Button>
-          </div>
-        </CardBody>
-      </Card>
+      <InlineAlert
+        color="success"
+        icon={faCircleCheck}
+        title={t('generate.questionsReadyHint')}
+        endContent={
+          <Button as={Link} className={buttonStyles.secondary} href="/simulados" size="sm" variant="bordered">
+            {t('generate.goToSimulados')}
+          </Button>
+        }
+        onDismiss={() => setShowSimuladosBanner(false)}
+      />
     );
   }
 
@@ -201,34 +234,12 @@ function CertificationsQuestionsPageContent() {
   function renderSelectionHint() {
     if (!showHint) return null;
     return (
-      <Card className="bg-primary-50/60 dark:bg-primary-900/20 shadow-none">
-        <CardBody className="flex flex-row items-center gap-3 py-3 px-4">
-          <FontAwesomeIcon className="text-primary mt-0.5 shrink-0" icon={faCircleInfo} />
-          <p className="text-xs text-default-700 flex-1">{t('generate.selectionHint')}</p>
-          <Button
-            isIconOnly
-            aria-label={t('common.dismiss')}
-            className={buttonStyles.iconOnly.neutral}
-            size="sm"
-            variant="light"
-            onPress={() => setShowHint(false)}
-          >
-            <FontAwesomeIcon icon={faXmark} />
-          </Button>
-        </CardBody>
-      </Card>
+      <InlineAlert
+        color="primary"
+        icon={faCircleInfo}
+        title={t('generate.selectionHint')}
+        onDismiss={() => setShowHint(false)}
+      />
     );
   }
-}
-
-export default function CertificationsQuestionsPage() {
-  return (
-    <CertificationsProvider>
-      <QuizProvider>
-        <Suspense>
-          <CertificationsQuestionsPageContent />
-        </Suspense>
-      </QuizProvider>
-    </CertificationsProvider>
-  );
 }

@@ -1,43 +1,35 @@
+'use client';
+
 import React, { useEffect } from 'react';
 import { Checkbox } from '@heroui/checkbox';
+import { Listbox, ListboxItem } from '@heroui/listbox';
 
-import { AIQuestion } from '@/shared/types';
-import useQuizContext from '@/features/hooks/useQuizContext.hook';
+import { AIQuestion, AIPublicExamQuestion } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
-interface QuestionCardProps {
-  readonly question: AIQuestion;
+interface GeneratedQuestionCardProps {
+  readonly question: AIQuestion | AIPublicExamQuestion;
   readonly index: number;
+  readonly selectedIds: number[];
+  readonly setSelectedIds: (ids: number[]) => void;
 }
 
-export function GeneratedQuestionsCard({ question, index }: QuestionCardProps) {
-  const { state, setSelectedAIquestions } = useQuizContext();
+export function GeneratedQuestionCard({ question, index, selectedIds, setSelectedIds }: GeneratedQuestionCardProps) {
   const [isSelected, setIsSelected] = React.useState(false);
   const { t } = useTranslation();
 
   useEffect(() => {
-    if (!state?.selectedAIQuestions) {
-      setIsSelected(false);
-
-      return;
-    }
-    setIsSelected(state.selectedAIQuestions.includes(question.id));
-  }, [state?.selectedAIQuestions, question.id]);
+    setIsSelected(selectedIds.includes(question.id));
+  }, [selectedIds, question.id]);
 
   const onCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { checked } = event.target;
+    const selected = new Set(selectedIds);
 
-    if (!state?.selectedAIQuestions) return;
-    const selected = new Set(state.selectedAIQuestions);
-
-    if (checked) {
-      selected.add(question.id);
-      setIsSelected(true);
-    } else {
-      selected.delete(question.id);
-      setIsSelected(false);
-    }
-    setSelectedAIquestions(Array.from(selected));
+    if (checked) selected.add(question.id);
+    else selected.delete(question.id);
+    setIsSelected(checked);
+    setSelectedIds(Array.from(selected));
   };
 
   return (
@@ -57,14 +49,19 @@ export function GeneratedQuestionsCard({ question, index }: QuestionCardProps) {
             count: question.correctCount,
           })}
         </p>
-        <ul className="flex flex-col gap-1 p-0 list-none">
+        <Listbox aria-label={t('aria.options')} classNames={{ base: 'p-0', list: 'gap-1' }}>
           {Object.entries(question.options).map(([key, val]) => (
-            <li key={key} className="rounded-lg px-3 py-2 text-sm text-default-600">
-              <strong className="mr-2 text-primary">{key}.</strong>
-              {val}
-            </li>
+            <ListboxItem
+              key={key}
+              classNames={{
+                base: 'rounded-lg px-3 py-2 text-default-600 hover:text-foreground hover:bg-default-100 data-[hover=true]:bg-default-100 transition-colors',
+                title: 'text-sm',
+              }}
+            >
+              <strong className="mr-2 text-primary">{key}.</strong> {val}
+            </ListboxItem>
           ))}
-        </ul>
+        </Listbox>
       </div>
     </div>
   );

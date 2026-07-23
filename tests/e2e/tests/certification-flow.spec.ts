@@ -48,7 +48,7 @@ test('full certification journey: configure → questions → simulado → answe
 
   // ─── Step 2: Generate questions ──────────────────────────────────────────
 
-  await page.goto('/certifications/questions?tab=generate');
+  await page.goto('/questions?type=certification');
 
   // Select the certification
   await page.getByRole('button', { name: /Selecione uma Certificação|Select a Certification/i }).click();

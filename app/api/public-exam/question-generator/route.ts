@@ -15,9 +15,10 @@ const quotaService = new QuotaService();
 
 function extractJson(raw: string): string {
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
-
   if (fenced) return fenced[1].trim();
-
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  if (start !== -1 && end > start) return raw.slice(start, end + 1);
   return raw.trim();
 }
 
@@ -36,7 +37,13 @@ export async function GET(request: NextRequest) {
 
     const rawResponse = await openAIService.call(publicExamQuestionsPrompt, questionParams);
     void quotaService.recordTokens(logId, { inputTokens: rawResponse.inputTokens, outputTokens: rawResponse.outputTokens });
-    const questionsFromAi = validateAiQuestions(JSON.parse(extractJson(rawResponse.text)));
+    let questionsFromAi;
+    try {
+      questionsFromAi = validateAiQuestions(JSON.parse(extractJson(rawResponse.text)));
+    } catch {
+      console.error('[question-generator] JSON parse failed. Raw snippet:', rawResponse.text.slice(0, 300));
+      throw Object.assign(new Error('AI returned malformed JSON — please retry'), { status: 502 });
+    }
 
     return NextResponse.json(questionsFromAi, { status: 200 });
   } catch (err: unknown) {

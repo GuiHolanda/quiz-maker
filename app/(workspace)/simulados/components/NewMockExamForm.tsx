@@ -122,7 +122,7 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
   if (totalSavedQuestions === 0) {
     return (
       <EmptyState
-        action={{ href: '/public-exams/questions', label: t('simulado.noQuestionsGoToQuestions') }}
+        action={{ href: '/questions?type=public_exam', label: t('simulado.noQuestionsGoToQuestions') }}
         description={t('simulado.noQuestionsDescription')}
         title={t('simulado.noQuestionsTitle')}
       />
@@ -280,7 +280,7 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
                           JSON.stringify({ ...current, selectedPublicExam, selectedSubjects: [entry.subjectName] }),
                         );
                       } catch {}
-                      router.push('/public-exams/questions?tab=generate');
+                      router.push('/questions?type=public_exam');
                     }}
                   >
                     {t('simulado.generateMissing')}

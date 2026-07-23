@@ -275,7 +275,7 @@ function HeroSection() {
               <Button
                 as={NextLink}
                 className="font-medium text-sm text-navy-400 hover:text-white border border-navy-700 hover:border-navy-600 rounded tracking-wide"
-                href={session?.user ? '/certifications/questions' : '#demo-terminal'}
+                href={session?.user ? '/questions' : '#demo-terminal'}
                 size="lg"
                 variant="bordered"
               >

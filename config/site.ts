@@ -7,7 +7,7 @@ export const siteConfig = {
   navItems: [
     {
       label: 'nav.questions',
-      href: '/certifications/questions',
+      href: '/questions',
     },
     {
       label: 'nav.configureCertification',
@@ -25,7 +25,7 @@ export const siteConfig = {
     },
     {
       label: 'nav.questions',
-      href: '/certifications/questions',
+      href: '/questions',
     },
     {
       label: 'nav.configureCertification',
