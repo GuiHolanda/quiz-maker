@@ -8,19 +8,25 @@ import { useSession, signOut } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBell, faMagnifyingGlass, faArrowUp, faUser } from '@fortawesome/free-solid-svg-icons';
 
+import { Popover, PopoverTrigger, PopoverContent } from '@heroui/popover';
+
 import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
 import { UsageBadge } from '@/shared/components/ui/UsageBadge';
 import { ThemeSwitch } from '@/shared/components/ui/theme-switch';
 import { LanguageSwitch } from '@/shared/components/ui/language-switch';
+import { RelativeDate } from '@/shared/components/ui/RelativeDate';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
+import { useNotificationsContext } from '@/features/hooks/useNotificationsContext.hook';
 
 export function WorkspaceHeader() {
   const { data: session, status } = useSession();
   const { t } = useTranslation();
   const { usage } = useUsageContext();
+  const { notifications, unreadCount, markAllRead } = useNotificationsContext();
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
 
   return (
     <>
@@ -43,12 +49,31 @@ export function WorkspaceHeader() {
           {status === 'authenticated' && usage && <UsageBadge usage={usage} />}
 
           {/* Notifications */}
-          <button
-            aria-label={t('aria.notifications')}
-            className="relative w-8 h-8 flex items-center justify-center border border-default-200 rounded-lg hover:border-default-300 transition-colors bg-content1"
+          <Popover
+            isOpen={isNotifOpen}
+            placement="bottom-end"
+            onOpenChange={(open) => {
+              setIsNotifOpen(open);
+              if (!open && unreadCount > 0) markAllRead();
+            }}
           >
-            <FontAwesomeIcon className="text-default-400 w-3 h-3" icon={faBell} />
-          </button>
+            <PopoverTrigger>
+              <button
+                aria-label={t('aria.notifications')}
+                className="relative w-8 h-8 flex items-center justify-center border border-default-200 rounded-lg hover:border-default-300 transition-colors bg-content1"
+              >
+                <FontAwesomeIcon className="text-default-400 w-3 h-3" icon={faBell} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-danger rounded-full flex items-center justify-center text-[9px] font-bold text-white leading-none">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="p-0 w-80">
+              {renderNotificationsPanel()}
+            </PopoverContent>
+          </Popover>
 
           {/* User dropdown */}
           {status === 'authenticated' && session?.user && (
@@ -123,4 +148,56 @@ export function WorkspaceHeader() {
       <UpgradeModal isOpen={isUpgradeOpen} onClose={() => setIsUpgradeOpen(false)} />
     </>
   );
+
+  function renderNotificationsPanel() {
+    return (
+      <div className="flex flex-col">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-default-200">
+          <p className="text-xs font-semibold text-foreground">{t('aria.notifications')}</p>
+          {unreadCount > 0 && (
+            <button
+              className="text-xs text-primary hover:opacity-80 transition-opacity"
+              onClick={markAllRead}
+            >
+              {t('notification.markAllRead')}
+            </button>
+          )}
+        </div>
+        {notifications.length === 0 ? (
+          <div className="px-4 py-6 text-center">
+            <p className="text-xs text-default-400">{t('notification.empty')}</p>
+          </div>
+        ) : (
+          <div className="flex flex-col max-h-80 overflow-y-auto">
+            {notifications.map((notif) => (
+              <div
+                key={notif.id}
+                className={`flex gap-3 px-4 py-3 border-b border-default-200 last:border-0 ${!notif.read ? 'bg-primary/5' : ''}`}
+              >
+                {!notif.read && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                )}
+                <div className={`flex flex-col gap-1 flex-1 min-w-0 ${notif.read ? 'pl-[18px]' : ''}`}>
+                  <p className="text-xs font-semibold text-foreground leading-snug">{notif.title}</p>
+                  <p className="text-xs text-default-500 leading-snug">{notif.description}</p>
+                  {notif.ctaHref && notif.ctaLabel && (
+                    <NextLink
+                      className="text-xs font-semibold text-primary hover:opacity-80 transition-opacity mt-1 self-start"
+                      href={notif.ctaHref}
+                      onClick={() => setIsNotifOpen(false)}
+                    >
+                      {notif.ctaLabel}
+                    </NextLink>
+                  )}
+                  <p className="text-[10px] text-default-400 mt-0.5">
+                    <RelativeDate date={notif.createdAt} />
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
 }
