@@ -30,7 +30,6 @@ export class OpenAIService {
       tools: [{ type: 'web_search_preview' }],
       input: prompt.build(input),
       max_output_tokens: 16000,
-      text: { format: { type: 'json_object' } },
     });
 
     return {
