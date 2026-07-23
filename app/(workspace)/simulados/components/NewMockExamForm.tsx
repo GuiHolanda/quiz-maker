@@ -20,7 +20,7 @@ import { buttonStyles } from '@/config/constants/buttonStyles';
 import { MockExamSubjectConfig, PublicExamBrowseSummary } from '@/shared/types';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
-import { PUBLIC_EXAMS_LOCAL_STORAGE_KEY } from '@/config/constants';
+import { PUBLIC_EXAMS_LOCAL_STORAGE_KEY, SIMULADO_NEW_PREFILL_KEY } from '@/config/constants';
 
 interface NewMockExamFormProps {
   readonly onCreated: () => void;
@@ -33,7 +33,7 @@ interface LocalSubjectEntry extends MockExamSubjectConfig {
 export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const { publicExams, isLoading: isExamsLoading, selectedPublicExam } = usePublicExamsContext();
+  const { publicExams, isLoading: isExamsLoading, selectedPublicExam, setSelectedPublicExam } = usePublicExamsContext();
   const { addMockExam } = useMockExamsContext();
   const [name, setName] = useState('');
   const [totalQuestions, setTotalQuestions] = useState('');
@@ -46,6 +46,24 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
   const [newSubjectName, setNewSubjectName] = useState('');
   const [newSubjectCount, setNewSubjectCount] = useState('');
   const { loading, request } = useRequest(createMockExam);
+
+  useEffect(() => {
+    if (isExamsLoading || publicExams.length === 0) return;
+    try {
+      const raw = localStorage.getItem(SIMULADO_NEW_PREFILL_KEY);
+      if (raw) {
+        const prefill = JSON.parse(raw);
+        if (prefill.type === 'public_exam' && prefill.examId) {
+          const exam = publicExams.find((e) => e.id === prefill.examId);
+          if (exam) {
+            setSelectedPublicExam(exam);
+            if (prefill.totalQuestions) setTotalQuestions(String(prefill.totalQuestions));
+          }
+        }
+        localStorage.removeItem(SIMULADO_NEW_PREFILL_KEY);
+      }
+    } catch {}
+  }, [isExamsLoading, publicExams, setSelectedPublicExam]);
 
   useEffect(() => {
     if (isExamsLoading || publicExams.length === 0) return;

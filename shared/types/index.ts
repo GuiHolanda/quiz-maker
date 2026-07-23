@@ -583,3 +583,33 @@ export interface QuestionBankResponse {
 }
 
 export type SimuladoType = 'certification' | 'concurso';
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  description: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+  createdAt: string;
+  read: boolean;
+}
+
+export interface FullExamJobTopicStatus {
+  id: string;
+  topicName: string;
+  questionCount: number;
+  status: 'pending' | 'running' | 'done' | 'error';
+  savedCount: number;
+  errorMessage: string | null;
+}
+
+export interface FullExamJobStatus {
+  id: string;
+  status: 'running' | 'done' | 'error';
+  totalTopics: number;
+  doneTopics: number;
+  savedCount: number;
+  type: 'certification' | 'public_exam';
+  refKey: string;
+  topics: FullExamJobTopicStatus[];
+}

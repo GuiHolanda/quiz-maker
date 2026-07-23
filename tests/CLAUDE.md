@@ -110,10 +110,11 @@ tests/e2e/
     auth.fixture.ts          ← estende o test base com mocks das rotas OpenAI
     mock-data.ts             ← questões estáticas retornadas pelos mocks
   tests/
-    certification-flow.spec.ts     ← jornada completa de certificações (6 steps)
-    public-exam-flow.spec.ts       ← jornada completa de concursos (6 steps)
-    question-bank-flow.spec.ts     ← banco de questões: geração, filtros, deleção
-    simulados-management.spec.ts   ← deleção de simulado + histórico de tentativas/resultado
+    certification-flow.spec.ts          ← jornada completa de certificações (6 steps)
+    public-exam-flow.spec.ts            ← jornada completa de concursos (6 steps)
+    question-bank-flow.spec.ts          ← banco de questões: geração, filtros, deleção
+    simulados-full-exam-job.spec.ts     ← Prova Completa: toggle → gerar → SSE → done → notificação + cancelar
+    simulados-management.spec.ts        ← deleção de simulado + histórico de tentativas/resultado
   global-setup.ts            ← cria usuário tester, login UI, salva sessão
   global-teardown.ts         ← deleta todos os dados do usuário E2E
 ```
@@ -160,6 +161,16 @@ npx playwright install chromium
 > **Nota sobre mocks de `finishAttempt`:** o PATCH `.../attempts/:id` é interceptado pelo fixture e retorna `{}` sem persistir no banco. Por isso o fluxo de histórico (`isAnswered = true` na lista) **não é testável via mock** — o teste de histórico bypassa o modal e navega diretamente para a URL de resultado com o ID real capturado.
 
 **`question-bank-flow.spec.ts`** — 1 jornada: geração de questões → verificação no banco → filtros → busca → deleção.
+
+**`simulados-full-exam-job.spec.ts`** — 3 testes (dependem de `certification-flow` e `public-exam-flow` rodarem antes — arquivo nomeado com prefixo `simulados-` para garantir ordem alfabética correta):
+
+1. **Cert — happy path**: seleciona cert → toggle Full Exam → tabela de distribuição → clica "Gerar Prova Completa" → InlineAlert verde (done) → badge no sino → dropdown com notificação
+2. **Cert — cancelar**: gera com stream que nunca termina → botão Cancelar aparece → clica → InlineAlert some → `DELETE /api/full-exam-job/:id` chamado
+3. **Concurso — happy path + CTA**: mesmo fluxo para public exam → CTA "Criar simulado" leva para `/simulados` com aba Concurso pré-selecionada (`aria-pressed="true"`)
+
+> **Nota sobre SSE em testes:** Playwright's `route.fulfill` não suporta streaming incremental — o browser EventSource precisa de uma conexão HTTP persistente real. A solução é usar `page.addInitScript` para sobrescrever o `EventSource` global com uma implementação fake que dispara eventos `done` sincroniamente em 100ms. O `NeverDoneEventSource` (usado no teste de cancelar) nunca dispara eventos, validando que o cancelamento funciona independentemente do estado do stream.
+
+> **Nota sobre notificações acumuladas:** os testes de notificação usam `.first()` nos locators de título e CTA porque runs anteriores podem ter deixado notificações no localStorage do usuário E2E. O `globalTeardown` limpa o banco mas não o localStorage — `.first()` garante que o teste não falhe por strict mode com múltiplos elementos.
 
 ### Como adicionar um novo spec
 

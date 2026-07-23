@@ -8,6 +8,7 @@ export const GET_CERTIFICATION_ANSWERS_URL = '/certification/get-answers';
 export const SAVE_QUESTIONS_URL = '/certification/save-questions';
 export const SAVE_CERTIFICATION_URL = '/certification/save-certification';
 export const QUIZ_GENERATOR_URL = '/certification/quiz-generator';
+export const FULL_EXAM_JOB_URL = '/full-exam-job';
 export const QUIZ_LOCAL_STORAGE_KEY = 'QUIZ';
 export const CERTIFICATIONS_LOCAL_STORAGE_KEY = 'CERTIFICATIONS';
 export const PUBLIC_EXAMS_LOCAL_STORAGE_KEY = 'PUBLIC_EXAMS';
@@ -18,6 +19,8 @@ export const AI_CHAT_LOCAL_STORAGE_KEY = (userId: string) => `AI_CHAT_MESSAGES_$
 export const AI_CHAT_FOLLOWUP_TIMESTAMP_KEY = (userId: string) => `AI_CHAT_FOLLOWUP_TS_${userId}`;
 export const SIMULADO_ATTEMPT_PROGRESS_KEY = (attemptId: number) =>
   `SIMULADO_ATTEMPT_PROGRESS_${attemptId}`;
+export const APP_NOTIFICATIONS_LOCAL_STORAGE_KEY = 'APP_NOTIFICATIONS';
+export const SIMULADO_NEW_PREFILL_KEY = 'SIMULADO_NEW_PREFILL';
 export const AI_CHAT_INACTIVITY_TIMEOUT_MS = 60 * 60 * 1000;
 // Auto-logout after 30 minutes of no mouse/keyboard/touch activity while chat is open
 export const AI_CHAT_LOGOUT_INACTIVITY_MS = 30 * 60 * 1000;

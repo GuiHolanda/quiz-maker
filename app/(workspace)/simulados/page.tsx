@@ -2,6 +2,7 @@
 
 import { Key, useState } from 'react';
 import { Tab, Tabs } from '@heroui/tabs';
+import { useSearchParams } from 'next/navigation';
 
 import { NewSimuladoTab } from './components/NewSimuladoTab';
 import { SimuladosListTab } from './components/SimuladosListTab';
@@ -15,7 +16,8 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 
 function SimuladosPageContent() {
   const { t } = useTranslation();
-  const [selectedTab, setSelectedTab] = useState<Key>('list');
+  const searchParams = useSearchParams();
+  const [selectedTab, setSelectedTab] = useState<Key>(searchParams.get('tab') === 'new' ? 'new' : 'list');
 
   return (
     <PageHeader subtitle={t('simulado.pageSubtitle')} title={t('simulado.pageTitle')}>

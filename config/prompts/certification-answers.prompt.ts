@@ -27,8 +27,7 @@ RULES:
 1. Use the same language as the exam questions.
 2. "correctOptions" must have exactly "correctCount" letters for each question.
 3. Base answers on current official documentation, standards, or best practices for the "${certification_name}" certification.
-4. Search the web for the authoritative answer if there is any doubt.
-5. Do NOT alter the question text or option text.
+4. Do NOT alter the question text or option text.
 
 OUTPUT: respond ONLY with valid JSON in the following format:
 {

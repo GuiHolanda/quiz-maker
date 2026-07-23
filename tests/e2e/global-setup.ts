@@ -47,6 +47,9 @@ async function cleanupUserData(userId: string) {
   await prisma.publicExamTopic.deleteMany({ where: { subject: { publicExam: { userId } } } });
   await prisma.publicExamSubject.deleteMany({ where: { publicExam: { userId } } });
   await prisma.publicExam.deleteMany({ where: { userId } });
+
+  await prisma.fullExamJobTopic.deleteMany({ where: { job: { userId } } });
+  await prisma.fullExamJob.deleteMany({ where: { userId } });
 }
 
 async function globalSetup(config: FullConfig) {

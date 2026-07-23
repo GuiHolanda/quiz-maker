@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { CertificationQuestionService, validateAiQuestions } from '@/features/services/question.service';
 import { OpenAIService } from '@/features/services/openAI.service';
-import { certificationQuestionsPrompt } from '@/config/prompts/certification-questions.prompt';
+import { certificationQuestionsResearchPrompt } from '@/config/prompts/certification-questions-research.prompt';
+import { certificationQuestionsReviewPrompt } from '@/config/prompts/certification-questions-review.prompt';
+import { certificationQuestionsFormatPrompt } from '@/config/prompts/certification-questions-format.prompt';
 import { QuotaService } from '@/features/services/quota.service';
 import { toApiErrorResponse } from '@/lib/api-error';
 import { auth } from '@/auth';
@@ -31,21 +33,39 @@ export async function GET(request: NextRequest) {
 
   const questionParams = questionService.getQuestionParams(new URL(request.url));
   const count = parseInt(questionParams.num_questions, 10) || 1;
+  const { certification_name, topic_name, num_questions } = questionParams;
 
   try {
     const { logId } = await quotaService.checkAndRecordQuestions(session.user.id, count);
 
-    const rawResponse = await openAIService.call(certificationQuestionsPrompt, {
-      certification_name: questionParams.certification_name,
-      topic_name: questionParams.topic_name,
-      num_questions: questionParams.num_questions,
+    const researchResponse = await openAIService.call(
+      certificationQuestionsResearchPrompt,
+      { certification_name, topic_name, num_questions },
+      { webSearch: true }
+    );
+
+    const reviewResponse = await openAIService.call(
+      certificationQuestionsReviewPrompt,
+      { certification_name, topic_name, draft_questions: researchResponse.text },
+      { webSearch: false, model: process.env.OPENAI_MODEL_REVIEW ?? process.env.OPENAI_MODEL ?? 'gpt-4o' }
+    );
+
+    const formatResponse = await openAIService.call(
+      certificationQuestionsFormatPrompt,
+      { certification_name, topic_name, reviewed_questions: reviewResponse.text },
+      { webSearch: false, jsonMode: true }
+    );
+
+    void quotaService.recordTokens(logId, {
+      inputTokens: researchResponse.inputTokens + reviewResponse.inputTokens + formatResponse.inputTokens,
+      outputTokens: researchResponse.outputTokens + reviewResponse.outputTokens + formatResponse.outputTokens,
     });
-    void quotaService.recordTokens(logId, { inputTokens: rawResponse.inputTokens, outputTokens: rawResponse.outputTokens });
+
     let questionsFromAi;
     try {
-      questionsFromAi = validateAiQuestions(JSON.parse(extractJson(rawResponse.text)));
+      questionsFromAi = validateAiQuestions(JSON.parse(extractJson(formatResponse.text)));
     } catch {
-      console.error('[question-generator] JSON parse failed. Raw snippet:', rawResponse.text.slice(0, 300));
+      console.error('[certification/question-generator] JSON parse failed. Raw snippet:', formatResponse.text.slice(0, 300));
       throw Object.assign(new Error('AI returned malformed JSON — please retry'), { status: 502 });
     }
 

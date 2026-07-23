@@ -61,6 +61,9 @@ async function globalTeardown() {
   await prisma.publicExamSubject.deleteMany({ where: { publicExam: { userId } } });
   await prisma.publicExam.deleteMany({ where: { userId } });
 
+  await prisma.fullExamJobTopic.deleteMany({ where: { job: { userId } } });
+  await prisma.fullExamJob.deleteMany({ where: { userId } });
+
   await prisma.$disconnect();
 }
 
