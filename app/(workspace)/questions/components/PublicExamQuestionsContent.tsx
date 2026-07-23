@@ -8,6 +8,7 @@ import { faCircleCheck, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
 
 import { GeneratedQuestionsList } from './GeneratedQuestionsList';
 import { QuestionGeneratorForm } from './QuestionGeneratorForm';
+import { FullExamDistributionTable } from './FullExamDistributionTable';
 
 import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
 import { PublicExamManager } from '@/shared/components/PublicExamManager';
@@ -15,12 +16,13 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { InlineAlert } from '@/shared/components/ui/InlineAlert';
-import { AIPublicExamQuestion, PublicExamQuestionParams } from '@/shared/types';
+import { AIPublicExamQuestion, PublicExamBrowseSummary, PublicExamQuestionParams } from '@/shared/types';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { useTwoPhaseGeneration } from '@/features/hooks/useTwoPhaseGeneration.hook';
-import { getPublicExamQuestions, savePublicExamQuestions } from '@/features/connectors';
+import { getPublicExamBrowseSummary, getPublicExamQuestions, savePublicExamQuestions } from '@/features/connectors';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { useRequest } from '@/features/hooks/useRequest.hook';
+import { useNotificationsContext } from '@/features/hooks/useNotificationsContext.hook';
 import { notify } from '@/shared/lib/notify';
 
 export function PublicExamQuestionsContent() {
@@ -30,7 +32,13 @@ export function PublicExamQuestionsContent() {
   const { publicExams, selectedPublicExam, selectedSubjects, selectedTopic, isLoading } = usePublicExamsContext();
   const { refreshUsage } = useUsageContext();
   const { loading: isSaving, request: requestSave } = useRequest(savePublicExamQuestions);
+  const { addNotification } = useNotificationsContext();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isFullExamMode, setIsFullExamMode] = useState(false);
+  const [pubBrowseSummary, setPubBrowseSummary] = useState<PublicExamBrowseSummary | null>(null);
+  const [isBatchGenerating, setIsBatchGenerating] = useState(false);
+  const [batchProgress, setBatchProgress] = useState({ completed: 0, total: 0 });
+  const [batchDone, setBatchDone] = useState(false);
   const [generatingCount, setGeneratingCount] = useState(5);
   const [progress, setProgress] = useState(0);
   const [showSimuladosBanner, setShowSimuladosBanner] = useState(false);
@@ -118,6 +126,57 @@ export function PublicExamQuestionsContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [generationParams]);
 
+  useEffect(() => {
+    if (!isFullExamMode || !selectedPublicExam) return;
+    getPublicExamBrowseSummary()
+      .then(setPubBrowseSummary)
+      .catch(() => {});
+  }, [isFullExamMode, selectedPublicExam]);
+
+  async function handleFullExamGenerate(subjectDistribution: Array<{ topicName: string; questionCount: number }>) {
+    if (!selectedPublicExam) return;
+
+    const validSubjects = subjectDistribution.filter((s) => s.questionCount > 0);
+    if (validSubjects.length === 0) return;
+
+    setIsBatchGenerating(true);
+    setBatchDone(false);
+    setBatchProgress({ completed: 0, total: validSubjects.length });
+
+    const results = await Promise.allSettled(
+      validSubjects.map(({ topicName: subjectName, questionCount }) =>
+        getPublicExamQuestions({
+          public_exam_name: selectedPublicExam.name,
+          exam_board_name: selectedPublicExam.examBoard?.name ?? '',
+          subject_name: subjectName,
+          num_questions: String(questionCount),
+        })
+          .then((qs) => savePublicExamQuestions(qs).then(() => ({ subjectName, count: qs.length, ok: true as const })))
+          .catch(() => ({ subjectName, count: 0, ok: false as const }))
+          .finally(() => setBatchProgress((prev) => ({ ...prev, completed: prev.completed + 1 })))
+      ),
+    );
+
+    const totalSaved = results
+      .map((r) => (r.status === 'fulfilled' ? r.value.count : 0))
+      .reduce((acc, c) => acc + c, 0);
+    const successfulSubjects = results.filter((r) => r.status === 'fulfilled' && r.value.ok).length;
+
+    setIsBatchGenerating(false);
+    setBatchDone(true);
+    refreshUsage();
+    addNotification({
+      title: t('notification.fullExamTitle'),
+      description: t('notification.fullExamDescription', {
+        certName: selectedPublicExam.name,
+        total: totalSaved,
+        topics: successfulSubjects,
+      }),
+      ctaLabel: t('generate.createSimulado'),
+      ctaHref: '/simulados',
+    });
+  }
+
   const onSave = async () => {
     const questionsToSave = selectedIds
       .map((id) => questions.find((q) => q.id === id))
@@ -168,10 +227,18 @@ export function PublicExamQuestionsContent() {
     return (
       <>
         <QuestionGeneratorForm
+          fullExamSlot={renderFullExamSlot()}
+          isFullExamMode={isFullExamMode}
           managerSlot={<PublicExamManager showTopic className="flex w-full gap-4 items-end" />}
           numQuestionsPlaceholderKey="concurso.numQuestionsPlaceholder"
+          onFullExamModeChange={(enabled) => {
+            setIsFullExamMode(enabled);
+            setBatchDone(false);
+            setBatchProgress({ completed: 0, total: 0 });
+          }}
           onGenerationStart={handleFormSubmit}
         />
+        {(isBatchGenerating || batchDone) && renderBatchProgress()}
         {(isGenerating || questions.length > 0) && renderSelectionHint()}
         {isGenerating && renderGenerationProgress()}
         {!isGenerating && questions.length > 0 && (
@@ -232,6 +299,55 @@ export function PublicExamQuestionsContent() {
         icon={faCircleInfo}
         title={t('generate.selectionHint')}
         onDismiss={() => setShowHint(false)}
+      />
+    );
+  }
+
+  function renderFullExamSlot() {
+    if (!selectedPublicExam || !pubBrowseSummary) {
+      return (
+        <p className="text-xs text-default-400 py-2">{t('concurso.selectPublicExamPlaceholder')}</p>
+      );
+    }
+
+    const examData = pubBrowseSummary.publicExams.find((e) => e.id === selectedPublicExam.id);
+    const subjects = examData?.subjects ?? [];
+
+    if (subjects.length === 0) {
+      return <p className="text-xs text-default-400 py-2">{t('simulado.noQuestionsTitle')}</p>;
+    }
+
+    return (
+      <FullExamDistributionTable
+        items={subjects.map((s) => ({ name: s.name, available: s.questionCount, count: s.questionCount }))}
+        onGenerate={handleFullExamGenerate}
+      />
+    );
+  }
+
+  function renderBatchProgress() {
+    if (batchDone) {
+      return (
+        <InlineAlert
+          color="success"
+          icon={faCircleCheck}
+          title={t('generate.fullExamComplete')}
+          description={t('generate.fullExamCompleteDescription', {
+            total: batchProgress.completed,
+            topics: batchProgress.total,
+          })}
+        />
+      );
+    }
+
+    return (
+      <InlineAlert
+        color="warning"
+        title={t('generate.generatingFullExam')}
+        description={t('generate.generatingProgress', {
+          completed: batchProgress.completed,
+          total: batchProgress.total,
+        })}
       />
     );
   }
