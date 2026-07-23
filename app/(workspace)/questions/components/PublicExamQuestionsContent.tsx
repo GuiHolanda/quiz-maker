@@ -2,11 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Progress } from '@heroui/progress';
-import { Card, CardBody } from '@heroui/card';
 import { Button } from '@heroui/button';
 import Link from 'next/link';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCircleCheck, faCircleInfo, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faCircleCheck, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
 
 import { GeneratedQuestionsList } from './GeneratedQuestionsList';
 import { QuestionGeneratorForm } from './QuestionGeneratorForm';
@@ -16,6 +14,7 @@ import { PublicExamManager } from '@/shared/components/PublicExamManager';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { InlineAlert } from '@/shared/components/ui/InlineAlert';
 import { AIPublicExamQuestion, PublicExamQuestionParams } from '@/shared/types';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { useTwoPhaseGeneration } from '@/features/hooks/useTwoPhaseGeneration.hook';
@@ -71,10 +70,13 @@ export function PublicExamQuestionsContent() {
       const err = error as { response?: { data?: { message?: string } } };
       notify.error(t('toast.failedToLoad'), err?.response?.data?.message ?? t('toast.somethingWrong'));
     },
-    [t],
+    [t]
   );
 
-  const { isSecondPhaseLoading, generate, abort } = useTwoPhaseGeneration<PublicExamQuestionParams, AIPublicExamQuestion>({
+  const { isSecondPhaseLoading, generate, abort } = useTwoPhaseGeneration<
+    PublicExamQuestionParams,
+    AIPublicExamQuestion
+  >({
     generateFn: getPublicExamQuestions,
     params: generationParams ?? { public_exam_name: '', exam_board_name: '', subject_name: '', num_questions: '5' },
     totalCount: generatingCount,
@@ -191,29 +193,17 @@ export function PublicExamQuestionsContent() {
   function renderSimuladosBanner() {
     if (!showSimuladosBanner) return null;
     return (
-      <Card className="border border-success-200 bg-success-50 dark:bg-success-900/20 shadow-none">
-        <CardBody className="flex flex-row items-center justify-between gap-3 py-3 px-4">
-          <div className="flex items-center gap-2">
-            <FontAwesomeIcon className="text-success shrink-0" icon={faCircleCheck} />
-            <p className="text-sm text-default-700">{t('generate.questionsReadyHint')}</p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Button as={Link} className={buttonStyles.secondary} href="/simulados" size="sm" variant="bordered">
-              {t('generate.goToSimulados')}
-            </Button>
-            <Button
-              isIconOnly
-              aria-label={t('common.dismiss')}
-              className={buttonStyles.iconOnly.neutral}
-              size="sm"
-              variant="light"
-              onPress={() => setShowSimuladosBanner(false)}
-            >
-              <FontAwesomeIcon icon={faXmark} />
-            </Button>
-          </div>
-        </CardBody>
-      </Card>
+      <InlineAlert
+        color="success"
+        icon={faCircleCheck}
+        title={t('generate.questionsReadyHint')}
+        endContent={
+          <Button as={Link} className={buttonStyles.secondary} href="/simulados" size="sm" variant="bordered">
+            {t('generate.goToSimulados')}
+          </Button>
+        }
+        onDismiss={() => setShowSimuladosBanner(false)}
+      />
     );
   }
 
@@ -237,22 +227,12 @@ export function PublicExamQuestionsContent() {
   function renderSelectionHint() {
     if (!showHint) return null;
     return (
-      <Card className="border border-primary-100 bg-primary-50/60 dark:bg-primary-900/20 shadow-none">
-        <CardBody className="flex flex-row items-center gap-3 py-3 px-4">
-          <FontAwesomeIcon className="text-primary shrink-0" icon={faCircleInfo} />
-          <p className="text-xs text-default-700 flex-1">{t('generate.selectionHint')}</p>
-          <Button
-            isIconOnly
-            aria-label={t('common.dismiss')}
-            className={`${buttonStyles.iconOnly.neutral} shrink-0`}
-            size="sm"
-            variant="light"
-            onPress={() => setShowHint(false)}
-          >
-            <FontAwesomeIcon icon={faXmark} />
-          </Button>
-        </CardBody>
-      </Card>
+      <InlineAlert
+        color="primary"
+        icon={faCircleInfo}
+        title={t('generate.selectionHint')}
+        onDismiss={() => setShowHint(false)}
+      />
     );
   }
 }

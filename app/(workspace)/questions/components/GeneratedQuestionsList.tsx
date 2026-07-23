@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { Alert } from '@heroui/alert';
 import { Button } from '@heroui/button';
 import { Checkbox } from '@heroui/checkbox';
 import { Chip } from '@heroui/chip';
@@ -13,6 +12,7 @@ import { AIQuestion, AIPublicExamQuestion } from '@/shared/types';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
 import { ItemsPerPageSelect } from '@/shared/components/ui/ItemsPerPageSelect';
 import { BusyDialog } from '@/shared/components/ui/BusyDialog';
+import { InlineAlert } from '@/shared/components/ui/InlineAlert';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 
@@ -114,22 +114,21 @@ export function GeneratedQuestionsList({
           })}
       </div>
 
-      <div className="flex gap-2 items-center flex-wrap px-4">
+      <div className="flex gap-2 items-center flex-wrap">
         <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
         <ItemsPerPageSelect isDisabled={isLoadingMore} value={questionsPerPage} onChange={onItemsPerPageChange} />
 
         {isLoadingMore && remainingCount > 0 && (
-          <Alert
-            classNames={{ base: 'w-full mt-2', title: 'text-xs font-semibold', description: 'text-xs font-semibold' }}
-            color="default"
-            description={t('generate.loadingMoreQuestionsHint')}
-            endContent={<Spinner size="sm" color="primary" />}
+          <InlineAlert
+            className="w-full mt-2"
+            color="primary"
+            variant="bordered"
+            startContent={<Spinner color="primary" size="sm" />}
             title={t('generate.loadingMoreQuestions', { count: remainingCount })}
-            variant="flat"
+            description={t('generate.loadingMoreQuestionsHint')}
           />
         )}
       </div>
-
       <BusyDialog isOpen={isSaving} />
     </div>
   );
