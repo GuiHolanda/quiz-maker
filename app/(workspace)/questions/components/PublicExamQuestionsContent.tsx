@@ -18,6 +18,7 @@ import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { InlineAlert } from '@/shared/components/ui/InlineAlert';
 import { AIPublicExamQuestion, PublicExamBrowseSummary, PublicExamQuestionParams } from '@/shared/types';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+import { SIMULADO_NEW_PREFILL_KEY } from '@/config/constants';
 import { useTwoPhaseGeneration } from '@/features/hooks/useTwoPhaseGeneration.hook';
 import { getPublicExamBrowseSummary, getPublicExamQuestions, savePublicExamQuestions } from '@/features/connectors';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
@@ -167,6 +168,13 @@ export function PublicExamQuestionsContent() {
     setBatchDone(true);
     setBatchResult({ saved: totalSaved, successfulTopics: successfulSubjects });
     refreshUsage();
+    try {
+      localStorage.setItem(SIMULADO_NEW_PREFILL_KEY, JSON.stringify({
+        type: 'public_exam',
+        examId: selectedPublicExam.id,
+        totalQuestions: selectedPublicExam.totalQuestions,
+      }));
+    } catch {}
     addNotification({
       title: t('notification.fullExamTitle'),
       description: t('notification.fullExamDescription', {
@@ -175,7 +183,7 @@ export function PublicExamQuestionsContent() {
         topics: successfulSubjects,
       }),
       ctaLabel: t('generate.createSimulado'),
-      ctaHref: '/simulados',
+      ctaHref: '/simulados?tab=new',
     });
   }
 

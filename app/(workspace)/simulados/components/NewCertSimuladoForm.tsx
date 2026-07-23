@@ -20,7 +20,7 @@ import { buttonStyles } from '@/config/constants/buttonStyles';
 import { CertSimuladoTopicConfig, Certification, BrowseSummary } from '@/shared/types';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
-import { CERTIFICATIONS_LOCAL_STORAGE_KEY } from '@/config/constants';
+import { CERTIFICATIONS_LOCAL_STORAGE_KEY, SIMULADO_NEW_PREFILL_KEY } from '@/config/constants';
 
 interface NewCertSimuladoFormProps {
   readonly onCreated: () => void;
@@ -47,6 +47,24 @@ export function NewCertSimuladoForm({ onCreated }: NewCertSimuladoFormProps) {
   const [newTopicName, setNewTopicName] = useState('');
   const [newTopicCount, setNewTopicCount] = useState('');
   const { loading, request } = useRequest(createCertSimulado);
+
+  useEffect(() => {
+    if (isCertsLoading || certifications.length === 0) return;
+    try {
+      const raw = localStorage.getItem(SIMULADO_NEW_PREFILL_KEY);
+      if (raw) {
+        const prefill = JSON.parse(raw);
+        if (prefill.type === 'certification' && prefill.certKey) {
+          const cert = certifications.find((c) => c.key === prefill.certKey);
+          if (cert) {
+            setSelectedCert(cert);
+            if (prefill.totalQuestions) setTotalQuestions(String(prefill.totalQuestions));
+          }
+        }
+        localStorage.removeItem(SIMULADO_NEW_PREFILL_KEY);
+      }
+    } catch {}
+  }, [isCertsLoading, certifications]);
 
   useEffect(() => {
     if (isCertsLoading || certifications.length === 0) return;

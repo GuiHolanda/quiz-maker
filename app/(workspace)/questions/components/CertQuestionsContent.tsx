@@ -18,6 +18,7 @@ import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { InlineAlert } from '@/shared/components/ui/InlineAlert';
 import { AIQuestion, BrowseSummary, QuestionParams } from '@/shared/types';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+import { SIMULADO_NEW_PREFILL_KEY } from '@/config/constants';
 import { useTwoPhaseGeneration } from '@/features/hooks/useTwoPhaseGeneration.hook';
 import { getQuestions, saveQuestions, getBrowseSummary } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
@@ -163,6 +164,13 @@ export function CertQuestionsContent() {
     setBatchDone(true);
     setBatchResult({ saved: totalSaved, successfulTopics });
     refreshUsage();
+    try {
+      localStorage.setItem(SIMULADO_NEW_PREFILL_KEY, JSON.stringify({
+        type: 'certification',
+        certKey: selectedCertification.key,
+        totalQuestions: selectedCertification.totalQuestions,
+      }));
+    } catch {}
     addNotification({
       title: t('notification.fullExamTitle'),
       description: t('notification.fullExamDescription', {
@@ -171,7 +179,7 @@ export function CertQuestionsContent() {
         topics: successfulTopics,
       }),
       ctaLabel: t('generate.createSimulado'),
-      ctaHref: '/simulados',
+      ctaHref: '/simulados?tab=new',
     });
   }
 
