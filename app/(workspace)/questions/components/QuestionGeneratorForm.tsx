@@ -4,54 +4,51 @@ import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import { Form } from '@heroui/form';
 
-import { QuizFormErrors, QuestionParams } from '@/shared/types';
-import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
-import { CertificationManager } from '@/shared/components/CertificationManager';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { inputProperties } from '@/config/constants/inputStyles';
 
 interface QuestionGeneratorFormProps {
-  readonly onGenerationStart: (params: QuestionParams) => void;
+  readonly managerSlot: React.ReactNode;
+  readonly onGenerationStart: (numQuestions: string) => void;
+  readonly numQuestionsError?: string;
+  readonly numQuestionsPlaceholderKey?: string;
 }
 
-export function QuestionGeneratorForm({ onGenerationStart }: Readonly<QuestionGeneratorFormProps>) {
-  const { selectedCertification, selectedTopics } = useCertificationsContext();
-  const [error, setError] = useState<QuizFormErrors>({});
+export function QuestionGeneratorForm({
+  managerSlot,
+  onGenerationStart,
+  numQuestionsError,
+  numQuestionsPlaceholderKey,
+}: Readonly<QuestionGeneratorFormProps>) {
+  const [error, setError] = useState<{ num_questions?: string }>({});
   const { t } = useTranslation();
+
+  const formErrors = {
+    ...error,
+    ...(numQuestionsError ? { num_questions: numQuestionsError } : {}),
+  } as Record<string, string>;
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
+    const num_questions = formData.get('num_questions')?.toString().trim() ?? '';
 
-    const num_questions = formData.get('num_questions')?.toString().trim() ?? '5';
-    const selectedTopic = selectedTopics[0];
-
-    const newErrors: QuizFormErrors = {};
-
-    if (!selectedCertification) newErrors.certificationTitle = t('error.certificationTitleRequired');
-    if (!selectedTopic) newErrors.topic = t('error.topicRequired');
+    const newErrors: { num_questions?: string } = {};
     if (!num_questions) newErrors.num_questions = t('error.numQuestionsRequired');
     if (Object.keys(newErrors).length > 0) {
       queueMicrotask(() => setError(newErrors));
-
       return;
     }
 
-    const requestPayload: QuestionParams = {
-      certification_name: selectedCertification?.label || '',
-      topic_name: selectedTopic,
-      num_questions,
-    };
-
-    onGenerationStart(requestPayload);
+    onGenerationStart(num_questions);
   };
 
   return (
-    <Form validationErrors={error} onSubmit={handleSubmit}>
+    <Form validationErrors={formErrors} onSubmit={handleSubmit}>
       <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6 w-full">
-        <CertificationManager className="flex w-full gap-4 items-end" />
+        {managerSlot}
         <div className="flex w-full items-end gap-4">
           <div className="no-number-spinners w-1/4">
             <Input
@@ -60,7 +57,7 @@ export function QuestionGeneratorForm({ onGenerationStart }: Readonly<QuestionGe
               max={20}
               min={1}
               name="num_questions"
-              placeholder={t('generate.numQuestionsPlaceholder')}
+              placeholder={t(numQuestionsPlaceholderKey ?? 'generate.numQuestionsPlaceholder')}
               type="number"
               {...inputProperties.input}
             />
@@ -76,4 +73,3 @@ export function QuestionGeneratorForm({ onGenerationStart }: Readonly<QuestionGe
     </Form>
   );
 }
-

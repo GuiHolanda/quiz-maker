@@ -13,6 +13,7 @@ import { QuestionGeneratorForm } from './QuestionGeneratorForm';
 
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
+import { CertificationManager } from '@/shared/components/CertificationManager';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
@@ -27,7 +28,7 @@ import { useRequest } from '@/features/hooks/useRequest.hook';
 export function CertQuestionsContent() {
   const { t } = useTranslation();
   const { state, replaceQuiz, setAIquestions, setSelectedAIquestions } = useQuizContext();
-  const { certifications, isLoading } = useCertificationsContext();
+  const { certifications, selectedCertification, selectedTopics, isLoading } = useCertificationsContext();
   const { refreshUsage } = useUsageContext();
   const { loading: isSaving, request: requestSave } = useRequest(saveQuestions);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -98,8 +99,25 @@ export function CertQuestionsContent() {
   const selectedIds = state?.selectedAIQuestions ?? [];
   const remainingCount = Math.max(0, generatingCount - aiQuestions.length);
 
-  const onGenerationStart = (params: QuestionParams) => {
-    setGeneratingCount(parseInt(params.num_questions, 10) || 5);
+  const handleFormSubmit = (numQuestions: string) => {
+    const selectedTopic = selectedTopics[0];
+
+    if (!selectedCertification) {
+      notify.warning(t('toast.validationError'), t('error.certificationTitleRequired'));
+      return;
+    }
+    if (!selectedTopic) {
+      notify.warning(t('toast.validationError'), t('error.topicRequired'));
+      return;
+    }
+
+    const params: QuestionParams = {
+      certification_name: selectedCertification.label,
+      topic_name: selectedTopic,
+      num_questions: numQuestions,
+    };
+
+    setGeneratingCount(parseInt(numQuestions, 10) || 5);
     setGenerationParams(params);
     setIsGenerating(true);
     setShowHint(true);
@@ -158,7 +176,10 @@ export function CertQuestionsContent() {
 
     return (
       <>
-        <QuestionGeneratorForm onGenerationStart={onGenerationStart} />
+        <QuestionGeneratorForm
+          managerSlot={<CertificationManager className="flex w-full gap-4 items-end" />}
+          onGenerationStart={handleFormSubmit}
+        />
         {(isGenerating || aiQuestions.length > 0) && renderSelectionHint()}
         {isGenerating && renderGenerationProgress()}
         {!isGenerating && aiQuestions.length > 0 && (

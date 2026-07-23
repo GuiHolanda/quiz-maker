@@ -9,9 +9,10 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleCheck, faCircleInfo, faXmark } from '@fortawesome/free-solid-svg-icons';
 
 import { GeneratedQuestionsList } from './GeneratedQuestionsList';
-import { PublicExamQuestionGeneratorForm } from './PublicExamQuestionGeneratorForm';
+import { QuestionGeneratorForm } from './QuestionGeneratorForm';
 
 import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
+import { PublicExamManager } from '@/shared/components/PublicExamManager';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
@@ -27,7 +28,7 @@ export function PublicExamQuestionsContent() {
   const { t } = useTranslation();
   const [questions, setQuestions] = useState<AIPublicExamQuestion[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const { publicExams, isLoading } = usePublicExamsContext();
+  const { publicExams, selectedPublicExam, selectedSubjects, selectedTopic, isLoading } = usePublicExamsContext();
   const { refreshUsage } = useUsageContext();
   const { loading: isSaving, request: requestSave } = useRequest(savePublicExamQuestions);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -84,8 +85,27 @@ export function PublicExamQuestionsContent() {
 
   const remainingCount = Math.max(0, generatingCount - questions.length);
 
-  const onGenerationStart = (params: PublicExamQuestionParams) => {
-    setGeneratingCount(parseInt(params.num_questions, 10) || 5);
+  const handleFormSubmit = (numQuestions: string) => {
+    const selectedSubject = selectedSubjects[0];
+
+    if (!selectedPublicExam) {
+      notify.warning(t('toast.validationError'), t('error.publicExamRequired'));
+      return;
+    }
+    if (!selectedSubject) {
+      notify.warning(t('toast.validationError'), t('error.subjectRequired'));
+      return;
+    }
+
+    const params: PublicExamQuestionParams = {
+      public_exam_name: selectedPublicExam.name,
+      exam_board_name: selectedPublicExam.examBoard?.name ?? '',
+      subject_name: selectedSubject,
+      topic_name: selectedTopic ?? undefined,
+      num_questions: numQuestions,
+    };
+
+    setGeneratingCount(parseInt(numQuestions, 10) || 5);
     setGenerationParams(params);
     setIsGenerating(true);
     setShowHint(true);
@@ -145,7 +165,11 @@ export function PublicExamQuestionsContent() {
 
     return (
       <>
-        <PublicExamQuestionGeneratorForm onGenerationStart={onGenerationStart} />
+        <QuestionGeneratorForm
+          managerSlot={<PublicExamManager showTopic className="flex w-full gap-4 items-end" />}
+          numQuestionsPlaceholderKey="concurso.numQuestionsPlaceholder"
+          onGenerationStart={handleFormSubmit}
+        />
         {(isGenerating || questions.length > 0) && renderSelectionHint()}
         {isGenerating && renderGenerationProgress()}
         {!isGenerating && questions.length > 0 && (
