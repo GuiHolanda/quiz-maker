@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useReducer, useEffect, type ReactNode } from 'react';
+import { createContext, useReducer, useEffect, useCallback, useMemo, useRef, type ReactNode } from 'react';
 
 import type { AppNotification } from '@/shared/types';
 import { notificationsReducer, type NotificationsState } from '@/features/reducers/notifications.reducer';
@@ -24,6 +24,7 @@ const INITIAL_STATE: NotificationsState = { notifications: [] };
 
 export function NotificationsProvider({ children }: { readonly children: ReactNode }) {
   const [state, dispatch] = useReducer(notificationsReducer, INITIAL_STATE);
+  const isHydrated = useRef(false);
 
   useEffect(() => {
     try {
@@ -33,15 +34,17 @@ export function NotificationsProvider({ children }: { readonly children: ReactNo
         dispatch({ type: 'setNotifications', payload: parsed });
       }
     } catch {}
+    isHydrated.current = true;
   }, []);
 
   useEffect(() => {
+    if (!isHydrated.current) return;
     try {
       localStorage.setItem(APP_NOTIFICATIONS_LOCAL_STORAGE_KEY, JSON.stringify(state.notifications));
     } catch {}
   }, [state.notifications]);
 
-  const addNotification = (notification: Omit<AppNotification, 'id' | 'createdAt' | 'read'>) => {
+  const addNotification = useCallback((notification: Omit<AppNotification, 'id' | 'createdAt' | 'read'>) => {
     const full: AppNotification = {
       ...notification,
       id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -49,15 +52,21 @@ export function NotificationsProvider({ children }: { readonly children: ReactNo
       read: false,
     };
     dispatch({ type: 'addNotification', payload: full });
-  };
+  }, []);
 
-  const markAllRead = () => dispatch({ type: 'markAllRead' });
+  const markAllRead = useCallback(() => dispatch({ type: 'markAllRead' }), []);
 
   const unreadCount = state.notifications.filter((n) => !n.read).length;
 
+  const contextValue = useMemo(
+    () => ({ notifications: state.notifications, unreadCount, addNotification, markAllRead }),
+    [state.notifications, unreadCount, addNotification, markAllRead],
+  );
+
   return (
-    <NotificationsContext.Provider value={{ notifications: state.notifications, unreadCount, addNotification, markAllRead }}>
+    <NotificationsContext.Provider value={contextValue}>
       {children}
     </NotificationsContext.Provider>
   );
 }
+

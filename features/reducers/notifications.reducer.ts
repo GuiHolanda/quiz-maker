@@ -1,7 +1,7 @@
 import type { AppNotification } from '@/shared/types';
 
 export interface NotificationsState {
-  notifications: AppNotification[];
+  readonly notifications: AppNotification[];
 }
 
 export type NotificationsAction =
