@@ -36,6 +36,21 @@ import { useRequest } from '@/features/hooks/useRequest.hook';
 import { useNotificationsContext } from '@/features/hooks/useNotificationsContext.hook';
 import { FullExamDistributionTable } from './FullExamDistributionTable';
 
+function distributeByWeight(items: Array<{ name: string; weight: number }>, total: number): Array<{ name: string; count: number }> {
+  const totalWeight = items.reduce((acc, item) => acc + item.weight, 0);
+  if (totalWeight === 0 || total === 0) return items.map((item) => ({ name: item.name, count: 0 }));
+
+  const exactValues = items.map((item) => ({ name: item.name, exact: (item.weight / totalWeight) * total }));
+  const floors = exactValues.map((item) => ({ name: item.name, count: Math.floor(item.exact), remainder: item.exact - Math.floor(item.exact) }));
+  const remaining = total - floors.reduce((acc, item) => acc + item.count, 0);
+
+  return floors
+    .map((item, i) => ({ ...item, i }))
+    .sort((a, b) => b.remainder - a.remainder)
+    .map((item, rank) => ({ name: item.name, count: item.count + (rank < remaining ? 1 : 0) }))
+    .sort((a, b) => floors.findIndex((f) => f.name === a.name) - floors.findIndex((f) => f.name === b.name));
+}
+
 export function CertQuestionsContent() {
   const { t } = useTranslation();
   const { state, replaceQuiz, setAIquestions, setSelectedAIquestions } = useQuizContext();
@@ -410,23 +425,23 @@ export function CertQuestionsContent() {
     }
 
     const totalTarget = selectedCertification.totalQuestions;
-    const totalMaxWeight = selectedCertification.topics.reduce((acc, topic) => acc + topic.maxQuestions, 0);
 
     // Use saved-questions data if available, otherwise fall back to the cert's configured topics
     const certData = browseSummary?.certifications.find((c) => c.key === selectedCertification.key);
     const hasSavedTopics = (certData?.topics.length ?? 0) > 0;
 
     const distributedItems = hasSavedTopics
-      ? certData!.topics.map((topic) => {
-          const certTopic = selectedCertification.topics.find((ct) => ct.name === topic.name);
-          const weight = certTopic?.maxQuestions ?? 0;
-          const count = totalMaxWeight > 0 ? Math.round((weight / totalMaxWeight) * totalTarget) : 0;
-          return { name: topic.name, count };
-        })
-      : selectedCertification.topics.map((topic) => {
-          const count = totalMaxWeight > 0 ? Math.round((topic.maxQuestions / totalMaxWeight) * totalTarget) : 0;
-          return { name: topic.name, count };
-        });
+      ? distributeByWeight(
+          certData!.topics.map((topic) => {
+            const certTopic = selectedCertification.topics.find((ct) => ct.name === topic.name);
+            return { name: topic.name, weight: certTopic?.maxQuestions ?? 0 };
+          }),
+          totalTarget,
+        )
+      : distributeByWeight(
+          selectedCertification.topics.map((topic) => ({ name: topic.name, weight: topic.maxQuestions })),
+          totalTarget,
+        );
 
     if (distributedItems.length === 0) {
       return <p className="text-xs text-default-400 py-2">{t('simulado.noQuestionsTitle')}</p>;

@@ -35,6 +35,21 @@ import { useRequest } from '@/features/hooks/useRequest.hook';
 import { useNotificationsContext } from '@/features/hooks/useNotificationsContext.hook';
 import { notify } from '@/shared/lib/notify';
 
+function distributeByWeight(items: Array<{ name: string; weight: number }>, total: number): Array<{ name: string; count: number }> {
+  const totalWeight = items.reduce((acc, item) => acc + item.weight, 0);
+  if (totalWeight === 0 || total === 0) return items.map((item) => ({ name: item.name, count: 0 }));
+
+  const exactValues = items.map((item) => ({ name: item.name, exact: (item.weight / totalWeight) * total }));
+  const floors = exactValues.map((item) => ({ name: item.name, count: Math.floor(item.exact), remainder: item.exact - Math.floor(item.exact) }));
+  const remaining = total - floors.reduce((acc, item) => acc + item.count, 0);
+
+  return floors
+    .map((item, i) => ({ ...item, i }))
+    .sort((a, b) => b.remainder - a.remainder)
+    .map((item, rank) => ({ name: item.name, count: item.count + (rank < remaining ? 1 : 0) }))
+    .sort((a, b) => floors.findIndex((f) => f.name === a.name) - floors.findIndex((f) => f.name === b.name));
+}
+
 export function PublicExamQuestionsContent() {
   const { t } = useTranslation();
   const [questions, setQuestions] = useState<AIPublicExamQuestion[]>([]);
@@ -398,23 +413,23 @@ export function PublicExamQuestionsContent() {
     }
 
     const totalTarget = selectedPublicExam.totalQuestions;
-    const totalMaxWeight = selectedPublicExam.subjects.reduce((acc, s) => acc + s.maxQuestions, 0);
 
     // Use saved-questions data if available, otherwise fall back to the exam's configured subjects
     const examData = pubBrowseSummary?.publicExams.find((e) => e.id === selectedPublicExam.id);
     const hasSavedSubjects = (examData?.subjects.length ?? 0) > 0;
 
     const distributedItems = hasSavedSubjects
-      ? examData!.subjects.map((subject) => {
-          const examSubject = selectedPublicExam.subjects.find((s) => s.name === subject.name);
-          const weight = examSubject?.maxQuestions ?? 0;
-          const count = totalMaxWeight > 0 ? Math.round((weight / totalMaxWeight) * totalTarget) : 0;
-          return { name: subject.name, count };
-        })
-      : selectedPublicExam.subjects.map((subject) => {
-          const count = totalMaxWeight > 0 ? Math.round((subject.maxQuestions / totalMaxWeight) * totalTarget) : 0;
-          return { name: subject.name, count };
-        });
+      ? distributeByWeight(
+          examData!.subjects.map((subject) => {
+            const examSubject = selectedPublicExam.subjects.find((s) => s.name === subject.name);
+            return { name: subject.name, weight: examSubject?.maxQuestions ?? 0 };
+          }),
+          totalTarget,
+        )
+      : distributeByWeight(
+          selectedPublicExam.subjects.map((subject) => ({ name: subject.name, weight: subject.maxQuestions })),
+          totalTarget,
+        );
 
     if (distributedItems.length === 0) {
       return <p className="text-xs text-default-400 py-2">{t('simulado.noQuestionsTitle')}</p>;
