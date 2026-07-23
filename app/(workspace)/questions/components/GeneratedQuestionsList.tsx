@@ -57,26 +57,25 @@ export function GeneratedQuestionsList({
   const onItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const v = Number(e.target.value) || 1;
     const bounded = Math.max(1, Math.min(questions.length, v));
-
     setQuestionsPerPage(bounded);
     setCurrentPage(1);
   };
 
   return (
     <div className="flex flex-col gap-4 mt-8">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-3 font-bold text-sm">
           {!isLoadingMore && (
             <>
               <Checkbox
-                isSelected={allSelected}
                 classNames={{ label: 'text-xs' }}
+                isSelected={allSelected}
                 onChange={(e) => onToggleSelectAll(e.target.checked)}
               >
                 {t('common.selectAll')}
               </Checkbox>
               {selectedCount > 0 && (
-                <Chip size="sm" variant="flat" color="primary">
+                <Chip color="primary" size="sm" variant="flat">
                   <strong>{t('common.selectedQuestions', { count: selectedCountLabel })}</strong>
                 </Chip>
               )}
@@ -85,14 +84,14 @@ export function GeneratedQuestionsList({
         </div>
 
         <div className="flex items-center gap-2 ml-auto">
-          <ItemsPerPageSelect value={questionsPerPage} onChange={onItemsPerPageChange} isDisabled={isLoadingMore} />
+          <ItemsPerPageSelect isDisabled={isLoadingMore} value={questionsPerPage} onChange={onItemsPerPageChange} />
           {!isLoadingMore && (
-            <Button className={buttonStyles.dangerFlat} size="sm" onPress={onDiscard}>
+            <Button className={buttonStyles.dangerFlat} onPress={onDiscard}>
               {selectedCount > 0 ? t('common.discardSelected') : t('common.discardAll')}
             </Button>
           )}
           {selectedCount > 0 && !isLoadingMore && (
-            <Button className={buttonStyles.primarySm} size="sm" onPress={onSave}>
+            <Button className={buttonStyles.primary} onPress={onSave}>
               {t('common.saveSelected')}
             </Button>
           )}
@@ -121,12 +120,12 @@ export function GeneratedQuestionsList({
 
         {isLoadingMore && remainingCount > 0 && (
           <Alert
+            classNames={{ base: 'w-full mt-2', title: 'text-xs font-semibold', description: 'text-xs font-semibold' }}
             color="primary"
-            variant="flat"
-            title={t('generate.loadingMoreQuestions', { count: remainingCount })}
             description={t('generate.loadingMoreQuestionsHint')}
             endContent={<Spinner size="sm" />}
-            classNames={{ base: 'w-full mt-2', title: 'text-xs font-semibold', description: 'text-xs font-semibold' }}
+            title={t('generate.loadingMoreQuestions', { count: remainingCount })}
+            variant="flat"
           />
         )}
       </div>
