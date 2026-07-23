@@ -247,14 +247,14 @@ export function CertQuestionsContent() {
   function renderSelectionHint() {
     if (!showHint) return null;
     return (
-      <Card className="bg-primary-50/60 dark:bg-primary-900/20 shadow-none">
-        <CardBody className="flex flex-row items-center gap-3 py-3 px-4">
+      <Card className="border border-primary-100 bg-primary-50/60 dark:bg-primary-900/20 shadow-none">
+        <CardBody className="flex flex-row items-start gap-3 py-3 px-4">
           <FontAwesomeIcon className="text-primary mt-0.5 shrink-0" icon={faCircleInfo} />
           <p className="text-xs text-default-700 flex-1">{t('generate.selectionHint')}</p>
           <Button
             isIconOnly
             aria-label={t('common.dismiss')}
-            className={buttonStyles.iconOnly.neutral}
+            className={`${buttonStyles.iconOnly.neutral} shrink-0`}
             size="sm"
             variant="light"
             onPress={() => setShowHint(false)}
