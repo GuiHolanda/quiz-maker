@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleCheck, faCircleInfo, faXmark } from '@fortawesome/free-solid-svg-icons';
 
-import { GeneratedPublicExamQuestionsList } from './GeneratedPublicExamQuestionsList';
+import { GeneratedQuestionsList } from './GeneratedQuestionsList';
 import { PublicExamQuestionGeneratorForm } from './PublicExamQuestionGeneratorForm';
 
 import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
@@ -18,15 +18,18 @@ import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { AIPublicExamQuestion, PublicExamQuestionParams } from '@/shared/types';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { useTwoPhaseGeneration } from '@/features/hooks/useTwoPhaseGeneration.hook';
-import { getPublicExamQuestions } from '@/features/connectors';
+import { getPublicExamQuestions, savePublicExamQuestions } from '@/features/connectors';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
+import { useRequest } from '@/features/hooks/useRequest.hook';
 import { notify } from '@/shared/lib/notify';
 
 export function PublicExamQuestionsContent() {
   const { t } = useTranslation();
   const [questions, setQuestions] = useState<AIPublicExamQuestion[]>([]);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const { publicExams, isLoading } = usePublicExamsContext();
   const { refreshUsage } = useUsageContext();
+  const { loading: isSaving, request: requestSave } = useRequest(savePublicExamQuestions);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingCount, setGeneratingCount] = useState(5);
   const [progress, setProgress] = useState(0);
@@ -93,6 +96,33 @@ export function PublicExamQuestionsContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [generationParams]);
 
+  const onSave = async () => {
+    const questionsToSave = selectedIds
+      .map((id) => questions.find((q) => q.id === id))
+      .filter(Boolean) as AIPublicExamQuestion[];
+
+    await requestSave(questionsToSave, () => {
+      notify.success(t('toast.success'), t('toast.publicExamQuestionsSaved', { count: questionsToSave.length }));
+      setSelectedIds([]);
+      setQuestions([]);
+      abort();
+      refreshUsage();
+      setShowSimuladosBanner(true);
+    });
+  };
+
+  const onDiscard = () => {
+    if (selectedIds.length > 0) {
+      const remaining = questions.filter((q) => !selectedIds.includes(q.id));
+
+      setSelectedIds([]);
+      setQuestions(remaining);
+    } else {
+      setSelectedIds([]);
+      setQuestions([]);
+    }
+  };
+
   return (
     <div className="flex w-full flex-col gap-4">
       {renderSimuladosBanner()}
@@ -119,16 +149,15 @@ export function PublicExamQuestionsContent() {
         {(isGenerating || questions.length > 0) && renderSelectionHint()}
         {isGenerating && renderGenerationProgress()}
         {!isGenerating && questions.length > 0 && (
-          <GeneratedPublicExamQuestionsList
+          <GeneratedQuestionsList
             isLoadingMore={isSecondPhaseLoading}
+            isSaving={isSaving}
             questions={questions}
             remainingCount={remainingCount}
-            setQuestions={setQuestions}
-            onSaved={() => {
-              abort();
-              refreshUsage();
-              setShowSimuladosBanner(true);
-            }}
+            selectedIds={selectedIds}
+            setSelectedIds={setSelectedIds}
+            onDiscard={onDiscard}
+            onSave={onSave}
           />
         )}
       </>

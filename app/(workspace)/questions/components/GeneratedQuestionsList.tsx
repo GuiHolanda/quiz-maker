@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { Alert } from '@heroui/alert';
 import { Button } from '@heroui/button';
@@ -7,45 +9,50 @@ import { Spinner } from '@heroui/spinner';
 
 import { GeneratedQuestionCard } from './GeneratedQuestionCard';
 
-import { AIQuestion } from '@/shared/types';
+import { AIQuestion, AIPublicExamQuestion } from '@/shared/types';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
 import { ItemsPerPageSelect } from '@/shared/components/ui/ItemsPerPageSelect';
-import useQuizContext from '@/features/hooks/useQuizContext.hook';
-import { useRequest } from '@/features/hooks/useRequest.hook';
-import { saveQuestions } from '@/features/connectors';
 import { BusyDialog } from '@/shared/components/ui/BusyDialog';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 
+interface GeneratedQuestionsListProps {
+  readonly questions: AIQuestion[] | AIPublicExamQuestion[];
+  readonly selectedIds: number[];
+  readonly setSelectedIds: (ids: number[]) => void;
+  readonly onSave: () => void;
+  readonly onDiscard: () => void;
+  readonly isSaving: boolean;
+  readonly isLoadingMore?: boolean;
+  readonly remainingCount?: number;
+}
+
 export function GeneratedQuestionsList({
   questions,
-  onSaved,
+  selectedIds,
+  setSelectedIds,
+  onSave,
+  onDiscard,
+  isSaving,
   isLoadingMore = false,
   remainingCount = 0,
-}: Readonly<{
-  questions: AIQuestion[];
-  onSaved?: () => void;
-  isLoadingMore?: boolean;
-  remainingCount?: number;
-}>) {
-  const { state, setSelectedAIquestions, setAIquestions } = useQuizContext();
+}: GeneratedQuestionsListProps) {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [questionsPerPage, setQuestionsPerPage] = React.useState<number>(5);
-  const { loading, request } = useRequest(saveQuestions);
   const { t } = useTranslation();
 
-  const selectedCount = state?.selectedAIQuestions?.length ?? 0;
+  const selectedCount = selectedIds.length;
   const selectedCountLabel = String(selectedCount).padStart(2, '0');
   const allSelected = questions.length > 0 && selectedCount === questions.length;
-
-  const onToggleSelectAll = (checked: boolean) => {
-    setSelectedAIquestions(checked ? questions.map((question) => question.id) : []);
-  };
 
   const totalPages = Math.max(1, Math.ceil(questions.length / questionsPerPage));
   const startIndex = (currentPage - 1) * questionsPerPage;
   const endIndex = startIndex + questionsPerPage;
   const visibleQuestions = questions.slice(startIndex, endIndex);
+
+  const onToggleSelectAll = (checked: boolean) => {
+    setSelectedIds(checked ? questions.map((q) => q.id) : []);
+  };
 
   const onItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const v = Number(e.target.value) || 1;
@@ -53,32 +60,6 @@ export function GeneratedQuestionsList({
 
     setQuestionsPerPage(bounded);
     setCurrentPage(1);
-  };
-
-  const onSaveSelectedQuestions = async () => {
-    const requestPayload = {
-      questions: state?.selectedAIQuestions?.map((id) => questions.find((q) => q.id === id)).filter(Boolean),
-    };
-
-    await request(requestPayload, onSaveSelectedQuestionsSuccess);
-  };
-
-  const onSaveSelectedQuestionsSuccess = () => {
-    setSelectedAIquestions([]);
-    setAIquestions([], null);
-    onSaved?.();
-  };
-
-  const onDiscardQuestions = () => {
-    if (selectedCount > 0) {
-      const remaining = questions.filter((q) => !state?.selectedAIQuestions?.includes(q.id));
-
-      setSelectedAIquestions([]);
-      setAIquestions(remaining, null);
-    } else {
-      setSelectedAIquestions([]);
-      setAIquestions([], null);
-    }
   };
 
   return (
@@ -89,8 +70,8 @@ export function GeneratedQuestionsList({
             <>
               <Checkbox
                 isSelected={allSelected}
-                onChange={(e) => onToggleSelectAll(e.target.checked)}
                 classNames={{ label: 'text-xs' }}
+                onChange={(e) => onToggleSelectAll(e.target.checked)}
               >
                 {t('common.selectAll')}
               </Checkbox>
@@ -106,12 +87,12 @@ export function GeneratedQuestionsList({
         <div className="flex items-center gap-2 ml-auto">
           <ItemsPerPageSelect value={questionsPerPage} onChange={onItemsPerPageChange} isDisabled={isLoadingMore} />
           {!isLoadingMore && (
-            <Button className={buttonStyles.dangerFlat} size="sm" onPress={onDiscardQuestions}>
+            <Button className={buttonStyles.dangerFlat} size="sm" onPress={onDiscard}>
               {selectedCount > 0 ? t('common.discardSelected') : t('common.discardAll')}
             </Button>
           )}
           {selectedCount > 0 && !isLoadingMore && (
-            <Button className={buttonStyles.primarySm} size="sm" onPress={onSaveSelectedQuestions}>
+            <Button className={buttonStyles.primarySm} size="sm" onPress={onSave}>
               {t('common.saveSelected')}
             </Button>
           )}
@@ -125,11 +106,11 @@ export function GeneratedQuestionsList({
 
             return (
               <GeneratedQuestionCard
-                key={`${question.topic}-${globalIndex}`}
+                key={question.id}
                 index={globalIndex}
                 question={question}
-                selectedIds={state?.selectedAIQuestions ?? []}
-                setSelectedIds={setSelectedAIquestions}
+                selectedIds={selectedIds}
+                setSelectedIds={setSelectedIds}
               />
             );
           })}
@@ -140,7 +121,7 @@ export function GeneratedQuestionsList({
 
         {isLoadingMore && remainingCount > 0 && (
           <Alert
-            color="default"
+            color="primary"
             variant="flat"
             title={t('generate.loadingMoreQuestions', { count: remainingCount })}
             description={t('generate.loadingMoreQuestionsHint')}
@@ -150,7 +131,7 @@ export function GeneratedQuestionsList({
         )}
       </div>
 
-      <BusyDialog isOpen={loading} />
+      <BusyDialog isOpen={isSaving} />
     </div>
   );
 }

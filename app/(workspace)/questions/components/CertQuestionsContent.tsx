@@ -19,15 +19,17 @@ import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { AIQuestion, QuestionParams } from '@/shared/types';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { useTwoPhaseGeneration } from '@/features/hooks/useTwoPhaseGeneration.hook';
-import { getQuestions } from '@/features/connectors';
+import { getQuestions, saveQuestions } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
+import { useRequest } from '@/features/hooks/useRequest.hook';
 
 export function CertQuestionsContent() {
   const { t } = useTranslation();
-  const { state, replaceQuiz, setAIquestions } = useQuizContext();
+  const { state, replaceQuiz, setAIquestions, setSelectedAIquestions } = useQuizContext();
   const { certifications, isLoading } = useCertificationsContext();
   const { refreshUsage } = useUsageContext();
+  const { loading: isSaving, request: requestSave } = useRequest(saveQuestions);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingCount, setGeneratingCount] = useState(5);
   const [progress, setProgress] = useState(0);
@@ -92,7 +94,9 @@ export function CertQuestionsContent() {
     onError: onGenerationError,
   });
 
-  const remainingCount = Math.max(0, generatingCount - (state?.aiQuestions?.length ?? 0));
+  const aiQuestions = state?.aiQuestions ?? [];
+  const selectedIds = state?.selectedAIQuestions ?? [];
+  const remainingCount = Math.max(0, generatingCount - aiQuestions.length);
 
   const onGenerationStart = (params: QuestionParams) => {
     setGeneratingCount(parseInt(params.num_questions, 10) || 5);
@@ -105,6 +109,32 @@ export function CertQuestionsContent() {
     if (generationParams && isGenerating) generate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [generationParams]);
+
+  const onSave = async () => {
+    const questionsToSave = selectedIds
+      .map((id) => aiQuestions.find((q) => q.id === id))
+      .filter(Boolean) as AIQuestion[];
+
+    await requestSave(questionsToSave, () => {
+      setSelectedAIquestions([]);
+      setAIquestions([], null);
+      abort();
+      refreshUsage();
+      setShowSimuladosBanner(true);
+    });
+  };
+
+  const onDiscard = () => {
+    if (selectedIds.length > 0) {
+      const remaining = aiQuestions.filter((q) => !selectedIds.includes(q.id));
+
+      setSelectedAIquestions([]);
+      setAIquestions(remaining, null);
+    } else {
+      setSelectedAIquestions([]);
+      setAIquestions([], null);
+    }
+  };
 
   return (
     <div className="flex w-full flex-col gap-4">
@@ -129,18 +159,18 @@ export function CertQuestionsContent() {
     return (
       <>
         <QuestionGeneratorForm onGenerationStart={onGenerationStart} />
-        {(isGenerating || (state?.aiQuestions?.length ?? 0) > 0) && renderSelectionHint()}
+        {(isGenerating || aiQuestions.length > 0) && renderSelectionHint()}
         {isGenerating && renderGenerationProgress()}
-        {!isGenerating && (state?.aiQuestions?.length ?? 0) > 0 && (
+        {!isGenerating && aiQuestions.length > 0 && (
           <GeneratedQuestionsList
             isLoadingMore={isSecondPhaseLoading}
-            questions={state?.aiQuestions ?? []}
+            isSaving={isSaving}
+            questions={aiQuestions}
             remainingCount={remainingCount}
-            onSaved={() => {
-              abort();
-              refreshUsage();
-              setShowSimuladosBanner(true);
-            }}
+            selectedIds={selectedIds}
+            setSelectedIds={setSelectedAIquestions}
+            onDiscard={onDiscard}
+            onSave={onSave}
           />
         )}
       </>
