@@ -583,3 +583,13 @@ export interface QuestionBankResponse {
 }
 
 export type SimuladoType = 'certification' | 'concurso';
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  description: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+  createdAt: string;
+  read: boolean;
+}
