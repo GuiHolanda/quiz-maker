@@ -121,9 +121,9 @@ export function GeneratedQuestionsList({
         {isLoadingMore && remainingCount > 0 && (
           <Alert
             classNames={{ base: 'w-full mt-2', title: 'text-xs font-semibold', description: 'text-xs font-semibold' }}
-            color="primary"
+            color="default"
             description={t('generate.loadingMoreQuestionsHint')}
-            endContent={<Spinner size="sm" />}
+            endContent={<Spinner size="sm" color="primary" />}
             title={t('generate.loadingMoreQuestions', { count: remainingCount })}
             variant="flat"
           />
