@@ -5,7 +5,7 @@ import { Checkbox } from '@heroui/checkbox';
 import { Chip } from '@heroui/chip';
 import { Spinner } from '@heroui/spinner';
 
-import { GeneratedPublicExamQuestionsCard } from './GeneratedPublicExamQuestionsCard';
+import { GeneratedQuestionCard } from './GeneratedQuestionCard';
 
 import { AIPublicExamQuestion } from '@/shared/types';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
@@ -115,7 +115,7 @@ export function GeneratedPublicExamQuestionsList({
             const globalIndex = startIndex + idx;
 
             return (
-              <GeneratedPublicExamQuestionsCard
+              <GeneratedQuestionCard
                 key={`${question.subject}-${globalIndex}`}
                 index={globalIndex}
                 question={question}

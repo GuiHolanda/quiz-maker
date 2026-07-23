@@ -5,7 +5,7 @@ import { Checkbox } from '@heroui/checkbox';
 import { Chip } from '@heroui/chip';
 import { Spinner } from '@heroui/spinner';
 
-import { GeneratedQuestionsCard } from './GeneratedQuestionsCard';
+import { GeneratedQuestionCard } from './GeneratedQuestionCard';
 
 import { AIQuestion } from '@/shared/types';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
@@ -124,10 +124,12 @@ export function GeneratedQuestionsList({
             const globalIndex = startIndex + idx;
 
             return (
-              <GeneratedQuestionsCard
+              <GeneratedQuestionCard
                 key={`${question.topic}-${globalIndex}`}
                 index={globalIndex}
                 question={question}
+                selectedIds={state?.selectedAIQuestions ?? []}
+                setSelectedIds={setSelectedAIquestions}
               />
             );
           })}
