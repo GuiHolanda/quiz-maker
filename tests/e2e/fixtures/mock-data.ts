@@ -209,3 +209,47 @@ export const mockMockExamResult = {
   ],
   subjectBreakdown: [{ subjectName: E2E_SUBJECT, correct: 2, total: 3 }],
 };
+
+// ─── Full Exam Job SSE helpers ────────────────────────────────────────────────
+
+function buildTopicEntry(topicName: string, status: 'pending' | 'running' | 'done' | 'error', savedCount = 0) {
+  return {
+    id: 'e2e-topic-1',
+    topicName,
+    questionCount: savedCount || 3,
+    status,
+    savedCount,
+    errorMessage: null,
+  };
+}
+
+export function buildFullExamJobProgressEvent(opts: {
+  doneTopics: number;
+  totalTopics: number;
+  savedCount: number;
+  topicName: string;
+  topicStatus: 'pending' | 'running' | 'done' | 'error';
+}): string {
+  const data = {
+    doneTopics: opts.doneTopics,
+    totalTopics: opts.totalTopics,
+    savedCount: opts.savedCount,
+    topics: [buildTopicEntry(opts.topicName, opts.topicStatus, opts.savedCount)],
+  };
+  return `event: progress\ndata: ${JSON.stringify(data)}\n\n`;
+}
+
+export function buildFullExamJobDoneEvent(opts: {
+  doneTopics: number;
+  totalTopics: number;
+  savedCount: number;
+  topicName: string;
+}): string {
+  const data = {
+    doneTopics: opts.doneTopics,
+    totalTopics: opts.totalTopics,
+    savedCount: opts.savedCount,
+    topics: [buildTopicEntry(opts.topicName, 'done', opts.savedCount)],
+  };
+  return `event: done\ndata: ${JSON.stringify(data)}\n\n`;
+}
