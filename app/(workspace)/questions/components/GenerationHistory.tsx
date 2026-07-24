@@ -107,7 +107,7 @@ function statusLabel(
   status: GenerationHistoryItem['status'],
   t: (key: string) => string,
 ): string {
-  if (status === 'done') return t('simulado.statusAnswered');
+  if (status === 'done') return t('generate.statusDone');
   if (status === 'awaiting_review') return t('generate.statusAwaitingReview');
   if (status === 'cancelled') return t('generate.statusCancelled');
   return t('generate.statusError');
