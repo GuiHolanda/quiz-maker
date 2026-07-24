@@ -61,9 +61,11 @@ export function GenerationHistory() {
                   )}
                 </div>
                 <span className="text-default-500 text-xs whitespace-nowrap tabular-nums">
-                  {item.questionsSaved}q
+                  {t('generate.historyGenerated', { count: item.questionsGenerated })}
                 </span>
-                {renderTokens(item)}
+                <span className="text-default-400 text-xs whitespace-nowrap tabular-nums">
+                  {t('generate.historySaved', { count: item.questionsSaved })}
+                </span>
                 <span className="text-default-400 text-xs whitespace-nowrap">
                   <RelativeDate date={item.createdAt} />
                 </span>
@@ -85,15 +87,6 @@ export function GenerationHistory() {
     </div>
   );
 
-  function renderTokens(item: GenerationHistoryItem) {
-    const totalTokens = (item.inputTokens ?? 0) + (item.outputTokens ?? 0);
-    if (totalTokens === 0) return null;
-    return (
-      <span className="text-default-400 text-xs whitespace-nowrap tabular-nums">
-        {t('generate.historyTokens', { count: totalTokens })}
-      </span>
-    );
-  }
 }
 
 function statusColor(status: GenerationHistoryItem['status']): 'success' | 'warning' | 'danger' | 'default' {

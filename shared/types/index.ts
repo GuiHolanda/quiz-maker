@@ -620,9 +620,8 @@ export interface GenerationHistoryItem {
   type: 'individual' | 'full_exam';
   refName: string | null;
   topicName: string | null;
+  questionsGenerated: number;
   questionsSaved: number;
-  inputTokens: number | null;
-  outputTokens: number | null;
   status: 'done' | 'error' | 'awaiting_review' | 'cancelled';
   createdAt: string;
 }
