@@ -2,9 +2,9 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { prismaMock } from '../__mocks__/prisma';
 
 vi.mock('@/features/services/openAI.service', () => ({
-  OpenAIService: vi.fn().mockImplementation(function () {
-    this.call = vi.fn().mockResolvedValue({ text: '{"questions":[{"id":1,"text":"Q1","options":{"A":"opt"}}]}', inputTokens: 10, outputTokens: 20 });
-  }),
+  OpenAIService: class {
+    call = vi.fn().mockResolvedValue({ text: '{"questions":[{"id":1,"text":"Q1","options":{"A":"opt"}}]}', inputTokens: 10, outputTokens: 20 });
+  },
 }));
 
 vi.mock('@/features/services/question.service', () => ({
@@ -14,10 +14,10 @@ vi.mock('@/features/services/question.service', () => ({
 }));
 
 vi.mock('@/features/services/quota.service', () => ({
-  QuotaService: vi.fn().mockImplementation(function () {
-    this.checkAndRecordQuestions = vi.fn().mockResolvedValue({ logId: 'log-1' });
-    this.recordTokens = vi.fn().mockResolvedValue(undefined);
-  }),
+  QuotaService: class {
+    checkAndRecordQuestions = vi.fn().mockResolvedValue({ logId: 'log-1' });
+    recordTokens = vi.fn().mockResolvedValue(undefined);
+  },
 }));
 
 import { processFullExamJob } from '@/features/services/full-exam-job.service';

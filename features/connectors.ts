@@ -29,6 +29,8 @@ import {
   QUESTION_BANK_TOPICS_URL,
   QUESTION_BANK_SOURCES_URL,
   FULL_EXAM_JOB_URL,
+  USAGE_HISTORY_URL,
+  FULL_EXAM_JOB_SAVE_URL,
 } from '@/config/constants';
 import {
   AIQuestion,
@@ -71,6 +73,7 @@ import {
   QuestionBankParams,
   QuestionBankResponse,
   FullExamJobStatus,
+  GenerationHistoryResponse,
 } from '@/shared/types';
 import api from '@/lib/bff.api';
 
@@ -550,3 +553,9 @@ export const getFullExamJob = (jobId: string): Promise<FullExamJobStatus> =>
 
 export const cancelFullExamJob = (jobId: string): Promise<void> =>
   api.delete(`${FULL_EXAM_JOB_URL}/${jobId}`).then(() => undefined);
+
+export const saveFullExamJob = (jobId: string, topicIds?: string[]): Promise<{ savedCount: number }> =>
+  api.post<{ savedCount: number }>(FULL_EXAM_JOB_SAVE_URL(jobId), { topicIds }).then((r) => r.data);
+
+export const getGenerationHistory = (page: number, limit: number): Promise<GenerationHistoryResponse> =>
+  api.get<GenerationHistoryResponse>(USAGE_HISTORY_URL, { params: { page, limit } }).then((r) => r.data);

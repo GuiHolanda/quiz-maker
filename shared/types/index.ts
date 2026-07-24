@@ -605,11 +605,31 @@ export interface FullExamJobTopicStatus {
 
 export interface FullExamJobStatus {
   id: string;
-  status: 'running' | 'done' | 'error';
+  status: 'running' | 'done' | 'error' | 'awaiting_review';
   totalTopics: number;
   doneTopics: number;
   savedCount: number;
   type: 'certification' | 'public_exam';
   refKey: string;
   topics: FullExamJobTopicStatus[];
+}
+
+export interface GenerationHistoryItem {
+  id: string;
+  source: 'usage_log' | 'full_exam_job';
+  type: 'individual' | 'full_exam';
+  refName: string | null;
+  topicName: string | null;
+  questionsSaved: number;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  status: 'done' | 'error' | 'awaiting_review' | 'cancelled';
+  createdAt: string;
+}
+
+export interface GenerationHistoryResponse {
+  items: GenerationHistoryItem[];
+  total: number;
+  page: number;
+  limit: number;
 }
