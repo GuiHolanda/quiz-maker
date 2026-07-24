@@ -102,10 +102,21 @@ export class QuotaService {
   // TOCTOU race conditions where concurrent requests all pass the check before
   // any of them records usage. Returns the usageLog id so callers can update
   // token counts after the LLM call completes.
-  async checkAndRecordQuestions(userId: string, count: number): Promise<{ logId: string }> {
+  async checkAndRecordQuestions(
+    userId: string,
+    count: number,
+    context?: { refName?: string; refKey?: string; type?: string; topicName?: string },
+  ): Promise<{ logId: string }> {
     const user = await this.getUserWithPeriodReset(userId);
     const plan = this.resolvePlan(user.plan);
     const limit = this.resolveQuestionsLimit(user);
+
+    const contextData = {
+      ...(context?.refName !== undefined && { refName: context.refName }),
+      ...(context?.refKey !== undefined && { refKey: context.refKey }),
+      ...(context?.type !== undefined && { type: context.type }),
+      ...(context?.topicName !== undefined && { topicName: context.topicName }),
+    };
 
     if (limit === Infinity) {
       const [, log] = await Promise.all([
@@ -113,7 +124,7 @@ export class QuotaService {
           where: { id: userId },
           data: { questionsGeneratedThisPeriod: { increment: count } },
         }),
-        prisma.usageLog.create({ data: { userId, action: 'generate_questions', count } }),
+        prisma.usageLog.create({ data: { userId, action: 'generate_questions', count, ...contextData } }),
       ]);
       return { logId: log.id };
     }
@@ -142,7 +153,7 @@ export class QuotaService {
       throw err;
     }
 
-    const log = await prisma.usageLog.create({ data: { userId, action: 'generate_questions', count } });
+    const log = await prisma.usageLog.create({ data: { userId, action: 'generate_questions', count, ...contextData } });
     return { logId: log.id };
   }
 

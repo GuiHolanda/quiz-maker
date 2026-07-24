@@ -213,4 +213,62 @@ describe('QuotaService', () => {
       );
     });
   });
+
+  describe('checkAndRecordQuestions — context fields', () => {
+    it('stores context fields in UsageLog when provided (unlimited plan)', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'tester', customQuotaOverride: -1 }),
+      );
+      prismaMock.user.update.mockResolvedValue(makeUser() as any);
+      prismaMock.usageLog.create.mockResolvedValue({ id: 'log-1' } as any);
+
+      await service.checkAndRecordQuestions('user-1', 5, {
+        refName: 'AWS SAA-C03',
+        refKey: 'aws-saa-c03',
+        type: 'certification',
+        topicName: 'S3 Storage Classes',
+      });
+
+      expect(prismaMock.usageLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          refName: 'AWS SAA-C03',
+          refKey: 'aws-saa-c03',
+          type: 'certification',
+          topicName: 'S3 Storage Classes',
+        }),
+      });
+    });
+
+    it('stores context fields in UsageLog when provided (finite plan)', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'free', questionsGeneratedThisPeriod: 0 }),
+      );
+      prismaMock.user.updateMany.mockResolvedValue({ count: 1 } as any);
+      prismaMock.usageLog.create.mockResolvedValue({ id: 'log-2' } as any);
+
+      await service.checkAndRecordQuestions('user-1', 5, {
+        refName: 'OAB',
+        type: 'certification',
+        topicName: 'Direito Civil',
+      });
+
+      expect(prismaMock.usageLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          refName: 'OAB',
+          type: 'certification',
+          topicName: 'Direito Civil',
+        }),
+      });
+    });
+
+    it('works without context (backward compatible)', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'free', questionsGeneratedThisPeriod: 0 }),
+      );
+      prismaMock.user.updateMany.mockResolvedValue({ count: 1 } as any);
+      prismaMock.usageLog.create.mockResolvedValue({ id: 'log-3' } as any);
+
+      await expect(service.checkAndRecordQuestions('user-1', 5)).resolves.toEqual({ logId: 'log-3' });
+    });
+  });
 });
