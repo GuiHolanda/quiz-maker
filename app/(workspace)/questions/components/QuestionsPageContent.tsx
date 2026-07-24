@@ -72,15 +72,13 @@ export function QuestionsPageContent() {
           </div>
         </div>
 
-        {renderActiveJobStatus()}
-
         <div className={selectedType === 'certification' ? '' : 'hidden'}>
           <CertQuestionsContent onJobStateChange={setCertJobState} onSaved={handleSaved} />
         </div>
         <div className={selectedType === 'public_exam' ? '' : 'hidden'}>
           <PublicExamQuestionsContent onJobStateChange={setExamJobState} onSaved={handleSaved} />
         </div>
-
+        {renderActiveJobStatus()}
         <GenerationHistory refreshKey={historyRefreshKey} />
       </div>
 
