@@ -36,7 +36,12 @@ export async function GET(request: NextRequest) {
   const { certification_name, topic_name, num_questions } = questionParams;
 
   try {
-    const { logId } = await quotaService.checkAndRecordQuestions(session.user.id, count);
+    const { logId } = await quotaService.checkAndRecordQuestions(session.user.id, count, {
+      refName: certification_name,
+      refKey: new URL(request.url).searchParams.get('certKey') ?? undefined,
+      type: 'certification',
+      topicName: topic_name,
+    });
 
     const researchResponse = await openAIService.call(
       certificationQuestionsResearchPrompt,

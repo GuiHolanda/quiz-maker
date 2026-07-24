@@ -36,7 +36,12 @@ export async function GET(request: NextRequest) {
   const { public_exam_name, exam_board_name, subject_name, topic_name, num_questions } = questionParams;
 
   try {
-    const { logId } = await quotaService.checkAndRecordQuestions(session.user.id, count);
+    const { logId } = await quotaService.checkAndRecordQuestions(session.user.id, count, {
+      refName: public_exam_name,
+      refKey: new URL(request.url).searchParams.get('publicExamId') ?? undefined,
+      type: 'public_exam',
+      topicName: subject_name,
+    });
 
     const researchResponse = await openAIService.call(
       publicExamQuestionsResearchPrompt,
