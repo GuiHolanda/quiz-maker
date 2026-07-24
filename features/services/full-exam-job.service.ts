@@ -2,8 +2,6 @@ import { prisma } from '@/lib/prisma';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { QuotaService } from '@/features/services/quota.service';
 import {
-  CertificationQuestionService,
-  PublicExamQuestionService,
   validateAiQuestions,
 } from '@/features/services/question.service';
 import { certificationQuestionsResearchPrompt } from '@/config/prompts/certification-questions-research.prompt';
@@ -82,8 +80,6 @@ export async function processFullExamJob(
         outputTokens: research.outputTokens + review.outputTokens + format.outputTokens,
       });
       questions = validateAiQuestions(JSON.parse(extractJson(format.text))) as AIQuestion[];
-      const certService = new CertificationQuestionService();
-      await certService.createFromPayload(questions as AIQuestion[], userId);
     } else {
       const research = await openAIService.call(
         publicExamQuestionsResearchPrompt,
@@ -105,18 +101,20 @@ export async function processFullExamJob(
         outputTokens: research.outputTokens + review.outputTokens + format.outputTokens,
       });
       questions = validateAiQuestions(JSON.parse(extractJson(format.text))) as AIPublicExamQuestion[];
-      const examService = new PublicExamQuestionService();
-      await examService.createFromPayload(questions as AIPublicExamQuestion[], userId);
     }
 
     await prisma.fullExamJobTopic.update({
       where: { id: topicId },
-      data: { status: 'done', savedCount: questions.length },
+      data: {
+        status: 'done',
+        savedCount: 0,
+        pendingQuestionsJson: JSON.stringify(questions),
+      },
     });
 
     await prisma.fullExamJob.update({
       where: { id: jobId },
-      data: { doneTopics: { increment: 1 }, savedCount: { increment: questions.length } },
+      data: { doneTopics: { increment: 1 } },
     });
   }
 
@@ -145,7 +143,7 @@ export async function processFullExamJob(
 
     await prisma.fullExamJob.update({
       where: { id: jobId },
-      data: { status: 'done' },
+      data: { status: 'awaiting_review' },
     });
   } catch (fatalErr) {
     console.error(`[full-exam-job] Job ${jobId} fatal error:`, fatalErr);
