@@ -10,6 +10,7 @@ export const SAVE_CERTIFICATION_URL = '/certification/save-certification';
 export const QUIZ_GENERATOR_URL = '/certification/quiz-generator';
 export const FULL_EXAM_JOB_URL = '/full-exam-job';
 export const USAGE_HISTORY_URL = '/usage/history';
+export const USAGE_HISTORY_FILTERS_URL = '/usage/history/filters';
 export const FULL_EXAM_JOB_SAVE_URL = (jobId: string) => `/full-exam-job/${jobId}/save`;
 export const QUIZ_LOCAL_STORAGE_KEY = 'QUIZ';
 export const CERTIFICATIONS_LOCAL_STORAGE_KEY = 'CERTIFICATIONS';

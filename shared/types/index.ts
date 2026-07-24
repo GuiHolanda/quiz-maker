@@ -618,6 +618,7 @@ export interface GenerationHistoryItem {
   id: string;
   source: 'usage_log' | 'full_exam_job';
   type: 'individual' | 'full_exam';
+  domain: 'certification' | 'public_exam';
   refName: string | null;
   topicName: string | null;
   questionsGenerated: number;
@@ -631,4 +632,25 @@ export interface GenerationHistoryResponse {
   total: number;
   page: number;
   limit: number;
+}
+
+export interface GenerationHistoryFilters {
+  readonly domain: 'all' | 'certification' | 'public_exam';
+  readonly source: string[];
+  readonly topic: string[];
+  readonly status: string[];
+  readonly sort: 'asc' | 'desc';
+}
+
+export const EMPTY_HISTORY_FILTERS: GenerationHistoryFilters = {
+  domain: 'all',
+  source: [],
+  topic: [],
+  status: [],
+  sort: 'desc',
+};
+
+export interface GenerationHistoryFilterOptions {
+  sources: string[];
+  topics: string[];
 }
