@@ -622,7 +622,7 @@ export interface GenerationHistoryItem {
   topicName: string | null;
   questionsGenerated: number;
   questionsSaved: number;
-  status: 'done' | 'error' | 'awaiting_review' | 'cancelled';
+  status: 'done' | 'error' | 'awaiting_review' | 'cancelled' | 'running';
   createdAt: string;
 }
 

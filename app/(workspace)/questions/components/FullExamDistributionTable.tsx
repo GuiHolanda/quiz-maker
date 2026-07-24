@@ -43,7 +43,7 @@ export function FullExamDistributionTable({ items, onGenerate, isGenerating = fa
         <p className="text-xs font-semibold text-default-500">{t('simulado.distributionByTopic')}</p>
         <span className="text-xs font-medium text-success">{t('simulado.distributed', { distributed: total, total })}</span>
       </div>
-      <div className="bg-content1 border border-default-200 rounded-xl overflow-hidden">
+      <div className="bg-content2 border border-default-200 rounded-xl overflow-hidden">
         {items.map((item, i) => {
           const isLast = i === items.length - 1;
           const currentCount = counts[item.name] ?? 0;
@@ -57,8 +57,10 @@ export function FullExamDistributionTable({ items, onGenerate, isGenerating = fa
                 <span className="text-sm text-foreground truncate">{item.name}</span>
               </div>
               <Input
+                aria-label={t('simulado.topicQuestionCountLabel', { topic: item.name })}
                 className="w-20 shrink-0"
                 classNames={{ inputWrapper: 'h-8' }}
+                isDisabled={isGenerating}
                 min={0}
                 size="sm"
                 type="number"

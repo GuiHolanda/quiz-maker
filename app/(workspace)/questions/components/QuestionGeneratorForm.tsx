@@ -20,6 +20,7 @@ interface QuestionGeneratorFormProps {
   readonly isFullExamMode?: boolean;
   readonly isFullExamModeDisabled?: boolean;
   readonly onFullExamModeChange?: (enabled: boolean) => void;
+  readonly isSubmitLoading?: boolean;
 }
 
 export function QuestionGeneratorForm({
@@ -32,6 +33,7 @@ export function QuestionGeneratorForm({
   isFullExamMode = false,
   isFullExamModeDisabled = false,
   onFullExamModeChange,
+  isSubmitLoading = false,
 }: Readonly<QuestionGeneratorFormProps>) {
   const [error, setError] = useState<{ num_questions?: string }>({});
   const { t } = useTranslation();
@@ -99,7 +101,7 @@ export function QuestionGeneratorForm({
                 {...inputProperties.input}
               />
             </div>
-            <Button className={`${buttonStyles.primary} ml-auto`} type="submit">
+            <Button className={`${buttonStyles.primary} ml-auto`} isDisabled={isSubmitLoading} isLoading={isSubmitLoading} type="submit">
               {t('common.generate')}
             </Button>
           </div>

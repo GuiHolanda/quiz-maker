@@ -329,7 +329,6 @@ export function PublicExamQuestionsContent() {
         />
         {showActiveJob && (
           <ActiveJobStatus
-            jobId={batchJobId}
             refName={selectedPublicExam?.name ?? ''}
             status={jobStatus ?? 'running'}
             doneTopics={batchProgress.completed}

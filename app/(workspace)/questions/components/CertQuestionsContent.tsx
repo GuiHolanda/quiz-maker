@@ -274,6 +274,18 @@ export function CertQuestionsContent() {
   };
 
   useEffect(() => {
+    if (!batchJobId) return;
+    eventSourceRef.current?.close();
+    eventSourceRef.current = null;
+    setIsBatchGenerating(false);
+    setJobStatus(null);
+    setBatchProgress({ completed: 0, total: 0 });
+    setBatchTopics([]);
+    cancelFullExamJob(batchJobId).catch(() => {});
+    setBatchJobId(null);
+  }, [selectedCertification?.key]);
+
+  useEffect(() => {
     if (!selectedCertification) return;
     getActiveFullExamJob({ type: 'certification', refKey: selectedCertification.key }).then((job) => {
       if (job && (job.status === 'running' || job.status === 'awaiting_review')) {
@@ -314,7 +326,7 @@ export function CertQuestionsContent() {
     }
 
     const isFullExamModeDisabled = !selectedCertification || selectedCertification.totalQuestions === 0;
-    const showActiveJob = (isBatchGenerating || jobStatus === 'awaiting_review') && batchJobId;
+    const showActiveJob = (isBatchGenerating || jobStatus === 'awaiting_review' || jobStatus === 'error') && batchJobId;
 
     return (
       <>
@@ -322,6 +334,7 @@ export function CertQuestionsContent() {
           fullExamSlot={renderFullExamSlot()}
           isFullExamMode={isFullExamMode}
           isFullExamModeDisabled={isFullExamModeDisabled}
+          isSubmitLoading={isBatchGenerating}
           managerSlot={<CertificationManager noTopics className="w-full" />}
           topicSlot={<CertificationManager topicOnly className="w-full" />}
           onFullExamModeChange={(enabled) => {
@@ -333,7 +346,6 @@ export function CertQuestionsContent() {
         />
         {showActiveJob && (
           <ActiveJobStatus
-            jobId={batchJobId}
             refName={selectedCertification?.label ?? ''}
             status={jobStatus ?? 'running'}
             doneTopics={batchProgress.completed}

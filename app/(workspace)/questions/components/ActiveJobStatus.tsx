@@ -13,7 +13,6 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface ActiveJobStatusProps {
-  readonly jobId: string;
   readonly refName: string;
   readonly status: 'running' | 'awaiting_review' | 'done' | 'error';
   readonly doneTopics: number;
@@ -45,7 +44,7 @@ export function ActiveJobStatus({
   const progressValue = totalTopics > 0 ? (doneTopics / totalTopics) * 100 : 0;
 
   return (
-    <div aria-live="polite" className="bg-content1 border border-default-200 rounded-xl p-4 flex flex-col gap-3">
+    <div aria-live="polite" className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-3">
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-sm font-semibold text-foreground">{refName}</span>
         {status === 'running' && (
@@ -96,6 +95,9 @@ export function ActiveJobStatus({
             <Button className={buttonStyles.secondary} size="sm" variant="bordered" onPress={onReviewAndSelect}>
               {t('generate.reviewAndSelect')}
             </Button>
+            <Button className={buttonStyles.dangerFlat} size="sm" onPress={onCancel}>
+              {t('common.discard')}
+            </Button>
           </div>
         </>
       )}
@@ -134,6 +136,7 @@ export function ActiveJobStatus({
               <span className="w-3 shrink-0 flex items-center justify-center">
                 {icon ? (
                   <FontAwesomeIcon
+                    aria-hidden="true"
                     className={`w-3 h-3 ${colorClass} ${topic.status === 'running' ? 'animate-spin' : ''}`}
                     icon={icon}
                   />
@@ -145,7 +148,7 @@ export function ActiveJobStatus({
                 {topic.topicName}
               </span>
               {topic.status === 'done' && (
-                <span className="text-default-400 shrink-0">{topic.questionCount}q</span>
+                <span className="text-default-400 shrink-0">{t('generate.topicQuestionCount', { count: topic.questionCount })}</span>
               )}
               {topic.status === 'error' && topic.errorMessage && (
                 <span className="text-danger/70 shrink-0 max-w-[120px] truncate" title={topic.errorMessage}>

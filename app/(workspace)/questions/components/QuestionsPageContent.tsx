@@ -34,16 +34,22 @@ export function QuestionsPageContent() {
         <div>
           <p className="text-sm font-semibold text-foreground mb-3">{t('generate.chooseType')}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" role="group" aria-label={t('generate.chooseType')}>
-            {renderTypeOption('certification', t('generate.typeCertification'), t('generate.chooseTypeCertification'), faGraduationCap)}
-            {renderTypeOption('public_exam', t('generate.typePublicExam'), t('generate.chooseTypePublicExam'), faClipboardList)}
+            {renderTypeOption(
+              'certification',
+              t('generate.typeCertification'),
+              t('generate.chooseTypeCertification'),
+              faGraduationCap
+            )}
+            {renderTypeOption(
+              'public_exam',
+              t('generate.typePublicExam'),
+              t('generate.chooseTypePublicExam'),
+              faClipboardList
+            )}
           </div>
         </div>
 
-        {selectedType === 'certification' ? (
-          <CertQuestionsContent />
-        ) : (
-          <PublicExamQuestionsContent />
-        )}
+        {selectedType === 'certification' ? <CertQuestionsContent /> : <PublicExamQuestionsContent />}
       </div>
 
       <UpgradeModal isOpen={isUpgradeOpen} onClose={() => setIsUpgradeOpen(false)} />
@@ -78,10 +84,14 @@ export function QuestionsPageContent() {
           <FontAwesomeIcon className="w-4 h-4" icon={icon} />
         </span>
         <span className="flex flex-col gap-0.5 min-w-0 flex-1">
-          <span className={`text-sm font-semibold leading-snug flex items-center gap-2 ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+          <span
+            className={`text-sm font-semibold leading-snug flex items-center gap-2 ${isSelected ? 'text-primary' : 'text-foreground'}`}
+          >
             {title}
             {isConcursoLocked && (
-              <Chip color="primary" size="sm" variant="flat">Pro</Chip>
+              <Chip color="primary" size="sm" variant="flat">
+                Pro
+              </Chip>
             )}
           </span>
           <span className="text-xs text-default-500 leading-snug">{description}</span>
