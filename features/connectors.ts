@@ -30,6 +30,7 @@ import {
   QUESTION_BANK_SOURCES_URL,
   FULL_EXAM_JOB_URL,
   USAGE_HISTORY_URL,
+  USAGE_HISTORY_FILTERS_URL,
   FULL_EXAM_JOB_SAVE_URL,
 } from '@/config/constants';
 import {
@@ -74,6 +75,8 @@ import {
   QuestionBankResponse,
   FullExamJobStatus,
   GenerationHistoryResponse,
+  GenerationHistoryFilters,
+  GenerationHistoryFilterOptions,
 } from '@/shared/types';
 import api from '@/lib/bff.api';
 
@@ -557,5 +560,24 @@ export const cancelFullExamJob = (jobId: string): Promise<void> =>
 export const saveFullExamJob = (jobId: string, topicIds?: string[]): Promise<{ savedCount: number }> =>
   api.post<{ savedCount: number }>(FULL_EXAM_JOB_SAVE_URL(jobId), { topicIds }).then((r) => r.data);
 
-export const getGenerationHistory = (page: number, limit: number): Promise<GenerationHistoryResponse> =>
-  api.get<GenerationHistoryResponse>(USAGE_HISTORY_URL, { params: { page, limit } }).then((r) => r.data);
+export const getGenerationHistory = (
+  page: number,
+  limit: number,
+  filters: GenerationHistoryFilters,
+): Promise<GenerationHistoryResponse> =>
+  api
+    .get<GenerationHistoryResponse>(USAGE_HISTORY_URL, {
+      params: {
+        page,
+        limit,
+        ...(filters.domain !== 'all' && { domain: filters.domain }),
+        ...(filters.source.length > 0 && { source: filters.source }),
+        ...(filters.topic.length > 0 && { topic: filters.topic }),
+        ...(filters.status.length > 0 && { status: filters.status }),
+        sort: filters.sort,
+      },
+    })
+    .then((r) => r.data);
+
+export const getGenerationHistoryFilters = (): Promise<GenerationHistoryFilterOptions> =>
+  api.get<GenerationHistoryFilterOptions>(USAGE_HISTORY_FILTERS_URL).then((r) => r.data);
