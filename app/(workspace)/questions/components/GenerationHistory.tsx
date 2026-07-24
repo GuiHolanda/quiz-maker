@@ -146,7 +146,6 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
             aria-label={filters.sort === 'desc' ? t('generate.historySortNewest') : t('generate.historySortOldest')}
             className={buttonStyles.flat}
             size="sm"
-            variant="flat"
             onPress={toggleSort}
           >
             <FontAwesomeIcon
@@ -160,7 +159,6 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
               className={buttonStyles.flat}
               size="sm"
               startContent={<FontAwesomeIcon className="w-3.5 h-3.5" icon={faSliders} />}
-              variant="flat"
               onPress={() => setIsFiltersOpen((prev) => !prev)}
             >
               {t('generate.historyFilters')}

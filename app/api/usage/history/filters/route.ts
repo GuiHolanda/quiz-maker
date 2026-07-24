@@ -35,7 +35,7 @@ export async function GET() {
     ]);
 
     const fullExamRefs = fullExamJobs.map((job) => job.refName);
-    const fullExamTopics = fullExamJobs.flatMap((job) => job.topics.map((t) => t.topicName));
+    const fullExamTopics = fullExamJobs.flatMap((job) => job.topics.map((topic) => topic.topicName));
 
     const sources = Array.from(
       new Set([

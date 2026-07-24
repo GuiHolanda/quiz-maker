@@ -55,7 +55,6 @@ export function GenerationHistoryFiltersBar({
         )}
       </div>
 
-      {/* Row 1: Type + Source */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Select
           {...inputProperties.select}
@@ -87,7 +86,6 @@ export function GenerationHistoryFiltersBar({
         </Select>
       </div>
 
-      {/* Row 2: Topic + Status */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Select
           {...inputProperties.select}

@@ -29,18 +29,14 @@ export async function GET(request: NextRequest) {
       topicName: { not: null },
     };
 
-    const fetchCount = page * limit;
-
     const [usageLogs, fullExamJobs] = await Promise.all([
       prisma.usageLog.findMany({
         where: usageLogWhere,
         orderBy: { createdAt: sort },
-        take: fetchCount,
       }),
       prisma.fullExamJob.findMany({
         where: { userId, status: { in: ['done', 'error', 'awaiting_review'] } },
         orderBy: { createdAt: sort },
-        take: fetchCount,
         include: {
           topics: {
             select: { id: true, topicName: true, questionCount: true, savedCount: true, status: true },
@@ -87,8 +83,8 @@ export async function GET(request: NextRequest) {
         })
       ),
       ...fullExamItems,
-    ].sort((a, b) => {
-      const diff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    ].sort((newer, older) => {
+      const diff = new Date(older.createdAt).getTime() - new Date(newer.createdAt).getTime();
       return sort === 'asc' ? -diff : diff;
     });
 
