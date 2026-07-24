@@ -31,7 +31,7 @@ export function GenerationHistory() {
       <h2 className="text-sm font-semibold text-primary">{t('generate.historySection')}</h2>
 
       {isLoading && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2" aria-label="Loading history">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="h-10 bg-content2 rounded-lg animate-pulse" />
           ))}
@@ -44,8 +44,34 @@ export function GenerationHistory() {
 
       {!isLoading && data && data.items.length > 0 && (
         <>
-          <div className="flex flex-col divide-y divide-divider">
-            {data.items.map((item) => renderRow(item))}
+          <div className="flex flex-col divide-y divide-divider" role="list">
+            {data.items.map((item) => (
+              <div
+                key={item.id}
+                role="listitem"
+                className="flex items-center gap-3 py-3 text-sm flex-wrap"
+              >
+                <Chip color={item.type === 'full_exam' ? 'primary' : 'default'} size="sm" variant="flat">
+                  {item.type === 'full_exam' ? t('generate.historyTypeFullExam') : t('generate.historyTypeIndividual')}
+                </Chip>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="text-foreground font-medium truncate">{item.refName ?? '—'}</span>
+                  {item.topicName && (
+                    <span className="text-default-400 text-xs truncate">{item.topicName}</span>
+                  )}
+                </div>
+                <span className="text-default-500 text-xs whitespace-nowrap tabular-nums">
+                  {item.questionsSaved}q
+                </span>
+                {renderTokens(item)}
+                <span className="text-default-400 text-xs whitespace-nowrap">
+                  <RelativeDate date={item.createdAt} />
+                </span>
+                <Chip color={statusColor(item.status)} size="sm" variant="flat">
+                  {statusLabel(item.status, t)}
+                </Chip>
+              </div>
+            ))}
           </div>
           {data.total > LIMIT && (
             <PaginationControls
@@ -59,45 +85,30 @@ export function GenerationHistory() {
     </div>
   );
 
-  function renderRow(item: GenerationHistoryItem) {
-    const statusColor: 'success' | 'warning' | 'danger' | 'default' =
-      item.status === 'done' ? 'success'
-      : item.status === 'awaiting_review' ? 'warning'
-      : item.status === 'error' || item.status === 'cancelled' ? 'danger'
-      : 'default';
-
-    const statusLabel =
-      item.status === 'done' ? t('simulado.statusAnswered')
-      : item.status === 'awaiting_review' ? t('generate.statusAwaitingReview')
-      : item.status === 'cancelled' ? t('generate.statusCancelled')
-      : t('generate.statusError');
-
+  function renderTokens(item: GenerationHistoryItem) {
     const totalTokens = (item.inputTokens ?? 0) + (item.outputTokens ?? 0);
-
+    if (totalTokens === 0) return null;
     return (
-      <div key={item.id} className="flex items-center gap-3 py-3 text-sm flex-wrap">
-        <Chip color={item.type === 'full_exam' ? 'primary' : 'default'} size="sm" variant="flat">
-          {item.type === 'full_exam' ? t('generate.historyTypeFullExam') : t('generate.historyTypeIndividual')}
-        </Chip>
-        <div className="flex flex-col min-w-0 flex-1">
-          <span className="text-foreground font-medium truncate">{item.refName ?? '—'}</span>
-          {item.topicName && (
-            <span className="text-default-400 text-xs truncate">{item.topicName}</span>
-          )}
-        </div>
-        <span className="text-default-500 text-xs whitespace-nowrap">{item.questionsSaved}q</span>
-        {totalTokens > 0 && (
-          <span className="text-default-400 text-xs whitespace-nowrap">
-            {t('generate.historyTokens', { count: totalTokens })}
-          </span>
-        )}
-        <span className="text-default-400 text-xs whitespace-nowrap">
-          <RelativeDate date={item.createdAt} />
-        </span>
-        <Chip color={statusColor} size="sm" variant="flat">
-          {statusLabel}
-        </Chip>
-      </div>
+      <span className="text-default-400 text-xs whitespace-nowrap tabular-nums">
+        {t('generate.historyTokens', { count: totalTokens })}
+      </span>
     );
   }
+}
+
+function statusColor(status: GenerationHistoryItem['status']): 'success' | 'warning' | 'danger' | 'default' {
+  if (status === 'done') return 'success';
+  if (status === 'awaiting_review') return 'warning';
+  if (status === 'error' || status === 'cancelled') return 'danger';
+  return 'default';
+}
+
+function statusLabel(
+  status: GenerationHistoryItem['status'],
+  t: (key: string) => string,
+): string {
+  if (status === 'done') return t('simulado.statusAnswered');
+  if (status === 'awaiting_review') return t('generate.statusAwaitingReview');
+  if (status === 'cancelled') return t('generate.statusCancelled');
+  return t('generate.statusError');
 }
