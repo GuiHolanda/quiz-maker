@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
     }
 
     const job = await prisma.fullExamJob.findFirst({
-      where: { userId: session.user.id, type, refKey, status: 'running' },
+      where: { userId: session.user.id, type, refKey, status: { in: ['running', 'awaiting_review'] } },
       orderBy: { createdAt: 'desc' },
       include: { topics: { orderBy: { createdAt: 'asc' } } },
     });

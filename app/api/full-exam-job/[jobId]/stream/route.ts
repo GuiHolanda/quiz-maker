@@ -64,6 +64,16 @@ export async function GET(
         return;
       }
 
+      if (job.status === 'awaiting_review') {
+        send('awaiting_review', {
+          doneTopics: job.doneTopics,
+          totalTopics: job.totalTopics,
+          topics: shapeTopics(job.topics),
+        });
+        controller.close();
+        return;
+      }
+
       if (job.status === 'error') {
         send('error', { message: 'Job failed', topics: shapeTopics(job.topics) });
         controller.close();
@@ -95,6 +105,14 @@ export async function GET(
               doneTopics: current.doneTopics,
               totalTopics: current.totalTopics,
               savedCount: current.savedCount,
+              topics: shapeTopics(current.topics),
+            });
+            controller.close();
+          } else if (current.status === 'awaiting_review') {
+            clearInterval(pollInterval);
+            send('awaiting_review', {
+              doneTopics: current.doneTopics,
+              totalTopics: current.totalTopics,
               topics: shapeTopics(current.topics),
             });
             controller.close();
