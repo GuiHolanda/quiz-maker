@@ -62,6 +62,7 @@ export function PublicExamQuestionsContent() {
   const [batchTopics, setBatchTopics] = useState<FullExamJobTopicStatus[]>([]);
   const [isSavingJob, setIsSavingJob] = useState(false);
   const [showSimuladosBanner, setShowSimuladosBanner] = useState(false);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   const aiQuestions = state?.aiQuestions ?? [];
@@ -100,6 +101,7 @@ export function PublicExamQuestionsContent() {
         if (data.topics) setBatchTopics(data.topics);
         refreshUsage();
         setShowSimuladosBanner(true);
+        setHistoryRefreshKey((k) => k + 1);
         if (selectedPublicExam) {
           try {
             localStorage.setItem(
@@ -204,6 +206,7 @@ export function PublicExamQuestionsContent() {
       setJobStatus('done');
       refreshUsage();
       setShowSimuladosBanner(true);
+      setHistoryRefreshKey((k) => k + 1);
       if (selectedPublicExam) {
         try {
           localStorage.setItem(
@@ -257,6 +260,7 @@ export function PublicExamQuestionsContent() {
       setAIquestions([], null);
       refreshUsage();
       setShowSimuladosBanner(true);
+      setHistoryRefreshKey((k) => k + 1);
     } catch {
       notify.error(t('toast.error'), t('toast.somethingWrong'));
     } finally {
@@ -352,7 +356,7 @@ export function PublicExamQuestionsContent() {
             onSave={onSave}
           />
         )}
-        <GenerationHistory />
+        <GenerationHistory refreshKey={historyRefreshKey} />
       </>
     );
   }

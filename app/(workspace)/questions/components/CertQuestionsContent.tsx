@@ -62,6 +62,7 @@ export function CertQuestionsContent() {
   const [batchTopics, setBatchTopics] = useState<FullExamJobTopicStatus[]>([]);
   const [isSavingJob, setIsSavingJob] = useState(false);
   const [showSimuladosBanner, setShowSimuladosBanner] = useState(false);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   const aiQuestions = state?.aiQuestions ?? [];
@@ -100,6 +101,7 @@ export function CertQuestionsContent() {
         if (data.topics) setBatchTopics(data.topics);
         refreshUsage();
         setShowSimuladosBanner(true);
+        setHistoryRefreshKey((k) => k + 1);
         if (selectedCertification) {
           try {
             localStorage.setItem(
@@ -202,6 +204,7 @@ export function CertQuestionsContent() {
       setJobStatus('done');
       refreshUsage();
       setShowSimuladosBanner(true);
+      setHistoryRefreshKey((k) => k + 1);
       if (selectedCertification) {
         try {
           localStorage.setItem(
@@ -261,6 +264,7 @@ export function CertQuestionsContent() {
       setAIquestions([], null);
       refreshUsage();
       setShowSimuladosBanner(true);
+      setHistoryRefreshKey((k) => k + 1);
     } catch {
       notify.error(t('toast.error'), t('toast.somethingWrong'));
     } finally {
@@ -369,7 +373,7 @@ export function CertQuestionsContent() {
             onSave={onSave}
           />
         )}
-        <GenerationHistory />
+        <GenerationHistory refreshKey={historyRefreshKey} />
       </>
     );
   }

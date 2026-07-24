@@ -21,7 +21,11 @@ import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 
 const LIMIT = 10;
 
-export function GenerationHistory() {
+interface GenerationHistoryProps {
+  readonly refreshKey?: number;
+}
+
+export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
   const { t } = useTranslation();
   const [data, setData] = useState<GenerationHistoryResponse | null>(null);
   const [page, setPage] = useState(1);
@@ -33,7 +37,7 @@ export function GenerationHistory() {
       .then(setData)
       .catch(() => setData(null))
       .finally(() => setIsLoading(false));
-  }, [page]);
+  }, [page, refreshKey]);
 
   return (
     <section aria-labelledby="history-heading" className='mt-8'>
