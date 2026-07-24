@@ -43,7 +43,9 @@ export async function POST(
 
     for (const topic of topicsToSave) {
       const raw = JSON.parse(topic.pendingQuestionsJson!);
-      const questions = validateAiQuestions(raw);
+      // pendingQuestionsJson stores a plain array; validateAiQuestions expects { questions: [] }
+      const payload = Array.isArray(raw) ? { questions: raw } : raw;
+      const questions = validateAiQuestions(payload);
 
       if (job.type === 'certification') {
         const certService = new CertificationQuestionService();
