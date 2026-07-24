@@ -24,11 +24,9 @@ export async function GET(request: NextRequest) {
       topicName: { not: null },
     };
 
-    // Fetch enough rows from each source to cover any page.
-    // For page N we need up to page*limit rows from each source in the worst case.
     const fetchCount = page * limit;
 
-    const [usageLogs, usageLogCount, fullExamJobs, fullExamJobCount] = await Promise.all([
+    const [usageLogs, usageLogCount, fullExamJobs] = await Promise.all([
       prisma.usageLog.findMany({
         where: usageLogWhere,
         orderBy: { createdAt: 'desc' },
@@ -39,12 +37,35 @@ export async function GET(request: NextRequest) {
         where: { userId, status: { in: ['done', 'error', 'awaiting_review'] } },
         orderBy: { createdAt: 'desc' },
         take: fetchCount,
-        include: { topics: { select: { questionCount: true, status: true } } },
-      }),
-      prisma.fullExamJob.count({
-        where: { userId, status: { in: ['done', 'error', 'awaiting_review'] } },
+        include: {
+          topics: {
+            select: { id: true, topicName: true, questionCount: true, savedCount: true, status: true },
+            orderBy: { createdAt: 'asc' },
+          },
+        },
       }),
     ]);
+
+    // Expand FullExamJob topics into individual rows — one row per topic
+    const fullExamItems: GenerationHistoryItem[] = fullExamJobs.flatMap((job) =>
+      job.topics.map((topic) => ({
+        id: `${job.id}__${topic.id}`,
+        source: 'full_exam_job' as const,
+        type: 'full_exam' as const,
+        refName: job.refName,
+        topicName: topic.topicName,
+        questionsGenerated: topic.questionCount,
+        questionsSaved: topic.savedCount,
+        status: topic.status === 'done'
+          ? ('done' as const)
+          : topic.status === 'error'
+            ? ('error' as const)
+            : ('awaiting_review' as const),
+        createdAt: job.createdAt.toISOString(),
+      })),
+    );
+
+    const fullExamItemCount = fullExamJobs.reduce((acc, job) => acc + job.topics.length, 0);
 
     const merged: GenerationHistoryItem[] = [
       ...usageLogs.map((log): GenerationHistoryItem => ({
@@ -58,24 +79,11 @@ export async function GET(request: NextRequest) {
         status: 'done',
         createdAt: log.createdAt.toISOString(),
       })),
-      ...fullExamJobs.map((job): GenerationHistoryItem => {
-        const totalGenerated = job.topics.reduce((acc, t) => acc + t.questionCount, 0);
-        return {
-          id: job.id,
-          source: 'full_exam_job',
-          type: 'full_exam',
-          refName: job.refName,
-          topicName: null,
-          questionsGenerated: totalGenerated,
-          questionsSaved: job.savedCount,
-          status: job.status as GenerationHistoryItem['status'],
-          createdAt: job.createdAt.toISOString(),
-        };
-      }),
+      ...fullExamItems,
     ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     const items = merged.slice((page - 1) * limit, page * limit);
-    const total = usageLogCount + fullExamJobCount;
+    const total = usageLogCount + fullExamItemCount;
 
     const response: GenerationHistoryResponse = { items, total, page, limit };
     return NextResponse.json(response, { status: 200 });
