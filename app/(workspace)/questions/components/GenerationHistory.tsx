@@ -40,7 +40,7 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
   }, [page, refreshKey]);
 
   return (
-    <section aria-labelledby="history-heading" className='mt-8'>
+    <section aria-labelledby="history-heading" className="mt-8">
       {renderSectionHeader()}
       <div
         aria-live="polite"
@@ -93,9 +93,9 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
         </div>
 
         <div className="flex flex-col min-w-0 flex-1">
-          <span className="text-sm font-medium text-foreground truncate leading-snug">{item.refName ?? '—'}</span>
+          <span className="text-sm font-medium text-foreground truncate leading-snug">{item.topicName ?? '—'}</span>
           {item.topicName && (
-            <span className="text-xs text-default-400 truncate leading-snug mt-0.5">{item.topicName}</span>
+            <span className="text-xs text-default-400 truncate leading-snug mt-0.5">{item.refName}</span>
           )}
         </div>
 

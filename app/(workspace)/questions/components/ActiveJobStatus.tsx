@@ -4,7 +4,14 @@ import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { Progress } from '@heroui/progress';
 import { Spinner } from '@heroui/spinner';
-import { faCircleCheck, faCircleNotch, faCircleXmark } from '@fortawesome/free-solid-svg-icons';
+import {
+  faCircleCheck,
+  faCircleNotch,
+  faCircleXmark,
+  faBolt,
+  faCheckCircle,
+  faLayerGroup,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import type { FullExamJobTopicStatus } from '@/shared/types';
@@ -43,15 +50,29 @@ export function ActiveJobStatus({
   const totalQuestionsReady = doneTopicsList.reduce((acc, topic) => acc + topic.questionCount, 0);
   const progressValue = totalTopics > 0 ? (doneTopics / totalTopics) * 100 : 0;
 
+  const isRunning = status === 'running';
+  const isError = status === 'error';
+  const headerIconColor = isRunning ? 'text-warning' : isError ? 'text-danger' : 'text-primary';
+  const headerBgColor = isRunning ? 'bg-warning/10' : isError ? 'bg-danger/10' : 'bg-primary/10';
+
   return (
-    <div aria-live="polite" className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-3">
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-sm font-semibold text-foreground">{refName}</span>
-        {status === 'running' && (
+    <section aria-live="polite" className='mt-8'>
+      <div className="flex items-center gap-3 mb-3">
+        <div className={`mt-0.5 w-8 h-8 rounded-lg ${headerBgColor} flex items-center justify-center shrink-0`}>
+          <FontAwesomeIcon
+            className={`w-3.5 h-3.5 ${headerIconColor} ${isRunning ? 'animate-pulse' : ''}`}
+            icon={faBolt}
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-xl font-bold text-foreground">{t('generate.statusSection')}</h2>
+          <p className="text-sm text-default-500 mt-0.5 truncate">{refName}</p>
+        </div>
+        {isRunning && (
           <Chip
             color="warning"
             size="sm"
-            startContent={<Spinner color="current" size="sm" classNames={{ wrapper: 'w-3 h-3' }} />}
+            startContent={<Spinner classNames={{ wrapper: 'w-3 h-3' }} color="current" size="sm" />}
             variant="flat"
           >
             {t('busy.generating')}
@@ -64,94 +85,137 @@ export function ActiveJobStatus({
         )}
       </div>
 
-      {status === 'running' && (
-        <>
-          <Progress
-            aria-label={t('generate.generatingProgress', { completed: doneTopics, total: totalTopics })}
-            classNames={{ label: 'text-xs text-default-500', value: 'text-xs text-default-500' }}
-            color="warning"
-            label={t('generate.generatingProgress', { completed: doneTopics, total: totalTopics })}
-            showValueLabel={false}
-            size="sm"
-            value={progressValue}
+      <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4">
+        {isRunning && (
+          <>
+            <Progress
+              aria-label={t('generate.generatingProgress', { completed: doneTopics, total: totalTopics })}
+              classNames={{ label: 'text-xs text-default-500', value: 'text-xs text-default-500' }}
+              color="warning"
+              label={t('generate.generatingProgress', { completed: doneTopics, total: totalTopics })}
+              showValueLabel={false}
+              size="sm"
+              value={progressValue}
+            />
+            {renderTopicList()}
+            <Button className={`${buttonStyles.dangerFlat} self-start`} size="sm" onPress={onCancel}>
+              {t('common.cancel')}
+            </Button>
+          </>
+        )}
+
+        {status === 'awaiting_review' && (
+          <>
+            {renderStatPair(totalQuestionsReady, doneTopicsList.length)}
+            {renderTopicList()}
+            <div className="flex gap-2 flex-wrap pt-4">
+              <Button className={buttonStyles.primary} isLoading={isSaving} size="sm" onPress={onSaveAll}>
+                {t('generate.saveAll')}
+              </Button>
+              <Button className={buttonStyles.secondary} size="sm" variant="bordered" onPress={onReviewAndSelect}>
+                {t('generate.reviewAndSelect')}
+              </Button>
+              <Button className={`${buttonStyles.dangerFlat} ml-auto`} size="sm" onPress={onCancel}>
+                {t('common.discard')}
+              </Button>
+            </div>
+          </>
+        )}
+
+        {isError && (
+          <InlineAlert
+            color="danger"
+            endContent={topics.length > 0 ? renderTopicList() : undefined}
+            icon={faCircleXmark}
+            title={t('generate.statusError')}
           />
-          {renderTopicList()}
-          <Button className={`${buttonStyles.dangerFlat} self-start`} size="sm" onPress={onCancel}>
-            {t('common.cancel')}
-          </Button>
-        </>
-      )}
-
-      {status === 'awaiting_review' && (
-        <>
-          <p className="text-sm text-default-500">
-            {t('generate.questionsReady', { count: totalQuestionsReady, topics: doneTopicsList.length })}
-          </p>
-          {renderTopicList()}
-          <div className="flex gap-2 flex-wrap">
-            <Button className={buttonStyles.primary} isLoading={isSaving} size="sm" onPress={onSaveAll}>
-              {t('generate.saveAll')}
-            </Button>
-            <Button className={buttonStyles.secondary} size="sm" variant="bordered" onPress={onReviewAndSelect}>
-              {t('generate.reviewAndSelect')}
-            </Button>
-            <Button className={buttonStyles.dangerFlat} size="sm" onPress={onCancel}>
-              {t('common.discard')}
-            </Button>
-          </div>
-        </>
-      )}
-
-      {status === 'error' && (
-        <InlineAlert
-          color="danger"
-          icon={faCircleXmark}
-          title={t('generate.statusError')}
-          endContent={topics.length > 0 ? renderTopicList() : undefined}
-        />
-      )}
-    </div>
+        )}
+      </div>
+    </section>
   );
+
+  function renderStatPair(questionsReady: number, topicsDone: number) {
+    return (
+      <div className="flex items-stretch gap-8">
+        <div className="flex items-center gap-3 rounded-lg py-3">
+          <div className="w-7 h-7 rounded-md bg-success/15 flex items-center justify-center shrink-0">
+            <FontAwesomeIcon className="w-3.5 h-3.5 text-success" icon={faCheckCircle} />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xl font-bold text-foreground tabular-nums leading-none">{questionsReady}</span>
+            <span className="text-xs text-default-400 mt-0.5">{t('generate.historyGeneratedLabel')}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 rounded-lg py-3">
+          <div className="w-7 h-7 rounded-md bg-primary/15 flex items-center justify-center shrink-0">
+            <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={faLayerGroup} />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xl font-bold text-foreground tabular-nums leading-none">{topicsDone}</span>
+            <span className="text-xs text-default-400 mt-0.5">{t('generate.topicsDoneLabel')}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   function renderTopicList() {
     if (topics.length === 0) return null;
 
     return (
-      <div className="flex flex-col gap-1.5 mt-1">
+      <div className="flex flex-col divide-y divide-divider border-y border-default-200">
         {topics.map((topic) => {
-          const icon =
-            topic.status === 'done' ? faCircleCheck
-            : topic.status === 'error' ? faCircleXmark
-            : topic.status === 'running' ? faCircleNotch
-            : null;
+          const isDone = topic.status === 'done';
+          const isTopicRunning = topic.status === 'running';
+          const isTopicError = topic.status === 'error';
 
-          const colorClass =
-            topic.status === 'done' ? 'text-success'
-            : topic.status === 'error' ? 'text-danger'
-            : topic.status === 'running' ? 'text-warning'
-            : 'text-default-300';
+          const iconNode = isDone
+            ? faCircleCheck
+            : isTopicError
+              ? faCircleXmark
+              : isTopicRunning
+                ? faCircleNotch
+                : null;
+
+          const boxBg = isDone
+            ? 'bg-success/10'
+            : isTopicError
+              ? 'bg-danger/10'
+              : isTopicRunning
+                ? 'bg-warning/10'
+                : 'bg-default-100';
+
+          const iconColor = isDone
+            ? 'text-success'
+            : isTopicError
+              ? 'text-danger'
+              : isTopicRunning
+                ? 'text-warning'
+                : 'text-default-300';
 
           return (
-            <div key={topic.id} className="flex items-center gap-2 text-xs">
-              <span className="w-3 shrink-0 flex items-center justify-center">
-                {icon ? (
+            <div key={topic.id} className="flex items-center gap-3 py-2.5">
+              <div className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 ${boxBg}`}>
+                {iconNode ? (
                   <FontAwesomeIcon
                     aria-hidden="true"
-                    className={`w-3 h-3 ${colorClass} ${topic.status === 'running' ? 'animate-spin' : ''}`}
-                    icon={icon}
+                    className={`w-3.5 h-3.5 ${iconColor} ${isTopicRunning ? 'animate-spin' : ''}`}
+                    icon={iconNode}
                   />
                 ) : (
-                  <span className="w-2.5 h-2.5 rounded-full border border-default-300 inline-block" />
+                  <span className="w-2 h-2 rounded-full border border-default-300 inline-block" />
                 )}
-              </span>
-              <span className={`flex-1 ${topic.status === 'error' ? 'text-danger' : 'text-default-500'}`}>
+              </div>
+              <span className={`flex-1 text-sm truncate ${isTopicError ? 'text-danger' : 'text-foreground'}`}>
                 {topic.topicName}
               </span>
-              {topic.status === 'done' && (
-                <span className="text-default-400 shrink-0">{t('generate.topicQuestionCount', { count: topic.questionCount })}</span>
+              {isDone && (
+                <span className="text-xs font-medium text-default-500 tabular-nums shrink-0 rounded-md px-2 py-1">
+                  {t('generate.topicQuestions', { count: topic.questionCount })}
+                </span>
               )}
-              {topic.status === 'error' && topic.errorMessage && (
-                <span className="text-danger/70 shrink-0 max-w-[120px] truncate" title={topic.errorMessage}>
+              {isTopicError && topic.errorMessage && (
+                <span className="text-xs text-danger/70 shrink-0 max-w-[140px] truncate" title={topic.errorMessage}>
                   {topic.errorMessage}
                 </span>
               )}
