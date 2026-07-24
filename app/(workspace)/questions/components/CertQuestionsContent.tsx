@@ -8,7 +8,6 @@ import { faCircleCheck } from '@fortawesome/free-solid-svg-icons';
 import { GeneratedQuestionsList } from './GeneratedQuestionsList';
 import { QuestionGeneratorForm } from './QuestionGeneratorForm';
 import { ActiveJobStatus } from './ActiveJobStatus';
-import { GenerationHistory } from './GenerationHistory';
 
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
@@ -47,7 +46,7 @@ function distributeByWeight(items: Array<{ name: string; weight: number }>, tota
     .sort((a, b) => floors.findIndex((f) => f.name === a.name) - floors.findIndex((f) => f.name === b.name));
 }
 
-export function CertQuestionsContent() {
+export function CertQuestionsContent({ onSaved }: { readonly onSaved?: () => void }) {
   const { t } = useTranslation();
   const { state, setAIquestions, setSelectedAIquestions } = useQuizContext();
   const { certifications, selectedCertification, selectedTopics, isLoading } = useCertificationsContext();
@@ -62,7 +61,6 @@ export function CertQuestionsContent() {
   const [batchTopics, setBatchTopics] = useState<FullExamJobTopicStatus[]>([]);
   const [isSavingJob, setIsSavingJob] = useState(false);
   const [showSimuladosBanner, setShowSimuladosBanner] = useState(false);
-  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   const aiQuestions = state?.aiQuestions ?? [];
@@ -101,7 +99,7 @@ export function CertQuestionsContent() {
         if (data.topics) setBatchTopics(data.topics);
         refreshUsage();
         setShowSimuladosBanner(true);
-        setHistoryRefreshKey((k) => k + 1);
+        onSaved?.();
         if (selectedCertification) {
           try {
             localStorage.setItem(
@@ -204,7 +202,7 @@ export function CertQuestionsContent() {
       setJobStatus('done');
       refreshUsage();
       setShowSimuladosBanner(true);
-      setHistoryRefreshKey((k) => k + 1);
+      onSaved?.();
       if (selectedCertification) {
         try {
           localStorage.setItem(
@@ -264,7 +262,7 @@ export function CertQuestionsContent() {
       setAIquestions([], null);
       refreshUsage();
       setShowSimuladosBanner(true);
-      setHistoryRefreshKey((k) => k + 1);
+      onSaved?.();
     } catch {
       notify.error(t('toast.error'), t('toast.somethingWrong'));
     } finally {
@@ -373,7 +371,6 @@ export function CertQuestionsContent() {
             onSave={onSave}
           />
         )}
-        <GenerationHistory refreshKey={historyRefreshKey} />
       </>
     );
   }

@@ -9,7 +9,6 @@ import { GeneratedQuestionsList } from './GeneratedQuestionsList';
 import { QuestionGeneratorForm } from './QuestionGeneratorForm';
 import { FullExamDistributionTable } from './FullExamDistributionTable';
 import { ActiveJobStatus } from './ActiveJobStatus';
-import { GenerationHistory } from './GenerationHistory';
 
 import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
 import { PublicExamManager } from '@/shared/components/PublicExamManager';
@@ -47,7 +46,7 @@ function distributeByWeight(items: Array<{ name: string; weight: number }>, tota
     .sort((a, b) => floors.findIndex((f) => f.name === a.name) - floors.findIndex((f) => f.name === b.name));
 }
 
-export function PublicExamQuestionsContent() {
+export function PublicExamQuestionsContent({ onSaved }: { readonly onSaved?: () => void }) {
   const { t } = useTranslation();
   const { state, setAIquestions, setSelectedAIquestions } = useQuizContext();
   const { publicExams, selectedPublicExam, selectedSubjects, isLoading } = usePublicExamsContext();
@@ -62,7 +61,7 @@ export function PublicExamQuestionsContent() {
   const [batchTopics, setBatchTopics] = useState<FullExamJobTopicStatus[]>([]);
   const [isSavingJob, setIsSavingJob] = useState(false);
   const [showSimuladosBanner, setShowSimuladosBanner] = useState(false);
-  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
+
   const eventSourceRef = useRef<EventSource | null>(null);
 
   const aiQuestions = state?.aiQuestions ?? [];
@@ -101,7 +100,7 @@ export function PublicExamQuestionsContent() {
         if (data.topics) setBatchTopics(data.topics);
         refreshUsage();
         setShowSimuladosBanner(true);
-        setHistoryRefreshKey((k) => k + 1);
+        onSaved?.();
         if (selectedPublicExam) {
           try {
             localStorage.setItem(
@@ -206,7 +205,7 @@ export function PublicExamQuestionsContent() {
       setJobStatus('done');
       refreshUsage();
       setShowSimuladosBanner(true);
-      setHistoryRefreshKey((k) => k + 1);
+      onSaved?.();
       if (selectedPublicExam) {
         try {
           localStorage.setItem(
@@ -260,7 +259,7 @@ export function PublicExamQuestionsContent() {
       setAIquestions([], null);
       refreshUsage();
       setShowSimuladosBanner(true);
-      setHistoryRefreshKey((k) => k + 1);
+      onSaved?.();
     } catch {
       notify.error(t('toast.error'), t('toast.somethingWrong'));
     } finally {
@@ -356,7 +355,6 @@ export function PublicExamQuestionsContent() {
             onSave={onSave}
           />
         )}
-        <GenerationHistory refreshKey={historyRefreshKey} />
       </>
     );
   }
