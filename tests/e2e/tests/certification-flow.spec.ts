@@ -48,6 +48,31 @@ test('full certification journey: configure → questions → simulado → answe
 
   // ─── Step 2: Generate questions ──────────────────────────────────────────
 
+  // Inject fake EventSource BEFORE navigation so it's active when the page loads.
+  await page.addInitScript(() => {
+    (window as any).EventSource = class FakeEventSource {
+      private handlers: Record<string, (e: { data: string }) => void> = {};
+      constructor(public url: string) {
+        setTimeout(() => {
+          const handler = this.handlers['awaiting_review'];
+          if (handler) {
+            handler({
+              data: JSON.stringify({
+                doneTopics: 1,
+                totalTopics: 1,
+                topics: [{ id: 't1', topicName: 'E2E Topic', questionCount: 3, status: 'done', savedCount: 0, errorMessage: null }],
+              }),
+            });
+          }
+        }, 100);
+      }
+      addEventListener(event: string, handler: (e: { data: string }) => void) {
+        this.handlers[event] = handler;
+      }
+      close() {}
+    };
+  });
+
   await page.goto('/questions?type=certification');
 
   // Select the certification
@@ -63,27 +88,21 @@ test('full certification journey: configure → questions → simulado → answe
   // Set question count
   await page.getByLabel(/Número de Questões|Number of Questions/i).fill('3');
 
-  // Generate — API is mocked, returns 3 questions immediately
+  // Generate — creates a job, SSE fires awaiting_review via fake EventSource
   await page.getByRole('button', { name: /^Gerar$|^Generate$/i }).click();
 
-  // Wait for the list to appear (mock API is synchronous so this is fast)
-  await expect(page.getByText(/E2E Question/i).first()).toBeVisible({ timeout: 15_000 });
+  // Wait for the awaiting_review state in ActiveJobStatus
+  await expect(
+    page.getByText(/Aguardando revis|Awaiting review/i),
+  ).toBeVisible({ timeout: 10_000 });
 
-  // Select all
-  await page.getByRole('checkbox', { name: /Selecionar tudo|Select all/i }).click({ force: true });
+  // Save all questions
+  await page.getByRole('button', { name: /Salvar todas|Save all/i }).click();
 
-  // Save
-  await page.getByRole('button', { name: /Salvar Questões Selecionadas|Save Selected questions/i }).click();
-
-  // Wait for the list to disappear (questions cleared after save)
-  await expect(page.getByText(/E2E Question/i).first()).not.toBeVisible({ timeout: 15_000 });
-
-  // ─── Step 2b: Verify the success banner appears after save ───────────────
-
-  // After save, the simulados banner appears confirming questions were saved
+  // Wait for the banner confirming questions were saved (job transitions to done)
   await expect(
     page.getByText(/Questões salvas|Questions saved/i),
-  ).toBeVisible({ timeout: 5_000 });
+  ).toBeVisible({ timeout: 10_000 });
 
   // ─── Step 3: Create a simulado ────────────────────────────────────────────
 
