@@ -31,13 +31,12 @@ export async function GET(request: NextRequest) {
 
     const fetchCount = page * limit;
 
-    const [usageLogs, usageLogCount, fullExamJobs] = await Promise.all([
+    const [usageLogs, fullExamJobs] = await Promise.all([
       prisma.usageLog.findMany({
         where: usageLogWhere,
         orderBy: { createdAt: sort },
         take: fetchCount,
       }),
-      prisma.usageLog.count({ where: usageLogWhere }),
       prisma.fullExamJob.findMany({
         where: { userId, status: { in: ['done', 'error', 'awaiting_review'] } },
         orderBy: { createdAt: sort },
@@ -71,8 +70,6 @@ export async function GET(request: NextRequest) {
         createdAt: job.createdAt.toISOString(),
       }))
     );
-
-    void usageLogCount;
 
     let merged: GenerationHistoryItem[] = [
       ...usageLogs.map(
