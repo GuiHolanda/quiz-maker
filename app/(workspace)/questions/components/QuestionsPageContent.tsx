@@ -10,13 +10,41 @@ import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { CertQuestionsContent } from './CertQuestionsContent';
 import { PublicExamQuestionsContent } from './PublicExamQuestionsContent';
 import { GenerationHistory } from './GenerationHistory';
+import { ActiveJobStatus } from './ActiveJobStatus';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
+import type { FullExamJobTopicStatus } from '@/shared/types';
 
 type QuestionsType = 'certification' | 'public_exam';
+
+export interface JobState {
+  jobId: string | null;
+  refName: string;
+  status: 'running' | 'awaiting_review' | 'done' | 'error' | null;
+  doneTopics: number;
+  totalTopics: number;
+  topics: FullExamJobTopicStatus[];
+  isSaving: boolean;
+  onCancel: () => void;
+  onSaveAll: () => void;
+  onReviewAndSelect: () => void;
+}
+
+const defaultJobState: JobState = {
+  jobId: null,
+  refName: '',
+  status: null,
+  doneTopics: 0,
+  totalTopics: 0,
+  topics: [],
+  isSaving: false,
+  onCancel: () => {},
+  onSaveAll: () => {},
+  onReviewAndSelect: () => {},
+};
 
 export function QuestionsPageContent() {
   const { t } = useTranslation();
@@ -27,6 +55,8 @@ export function QuestionsPageContent() {
   const [selectedType, setSelectedType] = useState<QuestionsType>(initialType);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
+  const [certJobState, setCertJobState] = useState<JobState>(defaultJobState);
+  const [examJobState, setExamJobState] = useState<JobState>(defaultJobState);
 
   const hasConcursoAccess = !usage || usage.publicExamsLimit !== 0;
   const handleSaved = () => setHistoryRefreshKey((k) => k + 1);
@@ -42,11 +72,13 @@ export function QuestionsPageContent() {
           </div>
         </div>
 
+        {renderActiveJobStatus()}
+
         <div className={selectedType === 'certification' ? '' : 'hidden'}>
-          <CertQuestionsContent onSaved={handleSaved} />
+          <CertQuestionsContent onJobStateChange={setCertJobState} onSaved={handleSaved} />
         </div>
         <div className={selectedType === 'public_exam' ? '' : 'hidden'}>
-          <PublicExamQuestionsContent onSaved={handleSaved} />
+          <PublicExamQuestionsContent onJobStateChange={setExamJobState} onSaved={handleSaved} />
         </div>
 
         <GenerationHistory refreshKey={historyRefreshKey} />
@@ -55,6 +87,24 @@ export function QuestionsPageContent() {
       <UpgradeModal isOpen={isUpgradeOpen} onClose={() => setIsUpgradeOpen(false)} />
     </PageHeader>
   );
+
+  function renderActiveJobStatus() {
+    const active = [certJobState, examJobState].find((s) => s.jobId && s.status && s.status !== 'done');
+    if (!active || !active.jobId || !active.status || active.status === 'done') return null;
+    return (
+      <ActiveJobStatus
+        doneTopics={active.doneTopics}
+        isSaving={active.isSaving}
+        refName={active.refName}
+        status={active.status}
+        topics={active.topics}
+        totalTopics={active.totalTopics}
+        onCancel={active.onCancel}
+        onReviewAndSelect={active.onReviewAndSelect}
+        onSaveAll={active.onSaveAll}
+      />
+    );
+  }
 
   function renderTypeOption(value: QuestionsType, title: string, description: string, icon: IconDefinition) {
     const isSelected = selectedType === value;

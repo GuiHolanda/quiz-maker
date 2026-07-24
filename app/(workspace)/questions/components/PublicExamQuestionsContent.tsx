@@ -8,7 +8,7 @@ import { faCircleCheck } from '@fortawesome/free-solid-svg-icons';
 import { GeneratedQuestionsList } from './GeneratedQuestionsList';
 import { QuestionGeneratorForm } from './QuestionGeneratorForm';
 import { FullExamDistributionTable } from './FullExamDistributionTable';
-import { ActiveJobStatus } from './ActiveJobStatus';
+import type { JobState } from './QuestionsPageContent';
 
 import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
 import { PublicExamManager } from '@/shared/components/PublicExamManager';
@@ -46,7 +46,13 @@ function distributeByWeight(items: Array<{ name: string; weight: number }>, tota
     .sort((a, b) => floors.findIndex((f) => f.name === a.name) - floors.findIndex((f) => f.name === b.name));
 }
 
-export function PublicExamQuestionsContent({ onSaved }: { readonly onSaved?: () => void }) {
+export function PublicExamQuestionsContent({
+  onSaved,
+  onJobStateChange,
+}: {
+  readonly onSaved?: () => void;
+  readonly onJobStateChange?: (state: JobState) => void;
+}) {
   const { t } = useTranslation();
   const { state, setAIquestions, setSelectedAIquestions } = useQuizContext();
   const { publicExams, selectedPublicExam, selectedSubjects, isLoading } = usePublicExamsContext();
@@ -63,6 +69,26 @@ export function PublicExamQuestionsContent({ onSaved }: { readonly onSaved?: () 
   const [showSimuladosBanner, setShowSimuladosBanner] = useState(false);
 
   const eventSourceRef = useRef<EventSource | null>(null);
+
+  const onJobStateChangeRef = useRef(onJobStateChange);
+  useEffect(() => {
+    onJobStateChangeRef.current = onJobStateChange;
+  });
+
+  useEffect(() => {
+    onJobStateChangeRef.current?.({
+      jobId: batchJobId,
+      refName: selectedPublicExam?.name ?? '',
+      status: jobStatus,
+      doneTopics: batchProgress.completed,
+      totalTopics: batchProgress.total,
+      topics: batchTopics,
+      isSaving: isSavingJob,
+      onCancel: handleCancelBatch,
+      onSaveAll: handleSaveAll,
+      onReviewAndSelect: handleReviewAndSelect,
+    });
+  }, [batchJobId, jobStatus, batchProgress, batchTopics, isSavingJob]);
 
   const aiQuestions = state?.aiQuestions ?? [];
   const selectedIds = state?.selectedAIQuestions ?? [];
@@ -312,8 +338,6 @@ export function PublicExamQuestionsContent({ onSaved }: { readonly onSaved?: () 
       );
     }
 
-    const showActiveJob = (isBatchGenerating || jobStatus === 'awaiting_review') && batchJobId;
-
     return (
       <>
         <QuestionGeneratorForm
@@ -330,19 +354,6 @@ export function PublicExamQuestionsContent({ onSaved }: { readonly onSaved?: () 
           }}
           onGenerationStart={handleFormSubmit}
         />
-        {showActiveJob && (
-          <ActiveJobStatus
-            refName={selectedPublicExam?.name ?? ''}
-            status={jobStatus ?? 'running'}
-            doneTopics={batchProgress.completed}
-            totalTopics={batchProgress.total}
-            topics={batchTopics}
-            isSaving={isSavingJob}
-            onCancel={handleCancelBatch}
-            onSaveAll={handleSaveAll}
-            onReviewAndSelect={handleReviewAndSelect}
-          />
-        )}
         {aiQuestions.length > 0 && (
           <GeneratedQuestionsList
             isLoadingMore={false}

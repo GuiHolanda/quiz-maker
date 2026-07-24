@@ -7,7 +7,6 @@ import { faCircleCheck } from '@fortawesome/free-solid-svg-icons';
 
 import { GeneratedQuestionsList } from './GeneratedQuestionsList';
 import { QuestionGeneratorForm } from './QuestionGeneratorForm';
-import { ActiveJobStatus } from './ActiveJobStatus';
 
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
 import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
@@ -30,6 +29,7 @@ import { notify } from '@/shared/lib/notify';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { useNotificationsContext } from '@/features/hooks/useNotificationsContext.hook';
 import { FullExamDistributionTable } from './FullExamDistributionTable';
+import type { JobState } from './QuestionsPageContent';
 
 function distributeByWeight(items: Array<{ name: string; weight: number }>, total: number): Array<{ name: string; count: number }> {
   const totalWeight = items.reduce((acc, item) => acc + item.weight, 0);
@@ -46,7 +46,13 @@ function distributeByWeight(items: Array<{ name: string; weight: number }>, tota
     .sort((a, b) => floors.findIndex((f) => f.name === a.name) - floors.findIndex((f) => f.name === b.name));
 }
 
-export function CertQuestionsContent({ onSaved }: { readonly onSaved?: () => void }) {
+export function CertQuestionsContent({
+  onSaved,
+  onJobStateChange,
+}: {
+  readonly onSaved?: () => void;
+  readonly onJobStateChange?: (state: JobState) => void;
+}) {
   const { t } = useTranslation();
   const { state, setAIquestions, setSelectedAIquestions } = useQuizContext();
   const { certifications, selectedCertification, selectedTopics, isLoading } = useCertificationsContext();
@@ -62,6 +68,26 @@ export function CertQuestionsContent({ onSaved }: { readonly onSaved?: () => voi
   const [isSavingJob, setIsSavingJob] = useState(false);
   const [showSimuladosBanner, setShowSimuladosBanner] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
+
+  const onJobStateChangeRef = useRef(onJobStateChange);
+  useEffect(() => {
+    onJobStateChangeRef.current = onJobStateChange;
+  });
+
+  useEffect(() => {
+    onJobStateChangeRef.current?.({
+      jobId: batchJobId,
+      refName: selectedCertification?.label ?? '',
+      status: jobStatus,
+      doneTopics: batchProgress.completed,
+      totalTopics: batchProgress.total,
+      topics: batchTopics,
+      isSaving: isSavingJob,
+      onCancel: handleCancelBatch,
+      onSaveAll: handleSaveAll,
+      onReviewAndSelect: handleReviewAndSelect,
+    });
+  }, [batchJobId, jobStatus, batchProgress, batchTopics, isSavingJob]);
 
   const aiQuestions = state?.aiQuestions ?? [];
   const selectedIds = state?.selectedAIQuestions ?? [];
@@ -328,7 +354,6 @@ export function CertQuestionsContent({ onSaved }: { readonly onSaved?: () => voi
     }
 
     const isFullExamModeDisabled = !selectedCertification || selectedCertification.totalQuestions === 0;
-    const showActiveJob = (isBatchGenerating || jobStatus === 'awaiting_review' || jobStatus === 'error') && batchJobId;
 
     return (
       <>
@@ -346,19 +371,6 @@ export function CertQuestionsContent({ onSaved }: { readonly onSaved?: () => voi
           }}
           onGenerationStart={handleFormSubmit}
         />
-        {showActiveJob && (
-          <ActiveJobStatus
-            refName={selectedCertification?.label ?? ''}
-            status={jobStatus ?? 'running'}
-            doneTopics={batchProgress.completed}
-            totalTopics={batchProgress.total}
-            topics={batchTopics}
-            isSaving={isSavingJob}
-            onCancel={handleCancelBatch}
-            onSaveAll={handleSaveAll}
-            onReviewAndSelect={handleReviewAndSelect}
-          />
-        )}
         {aiQuestions.length > 0 && (
           <GeneratedQuestionsList
             isLoadingMore={false}
