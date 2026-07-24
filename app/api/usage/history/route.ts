@@ -54,7 +54,8 @@ export async function GET(request: NextRequest) {
         type: 'full_exam' as const,
         refName: job.refName,
         topicName: topic.topicName,
-        questionsGenerated: topic.questionCount,
+        // Only count as generated when the topic actually completed
+        questionsGenerated: topic.status === 'done' ? topic.questionCount : 0,
         questionsSaved: topic.savedCount,
         status: topic.status === 'done'
           ? ('done' as const)
