@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
         where: { userId, status: { in: ['done', 'error', 'awaiting_review'] } },
         orderBy: { createdAt: 'desc' },
         take: fetchCount,
+        include: { topics: { select: { questionCount: true, status: true } } },
       }),
       prisma.fullExamJob.count({
         where: { userId, status: { in: ['done', 'error', 'awaiting_review'] } },
@@ -57,17 +58,20 @@ export async function GET(request: NextRequest) {
         status: 'done',
         createdAt: log.createdAt.toISOString(),
       })),
-      ...fullExamJobs.map((job): GenerationHistoryItem => ({
-        id: job.id,
-        source: 'full_exam_job',
-        type: 'full_exam',
-        refName: job.refName,
-        topicName: null,
-        questionsGenerated: job.totalTopics > 0 ? job.doneTopics : 0,
-        questionsSaved: job.savedCount,
-        status: job.status as GenerationHistoryItem['status'],
-        createdAt: job.createdAt.toISOString(),
-      })),
+      ...fullExamJobs.map((job): GenerationHistoryItem => {
+        const totalGenerated = job.topics.reduce((acc, t) => acc + t.questionCount, 0);
+        return {
+          id: job.id,
+          source: 'full_exam_job',
+          type: 'full_exam',
+          refName: job.refName,
+          topicName: null,
+          questionsGenerated: totalGenerated,
+          questionsSaved: job.savedCount,
+          status: job.status as GenerationHistoryItem['status'],
+          createdAt: job.createdAt.toISOString(),
+        };
+      }),
     ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     const items = merged.slice((page - 1) * limit, page * limit);
