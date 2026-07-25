@@ -27,12 +27,6 @@ For each question, check and correct if needed:
 6. **Correctness of correctCount** — the number of correct options declared is realistic for this question.
 7. **Self-containment** — each question is answerable without external context.
 
-## CRITICAL RULES
-
-- **NEVER remove or discard any question.** If a question has issues, fix it — do not drop it.
-- **The output MUST contain exactly the same number of questions as the input.** Count them before responding.
-- If a question is beyond repair, replace it with a new question on the same topic and difficulty — do not reduce the count.
-
 ## OUTPUT
 
 Return the complete revised question list in the exact same structured plain-text format as the input. Apply all corrections inline. Do not add commentary, scores, or explanations outside the question blocks. If a question is already perfect, reproduce it unchanged.`;

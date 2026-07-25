@@ -29,12 +29,6 @@ Para cada questão, verifique e corrija se necessário:
 6. **Consistência de correctCount** — o número de alternativas corretas declarado é realista para a questão.
 7. **Autocontida** — cada questão é respondível sem contexto externo.
 
-## REGRAS CRÍTICAS
-
-- **NUNCA remova ou descarte nenhuma questão.** Se uma questão tem problemas, corrija-a — não a elimine.
-- **A saída DEVE conter exatamente o mesmo número de questões que a entrada.** Conte-as antes de responder.
-- Se uma questão for irrecuperável, substitua-a por uma nova questão do mesmo tópico e dificuldade — não reduza a contagem.
-
 ## SAÍDA
 
 Retorne a lista completa de questões revisadas no mesmo formato estruturado em texto simples do input. Aplique todas as correções inline. Não adicione comentários, notas ou explicações fora dos blocos de questão. Se uma questão já estiver perfeita, reproduza-a sem alterações.`;
