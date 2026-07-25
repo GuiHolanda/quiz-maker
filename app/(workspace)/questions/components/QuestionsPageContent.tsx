@@ -101,12 +101,13 @@ export function QuestionsPageContent() {
     if (activeJobs.length === 0) return null;
     return (
       <>
-        {activeJobs.map((active) => (
+        {activeJobs.map((active, index) => (
           <ActiveJobStatus
             key={active.jobId!}
             doneTopics={active.doneTopics}
             isSaving={active.isSaving}
             refName={active.refName}
+            showSectionHeader={index === 0}
             status={active.status!}
             topics={active.topics}
             totalTopics={active.totalTopics}

@@ -29,6 +29,7 @@ interface ActiveJobStatusProps {
   readonly onSaveAll: () => void;
   readonly onReviewAndSelect: () => void;
   readonly isSaving?: boolean;
+  readonly showSectionHeader?: boolean;
 }
 
 export function ActiveJobStatus({
@@ -41,6 +42,7 @@ export function ActiveJobStatus({
   onSaveAll,
   onReviewAndSelect,
   isSaving = false,
+  showSectionHeader = true,
 }: ActiveJobStatusProps) {
   const { t } = useTranslation();
 
@@ -56,8 +58,9 @@ export function ActiveJobStatus({
   const headerBgColor = isRunning ? 'bg-warning/10' : isError ? 'bg-danger/10' : 'bg-primary/10';
 
   return (
-    <section aria-live="polite" className='mt-8'>
-      <div className="flex items-center gap-3 mb-3">
+    <section aria-live="polite" className="mt-8">
+      {showSectionHeader && (
+        <div className="flex items-start gap-3 mb-3">
         <div className={`mt-0.5 w-8 h-8 rounded-lg ${headerBgColor} flex items-center justify-center shrink-0`}>
           <FontAwesomeIcon
             className={`w-3.5 h-3.5 ${headerIconColor} ${isRunning ? 'animate-pulse' : ''}`}
@@ -66,7 +69,13 @@ export function ActiveJobStatus({
         </div>
         <div className="flex-1 min-w-0">
           <h2 className="text-xl font-bold text-foreground">{t('generate.statusSection')}</h2>
-          <p className="text-sm text-default-500 mt-0.5 truncate">{refName}</p>
+          <p className="text-sm text-default-500 mt-0.5">
+            {isRunning
+              ? t('generate.statusSectionSubtitleRunning')
+              : isError
+                ? t('generate.statusSectionSubtitleError')
+                : t('generate.statusSectionSubtitleReview')}
+          </p>
         </div>
         {isRunning && (
           <Chip
@@ -84,6 +93,7 @@ export function ActiveJobStatus({
           </Chip>
         )}
       </div>
+      )}
 
       <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4">
         {isRunning && (
@@ -136,23 +146,26 @@ export function ActiveJobStatus({
 
   function renderStatPair(questionsReady: number, topicsDone: number) {
     return (
-      <div className="flex items-stretch gap-8">
-        <div className="flex items-center gap-3 rounded-lg py-3">
-          <div className="w-7 h-7 rounded-md bg-success/15 flex items-center justify-center shrink-0">
-            <FontAwesomeIcon className="w-3.5 h-3.5 text-success" icon={faCheckCircle} />
+      <div>
+        <p className="text-md text-default-700 mt-0.5 truncate font-bold">{refName}</p>
+        <div className="flex items-stretch gap-8">
+          <div className="flex items-center gap-3 rounded-lg py-3">
+            <div className="w-7 h-7 rounded-md bg-success/15 flex items-center justify-center shrink-0">
+              <FontAwesomeIcon className="w-3.5 h-3.5 text-success" icon={faCheckCircle} />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xl font-bold text-foreground tabular-nums leading-none">{questionsReady}</span>
+              <span className="text-xs text-default-400 mt-0.5">{t('generate.historyGeneratedLabel')}</span>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-bold text-foreground tabular-nums leading-none">{questionsReady}</span>
-            <span className="text-xs text-default-400 mt-0.5">{t('generate.historyGeneratedLabel')}</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 rounded-lg py-3">
-          <div className="w-7 h-7 rounded-md bg-primary/15 flex items-center justify-center shrink-0">
-            <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={faLayerGroup} />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-bold text-foreground tabular-nums leading-none">{topicsDone}</span>
-            <span className="text-xs text-default-400 mt-0.5">{t('generate.topicsDoneLabel')}</span>
+          <div className="flex items-center gap-3 rounded-lg py-3">
+            <div className="w-7 h-7 rounded-md bg-primary/15 flex items-center justify-center shrink-0">
+              <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={faLayerGroup} />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xl font-bold text-foreground tabular-nums leading-none">{topicsDone}</span>
+              <span className="text-xs text-default-400 mt-0.5">{t('generate.topicsDoneLabel')}</span>
+            </div>
           </div>
         </div>
       </div>
