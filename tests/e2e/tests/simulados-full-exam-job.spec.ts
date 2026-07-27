@@ -214,3 +214,136 @@ test.describe('Generation Job — concurso público', () => {
     await expect(concursoOption).toHaveAttribute('aria-pressed', 'true', { timeout: 5_000 });
   });
 });
+
+// ─── Helpers para testes de reconexão SSE ────────────────────────────────────
+
+async function injectNeverDoneEventSource(page: import('@playwright/test').Page) {
+  await page.addInitScript(() => {
+    class NeverDoneEventSource extends EventTarget {
+      static CONNECTING = 0; static OPEN = 1; static CLOSED = 2;
+      readyState = 1; url: string; withCredentials = false;
+      onerror: ((e: Event) => void) | null = null;
+      onmessage: ((e: MessageEvent) => void) | null = null;
+      onopen: ((e: Event) => void) | null = null;
+      constructor(url: string) { super(); this.url = url; }
+      close() { this.readyState = 2; }
+    }
+    (window as unknown as { EventSource: typeof NeverDoneEventSource }).EventSource = NeverDoneEventSource;
+  });
+}
+
+test.describe('Generation Job — reconexão SSE após reload', () => {
+  test('restaura job running após reload e exibe botão cancelar', async ({
+    authedPage: page,
+  }) => {
+    const runningJobPayload = {
+      id: 'e2e-reload-job',
+      status: 'running',
+      type: 'certification',
+      refKey: 'reload-cert',
+      refName: E2E_CERT_LABEL,
+      examBoardName: null,
+      totalTopics: 1,
+      doneTopics: 0,
+      queuedTopics: 0,
+      savedCount: 0,
+      topics: [
+        {
+          id: 'reload-topic-1',
+          topicName: E2E_CERT_TOPIC,
+          questionCount: 5,
+          status: 'running',
+          savedCount: 0,
+          errorMessage: null,
+        },
+      ],
+    };
+
+    // GET /api/generation-job (list) returns the active job
+    await page.route('**/api/generation-job', (route) => {
+      if (route.request().method() === 'GET') {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([runningJobPayload]),
+        });
+      } else {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ jobId: 'e2e-reload-job' }),
+        });
+      }
+    });
+
+    // DELETE mock for the cancel button
+    await page.route('**/api/generation-job/**', (route) => {
+      if (route.request().method() === 'DELETE') {
+        route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) });
+      } else {
+        route.continue();
+      }
+    });
+
+    // EventSource never fires — job stays "running" visually
+    await injectNeverDoneEventSource(page);
+
+    await page.goto('/questions?type=certification');
+
+    // Cancel button must be visible (proves the job was restored as active)
+    const cancelBtn = page.getByRole('button', { name: /^Cancelar$|^Cancel$/i });
+    await expect(cancelBtn).toBeVisible({ timeout: 15_000 });
+  });
+
+  test('restaura job awaiting_review após reload e exibe UI de conclusão', async ({
+    authedPage: page,
+  }) => {
+    const awaitingJobPayload = {
+      id: 'e2e-awaiting-job',
+      status: 'awaiting_review',
+      type: 'certification',
+      refKey: 'awaiting-cert',
+      refName: E2E_CERT_LABEL,
+      examBoardName: null,
+      totalTopics: 1,
+      doneTopics: 1,
+      queuedTopics: 0,
+      savedCount: 0,
+      topics: [
+        {
+          id: 'awaiting-topic-1',
+          topicName: E2E_CERT_TOPIC,
+          questionCount: 3,
+          status: 'done',
+          savedCount: 0,
+          errorMessage: null,
+        },
+      ],
+    };
+
+    // GET /api/generation-job (list) returns awaiting_review job
+    await page.route('**/api/generation-job', (route) => {
+      if (route.request().method() === 'GET') {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([awaitingJobPayload]),
+        });
+      } else {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ jobId: 'e2e-awaiting-job' }),
+        });
+      }
+    });
+
+    // No EventSource injection needed — awaiting_review should not open a new stream
+    await page.goto('/questions?type=certification');
+
+    // Completion UI must be visible — awaiting_review shows the review card with action buttons
+    await expect(
+      page.getByText(/Aguardando revisão|Awaiting review/i).first()
+    ).toBeVisible({ timeout: 15_000 });
+  });
+});
