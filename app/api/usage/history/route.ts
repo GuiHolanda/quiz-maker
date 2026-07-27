@@ -29,13 +29,13 @@ export async function GET(request: NextRequest) {
       topicName: { not: null },
     };
 
-    const [usageLogs, fullExamJobs] = await Promise.all([
+    const [usageLogs, generationJobs] = await Promise.all([
       prisma.usageLog.findMany({
         where: usageLogWhere,
         orderBy: { createdAt: sort },
       }),
-      prisma.fullExamJob.findMany({
-        where: { userId, status: { in: ['done', 'error', 'awaiting_review'] } },
+      prisma.generationJob.findMany({
+        where: { userId, status: { in: ['done', 'error', 'awaiting_review', 'running', 'queued', 'cancelled'] } },
         orderBy: { createdAt: sort },
         include: {
           topics: {
@@ -46,11 +46,11 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
-    // Expand FullExamJob topics into individual rows — one row per topic
-    const fullExamItems: GenerationHistoryItem[] = fullExamJobs.flatMap((job) =>
+    // Expand GenerationJob topics into individual rows — one row per topic
+    const fullExamItems: GenerationHistoryItem[] = generationJobs.flatMap((job) =>
       job.topics.map((topic) => ({
         id: `${job.id}__${topic.id}`,
-        source: 'full_exam_job' as const,
+        source: 'generation_job' as const,
         type: 'full_exam' as const,
         domain: (job.type === 'public_exam' ? 'public_exam' : 'certification') as 'certification' | 'public_exam',
         refName: job.refName,
@@ -59,10 +59,18 @@ export async function GET(request: NextRequest) {
         questionsSaved: topic.savedCount,
         status:
           topic.status === 'done'
-            ? ('done' as const)
-            : topic.status === 'error'
-              ? ('error' as const)
-              : ('awaiting_review' as const),
+            ? job.status === 'cancelled'
+              ? ('cancelled' as const)
+              : ('done' as const)
+            : topic.status === 'cancelled'
+              ? ('cancelled' as const)
+              : topic.status === 'error'
+                ? ('error' as const)
+                : topic.status === 'queued'
+                  ? ('queued' as const)
+                  : job.status === 'awaiting_review'
+                    ? ('awaiting_review' as const)
+                    : ('running' as const),
         createdAt: job.createdAt.toISOString(),
       }))
     );
