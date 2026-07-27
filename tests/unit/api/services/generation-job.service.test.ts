@@ -1,13 +1,22 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { prismaMock } from '../__mocks__/prisma';
 
-const { openAICallMock } = vi.hoisted(() => ({
-  openAICallMock: vi.fn().mockResolvedValue({
-    text: '{"questions":[{"id":1,"text":"Q1","options":{"A":"opt"}}]}',
-    inputTokens: 10,
-    outputTokens: 20,
-  }),
-}));
+const { openAICallMock, quotaConstructorMock } = vi.hoisted(() => {
+  const defaultInstance = {
+    checkAndRecordQuestions: vi.fn().mockResolvedValue({ logId: 'log-1' }),
+    recordTokens: vi.fn().mockResolvedValue(undefined),
+  };
+  return {
+    openAICallMock: vi.fn().mockResolvedValue({
+      text: '{"questions":[{"id":1,"text":"Q1","options":{"A":"opt"}}]}',
+      inputTokens: 10,
+      outputTokens: 20,
+    }),
+    quotaConstructorMock: vi.fn().mockImplementation(function () {
+      return defaultInstance;
+    }),
+  };
+});
 
 vi.mock('@/features/services/openAI.service', () => ({
   OpenAIService: class {
@@ -22,10 +31,7 @@ vi.mock('@/features/services/question.service', () => ({
 }));
 
 vi.mock('@/features/services/quota.service', () => ({
-  QuotaService: class {
-    checkAndRecordQuestions = vi.fn().mockResolvedValue({ logId: 'log-1' });
-    recordTokens = vi.fn().mockResolvedValue(undefined);
-  },
+  QuotaService: quotaConstructorMock,
 }));
 
 // after() executa o callback de forma síncrona nos testes para não vazar promises.
@@ -135,6 +141,18 @@ describe('claimSlots — respeita tetos global e por usuário', () => {
 
     expect(prismaMock.generationJobTopic.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 2 }));
   });
+
+  it('retorna [] quando findMany não encontra candidatos queued', async () => {
+    prismaMock.generationJobTopic.count
+      .mockResolvedValueOnce(0) // globalRunning
+      .mockResolvedValueOnce(0); // userRunning
+    prismaMock.generationJobTopic.findMany.mockResolvedValue([]);
+
+    const promoted = await claimSlots('user-1');
+
+    expect(promoted).toEqual([]);
+    expect(prismaMock.generationJobTopic.updateMany).not.toHaveBeenCalled();
+  });
 });
 
 describe('processTopic — pipeline e finalização', () => {
@@ -185,6 +203,60 @@ describe('processTopic — pipeline e finalização', () => {
         data: expect.objectContaining({ status: 'error', errorMessage: expect.stringContaining('bad json') }),
       }),
     );
+  });
+
+  it('marca tópico como error quando quota está excedida (checkAndRecordQuestions lança)', async () => {
+    quotaConstructorMock.mockImplementationOnce(function () {
+      return {
+        checkAndRecordQuestions: vi.fn().mockRejectedValue(
+          Object.assign(new Error('Quota exceeded'), { status: 402 })
+        ),
+        recordTokens: vi.fn(),
+      };
+    });
+
+    await processTopic('topic-1');
+
+    expect(prismaMock.generationJobTopic.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'topic-1' },
+        data: expect.objectContaining({ status: 'error', errorMessage: 'Quota exceeded' }),
+      }),
+    );
+  });
+
+  it('retorna silenciosamente quando findUnique retorna null (job deletado durante processamento)', async () => {
+    prismaMock.generationJobTopic.findUnique.mockResolvedValueOnce(null);
+
+    await expect(processTopic('topic-inexistente')).resolves.toBeUndefined();
+    expect(prismaMock.generationJobTopic.update).not.toHaveBeenCalled();
+  });
+
+  it('não chama generationJob.update quando ainda há tópicos pendentes', async () => {
+    prismaMock.generationJobTopic.count.mockResolvedValue(2);
+
+    await processTopic('topic-1');
+
+    expect(prismaMock.generationJob.update).not.toHaveBeenCalled();
+  });
+
+  it('chama recordTokens com a soma correta de tokens das 3 etapas', async () => {
+    const recordTokensMock = vi.fn().mockResolvedValue(undefined);
+    quotaConstructorMock.mockImplementationOnce(function () {
+      return {
+        checkAndRecordQuestions: vi.fn().mockResolvedValue({ logId: 'log-tokens' }),
+        recordTokens: recordTokensMock,
+      };
+    });
+
+    // The module-level mock returns inputTokens:10, outputTokens:20 per call
+    // 3 pipeline steps × 10 = 30 input, 3 × 20 = 60 output
+    await processTopic('topic-1');
+
+    expect(recordTokensMock).toHaveBeenCalledWith('log-tokens', {
+      inputTokens: 30,
+      outputTokens: 60,
+    });
   });
 });
 
