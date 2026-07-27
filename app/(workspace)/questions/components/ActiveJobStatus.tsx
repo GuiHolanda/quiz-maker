@@ -11,20 +11,24 @@ import {
   faBolt,
   faCheckCircle,
   faLayerGroup,
+  faGraduationCap,
+  faClipboardList,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
-import type { FullExamJobTopicStatus } from '@/shared/types';
+import type { GenerationJobTopicStatus } from '@/shared/types';
 import { InlineAlert } from '@/shared/components/ui/InlineAlert';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface ActiveJobStatusProps {
   readonly refName: string;
-  readonly status: 'running' | 'awaiting_review' | 'done' | 'error';
+  readonly type: 'certification' | 'public_exam';
+  readonly status: 'queued' | 'running' | 'awaiting_review' | 'done' | 'error';
   readonly doneTopics: number;
   readonly totalTopics: number;
-  readonly topics: FullExamJobTopicStatus[];
+  readonly queuedTopics: number;
+  readonly topics: GenerationJobTopicStatus[];
   readonly onCancel: () => void;
   readonly onSaveAll: () => void;
   readonly onReviewAndSelect: () => void;
@@ -34,9 +38,11 @@ interface ActiveJobStatusProps {
 
 export function ActiveJobStatus({
   refName,
+  type,
   status,
   doneTopics,
   totalTopics,
+  queuedTopics,
   topics,
   onCancel,
   onSaveAll,
@@ -52,8 +58,12 @@ export function ActiveJobStatus({
   const totalQuestionsReady = doneTopicsList.reduce((acc, topic) => acc + topic.questionCount, 0);
   const progressValue = totalTopics > 0 ? (doneTopics / totalTopics) * 100 : 0;
 
-  const isRunning = status === 'running';
+  // "queued" e "running" compartilham a UI de progresso — a distinção fica nos pills dos tópicos.
+  const isRunning = status === 'running' || status === 'queued';
   const isError = status === 'error';
+  // Timeout: erro sem nenhum dado parcial (todos os tópicos ficaram em queued/running).
+  const isTimeout =
+    isError && topics.length > 0 && topics.every((topic) => topic.status === 'queued' || topic.status === 'running');
   const headerIconColor = isRunning ? 'text-warning' : isError ? 'text-danger' : 'text-primary';
   const headerBgColor = isRunning ? 'bg-warning/10' : isError ? 'bg-danger/10' : 'bg-primary/10';
 
@@ -61,41 +71,18 @@ export function ActiveJobStatus({
     <section aria-live="polite" className="mt-8">
       {showSectionHeader && (
         <div className="flex items-start gap-3 mb-3">
-        <div className={`mt-0.5 w-8 h-8 rounded-lg ${headerBgColor} flex items-center justify-center shrink-0`}>
-          <FontAwesomeIcon
-            className={`w-3.5 h-3.5 ${headerIconColor} ${isRunning ? 'animate-pulse' : ''}`}
-            icon={faBolt}
-          />
+          <div className={`mt-0.5 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0`}>
+            <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={faBolt} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-bold text-foreground">{t('generate.statusSection')}</h2>
+            <p className="text-sm text-default-500 mt-0.5">{t('generate.statusSectionSubtitleRunning')}</p>
+          </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <h2 className="text-xl font-bold text-foreground">{t('generate.statusSection')}</h2>
-          <p className="text-sm text-default-500 mt-0.5">
-            {isRunning
-              ? t('generate.statusSectionSubtitleRunning')
-              : isError
-                ? t('generate.statusSectionSubtitleError')
-                : t('generate.statusSectionSubtitleReview')}
-          </p>
-        </div>
-        {isRunning && (
-          <Chip
-            color="warning"
-            size="sm"
-            startContent={<Spinner classNames={{ wrapper: 'w-3 h-3' }} color="current" size="sm" />}
-            variant="flat"
-          >
-            {t('busy.generating')}
-          </Chip>
-        )}
-        {status === 'awaiting_review' && (
-          <Chip color="primary" size="sm" variant="flat">
-            {t('generate.awaitingReview')}
-          </Chip>
-        )}
-      </div>
       )}
 
       <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4">
+        {renderCardHeader()}
         {isRunning && (
           <>
             <Progress
@@ -107,6 +94,9 @@ export function ActiveJobStatus({
               size="sm"
               value={progressValue}
             />
+            {queuedTopics > 0 && (
+              <p className="text-xs text-warning">{t('generate.queuedHint', { count: queuedTopics })}</p>
+            )}
             {renderTopicList()}
             <Button className={`${buttonStyles.dangerFlat} self-start`} size="sm" onPress={onCancel}>
               {t('common.cancel')}
@@ -132,22 +122,68 @@ export function ActiveJobStatus({
           </>
         )}
 
-        {isError && (
-          <InlineAlert
-            color="danger"
-            endContent={topics.length > 0 ? renderTopicList() : undefined}
-            icon={faCircleXmark}
-            title={t('generate.statusError')}
-          />
-        )}
+        {isError &&
+          (isTimeout ? (
+            <InlineAlert
+              color="warning"
+              description={t('generate.timeoutDescription')}
+              endContent={
+                <Button className={buttonStyles.secondary} size="sm" variant="bordered" onPress={onCancel}>
+                  {t('generate.retry')}
+                </Button>
+              }
+              icon={faCircleXmark}
+              title={t('generate.timeoutTitle')}
+            />
+          ) : (
+            <InlineAlert
+              color="danger"
+              endContent={topics.length > 0 ? renderTopicList() : undefined}
+              icon={faCircleXmark}
+              title={t('generate.statusError')}
+            />
+          ))}
       </div>
     </section>
   );
 
+  function renderCardHeader() {
+    const chip = isRunning ? (
+      <Chip
+        color="warning"
+        size="sm"
+        startContent={<Spinner classNames={{ wrapper: 'w-3 h-3' }} color="current" size="sm" />}
+        variant="flat"
+      >
+        <span className="ml-2">{status === 'queued' ? t('generate.statusQueued') : t('busy.generating')}</span>
+      </Chip>
+    ) : status === 'awaiting_review' ? (
+      <Chip color="primary" size="sm" variant="flat">
+        {t('generate.awaitingReview')}
+      </Chip>
+    ) : isError ? (
+      <Chip color="danger" size="sm" variant="flat">
+        {t('generate.statusError')}
+      </Chip>
+    ) : null;
+
+    return (
+      <div className="flex items-center gap-3 pb-4 border-b border-default-200">
+        <div className={`w-8 h-8 rounded-lg ${headerBgColor} flex items-center justify-center shrink-0`}>
+          <FontAwesomeIcon
+            className={`w-3.5 h-3.5 ${headerIconColor}`}
+            icon={type === 'certification' ? faGraduationCap : faClipboardList}
+          />
+        </div>
+        <p className="flex-1 min-w-0 text-md font-bold text-foreground truncate">{refName}</p>
+        {chip}
+      </div>
+    );
+  }
+
   function renderStatPair(questionsReady: number, topicsDone: number) {
     return (
       <div>
-        <p className="text-md text-default-700 mt-0.5 truncate font-bold">{refName}</p>
         <div className="flex items-stretch gap-8">
           <div className="flex items-center gap-3 rounded-lg py-3">
             <div className="w-7 h-7 rounded-md bg-success/15 flex items-center justify-center shrink-0">

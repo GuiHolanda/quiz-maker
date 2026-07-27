@@ -1,69 +1,113 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Chip } from '@heroui/chip';
+import { Button } from '@heroui/button';
+import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faGraduationCap, faClipboardList } from '@fortawesome/free-solid-svg-icons';
+import { faGraduationCap, faClipboardList, faCircleCheck } from '@fortawesome/free-solid-svg-icons';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 
 import { CertQuestionsContent } from './CertQuestionsContent';
 import { PublicExamQuestionsContent } from './PublicExamQuestionsContent';
 import { GenerationHistory } from './GenerationHistory';
 import { ActiveJobStatus } from './ActiveJobStatus';
+import { GeneratedQuestionsList } from './GeneratedQuestionsList';
 
+import useQuizContext from '@/features/hooks/useQuizContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
+import { useGenerationJobsContext } from '@/features/hooks/useGenerationJobsContext.hook';
+import type { TrackedJob } from '@/features/providers/generationJobs.provider';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
-import type { FullExamJobTopicStatus } from '@/shared/types';
+import { InlineAlert } from '@/shared/components/ui/InlineAlert';
+import { buttonStyles } from '@/config/constants/buttonStyles';
+import { notify } from '@/shared/lib/notify';
+import type { AIQuestion, AIPublicExamQuestion } from '@/shared/types';
 
 type QuestionsType = 'certification' | 'public_exam';
-
-export interface JobState {
-  jobId: string | null;
-  refName: string;
-  status: 'running' | 'awaiting_review' | 'done' | 'error' | null;
-  doneTopics: number;
-  totalTopics: number;
-  topics: FullExamJobTopicStatus[];
-  isSaving: boolean;
-  onCancel: () => void;
-  onSaveAll: () => void;
-  onReviewAndSelect: () => void;
-}
-
-const defaultJobState: JobState = {
-  jobId: null,
-  refName: '',
-  status: null,
-  doneTopics: 0,
-  totalTopics: 0,
-  topics: [],
-  isSaving: false,
-  onCancel: () => {},
-  onSaveAll: () => {},
-  onReviewAndSelect: () => {},
-};
 
 export function QuestionsPageContent() {
   const { t } = useTranslation();
   const { usage } = useUsageContext();
+  const { state, setAIquestions, setSelectedAIquestions } = useQuizContext();
+  const { jobs, cancelJob, saveAllJob, getJobPendingQuestions } = useGenerationJobsContext();
   const searchParams = useSearchParams();
 
   const initialType = (searchParams.get('type') as QuestionsType) ?? 'certification';
   const [selectedType, setSelectedType] = useState<QuestionsType>(initialType);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
-  const [certJobState, setCertJobState] = useState<JobState>(defaultJobState);
-  const [examJobState, setExamJobState] = useState<JobState>(defaultJobState);
+  const [showSimuladosBanner, setShowSimuladosBanner] = useState(false);
+  const [reviewJob, setReviewJob] = useState<TrackedJob | null>(null);
+  // As seções de jobs ativos e de revisão dependem de estado client-only (jobs buscados
+  // via useEffect, quiz state do localStorage). Só renderizamos após montar para evitar
+  // mismatch de hidratação com o SSR (onde esse estado ainda não existe).
+  const [mounted, setMounted] = useState(false);
+  const prevActiveCount = useRef(jobs.length);
+  const reviewSectionRef = useRef<HTMLElement>(null);
+  const statusSectionRef = useRef<HTMLDivElement>(null);
 
+  function scrollToRef(ref: React.RefObject<HTMLElement | null>) {
+    // Aguarda a seção renderizar antes de rolar até ela.
+    requestAnimationFrame(() => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Reage à mudança na lista de jobs: se cresceu, um job iniciou → rola até o status.
+  // Se diminuiu, um job saiu (salvo/concluído) → atualiza histórico + banner.
+  useEffect(() => {
+    if (jobs.length > prevActiveCount.current) {
+      scrollToRef(statusSectionRef);
+    } else if (jobs.length < prevActiveCount.current) {
+      setHistoryRefreshKey((k) => k + 1);
+      setShowSimuladosBanner(true);
+    }
+    prevActiveCount.current = jobs.length;
+  }, [jobs.length]);
+
+  const aiQuestions = state?.aiQuestions ?? [];
+  const selectedIds = state?.selectedAIQuestions ?? [];
   const hasConcursoAccess = !usage || usage.publicExamsLimit !== 0;
-  const handleSaved = () => setHistoryRefreshKey((k) => k + 1);
+
+  // Carrega as questões pendentes na lista de revisão, sem salvar ainda.
+  async function handleReviewAndSelect(jobId: string) {
+    const job = jobs.find((j) => j.jobId === jobId) ?? null;
+    try {
+      const pending = await getJobPendingQuestions(jobId);
+      setAIquestions(pending as AIQuestion[], null);
+      setReviewJob(job);
+      scrollToRef(reviewSectionRef);
+    } catch {
+      notify.error(t('toast.error'), t('toast.somethingWrong'));
+    }
+  }
+
+  // Salvar a partir da revisão persiste o job inteiro (o backend salva todos os tópicos prontos).
+  async function handleReviewSave() {
+    if (reviewJob) await saveAllJob(reviewJob.jobId);
+    setReviewJob(null);
+    setAIquestions([], null);
+    setSelectedAIquestions([]);
+  }
+
+  // Descartar cancela o job em revisão (e seus tópicos aguardando revisão) e limpa a lista.
+  const handleReviewDiscard = async () => {
+    if (reviewJob) await cancelJob(reviewJob.jobId);
+    setReviewJob(null);
+    setSelectedAIquestions([]);
+    setAIquestions([], null);
+  };
 
   return (
     <PageHeader subtitle={t('generate.pageSubtitle')} title={t('generate.pageTitle')}>
       <div className="flex flex-col gap-6">
+        {renderSimuladosBanner()}
         <div>
           <p className="text-sm font-semibold text-foreground mb-3">{t('generate.chooseType')}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" role="group" aria-label={t('generate.chooseType')}>
@@ -83,12 +127,14 @@ export function QuestionsPageContent() {
         </div>
 
         <div className={selectedType === 'certification' ? '' : 'hidden'}>
-          <CertQuestionsContent onJobStateChange={setCertJobState} onSaved={handleSaved} />
+          <CertQuestionsContent />
         </div>
         <div className={selectedType === 'public_exam' ? '' : 'hidden'}>
-          <PublicExamQuestionsContent onJobStateChange={setExamJobState} onSaved={handleSaved} />
+          <PublicExamQuestionsContent />
         </div>
-        {renderActiveJobStatus()}
+
+        {renderReviewList()}
+        <div ref={statusSectionRef}>{renderActiveJobs()}</div>
         <GenerationHistory refreshKey={historyRefreshKey} />
       </div>
 
@@ -96,27 +142,92 @@ export function QuestionsPageContent() {
     </PageHeader>
   );
 
-  function renderActiveJobStatus() {
-    const activeJobs = [certJobState, examJobState].filter((s) => s.jobId && s.status && s.status !== 'done');
-    if (activeJobs.length === 0) return null;
+  function renderSimuladosBanner() {
+    if (!showSimuladosBanner) return null;
+    return (
+      <InlineAlert
+        color="success"
+        icon={faCircleCheck}
+        title={t('generate.questionsReadyHint')}
+        endContent={
+          <Button as={Link} className={buttonStyles.secondary} href="/simulados" size="sm" variant="bordered">
+            {t('generate.goToSimulados')}
+          </Button>
+        }
+        onDismiss={() => setShowSimuladosBanner(false)}
+      />
+    );
+  }
+
+  function renderActiveJobs() {
+    if (!mounted) return null;
+    // Oculta o painel do job em revisão — a lista de revisão o substitui.
+    const visibleJobs = jobs.filter((job) => job.jobId !== reviewJob?.jobId);
+    if (visibleJobs.length === 0) return null;
     return (
       <>
-        {activeJobs.map((active, index) => (
+        {visibleJobs.map((job, index) => (
           <ActiveJobStatus
-            key={active.jobId!}
-            doneTopics={active.doneTopics}
-            isSaving={active.isSaving}
-            refName={active.refName}
+            key={job.jobId}
+            doneTopics={job.doneTopics}
+            isSaving={job.isSaving}
+            queuedTopics={job.queuedTopics}
+            refName={job.refName}
             showSectionHeader={index === 0}
-            status={active.status!}
-            topics={active.topics}
-            totalTopics={active.totalTopics}
-            onCancel={active.onCancel}
-            onReviewAndSelect={active.onReviewAndSelect}
-            onSaveAll={active.onSaveAll}
+            status={job.status}
+            topics={job.topics}
+            totalTopics={job.totalTopics}
+            type={job.type}
+            onCancel={() => cancelJob(job.jobId)}
+            onReviewAndSelect={() => handleReviewAndSelect(job.jobId)}
+            onSaveAll={() => saveAllJob(job.jobId)}
           />
         ))}
       </>
+    );
+  }
+
+  function renderReviewList() {
+    if (!mounted || aiQuestions.length === 0) return null;
+    return (
+      <section ref={reviewSectionRef} className="flex flex-col gap-4 mt-8 pt-8 border-t border-default-200">
+        {renderReviewHeader()}
+        <GeneratedQuestionsList
+          isLoadingMore={false}
+          isSaving={false}
+          questions={aiQuestions}
+          remainingCount={0}
+          selectedIds={selectedIds}
+          setSelectedIds={setSelectedAIquestions}
+          onDiscard={handleReviewDiscard}
+          onSave={handleReviewSave}
+        />
+      </section>
+    );
+  }
+
+  function renderReviewHeader() {
+    // O reviewJob (snapshot em memória) pode se perder num reload, mas as questões persistem
+    // no localStorage com o nome/tipo embutidos — então derivamos deles como fonte confiável.
+    const first = aiQuestions[0] as (AIQuestion & AIPublicExamQuestion) | undefined;
+    const isPublicExam = reviewJob?.type === 'public_exam' || Boolean(first?.publicExamName);
+    const refName = reviewJob?.refName ?? first?.publicExamName ?? first?.certificationTitle ?? '';
+    const icon = isPublicExam ? faClipboardList : faGraduationCap;
+
+    return (
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+          <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={icon} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-xl font-bold text-foreground">{t('generate.reviewSectionTitle')}</h2>
+          {refName && <p className="text-sm font-semibold text-primary mt-0.5 truncate">{refName}</p>}
+          <p className="text-sm text-default-500 mt-0.5">{t('generate.reviewSectionSubtitle')}</p>
+        </div>
+        <Chip color="primary" size="sm" variant="flat">
+          {t('generate.reviewCount', { count: aiQuestions.length })}
+        </Chip>
+      </div>
     );
   }
 

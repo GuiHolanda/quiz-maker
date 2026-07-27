@@ -51,6 +51,8 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
     topics: [],
   });
 
+  const hasRunning = data?.items.some((item) => item.status === 'running' || item.status === 'queued') ?? false;
+
   useEffect(() => {
     getGenerationHistoryFilters()
       .then(setFilterOptions)
@@ -64,6 +66,16 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
       .catch(() => setData(null))
       .finally(() => setIsLoading(false));
   }, [page, filters, refreshKey]);
+
+  useEffect(() => {
+    if (!hasRunning) return;
+    const id = setInterval(() => {
+      getGenerationHistory(page, LIMIT, filters)
+        .then(setData)
+        .catch(() => {});
+    }, 3000);
+    return () => clearInterval(id);
+  }, [hasRunning, page, filters]);
 
   function handleFilterChange<K extends keyof GenerationHistoryFilters>(key: K, value: GenerationHistoryFilters[K]) {
     setPage(1);
@@ -242,7 +254,8 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
 function statusColor(status: GenerationHistoryItem['status']): 'success' | 'warning' | 'danger' | 'default' {
   if (status === 'done') return 'success';
   if (status === 'awaiting_review') return 'warning';
-  if (status === 'error' || status === 'cancelled') return 'danger';
+  if (status === 'error') return 'danger';
+  if (status === 'cancelled') return 'default';
   return 'default';
 }
 
@@ -251,5 +264,6 @@ function statusLabel(status: GenerationHistoryItem['status'], t: (key: string) =
   if (status === 'awaiting_review') return t('generate.statusAwaitingReview');
   if (status === 'cancelled') return t('generate.statusCancelled');
   if (status === 'running') return t('generate.statusRunning');
+  if (status === 'queued') return t('generate.statusQueued');
   return t('generate.statusError');
 }

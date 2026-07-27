@@ -11,12 +11,7 @@ import { buttonStyles } from '@/config/constants/buttonStyles';
 import type { GenerationHistoryFilters, GenerationHistoryFilterOptions } from '@/shared/types';
 
 export function hasActiveHistoryFilters(filters: GenerationHistoryFilters): boolean {
-  return (
-    filters.domain !== 'all' ||
-    filters.source.length > 0 ||
-    filters.topic.length > 0 ||
-    filters.status.length > 0
-  );
+  return filters.domain !== 'all' || filters.source.length > 0 || filters.topic.length > 0 || filters.status.length > 0;
 }
 
 interface GenerationHistoryFiltersBarProps {
@@ -24,7 +19,7 @@ interface GenerationHistoryFiltersBarProps {
   readonly filterOptions: GenerationHistoryFilterOptions;
   readonly onFilterChange: <K extends keyof GenerationHistoryFilters>(
     key: K,
-    value: GenerationHistoryFilters[K],
+    value: GenerationHistoryFilters[K]
   ) => void;
   readonly onClear: () => void;
 }
