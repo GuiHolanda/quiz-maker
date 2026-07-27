@@ -87,6 +87,21 @@ async function setupGenerationJobMocks(
   });
 }
 
+async function injectNeverDoneEventSource(page: import('@playwright/test').Page) {
+  await page.addInitScript(() => {
+    class NeverDoneEventSource extends EventTarget {
+      static CONNECTING = 0; static OPEN = 1; static CLOSED = 2;
+      readyState = 1; url: string; withCredentials = false;
+      onerror: ((e: Event) => void) | null = null;
+      onmessage: ((e: MessageEvent) => void) | null = null;
+      onopen: ((e: Event) => void) | null = null;
+      constructor(url: string) { super(); this.url = url; }
+      close() { this.readyState = 2; }
+    }
+    (window as unknown as { EventSource: typeof NeverDoneEventSource }).EventSource = NeverDoneEventSource;
+  });
+}
+
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 test.describe('Generation Job — certification', () => {
@@ -125,18 +140,7 @@ test.describe('Generation Job — certification', () => {
     authedPage: page,
   }) => {
     // Stream that never fires done — verifies cancel works regardless
-    await page.addInitScript(() => {
-      class NeverDoneEventSource extends EventTarget {
-        static CONNECTING = 0; static OPEN = 1; static CLOSED = 2;
-        readyState = 1; url: string; withCredentials = false;
-        onerror: ((e: Event) => void) | null = null;
-        onmessage: ((e: MessageEvent) => void) | null = null;
-        onopen: ((e: Event) => void) | null = null;
-        constructor(url: string) { super(); this.url = url; }
-        close() { this.readyState = 2; }
-      }
-      (window as unknown as { EventSource: typeof NeverDoneEventSource }).EventSource = NeverDoneEventSource;
-    });
+    await injectNeverDoneEventSource(page);
 
     let deleteCalled = false;
     await page.route('**/api/generation-job', (route) => {
@@ -214,23 +218,6 @@ test.describe('Generation Job — concurso público', () => {
     await expect(concursoOption).toHaveAttribute('aria-pressed', 'true', { timeout: 5_000 });
   });
 });
-
-// ─── Helpers para testes de reconexão SSE ────────────────────────────────────
-
-async function injectNeverDoneEventSource(page: import('@playwright/test').Page) {
-  await page.addInitScript(() => {
-    class NeverDoneEventSource extends EventTarget {
-      static CONNECTING = 0; static OPEN = 1; static CLOSED = 2;
-      readyState = 1; url: string; withCredentials = false;
-      onerror: ((e: Event) => void) | null = null;
-      onmessage: ((e: MessageEvent) => void) | null = null;
-      onopen: ((e: Event) => void) | null = null;
-      constructor(url: string) { super(); this.url = url; }
-      close() { this.readyState = 2; }
-    }
-    (window as unknown as { EventSource: typeof NeverDoneEventSource }).EventSource = NeverDoneEventSource;
-  });
-}
 
 test.describe('Generation Job — reconexão SSE após reload', () => {
   test('restaura job running após reload e exibe botão cancelar', async ({

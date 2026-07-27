@@ -37,7 +37,7 @@ vi.mock('@/features/services/quota.service', () => ({
 // after() executa o callback de forma síncrona nos testes para não vazar promises.
 vi.mock('next/server', () => ({
   after: (fn: () => void) => {
-    // Não encadeia recursivamente — só registra que foi chamado.
+    // Descarta a função para evitar encadeamento recursivo de processTopic nos testes.
     void fn;
   },
 }));
