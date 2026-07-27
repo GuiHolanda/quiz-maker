@@ -89,14 +89,8 @@ test('public exam full flow: configure → questions → simulado → answer →
   });
   await page.getByRole('option', { name: new RegExp(E2E_PUBLIC_EXAM_NAME, 'i') }).click();
 
-  // Select subject
-  const subjectSelect = page.getByRole('button', { name: /Selecione uma Mat[eé]ria|Select.*Subject/i }).first();
-  await subjectSelect.click();
-  await expect(page.getByRole('option', { name: new RegExp(E2E_SUBJECT, 'i') })).toBeVisible({ timeout: 5_000 });
-  await page.getByRole('option', { name: new RegExp(E2E_SUBJECT, 'i') }).click();
-
-  // Set question count
-  await page.getByLabel(/N[uú]mero de Quest[oõ]es|Number of Questions/i).fill('3');
+  // Distribution table shows the subject pre-filled
+  await expect(page.getByText(new RegExp(E2E_SUBJECT, 'i')).first()).toBeVisible({ timeout: 8_000 });
 
   // Generate — creates a job, SSE fires awaiting_review via fake EventSource
   await page.getByRole('button', { name: /^Gerar$|^Generate$/i }).click();

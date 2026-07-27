@@ -212,7 +212,7 @@ export const mockMockExamResult = {
 
 // ─── Full Exam Job SSE helpers ────────────────────────────────────────────────
 
-function buildTopicEntry(topicName: string, status: 'pending' | 'running' | 'done' | 'error', savedCount = 0) {
+function buildTopicEntry(topicName: string, status: 'queued' | 'running' | 'done' | 'error', savedCount = 0) {
   return {
     id: 'e2e-topic-1',
     topicName,
@@ -223,12 +223,12 @@ function buildTopicEntry(topicName: string, status: 'pending' | 'running' | 'don
   };
 }
 
-export function buildFullExamJobProgressEvent(opts: {
+export function buildGenerationJobProgressEvent(opts: {
   doneTopics: number;
   totalTopics: number;
   savedCount: number;
   topicName: string;
-  topicStatus: 'pending' | 'running' | 'done' | 'error';
+  topicStatus: 'queued' | 'running' | 'done' | 'error';
 }): string {
   const data = {
     doneTopics: opts.doneTopics,
@@ -239,7 +239,7 @@ export function buildFullExamJobProgressEvent(opts: {
   return `event: progress\ndata: ${JSON.stringify(data)}\n\n`;
 }
 
-export function buildFullExamJobDoneEvent(opts: {
+export function buildGenerationJobDoneEvent(opts: {
   doneTopics: number;
   totalTopics: number;
   savedCount: number;

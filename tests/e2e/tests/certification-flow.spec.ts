@@ -75,18 +75,13 @@ test('full certification journey: configure → questions → simulado → answe
 
   await page.goto('/questions?type=certification');
 
-  // Select the certification
+  // Select the certification — distribution table appears automatically
   await page.getByRole('button', { name: /Selecione uma Certificação|Select a Certification/i }).click();
   await expect(page.getByRole('option', { name: E2E_CERT_LABEL })).toBeVisible({ timeout: 8_000 });
   await page.getByRole('option', { name: E2E_CERT_LABEL }).click();
 
-  // Select the topic
-  await page.getByRole('button', { name: /Selecione um Tópico|Select a Topic/i }).click();
-  await expect(page.getByRole('option', { name: E2E_CERT_TOPIC })).toBeVisible({ timeout: 5_000 });
-  await page.getByRole('option', { name: E2E_CERT_TOPIC }).click();
-
-  // Set question count
-  await page.getByLabel(/Número de Questões|Number of Questions/i).fill('3');
+  // Distribution table shows the topic pre-filled
+  await expect(page.getByText(E2E_CERT_TOPIC)).toBeVisible({ timeout: 8_000 });
 
   // Generate — creates a job, SSE fires awaiting_review via fake EventSource
   await page.getByRole('button', { name: /^Gerar$|^Generate$/i }).click();

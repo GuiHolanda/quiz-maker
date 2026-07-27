@@ -103,8 +103,8 @@ export const test = base.extend<AuthFixtures>({
       }
     });
 
-    // ── Full exam job save mock ────────────────────────────────────────────
-    await page.route('**/api/full-exam-job/*/save', (route) => {
+    // ── Generation job save mock ──────────────────────────────────────────
+    await page.route('**/api/generation-job/*/save', (route) => {
       if (route.request().method() === 'POST') {
         route.fulfill({
           status: 200,

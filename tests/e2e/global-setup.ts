@@ -48,8 +48,8 @@ async function cleanupUserData(userId: string) {
   await prisma.publicExamSubject.deleteMany({ where: { publicExam: { userId } } });
   await prisma.publicExam.deleteMany({ where: { userId } });
 
-  await prisma.fullExamJobTopic.deleteMany({ where: { job: { userId } } });
-  await prisma.fullExamJob.deleteMany({ where: { userId } });
+  await prisma.generationJobTopic.deleteMany({ where: { job: { userId } } });
+  await prisma.generationJob.deleteMany({ where: { userId } });
 }
 
 async function globalSetup(config: FullConfig) {

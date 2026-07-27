@@ -68,15 +68,6 @@ test('question bank: generate questions → verify in bank → filter → search
 }, testInfo) => {
   testInfo.setTimeout(90_000);
 
-  // Override the generator mock with BANK-specific texts
-  await page.route('**/api/certification/question-generator**', (route) => {
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(bankMockQuestions),
-    });
-  });
-
   // ── Step 1: Ensure certification exists ──────────────────────────────────
 
   await page.goto('/certifications/configure');
@@ -106,28 +97,14 @@ test('question bank: generate questions → verify in bank → filter → search
     await expect(certListTab).toHaveAttribute('aria-selected', 'true', { timeout: 10_000 });
   }
 
-  // ── Step 2: Generate and save 3 BANK questions ───────────────────────────
+  // ── Step 2: Seed 3 BANK questions directly via the save API ──────────────
+  // Generation is now fully server-side (OpenAI runs in after(), not interceptable),
+  // so we seed the questions directly — the bank UI is what this spec exercises.
 
-  await page.goto('/questions?type=certification');
-
-  await page.getByRole('button', { name: /Selecione uma Certificação|Select a Certification/i }).click();
-  await expect(page.getByRole('option', { name: E2E_CERT_LABEL })).toBeVisible({ timeout: 8_000 });
-  await page.getByRole('option', { name: E2E_CERT_LABEL }).click();
-
-  await page.getByRole('button', { name: /Selecione um Tópico|Select a Topic/i }).click();
-  await expect(page.getByRole('option', { name: E2E_CERT_TOPIC })).toBeVisible({ timeout: 5_000 });
-  await page.getByRole('option', { name: E2E_CERT_TOPIC }).click();
-
-  await page.getByLabel(/Número de Questões|Number of Questions/i).fill('3');
-  await page.getByRole('button', { name: /^Gerar$|^Generate$/i }).click();
-
-  // Verify BANK-specific texts appear (not the cert-flow texts)
-  await expect(page.getByText('BANK_Q1').first()).toBeVisible({ timeout: 15_000 });
-
-  await page.getByRole('checkbox', { name: /Selecionar tudo|Select all/i }).click({ force: true });
-  await page.getByRole('button', { name: /Salvar Questões Selecionadas|Save Selected questions/i }).click();
-
-  await expect(page.getByText(/Questões salvas|Questions saved/i)).toBeVisible({ timeout: 15_000 });
+  const saveResponse = await page.request.post('/api/certification/save-questions', {
+    data: bankMockQuestions,
+  });
+  expect(saveResponse.ok()).toBeTruthy();
 
   // ── Step 3: Verify in Question Bank ──────────────────────────────────────
 
