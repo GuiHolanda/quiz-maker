@@ -41,7 +41,7 @@ vi.mock('@/config/constants', () => ({
   GENERATION_MAX_TOPICS_PER_USER: 5,
 }));
 
-import { claimSlots, processTopic, claimGlobalSlotsAndDispatch } from '@/features/services/generation-job.service';
+import { claimSlots, processTopic, claimGlobalSlotsAndDispatch, extractJson, sanitizeError } from '@/features/services/generation-job.service';
 
 const makeTopic = (overrides = {}) => ({
   id: 'topic-1',
@@ -317,5 +317,56 @@ describe('claimGlobalSlots — cross-user slot management (via claimGlobalSlotsA
     await claimGlobalSlotsAndDispatch();
 
     expect(prismaMock.generationJobTopic.updateMany).not.toHaveBeenCalled();
+  });
+});
+
+describe('extractJson — parse defensivo da resposta da LLM', () => {
+  it('extrai o conteúdo de um fenced code block ```json```', () => {
+    const raw = 'Some preamble\n```json\n{"questions":[]}\n```\nSome postamble';
+    expect(extractJson(raw)).toBe('{"questions":[]}');
+  });
+
+  it('extrai o conteúdo de um fenced code block sem linguagem', () => {
+    const raw = '```\n{"questions":[]}\n```';
+    expect(extractJson(raw)).toBe('{"questions":[]}');
+  });
+
+  it('extrai a substring {…} quando não há fenced block', () => {
+    const raw = 'Here is the answer: {"questions":[{"id":1}]} done';
+    expect(extractJson(raw)).toBe('{"questions":[{"id":1}]}');
+  });
+
+  it('retorna o texto trimado quando não há {} nem fenced block', () => {
+    const raw = '  plain text without braces  ';
+    expect(extractJson(raw)).toBe('plain text without braces');
+  });
+
+  it('prefere o fenced block quando há ambos fenced e {…} no texto', () => {
+    const raw = 'extra {"x":1} ```json\n{"questions":[]}\n```';
+    expect(extractJson(raw)).toBe('{"questions":[]}');
+  });
+});
+
+describe('sanitizeError — formatação de erro para o banco', () => {
+  it('retorna message de uma instância Error', () => {
+    expect(sanitizeError(new Error('algo deu errado'))).toBe('algo deu errado');
+  });
+
+  it('trunca mensagens com mais de 500 caracteres', () => {
+    const long = 'x'.repeat(600);
+    expect(sanitizeError(new Error(long))).toHaveLength(500);
+  });
+
+  it('converte string não-Error para string', () => {
+    expect(sanitizeError('erro de string')).toBe('erro de string');
+  });
+
+  it('converte objeto não-Error para string via String()', () => {
+    expect(sanitizeError({ code: 42 })).toBe('[object Object]');
+  });
+
+  it('trunca também valores não-Error maiores que 500 chars', () => {
+    const long = 'y'.repeat(600);
+    expect(sanitizeError(long)).toHaveLength(500);
   });
 });
