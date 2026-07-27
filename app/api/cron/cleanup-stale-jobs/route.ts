@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { after } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
+import { claimGlobalSlotsAndDispatch } from '@/features/services/generation-job.service';
 
 // Called by Vercel Cron — secured via CRON_SECRET header
 export const maxDuration = 60;
@@ -15,8 +17,9 @@ export async function GET(request: NextRequest) {
 
   const cutoff = new Date(Date.now() - STALE_THRESHOLD_MS);
 
-  const staleJobs = await prisma.fullExamJob.findMany({
-    where: { status: 'running', updatedAt: { lt: cutoff } },
+  // Jobs travados em 'running' ou 'queued' (nunca promovidos por falha) além do TTL.
+  const staleJobs = await prisma.generationJob.findMany({
+    where: { status: { in: ['running', 'queued'] }, updatedAt: { lt: cutoff } },
     select: { id: true },
   });
 
@@ -26,15 +29,18 @@ export async function GET(request: NextRequest) {
 
   const staleIds = staleJobs.map((j) => j.id);
 
-  await prisma.fullExamJob.updateMany({
+  await prisma.generationJob.updateMany({
     where: { id: { in: staleIds } },
     data: { status: 'error' },
   });
 
-  await prisma.fullExamJobTopic.updateMany({
-    where: { jobId: { in: staleIds }, status: { in: ['pending', 'running'] } },
+  await prisma.generationJobTopic.updateMany({
+    where: { jobId: { in: staleIds }, status: { in: ['queued', 'running'] } },
     data: { status: 'error', errorMessage: 'Job timed out' },
   });
+
+  // Libera os slots que os jobs travados ocupavam e destrava a fila global.
+  after(() => claimGlobalSlotsAndDispatch());
 
   console.log(`[cleanup-stale-jobs] Cleaned ${staleIds.length} stale jobs`);
 

@@ -12,10 +12,7 @@ import type { AIQuestion, AIPublicExamQuestion } from '@/shared/types';
 
 export const maxDuration = 60;
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ jobId: string }> },
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ jobId: string }> }) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -26,7 +23,7 @@ export async function POST(
   try {
     const body = (await request.json()) as { topicIds?: string[] };
 
-    const job = await prisma.fullExamJob.findFirst({
+    const job = await prisma.generationJob.findFirst({
       where: { id: jobId, userId: session.user.id, status: 'awaiting_review' },
       include: { topics: true },
     });
@@ -55,7 +52,7 @@ export async function POST(
         await examService.createFromPayload(questions as AIPublicExamQuestion[], session.user.id);
       }
 
-      await prisma.fullExamJobTopic.update({
+      await prisma.generationJobTopic.update({
         where: { id: topic.id },
         data: { savedCount: questions.length, pendingQuestionsJson: null },
       });
@@ -63,14 +60,14 @@ export async function POST(
       totalSaved += questions.length;
     }
 
-    await prisma.fullExamJob.update({
+    await prisma.generationJob.update({
       where: { id: jobId },
       data: { status: 'done', savedCount: { increment: totalSaved } },
     });
 
     return NextResponse.json({ savedCount: totalSaved }, { status: 200 });
   } catch (err: unknown) {
-    console.error('[full-exam-job save POST]', err);
+    console.error('[generation-job save POST]', err);
     const { status, ...body } = toApiErrorResponse(err);
     return NextResponse.json(body, { status });
   }

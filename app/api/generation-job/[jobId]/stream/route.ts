@@ -25,10 +25,15 @@ function shapeTopics(topics: TopicShape[]) {
   }));
 }
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ jobId: string }> },
-) {
+function counts(topics: TopicShape[]) {
+  return {
+    totalTopics: topics.length,
+    doneTopics: topics.filter((t) => t.status === 'done' || t.status === 'error').length,
+    queuedTopics: topics.filter((t) => t.status === 'queued').length,
+  };
+}
+
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ jobId: string }> }) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -36,7 +41,7 @@ export async function GET(
 
   const { jobId } = await params;
 
-  const job = await prisma.fullExamJob.findFirst({
+  const job = await prisma.generationJob.findFirst({
     where: { id: jobId, userId: session.user.id },
     include: { topics: { orderBy: { createdAt: 'asc' } } },
   });
@@ -54,42 +59,29 @@ export async function GET(
       }
 
       if (job.status === 'done') {
-        send('done', {
-          doneTopics: job.doneTopics,
-          totalTopics: job.totalTopics,
-          savedCount: job.savedCount,
-          topics: shapeTopics(job.topics),
-        });
+        send('done', { ...counts(job.topics), savedCount: job.savedCount, topics: shapeTopics(job.topics) });
         controller.close();
         return;
       }
 
       if (job.status === 'awaiting_review') {
-        send('awaiting_review', {
-          doneTopics: job.doneTopics,
-          totalTopics: job.totalTopics,
-          topics: shapeTopics(job.topics),
-        });
+        send('awaiting_review', { ...counts(job.topics), topics: shapeTopics(job.topics) });
         controller.close();
         return;
       }
 
       if (job.status === 'error') {
-        send('error', { message: 'Job failed', topics: shapeTopics(job.topics) });
+        send('error', { message: 'Job failed', ...counts(job.topics), topics: shapeTopics(job.topics) });
         controller.close();
         return;
       }
 
-      send('progress', {
-        doneTopics: job.doneTopics,
-        totalTopics: job.totalTopics,
-        savedCount: job.savedCount,
-        topics: shapeTopics(job.topics),
-      });
+      // 'queued' e 'running' emitem progress — a UI distingue via os status dos tópicos.
+      send('progress', { ...counts(job.topics), savedCount: job.savedCount, topics: shapeTopics(job.topics) });
 
       const pollInterval = setInterval(async () => {
         try {
-          const current = await prisma.fullExamJob.findUnique({
+          const current = await prisma.generationJob.findUnique({
             where: { id: jobId },
             include: { topics: { orderBy: { createdAt: 'asc' } } },
           });
@@ -102,28 +94,22 @@ export async function GET(
           if (current.status === 'done') {
             clearInterval(pollInterval);
             send('done', {
-              doneTopics: current.doneTopics,
-              totalTopics: current.totalTopics,
+              ...counts(current.topics),
               savedCount: current.savedCount,
               topics: shapeTopics(current.topics),
             });
             controller.close();
           } else if (current.status === 'awaiting_review') {
             clearInterval(pollInterval);
-            send('awaiting_review', {
-              doneTopics: current.doneTopics,
-              totalTopics: current.totalTopics,
-              topics: shapeTopics(current.topics),
-            });
+            send('awaiting_review', { ...counts(current.topics), topics: shapeTopics(current.topics) });
             controller.close();
           } else if (current.status === 'error') {
             clearInterval(pollInterval);
-            send('error', { message: 'Job failed', topics: shapeTopics(current.topics) });
+            send('error', { message: 'Job failed', ...counts(current.topics), topics: shapeTopics(current.topics) });
             controller.close();
           } else {
             send('progress', {
-              doneTopics: current.doneTopics,
-              totalTopics: current.totalTopics,
+              ...counts(current.topics),
               savedCount: current.savedCount,
               topics: shapeTopics(current.topics),
             });

@@ -594,36 +594,39 @@ export interface AppNotification {
   read: boolean;
 }
 
-export interface FullExamJobTopicStatus {
+export interface GenerationJobTopicStatus {
   id: string;
   topicName: string;
   questionCount: number;
-  status: 'pending' | 'running' | 'done' | 'error';
+  status: 'queued' | 'running' | 'done' | 'error' | 'cancelled';
   savedCount: number;
   errorMessage: string | null;
 }
 
-export interface FullExamJobStatus {
+export interface GenerationJobStatus {
   id: string;
-  status: 'running' | 'done' | 'error' | 'awaiting_review';
+  status: 'queued' | 'running' | 'done' | 'error' | 'awaiting_review';
   totalTopics: number;
   doneTopics: number;
+  queuedTopics: number;
   savedCount: number;
   type: 'certification' | 'public_exam';
   refKey: string;
-  topics: FullExamJobTopicStatus[];
+  refName: string;
+  examBoardName: string | null;
+  topics: GenerationJobTopicStatus[];
 }
 
 export interface GenerationHistoryItem {
   id: string;
-  source: 'usage_log' | 'full_exam_job';
+  source: 'usage_log' | 'generation_job';
   type: 'individual' | 'full_exam';
   domain: 'certification' | 'public_exam';
   refName: string | null;
   topicName: string | null;
   questionsGenerated: number;
   questionsSaved: number;
-  status: 'done' | 'error' | 'awaiting_review' | 'cancelled' | 'running';
+  status: 'done' | 'error' | 'awaiting_review' | 'cancelled' | 'running' | 'queued';
   createdAt: string;
 }
 

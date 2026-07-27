@@ -1,5 +1,4 @@
 import {
-  CERTIFICATION_GENERATOR_URL,
   SAVE_QUESTIONS_URL,
   SAVE_CERTIFICATION_URL,
   QUIZ_GENERATOR_URL,
@@ -12,7 +11,6 @@ import {
   EXAM_BOARDS_URL,
   SAVE_PUBLIC_EXAM_URL,
   EXTRACT_EDITAL_URL,
-  PUBLIC_EXAM_GENERATOR_URL,
   SAVE_PUBLIC_EXAM_QUESTIONS_URL,
   GET_PUBLIC_EXAM_ANSWERS_URL,
   BROWSE_PUBLIC_EXAM_SUMMARY_URL,
@@ -28,16 +26,15 @@ import {
   QUESTION_BANK_URL,
   QUESTION_BANK_TOPICS_URL,
   QUESTION_BANK_SOURCES_URL,
-  FULL_EXAM_JOB_URL,
+  GENERATION_JOB_URL,
   USAGE_HISTORY_URL,
   USAGE_HISTORY_FILTERS_URL,
-  FULL_EXAM_JOB_SAVE_URL,
+  GENERATION_JOB_SAVE_URL,
 } from '@/config/constants';
 import {
   AIQuestion,
   Certification,
   CertificationTopic,
-  QuestionParams,
   StoredQuestion,
   TopicUpdatePayload,
   UsageStats,
@@ -50,7 +47,6 @@ import {
   PublicExamTopic,
   PublicExamSubjectUpdatePayload,
   AIPublicExamQuestion,
-  PublicExamQuestionParams,
   PublicExamBrowseSummary,
   PublicExamBrowseQuestionsParams,
   PublicExamBrowseQuestionsResponse,
@@ -73,7 +69,7 @@ import {
   CertFinishAttemptPayload,
   QuestionBankParams,
   QuestionBankResponse,
-  FullExamJobStatus,
+  GenerationJobStatus,
   GenerationHistoryResponse,
   GenerationHistoryFilters,
   GenerationHistoryFilterOptions,
@@ -84,20 +80,6 @@ export async function getCertifications(): Promise<Certification[]> {
   const { data } = await api.get<{ certifications: Certification[] }>('/certification/certifications');
 
   return data.certifications;
-}
-
-export async function getQuestions(requestPayload: QuestionParams): Promise<AIQuestion[]> {
-  const { num_questions, topic_name, certification_name } = requestPayload;
-
-  const { data } = await api.get<AIQuestion[]>(CERTIFICATION_GENERATOR_URL, {
-    params: {
-      certification_name,
-      topic_name,
-      num_questions,
-    },
-  });
-
-  return data;
 }
 
 export async function saveQuestions(questions: AIQuestion[]): Promise<void> {
@@ -307,16 +289,6 @@ export async function addPublicExamTopic(subjectId: string, name: string): Promi
   });
 
   return data.topic;
-}
-
-export async function getPublicExamQuestions(
-  requestPayload: PublicExamQuestionParams
-): Promise<AIPublicExamQuestion[]> {
-  const { data } = await api.get<AIPublicExamQuestion[]>(PUBLIC_EXAM_GENERATOR_URL, {
-    params: requestPayload,
-  });
-
-  return data;
 }
 
 export async function savePublicExamQuestions(questions: AIPublicExamQuestion[]): Promise<void> {
@@ -534,36 +506,33 @@ export async function getQuestionBankSources(type?: 'all' | 'certification' | 'p
   return data.sources;
 }
 
-export const createFullExamJob = (payload: {  type: 'certification' | 'public_exam';
+export const createGenerationJob = (payload: {
+  type: 'certification' | 'public_exam';
   refKey: string;
   refName: string;
   examBoardName?: string;
   distribution: Array<{ topicName: string; questionCount: number }>;
-}): Promise<{ jobId: string }> =>
-  api.post<{ jobId: string }>(FULL_EXAM_JOB_URL, payload).then((r) => r.data);
+}): Promise<{ jobId: string }> => api.post<{ jobId: string }>(GENERATION_JOB_URL, payload).then((r) => r.data);
 
-export const getActiveFullExamJob = (params: {
-  type: 'certification' | 'public_exam';
-  refKey: string;
-}): Promise<FullExamJobStatus | null> =>
+export const getGenerationJob = (jobId: string): Promise<GenerationJobStatus> =>
+  api.get<GenerationJobStatus>(`${GENERATION_JOB_URL}/${jobId}`).then((r) => r.data);
+
+export const getActiveGenerationJobs = (): Promise<GenerationJobStatus[]> =>
   api
-    .get<FullExamJobStatus | null>(FULL_EXAM_JOB_URL, { params })
+    .get<GenerationJobStatus[]>(GENERATION_JOB_URL)
     .then((r) => r.data)
-    .catch(() => null);
+    .catch(() => []);
 
-export const getFullExamJob = (jobId: string): Promise<FullExamJobStatus> =>
-  api.get<FullExamJobStatus>(`${FULL_EXAM_JOB_URL}/${jobId}`).then((r) => r.data);
+export const cancelGenerationJob = (jobId: string): Promise<void> =>
+  api.delete(`${GENERATION_JOB_URL}/${jobId}`).then(() => undefined);
 
-export const cancelFullExamJob = (jobId: string): Promise<void> =>
-  api.delete(`${FULL_EXAM_JOB_URL}/${jobId}`).then(() => undefined);
-
-export const saveFullExamJob = (jobId: string, topicIds?: string[]): Promise<{ savedCount: number }> =>
-  api.post<{ savedCount: number }>(FULL_EXAM_JOB_SAVE_URL(jobId), { topicIds }).then((r) => r.data);
+export const saveGenerationJob = (jobId: string, topicIds?: string[]): Promise<{ savedCount: number }> =>
+  api.post<{ savedCount: number }>(GENERATION_JOB_SAVE_URL(jobId), { topicIds }).then((r) => r.data);
 
 export const getGenerationHistory = (
   page: number,
   limit: number,
-  filters: GenerationHistoryFilters,
+  filters: GenerationHistoryFilters
 ): Promise<GenerationHistoryResponse> =>
   api
     .get<GenerationHistoryResponse>(USAGE_HISTORY_URL, {

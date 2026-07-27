@@ -3,15 +3,18 @@ import { PublicExamsState } from '@/features/reducers/publicExams.reducer';
 import { MockExamsState } from '@/features/reducers/mockExams.reducer';
 import { CertSimuladosState } from '@/features/reducers/certSimulados.reducer';
 
-export const CERTIFICATION_GENERATOR_URL = '/certification/question-generator';
 export const GET_CERTIFICATION_ANSWERS_URL = '/certification/get-answers';
 export const SAVE_QUESTIONS_URL = '/certification/save-questions';
 export const SAVE_CERTIFICATION_URL = '/certification/save-certification';
 export const QUIZ_GENERATOR_URL = '/certification/quiz-generator';
-export const FULL_EXAM_JOB_URL = '/full-exam-job';
+export const GENERATION_JOB_URL = '/generation-job';
 export const USAGE_HISTORY_URL = '/usage/history';
 export const USAGE_HISTORY_FILTERS_URL = '/usage/history/filters';
-export const FULL_EXAM_JOB_SAVE_URL = (jobId: string) => `/full-exam-job/${jobId}/save`;
+export const GENERATION_JOB_SAVE_URL = (jobId: string) => `/generation-job/${jobId}/save`;
+
+// Concorrência de geração — protege o rate limit da OpenAI
+export const GENERATION_MAX_CONCURRENT_TOPICS = Number(process.env.GENERATION_MAX_CONCURRENT_TOPICS ?? 150);
+export const GENERATION_MAX_TOPICS_PER_USER = 5;
 export const QUIZ_LOCAL_STORAGE_KEY = 'QUIZ';
 export const CERTIFICATIONS_LOCAL_STORAGE_KEY = 'CERTIFICATIONS';
 export const PUBLIC_EXAMS_LOCAL_STORAGE_KEY = 'PUBLIC_EXAMS';
@@ -205,7 +208,6 @@ export const PLAN_PRICES_BRL_MONTHLY: Record<string, number> = {
 export const BROWSE_SUMMARY_URL = '/certification/browse-questions/summary';
 export const BROWSE_QUESTIONS_URL = '/certification/browse-questions/questions';
 
-export const PUBLIC_EXAM_GENERATOR_URL = '/public-exam/question-generator';
 export const SAVE_PUBLIC_EXAM_QUESTIONS_URL = '/public-exam/save-questions';
 export const GET_PUBLIC_EXAM_ANSWERS_URL = '/public-exam/get-answers';
 export const SAVE_PUBLIC_EXAM_URL = '/public-exam/save-public-exam';
