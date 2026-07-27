@@ -41,7 +41,7 @@ vi.mock('@/config/constants', () => ({
   GENERATION_MAX_TOPICS_PER_USER: 5,
 }));
 
-import { claimSlots, processTopic } from '@/features/services/generation-job.service';
+import { claimSlots, processTopic, claimGlobalSlotsAndDispatch } from '@/features/services/generation-job.service';
 
 const makeTopic = (overrides = {}) => ({
   id: 'topic-1',
@@ -242,5 +242,73 @@ describe('processTopic — branch public_exam', () => {
         data: expect.objectContaining({ status: 'error', errorMessage: expect.stringContaining('bad public exam json') }),
       }),
     );
+  });
+});
+
+describe('claimGlobalSlots — cross-user slot management (via claimGlobalSlotsAndDispatch)', () => {
+  beforeEach(() => {
+    prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+  });
+
+  it('não promove nada quando o teto global está cheio', async () => {
+    // GENERATION_MAX_CONCURRENT_TOPICS is mocked as 10 at the top of the file
+    prismaMock.generationJobTopic.count.mockResolvedValueOnce(10); // globalRunning = teto
+
+    await claimGlobalSlotsAndDispatch();
+
+    expect(prismaMock.generationJobTopic.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('não promove nada quando não há candidatos queued', async () => {
+    prismaMock.generationJobTopic.count.mockResolvedValueOnce(0); // globalRunning
+    prismaMock.generationJobTopic.findMany.mockResolvedValue([]); // sem candidatos
+
+    await claimGlobalSlotsAndDispatch();
+
+    expect(prismaMock.generationJobTopic.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('promove candidatos de múltiplos usuários respeitando o teto por usuário', async () => {
+    // 8 rodando globalmente — 2 slots livres
+    // claimGlobalSlots reads globalRunning, then does findMany (take: slots*4 = 8),
+    // then reads userRunning per unique userId in the candidates
+    prismaMock.generationJobTopic.count
+      .mockResolvedValueOnce(8)  // globalRunning → 2 slots
+      .mockResolvedValueOnce(0)  // userRunning for user-A
+      .mockResolvedValueOnce(0); // userRunning for user-B
+
+    // One candidate per user so each fills one of the 2 available slots
+    prismaMock.generationJobTopic.findMany.mockResolvedValue([
+      { id: 'tA1', jobId: 'jobA', job: { userId: 'user-A' } },
+      { id: 'tB1', jobId: 'jobB', job: { userId: 'user-B' } },
+    ] as any);
+    prismaMock.generationJobTopic.updateMany.mockResolvedValue({ count: 2 } as any);
+    prismaMock.generationJob.updateMany.mockResolvedValue({ count: 2 } as any);
+
+    await claimGlobalSlotsAndDispatch();
+
+    // Both candidates are promoted — each fills one of the 2 global slots
+    expect(prismaMock.generationJobTopic.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: { in: expect.arrayContaining(['tA1', 'tB1']) } }),
+        data: { status: 'running' },
+      }),
+    );
+  });
+
+  it('não promove quando o usuário único já atingiu o teto individual', async () => {
+    // 3 slots livres globalmente, but user-A already has 5 running (= GENERATION_MAX_TOPICS_PER_USER)
+    prismaMock.generationJobTopic.count
+      .mockResolvedValueOnce(7)  // globalRunning → 3 slots
+      .mockResolvedValueOnce(5); // userRunning for user-A = teto
+
+    prismaMock.generationJobTopic.findMany.mockResolvedValue([
+      { id: 'tA1', jobId: 'jobA', job: { userId: 'user-A' } },
+      { id: 'tA2', jobId: 'jobA', job: { userId: 'user-A' } },
+    ] as any);
+
+    await claimGlobalSlotsAndDispatch();
+
+    expect(prismaMock.generationJobTopic.updateMany).not.toHaveBeenCalled();
   });
 });
