@@ -290,7 +290,14 @@ describe('claimGlobalSlots — cross-user slot management (via claimGlobalSlotsA
     // Both candidates are promoted — each fills one of the 2 global slots
     expect(prismaMock.generationJobTopic.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ id: { in: expect.arrayContaining(['tA1', 'tB1']) } }),
+        where: expect.objectContaining({ id: { in: ['tA1', 'tB1'] } }),
+        data: { status: 'running' },
+      }),
+    );
+    // Jobs should also be transitioned from queued → running
+    expect(prismaMock.generationJob.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: { in: expect.arrayContaining(['jobA', 'jobB']) }, status: 'queued' }),
         data: { status: 'running' },
       }),
     );
