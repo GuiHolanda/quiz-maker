@@ -1,11 +1,17 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { prismaMock } from '../__mocks__/prisma';
 
+const { openAICallMock } = vi.hoisted(() => ({
+  openAICallMock: vi.fn().mockResolvedValue({
+    text: '{"questions":[{"id":1,"text":"Q1","options":{"A":"opt"}}]}',
+    inputTokens: 10,
+    outputTokens: 20,
+  }),
+}));
+
 vi.mock('@/features/services/openAI.service', () => ({
   OpenAIService: class {
-    call = vi
-      .fn()
-      .mockResolvedValue({ text: '{"questions":[{"id":1,"text":"Q1","options":{"A":"opt"}}]}', inputTokens: 10, outputTokens: 20 });
+    call = openAICallMock;
   },
 }));
 
@@ -54,6 +60,27 @@ const makeTopic = (overrides = {}) => ({
     type: 'certification',
     refName: 'AWS SAA-C03',
     examBoardName: null,
+  },
+  ...overrides,
+});
+
+const makePublicExamTopic = (overrides = {}) => ({
+  id: 'topic-pe-1',
+  jobId: 'job-pe-1',
+  topicName: 'Direito Administrativo',
+  questionCount: 5,
+  status: 'running',
+  savedCount: 0,
+  errorMessage: null,
+  pendingQuestionsJson: null,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  job: {
+    id: 'job-pe-1',
+    userId: 'user-1',
+    type: 'public_exam',
+    refName: 'TRF 1ª Região 2024',
+    examBoardName: 'FCC',
   },
   ...overrides,
 });
@@ -156,6 +183,63 @@ describe('processTopic — pipeline e finalização', () => {
       expect.objectContaining({
         where: { id: 'topic-1' },
         data: expect.objectContaining({ status: 'error', errorMessage: expect.stringContaining('bad json') }),
+      }),
+    );
+  });
+});
+
+describe('processTopic — branch public_exam', () => {
+  beforeEach(() => {
+    prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+    prismaMock.generationJobTopic.findUnique.mockResolvedValue(
+      makePublicExamTopic() as any,
+    );
+    prismaMock.generationJobTopic.update.mockResolvedValue(makePublicExamTopic() as any);
+    prismaMock.generationJob.update.mockResolvedValue({} as any);
+    prismaMock.generationJob.updateMany.mockResolvedValue({ count: 0 } as any);
+    prismaMock.generationJobTopic.updateMany.mockResolvedValue({ count: 0 } as any);
+    prismaMock.generationJobTopic.count.mockResolvedValue(0);
+    prismaMock.generationJobTopic.findMany.mockResolvedValue([]);
+  });
+
+  it('chama openAIService.call com os campos corretos de public_exam', async () => {
+    await processTopic('topic-pe-1');
+
+    expect(openAICallMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        public_exam_name: 'TRF 1ª Região 2024',
+        exam_board_name: 'FCC',
+        subject_name: 'Direito Administrativo',
+        num_questions: '5',
+      }),
+      expect.objectContaining({ webSearch: true }),
+    );
+  });
+
+  it('armazena pendingQuestionsJson ao concluir tópico de concurso', async () => {
+    await processTopic('topic-pe-1');
+
+    expect(prismaMock.generationJobTopic.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'topic-pe-1' },
+        data: expect.objectContaining({ status: 'done', savedCount: 0, pendingQuestionsJson: expect.any(String) }),
+      }),
+    );
+  });
+
+  it('marca tópico de concurso como error quando o pipeline lança', async () => {
+    const { validateAiQuestions } = await import('@/features/services/question.service');
+    (validateAiQuestions as any).mockImplementationOnce(() => {
+      throw new Error('bad public exam json');
+    });
+
+    await processTopic('topic-pe-1');
+
+    expect(prismaMock.generationJobTopic.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'topic-pe-1' },
+        data: expect.objectContaining({ status: 'error', errorMessage: expect.stringContaining('bad public exam json') }),
       }),
     );
   });
