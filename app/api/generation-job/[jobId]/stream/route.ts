@@ -12,6 +12,7 @@ type TopicShape = {
   status: string;
   savedCount: number;
   errorMessage: string | null;
+  errorType: string | null;
 };
 
 function shapeTopics(topics: TopicShape[]) {
@@ -22,6 +23,7 @@ function shapeTopics(topics: TopicShape[]) {
     status: t.status,
     savedCount: t.savedCount,
     errorMessage: t.errorMessage,
+    errorType: t.errorType,
   }));
 }
 
@@ -50,6 +52,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
+  let pollIntervalRef: ReturnType<typeof setInterval> | null = null;
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
@@ -58,20 +61,20 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
         controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
       }
 
-      if (job.status === 'done') {
-        send('done', { ...counts(job.topics), savedCount: job.savedCount, topics: shapeTopics(job.topics) });
-        controller.close();
-        return;
+      const TERMINAL = ['done', 'awaiting_review', 'error', 'cancelled'];
+
+      function emitTerminal(status: string, topics: TopicShape[], savedCount: number) {
+        if (status === 'done') {
+          send('done', { ...counts(topics), savedCount, topics: shapeTopics(topics) });
+        } else if (status === 'awaiting_review') {
+          send('awaiting_review', { ...counts(topics), topics: shapeTopics(topics) });
+        } else {
+          send(status, { message: 'Job ended', ...counts(topics), topics: shapeTopics(topics) });
+        }
       }
 
-      if (job.status === 'awaiting_review') {
-        send('awaiting_review', { ...counts(job.topics), topics: shapeTopics(job.topics) });
-        controller.close();
-        return;
-      }
-
-      if (job.status === 'error') {
-        send('error', { message: 'Job failed', ...counts(job.topics), topics: shapeTopics(job.topics) });
+      if (TERMINAL.includes(job.status)) {
+        emitTerminal(job.status, job.topics, job.savedCount);
         controller.close();
         return;
       }
@@ -79,7 +82,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       // 'queued' e 'running' emitem progress — a UI distingue via os status dos tópicos.
       send('progress', { ...counts(job.topics), savedCount: job.savedCount, topics: shapeTopics(job.topics) });
 
+      let polling = false;
       const pollInterval = setInterval(async () => {
+        if (polling) return;
+        polling = true;
         try {
           const current = await prisma.generationJob.findUnique({
             where: { id: jobId },
@@ -90,35 +96,28 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
             controller.close();
             return;
           }
-
-          if (current.status === 'done') {
+          if (TERMINAL.includes(current.status)) {
             clearInterval(pollInterval);
-            send('done', {
-              ...counts(current.topics),
-              savedCount: current.savedCount,
-              topics: shapeTopics(current.topics),
-            });
+            emitTerminal(current.status, current.topics, current.savedCount);
             controller.close();
-          } else if (current.status === 'awaiting_review') {
-            clearInterval(pollInterval);
-            send('awaiting_review', { ...counts(current.topics), topics: shapeTopics(current.topics) });
-            controller.close();
-          } else if (current.status === 'error') {
-            clearInterval(pollInterval);
-            send('error', { message: 'Job failed', ...counts(current.topics), topics: shapeTopics(current.topics) });
-            controller.close();
-          } else {
-            send('progress', {
-              ...counts(current.topics),
-              savedCount: current.savedCount,
-              topics: shapeTopics(current.topics),
-            });
+            return;
           }
+          send('progress', {
+            ...counts(current.topics),
+            savedCount: current.savedCount,
+            topics: shapeTopics(current.topics),
+          });
         } catch {
           clearInterval(pollInterval);
           controller.close();
+        } finally {
+          polling = false;
         }
       }, 1500);
+      pollIntervalRef = pollInterval;
+    },
+    cancel() {
+      if (pollIntervalRef) clearInterval(pollIntervalRef);
     },
   });
 
