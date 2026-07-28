@@ -263,9 +263,16 @@ export function ActiveJobStatus({
                   {t('generate.topicQuestions', { count: topic.questionCount })}
                 </span>
               )}
-              {isTopicError && topic.errorMessage && (
-                <span className="text-xs text-danger/70 shrink-0 max-w-[140px] truncate" title={topic.errorMessage}>
-                  {topic.errorMessage}
+              {isTopicError && (
+                <span
+                  className="text-xs text-danger/70 shrink-0 max-w-[140px] truncate"
+                  title={topic.errorMessage ?? undefined}
+                >
+                  {topic.errorType === 'quota'
+                    ? t('generate.errorQuota')
+                    : topic.errorType === 'timeout'
+                      ? t('generate.errorTimeout')
+                      : t('generate.errorGeneration')}
                 </span>
               )}
             </div>

@@ -157,6 +157,11 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
         closeSource(jobId);
         updateJob(jobId, { status: 'error' });
       });
+
+      es.addEventListener('cancelled', () => {
+        closeSource(jobId);
+        setJobs((prev) => prev.filter((j) => j.jobId !== jobId));
+      });
     },
     [closeSource, updateJob, fireDoneNotification]
   );
@@ -194,6 +199,7 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
               status: 'queued' as const,
               savedCount: 0,
               errorMessage: null,
+              errorType: null,
             })),
             isSaving: false,
             prefill: { totalQuestions: input.totalQuestions },

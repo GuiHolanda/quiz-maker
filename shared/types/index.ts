@@ -601,6 +601,7 @@ export interface GenerationJobTopicStatus {
   status: 'queued' | 'running' | 'done' | 'error' | 'cancelled';
   savedCount: number;
   errorMessage: string | null;
+  errorType: 'quota' | 'generation' | 'timeout' | null;
 }
 
 export interface GenerationJobStatus {
