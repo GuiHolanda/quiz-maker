@@ -27,11 +27,13 @@ export type TopicErrorType = 'quota' | 'generation' | 'timeout';
 export function sanitizeError(err: unknown): { message: string; errorType: TopicErrorType } {
   if (err instanceof Error) {
     const msg = err.message.toLowerCase();
-    if (msg.includes('limit reached') || msg.includes('quota')) {
-      return { message: 'Limite de quota atingido', errorType: 'quota' };
-    }
+    // 429 vem primeiro: um "insufficient_quota" da OpenAI tem status 429 e a palavra "quota"
+    // na mensagem, mas é limite da plataforma, não do usuário — não deve virar errorType 'quota'.
     if ((err as { status?: number }).status === 429) {
       return { message: 'Limite de requisições da IA atingido', errorType: 'timeout' };
+    }
+    if (msg.includes('limit reached') || msg.includes('quota')) {
+      return { message: 'Limite de quota atingido', errorType: 'quota' };
     }
     if (msg.includes('timeout') || msg.includes('econnaborted')) {
       return { message: 'Tempo limite de geração excedido', errorType: 'timeout' };
@@ -108,9 +110,9 @@ async function claimGlobalSlots(): Promise<string[]> {
       select: { job: { select: { userId: true } } },
     });
     const userRunningCounts = new Map<string, number>();
-    for (const rt of runningTopics) {
-      const uid = rt.job.userId;
-      userRunningCounts.set(uid, (userRunningCounts.get(uid) ?? 0) + 1);
+    for (const runningTopic of runningTopics) {
+      const runningUserId = runningTopic.job.userId;
+      userRunningCounts.set(runningUserId, (userRunningCounts.get(runningUserId) ?? 0) + 1);
     }
 
     const toPromote: string[] = [];
