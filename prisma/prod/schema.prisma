@@ -140,20 +140,33 @@ model Explanation {
 }
 
 model UsageLog {
-  id           String   @id @default(cuid())
-  userId       String
-  action       String
-  count        Int      @default(1)
-  inputTokens  Int      @default(0)
-  outputTokens Int      @default(0)
-  refName      String?
-  refKey       String?
-  type         String?
-  topicName    String?
-  createdAt    DateTime @default(now())
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String         @id @default(cuid())
+  userId          String
+  action          String
+  count           Int            @default(1)
+  totalDurationMs Int?
+  refName         String?
+  refKey          String?
+  type            String?
+  topicName       String?
+  createdAt       DateTime       @default(now())
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  steps           UsageLogStep[]
 
   @@index([userId])
+}
+
+model UsageLogStep {
+  id           String   @id @default(cuid())
+  usageLogId   String
+  step         String
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  durationMs   Int
+  createdAt    DateTime @default(now())
+  usageLog     UsageLog @relation(fields: [usageLogId], references: [id], onDelete: Cascade)
+
+  @@index([usageLogId])
 }
 
 model ExamBoard {
