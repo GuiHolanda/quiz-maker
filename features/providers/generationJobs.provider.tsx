@@ -10,7 +10,7 @@ import {
   cancelGenerationJob,
   saveGenerationJob,
 } from '@/features/connectors';
-import { SIMULADO_NEW_PREFILL_KEY } from '@/config/constants';
+import { SIMULADO_NEW_PREFILL_KEY, GENERATION_MAX_ACTIVE_JOBS_PER_USER } from '@/config/constants';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { useNotificationsContext } from '@/features/hooks/useNotificationsContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -206,7 +206,16 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
           },
         ]);
         connectStream(jobId);
-      } catch {
+      } catch (e: unknown) {
+        // O único 429 possível neste endpoint é o teto de jobs ativos simultâneos (A2).
+        const status = (e as { response?: { status?: number } })?.response?.status;
+        if (status === 429) {
+          notify.warning(
+            t('generate.tooManyJobsTitle'),
+            t('generate.tooManyJobsDescription', { max: GENERATION_MAX_ACTIVE_JOBS_PER_USER })
+          );
+          return;
+        }
         notify.error(t('toast.error'), t('toast.somethingWrong'));
       }
     },

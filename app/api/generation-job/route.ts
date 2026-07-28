@@ -146,7 +146,12 @@ export async function POST(request: NextRequest) {
       },
     });
     if (activeJobCount >= GENERATION_MAX_ACTIVE_JOBS_PER_USER) {
-      throw Object.assign(new Error('Maximum active jobs reached'), { status: 429 });
+      throw Object.assign(
+        new Error(
+          `You already have ${activeJobCount} generations in progress (limit ${GENERATION_MAX_ACTIVE_JOBS_PER_USER}). Wait for one to finish or review its results before starting another.`
+        ),
+        { status: 429 }
+      );
     }
 
     // B1 — reject early if the user has no remaining quota for even one question
