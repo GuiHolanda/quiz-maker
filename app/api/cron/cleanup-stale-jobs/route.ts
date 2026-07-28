@@ -7,7 +7,10 @@ import { claimGlobalSlotsAndDispatch } from '@/features/services/generation-job.
 // Called by Vercel Cron — secured via CRON_SECRET header
 export const maxDuration = 60;
 
-const STALE_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
+// 10 min: with maybeFinalizeJob heartbeating updatedAt on every completed topic, a live
+// job never idles this long. A job untouched for 10 min has genuinely lost its worker
+// (deploy, crash, or after() dropped) and is safe to mark as error and reclaim its slots.
+const STALE_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
 
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
