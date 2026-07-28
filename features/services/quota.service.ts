@@ -164,6 +164,19 @@ export class QuotaService {
     });
   }
 
+  // Undo a prior checkAndRecordQuestions when generation ultimately failed: give the
+  // user their quota back and drop the usage log so it never counts toward cost analytics.
+  async rollbackQuota(logId: string): Promise<void> {
+    const log = await prisma.usageLog.findUnique({ where: { id: logId } });
+    if (!log) return;
+
+    await prisma.user.update({
+      where: { id: log.userId },
+      data: { questionsGeneratedThisPeriod: { decrement: log.count } },
+    });
+    await prisma.usageLog.delete({ where: { id: logId } });
+  }
+
   async record(userId: string, action: QuotaAction, count: number): Promise<void> {
     await Promise.all([
       action === 'generate_questions'

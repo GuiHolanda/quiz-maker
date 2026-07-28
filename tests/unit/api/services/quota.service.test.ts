@@ -271,4 +271,35 @@ describe('QuotaService', () => {
       await expect(service.checkAndRecordQuestions('user-1', 5)).resolves.toEqual({ logId: 'log-3' });
     });
   });
+
+  describe('rollbackQuota', () => {
+    it('decrements the period counter and deletes the usage log', async () => {
+      prismaMock.usageLog.findUnique.mockResolvedValue({
+        id: 'log-1',
+        userId: 'user-1',
+        count: 5,
+      } as any);
+      prismaMock.user.update.mockResolvedValue({} as any);
+      prismaMock.usageLog.delete.mockResolvedValue({} as any);
+
+      const service = new QuotaService();
+      await service.rollbackQuota('log-1');
+
+      expect(prismaMock.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { questionsGeneratedThisPeriod: { decrement: 5 } },
+      });
+      expect(prismaMock.usageLog.delete).toHaveBeenCalledWith({ where: { id: 'log-1' } });
+    });
+
+    it('is a no-op when the log does not exist', async () => {
+      prismaMock.usageLog.findUnique.mockResolvedValue(null);
+
+      const service = new QuotaService();
+      await service.rollbackQuota('missing');
+
+      expect(prismaMock.user.update).not.toHaveBeenCalled();
+      expect(prismaMock.usageLog.delete).not.toHaveBeenCalled();
+    });
+  });
 });
