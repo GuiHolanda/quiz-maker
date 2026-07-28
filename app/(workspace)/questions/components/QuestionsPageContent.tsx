@@ -9,8 +9,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGraduationCap, faClipboardList, faCircleCheck } from '@fortawesome/free-solid-svg-icons';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 
-import { CertQuestionsContent } from './CertQuestionsContent';
-import { PublicExamQuestionsContent } from './PublicExamQuestionsContent';
+import { QuestionsContent } from './QuestionsContent';
 import { GenerationHistory } from './GenerationHistory';
 import { ActiveJobStatus } from './ActiveJobStatus';
 import { GeneratedQuestionsList } from './GeneratedQuestionsList';
@@ -127,10 +126,10 @@ export function QuestionsPageContent() {
         </div>
 
         <div className={selectedType === 'certification' ? '' : 'hidden'}>
-          <CertQuestionsContent />
+          <QuestionsContent type="certification" />
         </div>
         <div className={selectedType === 'public_exam' ? '' : 'hidden'}>
-          <PublicExamQuestionsContent />
+          <QuestionsContent type="public_exam" />
         </div>
 
         {renderReviewList()}

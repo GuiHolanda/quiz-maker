@@ -71,3 +71,6 @@ prisma/dev/prisma/
 .github/
 .impeccable/
 .claude
+
+prisma/**.dump.sql
+prisma/**.db.backup

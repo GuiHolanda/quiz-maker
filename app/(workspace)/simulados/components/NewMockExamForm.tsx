@@ -13,7 +13,7 @@ import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
 import { useMockExamsContext } from '@/features/providers/mockExams.provider';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { createMockExam, getPublicExamBrowseSummary } from '@/features/connectors';
-import { PublicExamManager } from '@/shared/components/PublicExamManager';
+import { EntitySelect } from '@/shared/components/EntitySelect';
 import { notify } from '@/shared/lib/notify';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { buttonStyles } from '@/config/constants/buttonStyles';
@@ -205,7 +205,18 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
 
   return (
     <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6">
-      <PublicExamManager noSubjects className="w-full" />
+      <EntitySelect
+        className="w-full"
+        items={publicExams.map((e) => ({
+          key: e.id ?? e.name,
+          label: [e.name, e.role, e.examBoard?.name].filter(Boolean).join(' · '),
+        }))}
+        label={t('concurso.selectPublicExam')}
+        name="publicExamName"
+        placeholder={t('concurso.selectPublicExamPlaceholder')}
+        selectedKey={selectedPublicExam ? (selectedPublicExam.id ?? selectedPublicExam.name) : null}
+        onSelect={(key) => setSelectedPublicExam(publicExams.find((e) => (e.id ?? e.name) === key) ?? null)}
+      />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Input
           autoComplete="off"
