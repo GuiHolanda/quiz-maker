@@ -4,7 +4,6 @@ import { prismaMock } from '../__mocks__/prisma';
 const { openAICallMock, quotaConstructorMock } = vi.hoisted(() => {
   const defaultInstance = {
     checkAndRecordQuestions: vi.fn().mockResolvedValue({ logId: 'log-1' }),
-    recordTokens: vi.fn().mockResolvedValue(undefined),
     rollbackQuota: vi.fn().mockResolvedValue(undefined),
   };
   return {
@@ -215,7 +214,6 @@ describe('processTopic — pipeline e finalização', () => {
     quotaConstructorMock.mockImplementationOnce(function () {
       return {
         checkAndRecordQuestions: vi.fn().mockResolvedValue({ logId: 'log-rb' }),
-        recordTokens: vi.fn(),
         rollbackQuota: rollbackMock,
       };
     });
@@ -235,7 +233,6 @@ describe('processTopic — pipeline e finalização', () => {
         checkAndRecordQuestions: vi.fn().mockRejectedValue(
           Object.assign(new Error('Quota exceeded'), { status: 402 })
         ),
-        recordTokens: vi.fn(),
       };
     });
 
@@ -267,25 +264,6 @@ describe('processTopic — pipeline e finalização', () => {
     expect(prismaMock.generationJob.update).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: 'job-1' }, data: { updatedAt: expect.any(Date) } }),
     );
-  });
-
-  it('chama recordTokens com a soma correta de tokens das 3 etapas', async () => {
-    const recordTokensMock = vi.fn().mockResolvedValue(undefined);
-    quotaConstructorMock.mockImplementationOnce(function () {
-      return {
-        checkAndRecordQuestions: vi.fn().mockResolvedValue({ logId: 'log-tokens' }),
-        recordTokens: recordTokensMock,
-      };
-    });
-
-    // The module-level mock returns inputTokens:10, outputTokens:20 per call
-    // 3 pipeline steps × 10 = 30 input, 3 × 20 = 60 output
-    await processTopic('topic-1');
-
-    expect(recordTokensMock).toHaveBeenCalledWith('log-tokens', {
-      inputTokens: 30,
-      outputTokens: 60,
-    });
   });
 });
 

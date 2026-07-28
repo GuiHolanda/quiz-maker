@@ -157,13 +157,6 @@ export class QuotaService {
     return { logId: log.id };
   }
 
-  async recordTokens(logId: string, tokens: { inputTokens: number; outputTokens: number }): Promise<void> {
-    await prisma.usageLog.update({
-      where: { id: logId },
-      data: { inputTokens: tokens.inputTokens, outputTokens: tokens.outputTokens },
-    });
-  }
-
   // Undo a prior checkAndRecordQuestions when generation ultimately failed: give the
   // user their quota back and drop the usage log so it never counts toward cost analytics.
   async rollbackQuota(logId: string): Promise<void> {

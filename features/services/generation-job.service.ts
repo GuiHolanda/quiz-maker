@@ -226,10 +226,6 @@ export async function processTopic(topicId: string): Promise<void> {
         { certification_name: refName, topic_name: topic.topicName, reviewed_questions: review.text },
         { webSearch: false, jsonMode: true }
       );
-      void quotaService.recordTokens(logId, {
-        inputTokens: research.inputTokens + review.inputTokens + format.inputTokens,
-        outputTokens: research.outputTokens + review.outputTokens + format.outputTokens,
-      });
       questions = validateAiQuestions(JSON.parse(extractJson(format.text))) as AIQuestion[];
     } else {
       const research = await openAIService.call(
@@ -262,10 +258,6 @@ export async function processTopic(topicId: string): Promise<void> {
         },
         { webSearch: false, jsonMode: true }
       );
-      void quotaService.recordTokens(logId, {
-        inputTokens: research.inputTokens + review.inputTokens + format.inputTokens,
-        outputTokens: research.outputTokens + review.outputTokens + format.outputTokens,
-      });
       questions = validateAiQuestions(JSON.parse(extractJson(format.text))) as AIPublicExamQuestion[];
     }
 
