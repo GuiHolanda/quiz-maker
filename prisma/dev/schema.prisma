@@ -411,6 +411,7 @@ model GenerationJobTopic {
   status       String        @default("queued") // "queued" | "running" | "done" | "error"
   savedCount           Int           @default(0)
   errorMessage         String?
+  errorType            String?       // "quota" | "generation" | "timeout" | null
   pendingQuestionsJson String?
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
