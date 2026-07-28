@@ -165,6 +165,8 @@ describe('processTopic — pipeline e finalização', () => {
     prismaMock.generationJobTopic.updateMany.mockResolvedValue({ count: 0 } as any);
     prismaMock.generationJobTopic.count.mockResolvedValue(0);
     prismaMock.generationJobTopic.findMany.mockResolvedValue([]);
+    prismaMock.usageLogStep.create.mockResolvedValue({} as any);
+    prismaMock.usageLog.update.mockResolvedValue({} as any);
   });
 
   it('armazena pendingQuestionsJson com savedCount 0 ao concluir o tópico', async () => {
@@ -174,6 +176,15 @@ describe('processTopic — pipeline e finalização', () => {
       expect.objectContaining({
         where: { id: 'topic-1' },
         data: expect.objectContaining({ status: 'done', savedCount: 0, pendingQuestionsJson: expect.any(String) }),
+      }),
+    );
+
+    // MetricsService side effects
+    expect(prismaMock.usageLogStep.create).toHaveBeenCalledTimes(3);
+    expect(prismaMock.usageLog.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: expect.any(String) }),
+        data: { totalDurationMs: expect.any(Number) },
       }),
     );
   });
@@ -279,6 +290,8 @@ describe('processTopic — branch public_exam', () => {
     prismaMock.generationJobTopic.updateMany.mockResolvedValue({ count: 0 } as any);
     prismaMock.generationJobTopic.count.mockResolvedValue(0);
     prismaMock.generationJobTopic.findMany.mockResolvedValue([]);
+    prismaMock.usageLogStep.create.mockResolvedValue({} as any);
+    prismaMock.usageLog.update.mockResolvedValue({} as any);
   });
 
   it('chama openAIService.call com os campos corretos de public_exam', async () => {
