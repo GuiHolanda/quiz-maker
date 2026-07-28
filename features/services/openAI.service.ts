@@ -8,13 +8,12 @@ export interface OpenAICallOptions {
   model?: string;
 }
 
+const MAX_429_ATTEMPTS = 3;
+
 export class OpenAIService {
-  // Single attempt with a generous 280s timeout. The earlier 90s + 1 retry
-  // pattern produced ~180s spent on stacked timeouts — exactly the failure
-  // mode reported in production logs. With maxRetries: 0, slow generations
-  // get one window that fits under Vercel's 300s function ceiling; rare
-  // transient errors surface to the user, who can re-submit faster than the
-  // SDK can retry a request that is already known to be slow.
+  // Single attempt with a generous 280s timeout (maxRetries: 0). Slow generations get
+  // one window under Vercel's 300s ceiling; 429 rate-limit errors are retried manually
+  // with exponential backoff below, since those ARE transient and benefit from waiting.
   constructor(
     private readonly openAIClient: OpenAI = new OpenAI({
       timeout: 280_000,
@@ -36,18 +35,38 @@ export class OpenAIService {
     const jsonMode = options?.jsonMode ?? false;
     const model = options?.model ?? process.env.OPENAI_MODEL ?? 'gpt-4o';
 
-    const response = await (this.openAIClient.responses.create as Function)({
-      model,
-      ...(webSearch ? { tools: [{ type: 'web_search_preview' }] } : {}),
-      ...(jsonMode ? { text: { format: { type: 'json_object' } } } : {}),
-      input: prompt.build(input),
-      max_output_tokens: 16000,
-    });
+    const response = await this.callWithBackoff<any>(() =>
+      (this.openAIClient.responses.create as Function)({
+        model,
+        ...(webSearch ? { tools: [{ type: 'web_search_preview' }] } : {}),
+        ...(jsonMode ? { text: { format: { type: 'json_object' } } } : {}),
+        input: prompt.build(input),
+        max_output_tokens: 16000,
+      })
+    );
 
     return {
       text: response?.output_text ?? '',
       inputTokens: response?.usage?.input_tokens ?? 0,
       outputTokens: response?.usage?.output_tokens ?? 0,
     };
+  }
+
+  // Retries only on HTTP 429 (rate limit). Timeouts and other errors propagate immediately —
+  // retrying a known-slow generation just doubles the wait.
+  private async callWithBackoff<T>(fn: () => Promise<T>): Promise<T> {
+    for (let attempt = 1; attempt <= MAX_429_ATTEMPTS; attempt++) {
+      try {
+        return await fn();
+      } catch (err: unknown) {
+        const is429 = (err as { status?: number })?.status === 429;
+        if (is429 && attempt < MAX_429_ATTEMPTS) {
+          await new Promise((resolve) => setTimeout(resolve, 2 ** attempt * 1000));
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw new Error('unreachable');
   }
 }
