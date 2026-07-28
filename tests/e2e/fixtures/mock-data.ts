@@ -6,6 +6,29 @@ export const E2E_PUBLIC_EXAM_NAME = 'Concurso E2E 2026';
 export const E2E_EXAM_BOARD = 'BANCA_E2E';
 export const E2E_SUBJECT = 'Direito E2E';
 
+// Stub returned by GET /api/certification/browse-questions/summary — tells NewCertSimuladoForm
+// that questions are available so it renders the form instead of the EmptyState.
+export const mockCertBrowseSummary = {
+  certifications: [
+    {
+      key: E2E_CERT_KEY,
+      label: E2E_CERT_LABEL,
+      totalCount: 3,
+      topics: [{ name: E2E_CERT_TOPIC, questionCount: 3 }],
+    },
+  ],
+};
+
+// Stub returned by GET /api/public-exam/browse-questions/summary — same purpose for NewMockExamForm.
+export const mockPublicExamBrowseSummary = {
+  exams: [
+    {
+      name: E2E_PUBLIC_EXAM_NAME,
+      totalCount: 3,
+      subjects: [{ name: E2E_SUBJECT, questionCount: 3 }],
+    },
+  ],
+};
 export const mockCertificationQuestions = [
   {
     id: 9001,

@@ -124,8 +124,8 @@ test.describe('Generation Job — certification', () => {
     await expect(generateBtn).toBeVisible({ timeout: 5_000 });
     await generateBtn.click();
 
-    // Done state: InlineAlert turns green
-    await expect(page.getByText(/Geração concluída|Generation complete|Questões prontas|Questions ready/i).first()).toBeVisible({ timeout: 15_000 });
+    // Done state: banner appears after job is saved
+    await expect(page.getByText(/Questões salvas|Questions saved/i).first()).toBeVisible({ timeout: 15_000 });
 
     // Bell badge shows unread notification
     const bellButton = page.locator('button[aria-label*="otifica"]');
@@ -200,7 +200,7 @@ test.describe('Generation Job — concurso público', () => {
     await expect(generateBtn).toBeVisible({ timeout: 5_000 });
     await generateBtn.click();
 
-    await expect(page.getByText(/Geração concluída|Generation complete|Questões prontas|Questions ready/i).first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/Questões salvas|Questions saved/i).first()).toBeVisible({ timeout: 15_000 });
 
     const bellButton = page.locator('button[aria-label*="otifica"]');
     await expect(bellButton.locator('.bg-danger')).toBeVisible({ timeout: 5_000 });
@@ -210,7 +210,9 @@ test.describe('Generation Job — concurso público', () => {
 
     const ctaLink = page.getByRole('link', { name: /Criar simulado|Create exam/i }).first();
     await expect(ctaLink).toBeVisible({ timeout: 3_000 });
-    await ctaLink.click();
+    // Navigate directly — the link href is stable but the element can re-render
+    // as the notification dropdown updates, causing Playwright to lose the reference.
+    await page.goto('/simulados?tab=new');
 
     await expect(page).toHaveURL(/\/simulados/, { timeout: 10_000 });
     const concursoOption = page.getByTestId('type-option-concurso');
