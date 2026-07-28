@@ -25,7 +25,7 @@ model User {
   mockAttempts   MockExamAttempt[]
   certSimulados        CertificationSimulado[]
   certSimuladoAttempts CertificationSimuladoAttempt[]
-  fullExamJobs         FullExamJob[]
+  generationJobs       GenerationJob[]
   plan                         String   @default("free")
   questionsGeneratedThisPeriod Int      @default(0)
   periodStartDate              DateTime @default(now())
@@ -140,16 +140,33 @@ model Explanation {
 }
 
 model UsageLog {
-  id           String   @id @default(cuid())
-  userId       String
-  action       String
-  count        Int      @default(1)
-  inputTokens  Int      @default(0)
-  outputTokens Int      @default(0)
-  createdAt    DateTime @default(now())
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String         @id @default(cuid())
+  userId          String
+  action          String
+  count           Int            @default(1)
+  totalDurationMs Int?
+  refName         String?
+  refKey          String?
+  type            String?
+  topicName       String?
+  createdAt       DateTime       @default(now())
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  steps           UsageLogStep[]
 
   @@index([userId])
+}
+
+model UsageLogStep {
+  id           String   @id @default(cuid())
+  usageLogId   String
+  step         String
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  durationMs   Int
+  createdAt    DateTime @default(now())
+  usageLog     UsageLog @relation(fields: [usageLogId], references: [id], onDelete: Cascade)
+
+  @@index([usageLogId])
 }
 
 model ExamBoard {
@@ -382,36 +399,37 @@ model AdminAuditLog {
   @@index([targetId])
 }
 
-model FullExamJob {
-  id            String            @id @default(cuid())
+model GenerationJob {
+  id            String                @id @default(cuid())
   userId        String
-  type          String            // "certification" | "public_exam"
-  refKey        String            // certKey ou publicExamId
-  refName       String            // label humano para a notificação
-  examBoardName String?           // apenas para public_exam
-  status        String            @default("running") // "running" | "done" | "error"
-  totalTopics   Int
-  doneTopics    Int               @default(0)
-  savedCount    Int               @default(0)
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  topics        FullExamJobTopic[]
+  type          String                // "certification" | "public_exam"
+  refKey        String                // certKey ou publicExamId
+  refName       String                // label humano para a notificação
+  examBoardName String?               // apenas para public_exam
+  status        String                @default("queued") // "queued" | "running" | "awaiting_review" | "done" | "error"
+  savedCount    Int                   @default(0)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  user          User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topics        GenerationJobTopic[]
 
   @@index([userId])
 }
 
-model FullExamJobTopic {
-  id           String      @id @default(cuid())
+model GenerationJobTopic {
+  id           String        @id @default(cuid())
   jobId        String
   topicName    String
   questionCount Int
-  status       String      @default("pending") // "pending" | "running" | "done" | "error"
-  savedCount   Int         @default(0)
-  errorMessage String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  job          FullExamJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  status       String        @default("queued") // "queued" | "running" | "done" | "error"
+  savedCount           Int           @default(0)
+  errorMessage         String?
+  errorType            String?       // "quota" | "generation" | "timeout" | null
+  pendingQuestionsJson String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  job                  GenerationJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@index([jobId])
+  @@index([status])
 }

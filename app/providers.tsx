@@ -15,6 +15,7 @@ import { useInactivityLogout } from '@/features/hooks/useInactivityLogout.hook';
 export interface ProvidersProps {
   children: React.ReactNode;
   themeProps?: ThemeProviderProps;
+  initialMessages?: Record<string, string>;
 }
 
 declare module '@react-types/shared' {
@@ -29,13 +30,13 @@ function InactivityGuard() {
   return null;
 }
 
-export function Providers({ children, themeProps }: ProvidersProps) {
+export function Providers({ children, themeProps, initialMessages }: ProvidersProps) {
   const router = useRouter();
 
   return (
     <SessionProvider>
       <InactivityGuard />
-      <LanguageProvider>
+      <LanguageProvider initialMessages={initialMessages}>
         <HeroUIProvider navigate={router.push}>
           <ToastProvider />
           <NextThemesProvider {...themeProps}>{children}</NextThemesProvider>

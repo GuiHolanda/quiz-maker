@@ -5,16 +5,17 @@ import { PLAN_LIMITS } from '@/config/constants';
 
 export class AdminService {
   async getOverview(): Promise<AdminOverviewStats> {
-    const [allUsers, usageLogs, tokenAgg, allTokensByUser] = await Promise.all([
+    const [allUsers, usageLogs, tokenAgg, allStepsByLog, allCountsByUser] = await Promise.all([
       prisma.user.findMany({ select: { plan: true, questionsGeneratedThisPeriod: true, subscriptionStatus: true } }),
       prisma.usageLog.aggregate({ _sum: { count: true }, where: { action: 'generate_questions' } }),
-      prisma.usageLog.aggregate({
+      prisma.usageLogStep.aggregate({ _sum: { inputTokens: true, outputTokens: true } }),
+      prisma.usageLogStep.groupBy({
+        by: ['usageLogId'],
         _sum: { inputTokens: true, outputTokens: true },
-        where: { action: 'generate_questions' },
       }),
       prisma.usageLog.groupBy({
         by: ['userId'],
-        _sum: { inputTokens: true, outputTokens: true, count: true },
+        _sum: { count: true },
         where: { action: 'generate_questions' },
       }),
     ]);
@@ -52,8 +53,20 @@ export class AdminService {
         ? Math.round((totalInputTokens + totalOutputTokens) / totalQuestionsGenerated)
         : 0;
 
+    // Resolve usageLogId → userId for steps, then join with user plans
+    const logIds = allStepsByLog.map((s) => s.usageLogId);
+    const logUserRows = await prisma.usageLog.findMany({
+      where: { id: { in: logIds } },
+      select: { id: true, userId: true },
+    });
+    const userIdByLogId = new Map(logUserRows.map((l) => [l.id, l.userId]));
+
+    const userIdsForTokens = logUserRows.map((l) => l.userId);
+    const userIdsForCounts = allCountsByUser.map((r) => r.userId);
+    const allUserIds = Array.from(new Set([...userIdsForTokens, ...userIdsForCounts]));
+
     const allUserPlans = await prisma.user.findMany({
-      where: { id: { in: allTokensByUser.map((t) => t.userId) } },
+      where: { id: { in: allUserIds } },
       select: { id: true, plan: true },
     });
     const planById = new Map(allUserPlans.map((u) => [u.id, u.plan as UserPlan]));
@@ -66,11 +79,19 @@ export class AdminService {
       tester: emptyPlanStats(),
       admin: emptyPlanStats(),
     };
-    for (const row of allTokensByUser) {
-      const plan = planById.get(row.userId);
+
+    for (const row of allStepsByLog) {
+      const userId = userIdByLogId.get(row.usageLogId);
+      const plan = userId ? planById.get(userId) : undefined;
       if (plan && plan in tokensByPlan) {
         tokensByPlan[plan].inputTokens += row._sum.inputTokens ?? 0;
         tokensByPlan[plan].outputTokens += row._sum.outputTokens ?? 0;
+      }
+    }
+
+    for (const row of allCountsByUser) {
+      const plan = planById.get(row.userId);
+      if (plan && plan in tokensByPlan) {
         tokensByPlan[plan].questionsGenerated += row._sum.count ?? 0;
       }
     }
@@ -133,12 +154,44 @@ export class AdminService {
     ]);
 
     const userIds = users.map((u) => u.id);
-    const tokensByUser = await prisma.usageLog.groupBy({
-      by: ['userId'],
-      _sum: { inputTokens: true, outputTokens: true, count: true },
-      where: { userId: { in: userIds }, action: 'generate_questions' },
+    const [countsByUser, stepsByLog] = await Promise.all([
+      prisma.usageLog.groupBy({
+        by: ['userId'],
+        _sum: { count: true },
+        where: { userId: { in: userIds }, action: 'generate_questions' },
+      }),
+      prisma.usageLogStep.groupBy({
+        by: ['usageLogId'],
+        _sum: { inputTokens: true, outputTokens: true },
+        where: { usageLog: { userId: { in: userIds } } },
+      }),
+    ]);
+
+    // Resolve usageLogId → userId
+    const logIdsPage = stepsByLog.map((s) => s.usageLogId);
+    const logsPage = await prisma.usageLog.findMany({
+      where: { id: { in: logIdsPage } },
+      select: { id: true, userId: true },
     });
-    const tokenMap = new Map(tokensByUser.map((t) => [t.userId, t._sum]));
+    const userIdByLogIdPage = new Map(logsPage.map((l) => [l.id, l.userId]));
+
+    const tokenMap = new Map<string, { inputTokens: number; outputTokens: number; count: number }>();
+    for (const uid of userIds) {
+      tokenMap.set(uid, { inputTokens: 0, outputTokens: 0, count: 0 });
+    }
+    for (const row of stepsByLog) {
+      const uid = userIdByLogIdPage.get(row.usageLogId);
+      if (uid && tokenMap.has(uid)) {
+        const entry = tokenMap.get(uid)!;
+        entry.inputTokens += row._sum.inputTokens ?? 0;
+        entry.outputTokens += row._sum.outputTokens ?? 0;
+      }
+    }
+    for (const row of countsByUser) {
+      if (tokenMap.has(row.userId)) {
+        tokenMap.get(row.userId)!.count += row._sum.count ?? 0;
+      }
+    }
 
     return {
       users: users.map((u) => ({
@@ -182,7 +235,7 @@ export class AdminService {
       },
     });
 
-    const [, tokenTotals] = await Promise.all([
+    const [, countTotals, stepTotals] = await Promise.all([
       prisma.adminAuditLog.create({
         data: {
           adminId,
@@ -194,7 +247,11 @@ export class AdminService {
       }),
       prisma.usageLog.aggregate({
         where: { userId: targetId },
-        _sum: { inputTokens: true, outputTokens: true, count: true },
+        _sum: { count: true },
+      }),
+      prisma.usageLogStep.aggregate({
+        where: { usageLog: { userId: targetId } },
+        _sum: { inputTokens: true, outputTokens: true },
       }),
     ]);
 
@@ -203,9 +260,9 @@ export class AdminService {
       plan: updated.plan as UserPlan,
       periodStartDate: updated.periodStartDate.toISOString(),
       createdAt: updated.createdAt.toISOString(),
-      totalInputTokens: tokenTotals._sum.inputTokens ?? 0,
-      totalOutputTokens: tokenTotals._sum.outputTokens ?? 0,
-      totalQuestionsGeneratedAllTime: tokenTotals._sum.count ?? 0,
+      totalInputTokens: stepTotals._sum.inputTokens ?? 0,
+      totalOutputTokens: stepTotals._sum.outputTokens ?? 0,
+      totalQuestionsGeneratedAllTime: countTotals._sum.count ?? 0,
     };
   }
 

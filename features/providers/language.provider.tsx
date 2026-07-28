@@ -5,15 +5,10 @@ import type { LanguageStoreApi, Language } from '@/shared/types';
 import React, { useReducer, useEffect, useCallback, useMemo } from 'react';
 
 import { LANGUAGE_LOCAL_STORAGE_KEY } from '@/config/constants';
-import { languageReducer, LanguageState } from '@/features/reducers/language.reducer';
+import { languageReducer } from '@/features/reducers/language.reducer';
 import { parseProperties } from '@/lib/properties-parser';
 
 export const LanguageContext = React.createContext<LanguageStoreApi | null>(null);
-
-const INITIAL_STATE: LanguageState = {
-  language: 'pt',
-  messages: {},
-};
 
 async function loadMessages(language: Language): Promise<Record<string, string>> {
   const res = await fetch(`/messages/${language}.properties`);
@@ -22,8 +17,14 @@ async function loadMessages(language: Language): Promise<Record<string, string>>
   return parseProperties(raw);
 }
 
-export function LanguageProvider({ children }: Readonly<{ children: React.ReactNode }>) {
-  const [state, dispatch] = useReducer(languageReducer, INITIAL_STATE);
+export function LanguageProvider({
+  children,
+  initialMessages,
+}: Readonly<{ children: React.ReactNode; initialMessages?: Record<string, string> }>) {
+  const [state, dispatch] = useReducer(languageReducer, {
+    language: 'pt',
+    messages: initialMessages ?? {},
+  });
 
   useEffect(() => {
     let lang: Language = 'pt';
@@ -34,8 +35,13 @@ export function LanguageProvider({ children }: Readonly<{ children: React.ReactN
       if (stored === 'en' || stored === 'pt') lang = stored;
     } catch {}
 
-    dispatch({ type: 'setLanguage', payload: { language: lang } });
-    loadMessages(lang).then((messages) => dispatch({ type: 'setMessages', payload: { messages } }));
+    // Se o idioma armazenado difere do SSR (pt), recarrega as mensagens no cliente.
+    // Caso contrário, mantém as mensagens vindas do servidor (sem refetch, sem flash).
+    if (lang !== 'pt' || !initialMessages) {
+      dispatch({ type: 'setLanguage', payload: { language: lang } });
+      loadMessages(lang).then((messages) => dispatch({ type: 'setMessages', payload: { messages } }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const initialized = React.useRef(false);

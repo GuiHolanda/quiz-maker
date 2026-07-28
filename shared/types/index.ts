@@ -594,22 +594,67 @@ export interface AppNotification {
   read: boolean;
 }
 
-export interface FullExamJobTopicStatus {
+export interface GenerationJobTopicStatus {
   id: string;
   topicName: string;
   questionCount: number;
-  status: 'pending' | 'running' | 'done' | 'error';
+  status: 'queued' | 'running' | 'done' | 'error' | 'cancelled';
   savedCount: number;
   errorMessage: string | null;
+  errorType: 'quota' | 'generation' | 'timeout' | null;
 }
 
-export interface FullExamJobStatus {
+export interface GenerationJobStatus {
   id: string;
-  status: 'running' | 'done' | 'error';
+  status: 'queued' | 'running' | 'done' | 'error' | 'awaiting_review';
   totalTopics: number;
   doneTopics: number;
+  queuedTopics: number;
   savedCount: number;
   type: 'certification' | 'public_exam';
   refKey: string;
-  topics: FullExamJobTopicStatus[];
+  refName: string;
+  examBoardName: string | null;
+  topics: GenerationJobTopicStatus[];
+}
+
+export interface GenerationHistoryItem {
+  id: string;
+  source: 'usage_log' | 'generation_job';
+  type: 'individual' | 'full_exam';
+  domain: 'certification' | 'public_exam';
+  refName: string | null;
+  topicName: string | null;
+  questionsGenerated: number;
+  questionsSaved: number;
+  status: 'done' | 'error' | 'awaiting_review' | 'cancelled' | 'running' | 'queued';
+  createdAt: string;
+}
+
+export interface GenerationHistoryResponse {
+  items: GenerationHistoryItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface GenerationHistoryFilters {
+  readonly domain: 'all' | 'certification' | 'public_exam';
+  readonly source: string[];
+  readonly topic: string[];
+  readonly status: string[];
+  readonly sort: 'asc' | 'desc';
+}
+
+export const EMPTY_HISTORY_FILTERS: GenerationHistoryFilters = {
+  domain: 'all',
+  source: [],
+  topic: [],
+  status: [],
+  sort: 'desc',
+};
+
+export interface GenerationHistoryFilterOptions {
+  sources: string[];
+  topics: string[];
 }

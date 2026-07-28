@@ -62,7 +62,7 @@ export function GeneratedQuestionsList({
   };
 
   return (
-    <div className="flex flex-col gap-4 mt-8">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-3 font-bold text-sm">
           {!isLoadingMore && (
@@ -104,7 +104,7 @@ export function GeneratedQuestionsList({
 
             return (
               <GeneratedQuestionCard
-                key={question.id}
+                key={globalIndex}
                 index={globalIndex}
                 question={question}
                 selectedIds={selectedIds}

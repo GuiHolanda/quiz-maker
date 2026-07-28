@@ -18,6 +18,14 @@ const prisma = new PrismaClient({
 export const E2E_USER_EMAIL = process.env.E2E_USER_EMAIL!;
 export const E2E_USER_PASSWORD = process.env.E2E_USER_PASSWORD!;
 
+// These constants mirror mock-data.ts — kept in sync manually.
+const E2E_CERT_KEY = 'AWS-SAA-C03-E2E';
+const E2E_CERT_LABEL = 'AWS Solutions Architect E2E';
+const E2E_CERT_TOPIC = 'E2E Topic';
+const E2E_PUBLIC_EXAM_NAME = 'Concurso E2E 2026';
+const E2E_EXAM_BOARD = 'BANCA_E2E';
+const E2E_SUBJECT = 'Direito E2E';
+
 async function cleanupUserData(userId: string) {
   // Delete in dependency order — same as globalTeardown
   await prisma.certificationSimuladoAttemptAnswer.deleteMany({ where: { attempt: { userId } } });
@@ -48,8 +56,94 @@ async function cleanupUserData(userId: string) {
   await prisma.publicExamSubject.deleteMany({ where: { publicExam: { userId } } });
   await prisma.publicExam.deleteMany({ where: { userId } });
 
-  await prisma.fullExamJobTopic.deleteMany({ where: { job: { userId } } });
-  await prisma.fullExamJob.deleteMany({ where: { userId } });
+  await prisma.generationJobTopic.deleteMany({ where: { job: { userId } } });
+  await prisma.generationJob.deleteMany({ where: { userId } });
+}
+
+// Seeds a certification with one topic and 3 questions so simulado creation tests
+// have real questions in the DB without needing a real LLM call.
+async function seedCertificationData(userId: string) {
+  const cert = await prisma.certification.create({
+    data: {
+      label: E2E_CERT_LABEL,
+      key: E2E_CERT_KEY,
+      provider: 'E2E',
+      totalQuestions: 65,
+      userId,
+      topics: {
+        create: [{ name: E2E_CERT_TOPIC, minQuestions: 0, maxQuestions: 100 }],
+      },
+    },
+  });
+
+  const questions = [
+    { text: 'E2E Question 1: Which service provides object storage?', options: { A: 'S3', B: 'EC2', C: 'RDS', D: 'Lambda' }, correct: ['A'] },
+    { text: 'E2E Question 2: Which service provides compute?', options: { A: 'S3', B: 'EC2', C: 'RDS', D: 'CloudFront' }, correct: ['B'] },
+    { text: 'E2E Question 3: Which service is a managed relational database?', options: { A: 'DynamoDB', B: 'Redshift', C: 'RDS', D: 'ElastiCache' }, correct: ['C'] },
+  ];
+
+  for (const q of questions) {
+    await prisma.question.create({
+      data: {
+        text: q.text,
+        correctCount: 1,
+        topic: E2E_CERT_TOPIC,
+        certificationTitle: E2E_CERT_LABEL,
+        difficulty: 'medium',
+        userId,
+        options: { create: Object.entries(q.options).map(([label, text]) => ({ label, text })) },
+        answer: { create: { correctOptions: JSON.stringify(q.correct) } },
+      },
+    });
+  }
+
+  return cert;
+}
+
+// Seeds a public exam with one subject and 3 questions.
+async function seedPublicExamData(userId: string) {
+  const examBoard = await prisma.examBoard.upsert({
+    where: { name: E2E_EXAM_BOARD },
+    update: {},
+    create: { name: E2E_EXAM_BOARD, fullName: E2E_EXAM_BOARD },
+  });
+
+  const exam = await prisma.publicExam.create({
+    data: {
+      name: E2E_PUBLIC_EXAM_NAME,
+      role: 'E2E Role',
+      totalQuestions: 60,
+      userId,
+      examBoardId: examBoard.id,
+      subjects: {
+        create: [{ name: E2E_SUBJECT, minQuestions: 100, maxQuestions: 100 }],
+      },
+    },
+  });
+
+  const questions = [
+    { text: 'E2E Concurso Question 1: O que é o princípio da legalidade?', options: { A: 'Opção A', B: 'Opção B', C: 'Opção C', D: 'Opção D' }, correct: ['A'] },
+    { text: 'E2E Concurso Question 2: O que é isonomia?', options: { A: 'Opção A', B: 'Opção B', C: 'Opção C', D: 'Opção D' }, correct: ['B'] },
+    { text: 'E2E Concurso Question 3: Qual é a finalidade da CF/88?', options: { A: 'Opção A', B: 'Opção B', C: 'Opção C', D: 'Opção D' }, correct: ['C'] },
+  ];
+
+  for (const q of questions) {
+    await prisma.publicExamQuestion.create({
+      data: {
+        text: q.text,
+        correctCount: 1,
+        subject: E2E_SUBJECT,
+        publicExamName: E2E_PUBLIC_EXAM_NAME,
+        examBoardName: E2E_EXAM_BOARD,
+        difficulty: 'medium',
+        userId,
+        options: { create: Object.entries(q.options).map(([label, text]) => ({ label, text })) },
+        answer: { create: { correctOptions: JSON.stringify(q.correct) } },
+      },
+    });
+  }
+
+  return exam;
 }
 
 async function globalSetup(config: FullConfig) {
@@ -76,6 +170,10 @@ async function globalSetup(config: FullConfig) {
 
   // Clean up any data left from a previous run (e.g. if teardown failed)
   await cleanupUserData(user.id);
+
+  // Seed cert + questions and exam + questions so simulado creation works without real LLM calls.
+  await seedCertificationData(user.id);
+  await seedPublicExamData(user.id);
 
   await prisma.$disconnect();
 

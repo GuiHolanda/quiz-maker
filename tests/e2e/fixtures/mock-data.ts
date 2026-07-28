@@ -6,6 +6,29 @@ export const E2E_PUBLIC_EXAM_NAME = 'Concurso E2E 2026';
 export const E2E_EXAM_BOARD = 'BANCA_E2E';
 export const E2E_SUBJECT = 'Direito E2E';
 
+// Stub returned by GET /api/certification/browse-questions/summary — tells NewCertSimuladoForm
+// that questions are available so it renders the form instead of the EmptyState.
+export const mockCertBrowseSummary = {
+  certifications: [
+    {
+      key: E2E_CERT_KEY,
+      label: E2E_CERT_LABEL,
+      totalCount: 3,
+      topics: [{ name: E2E_CERT_TOPIC, questionCount: 3 }],
+    },
+  ],
+};
+
+// Stub returned by GET /api/public-exam/browse-questions/summary — same purpose for NewMockExamForm.
+export const mockPublicExamBrowseSummary = {
+  exams: [
+    {
+      name: E2E_PUBLIC_EXAM_NAME,
+      totalCount: 3,
+      subjects: [{ name: E2E_SUBJECT, questionCount: 3 }],
+    },
+  ],
+};
 export const mockCertificationQuestions = [
   {
     id: 9001,
@@ -212,7 +235,7 @@ export const mockMockExamResult = {
 
 // ─── Full Exam Job SSE helpers ────────────────────────────────────────────────
 
-function buildTopicEntry(topicName: string, status: 'pending' | 'running' | 'done' | 'error', savedCount = 0) {
+function buildTopicEntry(topicName: string, status: 'queued' | 'running' | 'done' | 'error', savedCount = 0) {
   return {
     id: 'e2e-topic-1',
     topicName,
@@ -223,12 +246,12 @@ function buildTopicEntry(topicName: string, status: 'pending' | 'running' | 'don
   };
 }
 
-export function buildFullExamJobProgressEvent(opts: {
+export function buildGenerationJobProgressEvent(opts: {
   doneTopics: number;
   totalTopics: number;
   savedCount: number;
   topicName: string;
-  topicStatus: 'pending' | 'running' | 'done' | 'error';
+  topicStatus: 'queued' | 'running' | 'done' | 'error';
 }): string {
   const data = {
     doneTopics: opts.doneTopics,
@@ -239,7 +262,7 @@ export function buildFullExamJobProgressEvent(opts: {
   return `event: progress\ndata: ${JSON.stringify(data)}\n\n`;
 }
 
-export function buildFullExamJobDoneEvent(opts: {
+export function buildGenerationJobDoneEvent(opts: {
   doneTopics: number;
   totalTopics: number;
   savedCount: number;

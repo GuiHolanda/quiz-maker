@@ -198,23 +198,26 @@ Route handlers never contain business logic — they delegate to services.
 
 ### Token recording pattern (question-generator routes)
 
-The two generator routes (`certification/question-generator` and `public-exam/question-generator`) follow a two-step pattern to record token usage without blocking the response:
+The two generator routes (`certification/question-generator` and `public-exam/question-generator`) follow a pattern to record per-step token usage and total duration via `MetricsService`:
 
 ```ts
 // 1. Atomic quota check + UsageLog row creation (before LLM call)
 const { logId } = await quotaService.checkAndRecordQuestions(session.user.id, count);
 
-// 2. LLM call — returns { text, inputTokens, outputTokens }
-const rawResponse = await openAIService.call(prompt, params);
+// 2. LLM calls — 3 steps: research → review → format
 
-// 3. Patch token counts — fire-and-forget (void) so response is not delayed
-void quotaService.recordTokens(logId, {
-  inputTokens: rawResponse.inputTokens,
-  outputTokens: rawResponse.outputTokens,
-});
+// 3. Record per-step tokens and duration via MetricsService (fire-and-forget)
+void metricsService.recordStep(logId, 'research', { inputTokens: research.inputTokens, outputTokens: research.outputTokens }, researchDurationMs);
+void metricsService.recordStep(logId, 'review', { inputTokens: review.inputTokens, outputTokens: review.outputTokens }, reviewDurationMs);
+void metricsService.recordStep(logId, 'format', { inputTokens: format.inputTokens, outputTokens: format.outputTokens }, formatDurationMs);
+
+// 4. Finalize total duration (awaited — last write before topic is marked done)
+await metricsService.finalize(logId, totalDurationMs);
 ```
 
-The `void` is intentional: `recordTokens` is a best-effort DB update that should not delay or fail the response to the user. If it fails silently, the `UsageLog` row will have `inputTokens = 0` and `outputTokens = 0` (the schema defaults).
+The three `recordStep` calls are fire-and-forget (`void`) — each writes a `UsageLogStep` row with per-step token counts and duration, and should not delay the response to the user. If one fails silently, that step's row will be missing but the rest of the flow continues unaffected.
+
+`finalize` is awaited because it is the last write before the topic is marked `done` — it patches `UsageLog.totalDurationMs` so the full pipeline duration is available for analytics.
 
 Admin service is co-located in `app/api/admin/admin.service.ts` (not in `features/services/`) because it is not shared with client code.
 

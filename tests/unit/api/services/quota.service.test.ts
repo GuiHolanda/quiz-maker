@@ -213,4 +213,93 @@ describe('QuotaService', () => {
       );
     });
   });
+
+  describe('checkAndRecordQuestions — context fields', () => {
+    it('stores context fields in UsageLog when provided (unlimited plan)', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'tester', customQuotaOverride: -1 }),
+      );
+      prismaMock.user.update.mockResolvedValue(makeUser() as any);
+      prismaMock.usageLog.create.mockResolvedValue({ id: 'log-1' } as any);
+
+      await service.checkAndRecordQuestions('user-1', 5, {
+        refName: 'AWS SAA-C03',
+        refKey: 'aws-saa-c03',
+        type: 'certification',
+        topicName: 'S3 Storage Classes',
+      });
+
+      expect(prismaMock.usageLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          refName: 'AWS SAA-C03',
+          refKey: 'aws-saa-c03',
+          type: 'certification',
+          topicName: 'S3 Storage Classes',
+        }),
+      });
+    });
+
+    it('stores context fields in UsageLog when provided (finite plan)', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'free', questionsGeneratedThisPeriod: 0 }),
+      );
+      prismaMock.user.updateMany.mockResolvedValue({ count: 1 } as any);
+      prismaMock.usageLog.create.mockResolvedValue({ id: 'log-2' } as any);
+
+      await service.checkAndRecordQuestions('user-1', 5, {
+        refName: 'OAB',
+        type: 'certification',
+        topicName: 'Direito Civil',
+      });
+
+      expect(prismaMock.usageLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          refName: 'OAB',
+          type: 'certification',
+          topicName: 'Direito Civil',
+        }),
+      });
+    });
+
+    it('works without context (backward compatible)', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'free', questionsGeneratedThisPeriod: 0 }),
+      );
+      prismaMock.user.updateMany.mockResolvedValue({ count: 1 } as any);
+      prismaMock.usageLog.create.mockResolvedValue({ id: 'log-3' } as any);
+
+      await expect(service.checkAndRecordQuestions('user-1', 5)).resolves.toEqual({ logId: 'log-3' });
+    });
+  });
+
+  describe('rollbackQuota', () => {
+    it('decrements the period counter and deletes the usage log', async () => {
+      prismaMock.usageLog.findUnique.mockResolvedValue({
+        id: 'log-1',
+        userId: 'user-1',
+        count: 5,
+      } as any);
+      prismaMock.user.update.mockResolvedValue({} as any);
+      prismaMock.usageLog.delete.mockResolvedValue({} as any);
+
+      const service = new QuotaService();
+      await service.rollbackQuota('log-1');
+
+      expect(prismaMock.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { questionsGeneratedThisPeriod: { decrement: 5 } },
+      });
+      expect(prismaMock.usageLog.delete).toHaveBeenCalledWith({ where: { id: 'log-1' } });
+    });
+
+    it('is a no-op when the log does not exist', async () => {
+      prismaMock.usageLog.findUnique.mockResolvedValue(null);
+
+      const service = new QuotaService();
+      await service.rollbackQuota('missing');
+
+      expect(prismaMock.user.update).not.toHaveBeenCalled();
+      expect(prismaMock.usageLog.delete).not.toHaveBeenCalled();
+    });
+  });
 });

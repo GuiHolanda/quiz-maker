@@ -43,6 +43,11 @@ export const inputProperties = {
     variant: 'bordered' as InputVariant,
     classNames: borderedInputClassNames,
   },
+  numberInput: {
+    labelPlacement: 'outside' as InputLabelPlacement,
+    variant: 'bordered' as InputVariant,
+    classNames: borderedInputClassNames,
+  },
   select: {
     labelPlacement: 'outside' as InputLabelPlacement,
     variant: 'bordered' as InputVariant,
