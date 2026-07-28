@@ -3,6 +3,7 @@ import { after } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { QuotaService } from '@/features/services/quota.service';
+import { MetricsService } from '@/features/services/metrics.service';
 import { validateAiQuestions } from '@/features/services/question.service';
 import { certificationQuestionsResearchPrompt } from '@/config/prompts/certification-questions-research.prompt';
 import { certificationQuestionsReviewPrompt } from '@/config/prompts/certification-questions-review.prompt';
@@ -191,6 +192,7 @@ async function maybeFinalizeJob(jobId: string): Promise<void> {
 export async function processTopic(topicId: string): Promise<void> {
   const openAIService = new OpenAIService();
   const quotaService = new QuotaService();
+  const metricsService = new MetricsService();
 
   const topic = await prisma.generationJobTopic.findUnique({
     where: { id: topicId },
@@ -204,30 +206,46 @@ export async function processTopic(topicId: string): Promise<void> {
   let logId: string | null = null;
 
   try {
+    const startTime = Date.now();
     const numStr = String(topic.questionCount);
-    const recorded = await quotaService.checkAndRecordQuestions(userId, topic.questionCount);
+    const recorded = await quotaService.checkAndRecordQuestions(userId, topic.questionCount, {
+      refKey: job.refKey,
+      refName: job.refName,
+      type: job.type,
+      topicName: topic.topicName,
+    });
     logId = recorded.logId;
 
     let questions: AIQuestion[] | AIPublicExamQuestion[];
 
     if (type === 'certification') {
+      let t0 = Date.now();
       const research = await openAIService.call(
         certificationQuestionsResearchPrompt,
         { certification_name: refName, topic_name: topic.topicName, num_questions: numStr },
         { webSearch: true }
       );
+      void metricsService.recordStep(logId, 'research', { inputTokens: research.inputTokens, outputTokens: research.outputTokens }, Date.now() - t0);
+
+      t0 = Date.now();
       const review = await openAIService.call(
         certificationQuestionsReviewPrompt,
         { certification_name: refName, topic_name: topic.topicName, draft_questions: research.text },
         { webSearch: false, model: process.env.OPENAI_MODEL_REVIEW ?? process.env.OPENAI_MODEL ?? 'gpt-4o' }
       );
+      void metricsService.recordStep(logId, 'review', { inputTokens: review.inputTokens, outputTokens: review.outputTokens }, Date.now() - t0);
+
+      t0 = Date.now();
       const format = await openAIService.call(
         certificationQuestionsFormatPrompt,
         { certification_name: refName, topic_name: topic.topicName, reviewed_questions: review.text },
         { webSearch: false, jsonMode: true }
       );
+      void metricsService.recordStep(logId, 'format', { inputTokens: format.inputTokens, outputTokens: format.outputTokens }, Date.now() - t0);
+
       questions = validateAiQuestions(JSON.parse(extractJson(format.text))) as AIQuestion[];
     } else {
+      let t0 = Date.now();
       const research = await openAIService.call(
         publicExamQuestionsResearchPrompt,
         {
@@ -238,6 +256,9 @@ export async function processTopic(topicId: string): Promise<void> {
         },
         { webSearch: true }
       );
+      void metricsService.recordStep(logId, 'research', { inputTokens: research.inputTokens, outputTokens: research.outputTokens }, Date.now() - t0);
+
+      t0 = Date.now();
       const review = await openAIService.call(
         publicExamQuestionsReviewPrompt,
         {
@@ -248,6 +269,9 @@ export async function processTopic(topicId: string): Promise<void> {
         },
         { webSearch: false, model: process.env.OPENAI_MODEL_REVIEW ?? process.env.OPENAI_MODEL ?? 'gpt-4o' }
       );
+      void metricsService.recordStep(logId, 'review', { inputTokens: review.inputTokens, outputTokens: review.outputTokens }, Date.now() - t0);
+
+      t0 = Date.now();
       const format = await openAIService.call(
         publicExamQuestionsFormatPrompt,
         {
@@ -258,8 +282,12 @@ export async function processTopic(topicId: string): Promise<void> {
         },
         { webSearch: false, jsonMode: true }
       );
+      void metricsService.recordStep(logId, 'format', { inputTokens: format.inputTokens, outputTokens: format.outputTokens }, Date.now() - t0);
+
       questions = validateAiQuestions(JSON.parse(extractJson(format.text))) as AIPublicExamQuestion[];
     }
+
+    await metricsService.finalize(logId, Date.now() - startTime);
 
     await prisma.generationJobTopic.update({
       where: { id: topicId },
