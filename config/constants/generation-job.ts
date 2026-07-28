@@ -7,9 +7,7 @@ export const OPENAI_TPM_LIMIT = 190_000;
 
 // Global cap on topics generating in parallel. 200K TPM / ~12K tokens per topic/min ≈ 16;
 // 10 leaves ~30% headroom against 429s. Overridable via env for tuning without deploy.
-export const GENERATION_MAX_CONCURRENT_TOPICS = Number(
-  process.env.GENERATION_MAX_CONCURRENT_TOPICS ?? 10
-);
+export const GENERATION_MAX_CONCURRENT_TOPICS = Number(process.env.GENERATION_MAX_CONCURRENT_TOPICS ?? 10);
 
 // Per-user slice of the global cap.
 export const GENERATION_MAX_TOPICS_PER_USER = 5;
