@@ -45,6 +45,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
           status: t.status,
           savedCount: t.savedCount,
           errorMessage: t.errorMessage,
+          errorType: t.errorType,
           pendingQuestionsJson: t.pendingQuestionsJson,
         })),
       },

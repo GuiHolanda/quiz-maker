@@ -22,6 +22,7 @@ type JobWithTopics = Awaited<ReturnType<typeof prisma.generationJob.findFirst>> 
     status: string;
     savedCount: number;
     errorMessage: string | null;
+    errorType: string | null;
   }[];
 };
 
@@ -48,6 +49,7 @@ function shapeJob(job: JobWithTopics) {
       status: t.status,
       savedCount: t.savedCount,
       errorMessage: t.errorMessage,
+      errorType: t.errorType,
     })),
   };
 }
