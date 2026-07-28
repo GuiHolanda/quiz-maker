@@ -10,8 +10,13 @@ export const maxDuration = 60;
 const STALE_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
 
 export async function GET(request: NextRequest) {
+  const secret = process.env.CRON_SECRET;
   const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!secret) {
+    console.error('[cleanup-stale-jobs] CRON_SECRET env var is not set — rejecting request');
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  if (authHeader !== `Bearer ${secret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
