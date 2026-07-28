@@ -22,9 +22,25 @@ export function extractJson(raw: string): string {
   return raw.trim();
 }
 
-export function sanitizeError(err: unknown): string {
-  if (err instanceof Error) return err.message.slice(0, 500);
-  return String(err).slice(0, 500);
+export type TopicErrorType = 'quota' | 'generation' | 'timeout';
+
+export function sanitizeError(err: unknown): { message: string; errorType: TopicErrorType } {
+  if (err instanceof Error) {
+    const msg = err.message.toLowerCase();
+    if (msg.includes('limit reached') || msg.includes('quota')) {
+      return { message: 'Limite de quota atingido', errorType: 'quota' };
+    }
+    if ((err as { status?: number }).status === 429) {
+      return { message: 'Limite de requisições da IA atingido', errorType: 'timeout' };
+    }
+    if (msg.includes('timeout') || msg.includes('econnaborted')) {
+      return { message: 'Tempo limite de geração excedido', errorType: 'timeout' };
+    }
+    if ('code' in err) {
+      return { message: 'Erro interno ao gerar questões', errorType: 'generation' };
+    }
+  }
+  return { message: 'Erro na geração de questões', errorType: 'generation' };
 }
 
 // Promove tópicos "queued" para "running" respeitando os tetos global e por usuário.
@@ -85,12 +101,16 @@ async function claimGlobalSlots(): Promise<string[]> {
     });
     if (candidates.length === 0) return [];
 
+    // Conta os tópicos "running" por usuário com uma única agregação, em vez de N counts
+    // dentro da transação (evita serializar dezenas de queries sob o lock de escrita).
+    const runningTopics = await tx.generationJobTopic.findMany({
+      where: { status: 'running' },
+      select: { job: { select: { userId: true } } },
+    });
     const userRunningCounts = new Map<string, number>();
-    for (const userId of Array.from(new Set(candidates.map((c) => c.job.userId)))) {
-      const running = await tx.generationJobTopic.count({
-        where: { status: 'running', job: { userId } },
-      });
-      userRunningCounts.set(userId, running);
+    for (const rt of runningTopics) {
+      const uid = rt.job.userId;
+      userRunningCounts.set(uid, (userRunningCounts.get(uid) ?? 0) + 1);
     }
 
     const toPromote: string[] = [];
@@ -144,7 +164,8 @@ export async function claimGlobalSlotsAndDispatch(): Promise<void> {
   }
 }
 
-// Marca o job como "awaiting_review" quando todos os tópicos terminaram (done/error).
+// Marca o job como "awaiting_review" quando todos os tópicos terminaram (done/error/cancelled).
+// Sempre atualiza updatedAt para que o cron de cleanup não mate jobs grandes ainda em progresso.
 async function maybeFinalizeJob(jobId: string): Promise<void> {
   const pending = await prisma.generationJobTopic.count({
     where: { jobId, status: { in: ['queued', 'running'] } },
@@ -153,6 +174,12 @@ async function maybeFinalizeJob(jobId: string): Promise<void> {
     await prisma.generationJob.update({
       where: { id: jobId },
       data: { status: 'awaiting_review' },
+    });
+  } else {
+    // Heartbeat: cada tópico concluído renova o TTL do job para o cron não o considerar travado.
+    await prisma.generationJob.update({
+      where: { id: jobId },
+      data: { updatedAt: new Date() },
     });
   }
 }
@@ -172,9 +199,12 @@ export async function processTopic(topicId: string): Promise<void> {
   const { job } = topic;
   const { userId, type, refName, examBoardName } = job;
 
+  let logId: string | null = null;
+
   try {
     const numStr = String(topic.questionCount);
-    const { logId } = await quotaService.checkAndRecordQuestions(userId, topic.questionCount);
+    const recorded = await quotaService.checkAndRecordQuestions(userId, topic.questionCount);
+    logId = recorded.logId;
 
     let questions: AIQuestion[] | AIPublicExamQuestion[];
 
@@ -243,12 +273,29 @@ export async function processTopic(topicId: string): Promise<void> {
     });
   } catch (topicErr) {
     console.error(`[generation-job] Topic "${topic.topicName}" failed:`, topicErr);
+    const { message, errorType } = sanitizeError(topicErr);
+    // Só há o que reembolsar se a quota chegou a ser debitada (logId definido).
+    if (logId) {
+      try {
+        await quotaService.rollbackQuota(logId);
+      } catch (rbErr) {
+        console.error('[generation-job] rollbackQuota failed:', rbErr);
+      }
+    }
     await prisma.generationJobTopic.update({
       where: { id: topicId },
-      data: { status: 'error', errorMessage: sanitizeError(topicErr) },
+      data: { status: 'error', errorMessage: message, errorType },
     });
   } finally {
-    await maybeFinalizeJob(job.id);
-    await releaseAndClaimNext(userId);
+    try {
+      await maybeFinalizeJob(job.id);
+    } catch (e) {
+      console.error('[generation-job] maybeFinalizeJob failed:', e);
+    }
+    try {
+      await releaseAndClaimNext(userId);
+    } catch (e) {
+      console.error('[generation-job] releaseAndClaimNext failed:', e);
+    }
   }
 }

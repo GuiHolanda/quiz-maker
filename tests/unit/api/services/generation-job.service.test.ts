@@ -5,6 +5,7 @@ const { openAICallMock, quotaConstructorMock } = vi.hoisted(() => {
   const defaultInstance = {
     checkAndRecordQuestions: vi.fn().mockResolvedValue({ logId: 'log-1' }),
     recordTokens: vi.fn().mockResolvedValue(undefined),
+    rollbackQuota: vi.fn().mockResolvedValue(undefined),
   };
   return {
     openAICallMock: vi.fn().mockResolvedValue({
@@ -189,7 +190,7 @@ describe('processTopic — pipeline e finalização', () => {
     );
   });
 
-  it('marca o tópico como error quando o pipeline lança', async () => {
+  it('marca o tópico como error com errorType generation quando o pipeline lança', async () => {
     const { validateAiQuestions } = await import('@/features/services/question.service');
     (validateAiQuestions as any).mockImplementationOnce(() => {
       throw new Error('bad json');
@@ -200,9 +201,32 @@ describe('processTopic — pipeline e finalização', () => {
     expect(prismaMock.generationJobTopic.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 'topic-1' },
-        data: expect.objectContaining({ status: 'error', errorMessage: expect.stringContaining('bad json') }),
+        data: expect.objectContaining({
+          status: 'error',
+          errorMessage: 'Erro na geração de questões',
+          errorType: 'generation',
+        }),
       }),
     );
+  });
+
+  it('faz rollback da quota quando a geração falha após o débito', async () => {
+    const rollbackMock = vi.fn().mockResolvedValue(undefined);
+    quotaConstructorMock.mockImplementationOnce(function () {
+      return {
+        checkAndRecordQuestions: vi.fn().mockResolvedValue({ logId: 'log-rb' }),
+        recordTokens: vi.fn(),
+        rollbackQuota: rollbackMock,
+      };
+    });
+    const { validateAiQuestions } = await import('@/features/services/question.service');
+    (validateAiQuestions as any).mockImplementationOnce(() => {
+      throw new Error('bad json');
+    });
+
+    await processTopic('topic-1');
+
+    expect(rollbackMock).toHaveBeenCalledWith('log-rb');
   });
 
   it('marca tópico como error quando quota está excedida (checkAndRecordQuestions lança)', async () => {
@@ -220,7 +244,7 @@ describe('processTopic — pipeline e finalização', () => {
     expect(prismaMock.generationJobTopic.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 'topic-1' },
-        data: expect.objectContaining({ status: 'error', errorMessage: 'Quota exceeded' }),
+        data: expect.objectContaining({ status: 'error', errorMessage: 'Limite de quota atingido', errorType: 'quota' }),
       }),
     );
   });
@@ -232,12 +256,17 @@ describe('processTopic — pipeline e finalização', () => {
     expect(prismaMock.generationJobTopic.update).not.toHaveBeenCalled();
   });
 
-  it('não chama generationJob.update quando ainda há tópicos pendentes', async () => {
+  it('atualiza updatedAt (heartbeat) sem finalizar quando ainda há tópicos pendentes', async () => {
     prismaMock.generationJobTopic.count.mockResolvedValue(2);
 
     await processTopic('topic-1');
 
-    expect(prismaMock.generationJob.update).not.toHaveBeenCalled();
+    expect(prismaMock.generationJob.update).not.toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: 'awaiting_review' }) }),
+    );
+    expect(prismaMock.generationJob.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'job-1' }, data: { updatedAt: expect.any(Date) } }),
+    );
   });
 
   it('chama recordTokens com a soma correta de tokens das 3 etapas', async () => {
@@ -311,7 +340,7 @@ describe('processTopic — branch public_exam', () => {
     expect(prismaMock.generationJobTopic.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 'topic-pe-1' },
-        data: expect.objectContaining({ status: 'error', errorMessage: expect.stringContaining('bad public exam json') }),
+        data: expect.objectContaining({ status: 'error', errorMessage: 'Erro na geração de questões', errorType: 'generation' }),
       }),
     );
   });
@@ -377,14 +406,21 @@ describe('claimGlobalSlots — cross-user slot management (via claimGlobalSlotsA
 
   it('não promove quando o usuário único já atingiu o teto individual', async () => {
     // 3 slots livres globalmente, but user-A already has 5 running (= GENERATION_MAX_TOPICS_PER_USER)
-    prismaMock.generationJobTopic.count
-      .mockResolvedValueOnce(7)  // globalRunning → 3 slots
-      .mockResolvedValueOnce(5); // userRunning for user-A = teto
+    prismaMock.generationJobTopic.count.mockResolvedValueOnce(7); // globalRunning → 3 slots
 
-    prismaMock.generationJobTopic.findMany.mockResolvedValue([
-      { id: 'tA1', jobId: 'jobA', job: { userId: 'user-A' } },
-      { id: 'tA2', jobId: 'jobA', job: { userId: 'user-A' } },
-    ] as any);
+    // Primeiro findMany: candidatos queued. Segundo findMany: tópicos running (5 do user-A = teto).
+    prismaMock.generationJobTopic.findMany
+      .mockResolvedValueOnce([
+        { id: 'tA1', jobId: 'jobA', job: { userId: 'user-A' } },
+        { id: 'tA2', jobId: 'jobA', job: { userId: 'user-A' } },
+      ] as any)
+      .mockResolvedValueOnce([
+        { job: { userId: 'user-A' } },
+        { job: { userId: 'user-A' } },
+        { job: { userId: 'user-A' } },
+        { job: { userId: 'user-A' } },
+        { job: { userId: 'user-A' } },
+      ] as any);
 
     await claimGlobalSlotsAndDispatch();
 
@@ -419,26 +455,47 @@ describe('extractJson — parse defensivo da resposta da LLM', () => {
   });
 });
 
-describe('sanitizeError — formatação de erro para o banco', () => {
-  it('retorna message de uma instância Error', () => {
-    expect(sanitizeError(new Error('algo deu errado'))).toBe('algo deu errado');
+describe('sanitizeError — categorização de erro', () => {
+  it('classifica quota', () => {
+    expect(sanitizeError(new Error('Question generation limit reached (250/period)'))).toEqual({
+      message: 'Limite de quota atingido',
+      errorType: 'quota',
+    });
   });
 
-  it('trunca mensagens com mais de 500 caracteres', () => {
-    const long = 'x'.repeat(600);
-    expect(sanitizeError(new Error(long))).toHaveLength(500);
+  it('classifica timeout', () => {
+    expect(sanitizeError(new Error('Request timeout ECONNABORTED'))).toEqual({
+      message: 'Tempo limite de geração excedido',
+      errorType: 'timeout',
+    });
   });
 
-  it('converte string não-Error para string', () => {
-    expect(sanitizeError('erro de string')).toBe('erro de string');
+  it('classifica 429 como timeout/rate-limit', () => {
+    expect(sanitizeError(Object.assign(new Error('rate limited'), { status: 429 }))).toEqual({
+      message: 'Limite de requisições da IA atingido',
+      errorType: 'timeout',
+    });
   });
 
-  it('converte objeto não-Error para string via String()', () => {
-    expect(sanitizeError({ code: 42 })).toBe('[object Object]');
+  it('classifica erro de banco (Prisma-like com code) como generation sem vazar detalhes', () => {
+    const prismaLike = Object.assign(new Error('Invalid `prisma.x` invocation'), { code: 'P2002' });
+    expect(sanitizeError(prismaLike)).toEqual({
+      message: 'Erro interno ao gerar questões',
+      errorType: 'generation',
+    });
   });
 
-  it('trunca também valores não-Error maiores que 500 chars', () => {
-    const long = 'y'.repeat(600);
-    expect(sanitizeError(long)).toHaveLength(500);
+  it('classifica erro genérico como generation', () => {
+    expect(sanitizeError(new Error('bad json'))).toEqual({
+      message: 'Erro na geração de questões',
+      errorType: 'generation',
+    });
+  });
+
+  it('trata valores não-Error como generation', () => {
+    expect(sanitizeError('boom')).toEqual({
+      message: 'Erro na geração de questões',
+      errorType: 'generation',
+    });
   });
 });
