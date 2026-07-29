@@ -5,7 +5,7 @@ import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import { Spinner } from '@heroui/spinner';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faXmark, faPen, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faXmark, faPen, faCheck, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 
 import { PublicExam, PublicExamSubject, PublicExamTopic } from '@/shared/types';
 import { useExamDraftCard } from '@/features/hooks/useExamDraftCard.hook';
@@ -41,6 +41,7 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
     handleSave,
   } = useExamDraftCard(publicExam);
 
+  const [expandedSubjects, setExpandedSubjects] = useState<Record<number, boolean>>({});
   const [newTopicInputs, setNewTopicInputs] = useState<Record<number, string>>({});
   // editing state: key is `${si}-${ti}`, value is current edit text or null (not editing)
   const [editingTopics, setEditingTopics] = useState<Record<string, string | null>>({});
@@ -161,28 +162,46 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
 
   function renderSubjectRow(subject: PublicExamSubject, si: number) {
     const isLastSubject = si === draft.subjects.length - 1;
+    const isExpanded = !!expandedSubjects[si];
 
     return (
       <React.Fragment key={si}>
-        {renderSubjectHeaderRow(subject, si)}
-        {(subject.topics ?? []).map((topic, ti) => renderTopicRow(topic, si, ti))}
-        {renderAddTopicRow(si, isLastSubject)}
+        {renderSubjectHeaderRow(subject, si, isExpanded)}
+        {isExpanded && (subject.topics ?? []).map((topic, ti) => renderTopicRow(topic, si, ti))}
+        {isExpanded && renderAddTopicRow(si, isLastSubject)}
       </React.Fragment>
     );
   }
 
-  function renderSubjectHeaderRow(subject: PublicExamSubject, si: number) {
+  function renderSubjectHeaderRow(subject: PublicExamSubject, si: number, isExpanded: boolean) {
+    const topicCount = (subject.topics ?? []).length;
+
     return (
       <tr key={`subject-${si}`} className="bg-content2">
         <td className={TD}>
-          <Input
-            {...inputProperties.input}
-            className="min-w-0"
-            isDisabled={isSaving}
-            size="sm"
-            value={subject.name}
-            onValueChange={(v) => updateSubject(si, { name: v })}
-          />
+          <div className="flex items-center gap-2">
+            <button
+              aria-label={isExpanded ? t('common.collapse') : t('common.expand')}
+              className="shrink-0 p-1 rounded text-default-400 hover:text-primary transition-colors"
+              type="button"
+              onClick={() => setExpandedSubjects((prev) => ({ ...prev, [si]: !prev[si] }))}
+            >
+              <FontAwesomeIcon className="w-3 h-3" icon={isExpanded ? faChevronDown : faChevronRight} />
+            </button>
+            <Input
+              {...inputProperties.input}
+              className="min-w-0 flex-1"
+              isDisabled={isSaving}
+              size="sm"
+              value={subject.name}
+              onValueChange={(v) => updateSubject(si, { name: v })}
+            />
+            {!isExpanded && topicCount > 0 && (
+              <span className="shrink-0 text-xs text-default-400 whitespace-nowrap">
+                {topicCount} {t('chat.topics')}
+              </span>
+            )}
+          </div>
         </td>
         <td className={TD}>
           <Input

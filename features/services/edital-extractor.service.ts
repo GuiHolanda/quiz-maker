@@ -64,6 +64,7 @@ REGRAS PARA NOMES DE MATÉRIAS E TÓPICOS:
 - Remova qualquer prefixo de numeração dos nomes (ex: "1.", "1.1.", "2.", "a)", "I -" → não inclua no nome).
 - Cada tópico deve ser um item separado no array. Se o edital listar múltiplos assuntos separados por ponto e vírgula (";") dentro de um mesmo item numerado, crie um objeto de tópico separado para cada assunto.
 - O nome do tópico deve conter apenas o conteúdo, sem numeração.
+- Nomes de matérias genéricos como "Conhecimentos Específicos", "Conhecimentos Técnicos", "Conhecimentos Profissionais" ou similares devem ser qualificados com o nome do cargo ou área. Ex: se o cargo é "Enfermeiro do Trabalho", use "Conhecimentos Específicos de Enfermeiro do Trabalho". Se o cargo é "Analista de TI", use "Conhecimentos Específicos de Analista de TI".
 
 Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, sem texto extra, sem comentários:
 {
