@@ -882,7 +882,9 @@ Before starting any non-trivial task (new feature, refactor, bug fix), ask the u
 git checkout -b feature/<kebab-case-description>
 ```
 
-Do **not** commit directly to `main` or the current branch unless the user explicitly says so.
+Do **not** commit directly to `main` under any circumstances. Never push to `main` directly. All work must go through a feature or fix branch and be merged via PR or explicit user instruction.
+
+Do **not** commit directly to the current working branch unless it is already a feature or fix branch (not `main`).
 
 ### Commits
 
