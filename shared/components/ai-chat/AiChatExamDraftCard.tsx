@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { PublicExam } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { AiChatDraftCard } from '@/shared/components/ai-chat/AiChatDraftCard';
-import { ExamDraftReviewModal } from '@/shared/components/ai-chat/ExamDraftReviewModal';
+import { DraftReviewModal } from '@/shared/components/ai-chat/DraftReviewModal';
 
 interface AiChatExamDraftCardProps {
   readonly publicExam: PublicExam;
@@ -31,9 +31,10 @@ export function AiChatExamDraftCard({ publicExam, onExamSaved }: AiChatExamDraft
       isSaved={isSaved}
       meta={meta}
       modal={
-        <ExamDraftReviewModal
+        <DraftReviewModal
+          type="public-exam"
+          data={publicExam}
           isOpen={isModalOpen}
-          publicExam={publicExam}
           onClose={() => setIsModalOpen(false)}
           onSaved={(draft) => {
             setSavedDraft(draft);

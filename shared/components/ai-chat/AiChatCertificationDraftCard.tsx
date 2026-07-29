@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Certification } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { AiChatDraftCard } from '@/shared/components/ai-chat/AiChatDraftCard';
-import { CertificationDraftReviewModal } from '@/shared/components/ai-chat/CertificationDraftReviewModal';
+import { DraftReviewModal } from '@/shared/components/ai-chat/DraftReviewModal';
 
 interface AiChatCertificationDraftCardProps {
   readonly certification: Certification;
@@ -32,8 +32,9 @@ export function AiChatCertificationDraftCard({
       isSaved={isSaved}
       meta={meta}
       modal={
-        <CertificationDraftReviewModal
-          certification={certification}
+        <DraftReviewModal
+          type="certification"
+          data={certification}
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onSaved={(draft) => {
