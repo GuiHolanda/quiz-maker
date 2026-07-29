@@ -77,9 +77,7 @@ prismaMock.$transaction.mockResolvedValue([undefined, undefined]);
 
 ## Testes E2E (`tests/e2e/`)
 
-### Ferramenta
-
-Playwright 1.x — Chromium headless, servidor `next dev` iniciado automaticamente.
+Playwright 1.x — Chromium headless, `next dev` iniciado automaticamente. Documentação completa (arquitetura da camada `support/`, catálogo de test-ids, tabela specs→cobertura, notas técnicas, como adicionar cenário) vive em **[tests/e2e/README.md](e2e/README.md)** — a fonte de verdade. Resumo abaixo.
 
 ### Scripts
 
@@ -94,7 +92,7 @@ DATABASE_URL="file:/caminho/absoluto/prisma/dev.db" npm run e2e:ui
 DATABASE_URL="file:/caminho/absoluto/prisma/dev.db" npx playwright test --headed
 
 # Spec individual
-DATABASE_URL="..." npx playwright test certification-flow
+DATABASE_URL="..." npx playwright test full-journey
 
 # Ver relatório do último run
 npx playwright show-report
@@ -104,116 +102,57 @@ npx playwright show-report
 
 ```
 tests/e2e/
-  auth/
-    storageState.json        ← sessão salva (gitignored)
-  fixtures/
-    auth.fixture.ts          ← estende o test base com mocks das rotas OpenAI
-    mock-data.ts             ← questões estáticas retornadas pelos mocks
-  tests/
-    certification-flow.spec.ts          ← jornada completa de certificações (6 steps)
-    public-exam-flow.spec.ts            ← jornada completa de concursos (6 steps)
-    question-bank-flow.spec.ts          ← banco de questões: geração, filtros, deleção
-    simulados-full-exam-job.spec.ts     ← Prova Completa: toggle → gerar → SSE → done → notificação + cancelar
-    simulados-management.spec.ts        ← deleção de simulado + histórico de tentativas/resultado
-  global-setup.ts            ← cria usuário tester, login UI, salva sessão
-  global-teardown.ts         ← deleta todos os dados do usuário E2E
+  auth/storageState.json     ← sessão salva (gitignored)
+  fixtures/                  ← auth.fixture.ts (mocks fixos) + mock-data.ts (payloads)
+  support/                   ← camada de helpers (constants, db-cleanup, selectors,
+                               journey-config, fake-eventsource, mocks, flows)
+  tests/                     ← 6 specs por capacidade (ver README, 20 testes no total)
+  global-setup.ts            ← seed user + dados, login UI, salva sessão
+  global-teardown.ts         ← deleta todos os dados do usuário E2E (FK-safe)
 ```
 
 ### Setup local obrigatório
 
-1. Criar `.env.test` na raiz do projeto (gitignored):
+1. Criar `.env.test` na raiz (gitignored):
 
 ```
 E2E_USER_EMAIL=e2e-test@certifiqueai.test
 E2E_USER_PASSWORD=E2ePassword123!
 ```
 
-2. Instalar browsers:
-
-```bash
-npx playwright install chromium
-```
+2. Instalar o browser: `npx playwright install chromium`
 
 ### Como funciona
 
-- **`globalSetup`**: cria/reseta usuário `tester` (sem limite de quota) no banco dev, faz login pela UI, salva `storageState.json`. Todos os testes partem autenticados sem re-login.
-- **Mocks OpenAI**: `auth.fixture.ts` intercepta `/api/certification/question-generator`, `/api/public-exam/question-generator` e endpoints `answers` via `page.route()` — retorna questões estáticas, sem custo de API.
-- **`globalTeardown`**: deleta todos os dados do usuário E2E em ordem FK-safe após o suite.
-- **DATABASE_URL**: `globalSetup`, `globalTeardown` e `next dev` precisam usar o mesmo banco. Passe caminho absoluto.
-- **Idempotência**: `globalSetup` limpa dados de runs anteriores antes de criar novos — pode rodar múltiplas vezes sem acumular dados.
-
-### Jornadas cobertas
-
-**`certification-flow.spec.ts`** e **`public-exam-flow.spec.ts`** — 6 steps cada:
-
-1. Configurar (cert ou concurso) via wizard
-2. Gerar questões (mockado) → selecionar todas → salvar
-3. Criar simulado em `/simulados` (rota unificada) — inclui clique no type picker para selecionar o tipo correto
-4. Responder todas as questões → finalizar
-5. Analisar resultado (score, breakdown, %)
-6. Iniciar nova tentativa → cancelar → voltar para `/simulados`
-
-**`simulados-management.spec.ts`** — 2 testes independentes de gestão:
-
-1. **Deleção**: cria simulado → navega para `/simulados` → trash icon → modal de confirmação → verifica que o count de cards diminuiu
-2. **Histórico / resultado**: cria simulado → inicia tentativa → captura `attemptId` da URL → navega diretamente para `/resultado/` → verifica score e breakdown
-
-> **Nota sobre mocks de `finishAttempt`:** o PATCH `.../attempts/:id` é interceptado pelo fixture e retorna `{}` sem persistir no banco. Por isso o fluxo de histórico (`isAnswered = true` na lista) **não é testável via mock** — o teste de histórico bypassa o modal e navega diretamente para a URL de resultado com o ID real capturado.
-
-**`question-bank-flow.spec.ts`** — 1 jornada: geração de questões → verificação no banco → filtros → busca → deleção.
-
-**`simulados-full-exam-job.spec.ts`** — 3 testes (dependem de `certification-flow` e `public-exam-flow` rodarem antes — arquivo nomeado com prefixo `simulados-` para garantir ordem alfabética correta):
-
-1. **Cert — happy path**: seleciona cert → toggle Full Exam → tabela de distribuição → clica "Gerar Prova Completa" → InlineAlert verde (done) → badge no sino → dropdown com notificação
-2. **Cert — cancelar**: gera com stream que nunca termina → botão Cancelar aparece → clica → InlineAlert some → `DELETE /api/full-exam-job/:id` chamado
-3. **Concurso — happy path + CTA**: mesmo fluxo para public exam → CTA "Criar simulado" leva para `/simulados` com aba Concurso pré-selecionada (`aria-pressed="true"`)
-
-> **Nota sobre SSE em testes:** Playwright's `route.fulfill` não suporta streaming incremental — o browser EventSource precisa de uma conexão HTTP persistente real. A solução é usar `page.addInitScript` para sobrescrever o `EventSource` global com uma implementação fake que dispara eventos `done` sincroniamente em 100ms. O `NeverDoneEventSource` (usado no teste de cancelar) nunca dispara eventos, validando que o cancelamento funciona independentemente do estado do stream.
-
-> **Nota sobre notificações acumuladas:** os testes de notificação usam `.first()` nos locators de título e CTA porque runs anteriores podem ter deixado notificações no localStorage do usuário E2E. O `globalTeardown` limpa o banco mas não o localStorage — `.first()` garante que o teste não falhe por strict mode com múltiplos elementos.
+- **`globalSetup`**: cria/reseta usuário `tester`, seeda uma certificação + um concurso (com tópico/matéria e 3 questões via Prisma), faz login pela UI, salva `storageState.json`. Idempotente — limpa runs anteriores via `cleanupUserData`.
+- **Mocks OpenAI/resultado**: `auth.fixture.ts` intercepta `question-generator`, `answers`, finish-attempt (PATCH) e resultado (GET) — payloads estáticos de `mock-data.ts`, sem custo de API.
+- **Seleção por `data-testid`**: estratégia primária de seletor (não labels i18n). O catálogo `TID` em `support/selectors.ts` é a fonte única; cada `data-testid` no componente casa com um valor de `TID`. HeroUI encaminha `data-testid` via react-aria `filterDOMProps`.
+- **`globalTeardown`**: deleta todos os dados do usuário E2E em ordem FK-safe via `cleanupUserData` (`support/db-cleanup.ts`, compartilhado com o setup).
+- **DATABASE_URL**: `globalSetup`, `globalTeardown` e `next dev` precisam usar o mesmo banco. Passe o caminho absoluto.
 
 ### Como adicionar um novo spec
 
-1. Criar `tests/e2e/tests/<nome>.spec.ts`
-2. Importar o fixture: `import { test, expect } from '../fixtures/auth.fixture'`
-3. Usar `authedPage` como page: `async ({ authedPage: page }) => { ... }`
-4. Para mocks adicionais além dos já configurados no fixture, usar `page.route()` no próprio spec
-5. Dados criados pelo usuário E2E (`e2e-test@certifiqueai.test`) são limpos automaticamente pelo `globalTeardown`
+1. Adicionar `data-testid` ao componente + entrada correspondente em `TID` (`support/selectors.ts`).
+2. Adicionar/estender um helper em `support/flows.ts` (interação reutilizável) ou um mock em `support/mocks.ts` (comportamento de servidor).
+3. Criar `tests/e2e/tests/<nome>.spec.ts`, importar `{ test, expect }` de `../fixtures/auth.fixture`, usar `authedPage`. Cenário que vale para ambas as verticais: iterar `for (const domain of ALL_DOMAINS)`.
+4. Dados do usuário E2E são limpos automaticamente pelo `globalTeardown`. Se seedar um novo model, estender `support/db-cleanup.ts` (ordem FK importa).
 
 ### Notas técnicas — HeroUI
 
-**Radio:** o input é `opacity: 0.0001`. Única abordagem que funciona:
+**Radio + submit do Form:** o input tem `opacity: 0.0001` e o submit é um pressable react-aria. `.click()` não funciona em nenhum dos dois — `.click()` no submit seleciona o radio mas não dispara o submit do `<Form>`, e a resposta nunca é salva. Use `dispatchEvent('click')` em ambos:
 ```typescript
 await group.locator('input').first().dispatchEvent('click');
+const submit = group.locator('xpath=ancestor::form').first().locator(tid(TID.answerSubmitBtn));
+await submit.dispatchEvent('click');
 ```
 Não usar: `.click({ force: true })`, `.check({ force: true })`, `page.mouse.click()` com boundingBox.
 
-**Select/Combobox:** o trigger é `button[data-slot="trigger"]`:
-```typescript
-await page.getByRole('button', { name: /label/i }).click();
-await expect(page.getByRole('option', { name: /opção/i })).toBeVisible({ timeout: 8_000 });
-await page.getByRole('option', { name: /opção/i }).click();
-```
+**Select/Combobox:** o trigger é `button[data-slot="trigger"]`. Abrir → esperar a opção visível → clicar.
 
-**i18n:** a UI padrão é PT-BR. Use regex cobrindo ambos os idiomas:
-```typescript
-page.getByRole('button', { name: /Finalizar Simulado|Finish Exam/i })
-```
+**SSE em testes:** `route.fulfill` não suporta streaming. `support/fake-eventsource.ts` sobrescreve `window.EventSource` via `addInitScript`. O app escuta via `addEventListener('awaiting_review', …)` (não `onmessage`); o fake dispara um `MessageEvent('awaiting_review', …)` em ~100ms. `NeverDoneEventSource` conecta mas nunca emite (para testes de cancelar/reconectar).
 
-**`data-testid` em componentes de lista:** elementos cujo `aria-label` ou texto não é único (ex.: múltiplos cards com o mesmo label) usam `data-testid` para escopo preciso nos testes:
-
-| `data-testid` | Componente | Uso |
-|---|---|---|
-| `simulado-card` | `SimuladosListTab` — cada card da lista | `page.locator('[data-testid="simulado-card"]', { hasText: '...' })` |
-| `type-option-certification` | `NewSimuladoTab` — botão Certificação | `page.getByTestId('type-option-certification')` |
-| `type-option-concurso` | `NewSimuladoTab` — botão Concurso | `page.getByTestId('type-option-concurso')` |
-
-Ao adicionar novos componentes de lista ou pickers com múltiplos itens ambíguos, adicionar `data-testid` preventivamente.
+**i18n:** a UI padrão é PT-BR. Prefira `data-testid`; quando precisar de texto, use regex cobrindo ambos os idiomas (`/Finalizar Simulado|Finish Exam/i`).
 
 ### CI
 
-`.github/workflows/e2e.yml` — trigger: push para `main`.
-
-Secrets: `E2E_USER_EMAIL`, `E2E_USER_PASSWORD`, `NEXTAUTH_SECRET`.
-
-Em falha, relatório HTML salvo como artifact (`playwright-report/`).
+`.github/workflows/e2e.yml` — trigger: push para `main`. Secrets: `E2E_USER_EMAIL`, `E2E_USER_PASSWORD`, `NEXTAUTH_SECRET`. Em falha, relatório HTML salvo como artifact (`playwright-report/`).
