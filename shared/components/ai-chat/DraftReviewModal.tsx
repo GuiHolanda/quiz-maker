@@ -38,7 +38,9 @@ type DraftReviewModalProps =
 
 export function DraftReviewModal(props: DraftReviewModalProps) {
   if (props.type === 'certification') {
-    return <CertificationModal data={props.data} isOpen={props.isOpen} onClose={props.onClose} onSaved={props.onSaved} />;
+    return (
+      <CertificationModal data={props.data} isOpen={props.isOpen} onClose={props.onClose} onSaved={props.onSaved} />
+    );
   }
   return <ExamModal data={props.data} isOpen={props.isOpen} onClose={props.onClose} onSaved={props.onSaved} />;
 }
@@ -73,7 +75,11 @@ function CertificationModal({ data, isOpen, onClose, onSaved }: CertificationMod
       canSave={canSave}
       error={
         hasError
-          ? { title: t('chat.errorGeneric'), description: t('chat.errorGenericDescription'), onRetry: handleSaveAndClose }
+          ? {
+              title: t('chat.errorGeneric'),
+              description: t('chat.errorGenericDescription'),
+              onRetry: handleSaveAndClose,
+            }
           : null
       }
       headerFields={renderHeaderFields()}
@@ -211,6 +217,7 @@ function CertificationModal({ data, isOpen, onClose, onSaved }: CertificationMod
         <td className={TD}>
           <Input
             {...inputProperties.input}
+            aria-label={t('chat.topicName')}
             className="min-w-0"
             isDisabled={isSaving}
             size="sm"
@@ -221,6 +228,7 @@ function CertificationModal({ data, isOpen, onClose, onSaved }: CertificationMod
         <td className={TD}>
           <Input
             {...inputProperties.input}
+            aria-label={t('chat.minPercent')}
             className="w-24"
             endContent={<span className="text-xs text-default-400">%</span>}
             isDisabled={isSaving}
@@ -233,6 +241,7 @@ function CertificationModal({ data, isOpen, onClose, onSaved }: CertificationMod
         <td className={TD}>
           <Input
             {...inputProperties.input}
+            aria-label={t('chat.maxPercent')}
             className="w-24"
             endContent={<span className="text-xs text-default-400">%</span>}
             isDisabled={isSaving}
@@ -309,7 +318,11 @@ function ExamModal({ data, isOpen, onClose, onSaved }: ExamModalProps) {
       canSave={canSave}
       error={
         hasError
-          ? { title: t('chat.examSaveError'), description: t('chat.examSaveErrorDescription'), onRetry: handleSaveAndClose }
+          ? {
+              title: t('chat.examSaveError'),
+              description: t('chat.examSaveErrorDescription'),
+              onRetry: handleSaveAndClose,
+            }
           : null
       }
       headerFields={renderHeaderFields()}
