@@ -134,7 +134,7 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
     return {
       ...(data as PublicExam),
       name: this.normalizeCase(d.name),
-      role: typeof d.role === 'string' ? this.normalizeCase(d.role) : (d.role as string | null | undefined),
+      role: typeof d.role === 'string' ? this.normalizeCase(d.role) : undefined,
       totalQuestions: typeof d.totalQuestions === 'number' && d.totalQuestions > 0 ? d.totalQuestions : 0,
       examDurationMinutes: typeof d.examDurationMinutes === 'number' && d.examDurationMinutes > 0 ? d.examDurationMinutes : undefined,
       passingScore: typeof d.passingScore === 'number' && d.passingScore >= 0 && d.passingScore <= 100 ? d.passingScore : undefined,
