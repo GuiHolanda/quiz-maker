@@ -5,9 +5,9 @@ import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import { Spinner } from '@heroui/spinner';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faXmark, faChevronDown, faChevronRight, faPen, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faXmark, faPen, faCheck } from '@fortawesome/free-solid-svg-icons';
 
-import { PublicExam, PublicExamSubject } from '@/shared/types';
+import { PublicExam, PublicExamSubject, PublicExamTopic } from '@/shared/types';
 import { useExamDraftCard } from '@/features/hooks/useExamDraftCard.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
@@ -20,7 +20,8 @@ interface ExamDraftReviewModalProps {
   readonly onSaved: (savedDraft: PublicExam) => void;
 }
 
-const TH = 'text-left font-mono text-[11px] text-default-400 uppercase tracking-widest px-4 py-3 border-b border-default-200';
+const TH =
+  'text-left font-mono text-[11px] text-default-400 uppercase tracking-widest px-4 py-3 border-b border-default-200';
 const TD = 'px-4 py-3 text-sm text-foreground border-b border-default-200';
 const TD_LAST = 'px-4 py-3 text-sm text-foreground';
 
@@ -40,7 +41,6 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
     handleSave,
   } = useExamDraftCard(publicExam);
 
-  const [expandedSubjects, setExpandedSubjects] = useState<Record<number, boolean>>({});
   const [newTopicInputs, setNewTopicInputs] = useState<Record<number, string>>({});
   // editing state: key is `${si}-${ti}`, value is current edit text or null (not editing)
   const [editingTopics, setEditingTopics] = useState<Record<string, string | null>>({});
@@ -54,7 +54,7 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
   };
 
   return (
-    <Modal isOpen={isOpen} scrollBehavior="inside" size="5xl" onClose={onClose}>
+    <Modal isOpen={isOpen} scrollBehavior="inside" size="5xl" onClose={onClose} className="p-4">
       <ModalContent>
         <ModalHeader className="flex flex-col gap-1">
           <p className="text-base font-bold text-foreground">{t('chat.examFound')}</p>
@@ -95,13 +95,27 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
   function renderHeaderFields() {
     return (
       <div className="flex flex-col gap-4">
-        <Input
-          {...inputProperties.input}
-          isDisabled={isSaving}
-          label={t('chat.examName')}
-          value={draft.name}
-          onValueChange={(v) => updateField('name', v)}
-        />
+        <div className="flex gap-4">
+          <div className="flex w-3/4">
+            <Input
+              {...inputProperties.input}
+              isDisabled={isSaving}
+              label={t('chat.examName')}
+              value={draft.name}
+              onValueChange={(v) => updateField('name', v)}
+            />
+          </div>
+          <div className="flex w-1/4">
+            <Input
+              {...inputProperties.input}
+              isDisabled={isSaving}
+              label={t('chat.examYear')}
+              type="number"
+              value={draft.year?.toString() ?? ''}
+              onValueChange={(v) => updateField('year', v ? parseInt(v, 10) : null)}
+            />
+          </div>
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <Input
             {...inputProperties.input}
@@ -116,16 +130,6 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
             label={t('chat.examRole')}
             value={draft.role ?? ''}
             onValueChange={(v) => updateField('role', v || null)}
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <Input
-            {...inputProperties.input}
-            isDisabled={isSaving}
-            label={t('chat.examYear')}
-            type="number"
-            value={draft.year?.toString() ?? ''}
-            onValueChange={(v) => updateField('year', v ? parseInt(v, 10) : null)}
           />
         </div>
       </div>
@@ -145,7 +149,6 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
                 <th className={TH}>{t('chat.subjectName')}</th>
                 <th className={TH}>{t('chat.minQuestions')}</th>
                 <th className={TH}>{t('chat.maxQuestions')}</th>
-                <th className={TH}>{t('chat.topics')}</th>
                 <th className={TH} />
               </tr>
             </thead>
@@ -157,175 +160,164 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
   }
 
   function renderSubjectRow(subject: PublicExamSubject, si: number) {
-    const isExpanded = !!expandedSubjects[si];
-    const isLast = si === draft.subjects.length - 1 && !isExpanded;
-    const tdClass = isLast ? TD_LAST : TD;
-    const rowBg = 'bg-content1 hover:bg-content2 transition-colors duration-150';
-    const topicCount = (subject.topics ?? []).length;
+    const isLastSubject = si === draft.subjects.length - 1;
 
     return (
       <React.Fragment key={si}>
-        <tr className={rowBg}>
-          <td className={tdClass}>
-            <Input
-              {...inputProperties.input}
-              className="min-w-0"
-              isDisabled={isSaving}
-              size="sm"
-              value={subject.name}
-              onValueChange={(v) => updateSubject(si, { name: v })}
-            />
-          </td>
-          <td className={tdClass}>
-            <Input
-              {...inputProperties.input}
-              className="w-24"
-              endContent={<span className="text-xs text-default-400">%</span>}
-              isDisabled={isSaving}
-              size="sm"
-              type="number"
-              value={subject.minQuestions.toString()}
-              onValueChange={(v) => updateSubject(si, { minQuestions: parseFloat(v) || 0 })}
-            />
-          </td>
-          <td className={tdClass}>
-            <Input
-              {...inputProperties.input}
-              className="w-24"
-              endContent={<span className="text-xs text-default-400">%</span>}
-              isDisabled={isSaving}
-              size="sm"
-              type="number"
-              value={subject.maxQuestions.toString()}
-              onValueChange={(v) => updateSubject(si, { maxQuestions: parseFloat(v) || 0 })}
-            />
-          </td>
-          <td className={tdClass}>
-            <button
-              className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-content2 hover:bg-primary/10 hover:text-primary transition-colors text-xs text-default-400 font-medium"
-              type="button"
-              onClick={() => setExpandedSubjects((prev) => ({ ...prev, [si]: !prev[si] }))}
-            >
-              <FontAwesomeIcon
-                className="w-2.5 h-2.5 text-default-400"
-                icon={isExpanded ? faChevronDown : faChevronRight}
-              />
-              {topicCount} {t('chat.topics')}
-            </button>
-          </td>
-          <td className={tdClass}>
-            <Button
-              className={`${buttonStyles.dangerFlat} text-xs h-8 px-3`}
-              isDisabled={isSaving}
-              size="sm"
-              onPress={() => removeSubject(si)}
-            >
-              {t('common.remove')}
-            </Button>
-          </td>
-        </tr>
-        {isExpanded && renderTopicsRow(subject, si)}
+        {renderSubjectHeaderRow(subject, si)}
+        {(subject.topics ?? []).map((topic, ti) => renderTopicRow(topic, si, ti))}
+        {renderAddTopicRow(si, isLastSubject)}
       </React.Fragment>
     );
   }
 
-  function renderTopicsRow(subject: PublicExamSubject, si: number) {
-    const topics = subject.topics ?? [];
-    const isLast = si === draft.subjects.length - 1;
+  function renderSubjectHeaderRow(subject: PublicExamSubject, si: number) {
+    return (
+      <tr key={`subject-${si}`} className="bg-content2">
+        <td className={TD}>
+          <Input
+            {...inputProperties.input}
+            className="min-w-0"
+            isDisabled={isSaving}
+            size="sm"
+            value={subject.name}
+            onValueChange={(v) => updateSubject(si, { name: v })}
+          />
+        </td>
+        <td className={TD}>
+          <Input
+            {...inputProperties.input}
+            className="w-24"
+            endContent={<span className="text-xs text-default-400">%</span>}
+            isDisabled={isSaving}
+            size="sm"
+            type="number"
+            value={subject.minQuestions.toString()}
+            onValueChange={(v) => updateSubject(si, { minQuestions: parseFloat(v) || 0 })}
+          />
+        </td>
+        <td className={TD}>
+          <Input
+            {...inputProperties.input}
+            className="w-24"
+            endContent={<span className="text-xs text-default-400">%</span>}
+            isDisabled={isSaving}
+            size="sm"
+            type="number"
+            value={subject.maxQuestions.toString()}
+            onValueChange={(v) => updateSubject(si, { maxQuestions: parseFloat(v) || 0 })}
+          />
+        </td>
+        <td className={TD}>
+          <Button
+            className={`${buttonStyles.dangerFlat} text-xs h-8 px-3`}
+            isDisabled={isSaving}
+            size="sm"
+            onPress={() => removeSubject(si)}
+          >
+            {t('common.remove')}
+          </Button>
+        </td>
+      </tr>
+    );
+  }
+
+  function renderTopicRow(topic: PublicExamTopic, si: number, ti: number) {
+    const editKey = `${si}-${ti}`;
+    const isEditingTopic = editingTopics[editKey] != null;
+    const editValue = editingTopics[editKey] ?? '';
+
+    if (isEditingTopic) {
+      return (
+        <tr key={`topic-edit-${si}-${ti}`} className="bg-content1">
+          <td className={TD} colSpan={4}>
+            <div className="flex items-center gap-1.5 pl-8">
+              <Input
+                {...inputProperties.input}
+                // eslint-disable-next-line jsx-a11y/no-autofocus
+                autoFocus
+                className="flex-1"
+                size="sm"
+                value={editValue}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && editValue.trim()) {
+                    updateTopic(si, ti, editValue);
+                    setEditingTopics((prev) => ({ ...prev, [editKey]: null }));
+                  }
+                  if (e.key === 'Escape') {
+                    setEditingTopics((prev) => ({ ...prev, [editKey]: null }));
+                  }
+                }}
+                onValueChange={(v) => setEditingTopics((prev) => ({ ...prev, [editKey]: v }))}
+              />
+              <Button
+                isIconOnly
+                aria-label={t('common.save')}
+                className={`${buttonStyles.iconOnly.primary} h-7 w-7 min-w-0 shrink-0`}
+                isDisabled={!editValue.trim()}
+                size="sm"
+                onPress={() => {
+                  if (editValue.trim()) {
+                    updateTopic(si, ti, editValue);
+                    setEditingTopics((prev) => ({ ...prev, [editKey]: null }));
+                  }
+                }}
+              >
+                <FontAwesomeIcon className="w-3 h-3" icon={faCheck} />
+              </Button>
+              <button
+                aria-label={t('common.cancel')}
+                className="p-1 rounded text-default-400 hover:text-danger transition-colors shrink-0"
+                type="button"
+                onClick={() => setEditingTopics((prev) => ({ ...prev, [editKey]: null }))}
+              >
+                <FontAwesomeIcon className="w-3 h-3" icon={faXmark} />
+              </button>
+            </div>
+          </td>
+        </tr>
+      );
+    }
 
     return (
-      <tr key={`topics-${si}`}>
-        <td className={`px-4 pb-3 pt-0 ${isLast ? '' : 'border-b border-default-200'}`} colSpan={5}>
-          <div className="flex flex-col gap-0.5 mb-2">
-            {topics.map((topic, ti) => {
-              const editKey = `${si}-${ti}`;
-              const isEditingTopic = editingTopics[editKey] != null;
-              const editValue = editingTopics[editKey] ?? '';
-
-              if (isEditingTopic) {
-                return (
-                  <div
-                    key={ti}
-                    className="flex items-center gap-1.5 rounded-md px-2 py-1.5 bg-content1 border border-primary/40 shadow-sm"
-                  >
-                    <Input
-                      {...inputProperties.input}
-                      // eslint-disable-next-line jsx-a11y/no-autofocus
-                      autoFocus
-                      className="flex-1"
-                      size="sm"
-                      value={editValue}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && editValue.trim()) {
-                          updateTopic(si, ti, editValue);
-                          setEditingTopics((prev) => ({ ...prev, [editKey]: null }));
-                        }
-                        if (e.key === 'Escape') {
-                          setEditingTopics((prev) => ({ ...prev, [editKey]: null }));
-                        }
-                      }}
-                      onValueChange={(v) => setEditingTopics((prev) => ({ ...prev, [editKey]: v }))}
-                    />
-                    <Button
-                      isIconOnly
-                      aria-label={t('common.save')}
-                      className={`${buttonStyles.iconOnly.primary} h-7 w-7 min-w-0 shrink-0`}
-                      isDisabled={!editValue.trim()}
-                      size="sm"
-                      onPress={() => {
-                        if (editValue.trim()) {
-                          updateTopic(si, ti, editValue);
-                          setEditingTopics((prev) => ({ ...prev, [editKey]: null }));
-                        }
-                      }}
-                    >
-                      <FontAwesomeIcon className="w-3 h-3" icon={faCheck} />
-                    </Button>
-                    <button
-                      aria-label={t('common.cancel')}
-                      className="p-1 rounded text-default-400 hover:text-danger transition-colors shrink-0"
-                      type="button"
-                      onClick={() => setEditingTopics((prev) => ({ ...prev, [editKey]: null }))}
-                    >
-                      <FontAwesomeIcon className="w-3 h-3" icon={faXmark} />
-                    </button>
-                  </div>
-                );
-              }
-
-              return (
-                <div
-                  key={ti}
-                  className="flex items-center justify-between gap-2 rounded-md px-3 py-2 bg-content1 hover:bg-content2 border border-transparent hover:border-default-200 transition-colors group"
+      <tr key={`topic-${si}-${ti}`} className="bg-content1 group">
+        <td className={TD} colSpan={4}>
+          <div className="flex items-center justify-between gap-2 pl-8 py-0.5">
+            <span className="text-xs text-default-700 leading-relaxed flex-1">{topic.name}</span>
+            <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+              {!isSaving && (
+                <button
+                  aria-label={t('common.edit')}
+                  className="p-1 rounded text-default-400 hover:text-primary hover:bg-default-200 transition-colors"
+                  type="button"
+                  onClick={() => setEditingTopics((prev) => ({ ...prev, [editKey]: topic.name }))}
                 >
-                  <span className="text-xs text-default-700 leading-relaxed flex-1">{topic.name}</span>
-                  <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {!isSaving && (
-                      <button
-                        aria-label={t('common.edit')}
-                        className="p-1 rounded text-default-400 hover:text-primary hover:bg-default-200 transition-colors"
-                        type="button"
-                        onClick={() => setEditingTopics((prev) => ({ ...prev, [editKey]: topic.name }))}
-                      >
-                        <FontAwesomeIcon className="w-2.5 h-2.5" icon={faPen} />
-                      </button>
-                    )}
-                    {!isSaving && (
-                      <button
-                        aria-label={`Remove ${topic.name}`}
-                        className="p-1 rounded text-default-400 hover:text-danger hover:bg-danger/10 transition-colors"
-                        type="button"
-                        onClick={() => removeTopic(si, ti)}
-                      >
-                        <FontAwesomeIcon className="w-2.5 h-2.5" icon={faXmark} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                  <FontAwesomeIcon className="w-2.5 h-2.5" icon={faPen} />
+                </button>
+              )}
+              {!isSaving && (
+                <button
+                  aria-label={`Remove ${topic.name}`}
+                  className="p-1 rounded text-default-400 hover:text-danger hover:bg-danger/10 transition-colors"
+                  type="button"
+                  onClick={() => removeTopic(si, ti)}
+                >
+                  <FontAwesomeIcon className="w-2.5 h-2.5" icon={faXmark} />
+                </button>
+              )}
+            </div>
           </div>
-          <div className="flex gap-1 items-center mt-1">
+        </td>
+      </tr>
+    );
+  }
+
+  function renderAddTopicRow(si: number, isLastSubject: boolean) {
+    const tdClass = isLastSubject ? TD_LAST : TD;
+    return (
+      <tr key={`add-topic-${si}`} className="bg-content1">
+        <td className={tdClass} colSpan={4}>
+          <div className="flex gap-1 items-center pl-8">
             <Input
               {...inputProperties.input}
               className="w-56"
