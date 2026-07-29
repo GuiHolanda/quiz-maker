@@ -135,6 +135,7 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
         applyProgress(e as MessageEvent);
         updateJob(jobId, { status: 'awaiting_review' });
         closeSource(jobId);
+        refreshUsage();
       });
 
       es.addEventListener('done', (e) => {
@@ -225,10 +226,10 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
   const cancelJob = useCallback(
     async (jobId: string) => {
       closeSource(jobId);
-      setJobs((prev) => prev.filter((j) => j.jobId !== jobId));
       try {
         await cancelGenerationJob(jobId);
       } catch {}
+      setJobs((prev) => prev.filter((j) => j.jobId !== jobId));
     },
     [closeSource]
   );
