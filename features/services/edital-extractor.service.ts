@@ -62,7 +62,7 @@ INSTRUÇÕES:
 
 Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, sem texto extra, sem comentários:
 {
-  "name": "string (nome completo do concurso, ex: 'Concurso Público TRF 1ª Região 2024')",
+  "name": "string (nome do concurso identificando apenas o órgão/entidade e o ano, sem incluir o cargo — o cargo vai em 'role'. Ex: 'Concurso Público TRF 1ª Região 2024', 'Concurso Público Prefeitura Municipal de Campina Grande 2024')",
   "role": "string ou null (nome exato do cargo conforme o edital, ex: 'Analista Judiciário — Área Judiciária')",
   "year": number ou null,
   "totalQuestions": number ou null (total de questões da prova objetiva, se informado),
@@ -133,9 +133,29 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
 
     return {
       ...(data as PublicExam),
+      name: this.normalizeCase(d.name),
+      role: typeof d.role === 'string' ? this.normalizeCase(d.role) : (d.role as string | null | undefined),
       totalQuestions: typeof d.totalQuestions === 'number' && d.totalQuestions > 0 ? d.totalQuestions : 0,
       examDurationMinutes: typeof d.examDurationMinutes === 'number' && d.examDurationMinutes > 0 ? d.examDurationMinutes : undefined,
       passingScore: typeof d.passingScore === 'number' && d.passingScore >= 0 && d.passingScore <= 100 ? d.passingScore : undefined,
+      subjects: (d.subjects as Record<string, unknown>[]).map((s) => ({
+        ...(s as object),
+        name: typeof s.name === 'string' ? this.normalizeCase(s.name) : s.name,
+        topics: Array.isArray(s.topics)
+          ? (s.topics as Record<string, unknown>[]).map((t) => ({
+              ...(t as object),
+              name: typeof t.name === 'string' ? this.normalizeCase(t.name) : t.name,
+            }))
+          : s.topics,
+      })) as PublicExam['subjects'],
     };
+  }
+
+  private normalizeCase(str: string): string {
+    const letters = str.replace(/[^a-zA-ZÀ-ÖØ-öø-ÿ]/g, '');
+    if (letters.length === 0) return str;
+    const isAllUpperCase = letters === letters.toUpperCase() && letters !== letters.toLowerCase();
+    if (!isAllUpperCase) return str;
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
   }
 }
