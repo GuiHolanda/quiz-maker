@@ -1,16 +1,19 @@
 'use client';
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
-import { Spinner } from '@heroui/spinner';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faXmark } from '@fortawesome/free-solid-svg-icons';
 
 import { Certification, CertificationTopic } from '@/shared/types';
 import { useCertificationDraftCard } from '@/features/hooks/useCertificationDraftCard.hook';
+import { DraftReviewModal } from '@/shared/components/ui/DraftReviewModal';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+
+const TH =
+  'text-left font-mono text-[11px] text-default-400 uppercase tracking-widest px-4 py-3 border-b border-default-200';
+const TD = 'px-4 py-3 text-sm text-foreground border-b border-default-200';
 
 interface CertificationDraftReviewModalProps {
   readonly certification: Certification;
@@ -18,10 +21,6 @@ interface CertificationDraftReviewModalProps {
   readonly onClose: () => void;
   readonly onSaved: (savedDraft: Certification) => void;
 }
-
-const TH = 'text-left font-mono text-[11px] text-default-400 uppercase tracking-widest px-4 py-3 border-b border-default-200';
-const TD = 'px-4 py-3 text-sm text-foreground border-b border-default-200';
-const TD_LAST = 'px-4 py-3 text-sm text-foreground';
 
 export function CertificationDraftReviewModal({
   certification,
@@ -34,10 +33,12 @@ export function CertificationDraftReviewModal({
     useCertificationDraftCard(certification);
 
   const isSaving = status === 'saving';
+  const hasError = status === 'error';
+
+  const canSave = draft.label.trim() !== '' && draft.key.trim() !== '';
 
   const handleSaveAndClose = async () => {
     const result = await handleSave();
-
     if (result === 'success') {
       onSaved(draft);
       onClose();
@@ -45,43 +46,30 @@ export function CertificationDraftReviewModal({
   };
 
   return (
-    <Modal isOpen={isOpen} scrollBehavior="inside" size="5xl" onClose={onClose}>
-      <ModalContent>
-        <ModalHeader className="flex flex-col gap-1">
-          <p className="text-base font-bold text-foreground">{t('chat.certificationPreview')}</p>
-          <p className="text-xs text-default-400 font-normal">{draft.label}</p>
-        </ModalHeader>
-
-        <ModalBody className="gap-6">
-          {renderHeaderFields()}
-          {renderTopicsTable()}
-        </ModalBody>
-
-        <ModalFooter>
-          <div className="flex gap-2 w-full">
-            <Button
-              className="bg-content2 border border-default-200 text-default-500 hover:bg-primary/10 hover:text-primary hover:border-primary/30 text-xs font-semibold rounded-lg"
-              isDisabled={isSaving}
-              size="sm"
-              startContent={<FontAwesomeIcon className="w-3 h-3" icon={faPlus} />}
-              variant="flat"
-              onPress={addTopic}
-            >
-              {t('chat.addTopicShort')}
-            </Button>
-            <Button
-              className="bg-primary text-primary-foreground font-semibold rounded-lg"
-              isDisabled={isSaving || !draft.label.trim() || !draft.key.trim()}
-              size="sm"
-              startContent={isSaving ? <Spinner color="current" size="sm" /> : undefined}
-              onPress={handleSaveAndClose}
-            >
-              {isSaving ? t('chat.saving') : t('chat.saveCertification')}
-            </Button>
-          </div>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+    <DraftReviewModal
+      addLabel={t('chat.addTopicShort')}
+      canSave={canSave}
+      error={
+        hasError
+          ? {
+              title: t('chat.errorGeneric'),
+              description: t('chat.errorGenericDescription'),
+              onRetry: handleSaveAndClose,
+            }
+          : null
+      }
+      headerFields={renderHeaderFields()}
+      isOpen={isOpen}
+      isSaving={isSaving}
+      saveLabel={isSaving ? t('chat.saving') : t('chat.saveCertification')}
+      subtitle={draft.label}
+      title={t('chat.certificationPreview')}
+      onAddPrimary={addTopic}
+      onClose={onClose}
+      onSave={handleSaveAndClose}
+    >
+      {renderTopicsTable()}
+    </DraftReviewModal>
   );
 
   function renderHeaderFields() {
@@ -125,7 +113,9 @@ export function CertificationDraftReviewModal({
           />
           <Input
             {...inputProperties.input}
-            endContent={<span className="text-xs text-default-400 self-center">{t('certification.examDurationUnit')}</span>}
+            endContent={
+              <span className="text-xs text-default-400 self-center">{t('certification.examDurationUnit')}</span>
+            }
             isDisabled={isSaving}
             label={t('certification.examDuration')}
             min={1}
@@ -177,15 +167,12 @@ export function CertificationDraftReviewModal({
   }
 
   function renderTopicRow(topic: CertificationTopic, ti: number) {
-    const isLast = ti === draft.topics.length - 1;
-    const tdClass = isLast ? TD_LAST : TD;
-    const rowBg = 'bg-content1 hover:bg-content2 transition-colors duration-150';
     const minPctValue = Math.round(topic.minQuestions ?? 0);
     const maxPctValue = Math.round(topic.maxQuestions ?? 0);
 
     return (
-      <tr key={ti} className={rowBg}>
-        <td className={tdClass}>
+      <tr key={ti} className="bg-content1 hover:bg-content2 transition-colors duration-150">
+        <td className={TD}>
           <Input
             {...inputProperties.input}
             className="min-w-0"
@@ -195,7 +182,7 @@ export function CertificationDraftReviewModal({
             onValueChange={(v) => updateTopic(ti, { name: v })}
           />
         </td>
-        <td className={tdClass}>
+        <td className={TD}>
           <Input
             {...inputProperties.input}
             className="w-24"
@@ -204,12 +191,10 @@ export function CertificationDraftReviewModal({
             size="sm"
             type="number"
             value={minPctValue.toString()}
-            onValueChange={(v) =>
-              updateTopic(ti, { minQuestions: Math.min(100, Math.max(0, parseFloat(v) || 0)) })
-            }
+            onValueChange={(v) => updateTopic(ti, { minQuestions: Math.min(100, Math.max(0, parseFloat(v) || 0)) })}
           />
         </td>
-        <td className={tdClass}>
+        <td className={TD}>
           <Input
             {...inputProperties.input}
             className="w-24"
@@ -218,12 +203,10 @@ export function CertificationDraftReviewModal({
             size="sm"
             type="number"
             value={maxPctValue.toString()}
-            onValueChange={(v) =>
-              updateTopic(ti, { maxQuestions: Math.min(100, Math.max(0, parseFloat(v) || 0)) })
-            }
+            onValueChange={(v) => updateTopic(ti, { maxQuestions: Math.min(100, Math.max(0, parseFloat(v) || 0)) })}
           />
         </td>
-        <td className={tdClass}>
+        <td className={TD}>
           <Button
             isIconOnly
             aria-label={t('common.remove')}
