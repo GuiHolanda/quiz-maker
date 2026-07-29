@@ -332,7 +332,7 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
       <tr key={`topic-${si}-${ti}`} className="bg-content1 group">
         <td className={TD} colSpan={4}>
           <div className="flex items-center justify-between gap-2 pl-8 py-0.5">
-            <span className="text-xs text-default-700 leading-relaxed flex-1">{topic.name}</span>
+            <span className="text-xs text-default-700 leading-relaxed break-words min-w-0">{topic.name}</span>
             <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
               {!isSaving && (
                 <button
