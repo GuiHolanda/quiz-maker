@@ -70,7 +70,7 @@ export class QuestionBankService {
     const { userId, search, source, topic, difficulty, hasAnswer, hasExplanation } = filters;
 
     const where: Record<string, unknown> = { userId };
-    if (search) where['text'] = { contains: search, mode: 'insensitive' };
+    if (search) where['text'] = { contains: search };
     if (source && source.length > 0) where['certificationTitle'] = { in: source };
     if (topic && topic.length > 0) where['topic'] = { in: topic };
     if (difficulty && difficulty.length > 0) where['difficulty'] = { in: difficulty };
@@ -126,7 +126,7 @@ export class QuestionBankService {
     const { userId, search, source, topic, difficulty, hasAnswer, hasExplanation } = filters;
 
     const where: Record<string, unknown> = { userId };
-    if (search) where['text'] = { contains: search, mode: 'insensitive' };
+    if (search) where['text'] = { contains: search };
     if (source && source.length > 0) where['publicExamName'] = { in: source };
     if (topic && topic.length > 0) where['subject'] = { in: topic };
     if (difficulty && difficulty.length > 0) where['difficulty'] = { in: difficulty };
