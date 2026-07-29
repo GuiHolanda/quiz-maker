@@ -14,7 +14,10 @@ interface UseCertificationDraftCardReturn {
   readonly draft: Certification;
   readonly status: CertificationDraftStatus;
   readonly updateField: (field: 'label' | 'key' | 'provider', value: string) => void;
-  readonly updateNumericField: (field: 'totalQuestions' | 'examDurationMinutes' | 'passingScore', value: number | undefined) => void;
+  readonly updateNumericField: (
+    field: 'totalQuestions' | 'examDurationMinutes' | 'passingScore' | 'year',
+    value: number | undefined
+  ) => void;
   readonly updateTopic: (index: number, patch: Partial<CertificationTopic>) => void;
   readonly addTopic: () => void;
   readonly removeTopic: (index: number) => void;
@@ -31,7 +34,7 @@ export function useCertificationDraftCard(initialDraft: Certification): UseCerti
   }, []);
 
   const updateNumericField = useCallback(
-    (field: 'totalQuestions' | 'examDurationMinutes' | 'passingScore', value: number | undefined) => {
+    (field: 'totalQuestions' | 'examDurationMinutes' | 'passingScore' | 'year', value: number | undefined) => {
       setDraft((prev) => ({ ...prev, [field]: value }));
     },
     []

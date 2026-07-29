@@ -77,6 +77,7 @@ export interface Certification {
   label: string;
   key: string;
   provider?: string;
+  year?: number | null;
   totalQuestions: number;
   examDurationMinutes?: number;
   passingScore?: number;
