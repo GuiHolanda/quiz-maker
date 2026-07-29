@@ -3,6 +3,15 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import path from 'path';
 import dotenv from 'dotenv';
+import {
+  E2E_CERT_KEY,
+  E2E_CERT_LABEL,
+  E2E_CERT_TOPIC,
+  E2E_PUBLIC_EXAM_NAME,
+  E2E_EXAM_BOARD,
+  E2E_SUBJECT,
+} from './support/constants';
+import { cleanupUserData } from './support/db-cleanup';
 
 // Load .env.test first (E2E credentials), then fall back to project .env for DATABASE_URL
 // Use process.cwd() — always the project root regardless of how TypeScript resolves __dirname
@@ -17,48 +26,6 @@ const prisma = new PrismaClient({
 
 export const E2E_USER_EMAIL = process.env.E2E_USER_EMAIL!;
 export const E2E_USER_PASSWORD = process.env.E2E_USER_PASSWORD!;
-
-// These constants mirror mock-data.ts — kept in sync manually.
-const E2E_CERT_KEY = 'AWS-SAA-C03-E2E';
-const E2E_CERT_LABEL = 'AWS Solutions Architect E2E';
-const E2E_CERT_TOPIC = 'E2E Topic';
-const E2E_PUBLIC_EXAM_NAME = 'Concurso E2E 2026';
-const E2E_EXAM_BOARD = 'BANCA_E2E';
-const E2E_SUBJECT = 'Direito E2E';
-
-async function cleanupUserData(userId: string) {
-  // Delete in dependency order — same as globalTeardown
-  await prisma.certificationSimuladoAttemptAnswer.deleteMany({ where: { attempt: { userId } } });
-  await prisma.certificationSimuladoAttempt.deleteMany({ where: { userId } });
-  await prisma.certificationSimuladoQuestion.deleteMany({ where: { simulado: { userId } } });
-  await prisma.certificationSimuladoTopicConfig.deleteMany({ where: { simulado: { userId } } });
-  await prisma.certificationSimulado.deleteMany({ where: { userId } });
-
-  await prisma.mockExamAttemptAnswer.deleteMany({ where: { attempt: { userId } } });
-  await prisma.mockExamAttempt.deleteMany({ where: { userId } });
-  await prisma.mockExamQuestion.deleteMany({ where: { mockExam: { userId } } });
-  await prisma.mockExamSubjectConfig.deleteMany({ where: { mockExam: { userId } } });
-  await prisma.mockExam.deleteMany({ where: { userId } });
-
-  await prisma.explanation.deleteMany({ where: { answer: { question: { userId } } } });
-  await prisma.answer.deleteMany({ where: { question: { userId } } });
-  await prisma.option.deleteMany({ where: { question: { userId } } });
-  await prisma.question.deleteMany({ where: { userId } });
-
-  await prisma.certificationTopic.deleteMany({ where: { certification: { userId } } });
-  await prisma.certification.deleteMany({ where: { userId } });
-
-  await prisma.publicExamExplanation.deleteMany({ where: { answer: { question: { userId } } } });
-  await prisma.publicExamAnswer.deleteMany({ where: { question: { userId } } });
-  await prisma.publicExamOption.deleteMany({ where: { question: { userId } } });
-  await prisma.publicExamQuestion.deleteMany({ where: { userId } });
-  await prisma.publicExamTopic.deleteMany({ where: { subject: { publicExam: { userId } } } });
-  await prisma.publicExamSubject.deleteMany({ where: { publicExam: { userId } } });
-  await prisma.publicExam.deleteMany({ where: { userId } });
-
-  await prisma.generationJobTopic.deleteMany({ where: { job: { userId } } });
-  await prisma.generationJob.deleteMany({ where: { userId } });
-}
 
 // Seeds a certification with one topic and 3 questions so simulado creation tests
 // have real questions in the DB without needing a real LLM call.
@@ -169,7 +136,7 @@ async function globalSetup(config: FullConfig) {
   });
 
   // Clean up any data left from a previous run (e.g. if teardown failed)
-  await cleanupUserData(user.id);
+  await cleanupUserData(prisma, user.id);
 
   // Seed cert + questions and exam + questions so simulado creation works without real LLM calls.
   await seedCertificationData(user.id);
