@@ -87,6 +87,7 @@ export function QuestionBankFiltersBar({ filters, onFilterChange, onClear }: Que
       {/* Row 1: Search + Source */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Input
+          data-testid="question-bank-search"
           {...inputProperties.input}
           label={t('questionBank.labelSearch')}
           placeholder={t('questionBank.searchPlaceholder')}
@@ -95,6 +96,7 @@ export function QuestionBankFiltersBar({ filters, onFilterChange, onClear }: Que
           onValueChange={(v) => onFilterChange('search', v)}
         />
         <Select
+          data-testid="question-bank-source-filter"
           {...inputProperties.select}
           label={t('questionBank.labelSource')}
           placeholder={t('questionBank.filterSource')}
@@ -140,6 +142,7 @@ export function QuestionBankFiltersBar({ filters, onFilterChange, onClear }: Que
         </Select>
 
         <Select
+          data-testid="question-bank-difficulty-filter"
           {...inputProperties.select}
           label={t('questionBank.labelDifficulty')}
           placeholder={t('questionBank.filterDifficulty')}

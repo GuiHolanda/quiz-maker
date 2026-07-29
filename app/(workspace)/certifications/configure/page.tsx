@@ -31,10 +31,10 @@ export default function ConfigureCertificationPage() {
             selectedKey={selectedTab as string}
             onSelectionChange={setSelectedTab}
           >
-            <Tab key="certificationsList" title={t('certification.tabList')}>
+            <Tab data-testid="wizard-tab-mine" key="certificationsList" title={t('certification.tabList')}>
               <CertificationsListTab onCreateNew={() => setSelectedTab('new')} />
             </Tab>
-            <Tab key="new" title={t('certification.tabNew')}>
+            <Tab data-testid="wizard-tab-new" key="new" title={t('certification.tabNew')}>
               <NewCertificationTab onBackToLibrary={() => setSelectedTab('certificationsList')} />
             </Tab>
           </Tabs>

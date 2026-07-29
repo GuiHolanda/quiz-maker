@@ -41,7 +41,7 @@ export function QuestionBankCard({ question, onDeleteRequest }: QuestionBankCard
   const explanations = question.answer?.explanations ?? {};
 
   return (
-    <div className="bg-content1 border border-default-200 rounded-xl overflow-hidden">
+    <div data-testid="question-bank-card" className="bg-content1 border border-default-200 rounded-xl overflow-hidden">
       {renderHeader()}
       {renderQuestionText()}
       {renderOptions()}
@@ -73,6 +73,7 @@ export function QuestionBankCard({ question, onDeleteRequest }: QuestionBankCard
           )}
         </div>
         <Button
+          data-testid="question-bank-delete-btn"
           isIconOnly
           aria-label={t('questionBank.deleteQuestion')}
           className={buttonStyles.iconOnly.danger}

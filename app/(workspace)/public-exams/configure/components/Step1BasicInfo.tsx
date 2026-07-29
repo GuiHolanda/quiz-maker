@@ -87,6 +87,7 @@ export function Step1BasicInfo({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="col-span-full">
             <Input
+              data-testid="wizard-title-input"
               label={t('concurso.name')}
               placeholder={t('concurso.namePlaceholder')}
               value={name}
@@ -172,11 +173,12 @@ export function Step1BasicInfo({
 
         <div className="flex items-center justify-between pt-4 border-t border-default-200">
           {hasDraft && (
-            <Button className={buttonStyles.dangerFlat} onPress={onDiscard}>
+            <Button data-testid="wizard-discard-btn" className={buttonStyles.dangerFlat} onPress={onDiscard}>
               {t('concurso.discardDraft')}
             </Button>
           )}
           <Button
+            data-testid="wizard-next-btn"
             className={buttonStyles.primary}
             endContent={<FontAwesomeIcon icon={faArrowRight} />}
             onPress={handleNext}

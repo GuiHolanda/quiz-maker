@@ -140,7 +140,7 @@ export function Step3Review({
 
       <div className="flex items-center justify-between gap-4 pt-6 border-t border-default-200">
         {hasDraft && (
-          <Button className={buttonStyles.dangerFlat} isDisabled={isLoading} onPress={onDiscard}>
+          <Button data-testid="wizard-discard-btn" className={buttonStyles.dangerFlat} isDisabled={isLoading} onPress={onDiscard}>
             {t('concurso.discardDraft')}
           </Button>
         )}
