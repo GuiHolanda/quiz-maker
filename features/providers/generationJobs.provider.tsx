@@ -135,6 +135,7 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
         applyProgress(e as MessageEvent);
         updateJob(jobId, { status: 'awaiting_review' });
         closeSource(jobId);
+        refreshUsage();
       });
 
       es.addEventListener('done', (e) => {
@@ -225,10 +226,10 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
   const cancelJob = useCallback(
     async (jobId: string) => {
       closeSource(jobId);
-      setJobs((prev) => prev.filter((j) => j.jobId !== jobId));
       try {
         await cancelGenerationJob(jobId);
       } catch {}
+      setJobs((prev) => prev.filter((j) => j.jobId !== jobId));
     },
     [closeSource]
   );
@@ -265,27 +266,32 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
 
   // Reconecta a todos os jobs ativos no mount (ex.: reload da página).
   useEffect(() => {
-    getActiveGenerationJobs().then((active) => {
-      if (active.length === 0) return;
-      setJobs(
-        active.map((job: GenerationJobStatus) => ({
-          jobId: job.id,
-          type: job.type,
-          refKey: job.refKey,
-          refName: job.refName,
-          status: job.status === 'done' ? 'awaiting_review' : job.status,
-          doneTopics: job.doneTopics,
-          totalTopics: job.totalTopics,
-          queuedTopics: job.queuedTopics,
-          topics: job.topics,
-          isSaving: false,
-          prefill: { totalQuestions: job.totalTopics },
-        }))
-      );
-      for (const job of active) {
-        if (job.status === 'queued' || job.status === 'running') connectStream(job.id);
-      }
-    });
+    getActiveGenerationJobs()
+      .then((active) => {
+        if (active.length === 0) return;
+        setJobs(
+          active.map((job: GenerationJobStatus) => ({
+            jobId: job.id,
+            type: job.type,
+            refKey: job.refKey,
+            refName: job.refName,
+            status: job.status === 'done' ? 'awaiting_review' : job.status,
+            doneTopics: job.doneTopics,
+            totalTopics: job.totalTopics,
+            queuedTopics: job.queuedTopics,
+            topics: job.topics,
+            isSaving: false,
+            prefill: { totalQuestions: job.totalTopics },
+          }))
+        );
+        for (const job of active) {
+          if (job.status === 'queued' || job.status === 'running') connectStream(job.id);
+        }
+      })
+      .catch(() => {
+        // Silently ignore errors (network failure, test abort) — the page still works
+        // without reconnect; the user can manually trigger a new job.
+      });
   }, []);
 
   useEffect(() => {

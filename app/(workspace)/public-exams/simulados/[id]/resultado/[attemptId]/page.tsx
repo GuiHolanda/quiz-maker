@@ -189,10 +189,10 @@ export default function SimuladoResultadoPage() {
 
         <div className="flex flex-col sm:flex-row gap-6 items-start">
           <div className="flex flex-col items-center gap-1 shrink-0">
-            <div className={`text-3xl font-extrabold ${scoreTextColor[color]}`}>
+            <div data-testid="result-score" className={`text-3xl font-extrabold ${scoreTextColor[color]}`}>
               {t('simulado.scoreGeneral', { correct, total })}
             </div>
-            <p className="text-sm text-default-500">{t('simulado.scorePercent', { percent })}</p>
+            <p data-testid="result-percent" className="text-sm text-default-500">{t('simulado.scorePercent', { percent })}</p>
           </div>
 
           <div className="hidden sm:block self-stretch border-r border-default-200" />
@@ -206,7 +206,7 @@ export default function SimuladoResultadoPage() {
         </div>
 
         <div className="border-t border-default-200 mt-6 pt-4 flex gap-3">
-          <Button className={buttonStyles.primary} isLoading={isStarting} onPress={handleTryAgain}>
+          <Button data-testid="result-retry-btn" className={buttonStyles.primary} isLoading={isStarting} onPress={handleTryAgain}>
             {t('simulado.tryAgain')}
           </Button>
           <Button variant="bordered" onPress={() => router.push('/simulados')}>

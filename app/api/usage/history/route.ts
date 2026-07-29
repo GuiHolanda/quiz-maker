@@ -46,6 +46,19 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
+    // UsageLog rows created by the GenerationJob pipeline (via checkAndRecordQuestions) are
+    // already represented as GenerationJob topic rows. Dedup by excluding UsageLogs that
+    // match a known (refName, topicName, count) tuple from any generation job topic.
+    const jobTopicKeys = new Set<string>();
+    for (const job of generationJobs) {
+      for (const topic of job.topics) {
+        jobTopicKeys.add(`${job.refName}__${topic.topicName}__${topic.questionCount}`);
+      }
+    }
+    const filteredUsageLogs = usageLogs.filter(
+      (log) => !jobTopicKeys.has(`${log.refName}__${log.topicName}__${log.count}`)
+    );
+
     // Expand GenerationJob topics into individual rows — one row per topic
     const fullExamItems: GenerationHistoryItem[] = generationJobs.flatMap((job) =>
       job.topics.map((topic) => ({
@@ -61,7 +74,9 @@ export async function GET(request: NextRequest) {
           topic.status === 'done'
             ? job.status === 'cancelled'
               ? ('cancelled' as const)
-              : ('done' as const)
+              : job.status === 'awaiting_review'
+                ? ('awaiting_review' as const)
+                : ('done' as const)
             : topic.status === 'cancelled'
               ? ('cancelled' as const)
               : topic.status === 'error'
@@ -76,7 +91,7 @@ export async function GET(request: NextRequest) {
     );
 
     let merged: GenerationHistoryItem[] = [
-      ...usageLogs.map(
+      ...filteredUsageLogs.map(
         (log): GenerationHistoryItem => ({
           id: log.id,
           source: 'usage_log',

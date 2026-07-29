@@ -145,7 +145,7 @@ export default function CertSimuladoTentativaPage() {
             >
               {t('common.back')}
             </Button>
-            <Button className={buttonStyles.danger} isLoading={isDiscarding} onPress={handleConfirmDiscard}>
+            <Button data-testid="confirm-discard-attempt-btn" className={buttonStyles.danger} isLoading={isDiscarding} onPress={handleConfirmDiscard}>
               {t('simulado.discardAttempt')}
             </Button>
           </ModalFooter>

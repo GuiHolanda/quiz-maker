@@ -478,7 +478,7 @@ DATABASE_URL="file:/Users/<you>/.../myquiz/prisma/dev.db" npm run e2e:ui
 DATABASE_URL="file:/Users/<you>/.../myquiz/prisma/dev.db" npx playwright test --headed
 
 # Spec individual
-DATABASE_URL="..." npx playwright test certification-flow
+DATABASE_URL="..." npx playwright test full-journey
 
 # Ver relatório do último run
 npx playwright show-report
@@ -486,17 +486,31 @@ npx playwright show-report
 
 ### Estrutura de arquivos
 
+Documentação detalhada da suite E2E vive em [tests/e2e/README.md](tests/e2e/README.md).
+
 ```
 tests/
   e2e/
     auth/
       storageState.json        ← sessão salva (gitignored)
     fixtures/
-      auth.fixture.ts          ← fixture com mocks das rotas OpenAI
-      mock-data.ts             ← questões estáticas retornadas pelos mocks
+      auth.fixture.ts          ← mocks fixos das rotas OpenAI/resultado
+      mock-data.ts             ← payloads estáticos + fixtures de resultado
+    support/                   ← camada de helpers reutilizáveis
+      constants.ts             ← fonte única dos 6 identificadores de seed
+      db-cleanup.ts            ← sequência FK-safe de deleteMany (setup + teardown)
+      selectors.ts             ← tid() + catálogo TID (fonte única dos data-testid)
+      journey-config.ts        ← DOMAINS map (tudo que difere entre cert e concurso)
+      fake-eventsource.ts      ← injeta EventSource fake via addInitScript
+      mocks.ts                 ← mocks do ciclo do generation-job + override de resultado
+      flows.ts                 ← helpers funcionais de jornada
     tests/
-      certification-flow.spec.ts   ← jornada completa de certificações
-      public-exam-flow.spec.ts     ← jornada completa de concursos
+      full-journey.spec.ts         ← jornada completa (×2 verticais)
+      generation-errors.spec.ts    ← quota 403 + erro de rede na geração
+      sse-reconnect.spec.ts        ← cancelar job + reconectar após reload
+      wizard-validation.spec.ts    ← discard de draft + guard de título vazio
+      question-bank.spec.ts        ← seed → verificar → buscar → deletar + empty state
+      empty-states.spec.ts         ← empty state de simulados e certificações
     global-setup.ts            ← cria usuário tester, faz login, salva sessão
     global-teardown.ts         ← deleta todos os dados do usuário E2E
 playwright.config.ts           ← raiz do projeto
@@ -521,21 +535,24 @@ npx playwright install chromium
 
 ### Como funciona
 
-- **`globalSetup`**: cria/reseta usuário `tester` (sem limite de quota) no banco dev, faz login pela UI, salva `storageState.json`. Todos os testes partem autenticados sem re-login.
-- **Mocks OpenAI**: `auth.fixture.ts` intercepta `/api/certification/question-generator`, `/api/public-exam/question-generator` e os endpoints `answers` — retorna questões estáticas de `mock-data.ts`. Nenhuma chamada real à OpenAI.
-- **`globalTeardown`**: deleta todos os dados do usuário E2E em ordem de dependência FK (simulados, tentativas, questões, certificações, concursos).
-- **DATABASE_URL**: o `globalSetup` e o `globalTeardown` precisam usar o mesmo banco que o `next dev` — passe o path absoluto como variável de ambiente.
+- **`globalSetup`**: cria/reseta usuário `tester` (sem limite de quota) no banco dev, seeda uma certificação + um concurso (cada um com tópico/matéria e 3 questões via Prisma), faz login pela UI e salva `storageState.json`. Todos os testes partem autenticados sem re-login.
+- **Mocks OpenAI/resultado**: `auth.fixture.ts` intercepta os endpoints de `question-generator`, `answers`, finish-attempt (PATCH) e resultado (GET) — retorna payloads estáticos de `mock-data.ts`. Nenhuma chamada real à OpenAI.
+- **Seleção por `data-testid`**: a estratégia primária de seletor é `data-testid` (não labels i18n). O catálogo `TID` em `tests/e2e/support/selectors.ts` é a fonte única de verdade; cada atributo `data-testid` no componente deve casar com um valor de `TID`. HeroUI encaminha `data-testid` via react-aria `filterDOMProps`.
+- **`globalTeardown`**: deleta todos os dados do usuário E2E em ordem FK-safe via `cleanupUserData` (compartilhado com o setup, em `support/db-cleanup.ts`).
+- **DATABASE_URL**: `globalSetup`, `globalTeardown` e o `next dev` precisam usar o mesmo banco — passe o path absoluto como variável de ambiente.
 
 ### Jornadas cobertas
 
-Ambas as specs cobrem o mesmo fluxo de 6 steps:
+Especificações organizadas por capacidade (20 testes no total). Specs que valem para as duas verticais iteram `for (const domain of ALL_DOMAINS)`.
 
-1. Configurar (certification ou concurso) via wizard de 3 steps
-2. Gerar questões (mockado) → selecionar todas → salvar
-3. Criar simulado
-4. Responder todas as questões → finalizar
-5. Analisar resultado (score + botão "Tentar novamente")
-6. Iniciar nova tentativa → cancelar → voltar para lista
+| Spec | Testes | Cobre |
+|---|---|---|
+| `full-journey.spec.ts` | 1 (×2) | gerar → salvar → simulado → responder → resultado → tentar novamente → cancelar |
+| `generation-errors.spec.ts` | 2 (×2) | quota 403 sem badge de sucesso; abort de rede no POST → toast de erro |
+| `sse-reconnect.spec.ts` | 3 (×2) | cancelar job chama DELETE; restaura job `running` e `awaiting_review` após reload |
+| `wizard-validation.spec.ts` | 2 (×2) | discard de draft volta para a lista; não avança do step 1 sem título |
+| `question-bank.spec.ts` | 2 | seed via API → verificar → buscar → deletar; busca sem resultado → empty state |
+| `empty-states.spec.ts` | 2 | empty state de simulados e de certificações |
 
 ### CI (GitHub Actions)
 
@@ -545,12 +562,14 @@ Secrets necessários no repositório: `E2E_USER_EMAIL`, `E2E_USER_PASSWORD`, `NE
 
 Em falha, o report HTML (screenshots + traces) é salvo como artifact em `playwright-report/`.
 
-### Nota técnica — HeroUI Radio
+### Nota técnica — HeroUI Radio + submit do Form
 
-O componente `Radio` do HeroUI v2 renderiza um `<input type="radio">` com `opacity: 0.0001` sobreposto ao label. Playwright não aceita `.click()` em elementos quasi-invisíveis. A solução correta é usar `dispatchEvent('click')` no input, que bypassa a verificação de visibilidade e dispara os handlers React corretamente:
+O `Radio` do HeroUI v2 renderiza um `<input type="radio">` com `opacity: 0.0001`, e o botão de submit é um pressable do react-aria. Playwright não aceita `.click()` no input quasi-invisível, e `.click()` no submit seleciona o radio mas **não** dispara o submit do `<Form>` react-aria — a resposta nunca é salva (progresso fica "0 respondidas" e o botão finalizar continua desabilitado). A solução é `dispatchEvent('click')` em ambos:
 
 ```typescript
 await group.locator('input').first().dispatchEvent('click');
+const submit = group.locator('xpath=ancestor::form').first().locator(tid(TID.answerSubmitBtn));
+await submit.dispatchEvent('click');
 ```
 
 Não use: `.click({ force: true })`, `.check({ force: true })`, `page.mouse.click()` com boundingBox, ou `page.evaluate` com eventos sintéticos — nenhum desses funciona com React Aria.

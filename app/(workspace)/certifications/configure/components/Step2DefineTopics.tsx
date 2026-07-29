@@ -199,7 +199,7 @@ export function Step2DefineTopics({
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-6 py-5 border-t border-default-200">
             {hasDraft && (
-              <Button className={buttonStyles.dangerFlat} onPress={onDiscard}>
+              <Button data-testid="wizard-discard-btn" className={buttonStyles.dangerFlat} onPress={onDiscard}>
                 {t('certification.discardDraft')}
               </Button>
             )}

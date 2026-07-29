@@ -265,7 +265,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
             >
               {t('common.cancel')}
             </Button>
-            <Button className={buttonStyles.danger} isLoading={isDeleting} onPress={handleDelete}>
+            <Button data-testid="confirm-delete-btn" className={buttonStyles.danger} isLoading={isDeleting} onPress={handleDelete}>
               {t('common.delete')}
             </Button>
           </ModalFooter>
@@ -431,6 +431,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
           <div className="flex flex-wrap justify-between gap-2 border-t border-default-100 mt-4 pt-4">
             <div className="flex gap-2">
               <Button
+                data-testid="simulado-answer-btn"
                 className={buttonStyles.primarySm}
                 isDisabled={startingKey !== null}
                 size="sm"
@@ -451,6 +452,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
             </div>
             <Button
               isIconOnly
+              data-testid="simulado-delete-btn"
               aria-label={t('simulado.delete')}
               className={buttonStyles.iconOnly.danger}
               size="sm"

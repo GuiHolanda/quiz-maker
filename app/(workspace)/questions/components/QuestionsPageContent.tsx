@@ -58,11 +58,12 @@ export function QuestionsPageContent() {
     setMounted(true);
   }, []);
 
-  // Reage à mudança na lista de jobs: se cresceu, um job iniciou → rola até o status.
+  // Reage à mudança na lista de jobs: se cresceu, um job iniciou → rola até o status + atualiza histórico.
   // Se diminuiu, um job saiu (salvo/concluído) → atualiza histórico + banner.
   useEffect(() => {
     if (jobs.length > prevActiveCount.current) {
       scrollToRef(statusSectionRef);
+      setHistoryRefreshKey((k) => k + 1);
     } else if (jobs.length < prevActiveCount.current) {
       setHistoryRefreshKey((k) => k + 1);
       setShowSimuladosBanner(true);

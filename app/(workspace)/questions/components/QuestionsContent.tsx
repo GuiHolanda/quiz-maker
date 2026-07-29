@@ -49,51 +49,35 @@ export function QuestionsContent({ type }: Readonly<QuestionsContentProps>) {
 
   return (
     <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6 w-full">
-      <div className="flex w-1/2 items-end gap-4">
+      <div className="flex w-3/4 xl:w-1/2 items-end gap-4">
         <div className="basis-3/4 min-w-0">{view.manager}</div>
-        {renderTotalInput()}
+        {view.selected && (
+          <div className="basis-1/4 min-w-0">
+            <NumberInput
+              {...inputProperties.numberInput}
+              hideStepper
+              id="total_questions"
+              label={t('generate.totalQuestions')}
+              minValue={1}
+              placeholder={t('generate.totalQuestionsPlaceholder')}
+              value={total}
+              onValueChange={(v) => queueMicrotask(() => setTotal(v))}
+            />
+          </div>
+        )}
       </div>
-      {renderDistributionSlot()}
+      {view.selected && (
+        <GenerationDistributionTable
+          key={view.distributionKey}
+          defaultTotal={view.totalQuestions}
+          total={total}
+          topics={view.sections.map((section) => ({ name: section.name, weight: section.maxQuestions }))}
+          onGenerate={view.onGenerate}
+          onTotalChange={setTotal}
+        />
+      )}
     </div>
   );
-
-  function renderTotalInput() {
-    return (
-      <div className="basis-1/6 min-w-0">
-        <NumberInput
-          {...inputProperties.numberInput}
-          hideStepper
-          id="total_questions"
-          label={t('generate.totalQuestions')}
-          minValue={1}
-          placeholder={t('generate.totalQuestionsPlaceholder')}
-          value={total}
-          onValueChange={(v) => queueMicrotask(() => setTotal(v))}
-        />
-      </div>
-    );
-  }
-
-  function renderDistributionSlot() {
-    if (!view.selected) {
-      return <p className="text-xs text-default-400 py-2">{view.selectPlaceholder}</p>;
-    }
-
-    if (view.sections.length === 0) {
-      return <p className="text-xs text-default-400 py-2">{t('simulado.noQuestionsTitle')}</p>;
-    }
-
-    return (
-      <GenerationDistributionTable
-        key={view.distributionKey}
-        defaultTotal={view.totalQuestions}
-        total={total}
-        topics={view.sections.map((section) => ({ name: section.name, weight: section.maxQuestions }))}
-        onGenerate={view.onGenerate}
-        onTotalChange={setTotal}
-      />
-    );
-  }
 
   function buildCertView() {
     const { certifications, selectedCertification, isLoading, setSelectedCertification } = cert;
@@ -116,7 +100,6 @@ export function QuestionsContent({ type }: Readonly<QuestionsContentProps>) {
           onSelect={(key) => setSelectedCertification(certifications.find((c) => c.key === key) ?? null)}
         />
       ),
-      selectPlaceholder: t('certification.selectCertificationPlaceholder'),
       empty: {
         href: '/certifications/configure',
         label: t('certification.tabNew'),
@@ -160,7 +143,6 @@ export function QuestionsContent({ type }: Readonly<QuestionsContentProps>) {
           onSelect={(key) => setSelectedPublicExam(publicExams.find((e) => (e.id ?? e.name) === key) ?? null)}
         />
       ),
-      selectPlaceholder: t('concurso.selectPublicExamPlaceholder'),
       empty: {
         href: '/public-exams/configure',
         label: t('concurso.tabNew'),

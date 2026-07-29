@@ -235,6 +235,7 @@ export function NewCertSimuladoForm({ onCreated }: NewCertSimuladoFormProps) {
           {...inputProperties.input}
         />
         <Input
+          data-testid="simulado-total-input"
           label={t('simulado.totalQuestions')}
           min={1}
           placeholder={t('simulado.totalQuestionsPlaceholder')}
@@ -249,6 +250,7 @@ export function NewCertSimuladoForm({ onCreated }: NewCertSimuladoFormProps) {
 
       <div className="flex justify-end pt-2">
         <Button
+          data-testid="simulado-create-btn"
           className={buttonStyles.primary}
           isDisabled={!selectedCert || !isDistributionValid}
           isLoading={loading}

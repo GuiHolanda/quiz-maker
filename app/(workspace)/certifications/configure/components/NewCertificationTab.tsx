@@ -156,7 +156,7 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
             <Button className={buttonStyles.secondary} variant="bordered" onPress={() => setIsDiscardOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button className={buttonStyles.danger} onPress={handleConfirmDiscard}>
+            <Button data-testid="confirm-discard-btn" className={buttonStyles.danger} onPress={handleConfirmDiscard}>
               {t('certification.discardDraft')}
             </Button>
           </ModalFooter>

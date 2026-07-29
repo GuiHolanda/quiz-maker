@@ -68,7 +68,7 @@ export function ActiveJobStatus({
   const headerBgColor = isRunning ? 'bg-warning/10' : isError ? 'bg-danger/10' : 'bg-primary/10';
 
   return (
-    <section aria-live="polite" className="mt-8">
+    <section aria-live="polite" className="mt-8" data-testid="question-gen-status">
       {showSectionHeader && (
         <div className="flex items-start gap-3 mb-3">
           <div className={`mt-0.5 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0`}>
@@ -98,7 +98,7 @@ export function ActiveJobStatus({
               <p className="text-xs text-warning">{t('generate.queuedHint', { count: queuedTopics })}</p>
             )}
             {renderTopicList()}
-            <Button className={`${buttonStyles.dangerFlat} self-start`} size="sm" onPress={onCancel}>
+            <Button className={`${buttonStyles.dangerFlat} self-start`} data-testid="question-gen-job-cancel-btn" size="sm" onPress={onCancel}>
               {t('common.cancel')}
             </Button>
           </>
@@ -109,7 +109,7 @@ export function ActiveJobStatus({
             {renderStatPair(totalQuestionsReady, doneTopicsList.length)}
             {renderTopicList()}
             <div className="flex gap-2 flex-wrap pt-4">
-              <Button className={buttonStyles.primary} isLoading={isSaving} size="sm" onPress={onSaveAll}>
+              <Button className={buttonStyles.primary} data-testid="question-gen-save-all-btn" isLoading={isSaving} size="sm" onPress={onSaveAll}>
                 {t('generate.saveAll')}
               </Button>
               <Button className={buttonStyles.secondary} size="sm" variant="bordered" onPress={onReviewAndSelect}>

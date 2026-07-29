@@ -126,7 +126,7 @@ export function QuestionCard({
               onValueChange={(value) => applySelection(value ? [value] : [])}
             >
               {Object.entries(question.options).map(([key, val]) => (
-                <Radio key={key} classNames={{ label: 'text-sm ml-2 text-default-600' }} size="sm" value={key}>
+                <Radio data-testid="answer-option" key={key} classNames={{ label: 'text-sm ml-2 text-default-600' }} size="sm" value={key}>
                   {String(val)}
                 </Radio>
               ))}
@@ -134,6 +134,7 @@ export function QuestionCard({
           )}
           {canSubmit && (
             <Button
+              data-testid="answer-submit-btn"
               className={`ml-auto text-xs font-semibold rounded-lg transition-all duration-200 py-0 h-8 px-4 ${
                 hasChanged
                   ? 'bg-warning text-warning-foreground hover:opacity-90'

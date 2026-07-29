@@ -58,12 +58,13 @@ export function WorkspaceHeader() {
           >
             <PopoverTrigger>
               <button
+                data-testid="notification-bell"
                 aria-label={t('aria.notifications')}
                 className="relative w-8 h-8 flex items-center justify-center border border-default-200 rounded-lg hover:border-default-300 transition-colors bg-content1"
               >
                 <FontAwesomeIcon className="text-default-400 w-3 h-3" icon={faBell} />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-danger rounded-full flex items-center justify-center text-[9px] font-bold text-danger-foreground leading-none">
+                  <span data-testid="notification-badge" className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-danger rounded-full flex items-center justify-center text-[9px] font-bold text-danger-foreground leading-none">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
@@ -171,6 +172,7 @@ export function WorkspaceHeader() {
             {notifications.map((notif) => (
               <div
                 key={notif.id}
+                data-testid="notification-item"
                 className={`flex gap-3 px-4 py-3 border-b border-default-200 last:border-0 ${!notif.read ? 'bg-primary/5' : ''}`}
               >
                 <div className={`w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0 ${notif.read ? 'invisible' : ''}`} />

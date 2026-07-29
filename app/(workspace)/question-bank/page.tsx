@@ -253,6 +253,7 @@ export default function QuestionBankPage() {
               {t('common.cancel')}
             </Button>
             <Button
+              data-testid="confirm-delete-btn"
               className={buttonStyles.danger}
               isLoading={isDeleting}
               size="sm"

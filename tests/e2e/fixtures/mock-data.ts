@@ -1,10 +1,20 @@
-export const E2E_CERT_KEY = 'AWS-SAA-C03-E2E';
-export const E2E_CERT_LABEL = 'AWS Solutions Architect E2E';
-export const E2E_CERT_TOPIC = 'E2E Topic';
+import {
+  E2E_CERT_KEY,
+  E2E_CERT_LABEL,
+  E2E_CERT_TOPIC,
+  E2E_PUBLIC_EXAM_NAME,
+  E2E_EXAM_BOARD,
+  E2E_SUBJECT,
+} from '../support/constants';
 
-export const E2E_PUBLIC_EXAM_NAME = 'Concurso E2E 2026';
-export const E2E_EXAM_BOARD = 'BANCA_E2E';
-export const E2E_SUBJECT = 'Direito E2E';
+export {
+  E2E_CERT_KEY,
+  E2E_CERT_LABEL,
+  E2E_CERT_TOPIC,
+  E2E_PUBLIC_EXAM_NAME,
+  E2E_EXAM_BOARD,
+  E2E_SUBJECT,
+};
 
 // Stub returned by GET /api/certification/browse-questions/summary — tells NewCertSimuladoForm
 // that questions are available so it renders the form instead of the EmptyState.

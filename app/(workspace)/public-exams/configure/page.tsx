@@ -31,10 +31,10 @@ export default function ConfigurePublicExamPage() {
             selectedKey={selectedTab as string}
             onSelectionChange={setSelectedTab}
           >
-            <Tab key="publicExamsList" title={t('concurso.tabList')}>
+            <Tab data-testid="wizard-tab-mine" key="publicExamsList" title={t('concurso.tabList')}>
               <PublicExamsListTab onCreateNew={() => setSelectedTab('new')} />
             </Tab>
-            <Tab key="new" title={t('concurso.tabNew')}>
+            <Tab data-testid="wizard-tab-new" key="new" title={t('concurso.tabNew')}>
               <NewPublicExamTab onBackToLibrary={() => setSelectedTab('publicExamsList')} />
             </Tab>
           </Tabs>
