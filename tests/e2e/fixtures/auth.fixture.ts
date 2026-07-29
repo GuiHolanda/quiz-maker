@@ -7,6 +7,7 @@ import {
   mockCertSimuladoResult,
   mockMockExamResult,
 } from './mock-data';
+import { E2E_CERT_KEY, E2E_CERT_LABEL, E2E_CERT_TOPIC, E2E_PUBLIC_EXAM_NAME, E2E_EXAM_BOARD, E2E_SUBJECT } from '../support/constants';
 
 type AuthFixtures = {
   authedPage: Page;
@@ -122,6 +123,45 @@ export const test = base.extend<AuthFixtures>({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({ items: [], total: 0, page: 1, limit: 10 }),
+      });
+    });
+
+    // ── Browse summary mocks — let NewCertSimuladoForm / NewMockExamForm
+    //    render the creation form instead of the EmptyState.
+    //    Without these mocks, totalSavedQuestions stays null until the real
+    //    DB responds, and the form may show a skeleton or empty state.
+    await page.route('**/api/certification/browse-questions/summary**', (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          certifications: [
+            {
+              key: E2E_CERT_KEY,
+              label: E2E_CERT_LABEL,
+              totalCount: 3,
+              topics: [{ name: E2E_CERT_TOPIC, questionCount: 3 }],
+            },
+          ],
+        }),
+      });
+    });
+
+    await page.route('**/api/public-exam/browse-questions/summary**', (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          publicExams: [
+            {
+              id: 'e2e-exam-id',
+              name: E2E_PUBLIC_EXAM_NAME,
+              examBoardName: E2E_EXAM_BOARD,
+              totalCount: 3,
+              subjects: [{ name: E2E_SUBJECT, questionCount: 3 }],
+            },
+          ],
+        }),
       });
     });
 
