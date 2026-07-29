@@ -232,6 +232,7 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
         />
 
         <Input
+          data-testid="simulado-total-input"
           label={t('simulado.totalQuestions')}
           min={1}
           placeholder={t('simulado.totalQuestionsPlaceholder')}
@@ -246,6 +247,7 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
 
       <div className="flex justify-end pt-2">
         <Button
+          data-testid="simulado-create-btn"
           className={buttonStyles.primary}
           isDisabled={!selectedPublicExam || !isDistributionValid}
           isLoading={loading}
