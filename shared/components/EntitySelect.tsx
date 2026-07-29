@@ -39,6 +39,7 @@ export const EntitySelect = ({
       <Select
         autoComplete="off"
         className="w-full"
+        data-testid="question-gen-select-trigger"
         label={label}
         name={name}
         placeholder={placeholder}

@@ -166,6 +166,7 @@ export function GenerationDistributionTable({
           )}
           <Button
             className={buttonStyles.primary}
+            data-testid="question-gen-generate-btn"
             isDisabled={currentTotal === 0 || isGenerating}
             onPress={handleGenerate}
             size="sm"
