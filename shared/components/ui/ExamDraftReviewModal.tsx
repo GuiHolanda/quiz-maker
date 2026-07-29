@@ -142,7 +142,7 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
     return (
       <div>
         <p className="text-xs font-semibold text-default-500 uppercase tracking-wide mb-3">{t('chat.subjects')}</p>
-        <div className="w-full rounded-xl border border-default-200">
+        <div className="w-full rounded-xl border border-default-200 overflow-hidden">
           <table className="w-full border-collapse">
             <thead className="bg-content2">
               <tr>

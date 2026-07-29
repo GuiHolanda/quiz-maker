@@ -51,7 +51,7 @@ TAREFA PRINCIPAL: Localize a seção de Conteúdo Programático (também chamada
 
 INSTRUÇÕES:
 1. Leia o edital completo e identifique a seção de conteúdo programático.
-2. Para o cargo especificado, extraia TODAS as matérias listadas e TODOS os tópicos de cada matéria exatamente como constam no edital — não resuma, não omita, não invente.
+2. Para o cargo especificado, extraia TODAS as matérias listadas e TODOS os tópicos de cada matéria — não resuma, não omita, não invente.
 3. Se o edital apresentar provas separadas (ex: Prova Objetiva, Prova Discursiva, Prova de Títulos), inclua apenas as matérias da prova objetiva. Se não houver distinção, inclua todas.
 4. Para minQuestions e maxQuestions: se o edital informar a quantidade de questões por matéria, converta para percentual do total (ex: 10 de 50 questões = 20%). Se não informar, distribua igualmente entre as matérias (100 / número de matérias, arredondado).
 5. A soma de todos os maxQuestions deve ser igual a 100.
@@ -59,6 +59,11 @@ INSTRUÇÕES:
 7. Se o edital informar a duração da prova, registre em examDurationMinutes (inteiro em minutos, ex: 4 horas = 240).
 8. Se o edital informar a nota mínima de aprovação, registre em passingScore como percentual 0–100 (ex: 72.0 para 72%). Se expressa em nota absoluta (ex: 56 de 80), converta para percentual.
 9. Se qualquer desses campos não constar no edital, omita-o do JSON.
+
+REGRAS PARA NOMES DE MATÉRIAS E TÓPICOS:
+- Remova qualquer prefixo de numeração dos nomes (ex: "1.", "1.1.", "2.", "a)", "I -" → não inclua no nome).
+- Cada tópico deve ser um item separado no array. Se o edital listar múltiplos assuntos separados por ponto e vírgula (";") dentro de um mesmo item numerado, crie um objeto de tópico separado para cada assunto.
+- O nome do tópico deve conter apenas o conteúdo, sem numeração.
 
 Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, sem texto extra, sem comentários:
 {
@@ -74,11 +79,11 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
   },
   "subjects": [
     {
-      "name": "string (nome da matéria/disciplina exatamente como no edital)",
+      "name": "string (nome da matéria/disciplina, sem prefixo de numeração)",
       "minQuestions": number (percentual 0-100),
       "maxQuestions": number (percentual 0-100),
       "topics": [
-        { "name": "string (tópico exatamente como consta no edital)" }
+        { "name": "string (um único tópico/assunto, sem numeração, sem ponto e vírgula separando múltiplos assuntos)" }
       ]
     }
   ]
@@ -140,12 +145,12 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
       passingScore: typeof d.passingScore === 'number' && d.passingScore >= 0 && d.passingScore <= 100 ? d.passingScore : undefined,
       subjects: (d.subjects as Record<string, unknown>[]).map((s) => ({
         ...(s as object),
-        name: typeof s.name === 'string' ? this.normalizeCase(s.name) : s.name,
+        name: typeof s.name === 'string' ? this.normalizeCase(this.stripNumbering(s.name)) : s.name,
         topics: Array.isArray(s.topics)
-          ? (s.topics as Record<string, unknown>[]).map((t) => ({
-              ...(t as object),
-              name: typeof t.name === 'string' ? this.normalizeCase(t.name) : t.name,
-            }))
+          ? (s.topics as Record<string, unknown>[]).flatMap((t) => {
+              if (typeof t.name !== 'string') return [t];
+              return this.splitTopics(t.name).map((name) => ({ ...(t as object), name }));
+            })
           : s.topics,
       })) as PublicExam['subjects'],
     };
@@ -157,5 +162,16 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
     const isAllUpperCase = letters === letters.toUpperCase() && letters !== letters.toLowerCase();
     if (!isAllUpperCase) return str;
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  }
+
+  private stripNumbering(str: string): string {
+    // Remove leading numbering patterns: "1.", "1.1.", "1.1.2.", "a)", "I -", "I.", etc.
+    return str.replace(/^[\d]+(?:\.[\d]+)*\.?\s*|^[a-zA-Z]\)\s*|^[IVXivx]+[\s.-]+/, '').trim();
+  }
+
+  private splitTopics(name: string): string[] {
+    // If a topic name contains semicolons, split into separate topics
+    const parts = name.split(';').map((p) => this.normalizeCase(this.stripNumbering(p.trim()))).filter(Boolean);
+    return parts.length > 1 ? parts : [this.normalizeCase(this.stripNumbering(name))];
   }
 }
