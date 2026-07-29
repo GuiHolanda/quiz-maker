@@ -10,42 +10,36 @@ import { InlineAlert } from '@/shared/components/ui/InlineAlert';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 
-export interface DraftModalShellError {
-  readonly title: string;
-  readonly description?: string;
-  readonly onRetry: () => void;
-}
-
 interface DraftModalShellProps {
   readonly isOpen: boolean;
   readonly onClose: () => void;
-  readonly title: string;
+  readonly name: string;
   readonly subtitle?: ReactNode;
   readonly headerFields: ReactNode;
   readonly children: ReactNode;
   readonly addLabel: string;
   readonly onAddPrimary: () => void;
-  readonly saveLabel: string;
   readonly isSaving: boolean;
   readonly canSave: boolean;
-  readonly error?: DraftModalShellError | null;
+  readonly hasError: boolean;
   readonly onSave: () => void;
+  readonly onRetry: () => void;
 }
 
 export function DraftModalShell({
   isOpen,
   onClose,
-  title,
+  name,
   subtitle,
   headerFields,
   children,
   addLabel,
   onAddPrimary,
-  saveLabel,
   isSaving,
   canSave,
-  error,
+  hasError,
   onSave,
+  onRetry,
 }: DraftModalShellProps) {
   const { t } = useTranslation();
 
@@ -53,25 +47,26 @@ export function DraftModalShell({
     <Modal className="p-4" isOpen={isOpen} scrollBehavior="inside" size="5xl" onClose={onClose}>
       <ModalContent>
         <ModalHeader className="flex flex-col gap-1">
-          <p className="text-base font-bold text-foreground">{title}</p>
+          <p className="text-base font-bold text-foreground">{t('chat.draftReviewTitle')}</p>
+          {name && <p className="text-xs text-default-400 font-normal">{name}</p>}
           {subtitle && <p className="text-xs text-default-400 font-normal">{subtitle}</p>}
         </ModalHeader>
 
         <ModalBody className="gap-6">
-          {error && (
+          {hasError && (
             <InlineAlert
               color="danger"
-              description={error.description}
+              description={t('chat.errorGenericDescription')}
               endContent={
                 <Button
                   className={`${buttonStyles.dangerFlat} text-xs h-7 px-3 shrink-0`}
                   size="sm"
-                  onPress={error.onRetry}
+                  onPress={onRetry}
                 >
                   {t('common.retry')}
                 </Button>
               }
-              title={error.title}
+              title={t('chat.errorGeneric')}
             />
           )}
           {headerFields}
@@ -96,7 +91,7 @@ export function DraftModalShell({
               startContent={isSaving ? <Spinner color="current" size="sm" /> : undefined}
               onPress={onSave}
             >
-              {saveLabel}
+              {isSaving ? t('chat.saving') : t('common.save')}
             </Button>
           </div>
         </ModalFooter>

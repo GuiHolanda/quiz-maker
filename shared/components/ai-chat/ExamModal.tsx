@@ -5,6 +5,7 @@ import { PublicExam } from '@/shared/types';
 import { useExamDraftCard } from '@/features/hooks/useExamDraftCard.hook';
 import { DraftModalShell } from '@/shared/components/ai-chat/DraftModalShell';
 import { ExamDistributionTable } from '@/shared/components/ai-chat/ExamDistributionTable';
+import { DraftExamMetricsFields } from '@/shared/components/ai-chat/DraftExamMetricsFields';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 
@@ -55,19 +56,15 @@ export function ExamModal({ data, isOpen, onClose, onSaved }: ExamModalProps) {
     <DraftModalShell
       addLabel={t('chat.addSubject')}
       canSave={canSave}
-      error={
-        hasError
-          ? { title: t('chat.examSaveError'), description: t('chat.examSaveErrorDescription'), onRetry: handleSaveAndClose }
-          : null
-      }
+      hasError={hasError}
       headerFields={renderHeaderFields()}
       isOpen={isOpen}
       isSaving={isSaving}
-      saveLabel={isSaving ? t('chat.saving') : t('chat.saveExam')}
+      name={draft.name}
       subtitle={t('chat.examExtractionSummary', { subjects: draft.subjects.length, topics: totalTopics })}
-      title={t('chat.examFound')}
       onAddPrimary={addSubject}
       onClose={onClose}
+      onRetry={handleSaveAndClose}
       onSave={handleSaveAndClose}
     >
       <ExamDistributionTable
@@ -126,47 +123,15 @@ export function ExamModal({ data, isOpen, onClose, onSaved }: ExamModalProps) {
             onValueChange={(v) => updateField('role', v || null)}
           />
         </div>
-        <div className="grid grid-cols-3 gap-4">
-          <Input
-            isRequired
-            {...inputProperties.input}
-            isDisabled={isSaving}
-            label={t('certification.totalQuestions')}
-            min={1}
-            placeholder="e.g. 65"
-            size="sm"
-            type="number"
-            value={draft.totalQuestions != null ? String(draft.totalQuestions) : ''}
-            onValueChange={(v) => updateNumericField('totalQuestions', parseInt(v, 10) || undefined)}
-          />
-          <Input
-            {...inputProperties.input}
-            endContent={
-              <span className="text-xs text-default-400 self-center">{t('certification.examDurationUnit')}</span>
-            }
-            isDisabled={isSaving}
-            label={t('certification.examDuration')}
-            min={1}
-            placeholder="e.g. 130"
-            size="sm"
-            type="number"
-            value={draft.examDurationMinutes != null ? String(draft.examDurationMinutes) : ''}
-            onValueChange={(v) => updateNumericField('examDurationMinutes', parseInt(v, 10) || undefined)}
-          />
-          <Input
-            {...inputProperties.input}
-            endContent={<span className="text-xs text-default-400 self-center">%</span>}
-            isDisabled={isSaving}
-            label={t('certification.passingScore')}
-            max={100}
-            min={0}
-            placeholder="e.g. 72"
-            size="sm"
-            type="number"
-            value={draft.passingScore != null ? String(draft.passingScore) : ''}
-            onValueChange={(v) => updateNumericField('passingScore', parseFloat(v) || undefined)}
-          />
-        </div>
+        <DraftExamMetricsFields
+          examDurationMinutes={draft.examDurationMinutes}
+          isSaving={isSaving}
+          passingScore={draft.passingScore}
+          totalQuestions={draft.totalQuestions}
+          onExamDurationChange={(v) => updateNumericField('examDurationMinutes', v)}
+          onPassingScoreChange={(v) => updateNumericField('passingScore', v)}
+          onTotalQuestionsChange={(v) => updateNumericField('totalQuestions', v)}
+        />
       </div>
     );
   }
