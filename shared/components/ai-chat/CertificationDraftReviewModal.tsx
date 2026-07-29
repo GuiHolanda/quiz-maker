@@ -6,7 +6,7 @@ import { faXmark } from '@fortawesome/free-solid-svg-icons';
 
 import { Certification, CertificationTopic } from '@/shared/types';
 import { useCertificationDraftCard } from '@/features/hooks/useCertificationDraftCard.hook';
-import { DraftReviewModal } from '@/shared/components/ui/DraftReviewModal';
+import { DraftReviewModal } from '@/shared/components/ai-chat/DraftReviewModal';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { buttonStyles } from '@/config/constants/buttonStyles';

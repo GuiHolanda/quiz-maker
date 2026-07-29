@@ -8,7 +8,7 @@ import { faXmark, faPen, faCheck, faChevronDown, faChevronRight } from '@fortawe
 
 import { PublicExam, PublicExamSubject, PublicExamTopic } from '@/shared/types';
 import { useExamDraftCard } from '@/features/hooks/useExamDraftCard.hook';
-import { DraftReviewModal } from '@/shared/components/ui/DraftReviewModal';
+import { DraftReviewModal } from '@/shared/components/ai-chat/DraftReviewModal';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { buttonStyles } from '@/config/constants/buttonStyles';
@@ -359,13 +359,11 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
     }
 
     return (
-      <tr key={`topic-${si}-${ti}`} className="bg-content1 group hover:bg-content2/50 transition-colors">
-        <td className={tdClass} colSpan={4}>
-          <div className="flex items-center justify-between gap-2 pl-7">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <span className="text-xs text-default-600 leading-relaxed break-words min-w-0">{topic.name}</span>
-            </div>
-            <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+      <tr key={`topic-${si}-${ti}`} className="bg-content1 group">
+        <td className={TD} colSpan={4}>
+          <div className="flex items-center justify-between gap-2 pl-8 py-0.5">
+            <span className="text-xs text-default-700 leading-relaxed break-words min-w-0">{topic.name}</span>
+            <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
               {!isSaving && (
                 <button
                   aria-label={t('common.edit')}
