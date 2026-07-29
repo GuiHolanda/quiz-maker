@@ -1,17 +1,22 @@
 'use client';
 import React, { useState } from 'react';
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
-import { Spinner } from '@heroui/spinner';
+import { Popover, PopoverContent, PopoverTrigger } from '@heroui/popover';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faXmark, faPen, faCheck, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faXmark, faPen, faCheck, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 
 import { PublicExam, PublicExamSubject, PublicExamTopic } from '@/shared/types';
 import { useExamDraftCard } from '@/features/hooks/useExamDraftCard.hook';
+import { DraftReviewModal } from '@/shared/components/ui/DraftReviewModal';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+
+const TH =
+  'text-left font-mono text-[11px] text-default-400 uppercase tracking-widest px-4 py-3 border-b border-default-200';
+const TD = 'px-4 py-3 text-sm text-foreground border-b border-default-200';
+const TD_LAST = 'px-4 py-3 text-sm text-foreground';
 
 interface ExamDraftReviewModalProps {
   readonly publicExam: PublicExam;
@@ -19,11 +24,6 @@ interface ExamDraftReviewModalProps {
   readonly onClose: () => void;
   readonly onSaved: (savedDraft: PublicExam) => void;
 }
-
-const TH =
-  'text-left font-mono text-[11px] text-default-400 uppercase tracking-widest px-4 py-3 border-b border-default-200';
-const TD = 'px-4 py-3 text-sm text-foreground border-b border-default-200';
-const TD_LAST = 'px-4 py-3 text-sm text-foreground';
 
 export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: ExamDraftReviewModalProps) {
   const { t } = useTranslation();
@@ -43,54 +43,53 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
 
   const [expandedSubjects, setExpandedSubjects] = useState<Record<number, boolean>>({});
   const [newTopicInputs, setNewTopicInputs] = useState<Record<number, string>>({});
-  // editing state: key is `${si}-${ti}`, value is current edit text or null (not editing)
   const [editingTopics, setEditingTopics] = useState<Record<string, string | null>>({});
+  const [confirmRemoveSubject, setConfirmRemoveSubject] = useState<number | null>(null);
 
   const isSaving = status === 'saving';
+  const hasError = status === 'error';
+
+  const totalTopics = draft.subjects.reduce((sum, subject) => sum + (subject.topics ?? []).length, 0);
+
+  const isDistributionValid = draft.subjects.every((subject) => {
+    return subject.name.trim() && subject.maxQuestions >= subject.minQuestions;
+  });
+
+  const canSave = draft.name.trim() !== '' && draft.examBoard.name.trim() !== '' && isDistributionValid;
 
   const handleSaveAndClose = async () => {
-    await handleSave();
-    onSaved(draft);
-    onClose();
+    const result = await handleSave();
+    if (result === 'success') {
+      onSaved(draft);
+      onClose();
+    }
   };
 
   return (
-    <Modal isOpen={isOpen} scrollBehavior="inside" size="5xl" onClose={onClose} className="p-4">
-      <ModalContent>
-        <ModalHeader className="flex flex-col gap-1">
-          <p className="text-base font-bold text-foreground">{t('chat.examFound')}</p>
-          <p className="text-xs text-default-400 font-normal">{draft.name}</p>
-        </ModalHeader>
-
-        <ModalBody className="gap-6">
-          {renderHeaderFields()}
-          {renderSubjectsSection()}
-        </ModalBody>
-
-        <ModalFooter>
-          <div className="flex gap-2 w-full">
-            <Button
-              className={`${buttonStyles.flat} text-xs`}
-              isDisabled={isSaving}
-              size="sm"
-              startContent={<FontAwesomeIcon className="w-3 h-3" icon={faPlus} />}
-              onPress={addSubject}
-            >
-              {t('chat.addSubject')}
-            </Button>
-            <Button
-              className={buttonStyles.primarySm}
-              isDisabled={isSaving || !draft.name.trim() || !draft.examBoard.name.trim()}
-              size="sm"
-              startContent={isSaving ? <Spinner color="current" size="sm" /> : undefined}
-              onPress={handleSaveAndClose}
-            >
-              {isSaving ? t('chat.saving') : t('chat.saveExam')}
-            </Button>
-          </div>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+    <DraftReviewModal
+      addLabel={t('chat.addSubject')}
+      canSave={canSave}
+      error={
+        hasError
+          ? {
+              title: t('chat.examSaveError'),
+              description: t('chat.examSaveErrorDescription'),
+              onRetry: handleSaveAndClose,
+            }
+          : null
+      }
+      headerFields={renderHeaderFields()}
+      isOpen={isOpen}
+      isSaving={isSaving}
+      saveLabel={isSaving ? t('chat.saving') : t('chat.saveExam')}
+      subtitle={t('chat.examExtractionSummary', { subjects: draft.subjects.length, topics: totalTopics })}
+      title={t('chat.examFound')}
+      onAddPrimary={addSubject}
+      onClose={onClose}
+      onSave={handleSaveAndClose}
+    >
+      {renderSubjectsSection()}
+    </DraftReviewModal>
   );
 
   function renderHeaderFields() {
@@ -161,14 +160,13 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
   }
 
   function renderSubjectRow(subject: PublicExamSubject, si: number) {
-    const isLastSubject = si === draft.subjects.length - 1;
     const isExpanded = !!expandedSubjects[si];
 
     return (
       <React.Fragment key={si}>
         {renderSubjectHeaderRow(subject, si, isExpanded)}
         {isExpanded && (subject.topics ?? []).map((topic, ti) => renderTopicRow(topic, si, ti))}
-        {isExpanded && renderAddTopicRow(si, isLastSubject)}
+        {isExpanded && renderAddTopicRow(si, si === draft.subjects.length - 1)}
       </React.Fragment>
     );
   }
@@ -190,6 +188,7 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
             </button>
             <Input
               {...inputProperties.input}
+              aria-label={t('chat.subjectName')}
               className="min-w-0 flex-1"
               isDisabled={isSaving}
               size="sm"
@@ -206,6 +205,7 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
         <td className={TD}>
           <Input
             {...inputProperties.input}
+            aria-label={t('chat.minQuestions')}
             className="w-24"
             endContent={<span className="text-xs text-default-400">%</span>}
             isDisabled={isSaving}
@@ -218,6 +218,7 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
         <td className={TD}>
           <Input
             {...inputProperties.input}
+            aria-label={t('chat.maxQuestions')}
             className="w-24"
             endContent={<span className="text-xs text-default-400">%</span>}
             isDisabled={isSaving}
@@ -228,14 +229,43 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
           />
         </td>
         <td className={TD}>
-          <Button
-            className={`${buttonStyles.dangerFlat} text-xs h-8 px-3`}
-            isDisabled={isSaving}
-            size="sm"
-            onPress={() => removeSubject(si)}
+          <Popover
+            isOpen={confirmRemoveSubject === si}
+            placement="left"
+            onOpenChange={(open) => setConfirmRemoveSubject(open ? si : null)}
           >
-            {t('common.remove')}
-          </Button>
+            <PopoverTrigger>
+              <Button className={`${buttonStyles.dangerFlat} text-xs h-8 px-3`} isDisabled={isSaving} size="sm">
+                {t('common.remove')}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="p-3 max-w-xs">
+              <div className="flex flex-col gap-3">
+                <p className="text-xs font-semibold text-foreground">{t('chat.removeSubjectConfirm')}</p>
+                <p className="text-xs text-default-500">{t('chat.removeSubjectConfirmBody')}</p>
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    className="text-xs h-7 px-3"
+                    size="sm"
+                    variant="flat"
+                    onPress={() => setConfirmRemoveSubject(null)}
+                  >
+                    {t('common.cancel')}
+                  </Button>
+                  <Button
+                    className={`${buttonStyles.danger} text-xs h-7 px-3`}
+                    size="sm"
+                    onPress={() => {
+                      removeSubject(si);
+                      setConfirmRemoveSubject(null);
+                    }}
+                  >
+                    {t('common.remove')}
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </td>
       </tr>
     );
@@ -303,7 +333,7 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
         <td className={TD} colSpan={4}>
           <div className="flex items-center justify-between gap-2 pl-8 py-0.5">
             <span className="text-xs text-default-700 leading-relaxed flex-1">{topic.name}</span>
-            <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
               {!isSaving && (
                 <button
                   aria-label={t('common.edit')}
@@ -316,7 +346,7 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
               )}
               {!isSaving && (
                 <button
-                  aria-label={`Remove ${topic.name}`}
+                  aria-label={t('chat.removeTopicNamed', { name: topic.name })}
                   className="p-1 rounded text-default-400 hover:text-danger hover:bg-danger/10 transition-colors"
                   type="button"
                   onClick={() => removeTopic(si, ti)}
