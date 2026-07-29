@@ -13,10 +13,14 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 
+// Subject header row — slightly elevated bg, medium padding
 const TH =
-  'text-left font-mono text-[11px] text-default-400 uppercase tracking-widest px-4 py-3 border-b border-default-200';
-const TD = 'px-4 py-3 text-sm text-foreground border-b border-default-200';
-const TD_LAST = 'px-4 py-3 text-sm text-foreground';
+  'text-left font-mono text-[10px] text-default-400 uppercase tracking-widest px-3 py-2.5 border-b border-default-200';
+const TD_S = 'px-3 py-2 border-b border-default-200';
+const TD_S_LAST = 'px-3 py-2';
+// Topic rows — tighter, recessed bg
+const TD_T = 'px-3 py-1.5 border-b border-default-100';
+const TD_T_LAST = 'px-3 py-1.5';
 
 interface ExamDraftReviewModalProps {
   readonly publicExam: PublicExam;
@@ -147,9 +151,9 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
             <thead className="bg-content2">
               <tr>
                 <th className={TH}>{t('chat.subjectName')}</th>
-                <th className={TH}>{t('chat.minQuestions')}</th>
-                <th className={TH}>{t('chat.maxQuestions')}</th>
-                <th className={TH} />
+                <th className={`${TH} w-28`}>{t('chat.minQuestions')}</th>
+                <th className={`${TH} w-28`}>{t('chat.maxQuestions')}</th>
+                <th className={`${TH} w-10`} />
               </tr>
             </thead>
             <tbody>{draft.subjects.map((subject, si) => renderSubjectRow(subject, si))}</tbody>
@@ -161,30 +165,43 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
 
   function renderSubjectRow(subject: PublicExamSubject, si: number) {
     const isExpanded = !!expandedSubjects[si];
+    const isLastSubject = si === draft.subjects.length - 1;
+    const hasTopics = (subject.topics ?? []).length > 0;
+    // Subject row has bottom border unless it's the last and not expanded
+    const tdSubject = isLastSubject && !isExpanded ? TD_S_LAST : TD_S;
 
     return (
       <React.Fragment key={si}>
-        {renderSubjectHeaderRow(subject, si, isExpanded)}
-        {isExpanded && (subject.topics ?? []).map((topic, ti) => renderTopicRow(topic, si, ti))}
-        {isExpanded && renderAddTopicRow(si, si === draft.subjects.length - 1)}
+        {renderSubjectHeaderRow(subject, si, isExpanded, tdSubject, hasTopics)}
+        {isExpanded &&
+          (subject.topics ?? []).map((topic, ti) =>
+            renderTopicRow(topic, si, ti, isLastSubject && ti === (subject.topics ?? []).length - 1 && !hasTopics)
+          )}
+        {isExpanded && renderAddTopicRow(si, isLastSubject)}
       </React.Fragment>
     );
   }
 
-  function renderSubjectHeaderRow(subject: PublicExamSubject, si: number, isExpanded: boolean) {
+  function renderSubjectHeaderRow(
+    subject: PublicExamSubject,
+    si: number,
+    isExpanded: boolean,
+    tdClass: string,
+    hasTopics: boolean
+  ) {
     const topicCount = (subject.topics ?? []).length;
 
     return (
       <tr key={`subject-${si}`} className="bg-content2">
-        <td className={TD}>
+        <td className={tdClass}>
           <div className="flex items-center gap-2">
             <button
               aria-label={isExpanded ? t('common.collapse') : t('common.expand')}
-              className="shrink-0 p-1 rounded text-default-400 hover:text-primary transition-colors"
+              className="shrink-0 w-5 h-5 flex items-center justify-center rounded text-default-400 hover:text-primary hover:bg-default-100 transition-colors"
               type="button"
               onClick={() => setExpandedSubjects((prev) => ({ ...prev, [si]: !prev[si] }))}
             >
-              <FontAwesomeIcon className="w-3 h-3" icon={isExpanded ? faChevronDown : faChevronRight} />
+              <FontAwesomeIcon className="w-2.5 h-2.5" icon={isExpanded ? faChevronDown : faChevronRight} />
             </button>
             <Input
               {...inputProperties.input}
@@ -196,17 +213,22 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
               onValueChange={(v) => updateSubject(si, { name: v })}
             />
             {!isExpanded && topicCount > 0 && (
-              <span className="shrink-0 text-xs text-default-400 whitespace-nowrap">
+              <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-default-100 text-default-500 whitespace-nowrap">
+                {topicCount} {t('chat.topics')}
+              </span>
+            )}
+            {isExpanded && hasTopics && (
+              <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary whitespace-nowrap">
                 {topicCount} {t('chat.topics')}
               </span>
             )}
           </div>
         </td>
-        <td className={TD}>
+        <td className={tdClass}>
           <Input
             {...inputProperties.input}
             aria-label={t('chat.minQuestions')}
-            className="w-24"
+            className="w-20"
             endContent={<span className="text-xs text-default-400">%</span>}
             isDisabled={isSaving}
             size="sm"
@@ -215,11 +237,11 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
             onValueChange={(v) => updateSubject(si, { minQuestions: parseFloat(v) || 0 })}
           />
         </td>
-        <td className={TD}>
+        <td className={tdClass}>
           <Input
             {...inputProperties.input}
             aria-label={t('chat.maxQuestions')}
-            className="w-24"
+            className="w-20"
             endContent={<span className="text-xs text-default-400">%</span>}
             isDisabled={isSaving}
             size="sm"
@@ -228,15 +250,22 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
             onValueChange={(v) => updateSubject(si, { maxQuestions: parseFloat(v) || 0 })}
           />
         </td>
-        <td className={TD}>
+        <td className={tdClass}>
           <Popover
             isOpen={confirmRemoveSubject === si}
             placement="left"
             onOpenChange={(open) => setConfirmRemoveSubject(open ? si : null)}
           >
             <PopoverTrigger>
-              <Button className={`${buttonStyles.dangerFlat} text-xs h-8 px-3`} isDisabled={isSaving} size="sm">
-                {t('common.remove')}
+              <Button
+                isIconOnly
+                aria-label={t('common.remove')}
+                className={buttonStyles.iconOnly.danger}
+                isDisabled={isSaving}
+                size="sm"
+                variant="light"
+              >
+                <FontAwesomeIcon className="w-3 h-3" icon={faXmark} />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="p-3 max-w-xs">
@@ -271,16 +300,17 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
     );
   }
 
-  function renderTopicRow(topic: PublicExamTopic, si: number, ti: number) {
+  function renderTopicRow(topic: PublicExamTopic, si: number, ti: number, isActuallyLast: boolean) {
     const editKey = `${si}-${ti}`;
     const isEditingTopic = editingTopics[editKey] != null;
     const editValue = editingTopics[editKey] ?? '';
+    const tdClass = isActuallyLast ? TD_T_LAST : TD_T;
 
     if (isEditingTopic) {
       return (
         <tr key={`topic-edit-${si}-${ti}`} className="bg-content1">
-          <td className={TD} colSpan={4}>
-            <div className="flex items-center gap-1.5 pl-8">
+          <td className={tdClass} colSpan={4}>
+            <div className="flex items-center gap-1.5 pl-7">
               <Input
                 {...inputProperties.input}
                 // eslint-disable-next-line jsx-a11y/no-autofocus
@@ -302,7 +332,7 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
               <Button
                 isIconOnly
                 aria-label={t('common.save')}
-                className={`${buttonStyles.iconOnly.primary} h-7 w-7 min-w-0 shrink-0`}
+                className={`${buttonStyles.iconOnly.primary} h-6 w-6 min-w-0 shrink-0`}
                 isDisabled={!editValue.trim()}
                 size="sm"
                 onPress={() => {
@@ -312,7 +342,7 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
                   }
                 }}
               >
-                <FontAwesomeIcon className="w-3 h-3" icon={faCheck} />
+                <FontAwesomeIcon className="w-2.5 h-2.5" icon={faCheck} />
               </Button>
               <button
                 aria-label={t('common.cancel')}
@@ -320,7 +350,7 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
                 type="button"
                 onClick={() => setEditingTopics((prev) => ({ ...prev, [editKey]: null }))}
               >
-                <FontAwesomeIcon className="w-3 h-3" icon={faXmark} />
+                <FontAwesomeIcon className="w-2.5 h-2.5" icon={faXmark} />
               </button>
             </div>
           </td>
@@ -329,15 +359,17 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
     }
 
     return (
-      <tr key={`topic-${si}-${ti}`} className="bg-content1 group">
-        <td className={TD} colSpan={4}>
-          <div className="flex items-center justify-between gap-2 pl-8 py-0.5">
-            <span className="text-xs text-default-700 leading-relaxed flex-1">{topic.name}</span>
-            <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+      <tr key={`topic-${si}-${ti}`} className="bg-content1 group hover:bg-content2/50 transition-colors">
+        <td className={tdClass} colSpan={4}>
+          <div className="flex items-center justify-between gap-2 pl-7">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <span className="text-xs text-default-600 leading-relaxed break-words min-w-0">{topic.name}</span>
+            </div>
+            <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
               {!isSaving && (
                 <button
                   aria-label={t('common.edit')}
-                  className="p-1 rounded text-default-400 hover:text-primary hover:bg-default-200 transition-colors"
+                  className="p-1 rounded text-default-400 hover:text-primary hover:bg-default-100 transition-colors"
                   type="button"
                   onClick={() => setEditingTopics((prev) => ({ ...prev, [editKey]: topic.name }))}
                 >
@@ -362,14 +394,14 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
   }
 
   function renderAddTopicRow(si: number, isLastSubject: boolean) {
-    const tdClass = isLastSubject ? TD_LAST : TD;
+    const tdClass = isLastSubject ? TD_S_LAST : TD_S;
     return (
       <tr key={`add-topic-${si}`} className="bg-content1">
         <td className={tdClass} colSpan={4}>
-          <div className="flex gap-1 items-center pl-8">
+          <div className="flex gap-1.5 items-center pl-7">
             <Input
               {...inputProperties.input}
-              className="w-56"
+              className="w-52"
               isDisabled={isSaving}
               placeholder={t('chat.addTopic')}
               size="sm"
@@ -383,7 +415,7 @@ export function ExamDraftReviewModal({ publicExam, isOpen, onClose, onSaved }: E
               onValueChange={(v) => setNewTopicInputs((prev) => ({ ...prev, [si]: v }))}
             />
             <Button
-              className={`${buttonStyles.primarySm} h-7 px-2`}
+              className={`${buttonStyles.primarySm} h-7 px-3`}
               isDisabled={isSaving || !newTopicInputs[si]?.trim()}
               size="sm"
               onPress={() => {
