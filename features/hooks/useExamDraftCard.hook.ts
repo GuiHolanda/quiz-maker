@@ -17,6 +17,10 @@ interface UseExamDraftCardReturn {
     field: keyof Pick<PublicExam, 'name' | 'role' | 'year'>,
     value: string | number | null
   ) => void;
+  readonly updateNumericField: (
+    field: 'totalQuestions' | 'examDurationMinutes' | 'passingScore',
+    value: number | undefined
+  ) => void;
   readonly updateExamBoardName: (name: string) => void;
   readonly updateSubject: (index: number, patch: Partial<PublicExamSubject>) => void;
   readonly removeSubject: (index: number) => void;
@@ -44,6 +48,13 @@ export function useExamDraftCard(initialDraft: PublicExam): UseExamDraftCardRetu
   const updateExamBoardName = useCallback((name: string) => {
     setDraft((prev) => ({ ...prev, examBoard: { ...prev.examBoard, name } }));
   }, []);
+
+  const updateNumericField = useCallback(
+    (field: 'totalQuestions' | 'examDurationMinutes' | 'passingScore', value: number | undefined) => {
+      setDraft((prev) => ({ ...prev, [field]: value ?? null }));
+    },
+    []
+  );
 
   const updateSubject = useCallback((index: number, patch: Partial<PublicExamSubject>) => {
     setDraft((prev) => {
@@ -156,6 +167,7 @@ export function useExamDraftCard(initialDraft: PublicExam): UseExamDraftCardRetu
     draft,
     status,
     updateField,
+    updateNumericField,
     updateExamBoardName,
     updateSubject,
     removeSubject,
