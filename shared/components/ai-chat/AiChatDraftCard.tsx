@@ -1,5 +1,5 @@
 'use client';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
