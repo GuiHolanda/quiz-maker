@@ -91,14 +91,14 @@ export async function mockActiveJobOnLoad(
   });
 }
 
-// Overrides the cert simulado result GET to return an all-wrong (0/3) result.
-export async function mockCertResultAllWrong(page: Page): Promise<void> {
-  await page.route('**/api/certification-simulados/**/attempts/**', (route) => {
+// Overrides the mock-exam result GET to return an all-wrong (0/3) result.
+export async function mockResultAllWrong(page: Page): Promise<void> {
+  await page.route('**/api/mock-exams/**/attempts/**', (route) => {
     if (route.request().method() === 'GET') {
       route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(buildAllWrongCertResult()),
+        body: JSON.stringify(buildAllWrongResult()),
       });
     } else if (route.request().method() === 'PATCH') {
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({}) });
@@ -108,30 +108,36 @@ export async function mockCertResultAllWrong(page: Page): Promise<void> {
   });
 }
 
-function buildAllWrongCertResult() {
+function buildAllWrongResult() {
   return {
     attempt: {
       id: 1,
-      simuladoId: 1,
+      mockExamId: 1,
       startedAt: '2026-07-28T00:00:00.000Z',
       finishedAt: '2026-07-28T00:00:00.000Z',
       score: 0,
       answers: [
-        { simuladoQuestionId: 1, selectedOptions: ['B'] },
-        { simuladoQuestionId: 2, selectedOptions: ['A'] },
-        { simuladoQuestionId: 3, selectedOptions: ['A'] },
+        { mockExamQuestionId: 1, selectedOptions: ['B'] },
+        { mockExamQuestionId: 2, selectedOptions: ['A'] },
+        { mockExamQuestionId: 3, selectedOptions: ['A'] },
       ],
     },
-    simulado: { id: 1, name: 'E2E Simulado', certKey: 'AWS-SAA-C03-E2E', certLabel: 'AWS Solutions Architect E2E' },
+    mockExam: {
+      id: 1,
+      name: 'E2E Mock Exam',
+      exam: { id: 'e2e-cert-exam-id', name: 'AWS Solutions Architect E2E', type: 'certification' },
+    },
     questions: [
       {
         id: 1,
         order: 1,
-        question: {
+        examQuestion: {
           id: 9001,
+          examName: 'AWS Solutions Architect E2E',
+          sectionName: 'E2E Topic',
           text: 'E2E Question 1: Which service provides object storage?',
           correctCount: 1,
-          topic: 'E2E Topic',
+          difficulty: 'medium',
           options: { A: 'S3', B: 'EC2', C: 'RDS', D: 'Lambda' },
           answer: { correctOptions: ['A'] },
         },
@@ -139,11 +145,13 @@ function buildAllWrongCertResult() {
       {
         id: 2,
         order: 2,
-        question: {
+        examQuestion: {
           id: 9002,
+          examName: 'AWS Solutions Architect E2E',
+          sectionName: 'E2E Topic',
           text: 'E2E Question 2: Which service provides compute?',
           correctCount: 1,
-          topic: 'E2E Topic',
+          difficulty: 'easy',
           options: { A: 'S3', B: 'EC2', C: 'RDS', D: 'CloudFront' },
           answer: { correctOptions: ['B'] },
         },
@@ -151,16 +159,18 @@ function buildAllWrongCertResult() {
       {
         id: 3,
         order: 3,
-        question: {
+        examQuestion: {
           id: 9003,
+          examName: 'AWS Solutions Architect E2E',
+          sectionName: 'E2E Topic',
           text: 'E2E Question 3: Which service is a managed relational database?',
           correctCount: 1,
-          topic: 'E2E Topic',
+          difficulty: 'medium',
           options: { A: 'DynamoDB', B: 'Redshift', C: 'RDS', D: 'ElastiCache' },
           answer: { correctOptions: ['C'] },
         },
       },
     ],
-    topicBreakdown: [{ topicName: 'E2E Topic', correct: 0, total: 3 }],
+    sectionBreakdown: [{ sectionName: 'E2E Topic', correct: 0, total: 3 }],
   };
 }

@@ -21,8 +21,6 @@ export const TID = {
   simuladoCreateBtn: 'simulado-create-btn',
   simuladoAnswerBtn: 'simulado-answer-btn',
   simuladoDeleteBtn: 'simulado-delete-btn',
-  // NewSimuladoTab type picker (distinct from the /questions picker)
-  simuladoTypeOptionConcurso: 'type-option-concurso',
 
   // Answer / result
   answerOption: 'answer-option',
