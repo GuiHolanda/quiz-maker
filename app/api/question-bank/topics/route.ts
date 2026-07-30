@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       orderBy: { sectionName: 'asc' },
     });
 
-    const topics = Array.from(new Set(rows.map((r) => r.sectionName))).sort();
+    const topics = Array.from(new Set(rows.map((r) => r.sectionName).filter(Boolean))).sort();
 
     return NextResponse.json({ topics }, { status: 200 });
   } catch (err: unknown) {

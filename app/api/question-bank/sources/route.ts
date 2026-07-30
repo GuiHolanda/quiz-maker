@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       orderBy: { examName: 'asc' },
     });
 
-    const sources = Array.from(new Set(rows.map((r) => r.examName))).sort();
+    const sources = Array.from(new Set(rows.map((r) => r.examName).filter(Boolean))).sort();
 
     return NextResponse.json({ sources }, { status: 200 });
   } catch (err: unknown) {

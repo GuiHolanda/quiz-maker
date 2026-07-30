@@ -33,13 +33,16 @@ export class ExamQuestionService {
       // Resolve canonical sections/topics from Exam configuration so the LLM's
       // echoed `sectionName`/`topic` strings never drift from the stored names.
       // Drift causes the mock-exam count query to return 0.
-      const examName = questions[0]?.examName ?? '';
-      const exam = examName
-        ? await tx.exam.findFirst({
-            where: { name: examName, userId },
+      const rawExamName = questions[0]?.examName ?? '';
+      // Use looseKey matching (NFC + lowercase + strip punctuation) so minor LLM
+      // drift in casing or accents doesn't break the Exam link.
+      const userExams = rawExamName
+        ? await tx.exam.findMany({
+            where: { userId },
             include: { sections: { include: { topics: true } } },
           })
-        : null;
+        : [];
+      const exam = userExams.find((e) => looseKey(e.name) === looseKey(rawExamName)) ?? null;
 
       type Canonical = { id: string; name: string };
       const sectionCanonical = new Map<string, Canonical>();
