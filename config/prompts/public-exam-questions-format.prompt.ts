@@ -22,8 +22,8 @@ ${reviewed_questions}
 
 Responda APENAS com JSON válido no formato abaixo, sem nenhum texto antes ou depois:
 
-{"questions":[{"id":1,"text":"<enunciado>","correctCount":1,"publicExamName":"${public_exam_name}","examBoardName":"${exam_board_name}","subject":"${subject_name}",${topic_name ? `"topic":"${topic_name}",` : ''}"difficulty":"medium","options":{"A":"<texto>","B":"<texto>","C":"<texto>","D":"<texto>","E":"<texto>"}}]}
+{"questions":[{"id":1,"examName":"${public_exam_name}","sectionName":"${subject_name}",${topic_name ? `"topic":"${topic_name}",` : ''}"text":"<enunciado>","correctCount":1,"difficulty":"medium","options":{"A":"<texto>","B":"<texto>","C":"<texto>","D":"<texto>","E":"<texto>"}}]}
 
-Campos obrigatórios por questão: id (inteiro sequencial a partir de 1), text, correctCount (inteiro 1–3), publicExamName, examBoardName, subject, difficulty (easy|medium|hard), options (objeto com chaves A–E, todas strings não vazias). O campo topic deve ser incluído apenas quando presente no input.`;
+Campos obrigatórios por questão: id (inteiro sequencial a partir de 1), examName, sectionName, text, correctCount (inteiro 1–3), difficulty (easy|medium|hard), options (objeto com chaves A–E, todas strings não vazias). O campo topic deve ser incluído apenas quando presente no input.`;
   },
 } satisfies PromptDefinition<PublicExamQuestionsFormatInput>;
