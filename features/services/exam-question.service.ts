@@ -26,23 +26,32 @@ export class ExamQuestionService {
     return { exam_name, reference_name, section_name, topic_name, num_questions };
   }
 
-  public async createFromPayload(questions: AIExamQuestion[], userId: string) {
+  public async createFromPayload(questions: AIExamQuestion[], userId: string, examId?: string) {
     return this.prismaService.$transaction(async (tx) => {
       const results: any[] = [];
 
-      // Resolve canonical sections/topics from Exam configuration so the LLM's
-      // echoed `sectionName`/`topic` strings never drift from the stored names.
-      // Drift causes the mock-exam count query to return 0.
-      const rawExamName = questions[0]?.examName ?? '';
-      // Use looseKey matching (NFC + lowercase + strip punctuation) so minor LLM
-      // drift in casing or accents doesn't break the Exam link.
-      const userExams = rawExamName
-        ? await tx.exam.findMany({
+      // Resolve the Exam for canonical section/topic lookup.
+      // When examId is provided (preferred path), use it directly — unambiguous.
+      // When not provided, fall back to looseKey name match as a best-effort.
+      let exam: (Awaited<ReturnType<typeof tx.exam.findFirst>> & {
+        sections: { id: string; name: string; topics: { id: string; name: string }[] }[];
+      }) | null = null;
+
+      if (examId) {
+        exam = await tx.exam.findFirst({
+          where: { id: examId, userId },
+          include: { sections: { include: { topics: true } } },
+        });
+      } else {
+        const rawExamName = questions[0]?.examName ?? '';
+        if (rawExamName) {
+          const all = await tx.exam.findMany({
             where: { userId },
             include: { sections: { include: { topics: true } } },
-          })
-        : [];
-      const exam = userExams.find((e) => looseKey(e.name) === looseKey(rawExamName)) ?? null;
+          });
+          exam = all.find((e) => looseKey(e.name) === looseKey(rawExamName)) ?? null;
+        }
+      }
 
       type Canonical = { id: string; name: string };
       const sectionCanonical = new Map<string, Canonical>();

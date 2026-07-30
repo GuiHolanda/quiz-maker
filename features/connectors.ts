@@ -147,8 +147,8 @@ export async function deleteTopic(topicId: string): Promise<void> {
 
 // — Questions —
 
-export async function saveExamQuestions(type: ExamType, questions: AIExamQuestion[]): Promise<void> {
-  await api.post(SAVE_EXAM_QUESTIONS_URL, { type, questions });
+export async function saveExamQuestions(type: ExamType, questions: AIExamQuestion[], examId?: string): Promise<void> {
+  await api.post(SAVE_EXAM_QUESTIONS_URL, { type, questions, ...(examId && { examId }) });
 }
 
 export async function getExamAnswers(type: ExamType, questions: AIExamQuestion[]): Promise<void> {

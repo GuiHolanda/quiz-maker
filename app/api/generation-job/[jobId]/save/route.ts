@@ -41,7 +41,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const questions = validateAiQuestions(payload);
 
       const questionService = new ExamQuestionService();
-      await questionService.createFromPayload(questions as AIExamQuestion[], session.user.id);
+      await questionService.createFromPayload(questions as AIExamQuestion[], session.user.id, job.refKey);
 
       await prisma.generationJobTopic.update({
         where: { id: topic.id },

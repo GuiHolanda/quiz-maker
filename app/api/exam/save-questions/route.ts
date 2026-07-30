@@ -18,8 +18,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => null);
     const payload = Array.isArray(body) ? { questions: body } : body;
     const questions: AIExamQuestion[] = validateAiQuestions(payload) as AIExamQuestion[];
+    const examId: string | undefined = typeof body?.examId === 'string' ? body.examId : undefined;
 
-    await questionService.createFromPayload(questions, session.user.id);
+    await questionService.createFromPayload(questions, session.user.id, examId);
 
     return NextResponse.json({ message: 'Questions saved successfully', count: questions.length }, { status: 200 });
   } catch (err: unknown) {
