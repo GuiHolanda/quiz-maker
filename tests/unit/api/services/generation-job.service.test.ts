@@ -24,7 +24,7 @@ vi.mock('@/features/services/openAI.service', () => ({
   },
 }));
 
-vi.mock('@/features/services/question.service', () => ({
+vi.mock('@/features/services/exam-question.service', () => ({
   validateAiQuestions: vi.fn().mockReturnValue([{ id: 1, text: 'Q1' }]),
   CertificationQuestionService: vi.fn(),
   PublicExamQuestionService: vi.fn(),
@@ -201,7 +201,7 @@ describe('processTopic — pipeline e finalização', () => {
   });
 
   it('marca o tópico como error com errorType generation quando o pipeline lança', async () => {
-    const { validateAiQuestions } = await import('@/features/services/question.service');
+    const { validateAiQuestions } = await import('@/features/services/exam-question.service');
     (validateAiQuestions as any).mockImplementationOnce(() => {
       throw new Error('bad json');
     });
@@ -228,7 +228,7 @@ describe('processTopic — pipeline e finalização', () => {
         rollbackQuota: rollbackMock,
       };
     });
-    const { validateAiQuestions } = await import('@/features/services/question.service');
+    const { validateAiQuestions } = await import('@/features/services/exam-question.service');
     (validateAiQuestions as any).mockImplementationOnce(() => {
       throw new Error('bad json');
     });
@@ -321,7 +321,7 @@ describe('processTopic — branch public_exam', () => {
   });
 
   it('marca tópico de concurso como error quando o pipeline lança', async () => {
-    const { validateAiQuestions } = await import('@/features/services/question.service');
+    const { validateAiQuestions } = await import('@/features/services/exam-question.service');
     (validateAiQuestions as any).mockImplementationOnce(() => {
       throw new Error('bad public exam json');
     });

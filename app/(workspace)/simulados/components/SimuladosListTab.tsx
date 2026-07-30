@@ -12,25 +12,16 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSliders, faXmark, faMagnifyingGlass, faTrash } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { useCertSimuladosContext } from '@/features/providers/certSimulados.provider';
 import { useMockExamsContext } from '@/features/providers/mockExams.provider';
-import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
-import {
-  deleteCertSimulado,
-  deleteMockExam,
-  ensureCertSimuladoAnswers,
-  ensureMockExamAnswers,
-  startCertSimuladoAttempt,
-  startMockExamAttempt,
-} from '@/features/connectors';
+import { deleteMockExam, ensureMockExamAnswers, startMockExamAttempt } from '@/features/connectors';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { notify } from '@/shared/lib/notify';
-import { CertSimuladoListItem, MockExamListItem, SimuladoType } from '@/shared/types';
+import { ExamType, MockExamListItem } from '@/shared/types';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { inputProperties } from '@/config/constants/inputStyles';
 
-type TypeFilter = 'all' | SimuladoType;
+type TypeFilter = 'all' | ExamType;
 type StatusFilter = 'all' | 'answered' | 'pending' | 'in_progress';
 type CountFilter = 'all' | 'upTo10' | '11to20' | '21to40' | '41plus';
 
@@ -43,7 +34,7 @@ interface AttemptRow {
 interface UnifiedSimulado {
   key: string;
   id: number;
-  type: SimuladoType;
+  type: ExamType;
   name: string | null;
   sourceLabel: string;
   totalQuestions: number;
@@ -86,8 +77,9 @@ function matchesCount(total: number, filter: CountFilter): boolean {
   }
 }
 
-function basePath(type: SimuladoType): string {
-  return type === 'certification' ? '/certifications/simulados' : '/public-exams/simulados';
+// All simulados run through the unified mock-exam attempt/result routes.
+function basePath(): string {
+  return '/public-exams/simulados';
 }
 
 interface SimuladosListTabProps {
@@ -96,8 +88,6 @@ interface SimuladosListTabProps {
 
 export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
   const { t } = useTranslation();
-  const { usage } = useUsageContext();
-  const cert = useCertSimuladosContext();
   const mock = useMockExamsContext();
   const router = useRouter();
 
@@ -108,22 +98,14 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
   const [historyTarget, setHistoryTarget] = useState<UnifiedSimulado | null>(null);
 
   useEffect(() => {
-    cert.refresh();
     mock.refresh();
-  }, [cert.refresh, mock.refresh]);
+  }, [mock.refresh]);
 
-  const hasConcursoAccess = !usage || usage.publicExamsLimit !== 0;
-  const isLoading = cert.isLoading || mock.isLoading;
-
-  // Type filter only has meaning when both verticals can appear in the list
-  const showTypeFilter = hasConcursoAccess;
+  const isLoading = mock.isLoading;
 
   const simulados = useMemo<UnifiedSimulado[]>(() => {
-    const fromCert: UnifiedSimulado[] = cert.simulados.map((s) => normalizeCert(s));
-    const fromMock: UnifiedSimulado[] = mock.mockExams.map((m) => normalizeMock(m));
-
-    return [...fromCert, ...fromMock].sort((a, b) => b.id - a.id || a.key.localeCompare(b.key));
-  }, [cert.simulados, mock.mockExams]);
+    return mock.mockExams.map((m) => normalizeMock(m)).sort((a, b) => b.id - a.id || a.key.localeCompare(b.key));
+  }, [mock.mockExams]);
 
   const sourceOptions = useMemo(() => {
     const relevant = filters.type === 'all' ? simulados : simulados.filter((s) => s.type === filters.type);
@@ -161,7 +143,6 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
     setFilters((prev) => {
       const next = { ...prev, [key]: value };
 
-      // Changing type invalidates source selections that no longer apply
       if (key === 'type') next.sources = [];
 
       return next;
@@ -172,22 +153,15 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
     setStartingKey(s.key);
     try {
       if (s.openAttemptId != null) {
-        router.push(`${basePath(s.type)}/${s.id}/tentativa/${s.openAttemptId}`);
+        router.push(`${basePath()}/${s.id}/tentativa/${s.openAttemptId}`);
 
         return;
       }
       // fire-and-forget: finishAttempt guarantees answers before scoring if this fails
-      if (s.type === 'certification') {
-        ensureCertSimuladoAnswers(s.id).catch(() => {});
-        const attempt = await startCertSimuladoAttempt(s.id);
+      ensureMockExamAnswers(s.id).catch(() => {});
+      const attempt = await startMockExamAttempt(s.id);
 
-        router.push(`${basePath(s.type)}/${s.id}/tentativa/${attempt.id}`);
-      } else {
-        ensureMockExamAnswers(s.id).catch(() => {});
-        const attempt = await startMockExamAttempt(s.id);
-
-        router.push(`${basePath(s.type)}/${s.id}/tentativa/${attempt.id}`);
-      }
+      router.push(`${basePath()}/${s.id}/tentativa/${attempt.id}`);
     } catch (e: unknown) {
       notify.error(
         t('toast.error'),
@@ -201,13 +175,8 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
     if (!deleteTarget) return;
     setIsDeleting(true);
     try {
-      if (deleteTarget.type === 'certification') {
-        await deleteCertSimulado(deleteTarget.id);
-        cert.removeSimulado(deleteTarget.id);
-      } else {
-        await deleteMockExam(deleteTarget.id);
-        mock.removeMockExam(deleteTarget.id);
-      }
+      await deleteMockExam(deleteTarget.id);
+      mock.removeMockExam(deleteTarget.id);
       const removedName = deleteTarget.name ?? deleteTarget.sourceLabel;
 
       setDeleteTarget(null);
@@ -265,7 +234,12 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
             >
               {t('common.cancel')}
             </Button>
-            <Button data-testid="confirm-delete-btn" className={buttonStyles.danger} isLoading={isDeleting} onPress={handleDelete}>
+            <Button
+              data-testid="confirm-delete-btn"
+              className={buttonStyles.danger}
+              isLoading={isDeleting}
+              onPress={handleDelete}
+            >
               {t('common.delete')}
             </Button>
           </ModalFooter>
@@ -322,25 +296,21 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
         </div>
 
         {/* Row 2: type + count + status */}
-        <div
-          className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${showTypeFilter ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}
-        >
-          {showTypeFilter && (
-            <Select
-              {...inputProperties.select}
-              label={t('simulado.filterByType')}
-              placeholder={t('simulado.filterAll')}
-              selectedKeys={filters.type !== 'all' ? new Set([filters.type]) : new Set([])}
-              onSelectionChange={(keys) => {
-                const val = Array.from(keys)[0] as TypeFilter | undefined;
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:grid-cols-3">
+          <Select
+            {...inputProperties.select}
+            label={t('simulado.filterByType')}
+            placeholder={t('simulado.filterAll')}
+            selectedKeys={filters.type !== 'all' ? new Set([filters.type]) : new Set([])}
+            onSelectionChange={(keys) => {
+              const val = Array.from(keys)[0] as TypeFilter | undefined;
 
-                updateFilter('type', val ?? 'all');
-              }}
-            >
-              <SelectItem key="certification">{t('simulado.filterCertifications')}</SelectItem>
-              <SelectItem key="concurso">{t('simulado.filterConcursos')}</SelectItem>
-            </Select>
-          )}
+              updateFilter('type', val ?? 'all');
+            }}
+          >
+            <SelectItem key="certification">{t('simulado.filterCertifications')}</SelectItem>
+            <SelectItem key="public_exam">{t('simulado.filterConcursos')}</SelectItem>
+          </Select>
 
           <Select
             {...inputProperties.select}
@@ -521,7 +491,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
           variant="bordered"
           onPress={() => {
             setHistoryTarget(null);
-            router.push(`${basePath(s.type)}/${s.id}/resultado/${attempt.id}`);
+            router.push(`${basePath()}/${s.id}/resultado/${attempt.id}`);
           }}
         >
           {t('simulado.viewAttempt')}
@@ -531,29 +501,13 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
   }
 }
 
-function normalizeCert(s: CertSimuladoListItem): UnifiedSimulado {
-  return {
-    key: `certification-${s.id}`,
-    id: s.id,
-    type: 'certification',
-    name: s.name,
-    sourceLabel: s.certLabel,
-    totalQuestions: s.totalQuestions,
-    attemptCount: s.attemptCount,
-    bestScore: s.bestScore,
-    openAttemptId: s.openAttemptId,
-    attempts: s.attempts.map((a) => ({ id: a.id, score: a.score, finishedAt: a.finishedAt })),
-    status: deriveStatus(s.openAttemptId, s.attemptCount),
-  };
-}
-
 function normalizeMock(m: MockExamListItem): UnifiedSimulado {
   return {
-    key: `concurso-${m.id}`,
+    key: `${m.exam.type}-${m.id}`,
     id: m.id,
-    type: 'concurso',
+    type: m.exam.type,
     name: m.name,
-    sourceLabel: m.publicExam.name,
+    sourceLabel: m.exam.name,
     totalQuestions: m.totalQuestions,
     attemptCount: m.attemptCount,
     bestScore: m.bestScore,

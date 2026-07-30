@@ -80,7 +80,7 @@ export function BillingOverview() {
 
   const isPaid = usage.plan !== 'free';
 
-  const certLimitLabel = usage.certificationsLimit === -1 ? t('billing.unlimited') : String(usage.certificationsLimit);
+  const certLimitLabel = usage.examsLimit === -1 ? t('billing.unlimited') : String(usage.examsLimit);
   const qLimitLabel = usage.questionsLimit === -1 ? t('billing.unlimited') : String(usage.questionsLimit);
 
   const planLabel =
@@ -165,14 +165,14 @@ export function BillingOverview() {
           <UsageCard
             icon={faFileContract}
             label={t('billing.certificationsCard')}
-            limit={usage!.certificationsLimit}
+            limit={usage!.examsLimit}
             limitLabel={certLimitLabel}
             renewNote={
-              usage!.certificationsLimit === -1
+              usage!.examsLimit === -1
                 ? t('billing.certificationsNote')
                 : t('billing.questionsRenewNote', { date: resetLabel })
             }
-            used={usage!.certificationsUsed}
+            used={usage!.examsUsed}
           />
         </div>
       </section>
@@ -190,7 +190,12 @@ export function BillingOverview() {
             </div>
             <p className="text-sm text-default-500">{t('billing.paymentManagedNote')}</p>
           </div>
-          <Button className={buttonStyles.secondary} isLoading={portalLoading} variant="bordered" onPress={handlePortal}>
+          <Button
+            className={buttonStyles.secondary}
+            isLoading={portalLoading}
+            variant="bordered"
+            onPress={handlePortal}
+          >
             {t('billing.updatePayment')}
           </Button>
         </div>
@@ -209,7 +214,12 @@ export function BillingOverview() {
             </div>
             <p className="text-sm text-default-500">{t('billing.billingSectionTitle')}</p>
           </div>
-          <Button className={buttonStyles.secondary} isLoading={portalLoading} variant="bordered" onPress={handlePortal}>
+          <Button
+            className={buttonStyles.secondary}
+            isLoading={portalLoading}
+            variant="bordered"
+            onPress={handlePortal}
+          >
             {t('billing.viewInvoices')}
           </Button>
         </div>

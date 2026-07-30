@@ -7,7 +7,7 @@ import { Tabs, Tab } from '@heroui/tabs';
 import { PublicExamsListTab } from './components/PublicExamsListTab';
 import { NewPublicExamTab } from './components/NewPublicExamTab';
 
-import PublicExamsProvider from '@/features/providers/publicExams.provider';
+import { ExamsProvider } from '@/features/providers/exams.provider';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 
@@ -16,7 +16,7 @@ export default function ConfigurePublicExamPage() {
   const [selectedTab, setSelectedTab] = useState<Key>('publicExamsList');
 
   return (
-    <PublicExamsProvider>
+    <ExamsProvider>
       <PageHeader subtitle={t('concurso.pageSubtitle')} title={t('concurso.pageTitle')}>
         <div className="flex w-full flex-col">
           <Tabs
@@ -40,6 +40,6 @@ export default function ConfigurePublicExamPage() {
           </Tabs>
         </div>
       </PageHeader>
-    </PublicExamsProvider>
+    </ExamsProvider>
   );
 }

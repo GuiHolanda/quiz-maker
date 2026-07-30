@@ -21,10 +21,7 @@ import { useRouter } from 'next/navigation';
  * triggering the block (e.g. after a confirm modal that already consented). Use
  * it right before `router.push(...)`.
  */
-export function useNavigationGuard(
-  shouldBlock: boolean,
-  onBlock: (proceed: () => void) => void
-) {
+export function useNavigationGuard(shouldBlock: boolean, onBlock: (proceed: () => void) => void) {
   const shouldBlockRef = useRef(shouldBlock);
   const onBlockRef = useRef(onBlock);
   const bypassNextRef = useRef(false);

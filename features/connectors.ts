@@ -1,28 +1,23 @@
 import {
-  SAVE_QUESTIONS_URL,
-  SAVE_CERTIFICATION_URL,
-  QUIZ_GENERATOR_URL,
+  SAVE_EXAM_URL,
+  SAVE_EXAM_QUESTIONS_URL,
+  GET_EXAM_ANSWERS_URL,
+  EXAM_QUIZ_GENERATOR_URL,
+  EXAM_QUESTION_EXPLANATION_URL,
+  EXAMS_URL,
   BILLING_USAGE_URL,
   BILLING_CHECKOUT_URL,
   BILLING_PORTAL_URL,
   BROWSE_SUMMARY_URL,
   BROWSE_QUESTIONS_URL,
-  PUBLIC_EXAMS_URL,
+  PROVIDERS_URL,
   EXAM_BOARDS_URL,
-  SAVE_PUBLIC_EXAM_URL,
   EXTRACT_EDITAL_URL,
-  SAVE_PUBLIC_EXAM_QUESTIONS_URL,
-  GET_PUBLIC_EXAM_ANSWERS_URL,
-  BROWSE_PUBLIC_EXAM_SUMMARY_URL,
-  BROWSE_PUBLIC_EXAM_QUESTIONS_URL,
-  GET_CERTIFICATION_ANSWERS_URL,
   MOCK_EXAMS_URL,
   ADMIN_USERS_URL,
   ADMIN_OVERVIEW_URL,
   ADMIN_AUDIT_LOG_URL,
   ADMIN_EXCHANGE_RATE_URL,
-  CERT_SIMULADOS_URL,
-  CERT_QUESTION_EXPLANATION_URL,
   QUESTION_BANK_URL,
   QUESTION_BANK_TOPICS_URL,
   QUESTION_BANK_SOURCES_URL,
@@ -32,24 +27,19 @@ import {
   GENERATION_JOB_SAVE_URL,
 } from '@/config/constants';
 import {
-  AIQuestion,
-  Certification,
-  CertificationTopic,
-  StoredQuestion,
-  TopicUpdatePayload,
+  AIExamQuestion,
+  Exam,
+  ExamType,
+  ExamSection,
+  ExamTopic,
+  StoredExamQuestion,
+  SectionUpdatePayload,
   UsageStats,
   BrowseSummary,
   BrowseQuestionsParams,
   BrowseQuestionsResponse,
-  PublicExam,
+  Provider,
   ExamBoard,
-  PublicExamSubject,
-  PublicExamTopic,
-  PublicExamSubjectUpdatePayload,
-  AIPublicExamQuestion,
-  PublicExamBrowseSummary,
-  PublicExamBrowseQuestionsParams,
-  PublicExamBrowseQuestionsResponse,
   MockExamListItem,
   MockExam,
   CreateMockExamPayload,
@@ -61,12 +51,6 @@ import {
   AdminAuditLogResponse,
   UserAdminRow,
   UserPlan,
-  CertSimuladoListItem,
-  CertSimulado,
-  CertSimuladoAttempt,
-  CertSimuladoResult,
-  CreateCertSimuladoPayload,
-  CertFinishAttemptPayload,
   QuestionBankParams,
   QuestionBankResponse,
   GenerationJobStatus,
@@ -76,83 +60,177 @@ import {
 } from '@/shared/types';
 import api from '@/lib/bff.api';
 
-export async function getCertifications(): Promise<Certification[]> {
-  const { data } = await api.get<{ certifications: Certification[] }>('/certification/certifications');
+// — Exams (certification + public_exam) —
 
-  return data.certifications;
+export async function getExams(): Promise<Exam[]> {
+  const { data } = await api.get<{ exams: Exam[] }>(EXAMS_URL);
+
+  return data.exams;
 }
 
-export async function saveQuestions(questions: AIQuestion[]): Promise<void> {
-  await api.post(SAVE_QUESTIONS_URL, questions);
+export async function saveExam(exam: Exam): Promise<Exam> {
+  const { data } = await api.post<{ exam: Exam }>(SAVE_EXAM_URL, exam);
+
+  return data.exam;
 }
 
-export async function getCertificationAnswers(questions: AIQuestion[]): Promise<void> {
-  await api.post(GET_CERTIFICATION_ANSWERS_URL, questions);
-}
-
-export async function saveCertification(certification: Certification): Promise<Certification> {
-  const { data } = await api.post<{ certification: Certification }>(SAVE_CERTIFICATION_URL, certification);
-
-  return data.certification;
-}
-
-export async function updateCertificationTopic(payload: TopicUpdatePayload): Promise<void> {
-  await api.patch(SAVE_CERTIFICATION_URL, payload);
-}
-
-export async function updateCertificationMeta(
-  certKey: string,
+export async function updateExamMeta(
+  examId: string,
   updates: {
-    newLabel?: string;
-    newKey?: string;
-    newProvider?: string | null;
+    newName?: string;
+    newRole?: string | null;
+    newYear?: number | null;
+    newProviderName?: string | null;
+    newExamBoardName?: string | null;
     newTotalQuestions?: number;
     newExamDurationMinutes?: number | null;
     newPassingScore?: number | null;
   }
-): Promise<Certification> {
-  const { data } = await api.patch<{ certification: Certification }>(SAVE_CERTIFICATION_URL, {
-    certificationKey: certKey,
-    ...updates,
-  });
+): Promise<Exam> {
+  const { data } = await api.patch<{ exam: Exam }>(SAVE_EXAM_URL, { examId, ...updates });
 
-  return data.certification;
+  return data.exam;
 }
 
-export async function deleteCertificationTopic(topicId: string): Promise<void> {
-  await api.delete(`${SAVE_CERTIFICATION_URL}?topicId=${encodeURIComponent(topicId)}`);
+export async function deleteExam(examId: string): Promise<void> {
+  await api.delete(`${SAVE_EXAM_URL}?examId=${encodeURIComponent(examId)}`);
 }
 
-export async function deleteCertification(certificationKey: string): Promise<void> {
-  await api.delete(`${SAVE_CERTIFICATION_URL}?certificationKey=${encodeURIComponent(certificationKey)}`);
-}
+// — Sections —
 
-export async function addCertificationTopic(
-  certificationKey: string,
+export async function addSection(
+  examId: string,
   name: string,
   minQuestions: number,
   maxQuestions: number
-): Promise<CertificationTopic> {
-  const { data } = await api.put<{ topic: CertificationTopic }>(SAVE_CERTIFICATION_URL, {
-    certificationKey,
+): Promise<ExamSection> {
+  const { data } = await api.put<{ section: ExamSection }>(SAVE_EXAM_URL, {
+    examId,
+    kind: 'section',
     name,
     minQuestions,
     maxQuestions,
   });
 
+  return data.section;
+}
+
+export async function updateSection(payload: SectionUpdatePayload): Promise<void> {
+  await api.patch(SAVE_EXAM_URL, { kind: 'section', ...payload });
+}
+
+export async function deleteSection(sectionId: string): Promise<void> {
+  await api.delete(`${SAVE_EXAM_URL}?sectionId=${encodeURIComponent(sectionId)}`);
+}
+
+// — Topics —
+
+export async function addTopic(sectionId: string, name: string): Promise<ExamTopic> {
+  const { data } = await api.put<{ topic: ExamTopic }>(SAVE_EXAM_URL, {
+    kind: 'topic',
+    sectionId,
+    name,
+  });
+
   return data.topic;
 }
 
+export async function updateTopic(topicId: string, newName: string): Promise<ExamTopic> {
+  const { data } = await api.patch<{ topic: ExamTopic }>(SAVE_EXAM_URL, { kind: 'topic', topicId, newName });
+
+  return data.topic;
+}
+
+export async function deleteTopic(topicId: string): Promise<void> {
+  await api.delete(`${SAVE_EXAM_URL}?topicId=${encodeURIComponent(topicId)}`);
+}
+
+// — Questions —
+
+export async function saveExamQuestions(type: ExamType, questions: AIExamQuestion[], examId?: string): Promise<void> {
+  await api.post(SAVE_EXAM_QUESTIONS_URL, { type, questions, ...(examId && { examId }) });
+}
+
+export async function getExamAnswers(type: ExamType, questions: AIExamQuestion[]): Promise<void> {
+  await api.post(GET_EXAM_ANSWERS_URL, { type, questions });
+}
+
 export async function getQuizQuestions(params: {
-  certificationTitle: string;
+  examName: string;
   numQuestions: number;
-}): Promise<StoredQuestion[]> {
-  const { data } = await api.get<StoredQuestion[]>(QUIZ_GENERATOR_URL, {
-    params: { certificationTitle: params.certificationTitle, numQuestions: params.numQuestions },
+}): Promise<StoredExamQuestion[]> {
+  const { data } = await api.get<StoredExamQuestion[]>(EXAM_QUIZ_GENERATOR_URL, {
+    params: { examName: params.examName, numQuestions: params.numQuestions },
   });
 
   return data;
 }
+
+export async function getExamQuestionExplanation(questionId: number): Promise<Record<string, string>> {
+  const { data } = await api.get<{ explanations: Record<string, string> }>(
+    `${EXAM_QUESTION_EXPLANATION_URL}/${questionId}/explanation`
+  );
+
+  return data.explanations;
+}
+
+// — Reference tables (autocomplete) —
+
+export async function getProviders(): Promise<Provider[]> {
+  const { data } = await api.get<{ providers: Provider[] }>(PROVIDERS_URL);
+
+  return data.providers;
+}
+
+export async function getExamBoards(): Promise<ExamBoard[]> {
+  const { data } = await api.get<{ examBoards: ExamBoard[] }>(EXAM_BOARDS_URL);
+
+  return data.examBoards;
+}
+
+export async function createProvider(name: string, fullName?: string): Promise<Provider> {
+  const { data } = await api.post<{ provider: Provider }>(PROVIDERS_URL, { name, fullName });
+
+  return data.provider;
+}
+
+export async function createExamBoard(name: string, fullName?: string): Promise<ExamBoard> {
+  const { data } = await api.post<{ examBoard: ExamBoard }>(EXAM_BOARDS_URL, { name, fullName });
+
+  return data.examBoard;
+}
+
+export async function extractEdital(file: File, role?: string): Promise<Exam> {
+  const formData = new FormData();
+
+  formData.append('file', file);
+  if (role) formData.append('role', role);
+  const { data } = await api.post<{ exam: Exam }>(EXTRACT_EDITAL_URL, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
+  return data.exam;
+}
+
+// — Browse questions —
+
+export async function getBrowseSummary(): Promise<BrowseSummary> {
+  const { data } = await api.get<BrowseSummary>(BROWSE_SUMMARY_URL);
+
+  return data;
+}
+
+export async function getBrowseQuestions(params: BrowseQuestionsParams): Promise<BrowseQuestionsResponse> {
+  const { data } = await api.get<BrowseQuestionsResponse>(BROWSE_QUESTIONS_URL, { params });
+
+  return data;
+}
+
+export async function deleteBrowseQuestion(id: number): Promise<void> {
+  await api.delete(`${BROWSE_QUESTIONS_URL}?id=${id}`);
+}
+
+// — Billing —
 
 export async function getBillingUsage(): Promise<UsageStats> {
   const { data } = await api.get<UsageStats>(BILLING_USAGE_URL);
@@ -172,150 +250,7 @@ export async function getPortalUrl(): Promise<string> {
   return data.url;
 }
 
-export async function getBrowseSummary(): Promise<BrowseSummary> {
-  const { data } = await api.get<BrowseSummary>(BROWSE_SUMMARY_URL);
-
-  return data;
-}
-
-export async function getBrowseQuestions(params: BrowseQuestionsParams): Promise<BrowseQuestionsResponse> {
-  const { data } = await api.get<BrowseQuestionsResponse>(BROWSE_QUESTIONS_URL, { params });
-
-  return data;
-}
-
-export async function deleteBrowseQuestion(id: number): Promise<void> {
-  await api.delete(`${BROWSE_QUESTIONS_URL}?id=${id}`);
-}
-
-export async function getPublicExams(): Promise<PublicExam[]> {
-  const { data } = await api.get<{ publicExams: PublicExam[] }>(PUBLIC_EXAMS_URL);
-
-  return data.publicExams;
-}
-
-export async function getExamBoards(): Promise<ExamBoard[]> {
-  const { data } = await api.get<{ examBoards: ExamBoard[] }>(EXAM_BOARDS_URL);
-
-  return data.examBoards;
-}
-
-export async function createExamBoard(name: string, fullName?: string): Promise<ExamBoard> {
-  const { data } = await api.post<{ examBoard: ExamBoard }>(EXAM_BOARDS_URL, { name, fullName });
-
-  return data.examBoard;
-}
-
-export async function savePublicExam(publicExam: PublicExam): Promise<PublicExam> {
-  const { data } = await api.post<{ publicExam: PublicExam }>(SAVE_PUBLIC_EXAM_URL, publicExam);
-
-  return data.publicExam;
-}
-
-export async function extractEdital(file: File, role?: string): Promise<PublicExam> {
-  const formData = new FormData();
-
-  formData.append('file', file);
-  if (role) formData.append('role', role);
-  const { data } = await api.post<{ publicExam: PublicExam }>(EXTRACT_EDITAL_URL, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
-
-  return data.publicExam;
-}
-
-export async function updatePublicExamSubject(payload: PublicExamSubjectUpdatePayload): Promise<void> {
-  await api.patch(SAVE_PUBLIC_EXAM_URL, payload);
-}
-
-export async function updatePublicExamMeta(
-  publicExamId: string,
-  updates: {
-    newName?: string;
-    newRole?: string | null;
-    newYear?: number | null;
-    newExamBoardName?: string;
-    newTotalQuestions?: number;
-    newExamDurationMinutes?: number | null;
-    newPassingScore?: number | null;
-  }
-): Promise<PublicExam> {
-  const { data } = await api.patch<{ publicExam: PublicExam }>(SAVE_PUBLIC_EXAM_URL, {
-    publicExamId,
-    ...updates,
-  });
-
-  return data.publicExam;
-}
-
-export async function deletePublicExamSubject(subjectId: string): Promise<void> {
-  await api.delete(`${SAVE_PUBLIC_EXAM_URL}?subjectId=${encodeURIComponent(subjectId)}`);
-}
-
-export async function deletePublicExam(examId: string): Promise<void> {
-  await api.delete(`${SAVE_PUBLIC_EXAM_URL}?examId=${encodeURIComponent(examId)}`);
-}
-
-export async function deletePublicExamTopic(topicId: string): Promise<void> {
-  await api.delete(`${SAVE_PUBLIC_EXAM_URL}?topicId=${encodeURIComponent(topicId)}`);
-}
-
-export async function updatePublicExamTopic(topicId: string, newName: string): Promise<PublicExamTopic> {
-  const { data } = await api.patch<{ topic: PublicExamTopic }>(SAVE_PUBLIC_EXAM_URL, { topicId, newName });
-
-  return data.topic;
-}
-
-export async function addPublicExamSubject(
-  publicExamId: string,
-  name: string,
-  minQuestions: number,
-  maxQuestions: number
-): Promise<PublicExamSubject> {
-  const { data } = await api.put<{ subject: PublicExamSubject }>(SAVE_PUBLIC_EXAM_URL, {
-    publicExamId,
-    name,
-    minQuestions,
-    maxQuestions,
-  });
-
-  return data.subject;
-}
-
-export async function addPublicExamTopic(subjectId: string, name: string): Promise<PublicExamTopic> {
-  const { data } = await api.put<{ topic: PublicExamTopic }>(SAVE_PUBLIC_EXAM_URL, {
-    subjectId,
-    name,
-  });
-
-  return data.topic;
-}
-
-export async function savePublicExamQuestions(questions: AIPublicExamQuestion[]): Promise<void> {
-  await api.post(SAVE_PUBLIC_EXAM_QUESTIONS_URL, questions);
-}
-
-export async function getPublicExamAnswers(questions: AIPublicExamQuestion[]): Promise<void> {
-  await api.post(GET_PUBLIC_EXAM_ANSWERS_URL, questions);
-}
-
-export async function getPublicExamBrowseSummary(): Promise<PublicExamBrowseSummary> {
-  const { data } = await api.get<PublicExamBrowseSummary>(BROWSE_PUBLIC_EXAM_SUMMARY_URL);
-
-  return data;
-}
-
-export async function getPublicExamBrowseQuestions(
-  params: PublicExamBrowseQuestionsParams
-): Promise<PublicExamBrowseQuestionsResponse> {
-  const { data } = await api.get<PublicExamBrowseQuestionsResponse>(BROWSE_PUBLIC_EXAM_QUESTIONS_URL, { params });
-
-  return data;
-}
-
-export async function deletePublicExamBrowseQuestion(id: number): Promise<void> {
-  await api.delete(`${BROWSE_PUBLIC_EXAM_QUESTIONS_URL}?id=${id}`);
-}
+// — Mock exams (simulados, both types) —
 
 export async function getMockExams(): Promise<MockExamListItem[]> {
   const { data } = await api.get<{ mockExams: MockExamListItem[] }>(MOCK_EXAMS_URL);
@@ -369,25 +304,7 @@ export async function getMockExamAttemptResult(mockExamId: number, attemptId: nu
   return data;
 }
 
-export async function getMockExamAnswers(questions: AIPublicExamQuestion[]): Promise<void> {
-  await api.post(`${MOCK_EXAMS_URL}/answers`, questions);
-}
-
-export async function getQuestionExplanation(questionId: number): Promise<Record<string, string>> {
-  const { data } = await api.get<{ explanations: Record<string, string> }>(
-    `/public-exam/questions/${questionId}/explanation`
-  );
-
-  return data.explanations;
-}
-
-export async function getCertificationQuestionExplanation(questionId: number): Promise<Record<string, string>> {
-  const { data } = await api.get<{ explanations: Record<string, string> }>(
-    `${CERT_QUESTION_EXPLANATION_URL}/${questionId}/explanation`
-  );
-
-  return data.explanations;
-}
+// — Admin —
 
 export async function getAdminOverview(): Promise<AdminOverviewStats> {
   const { data } = await api.get<AdminOverviewStats>(ADMIN_OVERVIEW_URL);
@@ -433,59 +350,7 @@ export async function getExchangeRate(): Promise<{ rate: number }> {
   return data;
 }
 
-// — Certification Simulados —
-
-export async function getCertSimulados(): Promise<CertSimuladoListItem[]> {
-  const { data } = await api.get<{ simulados: CertSimuladoListItem[] }>(CERT_SIMULADOS_URL);
-
-  return data.simulados;
-}
-
-export async function createCertSimulado(payload: CreateCertSimuladoPayload): Promise<CertSimuladoListItem> {
-  const { data } = await api.post<{ simulado: CertSimuladoListItem }>(CERT_SIMULADOS_URL, payload);
-
-  return data.simulado;
-}
-
-export async function deleteCertSimulado(id: number): Promise<void> {
-  await api.delete(`${CERT_SIMULADOS_URL}?id=${id}`);
-}
-
-export async function getCertSimulado(id: number): Promise<CertSimulado> {
-  const { data } = await api.get<{ simulado: CertSimulado }>(`${CERT_SIMULADOS_URL}/${id}`);
-
-  return data.simulado;
-}
-
-export async function startCertSimuladoAttempt(simuladoId: number): Promise<CertSimuladoAttempt> {
-  const { data } = await api.post<{ attempt: CertSimuladoAttempt }>(`${CERT_SIMULADOS_URL}/${simuladoId}/attempts`);
-
-  return data.attempt;
-}
-
-export async function ensureCertSimuladoAnswers(simuladoId: number): Promise<{ generated: number }> {
-  const { data } = await api.post<{ generated: number }>(`${CERT_SIMULADOS_URL}/${simuladoId}/answers`);
-
-  return data;
-}
-
-export async function finishCertSimuladoAttempt(
-  simuladoId: number,
-  attemptId: number,
-  payload: CertFinishAttemptPayload
-): Promise<void> {
-  await api.patch(`${CERT_SIMULADOS_URL}/${simuladoId}/attempts/${attemptId}`, payload);
-}
-
-export async function discardCertSimuladoAttempt(simuladoId: number, attemptId: number): Promise<void> {
-  await api.delete(`${CERT_SIMULADOS_URL}/${simuladoId}/attempts/${attemptId}`);
-}
-
-export async function getCertSimuladoResult(simuladoId: number, attemptId: number): Promise<CertSimuladoResult> {
-  const { data } = await api.get<CertSimuladoResult>(`${CERT_SIMULADOS_URL}/${simuladoId}/attempts/${attemptId}`);
-
-  return data;
-}
+// — Question bank —
 
 export async function getQuestionBank(params: QuestionBankParams): Promise<QuestionBankResponse> {
   const { data } = await api.get<QuestionBankResponse>(QUESTION_BANK_URL, { params });
@@ -506,8 +371,10 @@ export async function getQuestionBankSources(type?: 'all' | 'certification' | 'p
   return data.sources;
 }
 
+// — Generation jobs —
+
 export const createGenerationJob = (payload: {
-  type: 'certification' | 'public_exam';
+  type: ExamType;
   refKey: string;
   refName: string;
   examBoardName?: string;

@@ -64,15 +64,16 @@ export function WorkspaceHeader() {
               >
                 <FontAwesomeIcon className="text-default-400 w-3 h-3" icon={faBell} />
                 {unreadCount > 0 && (
-                  <span data-testid="notification-badge" className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-danger rounded-full flex items-center justify-center text-[9px] font-bold text-danger-foreground leading-none">
+                  <span
+                    data-testid="notification-badge"
+                    className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-danger rounded-full flex items-center justify-center text-[9px] font-bold text-danger-foreground leading-none"
+                  >
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
               </button>
             </PopoverTrigger>
-            <PopoverContent className="p-0 w-80">
-              {renderNotificationsPanel()}
-            </PopoverContent>
+            <PopoverContent className="p-0 w-80">{renderNotificationsPanel()}</PopoverContent>
           </Popover>
 
           {/* User dropdown */}
@@ -155,10 +156,7 @@ export function WorkspaceHeader() {
         <div className="flex items-center justify-between px-4 py-3 border-b border-default-200">
           <p className="text-xs font-semibold text-foreground">{t('aria.notifications')}</p>
           {unreadCount > 0 && (
-            <button
-              className="text-xs text-primary hover:opacity-80 transition-opacity"
-              onClick={markAllRead}
-            >
+            <button className="text-xs text-primary hover:opacity-80 transition-opacity" onClick={markAllRead}>
               {t('notification.markAllRead')}
             </button>
           )}
@@ -175,7 +173,9 @@ export function WorkspaceHeader() {
                 data-testid="notification-item"
                 className={`flex gap-3 px-4 py-3 border-b border-default-200 last:border-0 ${!notif.read ? 'bg-primary/5' : ''}`}
               >
-                <div className={`w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0 ${notif.read ? 'invisible' : ''}`} />
+                <div
+                  className={`w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0 ${notif.read ? 'invisible' : ''}`}
+                />
                 <div className="flex flex-col gap-1 flex-1 min-w-0">
                   <p className="text-xs font-semibold text-foreground leading-snug">{notif.title}</p>
                   <p className="text-xs text-default-500 leading-snug">{notif.description}</p>

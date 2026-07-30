@@ -49,9 +49,7 @@ export class AdminService {
     const totalInputTokens = tokenAgg._sum.inputTokens ?? 0;
     const totalOutputTokens = tokenAgg._sum.outputTokens ?? 0;
     const avgTokensPerQuestion =
-      totalQuestionsGenerated > 0
-        ? Math.round((totalInputTokens + totalOutputTokens) / totalQuestionsGenerated)
-        : 0;
+      totalQuestionsGenerated > 0 ? Math.round((totalInputTokens + totalOutputTokens) / totalQuestionsGenerated) : 0;
 
     // Resolve usageLogId → userId for steps, then join with user plans
     const logIds = allStepsByLog.map((s) => s.usageLogId);
@@ -122,10 +120,7 @@ export class AdminService {
     const where = {
       ...(search
         ? {
-            OR: [
-              { email: { contains: search } },
-              { name: { contains: search } },
-            ],
+            OR: [{ email: { contains: search } }, { name: { contains: search } }],
           }
         : {}),
       ...(plan ? { plan } : {}),

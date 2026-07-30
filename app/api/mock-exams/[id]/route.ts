@@ -20,34 +20,34 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const shaped = {
       id: mockExam.id,
       name: mockExam.name,
-      publicExam: {
-        id: mockExam.publicExam.id,
-        name: mockExam.publicExam.name,
-        examBoard: mockExam.publicExam.examBoard,
+      examId: mockExam.examId,
+      exam: {
+        id: mockExam.exam.id,
+        name: mockExam.exam.name,
+        type: mockExam.exam.type,
+        provider: mockExam.exam.provider,
+        examBoard: mockExam.exam.examBoard,
       },
-      subjects: mockExam.subjects.map((s) => ({ subjectName: s.subjectName, questionCount: s.questionCount })),
+      sections: mockExam.sections.map((s) => ({ sectionName: s.sectionName, questionCount: s.questionCount })),
       questions: mockExam.questions.map((mq) => ({
         id: mq.id,
         order: mq.order,
-        publicExamQuestion: {
-          id: mq.publicExamQuestion.id,
-          text: mq.publicExamQuestion.text,
-          correctCount: mq.publicExamQuestion.correctCount,
-          subject: mq.publicExamQuestion.subject,
-          topic: mq.publicExamQuestion.topic,
-          difficulty: mq.publicExamQuestion.difficulty,
-          options: Object.fromEntries(mq.publicExamQuestion.options.map((o) => [o.label, o.text])),
-          answer: mq.publicExamQuestion.answer
+        examQuestion: {
+          id: mq.examQuestion.id,
+          text: mq.examQuestion.text,
+          correctCount: mq.examQuestion.correctCount,
+          sectionName: mq.examQuestion.sectionName,
+          topic: mq.examQuestion.topicName,
+          difficulty: mq.examQuestion.difficulty,
+          options: Object.fromEntries(mq.examQuestion.options.map((o) => [o.label, o.text])),
+          answer: mq.examQuestion.answer
             ? {
-                questionId: mq.publicExamQuestion.answer.questionId,
-                correctOptions: mq.publicExamQuestion.answer.correctOptions,
-                explanations: Object.fromEntries(
-                  mq.publicExamQuestion.answer.explanations.map((e) => [e.label, e.text])
-                ),
+                questionId: mq.examQuestion.answer.questionId,
+                correctOptions: mq.examQuestion.answer.correctOptions,
+                explanations: Object.fromEntries(mq.examQuestion.answer.explanations.map((e) => [e.label, e.text])),
               }
             : null,
-          examBoardName: mq.publicExamQuestion.examBoardName,
-          publicExamName: mq.publicExamQuestion.publicExamName,
+          examName: mq.examQuestion.examName,
         },
       })),
       attempts: mockExam.attempts,

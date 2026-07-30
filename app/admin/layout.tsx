@@ -25,10 +25,7 @@ export default async function AdminLayout({ children }: { readonly children: Rea
         className="w-56 shrink-0 flex flex-col"
         style={{ background: '#0f1b3d', borderRight: '1px solid rgba(30,58,95,0.6)' }}
       >
-        <div
-          className="py-5 px-5 flex items-center gap-2.5"
-          style={{ borderBottom: '1px solid rgba(30,58,95,0.6)' }}
-        >
+        <div className="py-5 px-5 flex items-center gap-2.5" style={{ borderBottom: '1px solid rgba(30,58,95,0.6)' }}>
           <span
             className="rounded p-1.5"
             style={{
@@ -57,7 +54,9 @@ export default async function AdminLayout({ children }: { readonly children: Rea
           </Link>
         </div>
       </aside>
-      <main className="flex-1 p-8 overflow-auto" style={{ background: '#070e20' }}>{children}</main>
+      <main className="flex-1 p-8 overflow-auto" style={{ background: '#070e20' }}>
+        {children}
+      </main>
     </div>
   );
 }

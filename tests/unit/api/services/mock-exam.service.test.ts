@@ -17,29 +17,19 @@ describe('MockExamService', () => {
     openAICallMock.mockReset();
   });
 
-  // Behaviour 1: validateSubjectAvailability throws 422 when count < requested (tested via create())
+  // Behaviour 1: validateSectionAvailability throws 422 when count < requested (tested via create())
   it('create() throws 422 when available question count is less than the requested questionCount', async () => {
-    // resolveSubjects: find the subject by publicExamId
-    prismaMock.publicExamSubject.findMany.mockResolvedValue([
-      { id: 'sub-1', name: 'Matemática' } as any,
-    ]);
-
-    // validateSubjectAvailability: find the exam
-    prismaMock.publicExam.findFirst.mockResolvedValue({
-      id: 'exam-1',
-      name: 'Concurso ABC',
-    } as any);
-
-    // Only 3 questions available, but 5 are requested
-    prismaMock.publicExamQuestion.count.mockResolvedValue(3);
+    prismaMock.examSection.findMany.mockResolvedValue([{ id: 'sec-1', name: 'Matemática' } as any]);
+    prismaMock.exam.findFirst.mockResolvedValue({ id: 'exam-1', name: 'Concurso ABC' } as any);
+    prismaMock.examQuestion.count.mockResolvedValue(3);
 
     await expect(
       service.create(
         {
-          publicExamId: 'exam-1',
+          examId: 'exam-1',
           name: 'Test',
           totalQuestions: 5,
-          subjects: [{ subjectName: 'Matemática', questionCount: 5 }],
+          sections: [{ sectionName: 'Matemática', questionCount: 5 }],
         },
         'user-1',
       ),
@@ -57,13 +47,10 @@ describe('MockExamService', () => {
     prismaMock.mockExamQuestion.findMany.mockResolvedValue([
       {
         id: 5,
-        publicExamQuestion: {
-          answer: { correctOptions: ['A'] },
-        },
+        examQuestion: { answer: { correctOptions: ['A'] } },
       },
     ] as any);
 
-    // Array-form transaction mock — batch form, not callback form
     prismaMock.$transaction.mockResolvedValue([undefined, undefined] as any);
 
     await service.finishAttempt(1, 10, 'user-1', [{ mockExamQuestionId: 5, selectedOptions: ['A'] }]);
@@ -93,8 +80,8 @@ describe('MockExamService', () => {
     );
   });
 
-  // Behaviour 3: getAttemptResult computes subject breakdown correctly
-  it('getAttemptResult() computes correct subjectBreakdown with per-subject correct/total counts', async () => {
+  // Behaviour 3: getAttemptResult computes section breakdown correctly
+  it('getAttemptResult() computes correct sectionBreakdown with per-section correct/total counts', async () => {
     const mockAttemptResult = {
       id: 10,
       mockExamId: 1,
@@ -109,58 +96,56 @@ describe('MockExamService', () => {
       mockExam: {
         id: 1,
         name: 'Test Mock',
-        publicExam: {
+        exam: {
           id: 'exam-1',
           name: 'Concurso ABC',
+          type: 'public_exam',
           examBoard: { id: 'board-1', name: 'CESGRANRIO' },
         },
         questions: [
           {
             id: 1,
             order: 0,
-            publicExamQuestion: {
+            examQuestion: {
               id: 101,
               text: 'Q1',
               correctCount: 0,
-              subject: 'Matemática',
-              topic: null,
+              sectionName: 'Matemática',
+              topicName: null,
               difficulty: 'medium',
               options: [],
-              examBoardName: 'CESGRANRIO',
-              publicExamName: 'Concurso ABC',
-              answer: { questionId: 101, correctOptions: ['A'], explanations: [] }, // selected ['A'] → correct
+              examName: 'Concurso ABC',
+              answer: { questionId: 101, correctOptions: ['A'], explanations: [] },
             },
           },
           {
             id: 2,
             order: 1,
-            publicExamQuestion: {
+            examQuestion: {
               id: 102,
               text: 'Q2',
               correctCount: 0,
-              subject: 'Matemática',
-              topic: null,
+              sectionName: 'Matemática',
+              topicName: null,
               difficulty: 'medium',
               options: [],
-              examBoardName: 'CESGRANRIO',
-              publicExamName: 'Concurso ABC',
-              answer: { questionId: 102, correctOptions: ['A'], explanations: [] }, // selected ['B'], correct is ['A'] → wrong
+              examName: 'Concurso ABC',
+              answer: { questionId: 102, correctOptions: ['A'], explanations: [] },
             },
           },
           {
             id: 3,
             order: 2,
-            publicExamQuestion: {
+            examQuestion: {
               id: 103,
               text: 'Q3',
               correctCount: 0,
-              subject: 'Português',
-              topic: null,
+              sectionName: 'Português',
+              topicName: null,
               difficulty: 'easy',
               options: [],
-              examBoardName: 'CESGRANRIO',
-              publicExamName: 'Concurso ABC',
-              answer: { questionId: 103, correctOptions: ['C'], explanations: [] }, // selected ['C'] → correct
+              examName: 'Concurso ABC',
+              answer: { questionId: 103, correctOptions: ['C'], explanations: [] },
             },
           },
         ],
@@ -171,39 +156,29 @@ describe('MockExamService', () => {
 
     const result = await service.getAttemptResult(1, 10, 'user-1');
 
-    expect(result.subjectBreakdown).toEqual(
+    expect(result.sectionBreakdown).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ subjectName: 'Matemática', correct: 1, total: 2 }),
-        expect.objectContaining({ subjectName: 'Português', correct: 1, total: 1 }),
+        expect.objectContaining({ sectionName: 'Matemática', correct: 1, total: 2 }),
+        expect.objectContaining({ sectionName: 'Português', correct: 1, total: 1 }),
       ]),
     );
-    expect(result.subjectBreakdown).toHaveLength(2);
+    expect(result.sectionBreakdown).toHaveLength(2);
   });
 
-  // Behaviour 4: resolveSubjects matches subject names case-insensitively (tested via create())
-  it('create() resolves subject names case-insensitively via NFC+lowercase looseKey matching', async () => {
-    const exam = { id: 'exam-1', name: 'Concurso ABC' } as any;
+  // Behaviour 4: resolveSections matches section names case-insensitively (tested via create())
+  it('create() resolves section names case-insensitively via NFC+lowercase looseKey matching', async () => {
+    const exam = { id: 'exam-1', name: 'Concurso ABC', provider: null, examBoard: null } as any;
 
-    // resolveSubjects: DB has 'Língua Portuguesa', request passes 'língua portuguesa'
-    prismaMock.publicExamSubject.findMany.mockResolvedValue([
-      { id: 'sub-1', name: 'Língua Portuguesa' } as any,
-    ]);
+    prismaMock.examSection.findMany.mockResolvedValue([{ id: 'sec-1', name: 'Língua Portuguesa' } as any]);
+    prismaMock.exam.findFirst.mockResolvedValue(exam);
+    prismaMock.examQuestion.count.mockResolvedValue(10);
+    prismaMock.exam.findFirstOrThrow.mockResolvedValue(exam);
+    prismaMock.examQuestion.findMany.mockResolvedValue([{ id: 1 }, { id: 2 }] as any);
 
-    // validateSubjectAvailability + create() both call publicExam.findFirst
-    prismaMock.publicExam.findFirst.mockResolvedValue(exam);
-
-    // 10 questions available — more than the 2 requested → passes availability check
-    prismaMock.publicExamQuestion.count.mockResolvedValue(10);
-
-    // drawQuestions calls findFirstOrThrow then findMany
-    prismaMock.publicExam.findFirstOrThrow.mockResolvedValue(exam);
-    prismaMock.publicExamQuestion.findMany.mockResolvedValue([{ id: 1 }, { id: 2 }] as any);
-
-    // Final mockExam.create
     prismaMock.mockExam.create.mockResolvedValue({
       id: 42,
       name: 'Test',
-      publicExam: { id: 'exam-1', name: 'Concurso ABC', examBoard: { id: 'board-1', name: 'CESGRANRIO' } },
+      exam: { id: 'exam-1', name: 'Concurso ABC', type: 'public_exam', examBoard: { id: 'board-1', name: 'CESGRANRIO' } },
       _count: { questions: 2 },
       createdAt: new Date(),
     } as any);
@@ -211,10 +186,10 @@ describe('MockExamService', () => {
     await expect(
       service.create(
         {
-          publicExamId: 'exam-1',
+          examId: 'exam-1',
           name: 'Test',
           totalQuestions: 2,
-          subjects: [{ subjectName: 'língua portuguesa', questionCount: 2 }],
+          sections: [{ sectionName: 'língua portuguesa', questionCount: 2 }],
         },
         'user-1',
       ),
@@ -222,12 +197,10 @@ describe('MockExamService', () => {
 
     expect(prismaMock.mockExam.create).toHaveBeenCalledOnce();
 
-    expect(prismaMock.publicExamQuestion.count).toHaveBeenCalledWith(
+    expect(prismaMock.examQuestion.count).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          OR: expect.arrayContaining([
-            expect.objectContaining({ subjectId: 'sub-1' }),
-          ]),
+          OR: expect.arrayContaining([expect.objectContaining({ sectionId: 'sec-1' })]),
         }),
       }),
     );
@@ -244,18 +217,17 @@ describe('MockExamService', () => {
     it('returns generated:0 when every question already has an answer (idempotent)', async () => {
       prismaMock.mockExam.findFirst.mockResolvedValue({
         id: 1,
-        publicExam: { name: 'Concurso ABC', role: null, examBoard: { name: 'CESGRANRIO' } },
+        exam: { name: 'Concurso ABC', type: 'public_exam', role: null, examBoard: { name: 'CESGRANRIO' } },
         questions: [
           {
-            publicExamQuestion: {
+            examQuestion: {
               id: 100,
-              subject: 'Matemática',
-              topic: null,
+              sectionName: 'Matemática',
+              topicName: null,
               text: 'Q1',
               correctCount: 1,
               difficulty: 'medium',
-              publicExamName: 'Concurso ABC',
-              examBoardName: 'CESGRANRIO',
+              examName: 'Concurso ABC',
               options: [{ label: 'A', text: 'opt' }],
               answer: { id: 9, correctOptions: ['A'] },
             },
@@ -269,35 +241,33 @@ describe('MockExamService', () => {
       expect(openAICallMock).not.toHaveBeenCalled();
     });
 
-    it('calls OpenAI per subject and persists answers for missing questions', async () => {
+    it('calls OpenAI per section and persists answers for missing questions', async () => {
       prismaMock.mockExam.findFirst.mockResolvedValue({
         id: 1,
-        publicExam: { name: 'Concurso ABC', role: 'Analista', examBoard: { name: 'CESGRANRIO' } },
+        exam: { name: 'Concurso ABC', type: 'public_exam', role: 'Analista', examBoard: { name: 'CESGRANRIO' } },
         questions: [
           {
-            publicExamQuestion: {
+            examQuestion: {
               id: 100,
-              subject: 'Matemática',
-              topic: 'Álgebra',
+              sectionName: 'Matemática',
+              topicName: 'Álgebra',
               text: 'Q1',
               correctCount: 1,
               difficulty: 'medium',
-              publicExamName: 'Concurso ABC',
-              examBoardName: 'CESGRANRIO',
+              examName: 'Concurso ABC',
               options: [{ label: 'A', text: 'opt-a' }],
               answer: null,
             },
           },
           {
-            publicExamQuestion: {
+            examQuestion: {
               id: 200,
-              subject: 'Português',
-              topic: 'Sintaxe',
+              sectionName: 'Português',
+              topicName: 'Sintaxe',
               text: 'Q2',
               correctCount: 1,
               difficulty: 'easy',
-              publicExamName: 'Concurso ABC',
-              examBoardName: 'CESGRANRIO',
+              examName: 'Concurso ABC',
               options: [{ label: 'A', text: 'opt-a' }],
               answer: null,
             },
@@ -314,11 +284,10 @@ describe('MockExamService', () => {
 
       expect(result.generated).toBe(2);
       expect(openAICallMock).toHaveBeenCalledTimes(2);
-      const subjects = new Set(openAICallMock.mock.calls.map((c: any[]) => c[1].subject_name));
+      const sections = new Set(openAICallMock.mock.calls.map((c: any[]) => c[1].subject_name));
 
-      expect(subjects.has('Matemática')).toBe(true);
-      expect(subjects.has('Português')).toBe(true);
-      // Each call carries the exam context.
+      expect(sections.has('Matemática')).toBe(true);
+      expect(sections.has('Português')).toBe(true);
       const firstInput = openAICallMock.mock.calls[0][1];
 
       expect(firstInput.public_exam_name).toBe('Concurso ABC');
@@ -329,32 +298,30 @@ describe('MockExamService', () => {
     it('skips only the questions that already have an answer', async () => {
       prismaMock.mockExam.findFirst.mockResolvedValue({
         id: 1,
-        publicExam: { name: 'Concurso ABC', role: null, examBoard: { name: 'CESGRANRIO' } },
+        exam: { name: 'Concurso ABC', type: 'public_exam', role: null, examBoard: { name: 'CESGRANRIO' } },
         questions: [
           {
-            publicExamQuestion: {
+            examQuestion: {
               id: 100,
-              subject: 'Matemática',
-              topic: null,
+              sectionName: 'Matemática',
+              topicName: null,
               text: 'Q1',
               correctCount: 1,
               difficulty: 'medium',
-              publicExamName: 'Concurso ABC',
-              examBoardName: 'CESGRANRIO',
+              examName: 'Concurso ABC',
               options: [{ label: 'A', text: 'opt' }],
               answer: { id: 9, correctOptions: ['A'] }, // skip
             },
           },
           {
-            publicExamQuestion: {
+            examQuestion: {
               id: 101,
-              subject: 'Matemática',
-              topic: null,
+              sectionName: 'Matemática',
+              topicName: null,
               text: 'Q2',
               correctCount: 1,
               difficulty: 'medium',
-              publicExamName: 'Concurso ABC',
-              examBoardName: 'CESGRANRIO',
+              examName: 'Concurso ABC',
               options: [{ label: 'A', text: 'opt' }],
               answer: null, // generate
             },

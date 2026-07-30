@@ -101,14 +101,14 @@ describe('QuotaService', () => {
     );
   });
 
-  // Behaviour 6: check create_certification throws 403 when maxCertifications reached (free plan, certCount=2)
-  it('check create_certification throws 403 when free plan user has reached maxCertifications (2)', async () => {
+  // Behaviour 6: check create_exam throws 403 when maxExams reached (free plan, examCount=2)
+  it('check create_exam throws 403 when free plan user has reached maxExams (2)', async () => {
     prismaMock.user.findUniqueOrThrow.mockResolvedValue(
       makeUser({ plan: 'free' }),
     );
-    prismaMock.certification.count.mockResolvedValue(2);
+    prismaMock.exam.count.mockResolvedValue(2);
 
-    const promise = service.check('user-1', 'create_certification', 1);
+    const promise = service.check('user-1', 'create_exam', 1);
 
     await expect(promise).rejects.toMatchObject({
       status: 403,
@@ -116,19 +116,14 @@ describe('QuotaService', () => {
     });
   });
 
-  // Behaviour 7: check create_public_exam throws 403 for free plan (limit=0, examCount=0)
-  it('check create_public_exam throws 403 for free plan (limit=0) even when examCount=0', async () => {
+  // Behaviour 7: check create_exam passes for free plan when under limit (examCount=0)
+  it('check create_exam passes for free plan when examCount=0 (limit=2)', async () => {
     prismaMock.user.findUniqueOrThrow.mockResolvedValue(
       makeUser({ plan: 'free' }),
     );
-    prismaMock.publicExam.count.mockResolvedValue(0);
+    prismaMock.exam.count.mockResolvedValue(0);
 
-    const promise = service.check('user-1', 'create_public_exam', 1);
-
-    await expect(promise).rejects.toMatchObject({
-      status: 403,
-      body: { error: 'quota_exceeded' },
-    });
+    await expect(service.check('user-1', 'create_exam', 1)).resolves.toBeUndefined();
   });
 
   // Behaviour 8: getUsage returns correct UsageStats — questionsLimit === -1 for tester plan
@@ -143,8 +138,9 @@ describe('QuotaService', () => {
         customQuotaOverride: null,
       }),
     );
-    prismaMock.certification.count.mockResolvedValue(3);
-    prismaMock.publicExam.count.mockResolvedValue(1);
+    // exam.count is called twice: certification then public_exam
+    prismaMock.exam.count.mockResolvedValueOnce(3).mockResolvedValueOnce(1);
+    prismaMock.examQuestion.count.mockResolvedValue(0);
 
     const usage = await service.getUsage('user-1');
 
@@ -152,10 +148,10 @@ describe('QuotaService', () => {
       plan: 'tester',
       questionsUsed: 42,
       questionsLimit: -1,
+      examsUsed: 4,
+      examsLimit: -1,
       certificationsUsed: 3,
-      certificationsLimit: -1,
       publicExamsUsed: 1,
-      publicExamsLimit: -1,
       periodStartDate: periodStart.toISOString(),
     });
   });

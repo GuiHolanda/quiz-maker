@@ -98,8 +98,9 @@ export function Step1BasicInfo({
 
           <Autocomplete
             allowsCustomValue
+            data-testid="exam-examboard-input"
             inputValue={examBoardName}
-            label={t('concurso.banca')}
+            label={t('exam.examBoardLabel')}
             placeholder={t('concurso.bancaPlaceholder')}
             onInputChange={onExamBoardChange}
             {...inputProperties.autocomplete}
@@ -148,7 +149,9 @@ export function Step1BasicInfo({
               {...inputProperties.input}
             />
             <Input
-              endContent={<span className="text-xs text-default-400 self-center">{t('certification.examDurationUnit')}</span>}
+              endContent={
+                <span className="text-xs text-default-400 self-center">{t('certification.examDurationUnit')}</span>
+              }
               label={t('certification.examDuration')}
               min={1}
               placeholder="e.g. 240"

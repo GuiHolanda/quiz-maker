@@ -9,81 +9,85 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark, faCheck, faRotateLeft } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
+import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { useMockExamsContext } from '@/features/providers/mockExams.provider';
 import { useRequest } from '@/features/hooks/useRequest.hook';
-import { createMockExam, getPublicExamBrowseSummary } from '@/features/connectors';
+import { createMockExam, getBrowseSummary } from '@/features/connectors';
 import { EntitySelect } from '@/shared/components/EntitySelect';
 import { notify } from '@/shared/lib/notify';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { buttonStyles } from '@/config/constants/buttonStyles';
-import { MockExamSubjectConfig, PublicExamBrowseSummary } from '@/shared/types';
+import { Exam, MockExamSectionConfig, BrowseSummary } from '@/shared/types';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
-import { PUBLIC_EXAMS_LOCAL_STORAGE_KEY, SIMULADO_NEW_PREFILL_KEY } from '@/config/constants';
+import { EXAMS_LOCAL_STORAGE_KEY, SIMULADO_NEW_PREFILL_KEY } from '@/config/constants';
 
 interface NewMockExamFormProps {
   readonly onCreated: () => void;
 }
 
-interface LocalSubjectEntry extends MockExamSubjectConfig {
+interface LocalSectionEntry extends MockExamSectionConfig {
   isTemporary?: boolean;
+}
+
+function referenceName(exam: Exam): string {
+  return exam.provider?.name ?? exam.examBoard?.name ?? '';
 }
 
 export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const { publicExams, isLoading: isExamsLoading, selectedPublicExam, setSelectedPublicExam } = usePublicExamsContext();
+  const { exams, isLoading: isExamsLoading, selectedExam, selectExam } = useExamsContext();
   const { addMockExam } = useMockExamsContext();
   const [name, setName] = useState('');
   const [totalQuestions, setTotalQuestions] = useState('');
-  const [distribution, setDistribution] = useState<LocalSubjectEntry[]>([]);
-  const [originalDistribution, setOriginalDistribution] = useState<LocalSubjectEntry[]>([]);
+  const [distribution, setDistribution] = useState<LocalSectionEntry[]>([]);
+  const [originalDistribution, setOriginalDistribution] = useState<LocalSectionEntry[]>([]);
   const [totalSavedQuestions, setTotalSavedQuestions] = useState<number | null>(null);
-  const [browseSummary, setBrowseSummary] = useState<PublicExamBrowseSummary | null>(null);
+  const [browseSummary, setBrowseSummary] = useState<BrowseSummary | null>(null);
   const [availableCounts, setAvailableCounts] = useState<Record<string, number>>({});
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newSubjectName, setNewSubjectName] = useState('');
-  const [newSubjectCount, setNewSubjectCount] = useState('');
+  const [newSectionName, setNewSectionName] = useState('');
+  const [newSectionCount, setNewSectionCount] = useState('');
   const { loading, request } = useRequest(createMockExam);
 
   useEffect(() => {
-    if (isExamsLoading || publicExams.length === 0) return;
+    if (isExamsLoading || exams.length === 0) return;
     try {
       const raw = localStorage.getItem(SIMULADO_NEW_PREFILL_KEY);
       if (raw) {
         const prefill = JSON.parse(raw);
-        if (prefill.type === 'public_exam' && prefill.examId) {
-          const exam = publicExams.find((e) => e.id === prefill.examId);
+        if (prefill.examId) {
+          const exam = exams.find((e) => e.id === prefill.examId);
           if (exam) {
-            setSelectedPublicExam(exam);
+            selectExam(exam);
             if (prefill.totalQuestions) setTotalQuestions(String(prefill.totalQuestions));
           }
         }
         localStorage.removeItem(SIMULADO_NEW_PREFILL_KEY);
       }
     } catch {}
-  }, [isExamsLoading, publicExams, setSelectedPublicExam]);
+  }, [isExamsLoading, exams, selectExam]);
 
   useEffect(() => {
-    if (isExamsLoading || publicExams.length === 0) return;
-    getPublicExamBrowseSummary()
+    if (isExamsLoading || exams.length === 0) return;
+    getBrowseSummary()
       .then((data) => {
-        const total = data.publicExams.reduce((acc, e) => acc + e.totalCount, 0);
+        const total = data.exams.reduce((acc, e) => acc + e.totalCount, 0);
 
         setTotalSavedQuestions(total);
         setBrowseSummary(data);
       })
       .catch(() => setTotalSavedQuestions(0));
-  }, [isExamsLoading, publicExams.length]);
+  }, [isExamsLoading, exams.length]);
 
   useEffect(() => {
-    if (!selectedPublicExam || !browseSummary) {
+    if (!selectedExam || !browseSummary) {
       setAvailableCounts({});
 
       return;
     }
-    const examData = browseSummary.publicExams.find((e) => e.id === selectedPublicExam.id);
+    const examData = browseSummary.exams.find((e) => e.id === selectedExam.id);
 
     if (!examData) {
       setAvailableCounts({});
@@ -92,14 +96,14 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
     }
     const counts: Record<string, number> = {};
 
-    examData.subjects.forEach((s) => {
+    examData.sections.forEach((s) => {
       counts[s.name] = s.questionCount;
     });
     setAvailableCounts(counts);
-  }, [selectedPublicExam, browseSummary]);
+  }, [selectedExam, browseSummary]);
 
   useEffect(() => {
-    if (!selectedPublicExam || !totalQuestions) {
+    if (!selectedExam || !totalQuestions) {
       setDistribution([]);
 
       return;
@@ -108,9 +112,9 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
 
     if (isNaN(total) || total <= 0) return;
 
-    const totalMax = selectedPublicExam.subjects.reduce((acc, s) => acc + s.maxQuestions, 0);
-    const suggested: LocalSubjectEntry[] = selectedPublicExam.subjects.map((s) => ({
-      subjectName: s.name,
+    const totalMax = selectedExam.sections.reduce((acc, s) => acc + s.maxQuestions, 0);
+    const suggested: LocalSectionEntry[] = selectedExam.sections.map((s) => ({
+      sectionName: s.name,
       questionCount: totalMax > 0 ? Math.round((s.maxQuestions / totalMax) * total) : 0,
     }));
 
@@ -121,18 +125,18 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
     setDistribution(suggested);
     setOriginalDistribution(suggested.map((entry) => ({ ...entry })));
     setShowAddForm(false);
-  }, [selectedPublicExam, totalQuestions]);
+  }, [selectedExam, totalQuestions]);
 
-  if (isExamsLoading || (publicExams.length > 0 && totalSavedQuestions === null)) {
+  if (isExamsLoading || (exams.length > 0 && totalSavedQuestions === null)) {
     return <SkeletonListLoader count={3} height="h-12" />;
   }
 
-  if (publicExams.length === 0) {
+  if (exams.length === 0) {
     return (
       <EmptyState
-        action={{ href: '/public-exams/configure', label: t('concurso.tabNew') }}
-        description={t('concurso.noExamsDescription')}
-        title={t('concurso.noExamsTitle')}
+        action={{ href: '/certifications/configure', label: t('exam.tabNew') }}
+        description={t('exam.noExamsDescription')}
+        title={t('exam.noExamsTitle')}
       />
     );
   }
@@ -140,7 +144,7 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
   if (totalSavedQuestions === 0) {
     return (
       <EmptyState
-        action={{ href: '/questions?type=public_exam', label: t('simulado.noQuestionsGoToQuestions') }}
+        action={{ href: '/questions', label: t('simulado.noQuestionsGoToQuestions') }}
         description={t('simulado.noQuestionsDescription')}
         title={t('simulado.noQuestionsTitle')}
       />
@@ -155,7 +159,7 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
     distribution.some((entry, i) => {
       const original = originalDistribution[i];
 
-      return !original || original.subjectName !== entry.subjectName || original.questionCount !== entry.questionCount;
+      return !original || original.sectionName !== entry.sectionName || original.questionCount !== entry.questionCount;
     });
 
   function handleResetDistribution() {
@@ -163,41 +167,41 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
     setShowAddForm(false);
   }
 
-  function handleSubjectChange(subjectName: string, value: string) {
+  function handleSectionChange(sectionName: string, value: string) {
     setDistribution((prev) =>
-      prev.map((entry) => (entry.subjectName === subjectName ? { ...entry, questionCount: Number(value) || 0 } : entry)),
+      prev.map((entry) => (entry.sectionName === sectionName ? { ...entry, questionCount: Number(value) || 0 } : entry))
     );
   }
 
-  function handleRemoveSubject(subjectName: string) {
-    setDistribution((prev) => prev.filter((entry) => entry.subjectName !== subjectName));
+  function handleRemoveSection(sectionName: string) {
+    setDistribution((prev) => prev.filter((entry) => entry.sectionName !== sectionName));
   }
 
-  function handleAddSubject() {
-    const subjectName = newSubjectName.trim();
-    const count = Number(newSubjectCount) || 0;
+  function handleAddSection() {
+    const sectionName = newSectionName.trim();
+    const count = Number(newSectionCount) || 0;
 
-    if (!subjectName) return;
-    setDistribution((prev) => [...prev, { subjectName, questionCount: count, isTemporary: true }]);
-    setNewSubjectName('');
-    setNewSubjectCount('');
+    if (!sectionName) return;
+    setDistribution((prev) => [...prev, { sectionName, questionCount: count, isTemporary: true }]);
+    setNewSectionName('');
+    setNewSectionCount('');
     setShowAddForm(false);
   }
 
   async function handleCreate() {
-    if (!selectedPublicExam?.id) return;
+    if (!selectedExam?.id) return;
     const saved = await request({
-      publicExamId: selectedPublicExam.id,
+      examId: selectedExam.id,
       name: name.trim() || undefined,
       totalQuestions: total,
-      subjects: distribution.map(({ subjectName, questionCount }) => ({ subjectName, questionCount })),
+      sections: distribution.map(({ sectionName, questionCount }) => ({ sectionName, questionCount })),
     });
 
     if (saved) {
       addMockExam(saved);
       notify.success(
         t('simulado.created'),
-        t('simulado.createdDescription', { name: saved.name ?? selectedPublicExam.name }),
+        t('simulado.createdDescription', { name: saved.name ?? selectedExam.name })
       );
       onCreated();
     }
@@ -207,23 +211,23 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
     <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6">
       <EntitySelect
         className="w-full"
-        items={publicExams.map((e) => ({
+        items={exams.map((e) => ({
           key: e.id ?? e.name,
-          label: [e.name, e.role, e.examBoard?.name].filter(Boolean).join(' · '),
+          label: [e.name, e.role, referenceName(e)].filter(Boolean).join(' · '),
         }))}
-        label={t('concurso.selectPublicExam')}
-        name="publicExamName"
-        placeholder={t('concurso.selectPublicExamPlaceholder')}
-        selectedKey={selectedPublicExam ? (selectedPublicExam.id ?? selectedPublicExam.name) : null}
-        onSelect={(key) => setSelectedPublicExam(publicExams.find((e) => (e.id ?? e.name) === key) ?? null)}
+        label={t('exam.selectExam')}
+        name="examName"
+        placeholder={t('exam.selectExamPlaceholder')}
+        selectedKey={selectedExam ? (selectedExam.id ?? selectedExam.name) : null}
+        onSelect={(key) => selectExam(exams.find((e) => (e.id ?? e.name) === key) ?? null)}
       />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Input
           autoComplete="off"
           label={t('simulado.nameLabel')}
           placeholder={
-            selectedPublicExam
-              ? t('simulado.namePlaceholder', { examName: selectedPublicExam.name, count: totalQuestions || '?' })
+            selectedExam
+              ? t('simulado.namePlaceholder', { examName: selectedExam.name, count: totalQuestions || '?' })
               : t('simulado.nameFallbackPlaceholder')
           }
           value={name}
@@ -249,7 +253,7 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
         <Button
           data-testid="simulado-create-btn"
           className={buttonStyles.primary}
-          isDisabled={!selectedPublicExam || !isDistributionValid}
+          isDisabled={!selectedExam || !isDistributionValid}
           isLoading={loading}
           onPress={handleCreate}
         >
@@ -281,17 +285,17 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
         </div>
         <div className="bg-content1 border border-default-200 rounded-xl overflow-hidden">
           {distribution.map((entry, i) => {
-            const available = entry.isTemporary ? undefined : availableCounts[entry.subjectName];
+            const available = entry.isTemporary ? undefined : availableCounts[entry.sectionName];
             const isInsufficient = !entry.isTemporary && (available === undefined || entry.questionCount > available);
             const isLast = i === distribution.length - 1;
 
             return (
               <div
-                key={entry.subjectName}
+                key={entry.sectionName}
                 className={`flex items-center gap-3 px-4 py-3 ${!isLast ? 'border-b border-default-200' : ''} ${isInsufficient ? 'border border-danger bg-danger/5 rounded-lg' : ''}`}
               >
                 <div className="flex flex-col flex-1 min-w-0">
-                  <span className="text-sm text-foreground truncate">{entry.subjectName}</span>
+                  <span className="text-sm text-foreground truncate">{entry.sectionName}</span>
                   {!entry.isTemporary && (
                     <span className={`text-xs ${isInsufficient ? 'text-danger' : 'text-default-400'}`}>
                       {t('simulado.availableQuestions', { count: available ?? 0 })}
@@ -304,14 +308,14 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
                     size="sm"
                     onPress={() => {
                       try {
-                        const current = JSON.parse(localStorage.getItem(PUBLIC_EXAMS_LOCAL_STORAGE_KEY) ?? '{}');
+                        const current = JSON.parse(localStorage.getItem(EXAMS_LOCAL_STORAGE_KEY) ?? '{}');
 
                         localStorage.setItem(
-                          PUBLIC_EXAMS_LOCAL_STORAGE_KEY,
-                          JSON.stringify({ ...current, selectedPublicExam, selectedSubjects: [entry.subjectName] }),
+                          EXAMS_LOCAL_STORAGE_KEY,
+                          JSON.stringify({ ...current, selectedExam, selectedSections: [entry.sectionName] })
                         );
                       } catch {}
-                      router.push('/questions?type=public_exam');
+                      router.push('/questions');
                     }}
                   >
                     {t('simulado.generateMissing')}
@@ -325,7 +329,7 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
                   type="number"
                   value={String(entry.questionCount)}
                   variant="bordered"
-                  onValueChange={(v) => handleSubjectChange(entry.subjectName, v)}
+                  onValueChange={(v) => handleSectionChange(entry.sectionName, v)}
                 />
                 <Button
                   isIconOnly
@@ -334,20 +338,20 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
                   isDisabled={distribution.length <= 1}
                   size="sm"
                   variant="light"
-                  onPress={() => handleRemoveSubject(entry.subjectName)}
+                  onPress={() => handleRemoveSection(entry.sectionName)}
                 >
                   <FontAwesomeIcon icon={faXmark} />
                 </Button>
               </div>
             );
           })}
-          {renderAddSubjectRow()}
+          {renderAddSectionRow()}
         </div>
       </div>
     );
   }
 
-  function renderAddSubjectRow() {
+  function renderAddSectionRow() {
     if (!showAddForm) {
       return (
         <div className="px-4 py-3 border-t border-default-200">
@@ -365,8 +369,8 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
           label={t('simulado.temporaryTopicName')}
           placeholder={t('simulado.temporaryTopicNamePlaceholder')}
           size="sm"
-          value={newSubjectName}
-          onValueChange={setNewSubjectName}
+          value={newSectionName}
+          onValueChange={setNewSectionName}
           {...inputProperties.input}
         />
         <Input
@@ -376,8 +380,8 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
           placeholder={t('simulado.temporaryTopicCountPlaceholder')}
           size="sm"
           type="number"
-          value={newSubjectCount}
-          onValueChange={setNewSubjectCount}
+          value={newSectionCount}
+          onValueChange={setNewSectionCount}
           {...inputProperties.input}
         />
         <div className="flex gap-1 shrink-0 pb-1">
@@ -386,7 +390,7 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
             aria-label={t('common.save')}
             className={buttonStyles.iconOnly.primary}
             size="sm"
-            onPress={handleAddSubject}
+            onPress={handleAddSection}
           >
             <FontAwesomeIcon icon={faCheck} />
           </Button>
@@ -398,8 +402,8 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
             variant="light"
             onPress={() => {
               setShowAddForm(false);
-              setNewSubjectName('');
-              setNewSubjectCount('');
+              setNewSectionName('');
+              setNewSectionCount('');
             }}
           >
             <FontAwesomeIcon icon={faXmark} />

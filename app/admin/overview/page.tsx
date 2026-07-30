@@ -42,7 +42,9 @@ export default async function AdminOverviewPage() {
     return (
       <div>
         <h1 className="font-sora font-extrabold text-white text-2xl mb-8">Visão Geral</h1>
-        <p className="font-mono text-xs" style={{ color: '#6a9fc8' }}>Erro ao carregar métricas.</p>
+        <p className="font-mono text-xs" style={{ color: '#6a9fc8' }}>
+          Erro ao carregar métricas.
+        </p>
       </div>
     );
   }
@@ -73,7 +75,9 @@ export default async function AdminOverviewPage() {
               </p>
               <p className="font-sora font-extrabold text-white text-2xl mb-2">{count}</p>
               <Progress color={planColors[plan]} value={pct} size="sm" className="mb-1" />
-              <p className="font-mono text-xs" style={{ color: '#4d87bc' }}>{pct}% do total</p>
+              <p className="font-mono text-xs" style={{ color: '#4d87bc' }}>
+                {pct}% do total
+              </p>
             </div>
           );
         })}
@@ -92,7 +96,9 @@ export default async function AdminOverviewPage() {
             {label}
           </p>
           <p className="font-sora font-extrabold text-white text-3xl">{value}</p>
-          <p className="font-mono text-xs mt-1" style={{ color: '#4d87bc' }}>{subtitle}</p>
+          <p className="font-mono text-xs mt-1" style={{ color: '#4d87bc' }}>
+            {subtitle}
+          </p>
         </div>
         <div
           className="shrink-0"
@@ -112,9 +118,7 @@ export default async function AdminOverviewPage() {
   function renderSectionLabel(text: string) {
     return (
       <div className="flex items-center gap-3 mb-4">
-        <div
-          style={{ width: '2px', height: '16px', background: '#00d4ff', borderRadius: '1px', flexShrink: 0 }}
-        />
+        <div style={{ width: '2px', height: '16px', background: '#00d4ff', borderRadius: '1px', flexShrink: 0 }} />
         <h2 className="font-sora font-bold text-white text-lg">{text}</h2>
       </div>
     );

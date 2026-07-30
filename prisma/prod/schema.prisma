@@ -8,32 +8,28 @@ datasource db {
 }
 
 model User {
-  id             String          @id @default(cuid())
-  name           String?
-  email          String          @unique
-  emailVerified  DateTime?
-  image          String?
-  password       String?
-  accounts       Account[]
-  sessions       Session[]
-  certifications Certification[]
-  questions      Question[]
-  publicExams         PublicExam[]
-  publicExamQuestions PublicExamQuestion[]
-  usageLogs      UsageLog[]
-  mockExams      MockExam[]
-  mockAttempts   MockExamAttempt[]
-  certSimulados        CertificationSimulado[]
-  certSimuladoAttempts CertificationSimuladoAttempt[]
-  generationJobs       GenerationJob[]
-  plan                         String   @default("free")
-  questionsGeneratedThisPeriod Int      @default(0)
-  periodStartDate              DateTime @default(now())
+  id                           String            @id @default(cuid())
+  name                         String?
+  email                        String            @unique
+  emailVerified                DateTime?
+  image                        String?
+  password                     String?
+  accounts                     Account[]
+  sessions                     Session[]
+  exams                        Exam[]
+  examQuestions                ExamQuestion[]
+  usageLogs                    UsageLog[]
+  mockExams                    MockExam[]
+  mockAttempts                 MockExamAttempt[]
+  generationJobs               GenerationJob[]
+  plan                         String            @default("free")
+  questionsGeneratedThisPeriod Int               @default(0)
+  periodStartDate              DateTime          @default(now())
   stripeCustomerId             String?
-  stripeSubscriptionId         String?  @unique
+  stripeSubscriptionId         String?           @unique
   subscriptionStatus           String?
   customQuotaOverride          Int?
-  createdAt     DateTime   @default(now())
+  createdAt                    DateTime          @default(now())
 }
 
 model Account {
@@ -70,73 +66,117 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model Certification {
-  id                  String               @id @default(cuid())
-  label               String
-  key                 String
-  provider            String?
+model Provider {
+  id       String  @id @default(cuid())
+  name     String  @unique
+  fullName String?
+  logoUrl  String?
+  exams    Exam[]
+}
+
+model ExamBoard {
+  id       String  @id @default(cuid())
+  name     String  @unique
+  fullName String?
+  exams    Exam[]
+}
+
+model Exam {
+  id                  String         @id @default(cuid())
+  type                String
+  name                String
+  role                String?
+  year                Int?
   totalQuestions      Int
   examDurationMinutes Int?
   passingScore        Float?
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  topics              CertificationTopic[]
+  providerId          String?
+  examBoardId         String?
   userId              String?
-  user                User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  provider            Provider?      @relation(fields: [providerId], references: [id])
+  examBoard           ExamBoard?     @relation(fields: [examBoardId], references: [id])
+  user                User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sections            ExamSection[]
+  questions           ExamQuestion[]
+  mockExams           MockExam[]
 
-  @@unique([userId, key])
+  @@unique([userId, type, name, year])
 }
 
-model CertificationTopic {
-  id              String        @id @default(cuid())
-  name            String
-  maxQuestions    Float
-  minQuestions    Float
-  certificationId String
-  certification   Certification @relation(fields: [certificationId], references: [id], onDelete: Cascade)
+model ExamSection {
+  id           String         @id @default(cuid())
+  name         String
+  minQuestions Int
+  maxQuestions Int
+  examId       String
+  exam         Exam           @relation(fields: [examId], references: [id], onDelete: Cascade)
+  topics       ExamTopic[]
+  questions    ExamQuestion[]
 
-  @@unique([certificationId, name])
+  @@unique([examId, name])
 }
 
-model Question {
-  id                 Int      @id @default(autoincrement())
-  text               String
-  correctCount       Int
-  options            Option[]
-  topic              String
-  certificationTitle String
-  difficulty         String
-  topicSubarea       String?
-  answer             Answer?
-  createdAt          DateTime @default(now())
-  userId             String?
-  user               User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  certSimuladoQuestions CertificationSimuladoQuestion[]
+model ExamTopic {
+  id        String         @id @default(cuid())
+  name      String
+  sectionId String
+  section   ExamSection    @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  questions ExamQuestion[]
+
+  @@unique([sectionId, name])
 }
 
-model Option {
-  id         Int      @id @default(autoincrement())
+model ExamQuestion {
+  id                Int                @id @default(autoincrement())
+  text              String
+  correctCount      Int
+  difficulty        String
+  examName          String
+  sectionName       String
+  topicName         String?
+  examId            String?
+  sectionId         String?
+  topicId           String?
+  userId            String?
+  createdAt         DateTime           @default(now())
+  options           ExamOption[]
+  answer            ExamAnswer?
+  exam              Exam?              @relation(fields: [examId], references: [id], onDelete: SetNull)
+  section           ExamSection?       @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  topic             ExamTopic?         @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  user              User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mockExamQuestions MockExamQuestion[]
+
+  @@index([examId])
+  @@index([sectionId])
+  @@index([topicId])
+}
+
+model ExamOption {
+  id         Int          @id @default(autoincrement())
   questionId Int
-  question   Question @relation(fields: [questionId], references: [id])
+  question   ExamQuestion @relation(fields: [questionId], references: [id])
   label      String
   text       String
 }
 
-model Answer {
-  id             Int           @id @default(autoincrement())
-  questionId     Int           @unique
-  question       Question      @relation(fields: [questionId], references: [id])
+model ExamAnswer {
+  id             Int               @id @default(autoincrement())
+  questionId     Int               @unique
+  question       ExamQuestion      @relation(fields: [questionId], references: [id])
   correctOptions Json
-  explanations   Explanation[]
+  explanations   ExamExplanation[]
 }
 
-model Explanation {
-  id        Int      @id @default(autoincrement())
+model ExamExplanation {
+  id        Int        @id @default(autoincrement())
   answerId  Int
-  answer    Answer   @relation(fields: [answerId], references: [id])
+  answer    ExamAnswer @relation(fields: [answerId], references: [id])
   label     String
   text      String
-  createdAt DateTime @default(now())
+  createdAt DateTime   @default(now())
 }
 
 model UsageLog {
@@ -169,138 +209,35 @@ model UsageLogStep {
   @@index([usageLogId])
 }
 
-model ExamBoard {
-  id          String       @id @default(cuid())
-  name        String       @unique
-  fullName    String?
-  publicExams PublicExam[]
-}
-
-model PublicExam {
-  id                  String              @id @default(cuid())
-  name                String
-  role                String?
-  year                Int?
-  totalQuestions      Int
-  examDurationMinutes Int?
-  passingScore        Float?
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  examBoardId         String
-  examBoard           ExamBoard           @relation(fields: [examBoardId], references: [id])
-  subjects            PublicExamSubject[]
-  questions           PublicExamQuestion[]
-  userId              String?
-  mockExams           MockExam[]
-  user                User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, name, year])
-}
-
-model PublicExamSubject {
-  id           String            @id @default(cuid())
-  name         String
-  minQuestions Float
-  maxQuestions Float
-  publicExamId String
-  publicExam   PublicExam        @relation(fields: [publicExamId], references: [id], onDelete: Cascade)
-  topics       PublicExamTopic[]
-  questions    PublicExamQuestion[]
-
-  @@unique([publicExamId, name])
-}
-
-model PublicExamTopic {
-  id        String            @id @default(cuid())
-  name      String
-  subjectId String
-  subject   PublicExamSubject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  questions PublicExamQuestion[]
-
-  @@unique([subjectId, name])
-}
-
-model PublicExamQuestion {
-  id             Int                @id @default(autoincrement())
-  text           String
-  correctCount   Int
-  options        PublicExamOption[]
-  publicExamName String
-  examBoardName  String
-  subject        String
-  topic          String?
-  difficulty     String
-  answer         PublicExamAnswer?
-  createdAt      DateTime           @default(now())
-  userId         String?
-  publicExamId   String?
-  subjectId      String?
-  topicId        String?
-  mockExamQuestions MockExamQuestion[]
-  publicExam     PublicExam?        @relation(fields: [publicExamId], references: [id], onDelete: SetNull)
-  subjectRef     PublicExamSubject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
-  topicRef       PublicExamTopic?   @relation(fields: [topicId], references: [id], onDelete: SetNull)
-  user           User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([publicExamId])
-  @@index([subjectId])
-  @@index([topicId])
-}
-
-model PublicExamOption {
-  id         Int                @id @default(autoincrement())
-  questionId Int
-  question   PublicExamQuestion @relation(fields: [questionId], references: [id])
-  label      String
-  text       String
-}
-
-model PublicExamAnswer {
-  id             Int                     @id @default(autoincrement())
-  questionId     Int                     @unique
-  question       PublicExamQuestion      @relation(fields: [questionId], references: [id])
-  correctOptions Json
-  explanations   PublicExamExplanation[]
-}
-
-model PublicExamExplanation {
-  id        Int              @id @default(autoincrement())
-  answerId  Int
-  answer    PublicExamAnswer @relation(fields: [answerId], references: [id])
-  label     String
-  text      String
-  createdAt DateTime         @default(now())
-}
-
 model MockExam {
-  id           Int                     @id @default(autoincrement())
-  name         String?
-  publicExamId String
-  userId       String?
-  createdAt    DateTime                @default(now())
-  publicExam   PublicExam              @relation(fields: [publicExamId], references: [id])
-  user         User?                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  subjects     MockExamSubjectConfig[]
-  questions    MockExamQuestion[]
-  attempts     MockExamAttempt[]
+  id        Int                     @id @default(autoincrement())
+  name      String?
+  examId    String
+  userId    String?
+  createdAt DateTime                @default(now())
+  exam      Exam                    @relation(fields: [examId], references: [id])
+  user      User?                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sections  MockExamSectionConfig[]
+  questions MockExamQuestion[]
+  attempts  MockExamAttempt[]
 }
 
-model MockExamSubjectConfig {
+model MockExamSectionConfig {
   id            Int      @id @default(autoincrement())
   mockExamId    Int
-  subjectName   String
+  sectionName   String
   questionCount Int
   mockExam      MockExam @relation(fields: [mockExamId], references: [id], onDelete: Cascade)
 }
 
 model MockExamQuestion {
-  id                   Int                     @id @default(autoincrement())
-  mockExamId           Int
-  publicExamQuestionId Int
-  order                Int
-  mockExam             MockExam                @relation(fields: [mockExamId], references: [id], onDelete: Cascade)
-  publicExamQuestion   PublicExamQuestion      @relation(fields: [publicExamQuestionId], references: [id])
-  attemptAnswers       MockExamAttemptAnswer[]
+  id             Int                     @id @default(autoincrement())
+  mockExamId     Int
+  examQuestionId Int
+  order          Int
+  mockExam       MockExam                @relation(fields: [mockExamId], references: [id], onDelete: Cascade)
+  examQuestion   ExamQuestion            @relation(fields: [examQuestionId], references: [id])
+  attemptAnswers MockExamAttemptAnswer[]
 }
 
 model MockExamAttempt {
@@ -324,68 +261,6 @@ model MockExamAttemptAnswer {
   mockExamQuestion   MockExamQuestion @relation(fields: [mockExamQuestionId], references: [id])
 }
 
-model CertificationSimulado {
-  id        Int      @id @default(autoincrement())
-  name      String?
-  certKey   String
-  userId    String?
-  createdAt DateTime @default(now())
-  user      User?                              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  topics    CertificationSimuladoTopicConfig[]
-  questions CertificationSimuladoQuestion[]
-  attempts  CertificationSimuladoAttempt[]
-
-  @@index([userId])
-}
-
-model CertificationSimuladoTopicConfig {
-  id            Int                   @id @default(autoincrement())
-  simuladoId    Int
-  topicName     String
-  questionCount Int
-  simulado      CertificationSimulado @relation(fields: [simuladoId], references: [id], onDelete: Cascade)
-
-  @@index([simuladoId])
-}
-
-model CertificationSimuladoQuestion {
-  id         Int                                  @id @default(autoincrement())
-  simuladoId Int
-  questionId Int
-  order      Int
-  simulado   CertificationSimulado                @relation(fields: [simuladoId], references: [id], onDelete: Cascade)
-  question   Question                             @relation(fields: [questionId], references: [id])
-  answers    CertificationSimuladoAttemptAnswer[]
-
-  @@index([simuladoId])
-}
-
-model CertificationSimuladoAttempt {
-  id         Int                                  @id @default(autoincrement())
-  simuladoId Int
-  userId     String?
-  startedAt  DateTime                             @default(now())
-  finishedAt DateTime?
-  score      Int?
-  simulado   CertificationSimulado                @relation(fields: [simuladoId], references: [id], onDelete: Cascade)
-  user       User?                                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  answers    CertificationSimuladoAttemptAnswer[]
-
-  @@index([simuladoId])
-  @@index([userId])
-}
-
-model CertificationSimuladoAttemptAnswer {
-  id                 Int                           @id @default(autoincrement())
-  attemptId          Int
-  simuladoQuestionId Int
-  selectedOptions    String
-  attempt            CertificationSimuladoAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  simuladoQuestion   CertificationSimuladoQuestion @relation(fields: [simuladoQuestionId], references: [id], onDelete: Cascade)
-
-  @@index([attemptId])
-}
-
 model AdminAuditLog {
   id        String   @id @default(cuid())
   adminId   String
@@ -400,31 +275,31 @@ model AdminAuditLog {
 }
 
 model GenerationJob {
-  id            String                @id @default(cuid())
+  id            String               @id @default(cuid())
   userId        String
-  type          String
-  refKey        String
-  refName       String
-  examBoardName String?
-  status        String                @default("queued")
-  savedCount    Int                   @default(0)
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
-  user          User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          String // "certification" | "public_exam"
+  refKey        String // certKey ou publicExamId
+  refName       String // label humano para a notificação
+  examBoardName String? // apenas para public_exam
+  status        String               @default("queued") // "queued" | "running" | "awaiting_review" | "done" | "error"
+  savedCount    Int                  @default(0)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   topics        GenerationJobTopic[]
 
   @@index([userId])
 }
 
 model GenerationJobTopic {
-  id            String        @id @default(cuid())
-  jobId         String
-  topicName     String
-  questionCount Int
-  status        String        @default("queued")
+  id                   String        @id @default(cuid())
+  jobId                String
+  topicName            String
+  questionCount        Int
+  status               String        @default("queued") // "queued" | "running" | "done" | "error"
   savedCount           Int           @default(0)
   errorMessage         String?
-  errorType            String?       // "quota" | "generation" | "timeout" | null
+  errorType            String? // "quota" | "generation" | "timeout" | null
   pendingQuestionsJson String?
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt

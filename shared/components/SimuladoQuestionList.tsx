@@ -21,7 +21,14 @@ interface SimuladoQuestionListProps {
   readonly onPendingChange?: (hasPending: boolean) => void;
 }
 
-export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFinish, onCancel, onPendingChange }: SimuladoQuestionListProps) {
+export function SimuladoQuestionList({
+  questions,
+  answers,
+  onAnswerChange,
+  onFinish,
+  onCancel,
+  onPendingChange,
+}: SimuladoQuestionListProps) {
   const { t } = useTranslation();
   const [currentPage, setCurrentPage] = React.useState(1);
   const [questionsPerPage, setQuestionsPerPage] = React.useState<number>(5);
@@ -138,7 +145,13 @@ export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFin
       </div>
 
       <div className="flex gap-2">
-        <Button data-testid="attempt-cancel-btn" className={buttonStyles.secondary} variant="bordered" size="sm" onPress={onCancel}>
+        <Button
+          data-testid="attempt-cancel-btn"
+          className={buttonStyles.secondary}
+          variant="bordered"
+          size="sm"
+          onPress={onCancel}
+        >
           {t('simulado.cancelAttempt')}
         </Button>
         <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
@@ -153,7 +166,13 @@ export function SimuladoQuestionList({ questions, answers, onAnswerChange, onFin
           isDisabled={canFinish}
         >
           <span className="ml-auto">
-            <Button data-testid="attempt-finalize-btn" className={buttonStyles.dangerFlat} isDisabled={!canFinish} size="sm" onPress={onFinish}>
+            <Button
+              data-testid="attempt-finalize-btn"
+              className={buttonStyles.dangerFlat}
+              isDisabled={!canFinish}
+              size="sm"
+              onPress={onFinish}
+            >
               {t('simulado.finalize')}
             </Button>
           </span>

@@ -26,9 +26,7 @@ export async function GET(request: NextRequest) {
         : process.env.STRIPE_PRICE_ID_PRO_AI_MONTHLY!;
   } else {
     priceId =
-      billingPeriod === 'yearly'
-        ? process.env.STRIPE_PRICE_ID_PRO_YEARLY!
-        : process.env.STRIPE_PRICE_ID_PRO_MONTHLY!;
+      billingPeriod === 'yearly' ? process.env.STRIPE_PRICE_ID_PRO_YEARLY! : process.env.STRIPE_PRICE_ID_PRO_MONTHLY!;
   }
 
   const user = await prisma.user.findUniqueOrThrow({

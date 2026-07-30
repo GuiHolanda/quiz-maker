@@ -31,7 +31,7 @@ export async function createSimulado(page: Page, domain: DomainConfig, total = 3
   await page.goto('/simulados');
   await page.locator(tid(TID.simuladoTabNew)).click();
 
-  // Dismiss any notification dropdown that may be open from a prior step (e.g. full-exam job done).
+  // Dismiss any notification dropdown that may be open from a prior step (e.g. generation job done).
   // The notification bell dialog can intercept clicks intended for the select trigger.
   const notificationDialog = page.getByRole('dialog').filter({ hasText: /Notifica/i });
   if (await notificationDialog.isVisible()) {
@@ -39,11 +39,8 @@ export async function createSimulado(page: Page, domain: DomainConfig, total = 3
     await notificationDialog.waitFor({ state: 'hidden', timeout: 3_000 });
   }
 
-  // public_exam requires picking the concurso type inside NewSimuladoTab
-  if (domain.type === 'public_exam') {
-    await page.locator(tid(TID.simuladoTypeOptionConcurso)).click();
-  }
-
+  // The unified NewMockExamForm has a single EntitySelect over all exams (cert + concurso) —
+  // there is no longer a type picker to select the vertical.
   // Scope all selectors to the tabpanel to avoid hitting other HeroUI triggers (e.g. notification bell).
   const panel = page.getByRole('tabpanel', { name: /Novo Simulado/i });
 

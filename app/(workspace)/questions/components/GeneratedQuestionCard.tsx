@@ -4,11 +4,11 @@ import React, { useEffect } from 'react';
 import { Checkbox } from '@heroui/checkbox';
 import { Listbox, ListboxItem } from '@heroui/listbox';
 
-import { AIQuestion, AIPublicExamQuestion } from '@/shared/types';
+import { AIQuestion } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface GeneratedQuestionCardProps {
-  readonly question: AIQuestion | AIPublicExamQuestion;
+  readonly question: AIQuestion;
   readonly index: number;
   readonly selectedIds: number[];
   readonly setSelectedIds: (ids: number[]) => void;

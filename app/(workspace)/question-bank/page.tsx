@@ -3,7 +3,6 @@
 import React, { useCallback, useDeferredValue, useEffect, useId, useRef, useState } from 'react';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
 import { Button } from '@heroui/button';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 
 import { PageHeader } from '@/shared/components/ui/PageHeader';
@@ -12,16 +11,12 @@ import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
 import { ItemsPerPageSelect } from '@/shared/components/ui/ItemsPerPageSelect';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { getQuestionBank, deleteBrowseQuestion, deletePublicExamBrowseQuestion } from '@/features/connectors';
+import { getQuestionBank, deleteBrowseQuestion } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import type { UnifiedQuestion, QuestionBankResponse } from '@/shared/types';
 import { QuestionBankCard } from './components/QuestionBankCard';
-import {
-  QuestionBankFiltersBar,
-  EMPTY_FILTERS,
-  hasActiveFilters,
-} from './components/QuestionBankFiltersBar';
+import { QuestionBankFiltersBar, EMPTY_FILTERS, hasActiveFilters } from './components/QuestionBankFiltersBar';
 import type { QuestionBankFilters } from './components/QuestionBankFiltersBar';
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -62,11 +57,7 @@ export default function QuestionBankPage() {
           topic: currentFilters.topic.length > 0 ? currentFilters.topic : undefined,
           difficulty: currentFilters.difficulty.length > 0 ? currentFilters.difficulty : undefined,
           hasAnswer:
-            currentFilters.hasAnswer === 'true'
-              ? true
-              : currentFilters.hasAnswer === 'false'
-                ? false
-                : undefined,
+            currentFilters.hasAnswer === 'true' ? true : currentFilters.hasAnswer === 'false' ? false : undefined,
           hasExplanation:
             currentFilters.hasExplanation === 'true'
               ? true
@@ -79,24 +70,35 @@ export default function QuestionBankPage() {
         setResult(data);
       } catch (e: unknown) {
         const err = e as { message?: string };
-        if (err?.message === 'canceled' || err?.message === 'Request aborted' || (err as { code?: string })?.code === 'ERR_CANCELED') return;
+        if (
+          err?.message === 'canceled' ||
+          err?.message === 'Request aborted' ||
+          (err as { code?: string })?.code === 'ERR_CANCELED'
+        )
+          return;
         setLoadError(true);
       } finally {
         setIsLoading(false);
       }
     },
-    [],
+    []
   );
 
   useEffect(() => {
     load(debouncedFilters, page, pageSize);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedFilters.search, filters.type, filters.source.join(','), filters.topic.join(','), filters.difficulty.join(','), filters.hasAnswer, filters.hasExplanation, page, pageSize]);
+  }, [
+    debouncedFilters.search,
+    filters.type,
+    filters.source.join(','),
+    filters.topic.join(','),
+    filters.difficulty.join(','),
+    filters.hasAnswer,
+    filters.hasExplanation,
+    page,
+    pageSize,
+  ]);
 
-  function handleFilterChange<K extends keyof QuestionBankFilters>(
-    key: K,
-    value: QuestionBankFilters[K],
-  ) {
+  function handleFilterChange<K extends keyof QuestionBankFilters>(key: K, value: QuestionBankFilters[K]) {
     setPage(1);
     setFilters((prev) => ({ ...prev, [key]: value }));
   }
@@ -115,11 +117,7 @@ export default function QuestionBankPage() {
     if (!deleteTarget) return;
     setIsDeleting(true);
     try {
-      if (deleteTarget.type === 'certification') {
-        await deleteBrowseQuestion(deleteTarget.id);
-      } else {
-        await deletePublicExamBrowseQuestion(deleteTarget.id);
-      }
+      await deleteBrowseQuestion(deleteTarget.id);
       notify.success(t('questionBank.deleteSuccess'));
       setDeleteTarget(null);
       // If deleted item was the last on a page > 1, go back one page
@@ -141,26 +139,14 @@ export default function QuestionBankPage() {
   return (
     <PageHeader subtitle={t('questionBank.subtitle')} title={t('questionBank.title')}>
       <div className="flex flex-col gap-4">
-        <QuestionBankFiltersBar
-          filters={filters}
-          onClear={handleClearFilters}
-          onFilterChange={handleFilterChange}
-        />
+        <QuestionBankFiltersBar filters={filters} onClear={handleClearFilters} onFilterChange={handleFilterChange} />
 
         {renderContent()}
 
         {!isLoading && questions.length > 0 && (
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-            <PaginationControls
-              currentPage={page}
-              totalPages={totalPages}
-              onChange={(p) => setPage(p)}
-            />
-            <ItemsPerPageSelect
-              isDisabled={isLoading}
-              value={pageSize}
-              onChange={handlePageSizeChange}
-            />
+            <PaginationControls currentPage={page} totalPages={totalPages} onChange={(p) => setPage(p)} />
+            <ItemsPerPageSelect isDisabled={isLoading} value={pageSize} onChange={handlePageSizeChange} />
           </div>
         )}
       </div>
@@ -213,9 +199,7 @@ export default function QuestionBankPage() {
 
     return (
       <div className="flex flex-col gap-4">
-        <p className="text-xs text-default-400">
-          {t('questionBank.totalCount', { count: result?.total ?? 0 })}
-        </p>
+        <p className="text-xs text-default-400">{t('questionBank.totalCount', { count: result?.total ?? 0 })}</p>
         {questions.map((q) => (
           <QuestionBankCard
             key={`${q.type}-${q.id}`}

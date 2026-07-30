@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { error: 'resend_failed', message: e.message ?? 'Something went wrong' },
-      { status: e.status ?? 500 },
+      { status: e.status ?? 500 }
     );
   }
 }

@@ -14,7 +14,7 @@ import {
   ensureMockExamAnswers,
   getMockExamAttemptResult,
   startMockExamAttempt,
-  getQuestionExplanation,
+  getExamQuestionExplanation,
 } from '@/features/connectors';
 import { MockExamResult, SimuladoResultQuestion } from '@/shared/types';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
@@ -48,7 +48,7 @@ export default function SimuladoResultadoPage() {
 
       if (cancelled) return;
 
-      const hasMissingAnswer = data.questions.some((mq) => !mq.publicExamQuestion.answer);
+      const hasMissingAnswer = data.questions.some((mq) => !mq.examQuestion.answer);
 
       if (hasMissingAnswer) {
         try {
@@ -109,7 +109,10 @@ export default function SimuladoResultadoPage() {
           <div className="flex flex-col gap-2">
             <Skeleton className="h-5 w-36 rounded-lg" />
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="bg-content1 border border-default-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+              <div
+                key={i}
+                className="bg-content1 border border-default-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+              >
                 <Skeleton className="h-4 flex-1 max-w-48 rounded-lg" />
                 <Skeleton className="h-6 w-20 rounded-lg" />
               </div>
@@ -129,19 +132,17 @@ export default function SimuladoResultadoPage() {
   const answersMap = new Map(result.attempt.answers.map((a) => [a.mockExamQuestionId, a.selectedOptions]));
 
   const mappedQuestions: SimuladoResultQuestion[] = result.questions.map((mq) => ({
-    id: mq.publicExamQuestion.id,
+    id: mq.examQuestion.id,
     simuladoQuestionId: mq.id,
     order: mq.order,
-    groupLabel: mq.publicExamQuestion.subject ?? t('simulado.unknownSubject'),
-    text: mq.publicExamQuestion.text,
-    correctCount: mq.publicExamQuestion.correctCount,
-    options: mq.publicExamQuestion.options as Record<string, string>,
-    answer: mq.publicExamQuestion.answer
-      ? { correctOptions: mq.publicExamQuestion.answer.correctOptions as string[] }
-      : null,
+    groupLabel: mq.examQuestion.sectionName ?? t('simulado.unknownSubject'),
+    text: mq.examQuestion.text,
+    correctCount: mq.examQuestion.correctCount,
+    options: mq.examQuestion.options as Record<string, string>,
+    answer: mq.examQuestion.answer ? { correctOptions: mq.examQuestion.answer.correctOptions as string[] } : null,
   }));
 
-  const questionsBySubject = mappedQuestions.reduce<Record<string, SimuladoResultQuestion[]>>((acc, q) => {
+  const questionsBySection = mappedQuestions.reduce<Record<string, SimuladoResultQuestion[]>>((acc, q) => {
     if (!acc[q.groupLabel]) acc[q.groupLabel] = [];
     acc[q.groupLabel].push(q);
 
@@ -169,7 +170,7 @@ export default function SimuladoResultadoPage() {
     }
   }
 
-  const examName = result.mockExam.name ?? result.mockExam.publicExam.name;
+  const examName = result.mockExam.name ?? result.mockExam.exam.name;
 
   return (
     <>
@@ -192,7 +193,9 @@ export default function SimuladoResultadoPage() {
             <div data-testid="result-score" className={`text-3xl font-extrabold ${scoreTextColor[color]}`}>
               {t('simulado.scoreGeneral', { correct, total })}
             </div>
-            <p data-testid="result-percent" className="text-sm text-default-500">{t('simulado.scorePercent', { percent })}</p>
+            <p data-testid="result-percent" className="text-sm text-default-500">
+              {t('simulado.scorePercent', { percent })}
+            </p>
           </div>
 
           <div className="hidden sm:block self-stretch border-r border-default-200" />
@@ -206,7 +209,12 @@ export default function SimuladoResultadoPage() {
         </div>
 
         <div className="border-t border-default-200 mt-6 pt-4 flex gap-3">
-          <Button data-testid="result-retry-btn" className={buttonStyles.primary} isLoading={isStarting} onPress={handleTryAgain}>
+          <Button
+            data-testid="result-retry-btn"
+            className={buttonStyles.primary}
+            isLoading={isStarting}
+            onPress={handleTryAgain}
+          >
             {t('simulado.tryAgain')}
           </Button>
           <Button variant="bordered" onPress={() => router.push('/simulados')}>
@@ -242,17 +250,17 @@ export default function SimuladoResultadoPage() {
           }}
           showDivider={false}
         >
-          {result!.subjectBreakdown.map((s) => {
+          {result!.sectionBreakdown.map((s) => {
             const pct = s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
-            const questions = questionsBySubject[s.subjectName] ?? [];
+            const questions = questionsBySection[s.sectionName] ?? [];
 
             return (
               <AccordionItem
-                key={s.subjectName}
-                aria-label={s.subjectName}
+                key={s.sectionName}
+                aria-label={s.sectionName}
                 title={
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className="truncate flex-1 min-w-0">{s.subjectName}</span>
+                    <span className="truncate flex-1 min-w-0">{s.sectionName}</span>
                     <Chip className="shrink-0 font-semibold" color={scoreColor(pct)} size="sm" variant="flat">
                       {s.correct}/{s.total} — {pct}%
                     </Chip>
@@ -267,7 +275,7 @@ export default function SimuladoResultadoPage() {
                       question={q}
                       selected={answersMap.get(q.simuladoQuestionId) ?? []}
                       showDivider={i > 0}
-                      onLoadExplanation={getQuestionExplanation}
+                      onLoadExplanation={getExamQuestionExplanation}
                     />
                   ))}
                 </div>

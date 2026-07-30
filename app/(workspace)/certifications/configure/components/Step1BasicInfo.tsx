@@ -1,25 +1,28 @@
 'use client';
+import type { Provider } from '@/shared/types';
+
+import { useEffect, useState } from 'react';
 import { faArrowRight, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
+import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
 
 import { StepHeader } from './StepHeader';
 
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { getProviders } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
 
 interface Step1BasicInfoProps {
-  readonly title: string;
-  readonly code: string;
+  readonly name: string;
   readonly provider: string;
   readonly totalQuestions: string;
   readonly examDurationMinutes: string;
   readonly passingScore: string;
-  readonly onTitleChange: (v: string) => void;
-  readonly onCodeChange: (v: string) => void;
+  readonly onNameChange: (v: string) => void;
   readonly onProviderChange: (v: string) => void;
   readonly onTotalQuestionsChange: (v: string) => void;
   readonly onExamDurationMinutesChange: (v: string) => void;
@@ -30,14 +33,12 @@ interface Step1BasicInfoProps {
 }
 
 export function Step1BasicInfo({
-  title,
-  code,
+  name,
   provider,
   totalQuestions,
   examDurationMinutes,
   passingScore,
-  onTitleChange,
-  onCodeChange,
+  onNameChange,
   onProviderChange,
   onTotalQuestionsChange,
   onExamDurationMinutesChange,
@@ -47,11 +48,18 @@ export function Step1BasicInfo({
   onDiscard,
 }: Step1BasicInfoProps) {
   const { t } = useTranslation();
-  const hasDraft = !!(title || code || provider || totalQuestions);
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const hasDraft = !!(name || provider || totalQuestions);
+
+  useEffect(() => {
+    getProviders()
+      .then(setProviders)
+      .catch(() => {});
+  }, []);
 
   const handleNext = () => {
-    if (!title.trim() || !code.trim()) {
-      notify.error(t('toast.validationError'), t('error.titleCodeRequired'));
+    if (!name.trim()) {
+      notify.error(t('toast.validationError'), t('error.nameRequired'));
 
       return;
     }
@@ -74,27 +82,25 @@ export function Step1BasicInfo({
               data-testid="wizard-title-input"
               label={t('certification.certificationTitle')}
               placeholder={t('certification.certificationTitlePlaceholder')}
-              value={title}
-              onChange={(e) => onTitleChange(e.target.value)}
+              value={name}
+              onChange={(e) => onNameChange(e.target.value)}
               {...inputProperties.input}
             />
           </div>
 
-          <Input
-            label={t('certification.provider')}
+          <Autocomplete
+            allowsCustomValue
+            data-testid="exam-provider-input"
+            inputValue={provider}
+            label={t('exam.providerLabel')}
             placeholder={t('certification.providerPlaceholder')}
-            value={provider}
-            onChange={(e) => onProviderChange(e.target.value)}
-            {...inputProperties.input}
-          />
-
-          <Input
-            label={t('certification.certificationCode')}
-            placeholder={t('certification.certificationCodePlaceholder')}
-            value={code}
-            onChange={(e) => onCodeChange(e.target.value)}
-            {...inputProperties.input}
-          />
+            onInputChange={onProviderChange}
+            {...inputProperties.autocomplete}
+          >
+            {providers.map((p) => (
+              <AutocompleteItem key={p.name}>{p.name}</AutocompleteItem>
+            ))}
+          </Autocomplete>
 
           <div className="col-span-full flex items-start gap-4 p-4 bg-background border border-default-200 rounded-xl">
             <div className="flex-shrink-0 w-10 h-10 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-center">
@@ -118,7 +124,9 @@ export function Step1BasicInfo({
               {...inputProperties.input}
             />
             <Input
-              endContent={<span className="text-xs text-default-400 self-center">{t('certification.examDurationUnit')}</span>}
+              endContent={
+                <span className="text-xs text-default-400 self-center">{t('certification.examDurationUnit')}</span>
+              }
               label={t('certification.examDuration')}
               min={1}
               placeholder="e.g. 130"

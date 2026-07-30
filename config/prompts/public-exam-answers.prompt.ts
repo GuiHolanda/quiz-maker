@@ -1,4 +1,4 @@
-import type { AIPublicExamQuestion } from '@/shared/types';
+import type { AIExamQuestion } from '@/shared/types';
 import type { PromptDefinition } from './types';
 
 export interface PublicExamAnswersInput {
@@ -7,7 +7,7 @@ export interface PublicExamAnswersInput {
   readonly role?: string;
   readonly subject_name: string;
   readonly topic_name?: string;
-  readonly questions: AIPublicExamQuestion[];
+  readonly questions: AIExamQuestion[];
 }
 
 export const publicExamAnswersPrompt = {

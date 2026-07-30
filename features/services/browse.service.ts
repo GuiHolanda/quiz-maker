@@ -1,24 +1,17 @@
 import { prisma } from '@/lib/prisma';
-import {
-  BrowseQuestionsResponse,
-  PublicExamBrowseQuestionsResponse,
-  BrowseSummary,
-  PublicExamBrowseSummary,
-} from '@/shared/types';
+import { BrowseQuestionsResponse, BrowseSummary, ExamType } from '@/shared/types';
 
-// ---- Shared base for ownership-checked delete ----
+// ---- Ownership-checked delete for ExamQuestion ----
 
-interface OwnerCheckDelegate {
-  findUnique(args: { where: { id: number } }): Promise<{ userId: string | null } | null>;
-  delete(args: { where: { id: number } }): Promise<unknown>;
-}
-
-abstract class BaseBrowseService {
-  protected abstract getDelegate(): OwnerCheckDelegate;
-  protected abstract deleteRelated(id: number): Promise<void>;
+export class BrowseQuestionsService {
+  private async deleteRelated(id: number): Promise<void> {
+    await prisma.examExplanation.deleteMany({ where: { answer: { questionId: id } } });
+    await prisma.examAnswer.deleteMany({ where: { questionId: id } });
+    await prisma.examOption.deleteMany({ where: { questionId: id } });
+  }
 
   async deleteQuestion(id: number, userId: string): Promise<void> {
-    const question = await this.getDelegate().findUnique({ where: { id } });
+    const question = await prisma.examQuestion.findUnique({ where: { id } });
 
     if (!question) {
       throw Object.assign(new Error('Question not found'), { status: 404 });
@@ -27,37 +20,23 @@ abstract class BaseBrowseService {
       throw Object.assign(new Error('Forbidden'), { status: 403 });
     }
     await this.deleteRelated(id);
-    await this.getDelegate().delete({ where: { id } });
-  }
-}
-
-// ---- Certification questions browse ----
-
-export class BrowseQuestionsService extends BaseBrowseService {
-  protected getDelegate(): OwnerCheckDelegate {
-    return prisma.question as unknown as OwnerCheckDelegate;
-  }
-
-  protected async deleteRelated(id: number): Promise<void> {
-    await prisma.explanation.deleteMany({ where: { answer: { questionId: id } } });
-    await prisma.answer.deleteMany({ where: { questionId: id } });
-    await prisma.option.deleteMany({ where: { questionId: id } });
+    await prisma.examQuestion.delete({ where: { id } });
   }
 
   async getQuestions(params: {
-    certificationTitle: string;
-    topic: string;
+    examName: string;
+    section: string;
     page: number;
     pageSize: number;
     userId: string;
   }): Promise<BrowseQuestionsResponse> {
-    const { certificationTitle, topic, page, pageSize, userId } = params;
-    const where = { certificationTitle, topic, userId };
+    const { examName, section, page, pageSize, userId } = params;
+    const where = { examName, sectionName: section, userId };
     const skip = (page - 1) * pageSize;
 
     const [total, rows] = await Promise.all([
-      prisma.question.count({ where }),
-      prisma.question.findMany({
+      prisma.examQuestion.count({ where }),
+      prisma.examQuestion.findMany({
         where,
         skip,
         take: pageSize,
@@ -71,78 +50,9 @@ export class BrowseQuestionsService extends BaseBrowseService {
 
     const questions = rows.map((q) => ({
       id: q.id,
-      certificationTitle: q.certificationTitle,
-      text: q.text,
-      correctCount: q.correctCount,
-      topic: q.topic,
-      difficulty: q.difficulty,
-      topicSubarea: q.topicSubarea ?? undefined,
-      options: q.options.reduce((acc: Record<string, string>, o) => {
-        acc[o.label] = o.text;
-
-        return acc;
-      }, {}),
-      answer: q.answer
-        ? {
-            questionId: q.id,
-            correctOptions: q.answer.correctOptions as string[],
-            explanations: (q.answer.explanations || []).reduce((a: Record<string, string>, ex) => {
-              a[ex.label] = ex.text;
-
-              return a;
-            }, {}),
-          }
-        : { questionId: q.id, correctOptions: [], explanations: {} },
-    }));
-
-    return { questions, total, page, pageSize };
-  }
-}
-
-// ---- Public exam questions browse ----
-
-export class PublicExamBrowseQuestionsService extends BaseBrowseService {
-  protected getDelegate(): OwnerCheckDelegate {
-    return prisma.publicExamQuestion as unknown as OwnerCheckDelegate;
-  }
-
-  protected async deleteRelated(id: number): Promise<void> {
-    await prisma.publicExamExplanation.deleteMany({ where: { answer: { questionId: id } } });
-    await prisma.publicExamAnswer.deleteMany({ where: { questionId: id } });
-    await prisma.publicExamOption.deleteMany({ where: { questionId: id } });
-  }
-
-  async getQuestions(params: {
-    publicExamName: string;
-    subject: string;
-    page: number;
-    pageSize: number;
-    userId: string;
-  }): Promise<PublicExamBrowseQuestionsResponse> {
-    const { publicExamName, subject, page, pageSize, userId } = params;
-    const where = { publicExamName, subject, userId };
-    const skip = (page - 1) * pageSize;
-
-    const [total, rows] = await Promise.all([
-      prisma.publicExamQuestion.count({ where }),
-      prisma.publicExamQuestion.findMany({
-        where,
-        skip,
-        take: pageSize,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          options: true,
-          answer: { include: { explanations: true } },
-        },
-      }),
-    ]);
-
-    const questions = rows.map((q) => ({
-      id: q.id,
-      publicExamName: q.publicExamName,
-      examBoardName: q.examBoardName,
-      subject: q.subject,
-      topic: q.topic ?? undefined,
+      examName: q.examName,
+      sectionName: q.sectionName,
+      topic: q.topicName ?? undefined,
       text: q.text,
       correctCount: q.correctCount,
       difficulty: q.difficulty,
@@ -168,91 +78,53 @@ export class PublicExamBrowseQuestionsService extends BaseBrowseService {
   }
 }
 
-// ---- Summary services ----
+// ---- Summary grouped by exam and section ----
 
 export class BrowseSummaryService {
-  async getSummary(userId: string): Promise<BrowseSummary> {
-    const rows = await prisma.question.groupBy({
-      by: ['certificationTitle', 'topic'],
+  async getSummary(userId: string, type?: ExamType): Promise<BrowseSummary> {
+    const rows = await prisma.examQuestion.groupBy({
+      by: ['examName', 'sectionName'],
       where: { userId },
       _count: { id: true },
-      orderBy: { certificationTitle: 'asc' },
+      orderBy: { examName: 'asc' },
     });
 
-    const certMap = new Map<string, { totalCount: number; topics: Map<string, number> }>();
-
-    for (const row of rows) {
-      const cert = certMap.get(row.certificationTitle) ?? { totalCount: 0, topics: new Map() };
-      const count = row._count.id;
-
-      cert.totalCount += count;
-      cert.topics.set(row.topic, count);
-      certMap.set(row.certificationTitle, cert);
-    }
-
-    const certLabels = await prisma.certification.findMany({
-      where: { userId },
-      select: { key: true, label: true },
-    });
-    const labelToKey = new Map(certLabels.map((c) => [c.label, c.key]));
-
-    const certifications = Array.from(certMap.entries()).map(([label, data]) => ({
-      label,
-      key: labelToKey.get(label) ?? label,
-      totalCount: data.totalCount,
-      topics: Array.from(data.topics.entries()).map(([name, questionCount]) => ({
-        name,
-        questionCount,
-      })),
-    }));
-
-    return { certifications };
-  }
-}
-
-export class PublicExamBrowseSummaryService {
-  async getSummary(userId: string): Promise<PublicExamBrowseSummary> {
-    const rows = await prisma.publicExamQuestion.groupBy({
-      by: ['publicExamName', 'examBoardName', 'subject'],
-      where: { userId },
-      _count: { id: true },
-      orderBy: { publicExamName: 'asc' },
-    });
-
-    type ExamData = { id: string; examBoardName: string; totalCount: number; subjects: Map<string, number> };
+    type ExamData = { totalCount: number; sections: Map<string, number> };
     const examMap = new Map<string, ExamData>();
 
     for (const row of rows) {
-      const exam = examMap.get(row.publicExamName) ?? {
-        id: row.publicExamName,
-        examBoardName: row.examBoardName,
-        totalCount: 0,
-        subjects: new Map(),
-      };
+      const exam = examMap.get(row.examName) ?? { totalCount: 0, sections: new Map() };
       const count = row._count.id;
 
       exam.totalCount += count;
-      exam.subjects.set(row.subject, count);
-      examMap.set(row.publicExamName, exam);
+      exam.sections.set(row.sectionName, count);
+      examMap.set(row.examName, exam);
     }
 
-    const examRecords = await prisma.publicExam.findMany({
-      where: { userId },
-      select: { id: true, name: true },
+    const examRecords = await prisma.exam.findMany({
+      where: { userId, ...(type && { type }) },
+      select: { id: true, name: true, type: true, provider: true, examBoard: true },
     });
-    const nameToId = new Map(examRecords.map((e) => [e.name, e.id]));
+    const byName = new Map(examRecords.map((e) => [e.name, e]));
 
-    const publicExams = Array.from(examMap.entries()).map(([name, data]) => ({
-      id: nameToId.get(name) ?? name,
-      name,
-      examBoardName: data.examBoardName,
-      totalCount: data.totalCount,
-      subjects: Array.from(data.subjects.entries()).map(([subjectName, questionCount]) => ({
-        name: subjectName,
-        questionCount,
-      })),
-    }));
+    const exams = Array.from(examMap.entries())
+      .filter(([name]) => (type ? byName.has(name) : true))
+      .map(([name, data]) => {
+        const record = byName.get(name);
 
-    return { publicExams };
+        return {
+          id: record?.id ?? name,
+          name,
+          type: (record?.type as ExamType) ?? 'certification',
+          referenceName: record?.provider?.name ?? record?.examBoard?.name ?? '',
+          totalCount: data.totalCount,
+          sections: Array.from(data.sections.entries()).map(([sectionName, questionCount]) => ({
+            name: sectionName,
+            questionCount,
+          })),
+        };
+      });
+
+    return { exams };
   }
 }

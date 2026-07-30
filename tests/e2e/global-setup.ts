@@ -4,7 +4,6 @@ import bcrypt from 'bcryptjs';
 import path from 'path';
 import dotenv from 'dotenv';
 import {
-  E2E_CERT_KEY,
   E2E_CERT_LABEL,
   E2E_CERT_TOPIC,
   E2E_PUBLIC_EXAM_NAME,
@@ -27,17 +26,23 @@ const prisma = new PrismaClient({
 export const E2E_USER_EMAIL = process.env.E2E_USER_EMAIL!;
 export const E2E_USER_PASSWORD = process.env.E2E_USER_PASSWORD!;
 
-// Seeds a certification with one topic and 3 questions so simulado creation tests
-// have real questions in the DB without needing a real LLM call.
+// Seeds a certification Exam with one section and 3 questions so simulado creation
+// tests have real questions in the DB without needing a real LLM call.
 async function seedCertificationData(userId: string) {
-  const cert = await prisma.certification.create({
+  const provider = await prisma.provider.upsert({
+    where: { name: 'E2E' },
+    update: {},
+    create: { name: 'E2E', fullName: 'E2E' },
+  });
+
+  const exam = await prisma.exam.create({
     data: {
-      label: E2E_CERT_LABEL,
-      key: E2E_CERT_KEY,
-      provider: 'E2E',
+      type: 'certification',
+      name: E2E_CERT_LABEL,
       totalQuestions: 65,
       userId,
-      topics: {
+      providerId: provider.id,
+      sections: {
         create: [{ name: E2E_CERT_TOPIC, minQuestions: 0, maxQuestions: 100 }],
       },
     },
@@ -50,12 +55,12 @@ async function seedCertificationData(userId: string) {
   ];
 
   for (const q of questions) {
-    await prisma.question.create({
+    await prisma.examQuestion.create({
       data: {
         text: q.text,
         correctCount: 1,
-        topic: E2E_CERT_TOPIC,
-        certificationTitle: E2E_CERT_LABEL,
+        sectionName: E2E_CERT_TOPIC,
+        examName: E2E_CERT_LABEL,
         difficulty: 'medium',
         userId,
         options: { create: Object.entries(q.options).map(([label, text]) => ({ label, text })) },
@@ -64,10 +69,10 @@ async function seedCertificationData(userId: string) {
     });
   }
 
-  return cert;
+  return exam;
 }
 
-// Seeds a public exam with one subject and 3 questions.
+// Seeds a public exam Exam with one section and 3 questions.
 async function seedPublicExamData(userId: string) {
   const examBoard = await prisma.examBoard.upsert({
     where: { name: E2E_EXAM_BOARD },
@@ -75,14 +80,15 @@ async function seedPublicExamData(userId: string) {
     create: { name: E2E_EXAM_BOARD, fullName: E2E_EXAM_BOARD },
   });
 
-  const exam = await prisma.publicExam.create({
+  const exam = await prisma.exam.create({
     data: {
+      type: 'public_exam',
       name: E2E_PUBLIC_EXAM_NAME,
       role: 'E2E Role',
       totalQuestions: 60,
       userId,
       examBoardId: examBoard.id,
-      subjects: {
+      sections: {
         create: [{ name: E2E_SUBJECT, minQuestions: 100, maxQuestions: 100 }],
       },
     },
@@ -95,13 +101,12 @@ async function seedPublicExamData(userId: string) {
   ];
 
   for (const q of questions) {
-    await prisma.publicExamQuestion.create({
+    await prisma.examQuestion.create({
       data: {
         text: q.text,
         correctCount: 1,
-        subject: E2E_SUBJECT,
-        publicExamName: E2E_PUBLIC_EXAM_NAME,
-        examBoardName: E2E_EXAM_BOARD,
+        sectionName: E2E_SUBJECT,
+        examName: E2E_PUBLIC_EXAM_NAME,
         difficulty: 'medium',
         userId,
         options: { create: Object.entries(q.options).map(([label, text]) => ({ label, text })) },

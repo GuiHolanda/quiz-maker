@@ -16,162 +16,44 @@ export {
   E2E_SUBJECT,
 };
 
-// Stub returned by GET /api/certification/browse-questions/summary — tells NewCertSimuladoForm
-// that questions are available so it renders the form instead of the EmptyState.
-export const mockCertBrowseSummary = {
-  certifications: [
-    {
-      key: E2E_CERT_KEY,
-      label: E2E_CERT_LABEL,
-      totalCount: 3,
-      topics: [{ name: E2E_CERT_TOPIC, questionCount: 3 }],
-    },
-  ],
-};
-
-// Stub returned by GET /api/public-exam/browse-questions/summary — same purpose for NewMockExamForm.
-export const mockPublicExamBrowseSummary = {
+// Stub returned by GET /api/exam/browse-questions/summary — tells NewMockExamForm that
+// questions are available so it renders the creation form instead of the EmptyState.
+// Unified shape: { exams: [{ id, name, type, referenceName, totalCount, sections }] }.
+// Both verticals are included so totalSavedQuestions > 0 regardless of the selected exam.
+export const mockBrowseSummary = {
   exams: [
     {
-      name: E2E_PUBLIC_EXAM_NAME,
+      id: 'e2e-cert-exam-id',
+      name: E2E_CERT_LABEL,
+      type: 'certification',
+      referenceName: 'E2E',
       totalCount: 3,
-      subjects: [{ name: E2E_SUBJECT, questionCount: 3 }],
+      sections: [{ name: E2E_CERT_TOPIC, questionCount: 3 }],
+    },
+    {
+      id: 'e2e-public-exam-id',
+      name: E2E_PUBLIC_EXAM_NAME,
+      type: 'public_exam',
+      referenceName: E2E_EXAM_BOARD,
+      totalCount: 3,
+      sections: [{ name: E2E_SUBJECT, questionCount: 3 }],
     },
   ],
 };
-export const mockCertificationQuestions = [
-  {
-    id: 9001,
-    certificationTitle: E2E_CERT_LABEL,
-    text: 'E2E Question 1: Which service provides object storage?',
-    correctCount: 1,
-    topic: E2E_CERT_TOPIC,
-    difficulty: 'medium',
-    options: { A: 'S3', B: 'EC2', C: 'RDS', D: 'Lambda' },
-    topicSubarea: undefined,
-  },
-  {
-    id: 9002,
-    certificationTitle: E2E_CERT_LABEL,
-    text: 'E2E Question 2: Which service provides compute?',
-    correctCount: 1,
-    topic: E2E_CERT_TOPIC,
-    difficulty: 'easy',
-    options: { A: 'S3', B: 'EC2', C: 'RDS', D: 'CloudFront' },
-    topicSubarea: undefined,
-  },
-  {
-    id: 9003,
-    certificationTitle: E2E_CERT_LABEL,
-    text: 'E2E Question 3: Which service is a managed relational database?',
-    correctCount: 1,
-    topic: E2E_CERT_TOPIC,
-    difficulty: 'medium',
-    options: { A: 'DynamoDB', B: 'Redshift', C: 'RDS', D: 'ElastiCache' },
-    topicSubarea: undefined,
-  },
-];
 
-export const mockPublicExamQuestions = [
-  {
-    id: 9101,
-    publicExamName: E2E_PUBLIC_EXAM_NAME,
-    examBoardName: E2E_EXAM_BOARD,
-    subject: E2E_SUBJECT,
-    topic: undefined,
-    text: 'E2E Concurso Question 1: O que é o princípio da legalidade?',
-    correctCount: 1,
-    difficulty: 'medium',
-    options: { A: 'Opção A', B: 'Opção B', C: 'Opção C', D: 'Opção D' },
-  },
-  {
-    id: 9102,
-    publicExamName: E2E_PUBLIC_EXAM_NAME,
-    examBoardName: E2E_EXAM_BOARD,
-    subject: E2E_SUBJECT,
-    topic: undefined,
-    text: 'E2E Concurso Question 2: O que é isonomia?',
-    correctCount: 1,
-    difficulty: 'easy',
-    options: { A: 'Opção A', B: 'Opção B', C: 'Opção C', D: 'Opção D' },
-  },
-  {
-    id: 9103,
-    publicExamName: E2E_PUBLIC_EXAM_NAME,
-    examBoardName: E2E_EXAM_BOARD,
-    subject: E2E_SUBJECT,
-    topic: undefined,
-    text: 'E2E Concurso Question 3: Qual é a finalidade da CF/88?',
-    correctCount: 1,
-    difficulty: 'hard',
-    options: { A: 'Opção A', B: 'Opção B', C: 'Opção C', D: 'Opção D' },
-  },
-];
-
+// ensure-answers stub — always returns generated:0 (idempotent no-op).
 export const mockAnswersResponse = { generated: 0 };
 
 // Stub returned by PATCH .../attempts/:id (finishAttempt).
-// The server-side finishAttempt checks for missing Answer rows and calls ensureAnswers
-// if any are missing. To avoid a real OpenAI call in tests we intercept the PATCH itself
-// and return a 200 with no body, then intercept the subsequent GET result endpoint with
-// a pre-built CertSimuladoResult / MockExamResult stub.
+// The server-side finishAttempt calls ensureAnswers when Answer rows are missing,
+// which would make a real OpenAI call in tests. Intercepting the PATCH prevents that,
+// and the subsequent GET result endpoint is served by mockMockExamResult below.
 export const mockFinishAttemptResponse = {};
 
-export const mockCertSimuladoResult = {
-  attempt: {
-    id: 1,
-    simuladoId: 1,
-    startedAt: new Date().toISOString(),
-    finishedAt: new Date().toISOString(),
-    score: 2,
-    answers: [
-      { simuladoQuestionId: 1, selectedOptions: ['A'] },
-      { simuladoQuestionId: 2, selectedOptions: ['B'] },
-      { simuladoQuestionId: 3, selectedOptions: ['C'] },
-    ],
-  },
-  simulado: { id: 1, name: 'E2E Simulado', certKey: E2E_CERT_KEY, certLabel: E2E_CERT_LABEL },
-  questions: [
-    {
-      id: 1,
-      order: 1,
-      question: {
-        id: 9001,
-        text: 'E2E Question 1: Which service provides object storage?',
-        correctCount: 1,
-        topic: E2E_CERT_TOPIC,
-        options: { A: 'S3', B: 'EC2', C: 'RDS', D: 'Lambda' },
-        answer: { correctOptions: ['A'] },
-      },
-    },
-    {
-      id: 2,
-      order: 2,
-      question: {
-        id: 9002,
-        text: 'E2E Question 2: Which service provides compute?',
-        correctCount: 1,
-        topic: E2E_CERT_TOPIC,
-        options: { A: 'S3', B: 'EC2', C: 'RDS', D: 'CloudFront' },
-        answer: { correctOptions: ['B'] },
-      },
-    },
-    {
-      id: 3,
-      order: 3,
-      question: {
-        id: 9003,
-        text: 'E2E Question 3: Which service is a managed relational database?',
-        correctCount: 1,
-        topic: E2E_CERT_TOPIC,
-        options: { A: 'DynamoDB', B: 'Redshift', C: 'RDS', D: 'ElastiCache' },
-        answer: { correctOptions: ['C'] },
-      },
-    },
-  ],
-  topicBreakdown: [{ topicName: E2E_CERT_TOPIC, correct: 2, total: 3 }],
-};
-
+// Unified MockExamResult stub served by GET /api/mock-exams/:id/attempts/:attemptId.
+// Both verticals route through this single endpoint now, so the mock includes a
+// sectionBreakdown entry for BOTH the certification topic and the public-exam subject,
+// ensuring the domain's seed topic is always visible on the result page.
 export const mockMockExamResult = {
   attempt: {
     id: 1,
@@ -188,62 +70,59 @@ export const mockMockExamResult = {
   mockExam: {
     id: 1,
     name: 'E2E Mock Exam',
-    publicExam: { id: 1, name: E2E_PUBLIC_EXAM_NAME },
+    exam: { id: 'e2e-cert-exam-id', name: E2E_CERT_LABEL, type: 'certification' },
   },
   questions: [
     {
       id: 1,
       order: 1,
-      publicExamQuestion: {
-        id: 9101,
-        publicExamName: E2E_PUBLIC_EXAM_NAME,
-        examBoardName: E2E_EXAM_BOARD,
-        subject: E2E_SUBJECT,
-        topic: null,
-        text: 'E2E Concurso Question 1: O que é o princípio da legalidade?',
+      examQuestion: {
+        id: 9001,
+        examName: E2E_CERT_LABEL,
+        sectionName: E2E_CERT_TOPIC,
+        text: 'E2E Question 1: Which service provides object storage?',
         correctCount: 1,
         difficulty: 'medium',
-        options: { A: 'Opção A', B: 'Opção B', C: 'Opção C', D: 'Opção D' },
+        options: { A: 'S3', B: 'EC2', C: 'RDS', D: 'Lambda' },
         answer: { correctOptions: ['A'] },
       },
     },
     {
       id: 2,
       order: 2,
-      publicExamQuestion: {
-        id: 9102,
-        publicExamName: E2E_PUBLIC_EXAM_NAME,
-        examBoardName: E2E_EXAM_BOARD,
-        subject: E2E_SUBJECT,
-        topic: null,
-        text: 'E2E Concurso Question 2: O que é isonomia?',
+      examQuestion: {
+        id: 9002,
+        examName: E2E_CERT_LABEL,
+        sectionName: E2E_CERT_TOPIC,
+        text: 'E2E Question 2: Which service provides compute?',
         correctCount: 1,
         difficulty: 'easy',
-        options: { A: 'Opção A', B: 'Opção B', C: 'Opção C', D: 'Opção D' },
+        options: { A: 'S3', B: 'EC2', C: 'RDS', D: 'CloudFront' },
         answer: { correctOptions: ['B'] },
       },
     },
     {
       id: 3,
       order: 3,
-      publicExamQuestion: {
-        id: 9103,
-        publicExamName: E2E_PUBLIC_EXAM_NAME,
-        examBoardName: E2E_EXAM_BOARD,
-        subject: E2E_SUBJECT,
-        topic: null,
-        text: 'E2E Concurso Question 3: Qual é a finalidade da CF/88?',
+      examQuestion: {
+        id: 9003,
+        examName: E2E_CERT_LABEL,
+        sectionName: E2E_CERT_TOPIC,
+        text: 'E2E Question 3: Which service is a managed relational database?',
         correctCount: 1,
-        difficulty: 'hard',
-        options: { A: 'Opção A', B: 'Opção B', C: 'Opção C', D: 'Opção D' },
+        difficulty: 'medium',
+        options: { A: 'DynamoDB', B: 'Redshift', C: 'RDS', D: 'ElastiCache' },
         answer: { correctOptions: ['C'] },
       },
     },
   ],
-  subjectBreakdown: [{ subjectName: E2E_SUBJECT, correct: 2, total: 3 }],
+  sectionBreakdown: [
+    { sectionName: E2E_CERT_TOPIC, correct: 2, total: 3 },
+    { sectionName: E2E_SUBJECT, correct: 2, total: 3 },
+  ],
 };
 
-// ─── Full Exam Job SSE helpers ────────────────────────────────────────────────
+// ─── Generation Job SSE helpers ───────────────────────────────────────────────
 
 function buildTopicEntry(topicName: string, status: 'queued' | 'running' | 'done' | 'error', savedCount = 0) {
   return {
@@ -269,6 +148,7 @@ export function buildGenerationJobProgressEvent(opts: {
     savedCount: opts.savedCount,
     topics: [buildTopicEntry(opts.topicName, opts.topicStatus, opts.savedCount)],
   };
+
   return `event: progress\ndata: ${JSON.stringify(data)}\n\n`;
 }
 
@@ -284,5 +164,6 @@ export function buildGenerationJobDoneEvent(opts: {
     savedCount: opts.savedCount,
     topics: [buildTopicEntry(opts.topicName, 'done', opts.savedCount)],
   };
+
   return `event: done\ndata: ${JSON.stringify(data)}\n\n`;
 }

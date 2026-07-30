@@ -8,7 +8,7 @@ import { Spinner } from '@heroui/spinner';
 
 import { GeneratedQuestionCard } from './GeneratedQuestionCard';
 
-import { AIQuestion, AIPublicExamQuestion } from '@/shared/types';
+import { AIQuestion } from '@/shared/types';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
 import { ItemsPerPageSelect } from '@/shared/components/ui/ItemsPerPageSelect';
 import { BusyDialog } from '@/shared/components/ui/BusyDialog';
@@ -17,7 +17,7 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface GeneratedQuestionsListProps {
-  readonly questions: AIQuestion[] | AIPublicExamQuestion[];
+  readonly questions: AIQuestion[];
   readonly selectedIds: number[];
   readonly setSelectedIds: (ids: number[]) => void;
   readonly onSave: () => void;

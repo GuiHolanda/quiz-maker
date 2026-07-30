@@ -17,13 +17,13 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { EditCertificationModal } from './EditCertificationModal';
 
-import { SectionsTable, SectionsTableHandle } from '@/shared/components/SectionsTable';
+import { ExamSectionsTable, ExamSectionsTableHandle } from '@/shared/components/ExamSectionsTable/ExamSectionsTable';
 import { RelativeDate } from '@/shared/components/ui/RelativeDate';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
-import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
-import { deleteCertification } from '@/features/connectors';
-import { Certification, CertificationTopic } from '@/shared/types';
+import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
+import { deleteExam } from '@/features/connectors';
+import { Exam, ExamSection, ExamTopic, Provider } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
 import { buttonStyles } from '@/config/constants/buttonStyles';
@@ -34,77 +34,123 @@ interface CertificationsListTabProps {
 
 export function CertificationsListTab({ onCreateNew }: CertificationsListTabProps) {
   const { t } = useTranslation();
-  const { certifications, isLoading, updateCertification, removeCertification } = useCertificationsContext();
-  const [editingCert, setEditingCert] = useState<Certification | null>(null);
-  const [deletingCert, setDeletingCert] = useState<Certification | null>(null);
+  const { certifications, isLoading, updateExam, removeExam } = useExamsContext();
+  const [editingCert, setEditingCert] = useState<Exam | null>(null);
+  const [deletingCert, setDeletingCert] = useState<Exam | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const tableRefs = useRef<Record<string, SectionsTableHandle | null>>({});
+  const tableRefs = useRef<Record<string, ExamSectionsTableHandle | null>>({});
 
-  const handleTopicUpdated = useCallback(
-    (certification: Certification, topicId: string, newName: string, minQuestions: number, maxQuestions: number) => {
-      const updatedTopics = certification.topics.map((t) =>
-        t.id === topicId ? { ...t, name: newName, minQuestions, maxQuestions } : t
+  const handleSectionUpdated = useCallback(
+    (exam: Exam, sectionId: string, newName: string, minQuestions: number, maxQuestions: number) => {
+      if (!exam.id) return;
+      const updatedSections = exam.sections.map((section) =>
+        section.id === sectionId ? { ...section, name: newName, minQuestions, maxQuestions } : section
       );
 
-      updateCertification(certification.key, { topics: updatedTopics });
+      updateExam(exam.id, { sections: updatedSections });
     },
-    [updateCertification]
+    [updateExam]
   );
 
-  const handleTopicRemoved = useCallback(
-    (certification: Certification, topicId: string) => {
-      const updatedTopics = certification.topics.filter((t) => t.id !== topicId);
+  const handleSectionRemoved = useCallback(
+    (exam: Exam, sectionId: string) => {
+      if (!exam.id) return;
+      const updatedSections = exam.sections.filter((section) => section.id !== sectionId);
 
-      updateCertification(certification.key, { topics: updatedTopics });
+      updateExam(exam.id, { sections: updatedSections });
     },
-    [updateCertification]
+    [updateExam]
+  );
+
+  const handleSectionAdded = useCallback(
+    (exam: Exam, section: ExamSection) => {
+      if (!exam.id) return;
+      updateExam(exam.id, { sections: [...exam.sections, section] });
+    },
+    [updateExam]
   );
 
   const handleTopicAdded = useCallback(
-    (certification: Certification, topic: CertificationTopic) => {
-      updateCertification(certification.key, { topics: [...certification.topics, topic] });
+    (exam: Exam, sectionId: string, topic: ExamTopic) => {
+      if (!exam.id) return;
+      const updatedSections = exam.sections.map((section) =>
+        section.id === sectionId ? { ...section, topics: [...(section.topics ?? []), topic] } : section
+      );
+
+      updateExam(exam.id, { sections: updatedSections });
     },
-    [updateCertification]
+    [updateExam]
+  );
+
+  const handleTopicRemoved = useCallback(
+    (exam: Exam, sectionId: string, topicId: string) => {
+      if (!exam.id) return;
+      const updatedSections = exam.sections.map((section) =>
+        section.id === sectionId
+          ? { ...section, topics: (section.topics ?? []).filter((topic) => topic.id !== topicId) }
+          : section
+      );
+
+      updateExam(exam.id, { sections: updatedSections });
+    },
+    [updateExam]
+  );
+
+  const handleTopicUpdated = useCallback(
+    (exam: Exam, sectionId: string, topicId: string, newName: string) => {
+      if (!exam.id) return;
+      const updatedSections = exam.sections.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              topics: (section.topics ?? []).map((topic) =>
+                topic.id === topicId ? { ...topic, name: newName } : topic
+              ),
+            }
+          : section
+      );
+
+      updateExam(exam.id, { sections: updatedSections });
+    },
+    [updateExam]
   );
 
   const handleCertSaved = useCallback(
     (
-      oldKey: string,
+      id: string,
       updated: {
-        label: string;
-        key: string;
-        provider?: string;
+        name: string;
+        provider?: Provider | null;
         totalQuestions: number;
         examDurationMinutes?: number;
         passingScore?: number;
       }
     ) => {
-      updateCertification(oldKey, {
-        label: updated.label,
-        key: updated.key,
+      updateExam(id, {
+        name: updated.name,
         provider: updated.provider,
         totalQuestions: updated.totalQuestions,
         examDurationMinutes: updated.examDurationMinutes,
         passingScore: updated.passingScore,
       });
     },
-    [updateCertification]
+    [updateExam]
   );
 
   const handleDeleteConfirm = useCallback(async () => {
-    if (!deletingCert?.key) return;
+    if (!deletingCert?.id) return;
     setIsDeleting(true);
     try {
-      await deleteCertification(deletingCert.key);
-      removeCertification(deletingCert.key);
-      notify.success(t('toast.success'), t('certification.certificationDeleted', { name: deletingCert.label }));
+      await deleteExam(deletingCert.id);
+      removeExam(deletingCert.id);
+      notify.success(t('toast.success'), t('certification.certificationDeleted', { name: deletingCert.name }));
       setDeletingCert(null);
     } catch {
       notify.error(t('toast.error'), t('certification.certificationDeleteError'));
     } finally {
       setIsDeleting(false);
     }
-  }, [deletingCert, removeCertification, t]);
+  }, [deletingCert, removeExam, t]);
 
   if (isLoading) {
     return <SkeletonListLoader />;
@@ -134,54 +180,59 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
           }}
           showDivider={false}
         >
-          {certifications.map((certification) => (
-            <AccordionItem
-              key={certification.key}
-              aria-label={certification.label}
-              title={renderTriggerTitle(certification)}
-            >
-              <SectionsTable
-                ref={(el) => {
-                  tableRefs.current[certification.key] = el;
-                }}
-                selectedCertification={certification}
-                topicsList={certification.topics}
-                onTopicAdded={(topic) => handleTopicAdded(certification, topic)}
-                onTopicRemoved={(topicId) => handleTopicRemoved(certification, topicId)}
-                onTopicUpdated={(topicId, newName, min, max) =>
-                  handleTopicUpdated(certification, topicId, newName, min, max)
-                }
-              />
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-default-200">
-                <Button
-                  className={buttonStyles.primarySm}
-                  size="sm"
-                  startContent={<FontAwesomeIcon className="text-[10px]" icon={faPlus} />}
-                  onPress={() => tableRefs.current[certification.key]?.startAdd()}
-                >
-                  {t('certification.addTopic')}
-                </Button>
-                <div className="flex items-center gap-2">
+          {certifications.map((certification) => {
+            const examKey = certification.id ?? certification.name;
+
+            return (
+              <AccordionItem key={examKey} aria-label={certification.name} title={renderTriggerTitle(certification)}>
+                <ExamSectionsTable
+                  ref={(el) => {
+                    tableRefs.current[examKey] = el;
+                  }}
+                  selectedExam={certification}
+                  sectionsList={certification.sections}
+                  onSectionAdded={(section) => handleSectionAdded(certification, section)}
+                  onSectionRemoved={(sectionId) => handleSectionRemoved(certification, sectionId)}
+                  onSectionUpdated={(sectionId, newName, min, max) =>
+                    handleSectionUpdated(certification, sectionId, newName, min, max)
+                  }
+                  onTopicAdded={(sectionId, topic) => handleTopicAdded(certification, sectionId, topic)}
+                  onTopicRemoved={(sectionId, topicId) => handleTopicRemoved(certification, sectionId, topicId)}
+                  onTopicUpdated={(sectionId, topicId, newName) =>
+                    handleTopicUpdated(certification, sectionId, topicId, newName)
+                  }
+                />
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-default-200">
                   <Button
-                    className={buttonStyles.flat}
+                    className={buttonStyles.primarySm}
                     size="sm"
-                    startContent={<FontAwesomeIcon className="text-xs" icon={faPen} />}
-                    onPress={() => setEditingCert(certification)}
+                    startContent={<FontAwesomeIcon className="text-[10px]" icon={faPlus} />}
+                    onPress={() => tableRefs.current[examKey]?.startAdd()}
                   >
-                    {t('certification.editCertification')}
+                    {t('certification.addTopic')}
                   </Button>
-                  <Button
-                    className={buttonStyles.dangerFlat}
-                    size="sm"
-                    startContent={<FontAwesomeIcon className="text-xs" icon={faTrash} />}
-                    onPress={() => setDeletingCert(certification)}
-                  >
-                    {t('certification.deleteCertificationTitle')}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      className={buttonStyles.flat}
+                      size="sm"
+                      startContent={<FontAwesomeIcon className="text-xs" icon={faPen} />}
+                      onPress={() => setEditingCert(certification)}
+                    >
+                      {t('certification.editCertification')}
+                    </Button>
+                    <Button
+                      className={buttonStyles.dangerFlat}
+                      size="sm"
+                      startContent={<FontAwesomeIcon className="text-xs" icon={faTrash} />}
+                      onPress={() => setDeletingCert(certification)}
+                    >
+                      {t('certification.deleteCertificationTitle')}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </AccordionItem>
-          ))}
+              </AccordionItem>
+            );
+          })}
         </Accordion>
       )}
 
@@ -197,7 +248,7 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
           <ModalHeader>{t('certification.deleteCertificationTitle')}</ModalHeader>
           <ModalBody>
             <p className="text-sm text-default-600">
-              {t('certification.deleteCertificationConfirm', { name: deletingCert?.label ?? '' })}
+              {t('certification.deleteCertificationConfirm', { name: deletingCert?.name ?? '' })}
             </p>
           </ModalBody>
           <ModalFooter>
@@ -218,35 +269,34 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
     </>
   );
 
-  function renderTriggerTitle(certification: Certification) {
+  function renderTriggerTitle(certification: Exam) {
     const topicStatus =
-      certification.topics.length === 0 ? (
+      certification.sections.length === 0 ? (
         <Chip color="warning" size="sm" variant="flat">
           {t('certification.noTopics')}
         </Chip>
       ) : (
         <span
-          aria-label={t('certification.topicsAriaLabel', { count: String(certification.topics.length) })}
+          aria-label={t('certification.topicsAriaLabel', { count: String(certification.sections.length) })}
           className="flex items-center gap-1 text-xs text-default-400"
         >
           <FontAwesomeIcon className="text-[10px]" icon={faLayerGroup} />
-          {certification.topics.length === 1
+          {certification.sections.length === 1
             ? t('certification.topicCount1')
-            : t('certification.topicCountN', { count: String(certification.topics.length) })}
+            : t('certification.topicCountN', { count: String(certification.sections.length) })}
         </span>
       );
 
-    const isEdited = certification.createdAt && certification.updatedAt
-    ? certification.updatedAt !== certification.createdAt
-    : false;
+    const isEdited =
+      certification.createdAt && certification.updatedAt ? certification.updatedAt !== certification.createdAt : false;
 
     return (
       <div className="flex flex-col gap-0.5 min-w-0">
         <div className="flex items-center justify-between gap-2 min-w-0">
-          <span className="text-sm font-semibold text-foreground truncate min-w-0">{certification.label}</span>
+          <span className="text-sm font-semibold text-foreground truncate min-w-0">{certification.name}</span>
           <div className="flex items-center gap-2 shrink-0">
-            {certification.provider && (
-              <span className="text-xs text-default-400 truncate max-w-[160px]">{certification.provider}</span>
+            {certification.provider?.name && (
+              <span className="text-xs text-default-400 truncate max-w-[160px]">{certification.provider.name}</span>
             )}
             {topicStatus}
           </div>

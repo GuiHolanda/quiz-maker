@@ -9,10 +9,9 @@ export const dynamic = 'force-dynamic';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-06-24.dahlia' });
 
 function resolvePlanFromPriceId(priceId: string | undefined): UserPlan {
-  const proAiPrices = [
-    process.env.STRIPE_PRICE_ID_PRO_AI_MONTHLY,
-    process.env.STRIPE_PRICE_ID_PRO_AI_YEARLY,
-  ].filter(Boolean);
+  const proAiPrices = [process.env.STRIPE_PRICE_ID_PRO_AI_MONTHLY, process.env.STRIPE_PRICE_ID_PRO_AI_YEARLY].filter(
+    Boolean
+  );
 
   return proAiPrices.includes(priceId) ? 'pro_ai' : 'pro';
 }
@@ -44,8 +43,7 @@ export async function POST(request: NextRequest) {
 
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
         const priceId = subscription.items.data[0]?.price?.id;
-        const customerId =
-          typeof session.customer === 'string' ? session.customer : session.customer?.id;
+        const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id;
 
         await prisma.user.update({
           where: { id: userId },

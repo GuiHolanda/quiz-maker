@@ -73,28 +73,47 @@ export interface AIQuestionsStoragePayload {
   selectedAIQuestions: number[] | null;
 }
 
-export interface Certification {
-  label: string;
-  key: string;
-  provider?: string;
-  totalQuestions: number;
-  examDurationMinutes?: number;
-  passingScore?: number;
-  createdAt?: string;
-  updatedAt?: string;
-  topics: CertificationTopic[];
+export type ExamType = 'certification' | 'public_exam';
+
+export interface Provider {
+  readonly id?: string;
+  readonly name: string;
+  readonly fullName?: string | null;
+  readonly logoUrl?: string | null;
 }
 
-export interface CertificationTopic {
-  id?: string;
-  name: string;
-  maxQuestions: number;
-  minQuestions: number;
-  questions?: number;
+export interface ExamTopic {
+  readonly id?: string;
+  readonly name: string;
 }
 
-export interface TopicUpdatePayload {
-  topicId: string;
+export interface ExamSection {
+  readonly id?: string;
+  readonly name: string;
+  readonly minQuestions: number; // 0–100 percent
+  readonly maxQuestions: number; // 0–100 percent
+  readonly topics?: ExamTopic[];
+  readonly questions?: number;
+}
+
+export interface Exam {
+  readonly id?: string;
+  readonly type: ExamType;
+  readonly name: string;
+  readonly role?: string | null;
+  readonly year?: number | null;
+  readonly totalQuestions: number;
+  readonly examDurationMinutes?: number | null;
+  readonly passingScore?: number | null;
+  readonly provider?: Provider | null;
+  readonly examBoard?: ExamBoard | null;
+  readonly createdAt?: string;
+  readonly updatedAt?: string;
+  readonly sections: ExamSection[];
+}
+
+export interface SectionUpdatePayload {
+  sectionId: string;
   newName?: string;
   minQuestions: number;
   maxQuestions: number;
@@ -110,22 +129,9 @@ export interface QuizStoreApi {
   clear: () => void;
 }
 
-export interface CertificationPayload {
-  certifications: Certification[];
-  selectedCertification: Certification | null;
-}
-
-export interface CertificationsStoreApi {
-  certifications: Certification[];
-  selectedCertification: Certification | null;
-  selectedTopics: string[];
-  isLoading: boolean;
-  setCertifications: (certifications: Certification[]) => void;
-  setSelectedCertification: (certification: Certification | null) => void;
-  setSelectedTopics: (topics: string[]) => void;
-  addCertification: (certification: Certification) => void;
-  removeCertification: (key: string) => void;
-  updateCertification: (key: string, patch: Partial<Certification>) => void;
+export interface ExamPayload {
+  exams: Exam[];
+  selectedExam: Exam | null;
 }
 
 export type Language = 'en' | 'pt';
@@ -148,26 +154,25 @@ export type ChatMessageRole = 'user' | 'assistant';
 export interface ChatMessage {
   readonly role: ChatMessageRole;
   readonly content: string;
-  readonly certificationData?: Certification;
+  readonly examDraft?: Exam;
   readonly sources?: string[];
   readonly isError?: boolean;
-  readonly examDraft?: PublicExam;
   readonly attachmentName?: string;
 }
 
 export type UserPlan = 'free' | 'pro' | 'pro_ai' | 'tester' | 'admin';
 
-export type QuotaAction = 'generate_questions' | 'create_certification' | 'create_public_exam';
+export type QuotaAction = 'generate_questions' | 'create_exam';
 
 export interface UsageStats {
   plan: UserPlan;
   questionsUsed: number;
   questionsLimit: number;
   questionsSavedInLibrary: number;
-  certificationsUsed: number;
-  certificationsLimit: number;
-  publicExamsUsed: number;
-  publicExamsLimit: number;
+  examsUsed: number; // enforcement: total across both types
+  examsLimit: number; // -1 = unlimited
+  certificationsUsed: number; // display only
+  publicExamsUsed: number; // display only
   periodStartDate: string;
 }
 
@@ -179,31 +184,33 @@ export interface QuotaError {
   plan: UserPlan;
 }
 
-export interface BrowseTopicSummary {
+export interface BrowseSectionSummary {
   name: string;
   questionCount: number;
 }
 
-export interface BrowseCertificationSummary {
-  label: string;
-  key: string;
+export interface BrowseExamSummary {
+  id: string;
+  name: string;
+  type: ExamType;
+  referenceName: string; // provider.name (cert) or examBoard.name (concurso)
   totalCount: number;
-  topics: BrowseTopicSummary[];
+  sections: BrowseSectionSummary[];
 }
 
 export interface BrowseSummary {
-  certifications: BrowseCertificationSummary[];
+  exams: BrowseExamSummary[];
 }
 
 export interface BrowseQuestionsParams {
-  certificationTitle: string;
-  topic: string;
+  examName: string;
+  section: string;
   page: number;
   pageSize: number;
 }
 
 export interface BrowseQuestionsResponse {
-  questions: StoredQuestion[];
+  questions: StoredExamQuestion[];
   total: number;
   page: number;
   pageSize: number;
@@ -212,42 +219,13 @@ export interface BrowseQuestionsResponse {
 export interface ExamBoard {
   id?: string;
   name: string;
-  fullName?: string;
+  fullName?: string | null;
 }
 
-export interface PublicExamTopic {
-  id?: string;
-  name: string;
-}
-
-export interface PublicExamSubject {
-  id?: string;
-  name: string;
-  minQuestions: number;
-  maxQuestions: number;
-  topics?: PublicExamTopic[];
-  questions?: number;
-}
-
-export interface PublicExam {
-  id?: string;
-  name: string;
-  role?: string;
-  year?: number;
-  totalQuestions: number;
-  examDurationMinutes?: number;
-  passingScore?: number;
-  createdAt?: string;
-  updatedAt?: string;
-  examBoard: ExamBoard;
-  subjects: PublicExamSubject[];
-}
-
-export interface AIPublicExamQuestion {
+export interface AIExamQuestion {
   id: number;
-  publicExamName: string;
-  examBoardName: string;
-  subject: string;
+  examName: string;
+  sectionName: string;
   topic?: string;
   text: string;
   correctCount: number;
@@ -255,11 +233,10 @@ export interface AIPublicExamQuestion {
   options: Option;
 }
 
-export interface StoredPublicExamQuestion {
+export interface StoredExamQuestion {
   id: number;
-  publicExamName: string;
-  examBoardName: string;
-  subject: string;
+  examName: string;
+  sectionName: string;
   topic?: string;
   text: string;
   correctCount: number;
@@ -268,98 +245,37 @@ export interface StoredPublicExamQuestion {
   answer: Answer;
 }
 
-export interface PublicExamQuestionParams {
-  public_exam_name: string;
-  exam_board_name: string;
-  subject_name: string;
+export interface ExamQuestionParams {
+  exam_name: string;
+  reference_name: string; // provider.name (cert) or examBoard.name (concurso)
+  section_name: string;
   topic_name?: string;
   num_questions: string;
 }
 
-export interface PublicExamSubjectUpdatePayload {
-  subjectId: string;
-  newName?: string;
-  minQuestions: number;
-  maxQuestions: number;
-}
-
-export interface PublicExamPayload {
-  publicExams: PublicExam[];
-  selectedPublicExam: PublicExam | null;
-}
-
-export interface PublicExamsStoreApi {
-  publicExams: PublicExam[];
-  selectedPublicExam: PublicExam | null;
-  selectedSubjects: string[];
-  selectedTopic: string | null;
-  isLoading: boolean;
-  setPublicExams: (publicExams: PublicExam[]) => void;
-  setSelectedPublicExam: (publicExam: PublicExam | null) => void;
-  setSelectedSubjects: (subjects: string[]) => void;
-  setSelectedTopic: (topic: string | null) => void;
-  addPublicExam: (publicExam: PublicExam) => void;
-  removePublicExam: (id: string) => void;
-  updatePublicExam: (id: string, patch: Partial<PublicExam>) => void;
-}
-
-export interface BrowsePublicExamSubjectSummary {
-  name: string;
-  questionCount: number;
-}
-
-export interface BrowsePublicExamSummary {
-  id: string;
-  name: string;
-  examBoardName: string;
-  totalCount: number;
-  subjects: BrowsePublicExamSubjectSummary[];
-}
-
-export interface PublicExamBrowseSummary {
-  publicExams: BrowsePublicExamSummary[];
-}
-
-export interface PublicExamBrowseQuestionsParams {
-  publicExamName: string;
-  subject: string;
-  page: number;
-  pageSize: number;
-}
-
-export interface PublicExamBrowseQuestionsResponse {
-  questions: StoredPublicExamQuestion[];
-  total: number;
-  page: number;
-  pageSize: number;
-}
-
-export type PublicExamFormErrors = {
-  publicExamName?: string;
-  subject?: string;
+export type ExamFormErrors = {
+  examName?: string;
+  section?: string;
   num_questions?: string;
 };
 
-export interface MockExamSubjectConfig {
-  subjectName: string;
+export interface ExamRef {
+  id: string;
+  name: string;
+  type: ExamType;
+  provider?: Provider | null;
+  examBoard?: ExamBoard | null;
+}
+
+export interface MockExamSectionConfig {
+  sectionName: string;
   questionCount: number;
 }
 
 export interface MockExamQuestion {
   id: number;
   order: number;
-  publicExamQuestion: StoredPublicExamQuestion;
-}
-
-export interface MockExam {
-  id: number;
-  name: string | null;
-  publicExamId: string;
-  publicExam: Pick<PublicExam, 'id' | 'name' | 'examBoard'>;
-  subjects: MockExamSubjectConfig[];
-  questions: MockExamQuestion[];
-  attempts: MockExamAttempt[];
-  createdAt: string;
+  examQuestion: StoredExamQuestion;
 }
 
 export interface MockExamAttemptAnswer {
@@ -376,10 +292,21 @@ export interface MockExamAttempt {
   answers: MockExamAttemptAnswer[];
 }
 
+export interface MockExam {
+  id: number;
+  name: string | null;
+  examId: string;
+  exam: ExamRef;
+  sections: MockExamSectionConfig[];
+  questions: MockExamQuestion[];
+  attempts: MockExamAttempt[];
+  createdAt: string;
+}
+
 export interface MockExamListItem {
   id: number;
   name: string | null;
-  publicExam: Pick<PublicExam, 'id' | 'name' | 'examBoard'>;
+  exam: ExamRef;
   totalQuestions: number;
   attemptCount: number;
   bestScore: number | null;
@@ -390,10 +317,10 @@ export interface MockExamListItem {
 }
 
 export interface CreateMockExamPayload {
-  publicExamId: string;
+  examId: string;
   name?: string;
   totalQuestions: number;
-  subjects: MockExamSubjectConfig[];
+  sections: MockExamSectionConfig[];
 }
 
 export interface FinishAttemptPayload {
@@ -402,9 +329,9 @@ export interface FinishAttemptPayload {
 
 export interface MockExamResult {
   attempt: MockExamAttempt;
-  mockExam: Pick<MockExam, 'id' | 'name' | 'publicExam'>;
+  mockExam: Pick<MockExam, 'id' | 'name' | 'exam'>;
   questions: MockExamQuestion[];
-  subjectBreakdown: { subjectName: string; correct: number; total: number }[];
+  sectionBreakdown: { sectionName: string; correct: number; total: number }[];
 }
 
 export interface UserAdminRow {
@@ -480,72 +407,6 @@ export interface SimuladoResultQuestion {
   readonly correctCount: number;
   readonly options: Record<string, string>;
   readonly answer: { correctOptions: string[] } | null;
-}
-
-// Certification Simulado types
-export interface CertSimuladoTopicConfig {
-  topicName: string;
-  questionCount: number;
-}
-
-export interface CertSimuladoQuestion {
-  id: number;
-  order: number;
-  question: StoredQuestion;
-}
-
-export interface CertSimuladoAttemptAnswer {
-  simuladoQuestionId: number;
-  selectedOptions: string[];
-}
-
-export interface CertSimuladoAttempt {
-  id: number;
-  simuladoId: number;
-  startedAt: string;
-  finishedAt: string | null;
-  score: number | null;
-  answers: CertSimuladoAttemptAnswer[];
-}
-
-export interface CertSimuladoListItem {
-  id: number;
-  name: string | null;
-  certKey: string;
-  certLabel: string;
-  totalQuestions: number;
-  attemptCount: number;
-  bestScore: number | null;
-  lastAttemptId: number | null;
-  openAttemptId: number | null;
-  attempts: Pick<CertSimuladoAttempt, 'id' | 'score' | 'startedAt' | 'finishedAt'>[];
-  createdAt: string;
-}
-
-export interface CertSimulado {
-  id: number;
-  name: string | null;
-  certKey: string;
-  certLabel: string;
-  topics: CertSimuladoTopicConfig[];
-  questions: CertSimuladoQuestion[];
-}
-
-export interface CreateCertSimuladoPayload {
-  certKey: string;
-  name?: string;
-  topics: CertSimuladoTopicConfig[];
-}
-
-export interface CertFinishAttemptPayload {
-  answers: CertSimuladoAttemptAnswer[];
-}
-
-export interface CertSimuladoResult {
-  attempt: CertSimuladoAttempt;
-  simulado: Pick<CertSimulado, 'id' | 'name' | 'certKey' | 'certLabel'>;
-  questions: CertSimuladoQuestion[];
-  topicBreakdown: { topicName: string; correct: number; total: number }[];
 }
 
 export interface UnifiedQuestion {

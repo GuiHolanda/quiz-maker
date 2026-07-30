@@ -8,7 +8,7 @@ import {
   AI_CHAT_INACTIVITY_TIMEOUT_MS,
   AI_CHAT_LOCAL_STORAGE_KEY,
 } from '@/config/constants';
-import { ChatMessage, Certification } from '@/shared/types';
+import { ChatMessage, Exam, ExamSection } from '@/shared/types';
 
 interface UseAiChatReturn {
   readonly messages: ChatMessage[];
@@ -28,7 +28,7 @@ interface UseAiChatReturn {
 interface ParsedCertResponse {
   context: string;
   sources: string[];
-  certificationData: Certification;
+  examDraft: Exam;
 }
 
 function parseCertificationData(text: string): ParsedCertResponse | null {
@@ -50,15 +50,30 @@ function parseCertificationData(text: string): ParsedCertResponse | null {
     )
       return null;
 
+    const sections: ExamSection[] = cert.topics.map((topic: Record<string, unknown>) => ({
+      name: topic.name as string,
+      minQuestions: topic.minQuestions as number,
+      maxQuestions: topic.maxQuestions as number,
+      topics: [],
+    }));
+
+    const examDraft: Exam = {
+      type: 'certification',
+      name: cert.label,
+      role: null,
+      year: typeof cert.year === 'number' ? cert.year : null,
+      totalQuestions: typeof cert.totalQuestions === 'number' ? cert.totalQuestions : 0,
+      examDurationMinutes: typeof cert.examDurationMinutes === 'number' ? cert.examDurationMinutes : null,
+      passingScore: typeof cert.passingScore === 'number' ? cert.passingScore : null,
+      provider: cert.provider ? { name: String(cert.provider) } : null,
+      examBoard: null,
+      sections,
+    };
+
     return {
       context: typeof parsed.context === 'string' ? parsed.context : '',
       sources: Array.isArray(parsed.sources) ? parsed.sources : [],
-      certificationData: {
-        ...cert,
-        totalQuestions: typeof cert.totalQuestions === 'number' ? cert.totalQuestions : 0,
-        examDurationMinutes: typeof cert.examDurationMinutes === 'number' ? cert.examDurationMinutes : undefined,
-        passingScore: typeof cert.passingScore === 'number' ? cert.passingScore : undefined,
-      } as Certification,
+      examDraft,
     };
   } catch {
     return null;
@@ -318,7 +333,7 @@ export function useAiChat(userId: string): UseAiChatReturn {
         ? {
             role: 'assistant',
             content: parsed.context,
-            certificationData: parsed.certificationData,
+            examDraft: parsed.examDraft,
             sources: parsed.sources,
           }
         : { role: 'assistant', content: cleanContent };

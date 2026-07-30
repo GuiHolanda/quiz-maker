@@ -1,5 +1,5 @@
 'use client';
-import type { CertificationTopic } from '@/shared/types';
+import type { ExamSection } from '@/shared/types';
 
 import { faCircleInfo, faLayerGroup, faRocket } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -12,23 +12,33 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface Step3ReviewProps {
-  readonly title: string;
-  readonly code: string;
+  readonly name: string;
   readonly provider: string;
   readonly totalQuestions: number;
   readonly examDurationMinutes?: number;
   readonly passingScore?: number;
-  readonly topics: CertificationTopic[];
+  readonly sections: ExamSection[];
   readonly isLoading: boolean;
   readonly onBack: () => void;
   readonly onSave: () => void;
   readonly onDiscard: () => void;
 }
 
-export function Step3Review({ title, code, provider, totalQuestions, examDurationMinutes, passingScore, topics, isLoading, onBack, onSave, onDiscard }: Step3ReviewProps) {
+export function Step3Review({
+  name,
+  provider,
+  totalQuestions,
+  examDurationMinutes,
+  passingScore,
+  sections,
+  isLoading,
+  onBack,
+  onSave,
+  onDiscard,
+}: Step3ReviewProps) {
   const { t } = useTranslation();
-  const hasDraft = !!(title || code || provider || topics.length > 0);
-  const visibleTopics = topics.filter((topic) => topic.name && topic.maxQuestions);
+  const hasDraft = !!(name || provider || sections.length > 0);
+  const visibleSections = sections.filter((section) => section.name && section.maxQuestions);
 
   return (
     <div className="flex flex-col gap-6">
@@ -43,17 +53,11 @@ export function Step3Review({ title, code, provider, totalQuestions, examDuratio
           <div className="flex flex-col gap-6 p-6">
             <div className="flex flex-col gap-1">
               <p className="text-xs font-medium text-default-400">{t('certification.certNameLabel')}</p>
-              <p className="text-base font-semibold text-foreground">{title || '—'}</p>
+              <p className="text-base font-semibold text-foreground">{name || '—'}</p>
             </div>
             <div className="flex flex-col gap-2">
-              <p className="text-xs font-medium text-default-400">{t('certification.providerLabel')}</p>
+              <p className="text-xs font-medium text-default-400">{t('exam.providerLabel')}</p>
               <p className="text-base text-foreground">{provider || '—'}</p>
-            </div>
-            <div className="flex flex-col gap-2">
-              <p className="text-xs font-medium text-default-400">{t('certification.examCodeLabel')}</p>
-              <span className="inline-flex w-fit bg-content2 border border-default-200 rounded px-3 py-1 font-mono text-primary text-sm">
-                {code || '—'}
-              </span>
             </div>
             <div className="flex flex-col gap-2">
               <p className="text-xs font-medium text-default-400">{t('certification.totalQuestions')}</p>
@@ -62,7 +66,9 @@ export function Step3Review({ title, code, provider, totalQuestions, examDuratio
             {examDurationMinutes && (
               <div className="flex flex-col gap-2">
                 <p className="text-xs font-medium text-default-400">{t('certification.examDuration')}</p>
-                <p className="text-base text-foreground">{examDurationMinutes} {t('certification.examDurationUnit')}</p>
+                <p className="text-base text-foreground">
+                  {examDurationMinutes} {t('certification.examDurationUnit')}
+                </p>
               </div>
             )}
             {passingScore !== undefined && (
@@ -82,29 +88,29 @@ export function Step3Review({ title, code, provider, totalQuestions, examDuratio
             </div>
             <span className="text-xs font-medium text-default-400">
               {t('certification.domainsCount', {
-                count: String(visibleTopics.length),
+                count: String(visibleSections.length),
               })}
             </span>
           </div>
           <div className="flex flex-col p-6 gap-6">
-            {visibleTopics.length === 0 && (
+            {visibleSections.length === 0 && (
               <p className="text-sm text-default-400 text-center py-4">{t('certification.noTopics')}</p>
             )}
-            {visibleTopics.map((topic, index) => (
+            {visibleSections.map((section, index) => (
               <motion.div
-                key={topic.name + index}
+                key={section.name + index}
                 animate={{ opacity: 1, x: 0 }}
                 className="flex flex-col gap-2"
                 initial={{ opacity: 0, x: -12 }}
                 transition={{ delay: index * 0.06, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               >
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-foreground">{topic.name}</p>
-                  <p className="text-sm font-bold font-mono text-primary">{topic.maxQuestions}%</p>
+                  <p className="text-sm font-medium text-foreground">{section.name}</p>
+                  <p className="text-sm font-bold font-mono text-primary">{section.maxQuestions}%</p>
                 </div>
                 <div className="w-full h-2 bg-content2 rounded-full overflow-hidden">
                   <motion.div
-                    animate={{ width: `${topic.minQuestions}%` }}
+                    animate={{ width: `${section.minQuestions}%` }}
                     className="h-full bg-primary rounded-full"
                     initial={{ width: '0%' }}
                     transition={{ delay: index * 0.06 + 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
@@ -122,13 +128,19 @@ export function Step3Review({ title, code, provider, totalQuestions, examDuratio
 
       <div className="flex items-center justify-between gap-4 pt-6 border-t border-default-200">
         {hasDraft && (
-          <Button data-testid="wizard-discard-btn" className={buttonStyles.dangerFlat} isDisabled={isLoading} onPress={onDiscard}>
+          <Button
+            data-testid="wizard-discard-btn"
+            className={buttonStyles.dangerFlat}
+            isDisabled={isLoading}
+            onPress={onDiscard}
+          >
             {t('certification.discardDraft')}
           </Button>
         )}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <p className="text-xs text-default-400 text-center sm:text-left">{t('certification.readyToDeploy')}</p>
           <Button
+            data-testid="exam-save-btn"
             className={buttonStyles.primary}
             endContent={!isLoading ? <FontAwesomeIcon className="text-xs" icon={faRocket} /> : undefined}
             isDisabled={isLoading}

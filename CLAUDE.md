@@ -76,9 +76,9 @@ The Axios instance uses `baseURL: '/api'` (relative URL). **Never import it in s
 | Components | PascalCase `.tsx` | `QuestionCard.tsx` |
 | Custom hooks | camelCase `.hook.ts` | `useRequest.hook.ts` |
 | Providers | camelCase `.provider.tsx` | `certifications.provider.tsx` |
-| Reducers | camelCase `.reducer.ts` | `certifications.reducer.ts` |
-| Services | PascalCase `.service.ts` | `certification.service.ts` |
-| API routes | kebab-case folder + `route.ts` | `save-certification/route.ts` |
+| Reducers | camelCase `.reducer.ts` | `exams.reducer.ts` |
+| Services | PascalCase `.service.ts` | `exam.service.ts` |
+| API routes | kebab-case folder + `route.ts` | `save-exam/route.ts` |
 | Pages | kebab-case folder + `page.tsx` | `configure-certification/page.tsx` |
 | Branches | `feature/<kebab-case>` | `feature/separate-questions` |
 
@@ -192,7 +192,7 @@ Note: `setIsBusy(false)` goes in the `catch` only — on success the user naviga
 
 ### State Management
 - Context + Reducer pattern everywhere
-- One provider per domain: `CertificationsProvider`, `QuizProvider`
+- One provider per domain: `ExamsProvider`, `QuizProvider`
 - Providers are composed in `app/layout.tsx`
 - UI-only state (selected item, active tab) → localStorage
 - Domain data (certifications list, questions) → database (source of truth)
@@ -269,6 +269,8 @@ const response = await openAIService.call(myFeaturePrompt, { param: 'value' });
 **AI chat** is the only exception — `AiChatService` uses streaming and manages its own `responses.create()` call. Its prompt strings live in `config/prompts/ai-chat-*.prompt.ts` but are not `PromptDefinition` instances.
 
 **Discovery:** `config/prompts/index.ts` re-exports all `PromptDefinition` prompts and their input types.
+
+**Dispatch by exam type:** the two prompt families stay separate (structural divergence: exam-board style, PT-BR framing) but are dispatched through a single `EXAM_PROMPTS: Record<ExamType, { research, review, format, answers, explanations }>` table in `config/prompts/index.ts`. `generation-job.service.ts` and the exam routes index into `EXAM_PROMPTS[type]` and pass the type-specific input (`provider.name` for cert, `examBoard.name` for concurso).
 
 | File | Prompt | Domain |
 |---|---|---|
@@ -444,14 +446,13 @@ import bcrypt from 'bcryptjs';
 
 | Arquivo de teste | O que cobre |
 |---|---|
-| `services/certification.service.test.ts` | CRUD de certificações e tópicos; propagação de `updatedAt` ao pai em add/update/deleteTopic |
-| `services/public-exam.service.test.ts` | CRUD de concursos, assuntos e tópicos; propagação de `updatedAt` ao pai em add/update/delete de subjects e topics |
-| `services/quota.service.test.ts` | Verificação e registro de quota |
-| `services/quiz-generator.service.test.ts` | Distribuição de questões por tópico |
+| `services/exam.service.test.ts` | CRUD de Exam/Section/Topic (ambos os tipos); propagação de `updatedAt` ao pai e reescrita de snapshots em rename de section |
+| `services/exam-question.service.test.ts` | `saveAnswers` (upsert idempotente) e `saveExplanations` |
+| `services/quota.service.test.ts` | Verificação e registro de quota; `create_exam` contra `maxExams`; `getUsage` dual (examsUsed + split por tipo) |
+| `services/quiz-generator.service.test.ts` | Distribuição de questões por seção |
 | `services/register.service.test.ts` | Registro de usuário |
 | `services/reset-password.service.test.ts` | Reset de senha |
-| `services/mock-exam.service.test.ts` | Simulados de concurso |
-| `services/certification-simulados.service.test.ts` | Simulados de certificação |
+| `services/mock-exam.service.test.ts` | Simulados unificados (cert + concurso) — disponibilidade, score, breakdown por seção, ensureAnswers |
 | `api-error.test.ts` | `toApiErrorResponse` — todos os ramos: erros de negócio, `PrismaClientValidationError`, `PrismaClientKnownRequestError` (P2002 e outros), `Error` genérico, non-`Error` |
 
 ---
@@ -604,15 +605,15 @@ type UserPlan = 'free' | 'pro' | 'pro_ai' | 'tester' | 'admin';
 
 ### Plan limits (`config/constants/index.ts` → `PLAN_LIMITS`)
 
-| Plan | Questions/period | Certifications | Public exams | AI Chat | Admin panel |
-|---|---|---|---|---|---|
-| `free` | 250 | 2 | 0 | ✗ | ✗ |
-| `pro` | 1500 | 5 | 2 | ✗ | ✗ |
-| `pro_ai` | 2500 | 5 | 5 | ✓ | ✗ |
-| `tester` | ∞ | ∞ | ∞ | ✓ | ✗ |
-| `admin` | ∞ | ∞ | ∞ | ✓ | ✓ |
+| Plan | Questions/period | Exams (cert + concurso) | AI Chat | Admin panel |
+|---|---|---|---|---|
+| `free` | 250 | 2 | ✗ | ✗ |
+| `pro` | 1500 | 5 | ✗ | ✗ |
+| `pro_ai` | 2500 | 5 | ✓ | ✗ |
+| `tester` | ∞ | ∞ | ✓ | ✗ |
+| `admin` | ∞ | ∞ | ✓ | ✓ |
 
-`tester` and `admin` are assigned manually (no Stripe product). `pro_ai` is a Stripe add-on differentiated by price ID (`STRIPE_PRICE_ID_PRO_AI_MONTHLY/YEARLY`).
+There is a **single `maxExams` counter** shared across both exam types — a `free` user can create any mix of certifications and concursos up to 2. `tester` and `admin` are assigned manually (no Stripe product). `pro_ai` is a Stripe add-on differentiated by price ID (`STRIPE_PRICE_ID_PRO_AI_MONTHLY/YEARLY`).
 
 ### Plan prices (`config/constants/index.ts` → `PLAN_PRICES_BRL_MONTHLY`)
 
@@ -636,10 +637,10 @@ Logic is in `features/services/quota.service.ts` → `resolveQuestionsLimit()`.
 ### `QuotaAction` type
 
 ```ts
-type QuotaAction = 'generate_questions' | 'create_certification' | 'create_public_exam';
+type QuotaAction = 'generate_questions' | 'create_exam';
 ```
 
-`quota.service.ts` enforces all three. `create_public_exam` uses `maxPublicExams` from `PLAN_LIMITS`. Free users have `maxPublicExams: 0` — they cannot create any concurso.
+`quota.service.ts` enforces both. `create_exam` counts all `Exam` rows for the user (any `type`) against `maxExams`.
 
 ### `UsageStats` shape
 
@@ -648,16 +649,16 @@ interface UsageStats {
   plan: UserPlan;
   questionsUsed: number;           // questões geradas no período atual (reseta a cada 30 dias)
   questionsLimit: number;          // -1 means unlimited
-  questionsSavedInLibrary: number; // questões salvas pelo user (count de Question + PublicExamQuestion)
-  certificationsUsed: number;
-  certificationsLimit: number;     // -1 means unlimited
-  publicExamsUsed: number;
-  publicExamsLimit: number;        // -1 means unlimited, 0 means no access
+  questionsSavedInLibrary: number; // questões salvas (count de ExamQuestion)
+  examsUsed: number;               // enforcement: total across both types
+  examsLimit: number;              // -1 means unlimited
+  certificationsUsed: number;      // display only
+  publicExamsUsed: number;         // display only
   periodStartDate: string;
 }
 ```
 
-`-1` is the "unlimited" sentinel throughout the UI. The `UsageBadge` hides itself when `questionsLimit === -1`.
+Enforcement uses the single `examsUsed`/`examsLimit`; `certificationsUsed`/`publicExamsUsed` are display-only counts shown split by type in the sidebar/admin. `-1` is the "unlimited" sentinel throughout the UI. The `UsageBadge` hides itself when `questionsLimit === -1`.
 
 `questionsUsed` e `questionsSavedInLibrary` medem coisas diferentes: o primeiro rastreia **chamadas à LLM** (para controle de quota e custo); o segundo conta **questões que o usuário efetivamente salvou na biblioteca**. A sidebar exibe ambos lado a lado para transparência.
 
@@ -752,12 +753,12 @@ Features that require specific plans are hidden at the UI layer as well as enfor
 
 | Feature | Plans | Where gated |
 |---|---|---|
-| Concursos section in sidebar | `pro`, `pro_ai`, `tester`, `admin` | `sidebar.tsx` — hidden when `usage.publicExamsLimit === 0` |
 | AI Chat FAB + Drawer | `pro_ai`, `tester`, `admin` | `AiChatWrapper.tsx` — hidden unless `session.user.plan` is in allowed list |
 | Admin link in sidebar | `admin` | `sidebar.tsx` — hidden unless `session.user.plan === 'admin'` |
 | Usage badge (header) | plans with finite limit | `UsageBadge.tsx` inside `WorkspaceHeader` — hidden when `questionsLimit === -1` |
 | Upgrade CTA (user dropdown) | `free` | `workspace-header.tsx` — shown only when `usage.plan === 'free'` |
-| Public exams counter (sidebar) | `pro`, `pro_ai`, `tester`, `admin` | `sidebar.tsx` — hidden when `publicExamsLimit === 0` |
+
+The Concursos section is now visible to **all plans** — the single `maxExams` quota lets free users create both certifications and concursos, so the old `publicExamsLimit === 0` gate was removed.
 
 ---
 
@@ -808,13 +809,11 @@ npm run db:seed:dev           # Seed dev database with sample certifications + q
 npm run db:clear:dev          # Wipe dev database
 ```
 
-### Topic / subject percentage unit
+### Section percentage unit
 
-`CertificationTopic.minQuestions` / `maxQuestions` and `PublicExamSubject.minQuestions` / `maxQuestions` are **integers 0–100** (e.g. `25` means 25%). This is the canonical unit across the entire stack: AI chat prompts, draft modal, manual wizard, SectionsTable sliders/inputs, API routes, and the database all use integer 0–100. **Do not multiply or divide by 100 when reading or writing these fields.**
+`ExamSection.minQuestions` / `maxQuestions` are **integers 0–100** (e.g. `25` means 25%). This is the canonical unit across the entire stack: AI chat prompts, draft modal, manual wizard, `ExamSectionsTable` sliders/inputs, API routes, and the database all use integer 0–100. **Do not multiply or divide by 100 when reading or writing these fields.**
 
-The only exception is `QuizGeneratorService.distributeQuestions` in [features/services/quiz-generator.service.ts](features/services/quiz-generator.service.ts), which converts to a fraction internally to multiply by `total` (`Math.floor((t.minQuestions / 100) * total)`).
-
-A historical mixed-unit window (fractional rows from old AI chat saves) was normalized via `scripts/normalize-topic-units.ts` — re-run with `--apply` if a fresh DB import brings in old fractional data.
+The only exception is `QuizGeneratorService.distributeQuestions` in [features/services/quiz-generator.service.ts](features/services/quiz-generator.service.ts), which converts to a fraction internally to multiply by `total` (`Math.floor((section.minQuestions / 100) * total)`).
 
 ---
 
@@ -835,7 +834,7 @@ Modo que gera questões para **todos os tópicos/matérias de uma vez** em um jo
 
 ```prisma
 model FullExamJob {
-  id, userId, type ("certification"|"public_exam"), refKey, refName,
+  id, userId, type ("certification"|"public_exam"), refKey (= Exam.id), refName,
   examBoardName?, status ("running"|"done"|"error"),
   totalTopics, doneTopics, savedCount, topics FullExamJobTopic[]
 }
@@ -882,7 +881,9 @@ Before starting any non-trivial task (new feature, refactor, bug fix), ask the u
 git checkout -b feature/<kebab-case-description>
 ```
 
-Do **not** commit directly to `main` or the current branch unless the user explicitly says so.
+Do **not** commit directly to `main` under any circumstances. Never push to `main` directly. All work must go through a feature or fix branch and be merged via PR or explicit user instruction.
+
+Do **not** commit directly to the current working branch unless it is already a feature or fix branch (not `main`).
 
 ### Commits
 

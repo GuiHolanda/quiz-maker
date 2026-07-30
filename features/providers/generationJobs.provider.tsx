@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 
-import type { AIQuestion, AIPublicExamQuestion, GenerationJobStatus, GenerationJobTopicStatus } from '@/shared/types';
+import type { AIExamQuestion, GenerationJobStatus, GenerationJobTopicStatus } from '@/shared/types';
 import {
   createGenerationJob,
   getActiveGenerationJobs,
@@ -48,7 +48,7 @@ interface GenerationJobsContextValue {
   readonly startJob: (input: StartJobInput) => Promise<void>;
   readonly cancelJob: (jobId: string) => Promise<void>;
   readonly saveAllJob: (jobId: string) => Promise<void>;
-  readonly getJobPendingQuestions: (jobId: string) => Promise<Array<AIQuestion | AIPublicExamQuestion>>;
+  readonly getJobPendingQuestions: (jobId: string) => Promise<Array<AIExamQuestion>>;
 }
 
 export const GenerationJobsContext = createContext<GenerationJobsContextValue>({
@@ -86,11 +86,7 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
       try {
         localStorage.setItem(
           SIMULADO_NEW_PREFILL_KEY,
-          JSON.stringify(
-            job.type === 'certification'
-              ? { type: 'certification', certKey: job.refKey, totalQuestions: job.prefill.totalQuestions }
-              : { type: 'public_exam', examId: job.refKey, totalQuestions: job.prefill.totalQuestions }
-          )
+          JSON.stringify({ type: job.type, examId: job.refKey, totalQuestions: job.prefill.totalQuestions })
         );
       } catch {}
       addNotification({
@@ -257,7 +253,7 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
       .flatMap((topic) => {
         const withJson = topic as GenerationJobTopicStatus & { pendingQuestionsJson?: string };
         return withJson.pendingQuestionsJson
-          ? (JSON.parse(withJson.pendingQuestionsJson) as Array<AIQuestion | AIPublicExamQuestion>)
+          ? (JSON.parse(withJson.pendingQuestionsJson) as Array<AIExamQuestion>)
           : [];
       });
     // Cada tópico numera suas questões a partir de 1 — reindexa para IDs únicos na lista unificada.

@@ -16,28 +16,24 @@ import { GeneratedQuestionsList } from './GeneratedQuestionsList';
 
 import useQuizContext from '@/features/hooks/useQuizContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { useGenerationJobsContext } from '@/features/hooks/useGenerationJobsContext.hook';
 import type { TrackedJob } from '@/features/providers/generationJobs.provider';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
-import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
 import { InlineAlert } from '@/shared/components/ui/InlineAlert';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { notify } from '@/shared/lib/notify';
-import type { AIQuestion, AIPublicExamQuestion } from '@/shared/types';
+import type { AIQuestion } from '@/shared/types';
 
 type QuestionsType = 'certification' | 'public_exam';
 
 export function QuestionsPageContent() {
   const { t } = useTranslation();
-  const { usage } = useUsageContext();
   const { state, setAIquestions, setSelectedAIquestions } = useQuizContext();
   const { jobs, cancelJob, saveAllJob, getJobPendingQuestions } = useGenerationJobsContext();
   const searchParams = useSearchParams();
 
   const initialType = (searchParams.get('type') as QuestionsType) ?? 'certification';
   const [selectedType, setSelectedType] = useState<QuestionsType>(initialType);
-  const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const [showSimuladosBanner, setShowSimuladosBanner] = useState(false);
   const [reviewJob, setReviewJob] = useState<TrackedJob | null>(null);
@@ -73,14 +69,13 @@ export function QuestionsPageContent() {
 
   const aiQuestions = state?.aiQuestions ?? [];
   const selectedIds = state?.selectedAIQuestions ?? [];
-  const hasConcursoAccess = !usage || usage.publicExamsLimit !== 0;
 
   // Carrega as questões pendentes na lista de revisão, sem salvar ainda.
   async function handleReviewAndSelect(jobId: string) {
     const job = jobs.find((j) => j.jobId === jobId) ?? null;
     try {
       const pending = await getJobPendingQuestions(jobId);
-      setAIquestions(pending as AIQuestion[], null);
+      setAIquestions(pending as unknown as AIQuestion[], null);
       setReviewJob(job);
       scrollToRef(reviewSectionRef);
     } catch {
@@ -137,8 +132,6 @@ export function QuestionsPageContent() {
         <div ref={statusSectionRef}>{renderActiveJobs()}</div>
         <GenerationHistory refreshKey={historyRefreshKey} />
       </div>
-
-      <UpgradeModal isOpen={isUpgradeOpen} onClose={() => setIsUpgradeOpen(false)} />
     </PageHeader>
   );
 
@@ -208,10 +201,10 @@ export function QuestionsPageContent() {
 
   function renderReviewHeader() {
     // O reviewJob (snapshot em memória) pode se perder num reload, mas as questões persistem
-    // no localStorage com o nome/tipo embutidos — então derivamos deles como fonte confiável.
-    const first = aiQuestions[0] as (AIQuestion & AIPublicExamQuestion) | undefined;
-    const isPublicExam = reviewJob?.type === 'public_exam' || Boolean(first?.publicExamName);
-    const refName = reviewJob?.refName ?? first?.publicExamName ?? first?.certificationTitle ?? '';
+    // no localStorage com o nome embutido — então derivamos dele como fallback confiável.
+    const first = aiQuestions[0];
+    const isPublicExam = reviewJob?.type === 'public_exam';
+    const refName = reviewJob?.refName ?? first?.certificationTitle ?? '';
     const icon = isPublicExam ? faClipboardList : faGraduationCap;
 
     return (
@@ -233,15 +226,6 @@ export function QuestionsPageContent() {
 
   function renderTypeOption(value: QuestionsType, title: string, description: string, icon: IconDefinition) {
     const isSelected = selectedType === value;
-    const isConcursoLocked = value === 'public_exam' && !hasConcursoAccess;
-
-    function handleClick() {
-      if (isConcursoLocked) {
-        setIsUpgradeOpen(true);
-      } else {
-        setSelectedType(value);
-      }
-    }
 
     return (
       <button
@@ -253,7 +237,7 @@ export function QuestionsPageContent() {
             : 'border-default-200 bg-content1 hover:bg-content2 hover:border-default-300'
         }`}
         type="button"
-        onClick={handleClick}
+        onClick={() => setSelectedType(value)}
       >
         <span className={`mt-0.5 shrink-0 ${isSelected ? 'text-primary' : 'text-default-400'}`}>
           <FontAwesomeIcon className="w-4 h-4" icon={icon} />
@@ -263,11 +247,6 @@ export function QuestionsPageContent() {
             className={`text-sm font-semibold leading-snug flex items-center gap-2 ${isSelected ? 'text-primary' : 'text-foreground'}`}
           >
             {title}
-            {isConcursoLocked && (
-              <Chip color="primary" size="sm" variant="flat">
-                Pro
-              </Chip>
-            )}
           </span>
           <span className="text-xs text-default-500 leading-snug">{description}</span>
         </span>
