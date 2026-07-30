@@ -58,11 +58,7 @@ export function DraftModalShell({
               color="danger"
               description={t('chat.errorGenericDescription')}
               endContent={
-                <Button
-                  className={`${buttonStyles.dangerFlat} text-xs h-7 px-3 shrink-0`}
-                  size="sm"
-                  onPress={onRetry}
-                >
+                <Button className={`${buttonStyles.dangerFlat} text-xs h-7 px-3 shrink-0`} size="sm" onPress={onRetry}>
                   {t('common.retry')}
                 </Button>
               }

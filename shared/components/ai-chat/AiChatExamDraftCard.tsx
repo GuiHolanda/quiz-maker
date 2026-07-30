@@ -19,9 +19,7 @@ export function AiChatExamDraftCard({ publicExam, onExamSaved }: AiChatExamDraft
   const isSaved = savedDraft !== null;
   const displayExam = savedDraft ?? publicExam;
 
-  const meta = [displayExam.examBoard.name, displayExam.role, displayExam.year?.toString()]
-    .filter(Boolean)
-    .join(' · ');
+  const meta = [displayExam.examBoard.name, displayExam.role, displayExam.year?.toString()].filter(Boolean).join(' · ');
   const count = `${displayExam.subjects.length} ${t('chat.subjects')}`;
 
   return (
@@ -37,7 +35,7 @@ export function AiChatExamDraftCard({ publicExam, onExamSaved }: AiChatExamDraft
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onSaved={(draft) => {
-            setSavedDraft(draft);
+            setSavedDraft(draft as PublicExam);
             setIsModalOpen(false);
             onExamSaved?.();
           }}

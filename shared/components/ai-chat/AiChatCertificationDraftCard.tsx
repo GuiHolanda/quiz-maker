@@ -38,7 +38,7 @@ export function AiChatCertificationDraftCard({
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onSaved={(draft) => {
-            setSavedDraft(draft);
+            setSavedDraft(draft as Certification);
             setIsModalOpen(false);
             onCertificationSaved?.();
           }}
