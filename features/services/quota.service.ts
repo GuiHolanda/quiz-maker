@@ -59,35 +59,16 @@ export class QuotaService {
       }
     }
 
-    if (action === 'create_certification') {
-      const certCount = await prisma.certification.count({ where: { userId } });
-      const limit = limits.maxCertifications;
-
-      if (limit !== Infinity && certCount >= limit) {
-        const err = Object.assign(new Error(`Certification limit reached (${limit})`), {
-          status: 403,
-          body: {
-            error: 'quota_exceeded',
-            message: `Certification limit reached (${limit})`,
-            limit,
-            used: certCount,
-            plan,
-          },
-        });
-        throw err;
-      }
-    }
-
-    if (action === 'create_public_exam') {
-      const examCount = await prisma.publicExam.count({ where: { userId } });
-      const limit = limits.maxPublicExams;
+    if (action === 'create_exam') {
+      const examCount = await prisma.exam.count({ where: { userId } });
+      const limit = limits.maxExams;
 
       if (limit !== Infinity && examCount >= limit) {
-        const err = Object.assign(new Error(`Public exam limit reached (${limit})`), {
+        const err = Object.assign(new Error(`Exam limit reached (${limit})`), {
           status: 403,
           body: {
             error: 'quota_exceeded',
-            message: `Public exam limit reached (${limit})`,
+            message: `Exam limit reached (${limit})`,
             limit,
             used: examCount,
             plan,
@@ -186,23 +167,23 @@ export class QuotaService {
     const user = await this.getUserWithPeriodReset(userId);
     const plan = this.resolvePlan(user.plan);
     const limits = PLAN_LIMITS[plan];
-    const [certCount, examCount, savedCert, savedExam] = await Promise.all([
-      prisma.certification.count({ where: { userId } }),
-      prisma.publicExam.count({ where: { userId } }),
-      prisma.question.count({ where: { userId } }),
-      prisma.publicExamQuestion.count({ where: { userId } }),
+    const [certCount, examConcursoCount, savedQuestions] = await Promise.all([
+      prisma.exam.count({ where: { userId, type: 'certification' } }),
+      prisma.exam.count({ where: { userId, type: 'public_exam' } }),
+      prisma.examQuestion.count({ where: { userId } }),
     ]);
+    const examsUsed = certCount + examConcursoCount;
     const questionsLimit = this.resolveQuestionsLimit(user);
 
     return {
       plan,
       questionsUsed: user.questionsGeneratedThisPeriod,
       questionsLimit: questionsLimit === Infinity ? -1 : questionsLimit,
-      questionsSavedInLibrary: savedCert + savedExam,
+      questionsSavedInLibrary: savedQuestions,
+      examsUsed,
+      examsLimit: limits.maxExams === Infinity ? -1 : limits.maxExams,
       certificationsUsed: certCount,
-      certificationsLimit: limits.maxCertifications === Infinity ? -1 : limits.maxCertifications,
-      publicExamsUsed: examCount,
-      publicExamsLimit: limits.maxPublicExams === Infinity ? -1 : limits.maxPublicExams,
+      publicExamsUsed: examConcursoCount,
       periodStartDate: user.periodStartDate.toISOString(),
     };
   }
