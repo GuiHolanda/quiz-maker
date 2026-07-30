@@ -40,133 +40,62 @@ export class QuestionBankService {
     const { userId, type = 'all', search, source, topic, difficulty, hasAnswer, hasExplanation, page, pageSize } = params;
     const skip = (page - 1) * pageSize;
 
-    const certResults = type === 'all' || type === 'certification'
-      ? await this.fetchCertificationQuestions({ userId, search, source, topic, difficulty, hasAnswer, hasExplanation })
-      : [];
+    const where: Record<string, unknown> = { userId };
+    if (search) where['text'] = { contains: search };
+    if (source && source.length > 0) where['examName'] = { in: source };
+    if (topic && topic.length > 0) where['sectionName'] = { in: topic };
+    if (difficulty && difficulty.length > 0) where['difficulty'] = { in: difficulty };
+    if (hasAnswer === true) where['answer'] = { isNot: null };
+    if (hasAnswer === false) where['answer'] = { is: null };
+    if (type !== 'all') where['exam'] = { type };
 
-    const examResults = type === 'all' || type === 'public_exam'
-      ? await this.fetchPublicExamQuestions({ userId, search, source, topic, difficulty, hasAnswer, hasExplanation })
-      : [];
+    const rows = await prisma.examQuestion.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: { options: true, answer: { include: { explanations: true } }, exam: { select: { type: true } } },
+    });
 
-    const combined = [...certResults, ...examResults].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
+    const filtered = hasExplanation !== undefined
+      ? rows.filter((q) => {
+          const exCount = q.answer?.explanations?.length ?? 0;
+          return hasExplanation ? exCount > 0 : exCount === 0;
+        })
+      : rows;
+
+    const combined: UnifiedQuestion[] = filtered.map((q) => {
+      const examType = (q.exam?.type as 'certification' | 'public_exam') ?? 'certification';
+      const topicLabel =
+        examType === 'public_exam'
+          ? q.sectionName + (q.topicName ? ` · ${q.topicName}` : '')
+          : q.sectionName;
+
+      return {
+        id: q.id,
+        type: examType,
+        text: q.text,
+        difficulty: q.difficulty,
+        topic: topicLabel,
+        sourceLabel: q.examName,
+        options: q.options.reduce((acc: Record<string, string>, o) => {
+          acc[o.label] = o.text;
+          return acc;
+        }, {}),
+        answer: q.answer
+          ? {
+              correctOptions: q.answer.correctOptions as string[],
+              explanations: (q.answer.explanations ?? []).reduce((a: Record<string, string>, ex) => {
+                a[ex.label] = ex.text;
+                return a;
+              }, {}),
+            }
+          : null,
+        createdAt: q.createdAt.toISOString(),
+      };
+    });
 
     const total = combined.length;
     const questions = combined.slice(skip, skip + pageSize);
 
     return { questions, total, page, pageSize };
-  }
-
-  private async fetchCertificationQuestions(filters: {
-    userId: string;
-    search?: string;
-    source?: string[];
-    topic?: string[];
-    difficulty?: string[];
-    hasAnswer?: boolean;
-    hasExplanation?: boolean;
-  }): Promise<UnifiedQuestion[]> {
-    const { userId, search, source, topic, difficulty, hasAnswer, hasExplanation } = filters;
-
-    const where: Record<string, unknown> = { userId };
-    if (search) where['text'] = { contains: search };
-    if (source && source.length > 0) where['certificationTitle'] = { in: source };
-    if (topic && topic.length > 0) where['topic'] = { in: topic };
-    if (difficulty && difficulty.length > 0) where['difficulty'] = { in: difficulty };
-    if (hasAnswer === true) where['answer'] = { isNot: null };
-    if (hasAnswer === false) where['answer'] = { is: null };
-
-    const rows = await prisma.question.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      include: { options: true, answer: { include: { explanations: true } } },
-    });
-
-    const filtered = hasExplanation !== undefined
-      ? rows.filter((q) => {
-          const exCount = q.answer?.explanations?.length ?? 0;
-          return hasExplanation ? exCount > 0 : exCount === 0;
-        })
-      : rows;
-
-    return filtered.map((q) => ({
-      id: q.id,
-      type: 'certification' as const,
-      text: q.text,
-      difficulty: q.difficulty,
-      topic: q.topic,
-      sourceLabel: q.certificationTitle,
-      options: q.options.reduce((acc: Record<string, string>, o) => {
-        acc[o.label] = o.text;
-        return acc;
-      }, {}),
-      answer: q.answer
-        ? {
-            correctOptions: q.answer.correctOptions as string[],
-            explanations: (q.answer.explanations ?? []).reduce((a: Record<string, string>, ex) => {
-              a[ex.label] = ex.text;
-              return a;
-            }, {}),
-          }
-        : null,
-      createdAt: q.createdAt.toISOString(),
-    }));
-  }
-
-  private async fetchPublicExamQuestions(filters: {
-    userId: string;
-    search?: string;
-    source?: string[];
-    topic?: string[];
-    difficulty?: string[];
-    hasAnswer?: boolean;
-    hasExplanation?: boolean;
-  }): Promise<UnifiedQuestion[]> {
-    const { userId, search, source, topic, difficulty, hasAnswer, hasExplanation } = filters;
-
-    const where: Record<string, unknown> = { userId };
-    if (search) where['text'] = { contains: search };
-    if (source && source.length > 0) where['publicExamName'] = { in: source };
-    if (topic && topic.length > 0) where['subject'] = { in: topic };
-    if (difficulty && difficulty.length > 0) where['difficulty'] = { in: difficulty };
-    if (hasAnswer === true) where['answer'] = { isNot: null };
-    if (hasAnswer === false) where['answer'] = { is: null };
-
-    const rows = await prisma.publicExamQuestion.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      include: { options: true, answer: { include: { explanations: true } } },
-    });
-
-    const filtered = hasExplanation !== undefined
-      ? rows.filter((q) => {
-          const exCount = q.answer?.explanations?.length ?? 0;
-          return hasExplanation ? exCount > 0 : exCount === 0;
-        })
-      : rows;
-
-    return filtered.map((q) => ({
-      id: q.id,
-      type: 'public_exam' as const,
-      text: q.text,
-      difficulty: q.difficulty,
-      topic: q.subject + (q.topic ? ` · ${q.topic}` : ''),
-      sourceLabel: q.publicExamName,
-      options: q.options.reduce((acc: Record<string, string>, o) => {
-        acc[o.label] = o.text;
-        return acc;
-      }, {}),
-      answer: q.answer
-        ? {
-            correctOptions: q.answer.correctOptions as string[],
-            explanations: (q.answer.explanations ?? []).reduce((a: Record<string, string>, ex) => {
-              a[ex.label] = ex.text;
-              return a;
-            }, {}),
-          }
-        : null,
-      createdAt: q.createdAt.toISOString(),
-    }));
   }
 }

@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 
-import { PublicExam } from '@/shared/types';
+import { Exam } from '@/shared/types';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
@@ -20,7 +20,7 @@ export class EditalExtractorService {
     }
   }
 
-  async extract(file: File, role?: string): Promise<PublicExam> {
+  async extract(file: File, role?: string): Promise<Exam> {
     const uploadedFile = await this.openai.files.create({
       file,
       purpose: 'user_data',
@@ -116,7 +116,7 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
     }
   }
 
-  private validateExtracted(data: unknown): PublicExam {
+  private validateExtracted(data: unknown): Exam {
     if (!data || typeof data !== 'object') {
       throw Object.assign(new Error('Extracted data is not an object'), { status: 502 });
     }
@@ -138,22 +138,28 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
     }
 
     return {
-      ...(data as PublicExam),
+      type: 'public_exam',
       name: this.normalizeCase(d.name),
-      role: typeof d.role === 'string' ? this.normalizeCase(d.role) : undefined,
+      role: typeof d.role === 'string' ? this.normalizeCase(d.role) : null,
+      year: typeof d.year === 'number' ? d.year : null,
       totalQuestions: typeof d.totalQuestions === 'number' && d.totalQuestions > 0 ? d.totalQuestions : 0,
-      examDurationMinutes: typeof d.examDurationMinutes === 'number' && d.examDurationMinutes > 0 ? d.examDurationMinutes : undefined,
-      passingScore: typeof d.passingScore === 'number' && d.passingScore >= 0 && d.passingScore <= 100 ? d.passingScore : undefined,
-      subjects: (d.subjects as Record<string, unknown>[]).map((s) => ({
-        ...(s as object),
-        name: typeof s.name === 'string' ? this.normalizeCase(this.stripNumbering(s.name)) : s.name,
+      examDurationMinutes: typeof d.examDurationMinutes === 'number' && d.examDurationMinutes > 0 ? d.examDurationMinutes : null,
+      passingScore: typeof d.passingScore === 'number' && d.passingScore >= 0 && d.passingScore <= 100 ? d.passingScore : null,
+      examBoard: {
+        name: board.name as string,
+        fullName: typeof board.fullName === 'string' ? board.fullName : null,
+      },
+      sections: (d.subjects as Record<string, unknown>[]).map((s) => ({
+        name: typeof s.name === 'string' ? this.normalizeCase(this.stripNumbering(s.name)) : String(s.name),
+        minQuestions: typeof s.minQuestions === 'number' ? s.minQuestions : 0,
+        maxQuestions: typeof s.maxQuestions === 'number' ? s.maxQuestions : 0,
         topics: Array.isArray(s.topics)
           ? (s.topics as Record<string, unknown>[]).flatMap((t) => {
-              if (typeof t.name !== 'string') return [t];
-              return this.splitTopics(t.name).map((name) => ({ ...(t as object), name }));
+              if (typeof t.name !== 'string') return [];
+              return this.splitTopics(t.name).map((name) => ({ name }));
             })
-          : s.topics,
-      })) as PublicExam['subjects'],
+          : [],
+      })) as Exam['sections'],
     };
   }
 

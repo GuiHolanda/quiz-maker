@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { QuotaService } from '@/features/services/quota.service';
 import { MetricsService } from '@/features/services/metrics.service';
-import { validateAiQuestions } from '@/features/services/question.service';
+import { validateAiQuestions } from '@/features/services/exam-question.service';
 import { certificationQuestionsResearchPrompt } from '@/config/prompts/certification-questions-research.prompt';
 import { certificationQuestionsReviewPrompt } from '@/config/prompts/certification-questions-review.prompt';
 import { certificationQuestionsFormatPrompt } from '@/config/prompts/certification-questions-format.prompt';
@@ -12,7 +12,7 @@ import { publicExamQuestionsResearchPrompt } from '@/config/prompts/public-exam-
 import { publicExamQuestionsReviewPrompt } from '@/config/prompts/public-exam-questions-review.prompt';
 import { publicExamQuestionsFormatPrompt } from '@/config/prompts/public-exam-questions-format.prompt';
 import { GENERATION_MAX_CONCURRENT_TOPICS, GENERATION_MAX_TOPICS_PER_USER } from '@/config/constants';
-import type { AIQuestion, AIPublicExamQuestion } from '@/shared/types';
+import type { AIExamQuestion } from '@/shared/types';
 
 export function extractJson(raw: string): string {
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -216,7 +216,7 @@ export async function processTopic(topicId: string): Promise<void> {
     });
     logId = recorded.logId;
 
-    let questions: AIQuestion[] | AIPublicExamQuestion[];
+    let questions: AIExamQuestion[];
 
     if (type === 'certification') {
       let t0 = Date.now();
@@ -243,7 +243,7 @@ export async function processTopic(topicId: string): Promise<void> {
       );
       void metricsService.recordStep(logId, 'format', { inputTokens: format.inputTokens, outputTokens: format.outputTokens }, Date.now() - t0);
 
-      questions = validateAiQuestions(JSON.parse(extractJson(format.text))) as AIQuestion[];
+      questions = validateAiQuestions(JSON.parse(extractJson(format.text))) as AIExamQuestion[];
     } else {
       let t0 = Date.now();
       const research = await openAIService.call(
@@ -284,7 +284,7 @@ export async function processTopic(topicId: string): Promise<void> {
       );
       void metricsService.recordStep(logId, 'format', { inputTokens: format.inputTokens, outputTokens: format.outputTokens }, Date.now() - t0);
 
-      questions = validateAiQuestions(JSON.parse(extractJson(format.text))) as AIPublicExamQuestion[];
+      questions = validateAiQuestions(JSON.parse(extractJson(format.text))) as AIExamQuestion[];
     }
 
     await metricsService.finalize(logId, Date.now() - startTime);
