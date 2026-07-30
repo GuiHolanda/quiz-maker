@@ -29,12 +29,12 @@ export async function POST(request: NextRequest) {
 
     editalExtractorService.validateFile(file);
 
-    const publicExam = await editalExtractorService.extract(
+    const exam = await editalExtractorService.extract(
       file,
       typeof role === 'string' && role.trim() ? role.trim() : undefined
     );
 
-    return NextResponse.json({ publicExam }, { status: 200 });
+    return NextResponse.json({ exam }, { status: 200 });
   } catch (err: unknown) {
     console.error('Failed to extract edital:', err);
     const { status, ...body } = toApiErrorResponse(err);

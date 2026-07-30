@@ -3,14 +3,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { OpenAIService } from '@/features/services/openAI.service';
-import { PublicExamQuestionService } from '@/features/services/question.service';
+import { ExamQuestionService } from '@/features/services/exam-question.service';
+import { certificationExplanationsPrompt } from '@/config/prompts/certification-explanations.prompt';
 import { publicExamExplanationsPrompt } from '@/config/prompts/public-exam-explanations.prompt';
 import { toApiErrorResponse } from '@/lib/api-error';
 
 export const maxDuration = 300;
 
 const openAIService = new OpenAIService();
-const questionService = new PublicExamQuestionService();
+const questionService = new ExamQuestionService();
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ questionId: string }> }) {
   const session = await auth();
@@ -21,11 +22,12 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     const { questionId } = await params;
     const id = Number(questionId);
 
-    const question = await prisma.publicExamQuestion.findFirst({
+    const question = await prisma.examQuestion.findFirst({
       where: { id, userId: session.user.id },
       include: {
         options: true,
         answer: { include: { explanations: true } },
+        exam: { include: { examBoard: true } },
       },
     });
 
@@ -38,32 +40,38 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ explanations });
     }
 
-    const publicExam = await prisma.publicExam.findFirst({
-      where: { name: question.publicExamName, userId: session.user.id },
-      select: { role: true },
-    });
-
     const correctOptions = question.answer.correctOptions as string[];
     const options = Object.fromEntries(question.options.map((o) => [o.label, o.text]));
+    const isPublicExam = question.exam?.type === 'public_exam';
 
-    const llmResponse = await openAIService.call(
-      publicExamExplanationsPrompt,
-      {
-        public_exam_name: question.publicExamName,
-        exam_board_name: question.examBoardName,
-        role: publicExam?.role ?? undefined,
-        subject: question.subject,
-        topic: question.topic ?? undefined,
-        question: { text: question.text, options, correctOptions },
-      },
-      { webSearch: false, jsonMode: true }
-    );
+    const llmResponse = isPublicExam
+      ? await openAIService.call(
+          publicExamExplanationsPrompt,
+          {
+            public_exam_name: question.examName,
+            exam_board_name: question.exam?.examBoard?.name ?? '',
+            role: question.exam?.role ?? undefined,
+            subject: question.sectionName,
+            topic: question.topicName ?? undefined,
+            question: { text: question.text, options, correctOptions },
+          },
+          { webSearch: false, jsonMode: true }
+        )
+      : await openAIService.call(
+          certificationExplanationsPrompt,
+          {
+            certification_name: question.examName,
+            topic: question.sectionName,
+            question: { text: question.text, options, correctOptions },
+          },
+          { webSearch: false, jsonMode: true }
+        );
 
     let explanations: Record<string, string>;
     try {
       ({ explanations } = JSON.parse(llmResponse.text) as { explanations: Record<string, string> });
     } catch {
-      console.error('[public-exam/explanation] JSON parse failed. Raw snippet:', llmResponse.text.slice(0, 300));
+      console.error('[exam/explanation] JSON parse failed. Raw snippet:', llmResponse.text.slice(0, 300));
       throw Object.assign(new Error('AI returned malformed JSON — please retry'), { status: 502 });
     }
 

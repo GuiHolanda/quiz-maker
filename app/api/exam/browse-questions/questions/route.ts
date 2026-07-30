@@ -14,26 +14,20 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const certificationTitle = searchParams.get('certificationTitle')?.trim();
-  const topic = searchParams.get('topic')?.trim();
+  const examName = searchParams.get('examName')?.trim();
+  const section = searchParams.get('section')?.trim();
   const page = parseInt(searchParams.get('page') ?? '1', 10);
   const pageSize = parseInt(searchParams.get('pageSize') ?? '10', 10);
 
-  if (!certificationTitle || !topic) {
-    return NextResponse.json({ message: 'certificationTitle and topic are required' }, { status: 400 });
+  if (!examName || !section) {
+    return NextResponse.json({ message: 'examName and section are required' }, { status: 400 });
   }
   if (isNaN(page) || page < 1 || isNaN(pageSize) || pageSize < 1) {
     return NextResponse.json({ message: 'page and pageSize must be positive integers' }, { status: 400 });
   }
 
   try {
-    const result = await service.getQuestions({
-      certificationTitle,
-      topic,
-      page,
-      pageSize,
-      userId: session.user.id,
-    });
+    const result = await service.getQuestions({ examName, section, page, pageSize, userId: session.user.id });
 
     return NextResponse.json(result, { status: 200 });
   } catch (err: unknown) {

@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 
-import { auth } from '@/auth';
-import { BrowseSummaryService } from '@/features/services/browse.service';
+import { ExamService } from '@/features/services/exam.service';
 import { toApiErrorResponse } from '@/lib/api-error';
+import { auth } from '@/auth';
 
-const service = new BrowseSummaryService();
+const examService = new ExamService();
 
 export async function GET() {
   const session = await auth();
@@ -14,11 +14,11 @@ export async function GET() {
   }
 
   try {
-    const summary = await service.getSummary(session.user.id);
+    const exams = await examService.getExams(session.user.id);
 
-    return NextResponse.json(summary, { status: 200 });
+    return NextResponse.json({ exams });
   } catch (err: unknown) {
-    console.error('browse-summary error:', err);
+    console.error('Failed to fetch exams:', err);
     const { status, ...body } = toApiErrorResponse(err);
 
     return NextResponse.json(body, { status });

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { PublicExamQuestionService, validateAiQuestions } from '@/features/services/question.service';
-import { AIPublicExamQuestion } from '@/shared/types';
+import { ExamQuestionService, validateAiQuestions } from '@/features/services/exam-question.service';
+import { AIExamQuestion } from '@/shared/types';
 import { toApiErrorResponse } from '@/lib/api-error';
 import { auth } from '@/auth';
 
-const questionService = new PublicExamQuestionService();
+const questionService = new ExamQuestionService();
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -17,14 +17,11 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null);
     const payload = Array.isArray(body) ? { questions: body } : body;
-    const questions: AIPublicExamQuestion[] = validateAiQuestions(payload) as AIPublicExamQuestion[];
+    const questions: AIExamQuestion[] = validateAiQuestions(payload) as AIExamQuestion[];
 
     await questionService.createFromPayload(questions, session.user.id);
 
-    return NextResponse.json(
-      { message: 'Public exam questions saved successfully', count: questions.length },
-      { status: 200 }
-    );
+    return NextResponse.json({ message: 'Questions saved successfully', count: questions.length }, { status: 200 });
   } catch (err: unknown) {
     console.error('Failed to process request:', err);
     const { status, ...body } = toApiErrorResponse(err);
