@@ -21,7 +21,9 @@ export function UsageProvider({ children }: { readonly children: ReactNode }) {
   const [usage, setUsage] = useState<UsageStats | null>(null);
 
   const refreshUsage = useCallback(() => {
-    getBillingUsage().then(setUsage).catch(() => {});
+    getBillingUsage()
+      .then(setUsage)
+      .catch(() => {});
   }, []);
 
   useEffect(() => {

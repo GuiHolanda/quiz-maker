@@ -37,9 +37,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (
       customQuotaOverride !== undefined &&
       customQuotaOverride !== null &&
-      (typeof customQuotaOverride !== 'number' || (!Number.isInteger(customQuotaOverride)) || (customQuotaOverride < -1))
+      (typeof customQuotaOverride !== 'number' || !Number.isInteger(customQuotaOverride) || customQuotaOverride < -1)
     ) {
-      return NextResponse.json({ error: 'customQuotaOverride must be null, -1, or a positive integer' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'customQuotaOverride must be null, -1, or a positive integer' },
+        { status: 400 }
+      );
     }
 
     const updated = await adminService.updateUser(session.user.id, id, {

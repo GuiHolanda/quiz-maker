@@ -169,7 +169,7 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
 
   function handleSectionChange(sectionName: string, value: string) {
     setDistribution((prev) =>
-      prev.map((entry) => (entry.sectionName === sectionName ? { ...entry, questionCount: Number(value) || 0 } : entry)),
+      prev.map((entry) => (entry.sectionName === sectionName ? { ...entry, questionCount: Number(value) || 0 } : entry))
     );
   }
 
@@ -199,7 +199,10 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
 
     if (saved) {
       addMockExam(saved);
-      notify.success(t('simulado.created'), t('simulado.createdDescription', { name: saved.name ?? selectedExam.name }));
+      notify.success(
+        t('simulado.created'),
+        t('simulado.createdDescription', { name: saved.name ?? selectedExam.name })
+      );
       onCreated();
     }
   }
@@ -309,7 +312,7 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
 
                         localStorage.setItem(
                           EXAMS_LOCAL_STORAGE_KEY,
-                          JSON.stringify({ ...current, selectedExam, selectedSections: [entry.sectionName] }),
+                          JSON.stringify({ ...current, selectedExam, selectedSections: [entry.sectionName] })
                         );
                       } catch {}
                       router.push('/questions');

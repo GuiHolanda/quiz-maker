@@ -117,10 +117,9 @@ export async function POST(request: NextRequest) {
 
     // C5 — per-topic question cap (output would exceed max_output_tokens)
     if (validTopics.some((entry) => entry.questionCount > GENERATION_MAX_QUESTIONS_PER_TOPIC)) {
-      throw Object.assign(
-        new Error(`Maximum ${GENERATION_MAX_QUESTIONS_PER_TOPIC} questions per topic`),
-        { status: 400 }
-      );
+      throw Object.assign(new Error(`Maximum ${GENERATION_MAX_QUESTIONS_PER_TOPIC} questions per topic`), {
+        status: 400,
+      });
     }
 
     // M6 — ownership: the refKey (Exam.id) must belong to the authenticated user

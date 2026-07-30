@@ -47,9 +47,7 @@ export function QuestionBankCard({ question, onDeleteRequest }: QuestionBankCard
       {renderOptions()}
       {renderFooter()}
       {hasExplanations && renderExplanationsToggle()}
-      <AnimatePresence initial={false}>
-        {showExplanations && renderExplanationsPanel()}
-      </AnimatePresence>
+      <AnimatePresence initial={false}>{showExplanations && renderExplanationsPanel()}</AnimatePresence>
     </div>
   );
 
@@ -67,7 +65,9 @@ export function QuestionBankCard({ question, onDeleteRequest }: QuestionBankCard
           </span>
           {question.topic && (
             <>
-              <span aria-hidden="true" className="text-default-300 text-xs shrink-0">·</span>
+              <span aria-hidden="true" className="text-default-300 text-xs shrink-0">
+                ·
+              </span>
               <span className="text-xs text-default-500 truncate">{question.topic}</span>
             </>
           )}
@@ -213,7 +213,9 @@ export function QuestionBankCard({ question, onDeleteRequest }: QuestionBankCard
 
     return (
       <div key={label} className="rounded-lg bg-content2 p-3">
-        <p className={`text-xs font-bold mb-1.5 ${isCorrect ? 'text-success-600 dark:text-success-400' : 'text-default-400'}`}>
+        <p
+          className={`text-xs font-bold mb-1.5 ${isCorrect ? 'text-success-600 dark:text-success-400' : 'text-default-400'}`}
+        >
           {label} — {isCorrect ? t('browse.correct') : t('browse.incorrect')}
         </p>
         <p className="text-sm text-foreground/90 leading-relaxed">{text}</p>

@@ -44,9 +44,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
             ? {
                 questionId: mq.examQuestion.answer.questionId,
                 correctOptions: mq.examQuestion.answer.correctOptions,
-                explanations: Object.fromEntries(
-                  mq.examQuestion.answer.explanations.map((e) => [e.label, e.text])
-                ),
+                explanations: Object.fromEntries(mq.examQuestion.answer.explanations.map((e) => [e.label, e.text])),
               }
             : null,
           examName: mq.examQuestion.examName,

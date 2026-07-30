@@ -98,7 +98,12 @@ export function ActiveJobStatus({
               <p className="text-xs text-warning">{t('generate.queuedHint', { count: queuedTopics })}</p>
             )}
             {renderTopicList()}
-            <Button className={`${buttonStyles.dangerFlat} self-start`} data-testid="question-gen-job-cancel-btn" size="sm" onPress={onCancel}>
+            <Button
+              className={`${buttonStyles.dangerFlat} self-start`}
+              data-testid="question-gen-job-cancel-btn"
+              size="sm"
+              onPress={onCancel}
+            >
               {t('common.cancel')}
             </Button>
           </>
@@ -109,7 +114,13 @@ export function ActiveJobStatus({
             {renderStatPair(totalQuestionsReady, doneTopicsList.length)}
             {renderTopicList()}
             <div className="flex gap-2 flex-wrap pt-4">
-              <Button className={buttonStyles.primary} data-testid="question-gen-save-all-btn" isLoading={isSaving} size="sm" onPress={onSaveAll}>
+              <Button
+                className={buttonStyles.primary}
+                data-testid="question-gen-save-all-btn"
+                isLoading={isSaving}
+                size="sm"
+                onPress={onSaveAll}
+              >
                 {t('generate.saveAll')}
               </Button>
               <Button className={buttonStyles.secondary} size="sm" variant="bordered" onPress={onReviewAndSelect}>

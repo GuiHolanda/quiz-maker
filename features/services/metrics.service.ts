@@ -5,7 +5,7 @@ export class MetricsService {
     logId: string,
     step: 'research' | 'review' | 'format',
     tokens: { inputTokens: number; outputTokens: number },
-    durationMs: number,
+    durationMs: number
   ): Promise<void> {
     await prisma.usageLogStep.create({
       data: {

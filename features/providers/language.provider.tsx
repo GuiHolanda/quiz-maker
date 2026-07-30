@@ -41,7 +41,6 @@ export function LanguageProvider({
       dispatch({ type: 'setLanguage', payload: { language: lang } });
       loadMessages(lang).then((messages) => dispatch({ type: 'setMessages', payload: { messages } }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const initialized = React.useRef(false);

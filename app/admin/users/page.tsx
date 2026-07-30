@@ -37,7 +37,9 @@ export default function AdminUsersPage() {
   const [planFilter, setPlanFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
-  const [pendingEdits, setPendingEdits] = useState<Record<string, { plan?: UserPlan; overrideMode: 'none' | 'infinite' | 'value'; overrideValue: string }>>({});
+  const [pendingEdits, setPendingEdits] = useState<
+    Record<string, { plan?: UserPlan; overrideMode: 'none' | 'infinite' | 'value'; overrideValue: string }>
+  >({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [usdToBrl, setUsdToBrl] = useState<number>(USD_TO_BRL_FALLBACK);
 
@@ -56,7 +58,9 @@ export default function AdminUsersPage() {
     }
   }, [page, search, planFilter, statusFilter, t]);
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   useEffect(() => {
     getExchangeRate()
@@ -67,22 +71,27 @@ export default function AdminUsersPage() {
   function getEdit(user: UserAdminRow) {
     if (pendingEdits[user.id]) return pendingEdits[user.id];
     const overrideMode =
-      user.customQuotaOverride === -1 ? 'infinite' :
-      user.customQuotaOverride != null ? 'value' : 'none';
+      user.customQuotaOverride === -1 ? 'infinite' : user.customQuotaOverride != null ? 'value' : 'none';
     return {
       plan: user.plan,
       overrideMode,
-      overrideValue: user.customQuotaOverride != null && user.customQuotaOverride !== -1
-        ? String(user.customQuotaOverride) : '',
+      overrideValue:
+        user.customQuotaOverride != null && user.customQuotaOverride !== -1 ? String(user.customQuotaOverride) : '',
     };
   }
 
-  function setEdit(userId: string, patch: Partial<{ plan: UserPlan; overrideMode: 'none' | 'infinite' | 'value'; overrideValue: string }>) {
+  function setEdit(
+    userId: string,
+    patch: Partial<{ plan: UserPlan; overrideMode: 'none' | 'infinite' | 'value'; overrideValue: string }>
+  ) {
     setPendingEdits((prev) => {
       const user = data?.users.find((u) => u.id === userId)!;
       const current = getEdit(user);
       const merged = { ...current, ...patch };
-      return { ...prev, [userId]: merged as { plan?: UserPlan; overrideMode: 'none' | 'infinite' | 'value'; overrideValue: string } };
+      return {
+        ...prev,
+        [userId]: merged as { plan?: UserPlan; overrideMode: 'none' | 'infinite' | 'value'; overrideValue: string },
+      };
     });
   }
 
@@ -91,14 +100,20 @@ export default function AdminUsersPage() {
     setSaving((prev) => ({ ...prev, [user.id]: true }));
 
     const customQuotaOverride =
-      edit.overrideMode === 'infinite' ? -1 :
-      edit.overrideMode === 'value' && edit.overrideValue ? parseInt(edit.overrideValue, 10) :
-      null;
+      edit.overrideMode === 'infinite'
+        ? -1
+        : edit.overrideMode === 'value' && edit.overrideValue
+          ? parseInt(edit.overrideValue, 10)
+          : null;
 
     try {
       await updateAdminUser(user.id, { plan: edit.plan, customQuotaOverride });
       notify.success(t('admin.saveSuccess'), t('admin.saveSuccessDescription'));
-      setPendingEdits((prev) => { const n = { ...prev }; delete n[user.id]; return n; });
+      setPendingEdits((prev) => {
+        const n = { ...prev };
+        delete n[user.id];
+        return n;
+      });
       fetchUsers();
     } catch {
       notify.error(t('admin.saveError'), t('admin.saveErrorDescription'));
@@ -118,25 +133,38 @@ export default function AdminUsersPage() {
           className="max-w-sm"
           placeholder="Buscar por nome ou email..."
           value={search}
-          onValueChange={(v) => { setSearch(v); setPage(1); }}
+          onValueChange={(v) => {
+            setSearch(v);
+            setPage(1);
+          }}
         />
         <Select
           {...inputProperties.select}
           className="w-40"
           placeholder="Todos os planos"
           selectedKeys={planFilter ? [planFilter] : []}
-          onSelectionChange={(keys) => { setPlanFilter(Array.from(keys)[0] as string ?? ''); setPage(1); }}
+          onSelectionChange={(keys) => {
+            setPlanFilter((Array.from(keys)[0] as string) ?? '');
+            setPage(1);
+          }}
         >
-          {PLAN_OPTIONS.map((p) => <SelectItem key={p}>{p}</SelectItem>)}
+          {PLAN_OPTIONS.map((p) => (
+            <SelectItem key={p}>{p}</SelectItem>
+          ))}
         </Select>
         <Select
           {...inputProperties.select}
           className="w-44"
           placeholder="Qualquer status"
           selectedKeys={statusFilter ? [statusFilter] : []}
-          onSelectionChange={(keys) => { setStatusFilter(Array.from(keys)[0] as string ?? ''); setPage(1); }}
+          onSelectionChange={(keys) => {
+            setStatusFilter((Array.from(keys)[0] as string) ?? '');
+            setPage(1);
+          }}
         >
-          {STATUS_OPTIONS.map((s) => <SelectItem key={s}>{s}</SelectItem>)}
+          {STATUS_OPTIONS.map((s) => (
+            <SelectItem key={s}>{s}</SelectItem>
+          ))}
         </Select>
       </div>
 
@@ -155,9 +183,7 @@ export default function AdminUsersPage() {
               <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Ações</th>
             </tr>
           </thead>
-          <tbody>
-            {(data?.users ?? []).map((user) => renderRow(user))}
-          </tbody>
+          <tbody>{(data?.users ?? []).map((user) => renderRow(user))}</tbody>
         </table>
       </div>
 
@@ -171,10 +197,14 @@ export default function AdminUsersPage() {
 
   function renderRow(user: UserAdminRow) {
     const edit = getEdit(user);
-    const effectiveLimit = edit.overrideMode === 'infinite' ? Infinity :
-      edit.overrideMode === 'value' && edit.overrideValue ? parseInt(edit.overrideValue, 10) :
-      null;
-    const planLimit = { free: 250, pro: 1500, pro_ai: 2500, tester: Infinity, admin: Infinity }[edit.plan ?? user.plan] ?? 250;
+    const effectiveLimit =
+      edit.overrideMode === 'infinite'
+        ? Infinity
+        : edit.overrideMode === 'value' && edit.overrideValue
+          ? parseInt(edit.overrideValue, 10)
+          : null;
+    const planLimit =
+      { free: 250, pro: 1500, pro_ai: 2500, tester: Infinity, admin: Infinity }[edit.plan ?? user.plan] ?? 250;
     const limit = effectiveLimit !== null ? effectiveLimit : planLimit;
     const used = user.questionsGeneratedThisPeriod;
     const pct = limit === Infinity ? 0 : Math.min(100, Math.round((used / limit) * 100));
@@ -194,7 +224,9 @@ export default function AdminUsersPage() {
             selectedKeys={[edit.plan ?? user.plan]}
             onSelectionChange={(keys) => setEdit(user.id, { plan: Array.from(keys)[0] as UserPlan })}
           >
-            {PLAN_OPTIONS.map((p) => <SelectItem key={p}>{p}</SelectItem>)}
+            {PLAN_OPTIONS.map((p) => (
+              <SelectItem key={p}>{p}</SelectItem>
+            ))}
           </Select>
         </td>
         <td className="px-4 py-3">
@@ -207,25 +239,21 @@ export default function AdminUsersPage() {
             </span>
           </div>
         </td>
-        <td className="px-4 py-3">
-          {renderTokensCell(user)}
-        </td>
-        <td className="px-4 py-3">
-          {renderCostCell(user)}
-        </td>
-        <td className="px-4 py-3">
-          {renderOverrideCell(user, edit)}
-        </td>
+        <td className="px-4 py-3">{renderTokensCell(user)}</td>
+        <td className="px-4 py-3">{renderCostCell(user)}</td>
+        <td className="px-4 py-3">{renderOverrideCell(user, edit)}</td>
         <td className="px-4 py-3">
           {user.subscriptionStatus ? (
-            <span className={`text-xs px-2 py-0.5 rounded-full ${
-              user.subscriptionStatus === 'active'
-                ? 'bg-success/10 text-success'
-                : 'bg-warning/10 text-warning'
-            }`}>
+            <span
+              className={`text-xs px-2 py-0.5 rounded-full ${
+                user.subscriptionStatus === 'active' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
+              }`}
+            >
               {user.subscriptionStatus}
             </span>
-          ) : <span className="text-xs text-default-400">—</span>}
+          ) : (
+            <span className="text-xs text-default-400">—</span>
+          )}
         </td>
         <td className="px-4 py-3">
           <Button
@@ -243,9 +271,8 @@ export default function AdminUsersPage() {
 
   function renderTokensCell(user: UserAdminRow) {
     const total = user.totalInputTokens + user.totalOutputTokens;
-    const avg = user.totalQuestionsGeneratedAllTime > 0
-      ? Math.round(total / user.totalQuestionsGeneratedAllTime)
-      : null;
+    const avg =
+      user.totalQuestionsGeneratedAllTime > 0 ? Math.round(total / user.totalQuestionsGeneratedAllTime) : null;
 
     if (total === 0) {
       return <span className="text-xs text-default-400">—</span>;
@@ -270,9 +297,8 @@ export default function AdminUsersPage() {
       return <span className="text-xs text-default-400">—</span>;
     }
     const totalCostBRL = computeCostBRL(user.totalInputTokens, user.totalOutputTokens, usdToBrl);
-    const costPerQBRL = user.totalQuestionsGeneratedAllTime > 0
-      ? totalCostBRL / user.totalQuestionsGeneratedAllTime
-      : null;
+    const costPerQBRL =
+      user.totalQuestionsGeneratedAllTime > 0 ? totalCostBRL / user.totalQuestionsGeneratedAllTime : null;
     const rateLabel = new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -291,14 +317,17 @@ export default function AdminUsersPage() {
     );
   }
 
-  function renderOverrideCell(user: UserAdminRow, edit: ReturnType<typeof getEdit>) {    return (
+  function renderOverrideCell(user: UserAdminRow, edit: ReturnType<typeof getEdit>) {
+    return (
       <div className="flex flex-col gap-1">
         <Select
           {...inputProperties.select}
           className="w-40"
           size="sm"
           selectedKeys={[edit.overrideMode]}
-          onSelectionChange={(keys) => setEdit(user.id, { overrideMode: Array.from(keys)[0] as 'none' | 'infinite' | 'value' })}
+          onSelectionChange={(keys) =>
+            setEdit(user.id, { overrideMode: Array.from(keys)[0] as 'none' | 'infinite' | 'value' })
+          }
         >
           <SelectItem key="none">Sem override</SelectItem>
           <SelectItem key="infinite">Infinito (∞)</SelectItem>

@@ -123,7 +123,13 @@ export function QuestionCard({
               onValueChange={(value) => applySelection(value ? [value] : [])}
             >
               {Object.entries(question.options).map(([key, val]) => (
-                <Radio data-testid="answer-option" key={key} classNames={{ label: 'text-sm ml-2 text-default-600' }} size="sm" value={key}>
+                <Radio
+                  data-testid="answer-option"
+                  key={key}
+                  classNames={{ label: 'text-sm ml-2 text-default-600' }}
+                  size="sm"
+                  value={key}
+                >
                   {String(val)}
                 </Radio>
               ))}

@@ -80,7 +80,9 @@ export function Step3Review({
             {examDurationMinutes && (
               <div className="flex flex-col gap-2">
                 <p className="text-xs font-medium text-default-400">{t('certification.examDuration')}</p>
-                <p className="text-base text-foreground">{examDurationMinutes} {t('certification.examDurationUnit')}</p>
+                <p className="text-base text-foreground">
+                  {examDurationMinutes} {t('certification.examDurationUnit')}
+                </p>
               </div>
             )}
             {passingScore !== undefined && (
@@ -140,7 +142,12 @@ export function Step3Review({
 
       <div className="flex items-center justify-between gap-4 pt-6 border-t border-default-200">
         {hasDraft && (
-          <Button data-testid="wizard-discard-btn" className={buttonStyles.dangerFlat} isDisabled={isLoading} onPress={onDiscard}>
+          <Button
+            data-testid="wizard-discard-btn"
+            className={buttonStyles.dangerFlat}
+            isDisabled={isLoading}
+            onPress={onDiscard}
+          >
             {t('concurso.discardDraft')}
           </Button>
         )}

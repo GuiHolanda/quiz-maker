@@ -184,11 +184,7 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
             const examKey = certification.id ?? certification.name;
 
             return (
-              <AccordionItem
-                key={examKey}
-                aria-label={certification.name}
-                title={renderTriggerTitle(certification)}
-              >
+              <AccordionItem key={examKey} aria-label={certification.name} title={renderTriggerTitle(certification)}>
                 <ExamSectionsTable
                   ref={(el) => {
                     tableRefs.current[examKey] = el;
@@ -291,9 +287,8 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
         </span>
       );
 
-    const isEdited = certification.createdAt && certification.updatedAt
-      ? certification.updatedAt !== certification.createdAt
-      : false;
+    const isEdited =
+      certification.createdAt && certification.updatedAt ? certification.updatedAt !== certification.createdAt : false;
 
     return (
       <div className="flex flex-col gap-0.5 min-w-0">

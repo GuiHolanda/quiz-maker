@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { CreateMockExamPayload, MockExamSectionConfig, AIExamQuestion, ExamType } from '@/shared/types';
+import { CreateMockExamPayload, MockExamSectionConfig, ExamType } from '@/shared/types';
 import { normalizeName, looseKey } from '@/shared/utils';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { ExamQuestionService } from '@/features/services/exam-question.service';
@@ -520,9 +520,7 @@ export class MockExamService {
             ? {
                 questionId: mq.examQuestion.answer.questionId,
                 correctOptions: mq.examQuestion.answer.correctOptions as unknown as string[],
-                explanations: Object.fromEntries(
-                  mq.examQuestion.answer.explanations.map((e) => [e.label, e.text])
-                ),
+                explanations: Object.fromEntries(mq.examQuestion.answer.explanations.map((e) => [e.label, e.text])),
               }
             : null,
           examName: mq.examQuestion.examName,

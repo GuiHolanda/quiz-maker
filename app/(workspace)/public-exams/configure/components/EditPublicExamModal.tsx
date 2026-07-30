@@ -17,7 +17,18 @@ interface EditPublicExamModalProps {
   readonly publicExam: Exam | null;
   readonly isOpen: boolean;
   readonly onClose: () => void;
-  readonly onSaved: (id: string, updated: { name: string; role?: string; year?: number; examBoard: ExamBoard; totalQuestions: number; examDurationMinutes?: number; passingScore?: number }) => void;
+  readonly onSaved: (
+    id: string,
+    updated: {
+      name: string;
+      role?: string;
+      year?: number;
+      examBoard: ExamBoard;
+      totalQuestions: number;
+      examDurationMinutes?: number;
+      passingScore?: number;
+    }
+  ) => void;
 }
 
 export function EditPublicExamModal({ publicExam, isOpen, onClose, onSaved }: EditPublicExamModalProps) {
@@ -148,7 +159,9 @@ export function EditPublicExamModal({ publicExam, isOpen, onClose, onSaved }: Ed
             />
             <Input
               {...inputProperties.input}
-              endContent={<span className="text-xs text-default-400 self-center">{t('certification.examDurationUnit')}</span>}
+              endContent={
+                <span className="text-xs text-default-400 self-center">{t('certification.examDurationUnit')}</span>
+              }
               label={t('certification.examDuration')}
               min={1}
               placeholder="e.g. 240"

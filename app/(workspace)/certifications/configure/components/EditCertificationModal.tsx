@@ -44,7 +44,9 @@ export function EditCertificationModal({ certification, isOpen, onClose, onSaved
       setName(certification.name);
       setProvider(certification.provider?.name ?? '');
       setTotalQuestions(String(certification.totalQuestions));
-      setExamDurationMinutes(certification.examDurationMinutes != null ? String(certification.examDurationMinutes) : '');
+      setExamDurationMinutes(
+        certification.examDurationMinutes != null ? String(certification.examDurationMinutes) : ''
+      );
       setPassingScore(certification.passingScore != null ? String(certification.passingScore) : '');
     }
   }, [certification]);
@@ -132,7 +134,9 @@ export function EditCertificationModal({ certification, isOpen, onClose, onSaved
             />
             <Input
               {...inputProperties.input}
-              endContent={<span className="text-xs text-default-400 self-center">{t('certification.examDurationUnit')}</span>}
+              endContent={
+                <span className="text-xs text-default-400 self-center">{t('certification.examDurationUnit')}</span>
+              }
               label={t('certification.examDuration')}
               min={1}
               placeholder="e.g. 130"

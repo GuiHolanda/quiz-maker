@@ -30,10 +30,9 @@ export class ResetPasswordService {
     const user = await prisma.user.findUnique({ where: { email: record.identifier }, select: { password: true } });
 
     if (user?.password === null) {
-      throw Object.assign(
-        new Error('Esta conta usa login com Google. Não é possível redefinir senha.'),
-        { status: 400 },
-      );
+      throw Object.assign(new Error('Esta conta usa login com Google. Não é possível redefinir senha.'), {
+        status: 400,
+      });
     }
 
     const hashed = await bcrypt.hash(password, 12);

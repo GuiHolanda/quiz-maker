@@ -52,7 +52,12 @@ export function ExamTopicsExpandedRow({
         <div>
           <div className="flex flex-col gap-0.5 mb-2">
             {topics.map((topic) => (
-              <ExamTopicItem key={topic.id ?? topic.name} topic={topic} onRemove={onRemoveTopic} onUpdate={onUpdateTopic} />
+              <ExamTopicItem
+                key={topic.id ?? topic.name}
+                topic={topic}
+                onRemove={onRemoveTopic}
+                onUpdate={onUpdateTopic}
+              />
             ))}
           </div>
 

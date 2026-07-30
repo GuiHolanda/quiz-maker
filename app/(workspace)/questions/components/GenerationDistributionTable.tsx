@@ -63,7 +63,6 @@ export function GenerationDistributionTable({
 
   useEffect(() => {
     recompute(total, removed);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [total]);
 
   function recompute(nextTotal: number, nextRemoved: Set<string>) {

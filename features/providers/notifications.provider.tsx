@@ -60,13 +60,8 @@ export function NotificationsProvider({ children }: { readonly children: ReactNo
 
   const contextValue = useMemo(
     () => ({ notifications: state.notifications, unreadCount, addNotification, markAllRead }),
-    [state.notifications, unreadCount, addNotification, markAllRead],
+    [state.notifications, unreadCount, addNotification, markAllRead]
   );
 
-  return (
-    <NotificationsContext.Provider value={contextValue}>
-      {children}
-    </NotificationsContext.Provider>
-  );
+  return <NotificationsContext.Provider value={contextValue}>{children}</NotificationsContext.Provider>;
 }
-

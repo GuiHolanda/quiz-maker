@@ -30,7 +30,9 @@ export default function AdminAuditLogPage() {
     }
   }, [page, t]);
 
-  useEffect(() => { fetchLog(); }, [fetchLog]);
+  useEffect(() => {
+    fetchLog();
+  }, [fetchLog]);
 
   return (
     <div style={{ minHeight: '100%' }}>
@@ -43,11 +45,36 @@ export default function AdminAuditLogPage() {
         <table className="w-full">
           <thead>
             <tr style={{ background: 'rgba(7,14,32,0.8)', borderBottom: '1px solid rgba(42,79,122,0.4)' }}>
-              <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Data</th>
-              <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Admin</th>
-              <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Usuário afetado</th>
-              <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Ação</th>
-              <th className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest" style={{ color: '#6a9fc8' }}>Antes → Depois</th>
+              <th
+                className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest"
+                style={{ color: '#6a9fc8' }}
+              >
+                Data
+              </th>
+              <th
+                className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest"
+                style={{ color: '#6a9fc8' }}
+              >
+                Admin
+              </th>
+              <th
+                className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest"
+                style={{ color: '#6a9fc8' }}
+              >
+                Usuário afetado
+              </th>
+              <th
+                className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest"
+                style={{ color: '#6a9fc8' }}
+              >
+                Ação
+              </th>
+              <th
+                className="text-left px-4 py-3 font-mono text-xs uppercase tracking-widest"
+                style={{ color: '#6a9fc8' }}
+              >
+                Antes → Depois
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -62,11 +89,15 @@ export default function AdminAuditLogPage() {
                 </td>
                 <td className="px-4 py-3">
                   <p className="font-sora font-semibold text-white text-sm">{entry.adminName ?? '—'}</p>
-                  <p className="font-mono text-xs" style={{ color: '#6a9fc8' }}>{entry.adminEmail}</p>
+                  <p className="font-mono text-xs" style={{ color: '#6a9fc8' }}>
+                    {entry.adminEmail}
+                  </p>
                 </td>
                 <td className="px-4 py-3">
                   <p className="font-sora font-semibold text-white text-sm">{entry.targetName ?? '—'}</p>
-                  <p className="font-mono text-xs" style={{ color: '#6a9fc8' }}>{entry.targetEmail}</p>
+                  <p className="font-mono text-xs" style={{ color: '#6a9fc8' }}>
+                    {entry.targetEmail}
+                  </p>
                 </td>
                 <td className="px-4 py-3">
                   <span
@@ -87,11 +118,7 @@ export default function AdminAuditLogPage() {
             ))}
             {data?.entries.length === 0 && (
               <tr>
-                <td
-                  colSpan={5}
-                  className="px-4 py-10 text-center font-mono text-sm"
-                  style={{ color: '#4d87bc' }}
-                >
+                <td colSpan={5} className="px-4 py-10 text-center font-mono text-sm" style={{ color: '#4d87bc' }}>
                   Nenhuma ação registrada ainda.
                 </td>
               </tr>

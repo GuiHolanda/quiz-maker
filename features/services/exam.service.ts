@@ -49,8 +49,7 @@ export class ExamService {
       totalQuestions: Math.round(totalQuestions),
       examDurationMinutes:
         typeof examDurationMinutes === 'number' && examDurationMinutes > 0 ? Math.round(examDurationMinutes) : null,
-      passingScore:
-        typeof passingScore === 'number' && passingScore >= 0 && passingScore <= 100 ? passingScore : null,
+      passingScore: typeof passingScore === 'number' && passingScore >= 0 && passingScore <= 100 ? passingScore : null,
       provider:
         providerRecord && typeof providerRecord.name === 'string'
           ? { name: normalizeName(providerRecord.name as string) }
@@ -173,13 +172,7 @@ export class ExamService {
     return { sectionId, newName: typeof newName === 'string' ? newName : undefined, minQuestions, maxQuestions };
   }
 
-  public async addSection(
-    examId: string,
-    name: string,
-    minQuestions: number,
-    maxQuestions: number,
-    userId: string
-  ) {
+  public async addSection(examId: string, name: string, minQuestions: number, maxQuestions: number, userId: string) {
     const exam = await this.prismaService.exam.findUnique({ where: { id: examId } });
 
     if (!exam) {

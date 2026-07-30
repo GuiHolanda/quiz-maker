@@ -176,28 +176,28 @@ export const Navbar = () => {
               </Dropdown>
             </NavbarItem>
             <NavbarItem>
-                <Dropdown>
-                  <DropdownTrigger>
-                    <button
-                      className={
-                        isConcursosScope
-                          ? 'flex items-center gap-1.5 text-foreground bg-default-100 font-semibold text-sm px-3 py-1.5 rounded-lg transition-colors duration-200'
-                          : 'flex items-center gap-1.5 text-default-500 hover:text-foreground text-sm px-3 py-1.5 rounded-lg hover:bg-default-100 transition-colors duration-200'
-                      }
-                    >
-                      {t('nav.concursos')}
-                      <FontAwesomeIcon className="w-2.5 h-2.5" icon={faChevronDown} />
-                    </button>
-                  </DropdownTrigger>
-                  <DropdownMenu aria-label={t('nav.concursos')} className="font-sans">
-                    {CONCURSO_ITEMS.map((item) => (
-                      <DropdownItem key={item.href} as={NextLink} href={item.href}>
-                        <span className="text-sm">{t(item.label)}</span>
-                      </DropdownItem>
-                    ))}
-                  </DropdownMenu>
-                </Dropdown>
-              </NavbarItem>
+              <Dropdown>
+                <DropdownTrigger>
+                  <button
+                    className={
+                      isConcursosScope
+                        ? 'flex items-center gap-1.5 text-foreground bg-default-100 font-semibold text-sm px-3 py-1.5 rounded-lg transition-colors duration-200'
+                        : 'flex items-center gap-1.5 text-default-500 hover:text-foreground text-sm px-3 py-1.5 rounded-lg hover:bg-default-100 transition-colors duration-200'
+                    }
+                  >
+                    {t('nav.concursos')}
+                    <FontAwesomeIcon className="w-2.5 h-2.5" icon={faChevronDown} />
+                  </button>
+                </DropdownTrigger>
+                <DropdownMenu aria-label={t('nav.concursos')} className="font-sans">
+                  {CONCURSO_ITEMS.map((item) => (
+                    <DropdownItem key={item.href} as={NextLink} href={item.href}>
+                      <span className="text-sm">{t(item.label)}</span>
+                    </DropdownItem>
+                  ))}
+                </DropdownMenu>
+              </Dropdown>
+            </NavbarItem>
             {NAV_LINKS.map((item) => {
               const isActive = item.href !== '#' && pathname === item.href;
 

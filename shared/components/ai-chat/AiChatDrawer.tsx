@@ -82,7 +82,14 @@ export function AiChatDrawer({ isOpen, onClose, userId }: AiChatDrawerProps) {
                 {t('chat.newChat')}
               </Button>
             )}
-            <Button isIconOnly aria-label={t('common.close')} className={buttonStyles.iconOnly.neutral} size="sm" variant="light" onPress={onClose}>
+            <Button
+              isIconOnly
+              aria-label={t('common.close')}
+              className={buttonStyles.iconOnly.neutral}
+              size="sm"
+              variant="light"
+              onPress={onClose}
+            >
               <FontAwesomeIcon icon={faXmark} />
             </Button>
           </div>

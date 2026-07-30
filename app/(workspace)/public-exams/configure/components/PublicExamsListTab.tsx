@@ -293,9 +293,8 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
         </span>
       );
 
-    const isEdited = publicExam.createdAt && publicExam.updatedAt
-      ? publicExam.updatedAt !== publicExam.createdAt
-      : false;
+    const isEdited =
+      publicExam.createdAt && publicExam.updatedAt ? publicExam.updatedAt !== publicExam.createdAt : false;
 
     return (
       <div className="flex flex-col gap-0.5 min-w-0">

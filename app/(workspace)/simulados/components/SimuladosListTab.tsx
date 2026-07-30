@@ -234,7 +234,12 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
             >
               {t('common.cancel')}
             </Button>
-            <Button data-testid="confirm-delete-btn" className={buttonStyles.danger} isLoading={isDeleting} onPress={handleDelete}>
+            <Button
+              data-testid="confirm-delete-btn"
+              className={buttonStyles.danger}
+              isLoading={isDeleting}
+              onPress={handleDelete}
+            >
               {t('common.delete')}
             </Button>
           </ModalFooter>
@@ -405,7 +410,12 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
                 {isInProgress ? t('simulado.continue') : isAnswered ? t('simulado.tryAgain') : t('simulado.respond')}
               </Button>
               {isAnswered && (
-                <Button className={buttonStyles.secondary} size="sm" variant="bordered" onPress={() => setHistoryTarget(s)}>
+                <Button
+                  className={buttonStyles.secondary}
+                  size="sm"
+                  variant="bordered"
+                  onPress={() => setHistoryTarget(s)}
+                >
                   {t('simulado.viewResults')}
                 </Button>
               )}

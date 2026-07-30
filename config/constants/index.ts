@@ -26,8 +26,7 @@ export const SIDEBAR_COLLAPSED_LOCAL_STORAGE_KEY = 'certifiqueai_sidebar_collaps
 export const SIDEBAR_COLLAPSED_COOKIE_KEY = 'certifiqueai_sidebar_collapsed';
 export const AI_CHAT_LOCAL_STORAGE_KEY = (userId: string) => `AI_CHAT_MESSAGES_${userId}`;
 export const AI_CHAT_FOLLOWUP_TIMESTAMP_KEY = (userId: string) => `AI_CHAT_FOLLOWUP_TS_${userId}`;
-export const SIMULADO_ATTEMPT_PROGRESS_KEY = (attemptId: number) =>
-  `SIMULADO_ATTEMPT_PROGRESS_${attemptId}`;
+export const SIMULADO_ATTEMPT_PROGRESS_KEY = (attemptId: number) => `SIMULADO_ATTEMPT_PROGRESS_${attemptId}`;
 export const APP_NOTIFICATIONS_LOCAL_STORAGE_KEY = 'APP_NOTIFICATIONS';
 export const SIMULADO_NEW_PREFILL_KEY = 'SIMULADO_NEW_PREFILL';
 export const AI_CHAT_INACTIVITY_TIMEOUT_MS = 60 * 60 * 1000;
@@ -57,11 +56,11 @@ export const BILLING_CHECKOUT_URL = '/billing/checkout';
 export const BILLING_PORTAL_URL = '/billing/portal';
 
 export const PLAN_LIMITS = {
-  free:   { questionsPerPeriod: 250,      maxExams: 2 },
-  pro:    { questionsPerPeriod: 1500,     maxExams: 5 },
-  pro_ai: { questionsPerPeriod: 2500,     maxExams: 5 },
+  free: { questionsPerPeriod: 250, maxExams: 2 },
+  pro: { questionsPerPeriod: 1500, maxExams: 5 },
+  pro_ai: { questionsPerPeriod: 2500, maxExams: 5 },
   tester: { questionsPerPeriod: Infinity, maxExams: Infinity },
-  admin:  { questionsPerPeriod: Infinity, maxExams: Infinity },
+  admin: { questionsPerPeriod: Infinity, maxExams: Infinity },
 } as const;
 
 export const ADMIN_USERS_URL = '/admin/users';
@@ -71,15 +70,15 @@ export const ADMIN_EXCHANGE_RATE_URL = '/admin/exchange-rate';
 
 export const ACTIVE_MODEL_PRICING_USD = {
   inputPerMillion: 0.75,
-  outputPerMillion: 4.50,
+  outputPerMillion: 4.5,
 } as const;
 
-export const USD_TO_BRL_FALLBACK = 5.70;
+export const USD_TO_BRL_FALLBACK = 5.7;
 
 export const PLAN_PRICES_BRL_MONTHLY: Record<string, number> = {
   free: 0,
-  pro: 19.80,
-  pro_ai: 39.80,
+  pro: 19.8,
+  pro_ai: 39.8,
 };
 
 export const MOCK_EXAMS_URL = '/mock-exams';

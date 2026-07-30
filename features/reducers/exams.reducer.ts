@@ -36,9 +36,7 @@ export function examsReducer(state: ExamsState, action: ExamsAction): ExamsState
     case 'removeExam':
       return { ...state, exams: state.exams.filter((e) => e.id !== action.payload.id) };
     case 'updateExam': {
-      const newExams = state.exams.map((e) =>
-        e.id === action.payload.id ? { ...e, ...action.payload.exam } : e
-      );
+      const newExams = state.exams.map((e) => (e.id === action.payload.id ? { ...e, ...action.payload.exam } : e));
       const updatedSelected =
         state.selectedExam && state.selectedExam.id === action.payload.id
           ? { ...state.selectedExam, ...action.payload.exam }

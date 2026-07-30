@@ -13,7 +13,7 @@ function buildQuestion(
   sectionName: string,
   topicName: string | null,
   q: SeedQuestion,
-  refs: { examId: string; sectionId: string; topicId?: string | null },
+  refs: { examId: string; sectionId: string; topicId?: string | null }
 ) {
   return prisma.examQuestion.create({
     data: {

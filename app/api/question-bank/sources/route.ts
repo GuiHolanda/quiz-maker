@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     console.error('question-bank/sources GET error:', err);
     return NextResponse.json(
       { error: err, message: e.message || 'Failed to load sources' },
-      { status: e.status || 500 },
+      { status: e.status || 500 }
     );
   }
 }

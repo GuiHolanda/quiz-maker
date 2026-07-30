@@ -86,7 +86,7 @@ export class QuotaService {
   async checkAndRecordQuestions(
     userId: string,
     count: number,
-    context?: { refName?: string; refKey?: string; type?: string; topicName?: string },
+    context?: { refName?: string; refKey?: string; type?: string; topicName?: string }
   ): Promise<{ logId: string }> {
     const user = await this.getUserWithPeriodReset(userId);
     const plan = this.resolvePlan(user.plan);

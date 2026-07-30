@@ -9,10 +9,7 @@ export type NotificationsAction =
   | { type: 'markAllRead' }
   | { type: 'setNotifications'; payload: AppNotification[] };
 
-export function notificationsReducer(
-  state: NotificationsState,
-  action: NotificationsAction,
-): NotificationsState {
+export function notificationsReducer(state: NotificationsState, action: NotificationsAction): NotificationsState {
   switch (action.type) {
     case 'addNotification':
       return { notifications: [action.payload, ...state.notifications] };

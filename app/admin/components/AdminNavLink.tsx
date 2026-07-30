@@ -12,8 +12,7 @@ export function AdminNavLink({ href, label }: AdminNavLinkProps) {
   const pathname = usePathname();
   const isActive = pathname === href;
 
-  const baseClassName =
-    'flex items-center px-3 py-2 rounded-lg text-sm font-mono transition-colors duration-200';
+  const baseClassName = 'flex items-center px-3 py-2 rounded-lg text-sm font-mono transition-colors duration-200';
 
   if (isActive) {
     return (
@@ -28,11 +27,7 @@ export function AdminNavLink({ href, label }: AdminNavLinkProps) {
   }
 
   return (
-    <Link
-      href={href}
-      className={`${baseClassName} hover:bg-navy-800/40`}
-      style={{ color: '#6a9fc8' }}
-    >
+    <Link href={href} className={`${baseClassName} hover:bg-navy-800/40`} style={{ color: '#6a9fc8' }}>
       {label}
     </Link>
   );

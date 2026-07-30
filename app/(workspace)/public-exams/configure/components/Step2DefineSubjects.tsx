@@ -77,9 +77,7 @@ export function Step2DefineSubjects({
 
           <div
             className={`rounded-xl p-4 flex gap-3 transition-colors duration-300 ${
-              isWeightageValid
-                ? 'bg-success/10 border border-success/30'
-                : 'bg-primary/10 border border-primary/30'
+              isWeightageValid ? 'bg-success/10 border border-success/30' : 'bg-primary/10 border border-primary/30'
             }`}
           >
             <AnimatePresence initial={false} mode="wait">
@@ -97,7 +95,9 @@ export function Step2DefineSubjects({
               </motion.span>
             </AnimatePresence>
             <div className="flex flex-col gap-1">
-              <p className={`text-sm font-semibold transition-colors duration-300 ${isWeightageValid ? 'text-success' : 'text-primary'}`}>
+              <p
+                className={`text-sm font-semibold transition-colors duration-300 ${isWeightageValid ? 'text-success' : 'text-primary'}`}
+              >
                 {t('concurso.systemLogic')}
               </p>
               <p className="text-sm text-default-500">
@@ -154,7 +154,9 @@ export function Step2DefineSubjects({
                         label={t('concurso.subjectName')}
                         placeholder={t('concurso.subjectNamePlaceholder')}
                         value={section.name}
-                        onChange={(e) => onUpdateSection(index, e.target.value, section.minQuestions, section.maxQuestions)}
+                        onChange={(e) =>
+                          onUpdateSection(index, e.target.value, section.minQuestions, section.maxQuestions)
+                        }
                       />
                       <Input
                         {...inputProperties.input}

@@ -271,7 +271,7 @@ function StyleGuideContent() {
           <p className="text-xs font-semibold text-primary">Semantic Colors (solid)</p>
           <div className="flex flex-wrap gap-3">
             {semanticColors.map((c) => (
-              <Button key={c} color={c} className='font-semibold text-foreground'>
+              <Button key={c} color={c} className="font-semibold text-foreground">
                 {c}
               </Button>
             ))}

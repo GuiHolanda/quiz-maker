@@ -219,41 +219,70 @@ export async function processTopic(topicId: string): Promise<void> {
     // Build the per-type input for each of the three pipeline steps. The prompt
     // objects come from the type-keyed dispatch table; the input shapes differ
     // (certification vs concurso), so they are constructed per branch.
-    const buildInput = (
-      step: 'research' | 'review' | 'format',
-      priorText?: string
-    ): Record<string, unknown> => {
+    const buildInput = (step: 'research' | 'review' | 'format', priorText?: string): Record<string, unknown> => {
       if (type === 'certification') {
-        if (step === 'research') return { certification_name: refName, topic_name: topic.topicName, num_questions: numStr };
-        if (step === 'review') return { certification_name: refName, topic_name: topic.topicName, draft_questions: priorText };
+        if (step === 'research')
+          return { certification_name: refName, topic_name: topic.topicName, num_questions: numStr };
+        if (step === 'review')
+          return { certification_name: refName, topic_name: topic.topicName, draft_questions: priorText };
         return { certification_name: refName, topic_name: topic.topicName, reviewed_questions: priorText };
       }
       if (step === 'research') {
-        return { public_exam_name: refName, exam_board_name: examBoardName ?? '', subject_name: topic.topicName, num_questions: numStr };
+        return {
+          public_exam_name: refName,
+          exam_board_name: examBoardName ?? '',
+          subject_name: topic.topicName,
+          num_questions: numStr,
+        };
       }
       if (step === 'review') {
-        return { public_exam_name: refName, exam_board_name: examBoardName ?? '', subject_name: topic.topicName, draft_questions: priorText };
+        return {
+          public_exam_name: refName,
+          exam_board_name: examBoardName ?? '',
+          subject_name: topic.topicName,
+          draft_questions: priorText,
+        };
       }
-      return { public_exam_name: refName, exam_board_name: examBoardName ?? '', subject_name: topic.topicName, reviewed_questions: priorText };
+      return {
+        public_exam_name: refName,
+        exam_board_name: examBoardName ?? '',
+        subject_name: topic.topicName,
+        reviewed_questions: priorText,
+      };
     };
 
     let t0 = Date.now();
     const research = await openAIService.call(prompts.research, buildInput('research'), { webSearch: true });
-    void metricsService.recordStep(logId, 'research', { inputTokens: research.inputTokens, outputTokens: research.outputTokens }, Date.now() - t0);
+    void metricsService.recordStep(
+      logId,
+      'research',
+      { inputTokens: research.inputTokens, outputTokens: research.outputTokens },
+      Date.now() - t0
+    );
 
     t0 = Date.now();
     const review = await openAIService.call(prompts.review, buildInput('review', research.text), {
       webSearch: false,
       model: reviewModel,
     });
-    void metricsService.recordStep(logId, 'review', { inputTokens: review.inputTokens, outputTokens: review.outputTokens }, Date.now() - t0);
+    void metricsService.recordStep(
+      logId,
+      'review',
+      { inputTokens: review.inputTokens, outputTokens: review.outputTokens },
+      Date.now() - t0
+    );
 
     t0 = Date.now();
     const format = await openAIService.call(prompts.format, buildInput('format', review.text), {
       webSearch: false,
       jsonMode: true,
     });
-    void metricsService.recordStep(logId, 'format', { inputTokens: format.inputTokens, outputTokens: format.outputTokens }, Date.now() - t0);
+    void metricsService.recordStep(
+      logId,
+      'format',
+      { inputTokens: format.inputTokens, outputTokens: format.outputTokens },
+      Date.now() - t0
+    );
 
     questions = validateAiQuestions(JSON.parse(extractJson(format.text))) as AIExamQuestion[];
 

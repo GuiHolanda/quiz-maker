@@ -190,7 +190,12 @@ export function BillingOverview() {
             </div>
             <p className="text-sm text-default-500">{t('billing.paymentManagedNote')}</p>
           </div>
-          <Button className={buttonStyles.secondary} isLoading={portalLoading} variant="bordered" onPress={handlePortal}>
+          <Button
+            className={buttonStyles.secondary}
+            isLoading={portalLoading}
+            variant="bordered"
+            onPress={handlePortal}
+          >
             {t('billing.updatePayment')}
           </Button>
         </div>
@@ -209,7 +214,12 @@ export function BillingOverview() {
             </div>
             <p className="text-sm text-default-500">{t('billing.billingSectionTitle')}</p>
           </div>
-          <Button className={buttonStyles.secondary} isLoading={portalLoading} variant="bordered" onPress={handlePortal}>
+          <Button
+            className={buttonStyles.secondary}
+            isLoading={portalLoading}
+            variant="bordered"
+            onPress={handlePortal}
+          >
             {t('billing.viewInvoices')}
           </Button>
         </div>

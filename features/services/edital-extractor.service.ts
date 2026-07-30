@@ -143,8 +143,10 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
       role: typeof d.role === 'string' ? this.normalizeCase(d.role) : null,
       year: typeof d.year === 'number' ? d.year : null,
       totalQuestions: typeof d.totalQuestions === 'number' && d.totalQuestions > 0 ? d.totalQuestions : 0,
-      examDurationMinutes: typeof d.examDurationMinutes === 'number' && d.examDurationMinutes > 0 ? d.examDurationMinutes : null,
-      passingScore: typeof d.passingScore === 'number' && d.passingScore >= 0 && d.passingScore <= 100 ? d.passingScore : null,
+      examDurationMinutes:
+        typeof d.examDurationMinutes === 'number' && d.examDurationMinutes > 0 ? d.examDurationMinutes : null,
+      passingScore:
+        typeof d.passingScore === 'number' && d.passingScore >= 0 && d.passingScore <= 100 ? d.passingScore : null,
       examBoard: {
         name: board.name as string,
         fullName: typeof board.fullName === 'string' ? board.fullName : null,
@@ -178,7 +180,10 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
 
   private splitTopics(name: string): string[] {
     // If a topic name contains semicolons, split into separate topics
-    const parts = name.split(';').map((p) => this.normalizeCase(this.stripNumbering(p.trim()))).filter(Boolean);
+    const parts = name
+      .split(';')
+      .map((p) => this.normalizeCase(this.stripNumbering(p.trim())))
+      .filter(Boolean);
     return parts.length > 1 ? parts : [this.normalizeCase(this.stripNumbering(name))];
   }
 }

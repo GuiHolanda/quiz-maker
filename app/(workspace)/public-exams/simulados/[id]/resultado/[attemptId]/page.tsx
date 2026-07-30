@@ -109,7 +109,10 @@ export default function SimuladoResultadoPage() {
           <div className="flex flex-col gap-2">
             <Skeleton className="h-5 w-36 rounded-lg" />
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="bg-content1 border border-default-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+              <div
+                key={i}
+                className="bg-content1 border border-default-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+              >
                 <Skeleton className="h-4 flex-1 max-w-48 rounded-lg" />
                 <Skeleton className="h-6 w-20 rounded-lg" />
               </div>
@@ -136,9 +139,7 @@ export default function SimuladoResultadoPage() {
     text: mq.examQuestion.text,
     correctCount: mq.examQuestion.correctCount,
     options: mq.examQuestion.options as Record<string, string>,
-    answer: mq.examQuestion.answer
-      ? { correctOptions: mq.examQuestion.answer.correctOptions as string[] }
-      : null,
+    answer: mq.examQuestion.answer ? { correctOptions: mq.examQuestion.answer.correctOptions as string[] } : null,
   }));
 
   const questionsBySection = mappedQuestions.reduce<Record<string, SimuladoResultQuestion[]>>((acc, q) => {
@@ -192,7 +193,9 @@ export default function SimuladoResultadoPage() {
             <div data-testid="result-score" className={`text-3xl font-extrabold ${scoreTextColor[color]}`}>
               {t('simulado.scoreGeneral', { correct, total })}
             </div>
-            <p data-testid="result-percent" className="text-sm text-default-500">{t('simulado.scorePercent', { percent })}</p>
+            <p data-testid="result-percent" className="text-sm text-default-500">
+              {t('simulado.scorePercent', { percent })}
+            </p>
           </div>
 
           <div className="hidden sm:block self-stretch border-r border-default-200" />
@@ -206,7 +209,12 @@ export default function SimuladoResultadoPage() {
         </div>
 
         <div className="border-t border-default-200 mt-6 pt-4 flex gap-3">
-          <Button data-testid="result-retry-btn" className={buttonStyles.primary} isLoading={isStarting} onPress={handleTryAgain}>
+          <Button
+            data-testid="result-retry-btn"
+            className={buttonStyles.primary}
+            isLoading={isStarting}
+            onPress={handleTryAgain}
+          >
             {t('simulado.tryAgain')}
           </Button>
           <Button variant="bordered" onPress={() => router.push('/simulados')}>

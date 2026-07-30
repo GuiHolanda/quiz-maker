@@ -17,8 +17,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const rawType = searchParams.get('type');
-    const type: ExamType | undefined =
-      rawType === 'certification' || rawType === 'public_exam' ? rawType : undefined;
+    const type: ExamType | undefined = rawType === 'certification' || rawType === 'public_exam' ? rawType : undefined;
 
     const summary = await service.getSummary(session.user.id, type);
 

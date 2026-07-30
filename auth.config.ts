@@ -14,9 +14,7 @@ export default {
       const { pathname } = request.nextUrl;
       const isLoggedIn = !!auth?.user;
       const isPublicRoute =
-        pathname === '/' ||
-        publicRoutePrefixes.some((r) => pathname.startsWith(r)) ||
-        pathname.startsWith('/api/auth');
+        pathname === '/' || publicRoutePrefixes.some((r) => pathname.startsWith(r)) || pathname.startsWith('/api/auth');
 
       if (isPublicRoute) return true;
 

@@ -97,12 +97,18 @@ export function ExamsProvider({ children }: Readonly<{ children: React.ReactNode
   }, []);
 
   const setExams = useCallback((exams: Exam[]) => dispatch({ type: 'setExams', payload: { exams } }), []);
-  const selectExam = useCallback((exam: Exam | null) => dispatch({ type: 'selectExam', payload: { id: exam?.id || null } }), []);
+  const selectExam = useCallback(
+    (exam: Exam | null) => dispatch({ type: 'selectExam', payload: { id: exam?.id || null } }),
+    []
+  );
   const setSelectedSections = useCallback(
     (sections: ExamSection[]) => dispatch({ type: 'setSelectedSections', payload: { sections } }),
     []
   );
-  const selectTopic = useCallback((topic: ExamTopic | null) => dispatch({ type: 'selectTopic', payload: { topic } }), []);
+  const selectTopic = useCallback(
+    (topic: ExamTopic | null) => dispatch({ type: 'selectTopic', payload: { topic } }),
+    []
+  );
   const addExam = useCallback((exam: Exam) => dispatch({ type: 'addExam', payload: { exam } }), []);
   const removeExam = useCallback((id: string) => dispatch({ type: 'removeExam', payload: { id } }), []);
   const updateExam = useCallback(

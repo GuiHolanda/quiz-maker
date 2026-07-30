@@ -70,7 +70,10 @@ export async function POST(request: NextRequest) {
 
     await questionService.saveAnswers(formattedAnswers.answers);
 
-    return NextResponse.json({ message: 'Answers saved successfully', count: formattedAnswers.answers.length }, { status: 200 });
+    return NextResponse.json(
+      { message: 'Answers saved successfully', count: formattedAnswers.answers.length },
+      { status: 200 }
+    );
   } catch (err: unknown) {
     console.error('Failed to process request:', err);
     const { status, ...body } = toApiErrorResponse(err);

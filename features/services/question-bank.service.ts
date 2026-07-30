@@ -37,7 +37,18 @@ export interface QuestionBankResponse {
 
 export class QuestionBankService {
   async getQuestions(params: QuestionBankParams): Promise<QuestionBankResponse> {
-    const { userId, type = 'all', search, source, topic, difficulty, hasAnswer, hasExplanation, page, pageSize } = params;
+    const {
+      userId,
+      type = 'all',
+      search,
+      source,
+      topic,
+      difficulty,
+      hasAnswer,
+      hasExplanation,
+      page,
+      pageSize,
+    } = params;
     const skip = (page - 1) * pageSize;
 
     const where: Record<string, unknown> = { userId };
@@ -55,19 +66,18 @@ export class QuestionBankService {
       include: { options: true, answer: { include: { explanations: true } }, exam: { select: { type: true } } },
     });
 
-    const filtered = hasExplanation !== undefined
-      ? rows.filter((q) => {
-          const exCount = q.answer?.explanations?.length ?? 0;
-          return hasExplanation ? exCount > 0 : exCount === 0;
-        })
-      : rows;
+    const filtered =
+      hasExplanation !== undefined
+        ? rows.filter((q) => {
+            const exCount = q.answer?.explanations?.length ?? 0;
+            return hasExplanation ? exCount > 0 : exCount === 0;
+          })
+        : rows;
 
     const combined: UnifiedQuestion[] = filtered.map((q) => {
       const examType = (q.exam?.type as 'certification' | 'public_exam') ?? 'certification';
       const topicLabel =
-        examType === 'public_exam'
-          ? q.sectionName + (q.topicName ? ` · ${q.topicName}` : '')
-          : q.sectionName;
+        examType === 'public_exam' ? q.sectionName + (q.topicName ? ` · ${q.topicName}` : '') : q.sectionName;
 
       return {
         id: q.id,

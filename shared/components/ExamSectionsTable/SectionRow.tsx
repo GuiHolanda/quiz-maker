@@ -231,7 +231,10 @@ export function SectionRow({
             type="button"
             onClick={() => setExpanded((v) => !v)}
           >
-            <FontAwesomeIcon className="w-2.5 h-2.5 text-default-400" icon={expanded ? faChevronDown : faChevronRight} />
+            <FontAwesomeIcon
+              className="w-2.5 h-2.5 text-default-400"
+              icon={expanded ? faChevronDown : faChevronRight}
+            />
             {(section.topics ?? []).length} {t('exam.topics')}
           </button>
         ) : (

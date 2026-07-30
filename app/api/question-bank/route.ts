@@ -16,11 +16,20 @@ export async function GET(request: NextRequest) {
 
   const type = searchParams.get('type') ?? 'all';
   const search = searchParams.get('search')?.trim() || undefined;
-  const sourceRaw = searchParams.getAll('source').map((s) => s.trim()).filter(Boolean);
+  const sourceRaw = searchParams
+    .getAll('source')
+    .map((s) => s.trim())
+    .filter(Boolean);
   const source = sourceRaw.length > 0 ? sourceRaw : undefined;
-  const topicRaw = searchParams.getAll('topic').map((t) => t.trim()).filter(Boolean);
+  const topicRaw = searchParams
+    .getAll('topic')
+    .map((t) => t.trim())
+    .filter(Boolean);
   const topic = topicRaw.length > 0 ? topicRaw : undefined;
-  const difficultyRaw = searchParams.getAll('difficulty').map((d) => d.trim()).filter(Boolean);
+  const difficultyRaw = searchParams
+    .getAll('difficulty')
+    .map((d) => d.trim())
+    .filter(Boolean);
   const difficulty = difficultyRaw.length > 0 ? difficultyRaw : undefined;
   const hasAnswerRaw = searchParams.get('hasAnswer');
   const hasExplanationRaw = searchParams.get('hasExplanation');
@@ -31,7 +40,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: 'Invalid type filter' }, { status: 400 });
   }
   if (isNaN(page) || page < 1 || isNaN(pageSize) || pageSize < 1 || pageSize > 50) {
-    return NextResponse.json({ message: 'page and pageSize must be valid positive integers (pageSize max 50)' }, { status: 400 });
+    return NextResponse.json(
+      { message: 'page and pageSize must be valid positive integers (pageSize max 50)' },
+      { status: 400 }
+    );
   }
 
   const hasAnswer = hasAnswerRaw === 'true' ? true : hasAnswerRaw === 'false' ? false : undefined;
@@ -57,7 +69,7 @@ export async function GET(request: NextRequest) {
     console.error('question-bank GET error:', err);
     return NextResponse.json(
       { error: err, message: e.message || 'Failed to load questions' },
-      { status: e.status || 500 },
+      { status: e.status || 500 }
     );
   }
 }
