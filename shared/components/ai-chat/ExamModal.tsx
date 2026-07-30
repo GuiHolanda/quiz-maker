@@ -85,57 +85,69 @@ export function ExamModal({ data, isOpen, onClose, onSaved }: ExamModalProps) {
 
   function renderHeaderFields() {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex gap-4">
-          <div className="flex w-3/4">
+      <div className="flex flex-col gap-3">
+        <div className="flex gap-2">
+          <div className="flex w-3/5">
             <Input
               {...inputProperties.input}
+              classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
               isDisabled={isSaving}
               label={t('exam.name')}
               placeholder=" "
               value={draft.name}
               onValueChange={(v) => updateField('name', v)}
+              size="sm"
             />
           </div>
-          <div className="flex w-1/4">
+          <div className="flex w-1/5">
             <Input
               {...inputProperties.input}
+              classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
               isDisabled={isSaving}
               label={t('exam.year')}
               placeholder=" "
               type="number"
               value={draft.year?.toString() ?? ''}
               onValueChange={(v) => updateField('year', v ? parseInt(v, 10) : null)}
+              size="sm"
+            />
+          </div>
+          <div className="flex w-1/5">
+            <Input
+              {...inputProperties.input}
+              classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
+              isDisabled={isSaving}
+              label={referenceLabel}
+              placeholder=" "
+              value={referenceName}
+              onValueChange={updateReferenceName}
+              size="sm"
             />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <Input
-            {...inputProperties.input}
-            isDisabled={isSaving}
-            label={referenceLabel}
-            placeholder=" "
-            value={referenceName}
-            onValueChange={updateReferenceName}
-          />
-          <Input
-            {...inputProperties.input}
-            isDisabled={isSaving}
-            label={t('exam.role')}
-            placeholder=" "
-            value={draft.role ?? ''}
-            onValueChange={(v) => updateField('role', v || null)}
+        <div className="flex gap-2 justify-between">
+          <div className="w-3/5">
+            <Input
+              {...inputProperties.input}
+              classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
+              isDisabled={isSaving}
+              label={t('exam.role')}
+              placeholder=" "
+              value={draft.role ?? ''}
+              onValueChange={(v) => updateField('role', v || null)}
+              size="sm"
+            />
+          </div>
+          <DraftExamMetricsFields
+            examDurationMinutes={draft.examDurationMinutes}
+            isSaving={isSaving}
+            passingScore={draft.passingScore}
+            totalQuestions={draft.totalQuestions}
+            onExamDurationChange={(v) => updateNumericField('examDurationMinutes', v)}
+            onPassingScoreChange={(v) => updateNumericField('passingScore', v)}
+            onTotalQuestionsChange={(v) => updateNumericField('totalQuestions', v)}
           />
         </div>
-        <DraftExamMetricsFields
-          examDurationMinutes={draft.examDurationMinutes}
-          isSaving={isSaving}
-          passingScore={draft.passingScore}
-          totalQuestions={draft.totalQuestions}
-          onExamDurationChange={(v) => updateNumericField('examDurationMinutes', v)}
-          onPassingScoreChange={(v) => updateNumericField('passingScore', v)}
-          onTotalQuestionsChange={(v) => updateNumericField('totalQuestions', v)}
-        />
       </div>
     );
   }

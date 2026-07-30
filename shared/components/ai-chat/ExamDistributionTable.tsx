@@ -11,8 +11,7 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 
-const TH =
-  'text-left font-mono text-[10px] text-default-400 uppercase tracking-widest px-3 py-2.5 border-b border-default-200';
+const TH = 'text-left font-mono text-xs text-default-400 px-3 py-2.5 border-b border-default-200';
 const TD_S = 'px-3 py-2 border-b border-default-200';
 const TD_S_LAST = 'px-3 py-2';
 const TD_T = 'px-3 py-1.5 border-b border-default-100';
@@ -47,7 +46,7 @@ export function ExamDistributionTable({
 
   return (
     <div>
-      <p className="text-xs font-semibold text-default-500 uppercase tracking-wide mb-3">{t('exam.sections')}</p>
+      <p className="text-xs font-semibold text-default-500 mb-3">{t('exam.sections')}</p>
       <div className="w-full rounded-xl border border-default-200 overflow-hidden">
         <table className="w-full border-collapse">
           <thead className="bg-content2">
@@ -94,24 +93,27 @@ export function ExamDistributionTable({
     return (
       <tr key={`section-${si}`} className="bg-content2">
         <td className={tdClass}>
-          <div className="flex items-center gap-2">
-            <button
-              aria-label={isExpanded ? t('common.collapse') : t('common.expand')}
-              className="shrink-0 w-5 h-5 flex items-center justify-center rounded text-default-400 hover:text-primary hover:bg-default-100 transition-colors"
-              type="button"
-              onClick={() => setExpandedSections((prev) => ({ ...prev, [si]: !prev[si] }))}
-            >
-              <FontAwesomeIcon className="w-2.5 h-2.5" icon={isExpanded ? faChevronDown : faChevronRight} />
-            </button>
-            <Input
-              {...inputProperties.input}
-              aria-label={t('exam.sectionName')}
-              className="min-w-0 flex-1"
-              isDisabled={isSaving}
-              size="sm"
-              value={section.name}
-              onValueChange={(v) => onUpdateSection(si, { name: v })}
-            />
+          <div className="flex items-center gap-2 justify-between">
+            <div className="flex w-3/4 items-center gap-2">
+              <button
+                aria-label={isExpanded ? t('common.collapse') : t('common.expand')}
+                className="shrink-0 w-5 h-5 flex items-center justify-center rounded text-default-400 hover:text-primary hover:bg-default-100 transition-colors"
+                type="button"
+                onClick={() => setExpandedSections((prev) => ({ ...prev, [si]: !prev[si] }))}
+              >
+                <FontAwesomeIcon className="w-2.5 h-2.5" icon={isExpanded ? faChevronDown : faChevronRight} />
+              </button>
+              <Input
+                {...inputProperties.input}
+                classNames={{ inputWrapper: 'h-8 bg-background', input: 'text-xs font-semibold' }}
+                aria-label={t('exam.sectionName')}
+                className="min-w-0 flex-1"
+                isDisabled={isSaving}
+                size="sm"
+                value={section.name}
+                onValueChange={(v) => onUpdateSection(si, { name: v })}
+              />
+            </div>
             {!isExpanded && topicCount > 0 && (
               <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-default-100 text-default-500 whitespace-nowrap">
                 {topicCount} {t('exam.topics')}
@@ -128,7 +130,7 @@ export function ExamDistributionTable({
           <Input
             {...inputProperties.input}
             aria-label={t('exam.minQuestions')}
-            className="w-20"
+            classNames={{ inputWrapper: 'h-8 bg-background', input: 'text-xs font-semibold' }}
             endContent={<span className="text-xs text-default-400">%</span>}
             isDisabled={isSaving}
             size="sm"
@@ -141,7 +143,7 @@ export function ExamDistributionTable({
           <Input
             {...inputProperties.input}
             aria-label={t('exam.maxQuestions')}
-            className="w-20"
+            classNames={{ inputWrapper: 'h-8 bg-background', input: 'text-xs font-semibold' }}
             endContent={<span className="text-xs text-default-400">%</span>}
             isDisabled={isSaving}
             size="sm"
