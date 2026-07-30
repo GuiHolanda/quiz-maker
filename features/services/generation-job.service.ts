@@ -5,12 +5,7 @@ import { OpenAIService } from '@/features/services/openAI.service';
 import { QuotaService } from '@/features/services/quota.service';
 import { MetricsService } from '@/features/services/metrics.service';
 import { validateAiQuestions } from '@/features/services/exam-question.service';
-import { certificationQuestionsResearchPrompt } from '@/config/prompts/certification-questions-research.prompt';
-import { certificationQuestionsReviewPrompt } from '@/config/prompts/certification-questions-review.prompt';
-import { certificationQuestionsFormatPrompt } from '@/config/prompts/certification-questions-format.prompt';
-import { publicExamQuestionsResearchPrompt } from '@/config/prompts/public-exam-questions-research.prompt';
-import { publicExamQuestionsReviewPrompt } from '@/config/prompts/public-exam-questions-review.prompt';
-import { publicExamQuestionsFormatPrompt } from '@/config/prompts/public-exam-questions-format.prompt';
+import { EXAM_PROMPTS } from '@/config/prompts';
 import { GENERATION_MAX_CONCURRENT_TOPICS, GENERATION_MAX_TOPICS_PER_USER } from '@/config/constants';
 import type { AIExamQuestion } from '@/shared/types';
 
@@ -218,74 +213,49 @@ export async function processTopic(topicId: string): Promise<void> {
 
     let questions: AIExamQuestion[];
 
-    if (type === 'certification') {
-      let t0 = Date.now();
-      const research = await openAIService.call(
-        certificationQuestionsResearchPrompt,
-        { certification_name: refName, topic_name: topic.topicName, num_questions: numStr },
-        { webSearch: true }
-      );
-      void metricsService.recordStep(logId, 'research', { inputTokens: research.inputTokens, outputTokens: research.outputTokens }, Date.now() - t0);
+    const prompts = EXAM_PROMPTS[type as 'certification' | 'public_exam'];
+    const reviewModel = process.env.OPENAI_MODEL_REVIEW ?? process.env.OPENAI_MODEL ?? 'gpt-4o';
 
-      t0 = Date.now();
-      const review = await openAIService.call(
-        certificationQuestionsReviewPrompt,
-        { certification_name: refName, topic_name: topic.topicName, draft_questions: research.text },
-        { webSearch: false, model: process.env.OPENAI_MODEL_REVIEW ?? process.env.OPENAI_MODEL ?? 'gpt-4o' }
-      );
-      void metricsService.recordStep(logId, 'review', { inputTokens: review.inputTokens, outputTokens: review.outputTokens }, Date.now() - t0);
+    // Build the per-type input for each of the three pipeline steps. The prompt
+    // objects come from the type-keyed dispatch table; the input shapes differ
+    // (certification vs concurso), so they are constructed per branch.
+    const buildInput = (
+      step: 'research' | 'review' | 'format',
+      priorText?: string
+    ): Record<string, unknown> => {
+      if (type === 'certification') {
+        if (step === 'research') return { certification_name: refName, topic_name: topic.topicName, num_questions: numStr };
+        if (step === 'review') return { certification_name: refName, topic_name: topic.topicName, draft_questions: priorText };
+        return { certification_name: refName, topic_name: topic.topicName, reviewed_questions: priorText };
+      }
+      if (step === 'research') {
+        return { public_exam_name: refName, exam_board_name: examBoardName ?? '', subject_name: topic.topicName, num_questions: numStr };
+      }
+      if (step === 'review') {
+        return { public_exam_name: refName, exam_board_name: examBoardName ?? '', subject_name: topic.topicName, draft_questions: priorText };
+      }
+      return { public_exam_name: refName, exam_board_name: examBoardName ?? '', subject_name: topic.topicName, reviewed_questions: priorText };
+    };
 
-      t0 = Date.now();
-      const format = await openAIService.call(
-        certificationQuestionsFormatPrompt,
-        { certification_name: refName, topic_name: topic.topicName, reviewed_questions: review.text },
-        { webSearch: false, jsonMode: true }
-      );
-      void metricsService.recordStep(logId, 'format', { inputTokens: format.inputTokens, outputTokens: format.outputTokens }, Date.now() - t0);
+    let t0 = Date.now();
+    const research = await openAIService.call(prompts.research, buildInput('research'), { webSearch: true });
+    void metricsService.recordStep(logId, 'research', { inputTokens: research.inputTokens, outputTokens: research.outputTokens }, Date.now() - t0);
 
-      questions = validateAiQuestions(JSON.parse(extractJson(format.text))) as AIExamQuestion[];
-    } else {
-      let t0 = Date.now();
-      const research = await openAIService.call(
-        publicExamQuestionsResearchPrompt,
-        {
-          public_exam_name: refName,
-          exam_board_name: examBoardName ?? '',
-          subject_name: topic.topicName,
-          num_questions: numStr,
-        },
-        { webSearch: true }
-      );
-      void metricsService.recordStep(logId, 'research', { inputTokens: research.inputTokens, outputTokens: research.outputTokens }, Date.now() - t0);
+    t0 = Date.now();
+    const review = await openAIService.call(prompts.review, buildInput('review', research.text), {
+      webSearch: false,
+      model: reviewModel,
+    });
+    void metricsService.recordStep(logId, 'review', { inputTokens: review.inputTokens, outputTokens: review.outputTokens }, Date.now() - t0);
 
-      t0 = Date.now();
-      const review = await openAIService.call(
-        publicExamQuestionsReviewPrompt,
-        {
-          public_exam_name: refName,
-          exam_board_name: examBoardName ?? '',
-          subject_name: topic.topicName,
-          draft_questions: research.text,
-        },
-        { webSearch: false, model: process.env.OPENAI_MODEL_REVIEW ?? process.env.OPENAI_MODEL ?? 'gpt-4o' }
-      );
-      void metricsService.recordStep(logId, 'review', { inputTokens: review.inputTokens, outputTokens: review.outputTokens }, Date.now() - t0);
+    t0 = Date.now();
+    const format = await openAIService.call(prompts.format, buildInput('format', review.text), {
+      webSearch: false,
+      jsonMode: true,
+    });
+    void metricsService.recordStep(logId, 'format', { inputTokens: format.inputTokens, outputTokens: format.outputTokens }, Date.now() - t0);
 
-      t0 = Date.now();
-      const format = await openAIService.call(
-        publicExamQuestionsFormatPrompt,
-        {
-          public_exam_name: refName,
-          exam_board_name: examBoardName ?? '',
-          subject_name: topic.topicName,
-          reviewed_questions: review.text,
-        },
-        { webSearch: false, jsonMode: true }
-      );
-      void metricsService.recordStep(logId, 'format', { inputTokens: format.inputTokens, outputTokens: format.outputTokens }, Date.now() - t0);
-
-      questions = validateAiQuestions(JSON.parse(extractJson(format.text))) as AIExamQuestion[];
-    }
+    questions = validateAiQuestions(JSON.parse(extractJson(format.text))) as AIExamQuestion[];
 
     await metricsService.finalize(logId, Date.now() - startTime);
 
