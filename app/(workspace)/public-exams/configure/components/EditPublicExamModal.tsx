@@ -6,18 +6,18 @@ import { Input } from '@heroui/input';
 import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
 import { Button } from '@heroui/button';
 
-import { ExamBoard, PublicExam } from '@/shared/types';
-import { updatePublicExamMeta, getExamBoards } from '@/features/connectors';
+import { ExamBoard, Exam } from '@/shared/types';
+import { updateExamMeta, getExamBoards } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface EditPublicExamModalProps {
-  publicExam: PublicExam | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onSaved: (id: string, updated: { name: string; role?: string; year?: number; examBoard: ExamBoard; totalQuestions: number; examDurationMinutes?: number; passingScore?: number }) => void;
+  readonly publicExam: Exam | null;
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
+  readonly onSaved: (id: string, updated: { name: string; role?: string; year?: number; examBoard: ExamBoard; totalQuestions: number; examDurationMinutes?: number; passingScore?: number }) => void;
 }
 
 export function EditPublicExamModal({ publicExam, isOpen, onClose, onSaved }: EditPublicExamModalProps) {
@@ -63,7 +63,7 @@ export function EditPublicExamModal({ publicExam, isOpen, onClose, onSaved }: Ed
     try {
       const yearNum = year ? Number(year) : null;
 
-      await updatePublicExamMeta(publicExam.id, {
+      await updateExamMeta(publicExam.id, {
         newName: name.trim(),
         newRole: role.trim() || null,
         newYear: yearNum,
@@ -108,7 +108,7 @@ export function EditPublicExamModal({ publicExam, isOpen, onClose, onSaved }: Ed
           <Autocomplete
             allowsCustomValue
             inputValue={examBoardName}
-            label={t('concurso.banca')}
+            label={t('exam.examBoardLabel')}
             placeholder={t('concurso.bancaPlaceholder')}
             onInputChange={setExamBoardName}
             {...inputProperties.autocomplete}

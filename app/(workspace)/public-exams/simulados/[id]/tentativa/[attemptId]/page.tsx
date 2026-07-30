@@ -51,11 +51,11 @@ export default function SimuladoTentativaPage() {
   }
 
   const questions = mockExam.questions.map((mq) => ({
-    id: mq.publicExamQuestion.id,
+    id: mq.examQuestion.id,
     simuladoQuestionId: mq.id,
-    text: mq.publicExamQuestion.text,
-    correctCount: mq.publicExamQuestion.correctCount,
-    options: mq.publicExamQuestion.options as Record<string, string>,
+    text: mq.examQuestion.text,
+    correctCount: mq.examQuestion.correctCount,
+    options: mq.examQuestion.options as Record<string, string>,
   }));
 
   function handleCancel() {
@@ -101,7 +101,7 @@ export default function SimuladoTentativaPage() {
     setIsFinishing(true);
     try {
       const attemptAnswers: MockExamAttemptAnswer[] = mockExam!.questions.map((mq) => {
-        const selected = answers[mq.publicExamQuestion.id] ?? [];
+        const selected = answers[mq.examQuestion.id] ?? [];
 
         return { mockExamQuestionId: mq.id, selectedOptions: selected };
       });
@@ -119,7 +119,7 @@ export default function SimuladoTentativaPage() {
     }
   }
 
-  const title = mockExam.name ?? mockExam.publicExam.name;
+  const title = mockExam.name ?? mockExam.exam.name;
   const subtitle = t('simulado.progress', {
     answered: Object.keys(answers).length,
     total: questions.length,

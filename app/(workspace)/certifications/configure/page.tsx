@@ -7,7 +7,7 @@ import { Tabs, Tab } from '@heroui/tabs';
 import { CertificationsListTab } from './components/CertificationsListTab';
 import { NewCertificationTab } from './components/NewCertificationTab';
 
-import CertificationsProvider from '@/features/providers/certifications.provider';
+import { ExamsProvider } from '@/features/providers/exams.provider';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 
@@ -16,7 +16,7 @@ export default function ConfigureCertificationPage() {
   const [selectedTab, setSelectedTab] = useState<Key>('certificationsList');
 
   return (
-    <CertificationsProvider>
+    <ExamsProvider>
       <PageHeader subtitle={t('certification.pageSubtitle')} title={t('certification.pageTitle')}>
         <div className="flex w-full flex-col">
           <Tabs
@@ -40,6 +40,6 @@ export default function ConfigureCertificationPage() {
           </Tabs>
         </div>
       </PageHeader>
-    </CertificationsProvider>
+    </ExamsProvider>
   );
 }

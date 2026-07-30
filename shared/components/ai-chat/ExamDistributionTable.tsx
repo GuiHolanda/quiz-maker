@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@heroui/popover';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark, faPen, faCheck, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 
-import { PublicExamSubject, PublicExamTopic } from '@/shared/types';
+import { ExamSection, ExamTopic } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { buttonStyles } from '@/config/constants/buttonStyles';
@@ -19,112 +19,107 @@ const TD_T = 'px-3 py-1.5 border-b border-default-100';
 const TD_T_LAST = 'px-3 py-1.5';
 
 interface ExamDistributionTableProps {
-  readonly subjects: PublicExamSubject[];
+  readonly sections: ExamSection[];
   readonly isSaving: boolean;
-  readonly onUpdateSubject: (index: number, patch: Partial<PublicExamSubject>) => void;
-  readonly onRemoveSubject: (index: number) => void;
-  readonly onAddTopic: (subjectIndex: number, name: string) => void;
-  readonly onRemoveTopic: (subjectIndex: number, topicIndex: number) => void;
-  readonly onUpdateTopic: (subjectIndex: number, topicIndex: number, newName: string) => void;
+  readonly onUpdateSection: (index: number, patch: Partial<ExamSection>) => void;
+  readonly onRemoveSection: (index: number) => void;
+  readonly onAddTopic: (sectionIndex: number, name: string) => void;
+  readonly onRemoveTopic: (sectionIndex: number, topicIndex: number) => void;
+  readonly onUpdateTopic: (sectionIndex: number, topicIndex: number, newName: string) => void;
 }
 
 export function ExamDistributionTable({
-  subjects,
+  sections,
   isSaving,
-  onUpdateSubject,
-  onRemoveSubject,
+  onUpdateSection,
+  onRemoveSection,
   onAddTopic,
   onRemoveTopic,
   onUpdateTopic,
 }: ExamDistributionTableProps) {
   const { t } = useTranslation();
-  const [expandedSubjects, setExpandedSubjects] = useState<Record<number, boolean>>({});
+  const [expandedSections, setExpandedSections] = useState<Record<number, boolean>>({});
   const [newTopicInputs, setNewTopicInputs] = useState<Record<number, string>>({});
   const [editingTopics, setEditingTopics] = useState<Record<string, string | null>>({});
-  const [confirmRemoveSubject, setConfirmRemoveSubject] = useState<number | null>(null);
+  const [confirmRemoveSection, setConfirmRemoveSection] = useState<number | null>(null);
 
-  if (subjects.length === 0) return null;
+  if (sections.length === 0) return null;
 
   return (
     <div>
-      <p className="text-xs font-semibold text-default-500 uppercase tracking-wide mb-3">{t('chat.subjects')}</p>
+      <p className="text-xs font-semibold text-default-500 uppercase tracking-wide mb-3">{t('exam.sections')}</p>
       <div className="w-full rounded-xl border border-default-200 overflow-hidden">
         <table className="w-full border-collapse">
           <thead className="bg-content2">
             <tr>
-              <th className={TH}>{t('chat.subjectName')}</th>
-              <th className={`${TH} w-28`}>{t('chat.minQuestions')}</th>
-              <th className={`${TH} w-28`}>{t('chat.maxQuestions')}</th>
+              <th className={TH}>{t('exam.sectionName')}</th>
+              <th className={`${TH} w-28`}>{t('exam.minQuestions')}</th>
+              <th className={`${TH} w-28`}>{t('exam.maxQuestions')}</th>
               <th className={`${TH} w-10`} />
             </tr>
           </thead>
-          <tbody>{subjects.map((subject, si) => renderSubjectRow(subject, si))}</tbody>
+          <tbody>{sections.map((section, si) => renderSectionRow(section, si))}</tbody>
         </table>
       </div>
     </div>
   );
 
-  function renderSubjectRow(subject: PublicExamSubject, si: number) {
-    const isExpanded = !!expandedSubjects[si];
-    const isLastSubject = si === subjects.length - 1;
-    const hasTopics = (subject.topics ?? []).length > 0;
-    const tdSubject = isLastSubject && !isExpanded ? TD_S_LAST : TD_S;
+  function renderSectionRow(section: ExamSection, si: number) {
+    const isExpanded = !!expandedSections[si];
+    const isLastSection = si === sections.length - 1;
+    const hasTopics = (section.topics ?? []).length > 0;
+    const tdSection = isLastSection && !isExpanded ? TD_S_LAST : TD_S;
 
     return (
       <React.Fragment key={si}>
-        {renderSubjectHeaderRow(subject, si, isExpanded, tdSubject, hasTopics)}
+        {renderSectionHeaderRow(section, si, isExpanded, tdSection, hasTopics)}
         {isExpanded &&
-          (subject.topics ?? []).map((topic, ti) =>
-            renderTopicRow(
-              topic,
-              si,
-              ti,
-              isLastSubject && ti === (subject.topics ?? []).length - 1 && !hasTopics
-            )
+          (section.topics ?? []).map((topic, ti) =>
+            renderTopicRow(topic, si, ti, isLastSection && ti === (section.topics ?? []).length - 1 && !hasTopics)
           )}
-        {isExpanded && renderAddTopicRow(si, isLastSubject)}
+        {isExpanded && renderAddTopicRow(si, isLastSection)}
       </React.Fragment>
     );
   }
 
-  function renderSubjectHeaderRow(
-    subject: PublicExamSubject,
+  function renderSectionHeaderRow(
+    section: ExamSection,
     si: number,
     isExpanded: boolean,
     tdClass: string,
     hasTopics: boolean
   ) {
-    const topicCount = (subject.topics ?? []).length;
+    const topicCount = (section.topics ?? []).length;
 
     return (
-      <tr key={`subject-${si}`} className="bg-content2">
+      <tr key={`section-${si}`} className="bg-content2">
         <td className={tdClass}>
           <div className="flex items-center gap-2">
             <button
               aria-label={isExpanded ? t('common.collapse') : t('common.expand')}
               className="shrink-0 w-5 h-5 flex items-center justify-center rounded text-default-400 hover:text-primary hover:bg-default-100 transition-colors"
               type="button"
-              onClick={() => setExpandedSubjects((prev) => ({ ...prev, [si]: !prev[si] }))}
+              onClick={() => setExpandedSections((prev) => ({ ...prev, [si]: !prev[si] }))}
             >
               <FontAwesomeIcon className="w-2.5 h-2.5" icon={isExpanded ? faChevronDown : faChevronRight} />
             </button>
             <Input
               {...inputProperties.input}
-              aria-label={t('chat.subjectName')}
+              aria-label={t('exam.sectionName')}
               className="min-w-0 flex-1"
               isDisabled={isSaving}
               size="sm"
-              value={subject.name}
-              onValueChange={(v) => onUpdateSubject(si, { name: v })}
+              value={section.name}
+              onValueChange={(v) => onUpdateSection(si, { name: v })}
             />
             {!isExpanded && topicCount > 0 && (
               <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-default-100 text-default-500 whitespace-nowrap">
-                {topicCount} {t('chat.topics')}
+                {topicCount} {t('exam.topics')}
               </span>
             )}
             {isExpanded && hasTopics && (
               <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary whitespace-nowrap">
-                {topicCount} {t('chat.topics')}
+                {topicCount} {t('exam.topics')}
               </span>
             )}
           </div>
@@ -132,34 +127,34 @@ export function ExamDistributionTable({
         <td className={tdClass}>
           <Input
             {...inputProperties.input}
-            aria-label={t('chat.minQuestions')}
+            aria-label={t('exam.minQuestions')}
             className="w-20"
             endContent={<span className="text-xs text-default-400">%</span>}
             isDisabled={isSaving}
             size="sm"
             type="number"
-            value={subject.minQuestions.toString()}
-            onValueChange={(v) => onUpdateSubject(si, { minQuestions: parseFloat(v) || 0 })}
+            value={section.minQuestions.toString()}
+            onValueChange={(v) => onUpdateSection(si, { minQuestions: parseFloat(v) || 0 })}
           />
         </td>
         <td className={tdClass}>
           <Input
             {...inputProperties.input}
-            aria-label={t('chat.maxQuestions')}
+            aria-label={t('exam.maxQuestions')}
             className="w-20"
             endContent={<span className="text-xs text-default-400">%</span>}
             isDisabled={isSaving}
             size="sm"
             type="number"
-            value={subject.maxQuestions.toString()}
-            onValueChange={(v) => onUpdateSubject(si, { maxQuestions: parseFloat(v) || 0 })}
+            value={section.maxQuestions.toString()}
+            onValueChange={(v) => onUpdateSection(si, { maxQuestions: parseFloat(v) || 0 })}
           />
         </td>
         <td className={tdClass}>
           <Popover
-            isOpen={confirmRemoveSubject === si}
+            isOpen={confirmRemoveSection === si}
             placement="left"
-            onOpenChange={(open) => setConfirmRemoveSubject(open ? si : null)}
+            onOpenChange={(open) => setConfirmRemoveSection(open ? si : null)}
           >
             <PopoverTrigger>
               <Button
@@ -175,14 +170,14 @@ export function ExamDistributionTable({
             </PopoverTrigger>
             <PopoverContent className="p-3 max-w-xs">
               <div className="flex flex-col gap-3">
-                <p className="text-xs font-semibold text-foreground">{t('chat.removeSubjectConfirm')}</p>
-                <p className="text-xs text-default-500">{t('chat.removeSubjectConfirmBody')}</p>
+                <p className="text-xs font-semibold text-foreground">{t('exam.removeSectionConfirm')}</p>
+                <p className="text-xs text-default-500">{t('exam.removeSectionConfirmBody')}</p>
                 <div className="flex gap-2 justify-end">
                   <Button
                     className="text-xs h-7 px-3"
                     size="sm"
                     variant="flat"
-                    onPress={() => setConfirmRemoveSubject(null)}
+                    onPress={() => setConfirmRemoveSection(null)}
                   >
                     {t('common.cancel')}
                   </Button>
@@ -190,8 +185,8 @@ export function ExamDistributionTable({
                     className={`${buttonStyles.danger} text-xs h-7 px-3`}
                     size="sm"
                     onPress={() => {
-                      onRemoveSubject(si);
-                      setConfirmRemoveSubject(null);
+                      onRemoveSection(si);
+                      setConfirmRemoveSection(null);
                     }}
                   >
                     {t('common.remove')}
@@ -205,7 +200,7 @@ export function ExamDistributionTable({
     );
   }
 
-  function renderTopicRow(topic: PublicExamTopic, si: number, ti: number, isActuallyLast: boolean) {
+  function renderTopicRow(topic: ExamTopic, si: number, ti: number, isActuallyLast: boolean) {
     const editKey = `${si}-${ti}`;
     const isEditingTopic = editingTopics[editKey] != null;
     const editValue = editingTopics[editKey] ?? '';
@@ -281,7 +276,7 @@ export function ExamDistributionTable({
               )}
               {!isSaving && (
                 <button
-                  aria-label={t('chat.removeTopicNamed', { name: topic.name })}
+                  aria-label={t('exam.removeTopicNamed', { name: topic.name })}
                   className="p-1 rounded text-default-400 hover:text-danger hover:bg-danger/10 transition-colors"
                   type="button"
                   onClick={() => onRemoveTopic(si, ti)}
@@ -296,8 +291,8 @@ export function ExamDistributionTable({
     );
   }
 
-  function renderAddTopicRow(si: number, isLastSubject: boolean) {
-    const tdClass = isLastSubject ? TD_S_LAST : TD_S;
+  function renderAddTopicRow(si: number, isLastSection: boolean) {
+    const tdClass = isLastSection ? TD_S_LAST : TD_S;
 
     return (
       <tr key={`add-topic-${si}`} className="bg-content1">
@@ -307,7 +302,7 @@ export function ExamDistributionTable({
               {...inputProperties.input}
               className="w-52"
               isDisabled={isSaving}
-              placeholder={t('chat.addTopic')}
+              placeholder={t('exam.addTopic')}
               size="sm"
               value={newTopicInputs[si] ?? ''}
               onKeyDown={(e) => {

@@ -9,12 +9,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleCheck, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { StoredQuestion, StoredPublicExamQuestion } from '@/shared/types';
+import { StoredExamQuestion } from '@/shared/types';
 
-export type QuestionCardQuestion = Pick<
-  StoredQuestion | StoredPublicExamQuestion,
-  'id' | 'text' | 'correctCount' | 'options'
->;
+export type QuestionCardQuestion = Pick<StoredExamQuestion, 'id' | 'text' | 'correctCount' | 'options'>;
 
 interface QuestionCardProps {
   readonly question: QuestionCardQuestion;

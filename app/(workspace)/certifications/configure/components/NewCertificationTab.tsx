@@ -1,5 +1,7 @@
 'use client';
-import { useRef, useState } from 'react';
+import type { Exam, ExamSection } from '@/shared/types';
+
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@heroui/button';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
@@ -8,9 +10,8 @@ import { Step1BasicInfo } from './Step1BasicInfo';
 import { Step2DefineTopics } from './Step2DefineTopics';
 import { Step3Review } from './Step3Review';
 
-import { saveCertification } from '@/features/connectors';
-import useCertificationsContext from '@/features/hooks/useCertificationsContext.hook';
-import { useCertificationDraft } from '@/features/hooks/useCertificationDraft.hook';
+import { saveExam } from '@/features/connectors';
+import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
@@ -20,62 +21,134 @@ interface NewCertificationTabProps {
   readonly onBackToLibrary: () => void;
 }
 
+interface CertificationDraft {
+  name: string;
+  provider: string;
+  totalQuestions: string;
+  examDurationMinutes: string;
+  passingScore: string;
+  sections: ExamSection[];
+  step: 1 | 2 | 3;
+}
+
+const STORAGE_KEY = 'NEW_CERTIFICATION_DRAFT';
+
+const EMPTY_DRAFT: CertificationDraft = {
+  name: '',
+  provider: '',
+  totalQuestions: '',
+  examDurationMinutes: '',
+  passingScore: '',
+  sections: [],
+  step: 1,
+};
+
 const variants = {
   enter: (dir: number) => ({ x: dir > 0 ? 40 : -40, opacity: 0 }),
   center: { x: 0, opacity: 1 },
   exit: (dir: number) => ({ x: dir > 0 ? -40 : 40, opacity: 0 }),
 };
 
+function readDraft(): CertificationDraft {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+
+    if (raw) return { ...EMPTY_DRAFT, ...JSON.parse(raw) };
+  } catch {
+    /* corrupted or unavailable storage */
+  }
+
+  return EMPTY_DRAFT;
+}
+
 export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProps) {
-  const { addCertification, certifications } = useCertificationsContext();
-  const { loading, request } = useRequest(saveCertification);
-  const draft = useCertificationDraft();
+  const { certifications, addExam } = useExamsContext();
+  const { loading, request } = useRequest(saveExam);
   const { t } = useTranslation();
   const [isDiscardOpen, setIsDiscardOpen] = useState(false);
-  const prevStep = useRef(draft.step);
+  const [hydrated, setHydrated] = useState(false);
+  const [draft, setDraft] = useState<CertificationDraft>(EMPTY_DRAFT);
+  const prevStep = useRef<1 | 2 | 3>(1);
+
+  useEffect(() => {
+    setDraft(readDraft());
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+    } catch {
+      /* storage full or unavailable */
+    }
+  }, [hydrated, draft]);
 
   const direction = draft.step > prevStep.current ? 1 : -1;
 
+  const patch = (updates: Partial<CertificationDraft>) => setDraft((prev) => ({ ...prev, ...updates }));
+
   const goToStep = (next: 1 | 2 | 3) => {
     prevStep.current = draft.step;
-    draft.setStep(next);
+    patch({ step: next });
+  };
+
+  const addEmptySection = () =>
+    setDraft((prev) => ({ ...prev, sections: [...prev.sections, { name: '', minQuestions: 0, maxQuestions: 0 }] }));
+
+  const updateSection = (index: number, name: string, minQuestions: number, maxQuestions: number) =>
+    setDraft((prev) => ({
+      ...prev,
+      sections: prev.sections.map((s, i) => (i === index ? { ...s, name, minQuestions, maxQuestions } : s)),
+    }));
+
+  const removeSection = (index: number) =>
+    setDraft((prev) => ({ ...prev, sections: prev.sections.filter((_, i) => i !== index) }));
+
+  const resetDraft = () => {
+    prevStep.current = 1;
+    setDraft(EMPTY_DRAFT);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
   };
 
   const handleSave = async () => {
-    const label = draft.title.trim();
-    const key = draft.code.trim();
+    const name = draft.name.trim();
 
-    if (!label || !key) {
-      notify.error(t('toast.validationError'), t('error.titleCodeRequired'));
+    if (!name) {
+      notify.error(t('toast.validationError'), t('error.nameRequired'));
       return;
     }
 
-    if (certifications.some((c) => c.key === key)) {
-      notify.error(t('toast.duplicateCertification'), t('error.duplicateCode', { code: key }));
+    if (certifications.some((c) => c.name === name)) {
+      notify.error(t('toast.duplicateCertification'), t('error.duplicateCode', { code: name }));
       return;
     }
 
-    const certification = {
-      label,
-      key,
-      provider: draft.provider || undefined,
+    const exam: Exam = {
+      type: 'certification',
+      name,
+      provider: draft.provider.trim() ? { name: draft.provider.trim() } : null,
       totalQuestions: parseInt(draft.totalQuestions, 10),
-      examDurationMinutes: parseInt(draft.examDurationMinutes, 10) || undefined,
-      passingScore: parseFloat(draft.passingScore) || undefined,
-      topics: draft.topics,
+      examDurationMinutes: parseInt(draft.examDurationMinutes, 10) || null,
+      passingScore: parseFloat(draft.passingScore) || null,
+      sections: draft.sections,
     };
-    const saved = await request(certification);
+    const saved = await request(exam);
 
     if (saved) {
-      addCertification(saved);
-      draft.reset();
-      notify.success(t('toast.success'), t('toast.savedSuccessfully', { title: label }));
+      addExam(saved);
+      resetDraft();
+      notify.success(t('toast.success'), t('toast.savedSuccessfully', { title: name }));
       onBackToLibrary();
     }
   };
 
   const handleConfirmDiscard = () => {
-    draft.reset();
+    resetDraft();
     setIsDiscardOpen(false);
     onBackToLibrary();
   };
@@ -83,44 +156,40 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
   const stepContent =
     draft.step === 1 ? (
       <Step1BasicInfo
-        code={draft.code}
         examDurationMinutes={draft.examDurationMinutes}
+        name={draft.name}
         passingScore={draft.passingScore}
         provider={draft.provider}
-        title={draft.title}
         totalQuestions={draft.totalQuestions}
         onBack={onBackToLibrary}
-        onCodeChange={draft.setCode}
         onDiscard={() => setIsDiscardOpen(true)}
-        onExamDurationMinutesChange={draft.setExamDurationMinutes}
+        onExamDurationMinutesChange={(v) => patch({ examDurationMinutes: v })}
+        onNameChange={(v) => patch({ name: v })}
         onNext={() => goToStep(2)}
-        onPassingScoreChange={draft.setPassingScore}
-        onProviderChange={draft.setProvider}
-        onTitleChange={draft.setTitle}
-        onTotalQuestionsChange={draft.setTotalQuestions}
+        onPassingScoreChange={(v) => patch({ passingScore: v })}
+        onProviderChange={(v) => patch({ provider: v })}
+        onTotalQuestionsChange={(v) => patch({ totalQuestions: v })}
       />
     ) : draft.step === 2 ? (
       <Step2DefineTopics
-        code={draft.code}
+        name={draft.name}
         provider={draft.provider}
-        title={draft.title}
-        topics={draft.topics}
-        onAddEmptyTopic={draft.addEmptyTopic}
+        sections={draft.sections}
+        onAddEmptySection={addEmptySection}
         onBack={() => goToStep(1)}
         onDiscard={() => setIsDiscardOpen(true)}
         onNext={() => goToStep(3)}
-        onRemoveTopic={draft.removeTopic}
-        onUpdateTopic={draft.updateTopic}
+        onRemoveSection={removeSection}
+        onUpdateSection={updateSection}
       />
     ) : (
       <Step3Review
-        code={draft.code}
         examDurationMinutes={parseInt(draft.examDurationMinutes, 10) || undefined}
         isLoading={loading}
+        name={draft.name}
         passingScore={parseFloat(draft.passingScore) || undefined}
         provider={draft.provider}
-        title={draft.title}
-        topics={draft.topics}
+        sections={draft.sections}
         totalQuestions={parseInt(draft.totalQuestions, 10) || 0}
         onBack={() => goToStep(2)}
         onDiscard={() => setIsDiscardOpen(true)}

@@ -1,5 +1,5 @@
 'use client';
-import type { PublicExamSubject } from '@/shared/types';
+import type { ExamSection } from '@/shared/types';
 
 import { faCircleInfo, faLayerGroup, faRocket } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -19,7 +19,7 @@ interface Step3ReviewProps {
   readonly totalQuestions: number;
   readonly examDurationMinutes?: number;
   readonly passingScore?: number;
-  readonly subjects: PublicExamSubject[];
+  readonly sections: ExamSection[];
   readonly isLoading: boolean;
   readonly onBack: () => void;
   readonly onSave: () => void;
@@ -34,15 +34,15 @@ export function Step3Review({
   totalQuestions,
   examDurationMinutes,
   passingScore,
-  subjects,
+  sections,
   isLoading,
   onBack,
   onSave,
   onDiscard,
 }: Step3ReviewProps) {
   const { t } = useTranslation();
-  const hasDraft = !!(name || examBoardName || role || year || subjects.length > 0);
-  const visibleSubjects = subjects.filter((s) => s.name && s.maxQuestions);
+  const hasDraft = !!(name || examBoardName || role || year || sections.length > 0);
+  const visibleSections = sections.filter((section) => section.name && section.maxQuestions);
 
   return (
     <div className="flex flex-col gap-6">
@@ -60,7 +60,7 @@ export function Step3Review({
               <p className="text-base font-semibold text-foreground">{name || '—'}</p>
             </div>
             <div className="flex flex-col gap-2">
-              <p className="text-xs font-medium text-default-400">{t('concurso.bancaLabel')}</p>
+              <p className="text-xs font-medium text-default-400">{t('exam.examBoardLabel')}</p>
               <p className="text-base text-foreground">{examBoardName || '—'}</p>
             </div>
             <div className="flex flex-col gap-2">
@@ -100,29 +100,29 @@ export function Step3Review({
             </div>
             <span className="text-xs font-medium text-default-400">
               {t('concurso.subjectsCount', {
-                count: String(visibleSubjects.length),
+                count: String(visibleSections.length),
               })}
             </span>
           </div>
           <div className="flex flex-col p-6 gap-6">
-            {visibleSubjects.length === 0 && (
+            {visibleSections.length === 0 && (
               <p className="text-sm text-default-400 text-center py-4">{t('concurso.noSubjects')}</p>
             )}
-            {visibleSubjects.map((subject, index) => (
+            {visibleSections.map((section, index) => (
               <motion.div
-                key={subject.name + index}
+                key={section.name + index}
                 animate={{ opacity: 1, x: 0 }}
                 className="flex flex-col gap-2"
                 initial={{ opacity: 0, x: -12 }}
                 transition={{ delay: index * 0.06, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               >
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-foreground">{subject.name}</p>
-                  <p className="text-sm font-bold font-mono text-primary">{subject.maxQuestions}%</p>
+                  <p className="text-sm font-medium text-foreground">{section.name}</p>
+                  <p className="text-sm font-bold font-mono text-primary">{section.maxQuestions}%</p>
                 </div>
                 <div className="w-full h-2 bg-content2 rounded-full overflow-hidden">
                   <motion.div
-                    animate={{ width: `${subject.minQuestions}%` }}
+                    animate={{ width: `${section.minQuestions}%` }}
                     className="h-full bg-primary rounded-full"
                     initial={{ width: '0%' }}
                     transition={{ delay: index * 0.06 + 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
@@ -147,6 +147,7 @@ export function Step3Review({
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <p className="text-xs text-default-400 text-center sm:text-left">{t('concurso.readyToDeploy')}</p>
           <Button
+            data-testid="exam-save-btn"
             className={buttonStyles.primary}
             endContent={!isLoading ? <FontAwesomeIcon className="text-xs" icon={faRocket} /> : undefined}
             isDisabled={isLoading}

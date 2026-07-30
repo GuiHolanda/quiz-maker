@@ -31,7 +31,7 @@ export function DraftExamMetricsFields({
         isRequired
         {...inputProperties.input}
         isDisabled={isSaving}
-        label={t('certification.totalQuestions')}
+        label={t('exam.totalQuestions')}
         min={1}
         placeholder="e.g. 65"
         size="sm"
@@ -41,11 +41,9 @@ export function DraftExamMetricsFields({
       />
       <Input
         {...inputProperties.input}
-        endContent={
-          <span className="text-xs text-default-400 self-center">{t('certification.examDurationUnit')}</span>
-        }
+        endContent={<span className="text-xs text-default-400 self-center">{t('exam.examDurationUnit')}</span>}
         isDisabled={isSaving}
-        label={t('certification.examDuration')}
+        label={t('exam.examDuration')}
         min={1}
         placeholder="e.g. 130"
         size="sm"
@@ -57,7 +55,7 @@ export function DraftExamMetricsFields({
         {...inputProperties.input}
         endContent={<span className="text-xs text-default-400 self-center">%</span>}
         isDisabled={isSaving}
-        label={t('certification.passingScore')}
+        label={t('exam.passingScore')}
         max={100}
         min={0}
         placeholder="e.g. 72"

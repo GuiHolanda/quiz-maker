@@ -3,45 +3,61 @@
 import { useState, useEffect } from 'react';
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@heroui/modal';
 import { Input } from '@heroui/input';
+import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
 import { Button } from '@heroui/button';
 
-import { Certification } from '@/shared/types';
-import { updateCertificationMeta } from '@/features/connectors';
+import { Exam, Provider } from '@/shared/types';
+import { updateExamMeta, getProviders } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface EditCertificationModalProps {
-  certification: Certification | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onSaved: (oldKey: string, updated: { label: string; key: string; provider?: string; totalQuestions: number; examDurationMinutes?: number; passingScore?: number }) => void;
+  readonly certification: Exam | null;
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
+  readonly onSaved: (
+    id: string,
+    updated: {
+      name: string;
+      provider?: Provider | null;
+      totalQuestions: number;
+      examDurationMinutes?: number;
+      passingScore?: number;
+    }
+  ) => void;
 }
 
 export function EditCertificationModal({ certification, isOpen, onClose, onSaved }: EditCertificationModalProps) {
   const { t } = useTranslation();
-  const [label, setLabel] = useState('');
-  const [certKey, setCertKey] = useState('');
+  const [name, setName] = useState('');
   const [provider, setProvider] = useState('');
   const [totalQuestions, setTotalQuestions] = useState('');
   const [examDurationMinutes, setExamDurationMinutes] = useState('');
   const [passingScore, setPassingScore] = useState('');
+  const [providers, setProviders] = useState<Provider[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (certification) {
-      setLabel(certification.label);
-      setCertKey(certification.key);
-      setProvider(certification.provider ?? '');
+      setName(certification.name);
+      setProvider(certification.provider?.name ?? '');
       setTotalQuestions(String(certification.totalQuestions));
       setExamDurationMinutes(certification.examDurationMinutes != null ? String(certification.examDurationMinutes) : '');
       setPassingScore(certification.passingScore != null ? String(certification.passingScore) : '');
     }
   }, [certification]);
 
+  useEffect(() => {
+    if (isOpen)
+      getProviders()
+        .then(setProviders)
+        .catch(() => {});
+  }, [isOpen]);
+
   const handleSave = async () => {
-    if (!certification || !label.trim() || !certKey.trim()) return;
+    if (!certification?.id || !name.trim()) return;
     const totalQuestionsNum = parseInt(totalQuestions, 10);
 
     if (!totalQuestionsNum || totalQuestionsNum < 1) {
@@ -50,28 +66,26 @@ export function EditCertificationModal({ certification, isOpen, onClose, onSaved
     }
     setSaving(true);
     try {
-      await updateCertificationMeta(certification.key, {
-        newLabel: label.trim(),
-        newKey: certKey.trim(),
-        newProvider: provider || null,
+      await updateExamMeta(certification.id, {
+        newName: name.trim(),
+        newProviderName: provider.trim() || null,
         newTotalQuestions: totalQuestionsNum,
         newExamDurationMinutes: parseInt(examDurationMinutes, 10) || null,
         newPassingScore: parseFloat(passingScore) || null,
       });
-      onSaved(certification.key, {
-        label: label.trim(),
-        key: certKey.trim(),
-        provider: provider || undefined,
+      onSaved(certification.id, {
+        name: name.trim(),
+        provider: provider.trim() ? { name: provider.trim() } : null,
         totalQuestions: totalQuestionsNum,
         examDurationMinutes: parseInt(examDurationMinutes, 10) || undefined,
         passingScore: parseFloat(passingScore) || undefined,
       });
-      notify.success(t('toast.success'), t('toast.savedSuccessfully', { title: label.trim() }));
+      notify.success(t('toast.success'), t('toast.savedSuccessfully', { title: name.trim() }));
       onClose();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
 
-      notify.error(t('toast.error'), msg || t('toast.failedToUpdate', { name: label.trim() }));
+      notify.error(t('toast.error'), msg || t('toast.failedToUpdate', { name: name.trim() }));
     } finally {
       setSaving(false);
     }
@@ -88,26 +102,22 @@ export function EditCertificationModal({ certification, isOpen, onClose, onSaved
             {...inputProperties.input}
             label={t('certification.certificationTitle')}
             placeholder={t('certification.certificationTitlePlaceholder')}
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
           />
-          <Input
-            {...inputProperties.input}
-            label={t('certification.certificationCode')}
-            placeholder={t('certification.certificationCodePlaceholder')}
-            value={certKey}
-            onChange={(e) => setCertKey(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-          />
-          <Input
-            {...inputProperties.input}
-            label={t('certification.provider')}
+          <Autocomplete
+            allowsCustomValue
+            inputValue={provider}
+            label={t('exam.providerLabel')}
             placeholder={t('certification.providerPlaceholder')}
-            value={provider}
-            onChange={(e) => setProvider(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-          />
+            onInputChange={setProvider}
+            {...inputProperties.autocomplete}
+          >
+            {providers.map((p) => (
+              <AutocompleteItem key={p.name}>{p.name}</AutocompleteItem>
+            ))}
+          </Autocomplete>
           <div className="grid grid-cols-3 gap-4">
             <Input
               isRequired

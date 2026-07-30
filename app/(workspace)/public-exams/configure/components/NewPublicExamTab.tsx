@@ -1,5 +1,7 @@
 'use client';
-import { useRef, useState } from 'react';
+import type { Exam, ExamSection } from '@/shared/types';
+
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@heroui/button';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
@@ -8,9 +10,8 @@ import { Step1BasicInfo } from './Step1BasicInfo';
 import { Step2DefineSubjects } from './Step2DefineSubjects';
 import { Step3Review } from './Step3Review';
 
-import { savePublicExam } from '@/features/connectors';
-import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
-import { usePublicExamDraft } from '@/features/hooks/usePublicExamDraft.hook';
+import { saveExam } from '@/features/connectors';
+import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
@@ -20,25 +21,105 @@ interface NewPublicExamTabProps {
   readonly onBackToLibrary: () => void;
 }
 
+interface PublicExamDraft {
+  name: string;
+  role: string;
+  year: string;
+  examBoardName: string;
+  totalQuestions: string;
+  examDurationMinutes: string;
+  passingScore: string;
+  sections: ExamSection[];
+  step: 1 | 2 | 3;
+}
+
+const STORAGE_KEY = 'NEW_PUBLIC_EXAM_DRAFT';
+
+const EMPTY_DRAFT: PublicExamDraft = {
+  name: '',
+  role: '',
+  year: '',
+  examBoardName: '',
+  totalQuestions: '',
+  examDurationMinutes: '',
+  passingScore: '',
+  sections: [],
+  step: 1,
+};
+
 const variants = {
   enter: (dir: number) => ({ x: dir > 0 ? 40 : -40, opacity: 0 }),
   center: { x: 0, opacity: 1 },
   exit: (dir: number) => ({ x: dir > 0 ? -40 : 40, opacity: 0 }),
 };
 
+function readDraft(): PublicExamDraft {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+
+    if (raw) return { ...EMPTY_DRAFT, ...JSON.parse(raw) };
+  } catch {
+    /* corrupted or unavailable storage */
+  }
+
+  return EMPTY_DRAFT;
+}
+
 export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
-  const { addPublicExam, publicExams } = usePublicExamsContext();
-  const { loading, request } = useRequest(savePublicExam);
-  const draft = usePublicExamDraft();
+  const { publicExams, addExam } = useExamsContext();
+  const { loading, request } = useRequest(saveExam);
   const { t } = useTranslation();
   const [isDiscardOpen, setIsDiscardOpen] = useState(false);
-  const prevStep = useRef(draft.step);
+  const [hydrated, setHydrated] = useState(false);
+  const [draft, setDraft] = useState<PublicExamDraft>(EMPTY_DRAFT);
+  const prevStep = useRef<1 | 2 | 3>(1);
+
+  useEffect(() => {
+    setDraft(readDraft());
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+    } catch {
+      /* storage full or unavailable */
+    }
+  }, [hydrated, draft]);
 
   const direction = draft.step > prevStep.current ? 1 : -1;
 
+  const patch = (updates: Partial<PublicExamDraft>) => setDraft((prev) => ({ ...prev, ...updates }));
+
   const goToStep = (next: 1 | 2 | 3) => {
     prevStep.current = draft.step;
-    draft.setStep(next);
+    patch({ step: next });
+  };
+
+  const addEmptySection = () =>
+    setDraft((prev) => ({
+      ...prev,
+      sections: [...prev.sections, { name: '', minQuestions: 0, maxQuestions: 0, topics: [] }],
+    }));
+
+  const updateSection = (index: number, name: string, minQuestions: number, maxQuestions: number) =>
+    setDraft((prev) => ({
+      ...prev,
+      sections: prev.sections.map((s, i) => (i === index ? { ...s, name, minQuestions, maxQuestions } : s)),
+    }));
+
+  const removeSection = (index: number) =>
+    setDraft((prev) => ({ ...prev, sections: prev.sections.filter((_, i) => i !== index) }));
+
+  const resetDraft = () => {
+    prevStep.current = 1;
+    setDraft(EMPTY_DRAFT);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
   };
 
   const handleSave = async () => {
@@ -52,34 +133,35 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
 
     const yearNum = draft.year ? Number(draft.year) : undefined;
 
-    if (publicExams.some((p) => p.name === name && p.year === yearNum)) {
+    if (publicExams.some((p) => p.name === name && (p.year ?? undefined) === yearNum)) {
       notify.error(t('toast.duplicatePublicExam'), t('error.duplicatePublicExam', { name }));
       return;
     }
 
-    const publicExam = {
+    const exam: Exam = {
+      type: 'public_exam',
       name,
-      role: draft.role.trim() || undefined,
-      year: yearNum,
+      role: draft.role.trim() || null,
+      year: yearNum ?? null,
       totalQuestions: parseInt(draft.totalQuestions, 10),
-      examDurationMinutes: parseInt(draft.examDurationMinutes, 10) || undefined,
-      passingScore: parseFloat(draft.passingScore) || undefined,
+      examDurationMinutes: parseInt(draft.examDurationMinutes, 10) || null,
+      passingScore: parseFloat(draft.passingScore) || null,
       examBoard: { name: examBoardName },
-      subjects: draft.subjects,
+      sections: draft.sections,
     };
 
-    const saved = await request(publicExam);
+    const saved = await request(exam);
 
     if (saved) {
-      addPublicExam(saved);
-      draft.reset();
+      addExam(saved);
+      resetDraft();
       notify.success(t('toast.success'), t('toast.savedSuccessfully', { title: name }));
       onBackToLibrary();
     }
   };
 
   const handleConfirmDiscard = () => {
-    draft.reset();
+    resetDraft();
     setIsDiscardOpen(false);
     onBackToLibrary();
   };
@@ -96,28 +178,28 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
         year={draft.year}
         onBack={onBackToLibrary}
         onDiscard={() => setIsDiscardOpen(true)}
-        onExamBoardChange={draft.setExamBoardName}
-        onExamDurationMinutesChange={draft.setExamDurationMinutes}
-        onNameChange={draft.setName}
+        onExamBoardChange={(v) => patch({ examBoardName: v })}
+        onExamDurationMinutesChange={(v) => patch({ examDurationMinutes: v })}
+        onNameChange={(v) => patch({ name: v })}
         onNext={() => goToStep(2)}
-        onPassingScoreChange={draft.setPassingScore}
-        onRoleChange={draft.setRole}
-        onTotalQuestionsChange={draft.setTotalQuestions}
-        onYearChange={draft.setYear}
+        onPassingScoreChange={(v) => patch({ passingScore: v })}
+        onRoleChange={(v) => patch({ role: v })}
+        onTotalQuestionsChange={(v) => patch({ totalQuestions: v })}
+        onYearChange={(v) => patch({ year: v })}
       />
     ) : draft.step === 2 ? (
       <Step2DefineSubjects
         examBoardName={draft.examBoardName}
         name={draft.name}
         role={draft.role}
-        subjects={draft.subjects}
+        sections={draft.sections}
         year={draft.year}
-        onAddEmptySubject={draft.addEmptySubject}
+        onAddEmptySection={addEmptySection}
         onBack={() => goToStep(1)}
         onDiscard={() => setIsDiscardOpen(true)}
         onNext={() => goToStep(3)}
-        onRemoveSubject={draft.removeSubject}
-        onUpdateSubject={draft.updateSubject}
+        onRemoveSection={removeSection}
+        onUpdateSection={updateSection}
       />
     ) : (
       <Step3Review
@@ -127,7 +209,7 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
         name={draft.name}
         passingScore={parseFloat(draft.passingScore) || undefined}
         role={draft.role}
-        subjects={draft.subjects}
+        sections={draft.sections}
         totalQuestions={parseInt(draft.totalQuestions, 10) || 0}
         year={draft.year}
         onBack={() => goToStep(2)}

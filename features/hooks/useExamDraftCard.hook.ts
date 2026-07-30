@@ -1,8 +1,8 @@
 'use client';
 import { useState, useCallback } from 'react';
 
-import { PublicExam, PublicExamSubject, PublicExamTopic } from '@/shared/types';
-import { savePublicExam } from '@/features/connectors';
+import { Exam, ExamSection, ExamTopic } from '@/shared/types';
+import { saveExam } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
 
@@ -11,42 +11,45 @@ export type ExamDraftStatus = 'editing' | 'saving' | 'saved' | 'error';
 export type ExamDraftSaveResult = 'success' | 'duplicate' | 'error';
 
 interface UseExamDraftCardReturn {
-  readonly draft: PublicExam;
+  readonly draft: Exam;
   readonly status: ExamDraftStatus;
-  readonly updateField: (
-    field: keyof Pick<PublicExam, 'name' | 'role' | 'year'>,
-    value: string | number | null
-  ) => void;
+  readonly updateField: (field: keyof Pick<Exam, 'name' | 'role' | 'year'>, value: string | number | null) => void;
   readonly updateNumericField: (
     field: 'totalQuestions' | 'examDurationMinutes' | 'passingScore',
     value: number | undefined
   ) => void;
-  readonly updateExamBoardName: (name: string) => void;
-  readonly updateSubject: (index: number, patch: Partial<PublicExamSubject>) => void;
-  readonly removeSubject: (index: number) => void;
-  readonly addSubject: () => void;
-  readonly addTopic: (subjectIndex: number, name: string) => void;
-  readonly removeTopic: (subjectIndex: number, topicIndex: number) => void;
-  readonly updateTopic: (subjectIndex: number, topicIndex: number, newName: string) => void;
+  readonly updateReferenceName: (name: string) => void;
+  readonly updateSection: (index: number, patch: Partial<ExamSection>) => void;
+  readonly removeSection: (index: number) => void;
+  readonly addSection: () => void;
+  readonly addTopic: (sectionIndex: number, name: string) => void;
+  readonly removeTopic: (sectionIndex: number, topicIndex: number) => void;
+  readonly updateTopic: (sectionIndex: number, topicIndex: number, newName: string) => void;
   readonly handleSave: () => Promise<ExamDraftSaveResult>;
 }
 
 const clampPercent = (value: number): number => Math.min(100, Math.max(0, Math.round(value)));
 
-export function useExamDraftCard(initialDraft: PublicExam): UseExamDraftCardReturn {
-  const [draft, setDraft] = useState<PublicExam>(initialDraft);
+export function useExamDraftCard(initialDraft: Exam): UseExamDraftCardReturn {
+  const [draft, setDraft] = useState<Exam>(initialDraft);
   const [status, setStatus] = useState<ExamDraftStatus>('editing');
   const { t } = useTranslation();
 
   const updateField = useCallback(
-    (field: keyof Pick<PublicExam, 'name' | 'role' | 'year'>, value: string | number | null) => {
+    (field: keyof Pick<Exam, 'name' | 'role' | 'year'>, value: string | number | null) => {
       setDraft((prev) => ({ ...prev, [field]: value }));
     },
     []
   );
 
-  const updateExamBoardName = useCallback((name: string) => {
-    setDraft((prev) => ({ ...prev, examBoard: { ...prev.examBoard, name } }));
+  const updateReferenceName = useCallback((name: string) => {
+    setDraft((prev) => {
+      if (prev.type === 'certification') {
+        return { ...prev, provider: { ...(prev.provider ?? {}), name } };
+      }
+
+      return { ...prev, examBoard: { ...(prev.examBoard ?? {}), name } };
+    });
   }, []);
 
   const updateNumericField = useCallback(
@@ -56,10 +59,10 @@ export function useExamDraftCard(initialDraft: PublicExam): UseExamDraftCardRetu
     []
   );
 
-  const updateSubject = useCallback((index: number, patch: Partial<PublicExamSubject>) => {
+  const updateSection = useCallback((index: number, patch: Partial<ExamSection>) => {
     setDraft((prev) => {
-      const subjects = [...prev.subjects];
-      const updated = { ...subjects[index], ...patch };
+      const sections = [...prev.sections];
+      const updated = { ...sections[index], ...patch };
 
       if (patch.minQuestions !== undefined || patch.maxQuestions !== undefined) {
         updated.minQuestions = clampPercent(updated.minQuestions);
@@ -74,89 +77,90 @@ export function useExamDraftCard(initialDraft: PublicExam): UseExamDraftCardRetu
         }
       }
 
-      subjects[index] = updated;
+      sections[index] = updated;
 
-      return { ...prev, subjects };
+      return { ...prev, sections };
     });
   }, []);
 
-  const removeSubject = useCallback((index: number) => {
+  const removeSection = useCallback((index: number) => {
     setDraft((prev) => ({
       ...prev,
-      subjects: prev.subjects.filter((_, i) => i !== index),
+      sections: prev.sections.filter((_, i) => i !== index),
     }));
   }, []);
 
-  const addSubject = useCallback(() => {
-    const newSubject: PublicExamSubject = { name: '', minQuestions: 0, maxQuestions: 0, topics: [] };
+  const addSection = useCallback(() => {
+    const newSection: ExamSection = { name: '', minQuestions: 0, maxQuestions: 0, topics: [] };
 
-    setDraft((prev) => ({ ...prev, subjects: [...prev.subjects, newSubject] }));
+    setDraft((prev) => ({ ...prev, sections: [...prev.sections, newSection] }));
   }, []);
 
-  const addTopic = useCallback((subjectIndex: number, name: string) => {
+  const addTopic = useCallback((sectionIndex: number, name: string) => {
     if (!name.trim()) return;
-    const newTopic: PublicExamTopic = { name: name.trim() };
+    const newTopic: ExamTopic = { name: name.trim() };
 
     setDraft((prev) => {
-      const subjects = [...prev.subjects];
+      const sections = [...prev.sections];
 
-      subjects[subjectIndex] = {
-        ...subjects[subjectIndex],
-        topics: [...(subjects[subjectIndex].topics ?? []), newTopic],
+      sections[sectionIndex] = {
+        ...sections[sectionIndex],
+        topics: [...(sections[sectionIndex].topics ?? []), newTopic],
       };
 
-      return { ...prev, subjects };
+      return { ...prev, sections };
     });
   }, []);
 
-  const removeTopic = useCallback((subjectIndex: number, topicIndex: number) => {
+  const removeTopic = useCallback((sectionIndex: number, topicIndex: number) => {
     setDraft((prev) => {
-      const subjects = [...prev.subjects];
+      const sections = [...prev.sections];
 
-      subjects[subjectIndex] = {
-        ...subjects[subjectIndex],
-        topics: (subjects[subjectIndex].topics ?? []).filter((_, i) => i !== topicIndex),
+      sections[sectionIndex] = {
+        ...sections[sectionIndex],
+        topics: (sections[sectionIndex].topics ?? []).filter((_, i) => i !== topicIndex),
       };
 
-      return { ...prev, subjects };
+      return { ...prev, sections };
     });
   }, []);
 
-  const updateTopic = useCallback((subjectIndex: number, topicIndex: number, newName: string) => {
+  const updateTopic = useCallback((sectionIndex: number, topicIndex: number, newName: string) => {
     if (!newName.trim()) return;
     setDraft((prev) => {
-      const subjects = [...prev.subjects];
-      const topics = [...(subjects[subjectIndex].topics ?? [])];
+      const sections = [...prev.sections];
+      const topics = [...(sections[sectionIndex].topics ?? [])];
 
       topics[topicIndex] = { ...topics[topicIndex], name: newName.trim() };
-      subjects[subjectIndex] = { ...subjects[subjectIndex], topics };
+      sections[sectionIndex] = { ...sections[sectionIndex], topics };
 
-      return { ...prev, subjects };
+      return { ...prev, sections };
     });
   }, []);
 
   const handleSave = useCallback(async (): Promise<ExamDraftSaveResult> => {
     setStatus('saving');
     try {
-      const saved = await savePublicExam(draft);
+      const saved = await saveExam(draft);
 
       setStatus('saved');
-      notify.success(t('chat.examSaved'), t('chat.examSavedDescription', { name: draft.name }));
-      window.dispatchEvent(new CustomEvent('public-exam-created', { detail: saved }));
+      notify.success(t('exam.saved'), t('exam.savedDescription', { name: draft.name }));
+      window.dispatchEvent(new CustomEvent('exam-created', { detail: saved }));
 
       return 'success';
     } catch (err: unknown) {
-      const httpStatus = (err as { response?: { status?: number }; status?: number })?.response?.status
-        ?? (err as { status?: number })?.status;
+      const httpStatus =
+        (err as { response?: { status?: number }; status?: number })?.response?.status ??
+        (err as { status?: number })?.status;
 
       if (httpStatus === 409) {
-        notify.error(t('chat.examDuplicate'), t('chat.examDuplicateDescription'));
+        notify.error(t('exam.duplicate'), t('exam.duplicateDescription'));
         setStatus('error');
 
         return 'duplicate';
       }
 
-      notify.error(t('chat.examSaveError'), t('chat.examSaveErrorDescription'));
+      notify.error(t('exam.saveError'), t('exam.saveErrorDescription'));
       setStatus('error');
 
       return 'error';
@@ -168,10 +172,10 @@ export function useExamDraftCard(initialDraft: PublicExam): UseExamDraftCardRetu
     status,
     updateField,
     updateNumericField,
-    updateExamBoardName,
-    updateSubject,
-    removeSubject,
-    addSubject,
+    updateReferenceName,
+    updateSection,
+    removeSection,
+    addSection,
     addTopic,
     removeTopic,
     updateTopic,

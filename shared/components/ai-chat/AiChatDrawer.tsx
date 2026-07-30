@@ -12,7 +12,6 @@ import { useAiChat } from '@/features/hooks/useAiChat.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { AiChatMessage } from '@/shared/components/ai-chat/AiChatMessage';
-import { AiChatCertificationDraftCard } from '@/shared/components/ai-chat/AiChatCertificationDraftCard';
 import { AiChatExamDraftCard } from '@/shared/components/ai-chat/AiChatExamDraftCard';
 
 interface AiChatDrawerProps {
@@ -106,12 +105,7 @@ export function AiChatDrawer({ isOpen, onClose, userId }: AiChatDrawerProps) {
               {message.isError ? (
                 <AiChatMessage content={message.content} isError={true} role={message.role} />
               ) : message.examDraft ? (
-                <AiChatExamDraftCard publicExam={message.examDraft} onExamSaved={handleFollowUp} />
-              ) : message.certificationData ? (
-                <AiChatCertificationDraftCard
-                  certification={message.certificationData}
-                  onCertificationSaved={handleFollowUp}
-                />
+                <AiChatExamDraftCard exam={message.examDraft} onExamSaved={handleFollowUp} />
               ) : (
                 <AiChatMessage attachmentName={message.attachmentName} content={message.content} role={message.role} />
               )}

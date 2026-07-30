@@ -1,5 +1,5 @@
 'use client';
-import type { PublicExamSubject } from '@/shared/types';
+import type { ExamSection } from '@/shared/types';
 
 import { faCircleCheck, faCircleInfo, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -18,10 +18,10 @@ interface Step2DefineSubjectsProps {
   readonly role: string;
   readonly year: string;
   readonly examBoardName: string;
-  readonly subjects: PublicExamSubject[];
-  readonly onAddEmptySubject: () => void;
-  readonly onUpdateSubject: (index: number, name: string, minQuestions: number, maxQuestions: number) => void;
-  readonly onRemoveSubject: (index: number) => void;
+  readonly sections: ExamSection[];
+  readonly onAddEmptySection: () => void;
+  readonly onUpdateSection: (index: number, name: string, minQuestions: number, maxQuestions: number) => void;
+  readonly onRemoveSection: (index: number) => void;
   readonly onBack: () => void;
   readonly onNext: () => void;
   readonly onDiscard: () => void;
@@ -32,20 +32,20 @@ export function Step2DefineSubjects({
   role,
   year,
   examBoardName,
-  subjects,
-  onAddEmptySubject,
-  onUpdateSubject,
-  onRemoveSubject,
+  sections,
+  onAddEmptySection,
+  onUpdateSection,
+  onRemoveSection,
   onBack,
   onNext,
   onDiscard,
 }: Step2DefineSubjectsProps) {
   const { t } = useTranslation();
-  const totalWeightage = subjects.reduce((sum, subject) => sum + Number(subject.maxQuestions), 0);
+  const totalWeightage = sections.reduce((sum, section) => sum + Number(section.maxQuestions), 0);
   const isWeightageValid = totalWeightage === 100;
-  const allSubjectsNamed = subjects.length > 0 && subjects.every((s) => s.name.trim().length > 0);
-  const isMinMaxValid = subjects.every((s) => s.minQuestions <= s.maxQuestions);
-  const hasDraft = !!(name || examBoardName || role || year || subjects.length > 0);
+  const allSectionsNamed = sections.length > 0 && sections.every((section) => section.name.trim().length > 0);
+  const isMinMaxValid = sections.every((section) => section.minQuestions <= section.maxQuestions);
+  const hasDraft = !!(name || examBoardName || role || year || sections.length > 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -61,7 +61,7 @@ export function Step2DefineSubjects({
                 <p className="text-base text-foreground mt-1">{name || '—'}</p>
               </div>
               <div className="col-span-1 lg:col-span-2">
-                <p className="text-xs font-bold text-primary-300">{t('concurso.bancaLabel')}</p>
+                <p className="text-xs font-bold text-primary-300">{t('exam.examBoardLabel')}</p>
                 <p className="text-sm text-foreground mt-1">{examBoardName || '—'}</p>
               </div>
               <div className="col-span-1 lg:col-span-2">
@@ -121,22 +121,23 @@ export function Step2DefineSubjects({
           <div className="flex items-center justify-between px-6 py-5 border-b border-default-200">
             <h3 className="text-lg font-bold text-foreground">{t('concurso.subjectsTitle')}</h3>
             <Button
+              data-testid="exam-add-section-btn"
               className={buttonStyles.primarySm}
               size="sm"
               startContent={<FontAwesomeIcon className="text-[10px]" icon={faPlus} />}
-              onPress={onAddEmptySubject}
+              onPress={onAddEmptySection}
             >
               {t('concurso.addSubject')}
             </Button>
           </div>
 
           <div className="flex flex-col gap-4 p-6 min-h-[200px]">
-            {subjects.length === 0 && (
+            {sections.length === 0 && (
               <p className="text-sm text-default-400 text-center py-10">{t('concurso.noSubjects')}</p>
             )}
             <AnimatePresence initial={false}>
-              {subjects.map((subject, index) => {
-                const hasMinMaxError = subject.minQuestions > subject.maxQuestions;
+              {sections.map((section, index) => {
+                const hasMinMaxError = section.minQuestions > section.maxQuestions;
 
                 return (
                   <motion.div
@@ -152,8 +153,8 @@ export function Step2DefineSubjects({
                         {...inputProperties.input}
                         label={t('concurso.subjectName')}
                         placeholder={t('concurso.subjectNamePlaceholder')}
-                        value={subject.name}
-                        onChange={(e) => onUpdateSubject(index, e.target.value, subject.minQuestions, subject.maxQuestions)}
+                        value={section.name}
+                        onChange={(e) => onUpdateSection(index, e.target.value, section.minQuestions, section.maxQuestions)}
                       />
                       <Input
                         {...inputProperties.input}
@@ -162,10 +163,10 @@ export function Step2DefineSubjects({
                         max={100}
                         min={0}
                         type="number"
-                        value={String(subject.minQuestions)}
+                        value={String(section.minQuestions)}
                         onChange={(e) => {
                           const newMin = Math.min(100, Math.max(0, Number(e.target.value) || 0));
-                          onUpdateSubject(index, subject.name, newMin, subject.maxQuestions);
+                          onUpdateSection(index, section.name, newMin, section.maxQuestions);
                         }}
                       />
                       <Input
@@ -175,10 +176,10 @@ export function Step2DefineSubjects({
                         max={100}
                         min={0}
                         type="number"
-                        value={String(subject.maxQuestions)}
+                        value={String(section.maxQuestions)}
                         onChange={(e) => {
                           const newMax = Math.min(100, Math.max(0, Number(e.target.value) || 0));
-                          onUpdateSubject(index, subject.name, subject.minQuestions, newMax);
+                          onUpdateSection(index, section.name, section.minQuestions, newMax);
                         }}
                       />
                       <div className="pb-1">
@@ -188,7 +189,7 @@ export function Step2DefineSubjects({
                           className={buttonStyles.iconOnly.danger}
                           size="sm"
                           variant="light"
-                          onPress={() => onRemoveSubject(index)}
+                          onPress={() => onRemoveSection(index)}
                         >
                           <FontAwesomeIcon className="text-xs" icon={faTrash} />
                         </Button>
@@ -211,7 +212,7 @@ export function Step2DefineSubjects({
             )}
             <Button
               className={buttonStyles.primary}
-              isDisabled={!allSubjectsNamed || !isWeightageValid || !isMinMaxValid}
+              isDisabled={!allSectionsNamed || !isWeightageValid || !isMinMaxValid}
               onPress={onNext}
             >
               {t('concurso.finalizePublicExam')}

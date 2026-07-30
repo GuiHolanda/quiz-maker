@@ -12,7 +12,7 @@ import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
 import { ItemsPerPageSelect } from '@/shared/components/ui/ItemsPerPageSelect';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { getQuestionBank, deleteBrowseQuestion, deletePublicExamBrowseQuestion } from '@/features/connectors';
+import { getQuestionBank, deleteBrowseQuestion } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import type { UnifiedQuestion, QuestionBankResponse } from '@/shared/types';
@@ -115,11 +115,7 @@ export default function QuestionBankPage() {
     if (!deleteTarget) return;
     setIsDeleting(true);
     try {
-      if (deleteTarget.type === 'certification') {
-        await deleteBrowseQuestion(deleteTarget.id);
-      } else {
-        await deletePublicExamBrowseQuestion(deleteTarget.id);
-      }
+      await deleteBrowseQuestion(deleteTarget.id);
       notify.success(t('questionBank.deleteSuccess'));
       setDeleteTarget(null);
       // If deleted item was the last on a page > 1, go back one page

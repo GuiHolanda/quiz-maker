@@ -19,12 +19,12 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { EditPublicExamModal } from './EditPublicExamModal';
 
 import { buttonStyles } from '@/config/constants/buttonStyles';
-import { PublicExamSubjectsTable, PublicExamSubjectsTableHandle } from '@/shared/components/PublicExamSubjectsTable';
+import { ExamSectionsTable, ExamSectionsTableHandle } from '@/shared/components/ExamSectionsTable/ExamSectionsTable';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
-import usePublicExamsContext from '@/features/hooks/usePublicExamsContext.hook';
-import { deletePublicExam } from '@/features/connectors';
-import { PublicExam, PublicExamSubject, PublicExamTopic, ExamBoard } from '@/shared/types';
+import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
+import { deleteExam } from '@/features/connectors';
+import { Exam, ExamSection, ExamTopic, ExamBoard } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
 import { RelativeDate } from '@/shared/components/ui/RelativeDate';
@@ -35,72 +35,85 @@ interface PublicExamsListTabProps {
 
 export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
   const { t } = useTranslation();
-  const { publicExams, isLoading, updatePublicExam, removePublicExam } = usePublicExamsContext();
-  const [editingExam, setEditingExam] = useState<PublicExam | null>(null);
-  const [deletingExam, setDeletingExam] = useState<PublicExam | null>(null);
+  const { publicExams, isLoading, updateExam, removeExam } = useExamsContext();
+  const [editingExam, setEditingExam] = useState<Exam | null>(null);
+  const [deletingExam, setDeletingExam] = useState<Exam | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const tableRefs = useRef<Record<string, PublicExamSubjectsTableHandle | null>>({});
+  const tableRefs = useRef<Record<string, ExamSectionsTableHandle | null>>({});
 
-  const handleSubjectUpdated = useCallback(
-    (publicExam: PublicExam, subjectId: string, newName: string, minQuestions: number, maxQuestions: number) => {
-      const updatedSubjects = publicExam.subjects.map((s) =>
-        s.id === subjectId ? { ...s, name: newName, minQuestions, maxQuestions } : s
+  const handleSectionUpdated = useCallback(
+    (exam: Exam, sectionId: string, newName: string, minQuestions: number, maxQuestions: number) => {
+      if (!exam.id) return;
+      const updatedSections = exam.sections.map((section) =>
+        section.id === sectionId ? { ...section, name: newName, minQuestions, maxQuestions } : section
       );
 
-      if (publicExam.id) updatePublicExam(publicExam.id, { subjects: updatedSubjects });
+      updateExam(exam.id, { sections: updatedSections });
     },
-    [updatePublicExam]
+    [updateExam]
   );
 
-  const handleSubjectRemoved = useCallback(
-    (publicExam: PublicExam, subjectId: string) => {
-      const updatedSubjects = publicExam.subjects.filter((s) => s.id !== subjectId);
+  const handleSectionRemoved = useCallback(
+    (exam: Exam, sectionId: string) => {
+      if (!exam.id) return;
+      const updatedSections = exam.sections.filter((section) => section.id !== sectionId);
 
-      if (publicExam.id) updatePublicExam(publicExam.id, { subjects: updatedSubjects });
+      updateExam(exam.id, { sections: updatedSections });
     },
-    [updatePublicExam]
+    [updateExam]
   );
 
-  const handleSubjectAdded = useCallback(
-    (publicExam: PublicExam, subject: PublicExamSubject) => {
-      if (publicExam.id) updatePublicExam(publicExam.id, { subjects: [...publicExam.subjects, subject] });
+  const handleSectionAdded = useCallback(
+    (exam: Exam, section: ExamSection) => {
+      if (!exam.id) return;
+      updateExam(exam.id, { sections: [...exam.sections, section] });
     },
-    [updatePublicExam]
+    [updateExam]
   );
 
   const handleTopicAdded = useCallback(
-    (publicExam: PublicExam, subjectId: string, topic: PublicExamTopic) => {
-      const updatedSubjects = publicExam.subjects.map((s) =>
-        s.id === subjectId ? { ...s, topics: [...(s.topics ?? []), topic] } : s
+    (exam: Exam, sectionId: string, topic: ExamTopic) => {
+      if (!exam.id) return;
+      const updatedSections = exam.sections.map((section) =>
+        section.id === sectionId ? { ...section, topics: [...(section.topics ?? []), topic] } : section
       );
 
-      if (publicExam.id) updatePublicExam(publicExam.id, { subjects: updatedSubjects });
+      updateExam(exam.id, { sections: updatedSections });
     },
-    [updatePublicExam]
+    [updateExam]
   );
 
   const handleTopicRemoved = useCallback(
-    (publicExam: PublicExam, subjectId: string, topicId: string) => {
-      const updatedSubjects = publicExam.subjects.map((s) =>
-        s.id === subjectId ? { ...s, topics: (s.topics ?? []).filter((tp) => tp.id !== topicId) } : s
+    (exam: Exam, sectionId: string, topicId: string) => {
+      if (!exam.id) return;
+      const updatedSections = exam.sections.map((section) =>
+        section.id === sectionId
+          ? { ...section, topics: (section.topics ?? []).filter((topic) => topic.id !== topicId) }
+          : section
       );
 
-      if (publicExam.id) updatePublicExam(publicExam.id, { subjects: updatedSubjects });
+      updateExam(exam.id, { sections: updatedSections });
     },
-    [updatePublicExam]
+    [updateExam]
   );
 
   const handleTopicUpdated = useCallback(
-    (publicExam: PublicExam, subjectId: string, topicId: string, newName: string) => {
-      const updatedSubjects = publicExam.subjects.map((s) =>
-        s.id === subjectId
-          ? { ...s, topics: (s.topics ?? []).map((tp) => (tp.id === topicId ? { ...tp, name: newName } : tp)) }
-          : s
+    (exam: Exam, sectionId: string, topicId: string, newName: string) => {
+      if (!exam.id) return;
+      const updatedSections = exam.sections.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              topics: (section.topics ?? []).map((topic) =>
+                topic.id === topicId ? { ...topic, name: newName } : topic
+              ),
+            }
+          : section
       );
 
-      if (publicExam.id) updatePublicExam(publicExam.id, { subjects: updatedSubjects });
+      updateExam(exam.id, { sections: updatedSections });
     },
-    [updatePublicExam]
+    [updateExam]
   );
 
   const handleExamSaved = useCallback(
@@ -116,7 +129,7 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
         passingScore?: number;
       }
     ) => {
-      updatePublicExam(id, {
+      updateExam(id, {
         name: updated.name,
         role: updated.role,
         year: updated.year,
@@ -126,15 +139,15 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
         passingScore: updated.passingScore,
       });
     },
-    [updatePublicExam]
+    [updateExam]
   );
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!deletingExam?.id) return;
     setIsDeleting(true);
     try {
-      await deletePublicExam(deletingExam.id);
-      removePublicExam(deletingExam.id);
+      await deleteExam(deletingExam.id);
+      removeExam(deletingExam.id);
       notify.success(t('toast.success'), t('concurso.examDeleted', { name: deletingExam.name }));
       setDeletingExam(null);
     } catch {
@@ -142,7 +155,7 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
     } finally {
       setIsDeleting(false);
     }
-  }, [deletingExam, removePublicExam, t]);
+  }, [deletingExam, removeExam, t]);
 
   if (isLoading) {
     return <SkeletonListLoader />;
@@ -177,21 +190,22 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
 
             return (
               <AccordionItem key={examKey} aria-label={publicExam.name} title={renderTriggerTitle(publicExam)}>
-                <PublicExamSubjectsTable
+                <ExamSectionsTable
                   ref={(el) => {
                     tableRefs.current[examKey] = el;
                   }}
-                  selectedPublicExam={publicExam}
-                  subjectsList={publicExam.subjects}
-                  onSubjectAdded={(subject) => handleSubjectAdded(publicExam, subject)}
-                  onSubjectRemoved={(subjectId) => handleSubjectRemoved(publicExam, subjectId)}
-                  onSubjectUpdated={(subjectId, newName, min, max) =>
-                    handleSubjectUpdated(publicExam, subjectId, newName, min, max)
+                  selectedExam={publicExam}
+                  sectionsList={publicExam.sections}
+                  showTopics
+                  onSectionAdded={(section) => handleSectionAdded(publicExam, section)}
+                  onSectionRemoved={(sectionId) => handleSectionRemoved(publicExam, sectionId)}
+                  onSectionUpdated={(sectionId, newName, min, max) =>
+                    handleSectionUpdated(publicExam, sectionId, newName, min, max)
                   }
-                  onTopicAdded={(subjectId, topic) => handleTopicAdded(publicExam, subjectId, topic)}
-                  onTopicRemoved={(subjectId, topicId) => handleTopicRemoved(publicExam, subjectId, topicId)}
-                  onTopicUpdated={(subjectId, topicId, newName) =>
-                    handleTopicUpdated(publicExam, subjectId, topicId, newName)
+                  onTopicAdded={(sectionId, topic) => handleTopicAdded(publicExam, sectionId, topic)}
+                  onTopicRemoved={(sectionId, topicId) => handleTopicRemoved(publicExam, sectionId, topicId)}
+                  onTopicUpdated={(sectionId, topicId, newName) =>
+                    handleTopicUpdated(publicExam, sectionId, topicId, newName)
                   }
                 />
                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-default-200">
@@ -261,21 +275,21 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
     </>
   );
 
-  function renderTriggerTitle(publicExam: PublicExam) {
+  function renderTriggerTitle(publicExam: Exam) {
     const subjectStatus =
-      publicExam.subjects.length === 0 ? (
+      publicExam.sections.length === 0 ? (
         <Chip color="warning" size="sm" variant="flat">
           {t('concurso.noSubjects')}
         </Chip>
       ) : (
         <span
-          aria-label={t('concurso.subjectsAriaLabel', { count: String(publicExam.subjects.length) })}
+          aria-label={t('concurso.subjectsAriaLabel', { count: String(publicExam.sections.length) })}
           className="flex items-center gap-1 text-xs text-default-400"
         >
           <FontAwesomeIcon className="text-[10px]" icon={faLayerGroup} />
-          {publicExam.subjects.length === 1
+          {publicExam.sections.length === 1
             ? t('concurso.subjectCount1')
-            : t('concurso.subjectCountN', { count: String(publicExam.subjects.length) })}
+            : t('concurso.subjectCountN', { count: String(publicExam.sections.length) })}
         </span>
       );
 

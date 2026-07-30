@@ -98,8 +98,9 @@ export function Step1BasicInfo({
 
           <Autocomplete
             allowsCustomValue
+            data-testid="exam-examboard-input"
             inputValue={examBoardName}
-            label={t('concurso.banca')}
+            label={t('exam.examBoardLabel')}
             placeholder={t('concurso.bancaPlaceholder')}
             onInputChange={onExamBoardChange}
             {...inputProperties.autocomplete}

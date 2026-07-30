@@ -7,9 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { NewSimuladoTab } from './components/NewSimuladoTab';
 import { SimuladosListTab } from './components/SimuladosListTab';
 
-import { CertificationsProvider } from '@/features/providers/certifications.provider';
-import { CertSimuladosProvider } from '@/features/providers/certSimulados.provider';
-import { PublicExamsProvider } from '@/features/providers/publicExams.provider';
+import { ExamsProvider } from '@/features/providers/exams.provider';
 import { MockExamsProvider } from '@/features/providers/mockExams.provider';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
@@ -47,14 +45,10 @@ function SimuladosPageContent() {
 
 export default function SimuladosPage() {
   return (
-    <CertificationsProvider>
-      <PublicExamsProvider>
-        <CertSimuladosProvider>
-          <MockExamsProvider>
-            <SimuladosPageContent />
-          </MockExamsProvider>
-        </CertSimuladosProvider>
-      </PublicExamsProvider>
-    </CertificationsProvider>
+    <ExamsProvider>
+      <MockExamsProvider>
+        <SimuladosPageContent />
+      </MockExamsProvider>
+    </ExamsProvider>
   );
 }

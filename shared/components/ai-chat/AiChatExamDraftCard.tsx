@@ -1,47 +1,49 @@
 'use client';
 import { useState } from 'react';
 
-import { PublicExam } from '@/shared/types';
+import { Exam } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { AiChatDraftCard } from '@/shared/components/ai-chat/AiChatDraftCard';
-import { DraftReviewModal } from '@/shared/components/ai-chat/DraftReviewModal';
+import { ExamModal } from '@/shared/components/ai-chat/ExamModal';
 
 interface AiChatExamDraftCardProps {
-  readonly publicExam: PublicExam;
+  readonly exam: Exam;
   readonly onExamSaved?: () => void;
 }
 
-export function AiChatExamDraftCard({ publicExam, onExamSaved }: AiChatExamDraftCardProps) {
+export function AiChatExamDraftCard({ exam, onExamSaved }: AiChatExamDraftCardProps) {
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [savedDraft, setSavedDraft] = useState<PublicExam | null>(null);
+  const [savedDraft, setSavedDraft] = useState<Exam | null>(null);
 
   const isSaved = savedDraft !== null;
-  const displayExam = savedDraft ?? publicExam;
+  const display = savedDraft ?? exam;
+  const isCertification = display.type === 'certification';
 
-  const meta = [displayExam.examBoard.name, displayExam.role, displayExam.year?.toString()].filter(Boolean).join(' · ');
-  const count = `${displayExam.subjects.length} ${t('chat.subjects')}`;
+  const referenceName = isCertification ? display.provider?.name : display.examBoard?.name;
+  const meta = [referenceName, display.role, display.year?.toString()].filter(Boolean).join(' · ');
+  const count = `${display.sections.length} ${t('exam.sections')}`;
+  const badge = isCertification ? t('exam.certificationPreview') : t('exam.examFound');
 
   return (
     <AiChatDraftCard
-      badge={t('chat.examFound')}
+      badge={badge}
       count={count}
       isSaved={isSaved}
       meta={meta}
       modal={
-        <DraftReviewModal
-          type="public-exam"
-          data={publicExam}
+        <ExamModal
+          data={exam}
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          onSaved={(draft) => {
-            setSavedDraft(draft as PublicExam);
+          onSaved={(saved) => {
+            setSavedDraft(saved);
             setIsModalOpen(false);
             onExamSaved?.();
           }}
         />
       }
-      title={displayExam.name}
+      title={display.name}
       onReviewPress={() => setIsModalOpen(true)}
     />
   );

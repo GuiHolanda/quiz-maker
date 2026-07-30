@@ -1,7 +1,7 @@
 'use client';
 import { Input } from '@heroui/input';
 
-import { PublicExam } from '@/shared/types';
+import { Exam } from '@/shared/types';
 import { useExamDraftCard } from '@/features/hooks/useExamDraftCard.hook';
 import { DraftModalShell } from '@/shared/components/ai-chat/DraftModalShell';
 import { ExamDistributionTable } from '@/shared/components/ai-chat/ExamDistributionTable';
@@ -10,10 +10,10 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 
 interface ExamModalProps {
-  readonly data: PublicExam;
+  readonly data: Exam;
   readonly isOpen: boolean;
   readonly onClose: () => void;
-  readonly onSaved: (saved: PublicExam) => void;
+  readonly onSaved: (saved: Exam) => void;
 }
 
 export function ExamModal({ data, isOpen, onClose, onSaved }: ExamModalProps) {
@@ -23,10 +23,10 @@ export function ExamModal({ data, isOpen, onClose, onSaved }: ExamModalProps) {
     status,
     updateField,
     updateNumericField,
-    updateExamBoardName,
-    updateSubject,
-    removeSubject,
-    addSubject,
+    updateReferenceName,
+    updateSection,
+    removeSection,
+    addSection,
     addTopic,
     removeTopic,
     updateTopic,
@@ -35,14 +35,18 @@ export function ExamModal({ data, isOpen, onClose, onSaved }: ExamModalProps) {
 
   const isSaving = status === 'saving';
   const hasError = status === 'error';
+  const isCertification = draft.type === 'certification';
 
-  const totalTopics = draft.subjects.reduce((sum, subject) => sum + (subject.topics ?? []).length, 0);
+  const totalTopics = draft.sections.reduce((sum, section) => sum + (section.topics ?? []).length, 0);
 
-  const isDistributionValid = draft.subjects.every((subject) => {
-    return subject.name.trim() && subject.maxQuestions >= subject.minQuestions;
+  const referenceName = isCertification ? (draft.provider?.name ?? '') : (draft.examBoard?.name ?? '');
+  const referenceLabel = isCertification ? t('exam.provider') : t('exam.examBoard');
+
+  const isDistributionValid = draft.sections.every((section) => {
+    return section.name.trim() && section.maxQuestions >= section.minQuestions;
   });
 
-  const canSave = draft.name.trim() !== '' && draft.examBoard.name.trim() !== '' && isDistributionValid;
+  const canSave = draft.name.trim() !== '' && referenceName.trim() !== '' && isDistributionValid;
 
   const handleSaveAndClose = async () => {
     const result = await handleSave();
@@ -54,26 +58,26 @@ export function ExamModal({ data, isOpen, onClose, onSaved }: ExamModalProps) {
 
   return (
     <DraftModalShell
-      addLabel={t('chat.addSubject')}
+      addLabel={t('exam.addSection')}
       canSave={canSave}
       hasError={hasError}
       headerFields={renderHeaderFields()}
       isOpen={isOpen}
       isSaving={isSaving}
       name={draft.name}
-      subtitle={t('chat.examExtractionSummary', { subjects: draft.subjects.length, topics: totalTopics })}
-      onAddPrimary={addSubject}
+      subtitle={t('exam.extractionSummary', { sections: draft.sections.length, topics: totalTopics })}
+      onAddPrimary={addSection}
       onClose={onClose}
       onRetry={handleSaveAndClose}
       onSave={handleSaveAndClose}
     >
       <ExamDistributionTable
         isSaving={isSaving}
-        subjects={draft.subjects}
+        sections={draft.sections}
         onAddTopic={addTopic}
-        onRemoveSubject={removeSubject}
+        onRemoveSection={removeSection}
         onRemoveTopic={removeTopic}
-        onUpdateSubject={updateSubject}
+        onUpdateSection={updateSection}
         onUpdateTopic={updateTopic}
       />
     </DraftModalShell>
@@ -87,7 +91,7 @@ export function ExamModal({ data, isOpen, onClose, onSaved }: ExamModalProps) {
             <Input
               {...inputProperties.input}
               isDisabled={isSaving}
-              label={t('chat.examName')}
+              label={t('exam.name')}
               placeholder=" "
               value={draft.name}
               onValueChange={(v) => updateField('name', v)}
@@ -97,7 +101,7 @@ export function ExamModal({ data, isOpen, onClose, onSaved }: ExamModalProps) {
             <Input
               {...inputProperties.input}
               isDisabled={isSaving}
-              label={t('chat.examYear')}
+              label={t('exam.year')}
               placeholder=" "
               type="number"
               value={draft.year?.toString() ?? ''}
@@ -109,15 +113,15 @@ export function ExamModal({ data, isOpen, onClose, onSaved }: ExamModalProps) {
           <Input
             {...inputProperties.input}
             isDisabled={isSaving}
-            label={t('chat.examBoard')}
+            label={referenceLabel}
             placeholder=" "
-            value={draft.examBoard.name}
-            onValueChange={updateExamBoardName}
+            value={referenceName}
+            onValueChange={updateReferenceName}
           />
           <Input
             {...inputProperties.input}
             isDisabled={isSaving}
-            label={t('chat.examRole')}
+            label={t('exam.role')}
             placeholder=" "
             value={draft.role ?? ''}
             onValueChange={(v) => updateField('role', v || null)}
