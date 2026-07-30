@@ -11,9 +11,9 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useAiChat } from '@/features/hooks/useAiChat.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { buttonStyles } from '@/config/constants/buttonStyles';
-import { AiChatMessage } from '@/shared/components/ui/AiChatMessage';
-import { AiChatCertificationDraftCard } from '@/shared/components/ui/AiChatCertificationDraftCard';
-import { AiChatExamDraftCard } from '@/shared/components/ui/AiChatExamDraftCard';
+import { AiChatMessage } from '@/shared/components/ai-chat/AiChatMessage';
+import { AiChatCertificationDraftCard } from '@/shared/components/ai-chat/AiChatCertificationDraftCard';
+import { AiChatExamDraftCard } from '@/shared/components/ai-chat/AiChatExamDraftCard';
 
 interface AiChatDrawerProps {
   readonly isOpen: boolean;

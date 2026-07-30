@@ -75,6 +75,7 @@ model Certification {
   label               String
   key                 String
   provider            String?
+  year                Int?
   totalQuestions      Int
   examDurationMinutes Int?
   passingScore        Float?

@@ -14,7 +14,10 @@ interface UseCertificationDraftCardReturn {
   readonly draft: Certification;
   readonly status: CertificationDraftStatus;
   readonly updateField: (field: 'label' | 'key' | 'provider', value: string) => void;
-  readonly updateNumericField: (field: 'totalQuestions' | 'examDurationMinutes' | 'passingScore', value: number | undefined) => void;
+  readonly updateNumericField: (
+    field: 'totalQuestions' | 'examDurationMinutes' | 'passingScore' | 'year',
+    value: number | undefined
+  ) => void;
   readonly updateTopic: (index: number, patch: Partial<CertificationTopic>) => void;
   readonly addTopic: () => void;
   readonly removeTopic: (index: number) => void;
@@ -31,7 +34,7 @@ export function useCertificationDraftCard(initialDraft: Certification): UseCerti
   }, []);
 
   const updateNumericField = useCallback(
-    (field: 'totalQuestions' | 'examDurationMinutes' | 'passingScore', value: number | undefined) => {
+    (field: 'totalQuestions' | 'examDurationMinutes' | 'passingScore' | 'year', value: number | undefined) => {
       setDraft((prev) => ({ ...prev, [field]: value }));
     },
     []
@@ -67,8 +70,9 @@ export function useCertificationDraftCard(initialDraft: Certification): UseCerti
       window.dispatchEvent(new CustomEvent('certification-created', { detail: saved }));
 
       return 'success';
-    } catch (err: any) {
-      const httpStatus = err?.response?.status ?? err?.status;
+    } catch (err: unknown) {
+      const httpStatus = (err as { response?: { status?: number }; status?: number })?.response?.status
+        ?? (err as { status?: number })?.status;
 
       if (httpStatus === 409) {
         notify.error(t('chat.errorDuplicate', { key: draft.key }), t('chat.errorDuplicateDescription'));
@@ -78,7 +82,7 @@ export function useCertificationDraftCard(initialDraft: Certification): UseCerti
       }
 
       notify.error(t('chat.errorGeneric'), t('chat.errorGenericDescription'));
-      setStatus('editing');
+      setStatus('error');
 
       return 'error';
     }

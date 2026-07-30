@@ -2,8 +2,8 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 
-import { AiChatDrawer } from '@/shared/components/ui/AiChatDrawer';
-import { AiChatFab } from '@/shared/components/ui/AiChatFab';
+import { AiChatDrawer } from '@/shared/components/ai-chat/AiChatDrawer';
+import { AiChatFab } from '@/shared/components/ai-chat/AiChatFab';
 
 const AI_CHAT_PLANS = ['pro_ai', 'tester', 'admin'];
 

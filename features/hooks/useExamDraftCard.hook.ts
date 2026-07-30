@@ -8,12 +8,18 @@ import { notify } from '@/shared/lib/notify';
 
 export type ExamDraftStatus = 'editing' | 'saving' | 'saved' | 'error';
 
+export type ExamDraftSaveResult = 'success' | 'duplicate' | 'error';
+
 interface UseExamDraftCardReturn {
   readonly draft: PublicExam;
   readonly status: ExamDraftStatus;
   readonly updateField: (
     field: keyof Pick<PublicExam, 'name' | 'role' | 'year'>,
     value: string | number | null
+  ) => void;
+  readonly updateNumericField: (
+    field: 'totalQuestions' | 'examDurationMinutes' | 'passingScore',
+    value: number | undefined
   ) => void;
   readonly updateExamBoardName: (name: string) => void;
   readonly updateSubject: (index: number, patch: Partial<PublicExamSubject>) => void;
@@ -22,8 +28,10 @@ interface UseExamDraftCardReturn {
   readonly addTopic: (subjectIndex: number, name: string) => void;
   readonly removeTopic: (subjectIndex: number, topicIndex: number) => void;
   readonly updateTopic: (subjectIndex: number, topicIndex: number, newName: string) => void;
-  readonly handleSave: () => Promise<void>;
+  readonly handleSave: () => Promise<ExamDraftSaveResult>;
 }
+
+const clampPercent = (value: number): number => Math.min(100, Math.max(0, Math.round(value)));
 
 export function useExamDraftCard(initialDraft: PublicExam): UseExamDraftCardReturn {
   const [draft, setDraft] = useState<PublicExam>(initialDraft);
@@ -41,11 +49,32 @@ export function useExamDraftCard(initialDraft: PublicExam): UseExamDraftCardRetu
     setDraft((prev) => ({ ...prev, examBoard: { ...prev.examBoard, name } }));
   }, []);
 
+  const updateNumericField = useCallback(
+    (field: 'totalQuestions' | 'examDurationMinutes' | 'passingScore', value: number | undefined) => {
+      setDraft((prev) => ({ ...prev, [field]: value ?? null }));
+    },
+    []
+  );
+
   const updateSubject = useCallback((index: number, patch: Partial<PublicExamSubject>) => {
     setDraft((prev) => {
       const subjects = [...prev.subjects];
+      const updated = { ...subjects[index], ...patch };
 
-      subjects[index] = { ...subjects[index], ...patch };
+      if (patch.minQuestions !== undefined || patch.maxQuestions !== undefined) {
+        updated.minQuestions = clampPercent(updated.minQuestions);
+        updated.maxQuestions = clampPercent(updated.maxQuestions);
+
+        if (updated.maxQuestions < updated.minQuestions) {
+          if (patch.minQuestions !== undefined) {
+            updated.maxQuestions = updated.minQuestions;
+          } else {
+            updated.minQuestions = updated.maxQuestions;
+          }
+        }
+      }
+
+      subjects[index] = updated;
 
       return { ...prev, subjects };
     });
@@ -106,7 +135,7 @@ export function useExamDraftCard(initialDraft: PublicExam): UseExamDraftCardRetu
     });
   }, []);
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(async (): Promise<ExamDraftSaveResult> => {
     setStatus('saving');
     try {
       const saved = await savePublicExam(draft);
@@ -114,13 +143,23 @@ export function useExamDraftCard(initialDraft: PublicExam): UseExamDraftCardRetu
       setStatus('saved');
       notify.success(t('chat.examSaved'), t('chat.examSavedDescription', { name: draft.name }));
       window.dispatchEvent(new CustomEvent('public-exam-created', { detail: saved }));
-    } catch (err: any) {
-      const isDuplicate = err?.response?.status === 409;
-      const title = isDuplicate ? t('chat.examDuplicate') : t('chat.examSaveError');
-      const description = isDuplicate ? t('chat.examDuplicateDescription') : t('chat.examSaveErrorDescription');
 
-      notify.error(title, description);
-      setStatus('editing');
+      return 'success';
+    } catch (err: unknown) {
+      const httpStatus = (err as { response?: { status?: number }; status?: number })?.response?.status
+        ?? (err as { status?: number })?.status;
+
+      if (httpStatus === 409) {
+        notify.error(t('chat.examDuplicate'), t('chat.examDuplicateDescription'));
+        setStatus('error');
+
+        return 'duplicate';
+      }
+
+      notify.error(t('chat.examSaveError'), t('chat.examSaveErrorDescription'));
+      setStatus('error');
+
+      return 'error';
     }
   }, [draft, t]);
 
@@ -128,6 +167,7 @@ export function useExamDraftCard(initialDraft: PublicExam): UseExamDraftCardRetu
     draft,
     status,
     updateField,
+    updateNumericField,
     updateExamBoardName,
     updateSubject,
     removeSubject,

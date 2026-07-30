@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 
 import { Sidebar } from '@/shared/components/ui/sidebar';
 import { WorkspaceHeader } from '@/shared/components/ui/workspace-header';
-import { AiChatWrapper } from '@/shared/components/ui/AiChatWrapper';
+import { AiChatWrapper } from '@/shared/components/ai-chat/AiChatWrapper';
 import { UsageProvider } from '@/features/providers/usage.provider';
 import { NotificationsProvider } from '@/features/providers/notifications.provider';
 import { SIDEBAR_COLLAPSED_COOKIE_KEY } from '@/config/constants';
