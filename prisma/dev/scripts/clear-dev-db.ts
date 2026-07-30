@@ -2,10 +2,10 @@ import { prisma } from '@/lib/prisma';
 
 async function main() {
   // Delete children first to respect relations
-  await prisma.explanation.deleteMany();
-  await prisma.answer.deleteMany();
-  await prisma.option.deleteMany();
-  await prisma.question.deleteMany();
+  await prisma.examExplanation.deleteMany();
+  await prisma.examAnswer.deleteMany();
+  await prisma.examOption.deleteMany();
+  await prisma.examQuestion.deleteMany();
 
   // Optional: reset SQLite autoincrement counters (safe no-op in other DBs)
   // This makes IDs start from 1 again after clearing.
