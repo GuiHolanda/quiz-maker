@@ -154,6 +154,12 @@ async function globalSetup(config: FullConfig) {
   await page.getByRole('button', { name: /sign in|login|entrar/i }).click();
   await page.waitForURL(`${baseURL}/dashboard`, { timeout: 15_000 });
 
+  // Clear wizard draft state so tests always start from step 1.
+  await page.evaluate(() => {
+    localStorage.removeItem('NEW_CERTIFICATION_DRAFT');
+    localStorage.removeItem('NEW_PUBLIC_EXAM_DRAFT');
+  });
+
   const storageStatePath = path.join(__dirname, 'auth/storageState.json');
   await page.context().storageState({ path: storageStatePath });
   await browser.close();
