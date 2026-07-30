@@ -175,8 +175,7 @@ export const Navbar = () => {
                 </DropdownMenu>
               </Dropdown>
             </NavbarItem>
-            {(!usage || usage.publicExamsLimit !== 0) && (
-              <NavbarItem>
+            <NavbarItem>
                 <Dropdown>
                   <DropdownTrigger>
                     <button
@@ -199,7 +198,6 @@ export const Navbar = () => {
                   </DropdownMenu>
                 </Dropdown>
               </NavbarItem>
-            )}
             {NAV_LINKS.map((item) => {
               const isActive = item.href !== '#' && pathname === item.href;
 
@@ -282,18 +280,14 @@ export const Navbar = () => {
                 </Link>
               </NavbarMenuItem>
             ))}
-            {(!usage || usage.publicExamsLimit !== 0) && (
-              <>
-                <p className="text-xs font-semibold text-default-400 px-2 pt-3 pb-1">{t('nav.concursos')}</p>
-                {CONCURSO_ITEMS.map((item) => (
-                  <NavbarMenuItem key={item.href}>
-                    <Link className="text-default-500 hover:text-foreground pl-2" href={item.href} size="lg">
-                      {t(item.label)}
-                    </Link>
-                  </NavbarMenuItem>
-                ))}
-              </>
-            )}
+            <p className="text-xs font-semibold text-default-400 px-2 pt-3 pb-1">{t('nav.concursos')}</p>
+            {CONCURSO_ITEMS.map((item) => (
+              <NavbarMenuItem key={item.href}>
+                <Link className="text-default-500 hover:text-foreground pl-2" href={item.href} size="lg">
+                  {t(item.label)}
+                </Link>
+              </NavbarMenuItem>
+            ))}
             {NAV_LINKS.map((item) => (
               <NavbarMenuItem key={item.label}>
                 <Link className="text-default-500 hover:text-foreground" href={item.href} size="lg">

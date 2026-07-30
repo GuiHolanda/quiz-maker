@@ -43,8 +43,6 @@ export function Sidebar({ defaultCollapsed = false }: { readonly defaultCollapse
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
-  const showConcursos = !usage || usage.publicExamsLimit !== 0;
-
   const toggleCollapsed = () => {
     setIsCollapsed((prev) => {
       const next = !prev;
@@ -175,17 +173,15 @@ export function Sidebar({ defaultCollapsed = false }: { readonly defaultCollapse
         </NextLink>
 
         {/* Concursos */}
-        {showConcursos && (
-          <NextLink
-            className={navLinkClass(pathname.startsWith('/public-exams'), collapsed)}
-            href="/public-exams/configure"
-            title={collapsed ? t('nav.concursos') : undefined}
-            onClick={closeDrawer}
-          >
-            <FontAwesomeIcon className="w-4 h-4 shrink-0" icon={faClipboard} />
-            {!collapsed && t('nav.concursos')}
-          </NextLink>
-        )}
+        <NextLink
+          className={navLinkClass(pathname.startsWith('/public-exams'), collapsed)}
+          href="/public-exams/configure"
+          title={collapsed ? t('nav.concursos') : undefined}
+          onClick={closeDrawer}
+        >
+          <FontAwesomeIcon className="w-4 h-4 shrink-0" icon={faClipboard} />
+          {!collapsed && t('nav.concursos')}
+        </NextLink>
 
         {/* Generate Questions */}
         <NextLink
@@ -247,8 +243,7 @@ export function Sidebar({ defaultCollapsed = false }: { readonly defaultCollapse
     if (!usage) return null;
 
     const questionsUnlimited = usage.questionsLimit === -1;
-    const certsUnlimited = usage.certificationsLimit === -1;
-    const examsUnlimited = usage.publicExamsLimit === -1;
+    const examsUnlimited = usage.examsLimit === -1;
 
     return (
       <div className={`border-t border-divider px-4 py-4 flex flex-col gap-3 shrink-0 ${isCollapsed ? 'hidden' : ''}`}>
@@ -284,23 +279,23 @@ export function Sidebar({ defaultCollapsed = false }: { readonly defaultCollapse
           </div>
         </div>
 
-        {/* Certifications counter */}
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-default-400">{t('sidebar.certificationsUsed')}</span>
-          <span className="text-xs font-medium text-foreground">
-            {certsUnlimited ? '∞' : `${usage.certificationsUsed}/${usage.certificationsLimit}`}
-          </span>
-        </div>
-
-        {/* Public exams counter (only when user has access) */}
-        {usage.publicExamsLimit !== 0 && (
+        {/* Exams counter: shared limit across both types, split display */}
+        <div className="flex flex-col gap-1">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-default-400">{t('sidebar.publicExamsUsed')}</span>
+            <span className="text-xs text-default-400">{t('sidebar.examsUsed')}</span>
             <span className="text-xs font-medium text-foreground">
-              {examsUnlimited ? '∞' : `${usage.publicExamsUsed}/${usage.publicExamsLimit}`}
+              {examsUnlimited ? '∞' : `${usage.examsUsed}/${usage.examsLimit}`}
             </span>
           </div>
-        )}
+          <div className="flex items-center justify-between mt-0.5">
+            <span className="text-xs text-default-400">
+              {t('sidebar.certificationsUsed')}: {usage.certificationsUsed}
+            </span>
+            <span className="text-xs text-default-400">
+              {t('sidebar.publicExamsUsed')}: {usage.publicExamsUsed}
+            </span>
+          </div>
+        </div>
       </div>
     );
   }
