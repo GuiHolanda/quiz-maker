@@ -123,20 +123,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // M6 — ownership: the refKey must belong to the authenticated user
-    if (body.type === 'certification') {
-      const cert = await prisma.certification.findFirst({
-        where: { key: body.refKey, userId: session.user.id },
-        select: { id: true },
-      });
-      if (!cert) throw Object.assign(new Error('Certification not found'), { status: 404 });
-    } else {
-      const exam = await prisma.publicExam.findFirst({
-        where: { id: body.refKey, userId: session.user.id },
-        select: { id: true },
-      });
-      if (!exam) throw Object.assign(new Error('Public exam not found'), { status: 404 });
-    }
+    // M6 — ownership: the refKey (Exam.id) must belong to the authenticated user
+    const exam = await prisma.exam.findFirst({
+      where: { id: body.refKey, userId: session.user.id, type: body.type },
+      select: { id: true },
+    });
+    if (!exam) throw Object.assign(new Error('Exam not found'), { status: 404 });
 
     // A2 — cap active jobs per user
     const activeJobCount = await prisma.generationJob.count({

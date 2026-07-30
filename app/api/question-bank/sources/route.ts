@@ -15,24 +15,13 @@ export async function GET(request: NextRequest) {
   const userId = session.user.id;
 
   try {
-    const [certSources, examSources] = await Promise.all([
-      type === 'all' || type === 'certification'
-        ? prisma.question.groupBy({
-            by: ['certificationTitle'],
-            where: { userId },
-            orderBy: { certificationTitle: 'asc' },
-          }).then((rows) => rows.map((r) => r.certificationTitle))
-        : Promise.resolve([] as string[]),
-      type === 'all' || type === 'public_exam'
-        ? prisma.publicExamQuestion.groupBy({
-            by: ['publicExamName'],
-            where: { userId },
-            orderBy: { publicExamName: 'asc' },
-          }).then((rows) => rows.map((r) => r.publicExamName))
-        : Promise.resolve([] as string[]),
-    ]);
+    const rows = await prisma.examQuestion.groupBy({
+      by: ['examName'],
+      where: { userId, ...(type !== 'all' && { exam: { type } }) },
+      orderBy: { examName: 'asc' },
+    });
 
-    const sources = Array.from(new Set([...certSources, ...examSources])).sort();
+    const sources = Array.from(new Set(rows.map((r) => r.examName))).sort();
 
     return NextResponse.json({ sources }, { status: 200 });
   } catch (err: unknown) {

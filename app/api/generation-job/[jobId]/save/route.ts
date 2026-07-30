@@ -3,12 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { toApiErrorResponse } from '@/lib/api-error';
-import {
-  CertificationQuestionService,
-  PublicExamQuestionService,
-  validateAiQuestions,
-} from '@/features/services/question.service';
-import type { AIQuestion, AIPublicExamQuestion } from '@/shared/types';
+import { ExamQuestionService, validateAiQuestions } from '@/features/services/exam-question.service';
+import type { AIExamQuestion } from '@/shared/types';
 
 export const maxDuration = 60;
 
@@ -44,13 +40,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const payload = Array.isArray(raw) ? { questions: raw } : raw;
       const questions = validateAiQuestions(payload);
 
-      if (job.type === 'certification') {
-        const certService = new CertificationQuestionService();
-        await certService.createFromPayload(questions as AIQuestion[], session.user.id);
-      } else {
-        const examService = new PublicExamQuestionService();
-        await examService.createFromPayload(questions as AIPublicExamQuestion[], session.user.id);
-      }
+      const questionService = new ExamQuestionService();
+      await questionService.createFromPayload(questions as AIExamQuestion[], session.user.id);
 
       await prisma.generationJobTopic.update({
         where: { id: topic.id },
