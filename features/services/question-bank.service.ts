@@ -58,14 +58,7 @@ export class QuestionBankService {
     if (difficulty && difficulty.length > 0) where['difficulty'] = { in: difficulty };
     if (hasAnswer === true) where['answer'] = { isNot: null };
     if (hasAnswer === false) where['answer'] = { is: null };
-    // When filtering by type, include questions with examId=null as a fallback
-    // (questions saved before the exam relation was set will still appear).
-    if (type !== 'all') {
-      where['OR'] = [
-        { exam: { type } },
-        { examId: null },
-      ];
-    }
+    if (type !== 'all') where['exam'] = { type };
 
     const rows = await prisma.examQuestion.findMany({
       where,
