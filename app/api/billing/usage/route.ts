@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { QuotaService } from '@/features/services/quota.service';
 import { auth } from '@/auth';
+import { toApiErrorResponse } from '@/lib/api-error';
 
 const quotaService = new QuotaService();
 
@@ -17,6 +18,8 @@ export async function GET() {
 
     return NextResponse.json(usage, { status: 200 });
   } catch (err: unknown) {
-    return NextResponse.json({ error: 'Failed to fetch usage' }, { status: 500 });
+    console.error('Failed to fetch billing usage:', err);
+    const { status, ...body } = toApiErrorResponse(err);
+    return NextResponse.json(body, { status });
   }
 }

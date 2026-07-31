@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { Providers } from './providers';
+import { auth } from '@/auth';
 
 import { siteConfig } from '@/config/site';
 import { fontSans, fontSora } from '@/config/fonts';
@@ -37,7 +38,7 @@ async function loadDefaultMessages(): Promise<Record<string, string>> {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const initialMessages = await loadDefaultMessages();
+  const [initialMessages, session] = await Promise.all([loadDefaultMessages(), auth()]);
 
   return (
     <html suppressHydrationWarning lang="en">
@@ -49,7 +50,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           fontSora.variable
         )}
       >
-        <Providers initialMessages={initialMessages} themeProps={{ attribute: 'class', defaultTheme: 'dark' }}>
+        <Providers
+          initialMessages={initialMessages}
+          session={session}
+          themeProps={{ attribute: 'class', defaultTheme: 'dark' }}
+        >
           {children}
         </Providers>
       </body>
