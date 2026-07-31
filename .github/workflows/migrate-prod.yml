@@ -24,6 +24,11 @@ jobs:
       - name: Generate Prisma client (prod)
         run: npm run prisma:generate:prod
 
+      - name: Resolve failed migration if blocked (idempotent unblock)
+        run: npx prisma migrate resolve --rolled-back 20260729215326_unify_exam_schema --schema=./prisma/prod/schema.prisma || true
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+
       - name: Apply prod migrations
         run: npm run prisma:migrate:prod
         env:
