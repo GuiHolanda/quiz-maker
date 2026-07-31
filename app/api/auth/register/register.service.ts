@@ -20,6 +20,10 @@ export class RegisterService {
 
     const normalizedEmail = email.toLowerCase();
 
+    // Hash early so the event loop isn't blocked right before the Resend HTTP call,
+    // which can cause TCP connection failures on cold-start Lambdas.
+    const hashed = await bcrypt.hash(password, 12);
+
     const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 
     if (existing) {
@@ -38,12 +42,8 @@ export class RegisterService {
         return { id: existing.id, email: existing.email, redirectToVerify: true as const };
       }
 
-      // Return success-shaped response for verified existing accounts too, to
-      // prevent callers from distinguishing registered vs. unregistered emails.
       return { id: existing.id, email: existing.email, redirectToVerify: false as const };
     }
-
-    const hashed = await bcrypt.hash(password, 12);
 
     const user = await prisma.user.create({
       data: {
