@@ -110,13 +110,18 @@ export class EmailService {
 
     const { html, text } = emailLayout(bodyHtml, bodyText);
 
-    await this.resend.emails.send({
+    const { error } = await this.resend.emails.send({
       from: this.sender,
       to,
       subject: `${code} - Codigo de verificacao ${BRAND_NAME}`,
       html,
       text,
     });
+
+    if (error) {
+      console.error('[EmailService] sendEmailVerification failed:', error);
+      throw Object.assign(new Error(error.message ?? 'Failed to send verification email'), { status: 500 });
+    }
   }
 
   async sendPasswordReset(to: string, resetUrl: string): Promise<void> {
@@ -161,12 +166,17 @@ export class EmailService {
 
     const { html, text } = emailLayout(bodyHtml, bodyText);
 
-    await this.resend.emails.send({
+    const { error } = await this.resend.emails.send({
       from: this.sender,
       to,
       subject: `Redefinicao de senha - ${BRAND_NAME}`,
       html,
       text,
     });
+
+    if (error) {
+      console.error('[EmailService] sendPasswordReset failed:', error);
+      throw Object.assign(new Error(error.message ?? 'Failed to send password reset email'), { status: 500 });
+    }
   }
 }
