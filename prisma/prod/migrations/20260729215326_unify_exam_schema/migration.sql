@@ -82,6 +82,14 @@ ALTER TABLE "CertificationSimuladoAttemptAnswer" DROP CONSTRAINT "CertificationS
 -- DropForeignKey
 ALTER TABLE "CertificationSimuladoAttemptAnswer" DROP CONSTRAINT "CertificationSimuladoAttemptAnswer_simuladoQuestionId_fkey";
 
+-- Clear MockExam-related rows before adding NOT NULL columns: existing rows
+-- reference PublicExam records that are dropped in this migration so there
+-- is no valid examId/examQuestionId to backfill. Delete in FK-safe order.
+DELETE FROM "MockExamAttemptAnswer";
+DELETE FROM "MockExamAttempt";
+DELETE FROM "MockExamQuestion";
+DELETE FROM "MockExam";
+
 -- AlterTable
 ALTER TABLE "MockExam" DROP COLUMN "publicExamId",
 ADD COLUMN     "examId" TEXT NOT NULL;
