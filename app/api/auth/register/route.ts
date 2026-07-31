@@ -5,6 +5,7 @@ import { RegisterService } from './register.service';
 const registerService = new RegisterService();
 
 export async function POST(request: NextRequest) {
+  console.log('[POST /api/auth/register] called');
   try {
     const body = await request.json().catch(() => null);
     const result = await registerService.register(body);

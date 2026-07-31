@@ -37,8 +37,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { email: credentials.email.toLowerCase() },
         });
 
+        console.log('[authorize] user found:', !!user, '| hasPassword:', !!user?.password, '| emailVerified:', !!user?.emailVerified);
+
         if (!user?.password) return null;
         const valid = await bcrypt.compare(credentials.password, user.password);
+
+        console.log('[authorize] passwordValid:', valid);
 
         if (!valid) return null;
 
