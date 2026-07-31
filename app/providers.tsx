@@ -1,6 +1,7 @@
 'use client';
 
 import type { ThemeProviderProps } from 'next-themes';
+import type { Session } from 'next-auth';
 
 import * as React from 'react';
 import { HeroUIProvider } from '@heroui/system';
@@ -16,6 +17,7 @@ export interface ProvidersProps {
   children: React.ReactNode;
   themeProps?: ThemeProviderProps;
   initialMessages?: Record<string, string>;
+  session?: Session | null;
 }
 
 declare module '@react-types/shared' {
@@ -30,11 +32,11 @@ function InactivityGuard() {
   return null;
 }
 
-export function Providers({ children, themeProps, initialMessages }: ProvidersProps) {
+export function Providers({ children, themeProps, initialMessages, session }: ProvidersProps) {
   const router = useRouter();
 
   return (
-    <SessionProvider>
+    <SessionProvider session={session}>
       <InactivityGuard />
       <LanguageProvider initialMessages={initialMessages}>
         <HeroUIProvider navigate={router.push}>
