@@ -7,6 +7,7 @@ import React, { useReducer, useEffect, useCallback, useMemo } from 'react';
 import { LANGUAGE_LOCAL_STORAGE_KEY } from '@/config/constants';
 import { languageReducer } from '@/features/reducers/language.reducer';
 import { parseProperties } from '@/lib/properties-parser';
+import { hasMessages } from '@/lib/i18n-utils';
 
 export const LanguageContext = React.createContext<LanguageStoreApi | null>(null);
 
@@ -37,7 +38,8 @@ export function LanguageProvider({
 
     // Se o idioma armazenado difere do SSR (pt), recarrega as mensagens no cliente.
     // Caso contrário, mantém as mensagens vindas do servidor (sem refetch, sem flash).
-    if (lang !== 'pt' || !initialMessages) {
+    // initialMessages vazio ({}) significa que o readFile falhou no servidor — força recarga.
+    if (lang !== 'pt' || !hasMessages(initialMessages)) {
       dispatch({ type: 'setLanguage', payload: { language: lang } });
       loadMessages(lang).then((messages) => dispatch({ type: 'setMessages', payload: { messages } }));
     }

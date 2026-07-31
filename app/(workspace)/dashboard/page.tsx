@@ -2,6 +2,7 @@
 
 import NextLink from 'next/link';
 import { useSession } from 'next-auth/react';
+import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faBolt,
@@ -106,8 +107,7 @@ const MOCK_DOMAINS = [
   },
 ] as const;
 
-function getGreeting(name: string | null | undefined): string {
-  const hour = new Date().getHours();
+function getGreeting(name: string | null | undefined, hour: number): string {
   const first = name?.split(' ')[0] ?? '';
   if (hour < 12) return `Bom dia, ${first}.`;
   if (hour < 18) return `Boa tarde, ${first}.`;
@@ -135,7 +135,9 @@ function focusBorderColor(color: 'danger' | 'warning' | 'secondary') {
 export default function DashboardPage() {
   const { data: session } = useSession();
   const { t } = useTranslation();
-  const greeting = getGreeting(session?.user?.name);
+  const [hour, setHour] = useState(0);
+  useEffect(() => { setHour(new Date().getHours()); }, []);
+  const greeting = getGreeting(session?.user?.name, hour);
 
   return (
     <div className="min-h-full bg-background2 px-6 py-6 space-y-5">
