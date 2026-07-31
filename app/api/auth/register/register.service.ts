@@ -30,7 +30,10 @@ export class RegisterService {
 
         await prisma.verificationToken.deleteMany({ where: { identifier } });
         await prisma.verificationToken.create({ data: { identifier, token: code, expires } });
+
+        console.log('[RegisterService] re-sending verification email to existing unverified:', normalizedEmail);
         await new EmailService().sendEmailVerification(normalizedEmail, code);
+        console.log('[RegisterService] re-send successful');
 
         return { id: existing.id, email: existing.email, redirectToVerify: true as const };
       }
@@ -57,7 +60,9 @@ export class RegisterService {
     await prisma.verificationToken.deleteMany({ where: { identifier } });
     await prisma.verificationToken.create({ data: { identifier, token: code, expires } });
 
+    console.log('[RegisterService] sending verification email to:', normalizedEmail);
     await new EmailService().sendEmailVerification(normalizedEmail, code);
+    console.log('[RegisterService] verification email sent successfully');
 
     return { id: user.id, email: user.email, redirectToVerify: true as const };
   }

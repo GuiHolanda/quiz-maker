@@ -78,11 +78,16 @@ export class EmailService {
   private readonly resend = new Resend(process.env.RESEND_API_KEY);
   private readonly from = process.env.RESEND_FROM_EMAIL!;
 
+  constructor() {
+    console.log('[EmailService] constructed — from:', this.from, 'key set:', !!process.env.RESEND_API_KEY);
+  }
+
   private get sender() {
     return `${BRAND_NAME} <${this.from}>`;
   }
 
   async sendEmailVerification(to: string, code: string): Promise<void> {
+    console.log('[EmailService] sendEmailVerification called — to:', to);
     const bodyHtml = `
 <h1 style="margin:0 0 12px;font-family:${FONT};font-size:22px;font-weight:700;color:#0f172a;line-height:1.2;">Verifique seu e-mail</h1>
 <p style="margin:0 0 32px;font-family:${FONT};font-size:15px;color:#64748b;line-height:1.6;">Use o codigo abaixo para confirmar seu cadastro no ${BRAND_NAME}. Ele expira em <strong style="color:#0f172a;">15 minutos</strong>.</p>
