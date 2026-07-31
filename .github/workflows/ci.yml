@@ -24,6 +24,9 @@ jobs:
       - name: Generate Prisma client
         run: npm run prisma:generate:dev
 
+      - name: Check migration safety
+        run: npm run check:migrations
+
       - name: Type check
         run: npx tsc --noEmit
 
