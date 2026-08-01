@@ -1,9 +1,7 @@
 'use client';
 
-import type { UsageStats } from '@/shared/types';
-
 import NextLink from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { signOut } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -13,7 +11,6 @@ import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSection 
 import { Button } from '@heroui/button';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { getBillingUsage } from '@/features/connectors';
 import { ThemeSwitch } from '@/shared/components/ui/theme-switch';
 import { LanguageSwitch } from '@/shared/components/ui/language-switch';
 import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
@@ -28,18 +25,7 @@ export function MarketingNavbar() {
   const { data: session, status } = useSession();
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [usage, setUsage] = useState<UsageStats | null>(null);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
-
-  useEffect(() => {
-    if (status === 'authenticated') {
-      getBillingUsage()
-        .then(setUsage)
-        .catch(() => {});
-    } else {
-      setUsage(null);
-    }
-  }, [status]);
 
   return (
     <>
@@ -164,7 +150,7 @@ export function MarketingNavbar() {
               {t('nav.manageAccount')}
             </DropdownItem>
           </DropdownSection>
-          {usage?.plan === 'free' ? (
+          {session?.user?.plan === 'free' ? (
             <DropdownSection showDivider>
               <DropdownItem
                 key="upgrade"
