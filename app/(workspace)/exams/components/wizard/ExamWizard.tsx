@@ -146,15 +146,19 @@ export function ExamWizard({ type, onSaved }: ExamWizardProps) {
       return;
     }
 
+    const totalQuestions = parseInt(draft.totalQuestions, 10);
+    const examDurationMinutes = parseInt(draft.examDurationMinutes, 10) || null;
+    const passingScore = parseFloat(draft.passingScore) || null;
+
     const exam: Exam =
       type === 'certification'
         ? {
             type: 'certification',
             name,
             provider: referenceEntityName ? { name: referenceEntityName } : null,
-            totalQuestions: parseInt(draft.totalQuestions, 10),
-            examDurationMinutes: parseInt(draft.examDurationMinutes, 10) || null,
-            passingScore: parseFloat(draft.passingScore) || null,
+            totalQuestions,
+            examDurationMinutes,
+            passingScore,
             sections: draft.sections,
           }
         : {
@@ -162,9 +166,9 @@ export function ExamWizard({ type, onSaved }: ExamWizardProps) {
             name,
             role: draft.role.trim() || null,
             year: yearNum ?? null,
-            totalQuestions: parseInt(draft.totalQuestions, 10),
-            examDurationMinutes: parseInt(draft.examDurationMinutes, 10) || null,
-            passingScore: parseFloat(draft.passingScore) || null,
+            totalQuestions,
+            examDurationMinutes,
+            passingScore,
             examBoard: { name: referenceEntityName },
             sections: draft.sections,
           };

@@ -31,7 +31,7 @@ export const DOMAINS: Record<DomainType, DomainConfig> = {
     generationUrl: '/questions?type=certification',
     seedLabel: E2E_CERT_LABEL,
     seedTopic: E2E_CERT_TOPIC,
-    configureUrl: '/certifications',
+    configureUrl: '/exams?type=certification',
     streamRouteGlob: '**/api/generation-job/*/stream',
   },
   public_exam: {
