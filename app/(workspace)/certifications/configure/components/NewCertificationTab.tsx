@@ -3,9 +3,6 @@ import type { Exam, ExamSection } from '@/shared/types';
 
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Button } from '@heroui/button';
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
-
 import { Step1BasicInfo } from './Step1BasicInfo';
 import { Step2DefineTopics } from './Step2DefineTopics';
 import { Step3Review } from './Step3Review';
@@ -15,7 +12,7 @@ import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
-import { buttonStyles } from '@/config/constants/buttonStyles';
+import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
 
 interface NewCertificationTabProps {
   readonly onBackToLibrary: () => void;
@@ -215,22 +212,16 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
         </AnimatePresence>
       </div>
 
-      <Modal isOpen={isDiscardOpen} size="sm" onClose={() => setIsDiscardOpen(false)}>
-        <ModalContent>
-          <ModalHeader>{t('certification.discardDraftTitle')}</ModalHeader>
-          <ModalBody>
-            <p className="text-sm text-default-600">{t('certification.discardDraftBody')}</p>
-          </ModalBody>
-          <ModalFooter>
-            <Button className={buttonStyles.secondary} variant="bordered" onPress={() => setIsDiscardOpen(false)}>
-              {t('common.cancel')}
-            </Button>
-            <Button data-testid="confirm-discard-btn" className={buttonStyles.danger} onPress={handleConfirmDiscard}>
-              {t('certification.discardDraft')}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <ConfirmModal
+        body={<p className="text-sm text-default-500">{t('certification.discardDraftBody')}</p>}
+        confirmLabel={t('certification.discardDraft')}
+        confirmTestId="confirm-discard-btn"
+        confirmVariant="danger"
+        isOpen={isDiscardOpen}
+        title={t('certification.discardDraftTitle')}
+        onClose={() => setIsDiscardOpen(false)}
+        onConfirm={handleConfirmDiscard}
+      />
     </>
   );
 }

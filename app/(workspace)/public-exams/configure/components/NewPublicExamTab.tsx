@@ -3,8 +3,7 @@ import type { Exam, ExamSection } from '@/shared/types';
 
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Button } from '@heroui/button';
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
+import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
 
 import { Step1BasicInfo } from './Step1BasicInfo';
 import { Step2DefineSubjects } from './Step2DefineSubjects';
@@ -15,7 +14,6 @@ import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
-import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface NewPublicExamTabProps {
   readonly onBackToLibrary: () => void;
@@ -236,22 +234,16 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
         </AnimatePresence>
       </div>
 
-      <Modal isOpen={isDiscardOpen} size="sm" onClose={() => setIsDiscardOpen(false)}>
-        <ModalContent>
-          <ModalHeader>{t('concurso.discardDraftTitle')}</ModalHeader>
-          <ModalBody>
-            <p className="text-sm text-default-600">{t('concurso.discardDraftBody')}</p>
-          </ModalBody>
-          <ModalFooter>
-            <Button className={buttonStyles.secondary} variant="bordered" onPress={() => setIsDiscardOpen(false)}>
-              {t('common.cancel')}
-            </Button>
-            <Button data-testid="confirm-discard-btn" className={buttonStyles.danger} onPress={handleConfirmDiscard}>
-              {t('concurso.discardDraft')}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <ConfirmModal
+        body={<p className="text-sm text-default-500">{t('concurso.discardDraftBody')}</p>}
+        confirmLabel={t('concurso.discardDraft')}
+        confirmTestId="confirm-discard-btn"
+        confirmVariant="danger"
+        isOpen={isDiscardOpen}
+        title={t('concurso.discardDraftTitle')}
+        onClose={() => setIsDiscardOpen(false)}
+        onConfirm={handleConfirmDiscard}
+      />
     </>
   );
 }

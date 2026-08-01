@@ -4,7 +4,7 @@ import { useState, useCallback, useRef } from 'react';
 import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
+import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
 import {
   faBullseye,
   faClock,
@@ -15,15 +15,15 @@ import {
   faTrash,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { EditCertificationModal } from './EditCertificationModal';
-
+import { EditExamModal } from '@/shared/components/EditExamModal/EditExamModal';
+import type { EditExamModalCertResult } from '@/shared/components/EditExamModal/EditExamModal';
 import { ExamSectionsTable, ExamSectionsTableHandle } from '@/shared/components/ExamSectionsTable/ExamSectionsTable';
 import { RelativeDate } from '@/shared/components/ui/RelativeDate';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { deleteExam } from '@/features/connectors';
-import { Exam, ExamSection, ExamTopic, Provider } from '@/shared/types';
+import { Exam, ExamSection, ExamTopic } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
 import { buttonStyles } from '@/config/constants/buttonStyles';
@@ -116,16 +116,7 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
   );
 
   const handleCertSaved = useCallback(
-    (
-      id: string,
-      updated: {
-        name: string;
-        provider?: Provider | null;
-        totalQuestions: number;
-        examDurationMinutes?: number;
-        passingScore?: number;
-      }
-    ) => {
+    (id: string, updated: EditExamModalCertResult) => {
       updateExam(id, {
         name: updated.name,
         provider: updated.provider,
@@ -236,36 +227,26 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
         </Accordion>
       )}
 
-      <EditCertificationModal
-        certification={editingCert}
+      <EditExamModal
+        exam={editingCert}
         isOpen={editingCert !== null}
         onClose={() => setEditingCert(null)}
         onSaved={handleCertSaved}
       />
 
-      <Modal isOpen={deletingCert !== null} size="sm" onClose={() => !isDeleting && setDeletingCert(null)}>
-        <ModalContent>
-          <ModalHeader>{t('certification.deleteCertificationTitle')}</ModalHeader>
-          <ModalBody>
-            <p className="text-sm text-default-600">
-              {t('certification.deleteCertificationConfirm', { name: deletingCert?.name ?? '' })}
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              className={buttonStyles.secondary}
-              isDisabled={isDeleting}
-              variant="bordered"
-              onPress={() => setDeletingCert(null)}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button className={buttonStyles.danger} isLoading={isDeleting} onPress={handleDeleteConfirm}>
-              {t('common.remove')}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <ConfirmModal
+        body={
+          <p className="text-sm text-default-500">
+            {t('certification.deleteCertificationConfirm', { name: deletingCert?.name ?? '' })}
+          </p>
+        }
+        confirmLabel={t('common.remove')}
+        isLoading={isDeleting}
+        isOpen={deletingCert !== null}
+        title={t('certification.deleteCertificationTitle')}
+        onClose={() => setDeletingCert(null)}
+        onConfirm={handleDeleteConfirm}
+      />
     </>
   );
 

@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useCallback, useDeferredValue, useEffect, useId, useRef, useState } from 'react';
+import React, { useCallback, useDeferredValue, useEffect, useRef, useState } from 'react';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
+import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
 import { Button } from '@heroui/button';
 import { faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 
@@ -13,7 +14,6 @@ import { ItemsPerPageSelect } from '@/shared/components/ui/ItemsPerPageSelect';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { getQuestionBank, deleteBrowseQuestion } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
-import { buttonStyles } from '@/config/constants/buttonStyles';
 import type { UnifiedQuestion, QuestionBankResponse } from '@/shared/types';
 import { QuestionBankCard } from './components/QuestionBankCard';
 import { QuestionBankFiltersBar, EMPTY_FILTERS, hasActiveFilters } from './components/QuestionBankFiltersBar';
@@ -25,8 +25,6 @@ type DeleteTarget = { id: number; type: 'certification' | 'public_exam' } | null
 
 export default function QuestionBankPage() {
   const { t } = useTranslation();
-  const deleteModalTitleId = useId();
-
   const [filters, setFilters] = useState<QuestionBankFilters>(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -213,41 +211,16 @@ export default function QuestionBankPage() {
 
   function renderDeleteModal() {
     return (
-      <Modal
-        aria-labelledby={deleteModalTitleId}
+      <ConfirmModal
+        body={<p className="text-sm text-default-500">{t('browse.singleDeleteConfirmBody')}</p>}
+        confirmLabel={t('common.delete')}
+        confirmTestId="confirm-delete-btn"
+        isLoading={isDeleting}
         isOpen={deleteTarget !== null}
-        size="sm"
-        onClose={() => !isDeleting && setDeleteTarget(null)}
-      >
-        <ModalContent>
-          <ModalHeader id={deleteModalTitleId} className="text-sm font-semibold">
-            {t('browse.singleDeleteConfirmTitle')}
-          </ModalHeader>
-          <ModalBody>
-            <p className="text-sm text-default-500">{t('browse.singleDeleteConfirmBody')}</p>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              className={buttonStyles.secondary}
-              isDisabled={isDeleting}
-              size="sm"
-              variant="bordered"
-              onPress={() => setDeleteTarget(null)}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button
-              data-testid="confirm-delete-btn"
-              className={buttonStyles.danger}
-              isLoading={isDeleting}
-              size="sm"
-              onPress={handleConfirmDelete}
-            >
-              {t('common.delete')}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+        title={t('browse.singleDeleteConfirmTitle')}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     );
   }
 }

@@ -245,24 +245,25 @@ export function BillingOverview() {
     return (
       <Modal isOpen={isCancelOpen} onClose={() => setIsCancelOpen(false)}>
         <ModalContent>
-          <ModalHeader className="flex flex-col items-center gap-0 pt-6">
+          <ModalHeader className="text-base font-semibold text-foreground border-b border-default-200 flex flex-col items-center gap-0 pt-6">
             <div className="w-12 h-12 rounded-full bg-danger/10 flex items-center justify-center text-danger mb-3">
               <FontAwesomeIcon icon={faTriangleExclamation} />
             </div>
-            <span className="text-base font-bold text-foreground">{t('billing.cancelModalTitle')}</span>
+            <span>{t('billing.cancelModalTitle')}</span>
           </ModalHeader>
-          <ModalBody>
+          <ModalBody className="py-6">
             <p className="text-sm text-center text-default-500">{t('billing.cancelConfirm')}</p>
           </ModalBody>
-          <ModalFooter className="flex flex-col sm:flex-row gap-3">
+          <ModalFooter className="border-t border-default-200 flex flex-col sm:flex-row gap-3">
             <Button
               className={`flex-1 ${buttonStyles.secondary}`}
+              size="sm"
               variant="bordered"
               onPress={() => setIsCancelOpen(false)}
             >
               {t('billing.cancelKeep')}
             </Button>
-            <Button className={`flex-1 ${buttonStyles.danger}`} isLoading={portalLoading} onPress={handlePortal}>
+            <Button className={`flex-1 ${buttonStyles.danger}`} isLoading={portalLoading} size="sm" onPress={handlePortal}>
               {t('billing.cancelConfirmCta')}
             </Button>
           </ModalFooter>

@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Button } from '@heroui/button';
-import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@heroui/modal';
+import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
 
 import { SimuladoQuestionList } from '@/shared/components/SimuladoQuestionList';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -15,7 +14,6 @@ import { BusyDialog } from '@/shared/components/ui/BusyDialog';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { notify } from '@/shared/lib/notify';
-import { buttonStyles } from '@/config/constants/buttonStyles';
 
 export default function SimuladoTentativaPage() {
   const { t } = useTranslation();
@@ -128,48 +126,27 @@ export default function SimuladoTentativaPage() {
   return (
     <>
       <BusyDialog isOpen={isFinishing} />
-      <Modal isOpen={showDiscardConfirm} onClose={() => !isDiscarding && setShowDiscardConfirm(false)}>
-        <ModalContent>
-          <ModalHeader>{t('simulado.discardAttemptTitle')}</ModalHeader>
-          <ModalBody>
-            <p className="text-sm text-default-500">{t('simulado.discardAttemptBody')}</p>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              className={buttonStyles.secondary}
-              isDisabled={isDiscarding}
-              variant="bordered"
-              onPress={() => setShowDiscardConfirm(false)}
-            >
-              {t('common.back')}
-            </Button>
-            <Button
-              data-testid="confirm-discard-attempt-btn"
-              className={buttonStyles.danger}
-              isLoading={isDiscarding}
-              onPress={handleConfirmDiscard}
-            >
-              {t('simulado.discardAttempt')}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-      <Modal isOpen={showExitConfirm} onClose={handleModalBack}>
-        <ModalContent>
-          <ModalHeader>{t('simulado.exitWithPendingTitle')}</ModalHeader>
-          <ModalBody>
-            <p className="text-sm text-default-500">{t('simulado.exitWithPendingBody')}</p>
-          </ModalBody>
-          <ModalFooter>
-            <Button className={buttonStyles.secondary} variant="bordered" onPress={handleModalBack}>
-              {t('common.back')}
-            </Button>
-            <Button className={buttonStyles.dangerFlat} onPress={handleConfirmExit}>
-              {t('simulado.exitAndLose')}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <ConfirmModal
+        body={<p className="text-sm text-default-500">{t('simulado.discardAttemptBody')}</p>}
+        cancelLabel={t('common.back')}
+        confirmLabel={t('simulado.discardAttempt')}
+        confirmTestId="confirm-discard-attempt-btn"
+        isLoading={isDiscarding}
+        isOpen={showDiscardConfirm}
+        title={t('simulado.discardAttemptTitle')}
+        onClose={() => setShowDiscardConfirm(false)}
+        onConfirm={handleConfirmDiscard}
+      />
+      <ConfirmModal
+        body={<p className="text-sm text-default-500">{t('simulado.exitWithPendingBody')}</p>}
+        cancelLabel={t('common.back')}
+        confirmLabel={t('simulado.exitAndLose')}
+        confirmVariant="dangerFlat"
+        isOpen={showExitConfirm}
+        title={t('simulado.exitWithPendingTitle')}
+        onClose={handleModalBack}
+        onConfirm={handleConfirmExit}
+      />
       <PageHeader subtitle={subtitle} title={title}>
         <SimuladoQuestionList
           answers={answers}
