@@ -6,7 +6,7 @@ import { faChevronDown, faChevronUp, faPlus } from '@fortawesome/free-solid-svg-
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import { CertificationsListTab } from './components/CertificationsListTab';
-import { NewCertificationTab } from './components/NewCertificationTab';
+import { CertificationWizard } from './components/wizard/CertificationWizard';
 
 import { ExamsProvider } from '@/features/providers/exams.provider';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -53,7 +53,7 @@ function ConfigureCertificationContent() {
           </button>
           {isFormOpen && (
             <div className="border-t border-default-200 p-4">
-              <NewCertificationTab onSaved={() => setIsFormOpen(false)} />
+              <CertificationWizard onSaved={() => setIsFormOpen(false)} />
             </div>
           )}
         </div>

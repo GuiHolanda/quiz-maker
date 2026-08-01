@@ -14,7 +14,7 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
 import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
 
-interface NewCertificationTabProps {
+interface CertificationWizardProps {
   readonly onSaved: () => void;
 }
 
@@ -58,7 +58,7 @@ function readDraft(): CertificationDraft {
   return EMPTY_DRAFT;
 }
 
-export function NewCertificationTab({ onSaved }: NewCertificationTabProps) {
+export function CertificationWizard({ onSaved }: CertificationWizardProps) {
   const { certifications, addExam } = useExamsContext();
   const { loading, request } = useRequest(saveExam);
   const { t } = useTranslation();
