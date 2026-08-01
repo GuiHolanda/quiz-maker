@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { faChevronDown, faChevronUp, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
-import { PublicExamsListTab } from './components/PublicExamsListTab';
+import { PublicExamsList } from './components/list/PublicExamsList';
 import { PublicExamWizard } from './components/wizard/PublicExamWizard';
 
 import { ExamsProvider } from '@/features/providers/exams.provider';
@@ -59,7 +59,7 @@ function ConfigurePublicExamContent() {
         </div>
 
         <section className="border-t border-default-200 pt-8" data-testid="configure-list-section">
-          <PublicExamsListTab />
+          <PublicExamsList />
         </section>
       </div>
     </PageHeader>
