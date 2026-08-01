@@ -439,7 +439,12 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
           )}
         </ModalBody>
         <ModalFooter className="border-t border-default-200">
-          <Button className={buttonStyles.secondary} size="sm" variant="bordered" onPress={() => setHistoryTarget(null)}>
+          <Button
+            className={buttonStyles.secondary}
+            size="sm"
+            variant="bordered"
+            onPress={() => setHistoryTarget(null)}
+          >
             {t('common.cancel')}
           </Button>
         </ModalFooter>

@@ -240,7 +240,10 @@ function HeroSection() {
         }
       }, 18);
     }, 600);
-    return () => { clearTimeout(timeout); clearInterval(interval); };
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
   }, [terminalTab, activeQuestion]);
 
   return (
@@ -360,13 +363,13 @@ function HeroSection() {
 
                 <div className="bg-accent/5 rounded px-4 py-3 mt-4">
                   <p className="font-mono text-xs text-navy-400 mb-2 uppercase tracking-widest">
-                    {terminalTab === 'aws' ? 'QUESTION #4,891 · AWS-SAA-C03 · HARD' : 'QUESTÃO #2,107 · CESPE/CEBRASPE · DIR. ADMINISTRATIVO'}
+                    {terminalTab === 'aws'
+                      ? 'QUESTION #4,891 · AWS-SAA-C03 · HARD'
+                      : 'QUESTÃO #2,107 · CESPE/CEBRASPE · DIR. ADMINISTRATIVO'}
                   </p>
                   <p className="font-mono text-sm text-white leading-relaxed break-words">
                     {displayedText}
-                    {displayedText.length < activeQuestion.length && (
-                      <span className="text-accent">▌</span>
-                    )}
+                    {displayedText.length < activeQuestion.length && <span className="text-accent">▌</span>}
                   </p>
                 </div>
 
@@ -474,19 +477,25 @@ function ExamGridSection() {
                     <FontAwesomeIcon className="text-accent text-lg" icon={faLandmark} />
                   </div>
                   <div>
-                    <span className="font-mono text-xs text-navy-400 uppercase tracking-widest block">{t('homepage.examGrid.concursoProvider')}</span>
+                    <span className="font-mono text-xs text-navy-400 uppercase tracking-widest block">
+                      {t('homepage.examGrid.concursoProvider')}
+                    </span>
                     <h3 className="font-sora font-bold text-white text-xl leading-tight">Concursos Públicos</h3>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 mt-2">
-                  <span className="font-mono text-sm text-accent font-medium">{t('homepage.examGrid.concursoQuestions')}</span>
+                  <span className="font-mono text-sm text-accent font-medium">
+                    {t('homepage.examGrid.concursoQuestions')}
+                  </span>
                   <span className="font-mono text-xs text-navy-600">· {t('homepage.examGrid.concursoBancas')}</span>
                 </div>
               </div>
 
               {/* Middle: bancas */}
               <div className="lg:col-span-1">
-                <p className="font-mono text-xs text-navy-500 uppercase tracking-widest mb-3">{t('homepage.examGrid.concursoBancasLabel')}</p>
+                <p className="font-mono text-xs text-navy-500 uppercase tracking-widest mb-3">
+                  {t('homepage.examGrid.concursoBancasLabel')}
+                </p>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
                   {CONCURSO_BANCAS.map((b) => (
                     <div key={b.name}>
@@ -499,7 +508,9 @@ function ExamGridSection() {
 
               {/* Right: areas */}
               <div className="lg:col-span-1">
-                <p className="font-mono text-xs text-navy-500 uppercase tracking-widest mb-3">{t('homepage.examGrid.concursoAreasLabel')}</p>
+                <p className="font-mono text-xs text-navy-500 uppercase tracking-widest mb-3">
+                  {t('homepage.examGrid.concursoAreasLabel')}
+                </p>
                 <div className="space-y-2">
                   {CONCURSO_AREAS.map((area) => (
                     <div key={area.label} className="flex items-center gap-2">
@@ -515,7 +526,10 @@ function ExamGridSection() {
             </div>
             <div className="relative z-10 mt-5 pt-4 border-t border-navy-800/60 flex items-center justify-between">
               <span className="text-xs text-navy-500">{t('homepage.examGrid.concursoCta')}</span>
-              <FontAwesomeIcon className="text-xs text-accent group-hover:translate-x-1 transition-transform duration-200" icon={faArrowRight} />
+              <FontAwesomeIcon
+                className="text-xs text-accent group-hover:translate-x-1 transition-transform duration-200"
+                icon={faArrowRight}
+              />
             </div>
           </div>
         </NextLink>
@@ -672,9 +686,7 @@ function FeaturesSection() {
                 <p className="font-mono text-xs text-navy-500 uppercase tracking-widest mb-3">
                   {t('homepage.features.mockup.yourAnswer')}
                 </p>
-                <div
-                  className="rounded p-3 bg-danger/10 border border-danger/30"
-                >
+                <div className="rounded p-3 bg-danger/10 border border-danger/30">
                   <div className="flex items-start gap-2">
                     <FontAwesomeIcon className="text-red-400 text-xs mt-0.5 shrink-0" icon={faXmark} />
                     <p className="font-mono text-xs text-red-300">
@@ -687,9 +699,7 @@ function FeaturesSection() {
                 <p className="font-mono text-xs text-navy-500 uppercase tracking-widest mb-3">
                   {t('homepage.features.mockup.correctAnswer')}
                 </p>
-                <div
-                  className="rounded p-3 bg-success/10 border border-success/30"
-                >
+                <div className="rounded p-3 bg-success/10 border border-success/30">
                   <div className="flex items-start gap-2">
                     <FontAwesomeIcon className="text-green-400 text-xs mt-0.5 shrink-0" icon={faCheck} />
                     <p className="font-mono text-xs text-green-300">D. FIFO queues provide exactly-once processing</p>
@@ -699,9 +709,7 @@ function FeaturesSection() {
             </div>
             <div className="p-4">
               <div className="flex items-center gap-2 mb-3">
-                <div
-                  className="w-5 h-5 rounded flex items-center justify-center shrink-0 bg-accent/10 border border-accent/30"
-                >
+                <div className="w-5 h-5 rounded flex items-center justify-center shrink-0 bg-accent/10 border border-accent/30">
                   <FontAwesomeIcon className="text-accent text-xs" icon={faRobot} />
                 </div>
                 <span className="font-mono text-xs text-accent">{t('homepage.features.mockup.aiExplanation')}</span>
@@ -1043,9 +1051,7 @@ function PricingSection() {
         </div>
 
         {/* Risk reduction */}
-        <p className="text-center text-xs text-navy-400 mt-6">
-          {t('pricing.trust.noCardRequired')}
-        </p>
+        <p className="text-center text-xs text-navy-400 mt-6">{t('pricing.trust.noCardRequired')}</p>
       </div>
     </section>
   );
@@ -1162,7 +1168,7 @@ function CtaSection() {
             <Button
               as={NextLink}
               className="font-medium text-sm text-navy-400 hover:text-white tracking-wide"
-              href="/certifications/configure"
+              href="/certifications"
               size="lg"
               variant="light"
             >

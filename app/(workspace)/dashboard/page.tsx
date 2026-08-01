@@ -136,7 +136,9 @@ export default function DashboardPage() {
   const { data: session } = useSession();
   const { t } = useTranslation();
   const [hour, setHour] = useState(0);
-  useEffect(() => { setHour(new Date().getHours()); }, []);
+  useEffect(() => {
+    setHour(new Date().getHours());
+  }, []);
   const greeting = getGreeting(session?.user?.name, hour);
 
   return (

@@ -43,9 +43,7 @@ export function PricingCard({
   return (
     <div
       className={`relative flex flex-col gap-6 rounded-lg p-7 transition-colors duration-200 ${
-        isProAi
-          ? 'bg-navy-950/60 border-2 border-accent/40'
-          : 'bg-navy-950/40 border border-navy-700/60'
+        isProAi ? 'bg-navy-950/60 border-2 border-accent/40' : 'bg-navy-950/40 border border-navy-700/60'
       }`}
     >
       {isPopular && (
@@ -57,16 +55,12 @@ export function PricingCard({
       )}
 
       <div className="flex flex-col gap-1">
-        <p className={`text-xs font-medium ${isProAi ? 'text-accent' : 'text-navy-400'}`}>
-          {t(nameKey)}
-        </p>
+        <p className={`text-xs font-medium ${isProAi ? 'text-accent' : 'text-navy-400'}`}>{t(nameKey)}</p>
         <div className="flex items-end gap-2">
           <span className="font-sora font-extrabold text-white text-3xl">{t(priceKey)}</span>
           <span className="text-xs text-navy-400 mb-1.5">{t('pricing.plan.perMonth')}</span>
         </div>
-        <p className="text-xs text-navy-400 min-h-[1rem]">
-          {sublineKey ? t(sublineKey) : ''}
-        </p>
+        <p className="text-xs text-navy-400 min-h-[1rem]">{sublineKey ? t(sublineKey) : ''}</p>
       </div>
 
       {isCurrent ? (
@@ -106,8 +100,7 @@ export function PricingCard({
             <span className={`text-sm ${feature.included ? 'text-foreground' : 'text-navy-400'}`}>
               {feature.value ? (
                 <>
-                  <span className="font-semibold">{feature.value}</span>{' '}
-                  {t(feature.labelKey)}
+                  <span className="font-semibold">{feature.value}</span> {t(feature.labelKey)}
                 </>
               ) : (
                 t(feature.labelKey)

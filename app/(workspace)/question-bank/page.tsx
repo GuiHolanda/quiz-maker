@@ -1,9 +1,7 @@
 'use client';
 
 import React, { useCallback, useDeferredValue, useEffect, useRef, useState } from 'react';
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
 import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
-import { Button } from '@heroui/button';
 import { faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 
 import { PageHeader } from '@/shared/components/ui/PageHeader';

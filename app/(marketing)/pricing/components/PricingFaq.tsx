@@ -27,7 +27,9 @@ function FaqItem({ question, answer, index, isOpen, onToggle }: FaqItemProps) {
   const id = `faq-item-${index}`;
 
   return (
-    <div className={`border rounded-xl overflow-hidden transition-colors duration-200 ${isOpen ? 'border-navy-600 bg-navy-950/60' : 'border-navy-700/60 bg-navy-950/30 hover:border-navy-600/60'}`}>
+    <div
+      className={`border rounded-xl overflow-hidden transition-colors duration-200 ${isOpen ? 'border-navy-600 bg-navy-950/60' : 'border-navy-700/60 bg-navy-950/30 hover:border-navy-600/60'}`}
+    >
       <button
         type="button"
         id={`${id}-btn`}
@@ -37,7 +39,9 @@ function FaqItem({ question, answer, index, isOpen, onToggle }: FaqItemProps) {
         onClick={onToggle}
       >
         <span className="font-sora font-semibold text-sm sm:text-base text-white leading-snug">{question}</span>
-        <span className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-200 ${isOpen ? 'bg-accent/20 text-accent' : 'bg-navy-800 text-navy-400'}`}>
+        <span
+          className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-200 ${isOpen ? 'bg-accent/20 text-accent' : 'bg-navy-800 text-navy-400'}`}
+        >
           <FontAwesomeIcon icon={isOpen ? faMinus : faPlus} className="text-xs" />
         </span>
       </button>

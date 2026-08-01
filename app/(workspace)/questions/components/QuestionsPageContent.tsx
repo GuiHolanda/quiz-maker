@@ -105,7 +105,11 @@ export function QuestionsPageContent() {
         {renderSimuladosBanner()}
         <div>
           <p className="text-sm font-semibold text-foreground mb-3">{t('generate.chooseType')}</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" role="group" aria-label={t('generate.chooseType')}>
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 gap-3 xl:w-3/4"
+            role="group"
+            aria-label={t('generate.chooseType')}
+          >
             {renderTypeOption(
               'certification',
               t('generate.typeCertification'),
