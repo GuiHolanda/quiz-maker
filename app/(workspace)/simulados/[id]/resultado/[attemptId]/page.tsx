@@ -164,7 +164,7 @@ export default function SimuladoResultadoPage() {
     try {
       const attempt = await startMockExamAttempt(Number(params.id));
 
-      router.push(`/public-exams/simulados/${params.id}/tentativa/${attempt.id}`);
+      router.push(`/simulados/${params.id}/tentativa/${attempt.id}`);
     } finally {
       setIsStarting(false);
     }
