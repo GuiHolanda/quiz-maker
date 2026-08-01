@@ -4,7 +4,7 @@ import { useState, useCallback, useRef } from 'react';
 import { Accordion, AccordionItem } from '@heroui/accordion';
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
+import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
 import {
   faBullseye,
   faCalendar,
@@ -16,7 +16,8 @@ import {
   faTrash,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { EditPublicExamModal } from './EditPublicExamModal';
+import { EditExamModal } from '@/shared/components/EditExamModal/EditExamModal';
+import type { EditExamModalCertResult, EditExamModalPublicExamResult } from '@/shared/components/EditExamModal/EditExamModal';
 
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { ExamSectionsTable, ExamSectionsTableHandle } from '@/shared/components/ExamSectionsTable/ExamSectionsTable';
@@ -24,7 +25,7 @@ import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { deleteExam } from '@/features/connectors';
-import { Exam, ExamSection, ExamTopic, ExamBoard } from '@/shared/types';
+import { Exam, ExamSection, ExamTopic } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
 import { RelativeDate } from '@/shared/components/ui/RelativeDate';
@@ -117,26 +118,17 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
   );
 
   const handleExamSaved = useCallback(
-    (
-      id: string,
-      updated: {
-        name: string;
-        role?: string;
-        year?: number;
-        examBoard: ExamBoard;
-        totalQuestions: number;
-        examDurationMinutes?: number;
-        passingScore?: number;
-      }
-    ) => {
+    (id: string, updated: EditExamModalCertResult | EditExamModalPublicExamResult) => {
+      const result = updated as EditExamModalPublicExamResult;
+
       updateExam(id, {
-        name: updated.name,
-        role: updated.role,
-        year: updated.year,
-        examBoard: updated.examBoard,
-        totalQuestions: updated.totalQuestions,
-        examDurationMinutes: updated.examDurationMinutes,
-        passingScore: updated.passingScore,
+        name: result.name,
+        role: result.role,
+        year: result.year,
+        examBoard: result.examBoard,
+        totalQuestions: result.totalQuestions,
+        examDurationMinutes: result.examDurationMinutes,
+        passingScore: result.passingScore,
       });
     },
     [updateExam]
@@ -242,36 +234,26 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
         </Accordion>
       )}
 
-      <EditPublicExamModal
+      <EditExamModal
+        exam={editingExam}
         isOpen={editingExam !== null}
-        publicExam={editingExam}
         onClose={() => setEditingExam(null)}
         onSaved={handleExamSaved}
       />
 
-      <Modal isOpen={deletingExam !== null} size="sm" onClose={() => !isDeleting && setDeletingExam(null)}>
-        <ModalContent>
-          <ModalHeader>{t('concurso.deleteExamTitle')}</ModalHeader>
-          <ModalBody>
-            <p className="text-sm text-default-600">
-              {t('concurso.deleteExamConfirm', { name: deletingExam?.name ?? '' })}
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              className={buttonStyles.secondary}
-              isDisabled={isDeleting}
-              variant="bordered"
-              onPress={() => setDeletingExam(null)}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button className={buttonStyles.danger} isLoading={isDeleting} onPress={handleDeleteConfirm}>
-              {t('common.remove')}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <ConfirmModal
+        body={
+          <p className="text-sm text-default-500">
+            {t('concurso.deleteExamConfirm', { name: deletingExam?.name ?? '' })}
+          </p>
+        }
+        confirmLabel={t('common.remove')}
+        isLoading={isDeleting}
+        isOpen={deletingExam !== null}
+        title={t('concurso.deleteExamTitle')}
+        onClose={() => setDeletingExam(null)}
+        onConfirm={handleDeleteConfirm}
+      />
     </>
   );
 
