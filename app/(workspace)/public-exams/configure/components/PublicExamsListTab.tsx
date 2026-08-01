@@ -30,11 +30,7 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
 import { RelativeDate } from '@/shared/components/ui/RelativeDate';
 
-interface PublicExamsListTabProps {
-  readonly onCreateNew: () => void;
-}
-
-export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
+export function PublicExamsListTab() {
   const { t } = useTranslation();
   const { publicExams, isLoading, updateExam, removeExam } = useExamsContext();
   const [editingExam, setEditingExam] = useState<Exam | null>(null);
@@ -159,7 +155,7 @@ export function PublicExamsListTab({ onCreateNew }: PublicExamsListTabProps) {
         <EmptyState
           action={{
             label: t('concurso.tabNew'),
-            onPress: onCreateNew,
+            href: '?new=true',
           }}
           description={t('concurso.noExamsDescription')}
           title={t('concurso.noExamsTitle')}
