@@ -8,7 +8,7 @@ import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
 
-import { StepHeader } from './StepHeader';
+import { StepHeader } from '@/shared/components/ui/wizard/StepHeader';
 
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { inputProperties } from '@/config/constants/inputStyles';
@@ -73,7 +73,7 @@ export function Step1BasicInfo({
 
   return (
     <div className="flex flex-col gap-6">
-      <StepHeader currentStep={1} onBack={onBack} />
+      <StepHeader currentStep={1} namespace="certification" onBack={onBack} />
 
       <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -7,7 +7,7 @@ import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import { AnimatePresence, motion } from 'framer-motion';
 
-import { StepHeader } from './StepHeader';
+import { StepHeader } from '@/shared/components/ui/wizard/StepHeader';
 
 import { inputProperties } from '@/config/constants/inputStyles';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -45,7 +45,7 @@ export function Step2DefineTopics({
 
   return (
     <div className="flex flex-col gap-6">
-      <StepHeader currentStep={2} onBack={onBack} />
+      <StepHeader currentStep={2} namespace="certification" onBack={onBack} />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         <div className="lg:col-span-4 flex flex-col gap-4">

@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button } from '@heroui/button';
 import { motion } from 'framer-motion';
 
-import { StepHeader } from './StepHeader';
+import { StepHeader } from '@/shared/components/ui/wizard/StepHeader';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
@@ -42,7 +42,7 @@ export function Step3Review({
 
   return (
     <div className="flex flex-col gap-6">
-      <StepHeader currentStep={3} onBack={onBack} />
+      <StepHeader currentStep={3} namespace="certification" onBack={onBack} />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         <div className="lg:col-span-5 bg-content1 border border-default-200 rounded-xl overflow-hidden">
