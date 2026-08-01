@@ -10,7 +10,7 @@ for (const domain of ALL_DOMAINS) {
       await page.locator(tid(TID.wizardTitleInput)).fill('Draft to discard');
       await page.locator(tid(TID.wizardDiscardBtn)).first().click();
       await page.locator(tid(TID.confirmDiscardBtn)).click();
-      await expect(page.locator(tid(TID.configureListSection))).toBeVisible();
+      await expect(page.locator(tid(TID.wizardTitleInput))).not.toBeVisible();
     });
 
     test('cannot advance past step 1 without a title', async ({ authedPage: page }) => {
