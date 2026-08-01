@@ -28,11 +28,7 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 
-interface CertificationsListTabProps {
-  readonly onCreateNew: () => void;
-}
-
-export function CertificationsListTab({ onCreateNew }: CertificationsListTabProps) {
+export function CertificationsListTab() {
   const { t } = useTranslation();
   const { certifications, isLoading, updateExam, removeExam } = useExamsContext();
   const [editingCert, setEditingCert] = useState<Exam | null>(null);
@@ -153,7 +149,7 @@ export function CertificationsListTab({ onCreateNew }: CertificationsListTabProp
         <EmptyState
           action={{
             label: t('certification.tabNew'),
-            onPress: onCreateNew,
+            href: '?new=true',
           }}
           description={t('certification.noCertificationsDescription')}
           title={t('certification.noCertificationsTitle')}
