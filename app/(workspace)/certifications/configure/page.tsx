@@ -36,6 +36,7 @@ function ConfigureCertificationContent() {
           }`}
         >
           <button
+            aria-expanded={isFormOpen}
             className="w-full flex items-center gap-3 p-4 hover:bg-content2 transition-colors duration-200 text-left"
             data-testid="configure-new-section-toggle"
             type="button"
@@ -44,7 +45,7 @@ function ConfigureCertificationContent() {
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={faPlus} />
             </div>
-            <p className="flex-1 text-sm font-semibold text-foreground">{t('certification.tabNew')}</p>
+            <span className="flex-1 text-sm font-semibold text-foreground">{t('certification.tabNew')}</span>
             <FontAwesomeIcon
               className="text-default-400 text-xs shrink-0"
               icon={isFormOpen ? faChevronUp : faChevronDown}
