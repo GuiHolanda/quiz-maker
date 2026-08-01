@@ -1,11 +1,5 @@
 'use client';
-import {
-  faBullseye,
-  faClock,
-  faHashtag,
-  faLayerGroup,
-  faGraduationCap,
-} from '@fortawesome/free-solid-svg-icons';
+import { faBullseye, faClock, faHashtag, faLayerGroup, faGraduationCap } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Chip } from '@heroui/chip';
 

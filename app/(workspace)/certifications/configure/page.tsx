@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { faChevronDown, faChevronUp, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
-import { CertificationsListTab } from './components/CertificationsListTab';
+import { CertificationsList } from './components/list/CertificationsList';
 import { CertificationWizard } from './components/wizard/CertificationWizard';
 
 import { ExamsProvider } from '@/features/providers/exams.provider';
@@ -59,7 +59,7 @@ function ConfigureCertificationContent() {
         </div>
 
         <section className="border-t border-default-200 pt-8" data-testid="configure-list-section">
-          <CertificationsListTab />
+          <CertificationsList />
         </section>
       </div>
     </PageHeader>
