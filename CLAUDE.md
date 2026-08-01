@@ -943,7 +943,7 @@ Common labels: `bug`, `feature`, `enhancement`, `backlog`.
 - A bug or broken behavior spotted in code that is **out of scope** for the current task
 - A gap in UX or functionality (missing button, missing feedback, missing validation, etc.)
 - A technical debt item or known limitation worth tracking
-- An inconsistency between certifications and public-exams flows that should be unified
+- An inconsistency between certification and public_exam behavior in the unified `/exams` route
 
 The question should be brief and specific — name the problem, then ask: *"Quer que eu crie uma issue para isso?"*. Do **not** create issues silently without asking.
 

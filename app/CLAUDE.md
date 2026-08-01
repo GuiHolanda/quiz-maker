@@ -354,7 +354,7 @@ interface EmptyStateProps {
 
 ### Quando usar `href` vs `onPress`
 
-- **`href`** — quando a CTA deve **navegar** para outra rota (ex.: "criar primeira certificação" leva a `/certifications/configure`).
+- **`href`** — quando a CTA deve **navegar** para outra rota (ex.: "criar primeira certificação" leva a `/exams?type=certification`).
 - **`onPress`** — quando a CTA deve **trocar de aba ou disparar uma ação local** dentro da mesma página (ex.: "Gerar questões" troca para a aba "Gerar" da página atual).
 - Se nem `href` nem `onPress` forem fornecidos, o botão não é renderizado — útil quando o componente filho não conhece o controlador de abas.
 
@@ -367,7 +367,7 @@ interface EmptyStateProps {
   description={t('certification.noCertificationsDescription')}
   action={{
     label: t('certification.tabNew'),
-    href: '/certifications/configure',
+    href: '/exams?type=certification',
   }}
 />
 
@@ -457,7 +457,7 @@ O mesmo padrão existe para `PublicExamBrowseQuestionsService` com `publicExamEx
 
 ### Navegação
 
-O item **Banco de Questões** (`faLayerGroup`) está no sidebar como item de topo-level, entre Dashboard e a seção Certificações. As páginas `/certifications/questions` e `/public-exams/questions` foram simplificadas para **somente geração** — a aba "Biblioteca" foi removida, e a navegação para ver questões salvas passa pelo Banco de Questões.
+O item **Banco de Questões** (`faLayerGroup`) está no sidebar como item de topo-level. A página `/questions` é a rota de geração de questões — unificada para ambos os tipos via `?type=`.
 
 ### API connectors
 
@@ -480,7 +480,7 @@ getQuestionBankSources(type?): Promise<string[]>
 | Group | Layout | Chrome renderizada | Rotas |
 |---|---|---|---|
 | `(marketing)` | `app/(marketing)/layout.tsx` | Navbar + Footer | `/` (homepage), futuras `/privacy`, `/terms`, etc. |
-| `(workspace)` | `app/(workspace)/layout.tsx` | Sidebar + WorkspaceHeader + AiChatWrapper | `/dashboard`, `/certifications/*`, `/public-exams/*`, `/billing` |
+| `(workspace)` | `app/(workspace)/layout.tsx` | Sidebar + WorkspaceHeader + AiChatWrapper | `/dashboard`, `/exams`, `/questions`, `/simulados`, `/question-bank`, `/billing` |
 | `(auth)` | `app/(auth)/layout.tsx` | Top bar minimalista (chip CertifiqueAI + LanguageSwitch) | `/login`, `/register`, `/forgot-password`, `/reset-password` |
 | `admin/` (não é group) | `app/admin/layout.tsx` | Sidebar admin própria | `/admin/*` |
 
@@ -557,76 +557,27 @@ A página é **100% mock por enquanto** — todos os dados são constantes está
 
 Não usa `<PageHeader>` — aplica seu próprio fundo `bg-background` para alinhar com o sistema de cores navy.
 
-### Domínio: Certifications (`app/(workspace)/certifications/`)
+### Domínio: Exams (`app/(workspace)/exams/`) — página unificada
 
-#### Questions (`certifications/questions/`)
-
-Página de **geração de questões** — sem aba de biblioteca (a biblioteca passou para o Banco de Questões em `/question-bank`).
+Rota única que serve tanto certificações (`/exams?type=certification`) quanto concursos (`/exams?type=public_exam`). O `ExamType` vem do search param `type`; o fallback é `'certification'`.
 
 | Arquivo | Papel |
 |---|---|
-| `page.tsx` | Providers (`CertificationsProvider` + `QuizProvider`) + layout direto (sem tabs). `onSaved` mostra banner com link para Simulados e chama `refreshUsage()` |
-| `components/QuestionGeneratorForm.tsx` | Form de configuração (certification, topic, count) |
-| `components/GeneratedQuestionsList.tsx` | Lista com select-all, salvar/descartar |
-| `components/GeneratedQuestionsCard.tsx` | Card individual: texto + opções (Listbox) + checkbox |
+| `page.tsx` | `ExamsProvider` + `Suspense`; lê `?type=` e passa para `ExamsContent` |
+| `exam-config.ts` | `EXAM_CONFIG: Record<ExamType, ExamTypeConfig>` — mapa central de todas as diferenças de domínio (labels i18n, ícones, campos opcionais, draft key, etc.) |
+| `components/list/ExamCard.tsx` | Card de exam: avatar (logo/initials/icon), badges de year (public_exam), stats chips |
+| `components/list/ExamDetailPanel.tsx` | Painel de detalhe com `ExamSectionsTable`, botões edit/delete/close |
+| `components/list/ExamsList.tsx` | Lista com skeleton, empty state, grid de cards, detail panel animado, `EditExamModal`, `ConfirmModal` |
+| `components/wizard/ExamWizard.tsx` | Orquestrador do wizard 3 passos: draft em localStorage, animação Framer Motion, `saveExam`, discard modal |
+| `components/wizard/Step1BasicInfo.tsx` | Nome, entidade de referência (provider ou examBoard via Autocomplete), role/year (public_exam apenas), totais |
+| `components/wizard/Step2DefineSections.tsx` | Definição de seções/matérias com distribuição de % (min/max), validação de soma = 100% |
+| `components/wizard/Step3Review.tsx` | Revisão final dos dados antes de salvar |
 
-#### Configure Certification (`certifications/configure/`)
+**Padrão de importação do config:** todos os componentes importam via `@/app/(workspace)/exams/exam-config` (alias absoluto, não relativo).
 
-| Arquivo | Papel |
-|---|---|
-| `page.tsx` | Provider + layout + HeroUI Tabs (abre por padrão na aba **Minhas certificações**) |
-| `components/CertificationHeader.tsx` | Exibe nome/código da certificação selecionada |
-| `components/NewCertificationTab.tsx` | Form de criação com validação |
-| `components/CertificationsListTab.tsx` | Accordion das certificações do usuário com botão de excluir, modal de confirmação, `<EmptyState>` com CTA `onPress` para a aba "New" e `SkeletonListLoader` durante o carregamento |
-| `components/EditCertificationModal.tsx` | Modal de edição de metadados (label, key, provider) |
-| `components/EditCertificationTab.tsx` | Select para escolher qual editar |
-| `components/TopicForm.tsx` | Form de adição de tópico com Slider de percentual |
-
-#### Simulados (`certifications/simulados/`)
-
-As rotas de tentativa e resultado de cert ainda existem como sub-rotas (sem `page.tsx` próprio no nível raiz):
-
-| Arquivo | Papel |
-|---|---|
-| `[id]/tentativa/[attemptId]/page.tsx` | Interface interativa de resposta (usa `shared/components/SimuladoQuestionList`) |
-| `[id]/resultado/[attemptId]/page.tsx` | Página de resultado com breakdown por tópico; faz fallback chamando `ensureCertSimuladoAnswers` se detectar questões sem `answer` |
-
-> **Nota:** a listagem e criação de simulados de certificação foram **unificadas** em `app/(workspace)/simulados/`. Não há mais `page.tsx` em `certifications/simulados/`.
-
----
-
-### Domínio: Public Exams (`app/(workspace)/public-exams/`)
-
-#### Configure Public Exam (`public-exams/configure/`)
-
-| Arquivo | Papel |
-|---|---|
-| `page.tsx` | Provider + layout + HeroUI Tabs |
-| `components/NewPublicExamTab.tsx` | Form de criação de concurso |
-| `components/PublicExamsListTab.tsx` | Accordion dos concursos do usuário com botão de excluir, modal de confirmação, `<EmptyState>` com CTA `onPress` para a aba "New" e `SkeletonListLoader` durante o carregamento |
-| `components/EditPublicExamModal.tsx` | Modal de edição de concurso |
-
-#### Questions (`public-exams/questions/`)
-
-Página de **geração de questões** — sem aba de biblioteca (a biblioteca passou para o Banco de Questões em `/question-bank`). Mesmo padrão do escopo de certificações.
-
-| Arquivo | Papel |
-|---|---|
-| `page.tsx` | `PublicExamsProvider` + layout direto (sem tabs). `onSaved` mostra banner com link para Simulados |
-| `components/PublicExamQuestionGeneratorForm.tsx` | Form de configuração (concurso, assunto, count) |
-| `components/GeneratedPublicExamQuestionsList.tsx` | Lista com select-all, salvar/descartar |
-| `components/GeneratedPublicExamQuestionsCard.tsx` | Card individual de questão de concurso |
-
-#### Simulados (`public-exams/simulados/`)
-
-As rotas de tentativa e resultado de concurso ainda existem como sub-rotas (sem `page.tsx` próprio no nível raiz):
-
-| Arquivo | Papel |
-|---|---|
-| `[id]/tentativa/[attemptId]/page.tsx` | Interface interativa de resposta (usa `shared/components/SimuladoQuestionList`) |
-| `[id]/resultado/[attemptId]/page.tsx` | Página de resultados com breakdown por matéria; faz fallback chamando `ensureMockExamAnswers` se detectar questões sem `answer` |
-
-> **Nota:** a listagem e criação de simulados de concurso foram **unificadas** em `app/(workspace)/simulados/`. Não há mais `page.tsx` em `public-exams/simulados/`.
+**Navegação na sidebar:** dois itens separados apontam para a mesma rota com `type` diferente:
+- "Certificações" → `/exams?type=certification` (active quando `pathname === '/exams' && type !== 'public_exam'`)
+- "Concursos" → `/exams?type=public_exam` (active quando `pathname === '/exams' && type === 'public_exam'`)
 
 ### Domínio: Simulados (`app/(workspace)/simulados/`) — página unificada
 
