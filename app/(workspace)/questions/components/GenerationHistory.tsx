@@ -95,7 +95,7 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
   const hasActiveFilters = hasActiveHistoryFilters(filters);
 
   return (
-    <section aria-labelledby="history-heading" className="mt-8">
+    <section aria-labelledby="history-heading" className="mt-4">
       {renderSectionHeader()}
 
       <AnimatePresence initial={false}>
