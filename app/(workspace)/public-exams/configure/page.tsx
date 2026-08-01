@@ -1,8 +1,9 @@
 'use client';
-import type { Key } from '@react-types/shared';
 
-import { useState } from 'react';
-import { Tabs, Tab } from '@heroui/tabs';
+import { Suspense, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { faChevronDown, faChevronUp, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import { PublicExamsListTab } from './components/PublicExamsListTab';
 import { NewPublicExamTab } from './components/NewPublicExamTab';
@@ -12,34 +13,55 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 
 export default function ConfigurePublicExamPage() {
-  const { t } = useTranslation();
-  const [selectedTab, setSelectedTab] = useState<Key>('publicExamsList');
-
   return (
     <ExamsProvider>
-      <PageHeader subtitle={t('concurso.pageSubtitle')} title={t('concurso.pageTitle')}>
-        <div className="flex w-full flex-col">
-          <Tabs
-            aria-label={t('aria.tabOptions')}
-            classNames={{
-              tabList: 'bg-content2 border border-default-200 rounded-xl p-1 gap-1',
-              tab: 'rounded-xl text-default-400 data-[selected=true]:text-foreground data-[selected=true]:font-semibold transition-colors duration-200',
-              tabContent: 'group-data-[selected=true]:text-foreground',
-              cursor: 'bg-primary rounded-xl',
-              panel: 'pt-4',
-            }}
-            selectedKey={selectedTab as string}
-            onSelectionChange={setSelectedTab}
-          >
-            <Tab data-testid="wizard-tab-mine" key="publicExamsList" title={t('concurso.tabList')}>
-              <PublicExamsListTab onCreateNew={() => setSelectedTab('new')} />
-            </Tab>
-            <Tab data-testid="wizard-tab-new" key="new" title={t('concurso.tabNew')}>
-              <NewPublicExamTab onBackToLibrary={() => setSelectedTab('publicExamsList')} />
-            </Tab>
-          </Tabs>
-        </div>
-      </PageHeader>
+      <Suspense>
+        <ConfigurePublicExamContent />
+      </Suspense>
     </ExamsProvider>
+  );
+}
+
+function ConfigurePublicExamContent() {
+  const { t } = useTranslation();
+  const searchParams = useSearchParams();
+  const [isFormOpen, setIsFormOpen] = useState(searchParams.get('new') === 'true');
+
+  return (
+    <PageHeader subtitle={t('concurso.pageSubtitle')} title={t('concurso.pageTitle')}>
+      <div className="flex flex-col gap-6">
+        <div
+          className={`bg-content1 border rounded-xl overflow-hidden transition-colors duration-200 ${
+            isFormOpen ? 'border-primary' : 'border-default-200'
+          }`}
+        >
+          <button
+            aria-expanded={isFormOpen}
+            className="w-full flex items-center gap-3 p-4 hover:bg-content2 transition-colors duration-200 text-left"
+            data-testid="configure-new-section-toggle"
+            type="button"
+            onClick={() => setIsFormOpen((prev) => !prev)}
+          >
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={faPlus} />
+            </div>
+            <span className="flex-1 text-sm font-semibold text-foreground">{t('concurso.tabNew')}</span>
+            <FontAwesomeIcon
+              className="text-default-400 text-xs shrink-0"
+              icon={isFormOpen ? faChevronUp : faChevronDown}
+            />
+          </button>
+          {isFormOpen && (
+            <div className="border-t border-default-200 p-4">
+              <NewPublicExamTab onSaved={() => setIsFormOpen(false)} />
+            </div>
+          )}
+        </div>
+
+        <section className="border-t border-default-200 pt-8" data-testid="configure-list-section">
+          <PublicExamsListTab />
+        </section>
+      </div>
+    </PageHeader>
   );
 }
