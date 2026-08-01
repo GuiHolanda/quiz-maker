@@ -6,7 +6,7 @@ import { faChevronDown, faChevronUp, faPlus } from '@fortawesome/free-solid-svg-
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import { PublicExamsListTab } from './components/PublicExamsListTab';
-import { NewPublicExamTab } from './components/NewPublicExamTab';
+import { PublicExamWizard } from './components/wizard/PublicExamWizard';
 
 import { ExamsProvider } from '@/features/providers/exams.provider';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -53,7 +53,7 @@ function ConfigurePublicExamContent() {
           </button>
           {isFormOpen && (
             <div className="border-t border-default-200 p-4">
-              <NewPublicExamTab onSaved={() => setIsFormOpen(false)} />
+              <PublicExamWizard onSaved={() => setIsFormOpen(false)} />
             </div>
           )}
         </div>

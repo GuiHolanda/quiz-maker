@@ -15,7 +15,7 @@ import { useRequest } from '@/features/hooks/useRequest.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
 
-interface NewPublicExamTabProps {
+interface PublicExamWizardProps {
   readonly onSaved: () => void;
 }
 
@@ -63,7 +63,7 @@ function readDraft(): PublicExamDraft {
   return EMPTY_DRAFT;
 }
 
-export function NewPublicExamTab({ onSaved }: NewPublicExamTabProps) {
+export function PublicExamWizard({ onSaved }: PublicExamWizardProps) {
   const { publicExams, addExam } = useExamsContext();
   const { loading, request } = useRequest(saveExam);
   const { t } = useTranslation();
