@@ -33,9 +33,11 @@ export class ExamQuestionService {
       // Resolve the Exam for canonical section/topic lookup.
       // When examId is provided (preferred path), use it directly — unambiguous.
       // When not provided, fall back to looseKey name match as a best-effort.
-      let exam: (Awaited<ReturnType<typeof tx.exam.findFirst>> & {
-        sections: { id: string; name: string; topics: { id: string; name: string }[] }[];
-      }) | null = null;
+      let exam:
+        | (Awaited<ReturnType<typeof tx.exam.findFirst>> & {
+            sections: { id: string; name: string; topics: { id: string; name: string }[] }[];
+          })
+        | null = null;
 
       if (examId) {
         exam = await tx.exam.findFirst({
