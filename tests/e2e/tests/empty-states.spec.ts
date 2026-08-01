@@ -33,7 +33,6 @@ test.describe('empty states', () => {
       }
     });
     await page.goto('/certifications/configure');
-    await page.locator(tid(TID.wizardTabMine)).click();
     await expect(page.locator(tid(TID.emptyState))).toBeVisible();
   });
 });
