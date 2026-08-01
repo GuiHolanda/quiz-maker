@@ -63,6 +63,8 @@ prisma/
 
 Page-specific components live in `app/(workspace)/<domain>/<page>/components/`. Components used by more than one page live in `shared/components/`. Never put page-specific components in `shared/components/`.
 
+Group related page components into subfolders when there are 3+ files for the same concern — e.g. `components/wizard/`, `components/list/`. This keeps the flat `components/` directory scannable and each subfolder self-contained.
+
 ### `lib/bff.api.ts` — client-side only
 
 The Axios instance uses `baseURL: '/api'` (relative URL). **Never import it in server components or API routes.** Server components that need data must call services directly (e.g. `new AdminService().getOverview()`) or use `prisma` directly.
@@ -125,17 +127,25 @@ Prefira código que lê como uma descrição do que está acontecendo, não como
     });
   ```
 
-### Renderer functions
+### Component decomposition
 
-Use **renderer functions** (regular functions declared inside the component, after the `return`) to break large JSX into named, scannable pieces — without creating new files or lifting state.
+Prefer **extracting sub-components to their own files** whenever a piece of JSX has a clear responsibility boundary, receives identifiable props, or would appear in more than one place. Put related components in a subfolder (`wizard/`, `list/`, etc.) rather than growing a flat `components/` directory.
+
+**Extract to a new file when:**
+- The piece has its own props interface (presentational: a card, a panel, a row)
+- The piece manages its own local state or refs (e.g. a detail panel with `useRef`)
+- The same shape appears in multiple pages or domains → move to `shared/components/`
+- A component file is growing past ~150 lines
+
+**Use renderer functions** (declared inside the component, after `return`) only for smaller intra-component splits where extracting a file would be overkill:
 
 Rules:
 - Declare them **after the main `return`** statement, inside the component function body
 - Name them `render<What>` — e.g. `renderHeader()`, `renderActionsCell()`, `renderEditingActions()`
 - They capture component scope (state, props, handlers) directly — no need to pass anything unless the data only exists in a loop
-- Keep each renderer **single-purpose** — if a renderer needs an `if/else` with very different shapes, split it further
-- **When to use:** any time the `return` block grows beyond ~40 lines or contains repeated structural patterns (table cells, conditional UI blocks, button groups)
-- **When NOT to use:** trivial one-liners, or when the piece would benefit from its own props interface and lifecycle — extract a proper sub-component instead
+- Keep each renderer **single-purpose**
+- **When to use:** conditional UI blocks or table-cell variants that share too much scope to extract cleanly, return block > ~40 lines
+- **When NOT to use:** when the piece has its own props, state, or ref — extract a file instead
 
 ```tsx
 export function MyComponent({ items }: MyComponentProps) {
