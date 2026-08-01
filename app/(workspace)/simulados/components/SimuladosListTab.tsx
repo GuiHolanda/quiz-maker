@@ -5,6 +5,7 @@ import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { Input } from '@heroui/input';
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@heroui/modal';
+import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
 import { Progress } from '@heroui/progress';
 import { Select, SelectItem } from '@heroui/select';
 import { useRouter } from 'next/navigation';
@@ -217,34 +218,20 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
         <div className="flex flex-col gap-4">{filtered.map((s) => renderCard(s))}</div>
       )}
 
-      <Modal isOpen={!!deleteTarget} onClose={() => !isDeleting && setDeleteTarget(null)}>
-        <ModalContent>
-          <ModalHeader>{t('simulado.deleteTitle')}</ModalHeader>
-          <ModalBody>
-            <p className="text-default-500 text-sm">
-              {t('simulado.deleteConfirm', { name: deleteTarget?.name ?? deleteTarget?.sourceLabel ?? '' })}
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              className={buttonStyles.secondary}
-              isDisabled={isDeleting}
-              variant="bordered"
-              onPress={() => setDeleteTarget(null)}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button
-              data-testid="confirm-delete-btn"
-              className={buttonStyles.danger}
-              isLoading={isDeleting}
-              onPress={handleDelete}
-            >
-              {t('common.delete')}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <ConfirmModal
+        body={
+          <p className="text-default-500 text-sm">
+            {t('simulado.deleteConfirm', { name: deleteTarget?.name ?? deleteTarget?.sourceLabel ?? '' })}
+          </p>
+        }
+        confirmLabel={t('common.delete')}
+        confirmTestId="confirm-delete-btn"
+        isLoading={isDeleting}
+        isOpen={!!deleteTarget}
+        title={t('simulado.deleteTitle')}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
 
       <Modal isOpen={!!historyTarget} size="lg" onClose={() => setHistoryTarget(null)}>
         <ModalContent>{historyTarget && renderHistoryModal(historyTarget)}</ModalContent>
@@ -440,19 +427,19 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
   function renderHistoryModal(s: UnifiedSimulado) {
     return (
       <>
-        <ModalHeader className="flex flex-col gap-1">
+        <ModalHeader className="text-base font-semibold text-foreground border-b border-default-200 flex flex-col gap-1">
           <p>{t('simulado.attemptHistory')}</p>
           <p className="text-default-400 text-sm font-normal">{s.name ?? s.sourceLabel}</p>
         </ModalHeader>
-        <ModalBody>
+        <ModalBody className="py-6">
           {s.attempts.length === 0 ? (
             <p className="text-default-400 text-sm">{t('simulado.noAttempts')}</p>
           ) : (
             <div className="flex flex-col gap-2">{s.attempts.map((a, i) => renderAttemptRow(s, a, i))}</div>
           )}
         </ModalBody>
-        <ModalFooter>
-          <Button className={buttonStyles.secondary} variant="bordered" onPress={() => setHistoryTarget(null)}>
+        <ModalFooter className="border-t border-default-200">
+          <Button className={buttonStyles.secondary} size="sm" variant="bordered" onPress={() => setHistoryTarget(null)}>
             {t('common.cancel')}
           </Button>
         </ModalFooter>

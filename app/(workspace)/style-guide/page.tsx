@@ -69,16 +69,19 @@ function StyleGuideContent() {
       {/* ── Confirm Modal ──────────────────────────────────────────── */}
       <Modal isOpen={confirmModal.isOpen} size="sm" onClose={confirmModal.onClose}>
         <ModalContent>
-          <ModalHeader>{t('styleguide.demo.confirmTitle')}</ModalHeader>
-          <ModalBody>
+          <ModalHeader className="text-base font-semibold text-foreground border-b border-default-200">
+            {t('styleguide.demo.confirmTitle')}
+          </ModalHeader>
+          <ModalBody className="py-6">
             <p className="text-sm text-default-500">{t('styleguide.demo.confirmBody')}</p>
           </ModalBody>
-          <ModalFooter>
-            <Button variant="bordered" onPress={confirmModal.onClose}>
+          <ModalFooter className="border-t border-default-200">
+            <Button className={buttonStyles.secondary} size="sm" variant="bordered" onPress={confirmModal.onClose}>
               {t('common.cancel')}
             </Button>
             <Button
-              className="bg-danger text-white font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
+              className={buttonStyles.danger}
+              size="sm"
               startContent={<FontAwesomeIcon className="w-3.5 h-3.5" icon={faTrash} />}
               onPress={confirmModal.onClose}
             >
@@ -91,36 +94,37 @@ function StyleGuideContent() {
       {/* ── Form Modal ─────────────────────────────────────────────── */}
       <Modal isOpen={formModal.isOpen} size="md" onClose={formModal.onClose}>
         <ModalContent>
-          <ModalHeader>{t('styleguide.demo.formTitle')}</ModalHeader>
-          <ModalBody>
-            <div className="flex flex-col gap-4 pb-2">
-              <Input
-                {...inputProperties.input}
-                label="Name"
-                placeholder="Enter a name"
-                value={formName}
-                onValueChange={setFormName}
-              />
-              <Select
-                {...inputProperties.select}
-                label="Category"
-                placeholder="Select a category"
-                selectedKeys={formSelect ? new Set([formSelect]) : new Set()}
-                onSelectionChange={(keys) => setFormSelect(Array.from(keys)[0] as string)}
-              >
-                <SelectItem key="option1">Option 1</SelectItem>
-                <SelectItem key="option2">Option 2</SelectItem>
-                <SelectItem key="option3">Option 3</SelectItem>
-              </Select>
-              <Textarea {...inputProperties.input} label="Description" minRows={3} placeholder="Enter a description" />
-            </div>
+          <ModalHeader className="text-base font-semibold text-foreground border-b border-default-200">
+            {t('styleguide.demo.formTitle')}
+          </ModalHeader>
+          <ModalBody className="flex flex-col gap-4 py-8">
+            <Input
+              {...inputProperties.input}
+              label="Name"
+              placeholder="Enter a name"
+              value={formName}
+              onValueChange={setFormName}
+            />
+            <Select
+              {...inputProperties.select}
+              label="Category"
+              placeholder="Select a category"
+              selectedKeys={formSelect ? new Set([formSelect]) : new Set()}
+              onSelectionChange={(keys) => setFormSelect(Array.from(keys)[0] as string)}
+            >
+              <SelectItem key="option1">Option 1</SelectItem>
+              <SelectItem key="option2">Option 2</SelectItem>
+              <SelectItem key="option3">Option 3</SelectItem>
+            </Select>
+            <Textarea {...inputProperties.input} label="Description" minRows={3} placeholder="Enter a description" />
           </ModalBody>
-          <ModalFooter>
-            <Button variant="bordered" onPress={formModal.onClose}>
+          <ModalFooter className="border-t border-default-200">
+            <Button className={buttonStyles.secondary} size="sm" variant="bordered" onPress={formModal.onClose}>
               {t('common.cancel')}
             </Button>
             <Button
-              className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
+              className={buttonStyles.primary}
+              size="sm"
               startContent={<FontAwesomeIcon className="w-3.5 h-3.5" icon={faSave} />}
               onPress={formModal.onClose}
             >
@@ -133,15 +137,14 @@ function StyleGuideContent() {
       {/* ── Info Modal ─────────────────────────────────────────────── */}
       <Modal isOpen={infoModal.isOpen} size="lg" onClose={infoModal.onClose}>
         <ModalContent>
-          <ModalHeader>{t('styleguide.demo.infoTitle')}</ModalHeader>
-          <ModalBody>
+          <ModalHeader className="text-base font-semibold text-foreground border-b border-default-200">
+            {t('styleguide.demo.infoTitle')}
+          </ModalHeader>
+          <ModalBody className="py-6">
             <p className="text-sm text-default-500">{t('styleguide.demo.infoBody')}</p>
           </ModalBody>
-          <ModalFooter>
-            <Button
-              className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200"
-              onPress={infoModal.onClose}
-            >
+          <ModalFooter className="border-t border-default-200">
+            <Button className={buttonStyles.primary} size="sm" onPress={infoModal.onClose}>
               {t('common.cancel')}
             </Button>
           </ModalFooter>
