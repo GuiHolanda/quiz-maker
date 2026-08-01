@@ -94,13 +94,7 @@ export function LoginForm() {
 
         <AnimatePresence initial={false} mode="wait">
           {isJustVerified && (
-            <motion.div
-              key="verified"
-              animate="visible"
-              exit="exit"
-              initial="hidden"
-              variants={bannerEntrance}
-            >
+            <motion.div key="verified" animate="visible" exit="exit" initial="hidden" variants={bannerEntrance}>
               <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-success/10 border border-success/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-success flex-shrink-0" />
                 <p className="text-success text-xs">{t('login.emailVerifiedSuccess')}</p>
@@ -108,13 +102,7 @@ export function LoginForm() {
             </motion.div>
           )}
           {isPasswordReset && !isJustVerified && (
-            <motion.div
-              key="reset"
-              animate="visible"
-              exit="exit"
-              initial="hidden"
-              variants={bannerEntrance}
-            >
+            <motion.div key="reset" animate="visible" exit="exit" initial="hidden" variants={bannerEntrance}>
               <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-success/10 border border-success/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-success flex-shrink-0" />
                 <p className="text-success text-xs">{t('login.passwordResetSuccess')}</p>
@@ -122,13 +110,7 @@ export function LoginForm() {
             </motion.div>
           )}
           {oauthError && (
-            <motion.div
-              key="oauth-error"
-              animate="visible"
-              exit="exit"
-              initial="hidden"
-              variants={bannerEntrance}
-            >
+            <motion.div key="oauth-error" animate="visible" exit="exit" initial="hidden" variants={bannerEntrance}>
               <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-danger flex-shrink-0" />
                 <p className="text-danger text-xs">{oauthError}</p>
@@ -177,13 +159,7 @@ export function LoginForm() {
 
           <AnimatePresence initial={false}>
             {error && (
-              <motion.div
-                key="form-error"
-                animate="visible"
-                exit="exit"
-                initial="hidden"
-                variants={bannerEntrance}
-              >
+              <motion.div key="form-error" animate="visible" exit="exit" initial="hidden" variants={bannerEntrance}>
                 <div className="flex flex-col gap-1 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/20">
                   <div className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-danger flex-shrink-0" />

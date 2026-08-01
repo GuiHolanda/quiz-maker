@@ -37,8 +37,8 @@ export const TID = {
   notificationItem: 'notification-item',
 
   // Wizard (configure)
-  wizardTabNew: 'wizard-tab-new',
-  wizardTabMine: 'wizard-tab-mine',
+  configureNewSectionToggle: 'configure-new-section-toggle',
+  configureListSection: 'configure-list-section',
   wizardTitleInput: 'wizard-title-input',
   wizardDiscardBtn: 'wizard-discard-btn',
   wizardNextBtn: 'wizard-next-btn',

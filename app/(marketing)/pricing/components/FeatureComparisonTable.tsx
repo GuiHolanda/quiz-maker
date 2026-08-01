@@ -49,10 +49,7 @@ function FeatureCell({ value }: FeatureCellProps) {
   if (typeof value === 'boolean') {
     return (
       <div className="flex justify-center">
-        <FontAwesomeIcon
-          className={value ? 'text-accent' : 'text-navy-700'}
-          icon={value ? faCheck : faXmark}
-        />
+        <FontAwesomeIcon className={value ? 'text-accent' : 'text-navy-700'} icon={value ? faCheck : faXmark} />
       </div>
     );
   }
@@ -88,17 +85,17 @@ export function FeatureComparisonTable() {
               <th className="py-4 text-center font-mono text-xs text-navy-400 uppercase tracking-widest w-1/5">
                 {t('pricing.plan.pro')}
               </th>
-              <th className="py-4 text-center font-mono text-xs uppercase tracking-widest w-1/5" style={{ color: '#00d4ff' }}>
+              <th
+                className="py-4 text-center font-mono text-xs uppercase tracking-widest w-1/5"
+                style={{ color: '#00d4ff' }}
+              >
                 {t('pricing.plan.proAi')}
               </th>
             </tr>
           </thead>
           <tbody>
             {FEATURES.map((row, i) => (
-              <tr
-                key={row.labelKey}
-                className={`border-b border-navy-800/40 ${i % 2 === 0 ? '' : 'bg-navy-950/30'}`}
-              >
+              <tr key={row.labelKey} className={`border-b border-navy-800/40 ${i % 2 === 0 ? '' : 'bg-navy-950/30'}`}>
                 <td className="py-3.5 font-mono text-xs text-navy-400">{t(row.labelKey)}</td>
                 <td className="py-3.5">
                   <FeatureCell value={row.free} />

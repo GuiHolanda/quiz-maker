@@ -164,7 +164,7 @@ export function Sidebar({ defaultCollapsed = false }: { readonly defaultCollapse
         {/* Certifications */}
         <NextLink
           className={navLinkClass(pathname.startsWith('/certifications'), collapsed)}
-          href="/certifications/configure"
+          href="/certifications"
           title={collapsed ? t('nav.certificates') : undefined}
           onClick={closeDrawer}
         >
@@ -175,7 +175,7 @@ export function Sidebar({ defaultCollapsed = false }: { readonly defaultCollapse
         {/* Concursos */}
         <NextLink
           className={navLinkClass(pathname.startsWith('/public-exams'), collapsed)}
-          href="/public-exams/configure"
+          href="/public-exams"
           title={collapsed ? t('nav.concursos') : undefined}
           onClick={closeDrawer}
         >

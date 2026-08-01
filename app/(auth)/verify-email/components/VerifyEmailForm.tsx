@@ -64,9 +64,7 @@ export function VerifyEmailForm({ email }: VerifyEmailFormProps) {
         <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight leading-tight">
           {t('verify.title')}
         </h1>
-        <p className="text-default-500 text-sm mt-2 leading-relaxed">
-          {t('verify.subtitle', { email })}
-        </p>
+        <p className="text-default-500 text-sm mt-2 leading-relaxed">{t('verify.subtitle', { email })}</p>
       </div>
 
       <form className="flex flex-col items-center gap-6" onSubmit={handleSubmit}>

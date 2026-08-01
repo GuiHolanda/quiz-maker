@@ -263,7 +263,12 @@ export function BillingOverview() {
             >
               {t('billing.cancelKeep')}
             </Button>
-            <Button className={`flex-1 ${buttonStyles.danger}`} isLoading={portalLoading} size="sm" onPress={handlePortal}>
+            <Button
+              className={`flex-1 ${buttonStyles.danger}`}
+              isLoading={portalLoading}
+              size="sm"
+              onPress={handlePortal}
+            >
               {t('billing.cancelConfirmCta')}
             </Button>
           </ModalFooter>

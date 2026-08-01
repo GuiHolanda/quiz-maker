@@ -32,8 +32,7 @@ test.describe('empty states', () => {
         route.continue();
       }
     });
-    await page.goto('/certifications/configure');
-    await page.locator(tid(TID.wizardTabMine)).click();
+    await page.goto('/certifications');
     await expect(page.locator(tid(TID.emptyState))).toBeVisible();
   });
 });

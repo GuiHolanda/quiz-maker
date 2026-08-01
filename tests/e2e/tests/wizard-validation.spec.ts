@@ -4,18 +4,18 @@ import { tid, TID } from '../support/selectors';
 
 for (const domain of ALL_DOMAINS) {
   test.describe(`wizard validation — ${domain.type}`, () => {
-    test('discard draft returns to the list tab', async ({ authedPage: page }) => {
+    test('discard draft collapses the form section', async ({ authedPage: page }) => {
       await page.goto(domain.configureUrl);
-      await page.locator(tid(TID.wizardTabNew)).click();
+      await page.locator(tid(TID.configureNewSectionToggle)).click();
       await page.locator(tid(TID.wizardTitleInput)).fill('Draft to discard');
       await page.locator(tid(TID.wizardDiscardBtn)).first().click();
       await page.locator(tid(TID.confirmDiscardBtn)).click();
-      await expect(page.locator(tid(TID.wizardTabMine))).toBeVisible();
+      await expect(page.locator(tid(TID.wizardTitleInput))).not.toBeVisible();
     });
 
     test('cannot advance past step 1 without a title', async ({ authedPage: page }) => {
       await page.goto(domain.configureUrl);
-      await page.locator(tid(TID.wizardTabNew)).click();
+      await page.locator(tid(TID.configureNewSectionToggle)).click();
       // clear any pre-filled title
       await page.locator(tid(TID.wizardTitleInput)).clear();
       await page.locator(tid(TID.wizardNextBtn)).click();

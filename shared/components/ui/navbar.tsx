@@ -32,13 +32,13 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 
 const PRODUCT_ITEMS = [
-  { label: 'nav.configureCertification', href: '/certifications/configure' },
+  { label: 'nav.configureCertification', href: '/certifications' },
   { label: 'nav.questions', href: '/questions' },
   { label: 'nav.simulados', href: '/simulados' },
 ] as const;
 
 const CONCURSO_ITEMS = [
-  { label: 'nav.configureConcurso', href: '/public-exams/configure' },
+  { label: 'nav.configureConcurso', href: '/public-exams' },
   { label: 'nav.questions', href: '/questions?type=public_exam' },
   { label: 'nav.simulados', href: '/simulados' },
 ] as const;

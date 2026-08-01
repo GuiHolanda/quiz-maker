@@ -191,9 +191,7 @@ function PricingPageContent() {
             onCtaPress={() => handleCheckout('pro_ai')}
           />
         </div>
-        <p className="text-center text-xs text-navy-400 mt-6">
-          {t('pricing.trust.noCardRequired')}
-        </p>
+        <p className="text-center text-xs text-navy-400 mt-6">{t('pricing.trust.noCardRequired')}</p>
       </section>
     );
   }

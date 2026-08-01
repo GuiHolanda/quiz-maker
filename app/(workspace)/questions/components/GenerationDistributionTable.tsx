@@ -8,6 +8,7 @@ import { faTrash, faRotateLeft } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+import { Chip } from '@heroui/chip';
 
 interface WeightedTopic {
   readonly name: string;
@@ -99,7 +100,8 @@ export function GenerationDistributionTable({
 
   return (
     <div className="flex flex-col gap-3 w-full">
-      <div className="bg-content2 border border-default-200 rounded-xl overflow-hidden">
+      <p className="font-bold text-sm mb-2">Distribuição de Tópicos</p>
+      <div className="border border-default-200 rounded-xl overflow-hidden">
         {activeTopics.length === 0 ? (
           <p className="text-xs text-default-400 px-4 py-3">{t('generate.noTopicsLeft')}</p>
         ) : (
@@ -143,11 +145,9 @@ export function GenerationDistributionTable({
       </div>
 
       <div className="flex items-center justify-between gap-2 mt-4">
-        <div className="flex items-center justify-end gap-4">
-          <span className="text-xs font-medium text-success pb-2">
-            {t('simulado.distributed', { distributed: currentTotal, total: currentTotal })}
-          </span>
-        </div>
+        <Chip color="success" size="sm" variant="flat" classNames={{ content: 'font-bold' }}>
+          {t('simulado.distributed', { distributed: currentTotal, total: currentTotal })}
+        </Chip>
         <div className="flex gap-4 items-center">
           {isModified ? (
             <Button

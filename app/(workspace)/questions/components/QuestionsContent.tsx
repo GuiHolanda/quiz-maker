@@ -22,13 +22,13 @@ interface QuestionsContentProps {
 
 const EMPTY_COPY: Record<ExamType, { href: string; labelKey: string; titleKey: string; descriptionKey: string }> = {
   certification: {
-    href: '/certifications/configure',
+    href: '/certifications',
     labelKey: 'certification.tabNew',
     titleKey: 'certification.noCertificationsTitle',
     descriptionKey: 'certification.noCertificationsDescription',
   },
   public_exam: {
-    href: '/public-exams/configure',
+    href: '/public-exams',
     labelKey: 'concurso.tabNew',
     titleKey: 'concurso.noExamsTitle',
     descriptionKey: 'concurso.noExamsDescription',
@@ -66,7 +66,7 @@ export function QuestionsContent({ type }: Readonly<QuestionsContentProps>) {
   const sections = selectedExam?.sections ?? [];
 
   return (
-    <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6 w-full">
+    <div className="flex flex-col gap-6 w-full">
       <div className="flex w-3/4 xl:w-1/2 items-end gap-4">
         <div className="basis-3/4 min-w-0">{renderManager()}</div>
         {selectedExam && (
@@ -85,14 +85,16 @@ export function QuestionsContent({ type }: Readonly<QuestionsContentProps>) {
         )}
       </div>
       {selectedExam && (
-        <GenerationDistributionTable
-          key={selectedExam.id ?? selectedExam.name}
-          defaultTotal={selectedExam.totalQuestions}
-          total={total}
-          topics={sections.map((section) => ({ name: section.name, weight: section.maxQuestions }))}
-          onGenerate={handleGenerate}
-          onTotalChange={setTotal}
-        />
+        <div className="bg-content1 border border-default-200 rounded-xl p-6">
+          <GenerationDistributionTable
+            key={selectedExam.id ?? selectedExam.name}
+            defaultTotal={selectedExam.totalQuestions}
+            total={total}
+            topics={sections.map((section) => ({ name: section.name, weight: section.maxQuestions }))}
+            onGenerate={handleGenerate}
+            onTotalChange={setTotal}
+          />
+        </div>
       )}
     </div>
   );
