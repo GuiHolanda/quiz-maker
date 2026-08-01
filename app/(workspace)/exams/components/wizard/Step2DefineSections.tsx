@@ -1,5 +1,5 @@
 'use client';
-import type { ExamSection } from '@/shared/types';
+import type { ExamSection, ExamType } from '@/shared/types';
 
 import { faCircleCheck, faCircleInfo, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -8,14 +8,17 @@ import { Input } from '@heroui/input';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { StepHeader } from '@/shared/components/ui/wizard/StepHeader';
-
 import { inputProperties } from '@/config/constants/inputStyles';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
 
-interface Step2DefineTopicsProps {
+interface Step2DefineSectionsProps {
+  readonly type: ExamType;
   readonly name: string;
-  readonly provider: string;
+  readonly referenceEntityName: string;
+  readonly role: string;
+  readonly year: string;
   readonly sections: ExamSection[];
   readonly onAddEmptySection: () => void;
   readonly onUpdateSection: (index: number, name: string, minQuestions: number, maxQuestions: number) => void;
@@ -25,9 +28,12 @@ interface Step2DefineTopicsProps {
   readonly onDiscard: () => void;
 }
 
-export function Step2DefineTopics({
+export function Step2DefineSections({
+  type,
   name,
-  provider,
+  referenceEntityName,
+  role,
+  year,
   sections,
   onAddEmptySection,
   onUpdateSection,
@@ -35,31 +41,48 @@ export function Step2DefineTopics({
   onBack,
   onNext,
   onDiscard,
-}: Step2DefineTopicsProps) {
+}: Step2DefineSectionsProps) {
   const { t } = useTranslation();
+  const config = EXAM_CONFIG[type];
   const totalWeightage = sections.reduce((sum, section) => sum + Number(section.maxQuestions), 0);
   const isWeightageValid = totalWeightage === 100;
   const allSectionsNamed = sections.length > 0 && sections.every((section) => section.name.trim().length > 0);
   const isMinMaxValid = sections.every((section) => section.minQuestions <= section.maxQuestions);
-  const hasDraft = !!(name || provider || sections.length > 0);
+  const hasDraft = !!(name || referenceEntityName || role || year || sections.length > 0);
 
   return (
     <div className="flex flex-col gap-6">
-      <StepHeader currentStep={2} namespace="certification" onBack={onBack} />
+      <StepHeader currentStep={2} namespace={type === 'certification' ? 'certification' : 'concurso'} onBack={onBack} />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         <div className="lg:col-span-4 flex flex-col gap-4">
           <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4">
-            <h3 className="text-lg font-bold text-foreground">{t('certification.certificationSummary')}</h3>
+            <h3 className="text-lg font-bold text-foreground">{t(config.step2SummaryTitle)}</h3>
             <div className="grid grid-cols-4 gap-3 items-end">
               <div className="col-span-2 lg:col-span-4">
-                <p className="text-xs font-bold text-primary-300">{t('certification.certNameLabel')}</p>
+                <p className="text-xs font-bold text-primary-300">
+                  {t(type === 'certification' ? 'certification.certNameLabel' : 'concurso.nameLabel')}
+                </p>
                 <p className="text-base text-foreground mt-1">{name || '—'}</p>
               </div>
               <div className="col-span-2 lg:col-span-4">
-                <p className="text-xs font-bold text-primary-300">{t('exam.providerLabel')}</p>
-                <p className="text-sm text-foreground mt-1">{provider || '—'}</p>
+                <p className="text-xs font-bold text-primary-300">
+                  {t(type === 'certification' ? 'exam.providerLabel' : 'exam.examBoardLabel')}
+                </p>
+                <p className="text-sm text-foreground mt-1">{referenceEntityName || '—'}</p>
               </div>
+              {config.hasRoleField && (
+                <div className="col-span-1 lg:col-span-2">
+                  <p className="text-xs font-bold text-primary-300">{t('concurso.cargoLabel')}</p>
+                  <p className="text-sm text-foreground mt-1">{role || '—'}</p>
+                </div>
+              )}
+              {config.hasYearField && (
+                <div className="col-span-1 lg:col-span-2">
+                  <p className="text-xs font-bold text-primary-300">{t('concurso.yearLabel')}</p>
+                  <p className="text-sm text-foreground mt-1">{year || '—'}</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -86,10 +109,10 @@ export function Step2DefineTopics({
               <p
                 className={`text-sm font-semibold transition-colors duration-300 ${isWeightageValid ? 'text-success' : 'text-primary'}`}
               >
-                {t('certification.systemLogic')}
+                {t(config.step2SystemLogic)}
               </p>
               <p className="text-sm text-default-500">
-                {t('certification.weightageInfoBase')}{' '}
+                {t(config.step2WeightageInfoBase)}{' '}
                 <motion.span
                   animate={{ scale: 1 }}
                   className={`font-bold inline-block ${isWeightageValid ? 'text-success' : 'text-warning'}`}
@@ -107,7 +130,7 @@ export function Step2DefineTopics({
 
         <div className="lg:col-span-8 bg-content1 border border-default-200 rounded-xl overflow-hidden">
           <div className="flex items-center justify-between px-6 py-5 border-b border-default-200">
-            <h3 className="text-lg font-bold text-foreground">{t('certification.studyDomains')}</h3>
+            <h3 className="text-lg font-bold text-foreground">{t(config.step2SectionsTitle)}</h3>
             <Button
               data-testid="exam-add-section-btn"
               className={buttonStyles.primarySm}
@@ -115,13 +138,13 @@ export function Step2DefineTopics({
               startContent={<FontAwesomeIcon className="text-[10px]" icon={faPlus} />}
               onPress={onAddEmptySection}
             >
-              {t('certification.addDomain')}
+              {t(config.step2AddBtn)}
             </Button>
           </div>
 
           <div className="flex flex-col gap-4 p-6 min-h-[200px]">
             {sections.length === 0 && (
-              <p className="text-sm text-default-400 text-center py-10">{t('certification.noTopics')}</p>
+              <p className="text-sm text-default-400 text-center py-10">{t(config.step2NoSections)}</p>
             )}
             <AnimatePresence initial={false}>
               {sections.map((section, index) => {
@@ -139,8 +162,8 @@ export function Step2DefineTopics({
                     <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_auto] gap-4 sm:items-end">
                       <Input
                         {...inputProperties.input}
-                        label={t('certification.domainName')}
-                        placeholder={t('certification.topicNamePlaceholder')}
+                        label={t(config.step2SectionNameLabel)}
+                        placeholder={t(config.step2SectionNamePlaceholder)}
                         value={section.name}
                         onChange={(e) =>
                           onUpdateSection(index, e.target.value, section.minQuestions, section.maxQuestions)
@@ -149,7 +172,7 @@ export function Step2DefineTopics({
                       <Input
                         {...inputProperties.input}
                         endContent={<span className="text-default-400 text-sm">%</span>}
-                        label={t('certification.minQuestions')}
+                        label={t(config.step2MinLabel)}
                         max={100}
                         min={0}
                         type="number"
@@ -162,7 +185,7 @@ export function Step2DefineTopics({
                       <Input
                         {...inputProperties.input}
                         endContent={<span className="text-default-400 text-sm">%</span>}
-                        label={t('certification.maxQuestions')}
+                        label={t(config.step2MaxLabel)}
                         max={100}
                         min={0}
                         type="number"
@@ -186,7 +209,7 @@ export function Step2DefineTopics({
                       </div>
                     </div>
                     {hasMinMaxError && (
-                      <p className="text-xs text-danger font-medium">{t('certification.minGreaterThanMax')}</p>
+                      <p className="text-xs text-danger font-medium">{t(config.step2MinGreaterThanMax)}</p>
                     )}
                   </motion.div>
                 );
@@ -197,7 +220,7 @@ export function Step2DefineTopics({
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-6 py-5 border-t border-default-200">
             {hasDraft && (
               <Button data-testid="wizard-discard-btn" className={buttonStyles.dangerFlat} onPress={onDiscard}>
-                {t('certification.discardDraft')}
+                {t(config.discardDraftLabel)}
               </Button>
             )}
             <Button
@@ -205,7 +228,7 @@ export function Step2DefineTopics({
               isDisabled={!allSectionsNamed || !isWeightageValid || !isMinMaxValid}
               onPress={onNext}
             >
-              {t('certification.finalizeCertification')}
+              {t(config.step2FinalizeBtnLabel)}
             </Button>
           </div>
         </div>

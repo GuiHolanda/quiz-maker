@@ -1,26 +1,31 @@
 'use client';
-import type { Exam, ExamSection } from '@/shared/types';
+import type { Exam, ExamSection, ExamType } from '@/shared/types';
 
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+
 import { Step1BasicInfo } from './Step1BasicInfo';
-import { Step2DefineTopics } from './Step2DefineTopics';
+import { Step2DefineSections } from './Step2DefineSections';
 import { Step3Review } from './Step3Review';
+import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
 
 import { saveExam } from '@/features/connectors';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { useRequest } from '@/features/hooks/useRequest.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
-import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
+import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
 
-interface CertificationWizardProps {
+interface ExamWizardProps {
+  readonly type: ExamType;
   readonly onSaved: () => void;
 }
 
-interface CertificationDraft {
+interface ExamDraft {
   name: string;
-  provider: string;
+  referenceEntityName: string;
+  role: string;
+  year: string;
   totalQuestions: string;
   examDurationMinutes: string;
   passingScore: string;
@@ -28,11 +33,11 @@ interface CertificationDraft {
   step: 1 | 2 | 3;
 }
 
-const STORAGE_KEY = 'NEW_CERTIFICATION_DRAFT';
-
-const EMPTY_DRAFT: CertificationDraft = {
+const EMPTY_DRAFT: ExamDraft = {
   name: '',
-  provider: '',
+  referenceEntityName: '',
+  role: '',
+  year: '',
   totalQuestions: '',
   examDurationMinutes: '',
   passingScore: '',
@@ -46,44 +51,42 @@ const variants = {
   exit: (dir: number) => ({ x: dir > 0 ? -40 : 40, opacity: 0 }),
 };
 
-function readDraft(): CertificationDraft {
+function readDraft(storageKey: string): ExamDraft {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-
+    const raw = localStorage.getItem(storageKey);
     if (raw) return { ...EMPTY_DRAFT, ...JSON.parse(raw) };
   } catch {
     /* corrupted or unavailable storage */
   }
-
   return EMPTY_DRAFT;
 }
 
-export function CertificationWizard({ onSaved }: CertificationWizardProps) {
-  const { certifications, addExam } = useExamsContext();
+export function ExamWizard({ type, onSaved }: ExamWizardProps) {
+  const config = EXAM_CONFIG[type];
+  const { certifications, publicExams, addExam } = useExamsContext();
   const { loading, request } = useRequest(saveExam);
   const { t } = useTranslation();
   const [isDiscardOpen, setIsDiscardOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
-  const [draft, setDraft] = useState<CertificationDraft>(EMPTY_DRAFT);
+  const [draft, setDraft] = useState<ExamDraft>(EMPTY_DRAFT);
   const prevStep = useRef<1 | 2 | 3>(1);
 
   useEffect(() => {
-    setDraft(readDraft());
+    setDraft(readDraft(config.draftStorageKey));
     setHydrated(true);
-  }, []);
+  }, [config.draftStorageKey]);
 
   useEffect(() => {
     if (!hydrated) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+      localStorage.setItem(config.draftStorageKey, JSON.stringify(draft));
     } catch {
       /* storage full or unavailable */
     }
-  }, [hydrated, draft]);
+  }, [hydrated, draft, config.draftStorageKey]);
 
   const direction = draft.step > prevStep.current ? 1 : -1;
-
-  const patch = (updates: Partial<CertificationDraft>) => setDraft((prev) => ({ ...prev, ...updates }));
+  const patch = (updates: Partial<ExamDraft>) => setDraft((prev) => ({ ...prev, ...updates }));
 
   const goToStep = (next: 1 | 2 | 3) => {
     prevStep.current = draft.step;
@@ -91,7 +94,10 @@ export function CertificationWizard({ onSaved }: CertificationWizardProps) {
   };
 
   const addEmptySection = () =>
-    setDraft((prev) => ({ ...prev, sections: [...prev.sections, { name: '', minQuestions: 0, maxQuestions: 0 }] }));
+    setDraft((prev) => ({
+      ...prev,
+      sections: [...prev.sections, { name: '', minQuestions: 0, maxQuestions: 0, topics: [] }],
+    }));
 
   const updateSection = (index: number, name: string, minQuestions: number, maxQuestions: number) =>
     setDraft((prev) => ({
@@ -106,7 +112,7 @@ export function CertificationWizard({ onSaved }: CertificationWizardProps) {
     prevStep.current = 1;
     setDraft(EMPTY_DRAFT);
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(config.draftStorageKey);
     } catch {
       /* ignore */
     }
@@ -114,28 +120,60 @@ export function CertificationWizard({ onSaved }: CertificationWizardProps) {
 
   const handleSave = async () => {
     const name = draft.name.trim();
+    const referenceEntityName = draft.referenceEntityName.trim();
 
     if (!name) {
       notify.error(t('toast.validationError'), t('error.nameRequired'));
       return;
     }
-
-    if (certifications.some((c) => c.name === name)) {
-      notify.error(t('toast.duplicateCertification'), t('error.duplicateCode', { code: name }));
+    if (type === 'public_exam' && !referenceEntityName) {
+      notify.error(t('toast.validationError'), t('error.nameAndBancaRequired'));
       return;
     }
 
-    const exam: Exam = {
-      type: 'certification',
-      name,
-      provider: draft.provider.trim() ? { name: draft.provider.trim() } : null,
-      totalQuestions: parseInt(draft.totalQuestions, 10),
-      examDurationMinutes: parseInt(draft.examDurationMinutes, 10) || null,
-      passingScore: parseFloat(draft.passingScore) || null,
-      sections: draft.sections,
-    };
-    const saved = await request(exam);
+    const exams = type === 'certification' ? certifications : publicExams;
+    const yearNum = draft.year ? Number(draft.year) : undefined;
 
+    const isDuplicate =
+      type === 'certification'
+        ? exams.some((e) => e.name === name)
+        : exams.some((e) => e.name === name && (e.year ?? undefined) === yearNum);
+
+    if (isDuplicate) {
+      const toastKey = type === 'certification' ? 'toast.duplicateCertification' : 'toast.duplicatePublicExam';
+      const msgKey = type === 'certification' ? 'error.duplicateCode' : 'error.duplicatePublicExam';
+      notify.error(t(toastKey), t(msgKey, { code: name, name }));
+      return;
+    }
+
+    const totalQuestions = parseInt(draft.totalQuestions, 10);
+    const examDurationMinutes = parseInt(draft.examDurationMinutes, 10) || null;
+    const passingScore = parseFloat(draft.passingScore) || null;
+
+    const exam: Exam =
+      type === 'certification'
+        ? {
+            type: 'certification',
+            name,
+            provider: referenceEntityName ? { name: referenceEntityName } : null,
+            totalQuestions,
+            examDurationMinutes,
+            passingScore,
+            sections: draft.sections,
+          }
+        : {
+            type: 'public_exam',
+            name,
+            role: draft.role.trim() || null,
+            year: yearNum ?? null,
+            totalQuestions,
+            examDurationMinutes,
+            passingScore,
+            examBoard: { name: referenceEntityName },
+            sections: draft.sections,
+          };
+
+    const saved = await request(exam);
     if (saved) {
       addExam(saved);
       resetDraft();
@@ -153,25 +191,33 @@ export function CertificationWizard({ onSaved }: CertificationWizardProps) {
   const stepContent =
     draft.step === 1 ? (
       <Step1BasicInfo
+        type={type}
         examDurationMinutes={draft.examDurationMinutes}
         name={draft.name}
         passingScore={draft.passingScore}
-        provider={draft.provider}
+        referenceEntityName={draft.referenceEntityName}
+        role={draft.role}
         totalQuestions={draft.totalQuestions}
+        year={draft.year}
         onBack={onSaved}
         onDiscard={() => setIsDiscardOpen(true)}
         onExamDurationMinutesChange={(v) => patch({ examDurationMinutes: v })}
         onNameChange={(v) => patch({ name: v })}
         onNext={() => goToStep(2)}
         onPassingScoreChange={(v) => patch({ passingScore: v })}
-        onProviderChange={(v) => patch({ provider: v })}
+        onReferenceEntityNameChange={(v) => patch({ referenceEntityName: v })}
+        onRoleChange={(v) => patch({ role: v })}
         onTotalQuestionsChange={(v) => patch({ totalQuestions: v })}
+        onYearChange={(v) => patch({ year: v })}
       />
     ) : draft.step === 2 ? (
-      <Step2DefineTopics
+      <Step2DefineSections
+        type={type}
         name={draft.name}
-        provider={draft.provider}
+        referenceEntityName={draft.referenceEntityName}
+        role={draft.role}
         sections={draft.sections}
+        year={draft.year}
         onAddEmptySection={addEmptySection}
         onBack={() => goToStep(1)}
         onDiscard={() => setIsDiscardOpen(true)}
@@ -181,13 +227,16 @@ export function CertificationWizard({ onSaved }: CertificationWizardProps) {
       />
     ) : (
       <Step3Review
+        type={type}
         examDurationMinutes={parseInt(draft.examDurationMinutes, 10) || undefined}
         isLoading={loading}
         name={draft.name}
         passingScore={parseFloat(draft.passingScore) || undefined}
-        provider={draft.provider}
+        referenceEntityName={draft.referenceEntityName}
+        role={draft.role}
         sections={draft.sections}
         totalQuestions={parseInt(draft.totalQuestions, 10) || 0}
+        year={draft.year}
         onBack={() => goToStep(2)}
         onDiscard={() => setIsDiscardOpen(true)}
         onSave={handleSave}
@@ -213,12 +262,12 @@ export function CertificationWizard({ onSaved }: CertificationWizardProps) {
       </div>
 
       <ConfirmModal
-        body={<p className="text-sm text-default-500">{t('certification.discardDraftBody')}</p>}
-        confirmLabel={t('certification.discardDraft')}
+        body={<p className="text-sm text-default-500">{t(config.discardDraftBody)}</p>}
+        confirmLabel={t(config.discardDraftLabel)}
         confirmTestId="confirm-discard-btn"
         confirmVariant="danger"
         isOpen={isDiscardOpen}
-        title={t('certification.discardDraftTitle')}
+        title={t(config.discardDraftTitle)}
         onClose={() => setIsDiscardOpen(false)}
         onConfirm={handleConfirmDiscard}
       />

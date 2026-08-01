@@ -1,30 +1,28 @@
 'use client';
-import {
-  faBullseye,
-  faCalendar,
-  faClock,
-  faHashtag,
-  faLayerGroup,
-  faClipboardList,
-} from '@fortawesome/free-solid-svg-icons';
+import { faBullseye, faCalendar, faClock, faHashtag, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Chip } from '@heroui/chip';
 
 import { RelativeDate } from '@/shared/components/ui/RelativeDate';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { Exam } from '@/shared/types';
+import type { Exam, ExamType } from '@/shared/types';
+import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
 
-interface PublicExamCardProps {
+interface ExamCardProps {
   readonly exam: Exam;
+  readonly type: ExamType;
   readonly isSelected: boolean;
   readonly onClick: () => void;
 }
 
-export function PublicExamCard({ exam, isSelected, onClick }: PublicExamCardProps) {
+export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
   const { t } = useTranslation();
-  const hasNoSubjects = exam.sections.length === 0;
-  const initials = exam.examBoard?.name
-    ? exam.examBoard.name
+  const config = EXAM_CONFIG[type];
+  const hasNoSections = exam.sections.length === 0;
+
+  const referenceEntity = type === 'certification' ? exam.provider : exam.examBoard;
+  const initials = referenceEntity?.name
+    ? referenceEntity.name
         .trim()
         .split(/\s+/)
         .slice(0, 2)
@@ -48,12 +46,14 @@ export function PublicExamCard({ exam, isSelected, onClick }: PublicExamCardProp
       onClick={onClick}
     >
       <div className="flex items-start gap-3 mb-4">
-        {renderExamBoardAvatar()}
+        {renderAvatar()}
         <div className="flex-1 min-w-0 pt-0.5">
           <span className="block text-sm font-semibold text-foreground leading-snug line-clamp-2">{exam.name}</span>
           <div className="flex items-center gap-2 flex-wrap mt-0.5">
-            {exam.examBoard?.name && <span className="text-xs text-default-400 truncate">{exam.examBoard.name}</span>}
-            {exam.year != null && (
+            {referenceEntity?.name && (
+              <span className="text-xs text-default-400 truncate">{referenceEntity.name}</span>
+            )}
+            {config.hasYearField && exam.year != null && (
               <span className="flex items-center gap-1 text-xs text-default-400">
                 <FontAwesomeIcon className="text-[9px]" icon={faCalendar} />
                 {exam.year}
@@ -61,9 +61,9 @@ export function PublicExamCard({ exam, isSelected, onClick }: PublicExamCardProp
             )}
           </div>
         </div>
-        {hasNoSubjects ? (
+        {hasNoSections ? (
           <Chip className="shrink-0 mt-0.5" color="warning" size="sm" variant="flat">
-            {t('concurso.noSubjects')}
+            {t(config.cardEmptyChipKey)}
           </Chip>
         ) : (
           <Chip className="shrink-0 mt-0.5" color="primary" size="sm" variant="flat">
@@ -80,19 +80,21 @@ export function PublicExamCard({ exam, isSelected, onClick }: PublicExamCardProp
           {exam.totalQuestions > 0 && (
             <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-content2 border border-default-200 text-xs text-default-500 group-hover:border-default-300 transition-colors duration-150">
               <FontAwesomeIcon className="text-[9px] text-default-400" icon={faHashtag} />
-              {t('concurso.questionsCount', { count: String(exam.totalQuestions) })}
+              {t(type === 'certification' ? 'certification.questionsCount' : 'concurso.questionsCount', {
+                count: String(exam.totalQuestions),
+              })}
             </span>
           )}
           {exam.examDurationMinutes && (
             <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-content2 border border-default-200 text-xs text-default-500 group-hover:border-default-300 transition-colors duration-150">
               <FontAwesomeIcon className="text-[9px] text-default-400" icon={faClock} />
-              {t('concurso.durationValue', { minutes: String(exam.examDurationMinutes) })}
+              {t('certification.durationValue', { minutes: String(exam.examDurationMinutes) })}
             </span>
           )}
           {exam.passingScore != null && (
             <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/8 border border-primary/20 text-xs text-primary font-medium transition-colors duration-150">
               <FontAwesomeIcon className="text-[9px]" icon={faBullseye} />
-              {t('concurso.passingScoreValue', { score: String(exam.passingScore) })}
+              {t('certification.passingScoreValue', { score: String(exam.passingScore) })}
             </span>
           )}
         </div>
@@ -106,7 +108,16 @@ export function PublicExamCard({ exam, isSelected, onClick }: PublicExamCardProp
     </button>
   );
 
-  function renderExamBoardAvatar() {
+  function renderAvatar() {
+    if (type === 'certification' && exam.provider?.logoUrl) {
+      return (
+        <div className="w-10 h-10 rounded-xl bg-content2 border border-default-200 flex items-center justify-center shrink-0 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img alt={exam.provider.name} className="w-8 h-8 object-contain" src={exam.provider.logoUrl} />
+        </div>
+      );
+    }
+
     if (initials) {
       return (
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -117,7 +128,7 @@ export function PublicExamCard({ exam, isSelected, onClick }: PublicExamCardProp
 
     return (
       <div className="w-10 h-10 rounded-xl bg-content2 border border-default-200 flex items-center justify-center shrink-0">
-        <FontAwesomeIcon className="text-sm text-default-400" icon={faClipboardList} />
+        <FontAwesomeIcon className="text-sm text-default-400" icon={config.icon} />
       </div>
     );
   }

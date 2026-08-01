@@ -2,11 +2,10 @@
 
 import { useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { faClipboardList } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
-import { PublicExamCard } from './PublicExamCard';
-import { PublicExamDetailPanel } from './PublicExamDetailPanel';
+import { ExamCard } from './ExamCard';
+import { ExamDetailPanel } from './ExamDetailPanel';
 
 import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
 import { EditExamModal } from '@/shared/components/EditExamModal/EditExamModal';
@@ -18,19 +17,27 @@ import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { deleteExam } from '@/features/connectors';
-import { Exam, ExamSection, ExamTopic } from '@/shared/types';
+import type { Exam, ExamSection, ExamTopic, ExamType } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
+import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
 
-export function PublicExamsList() {
+interface ExamsListProps {
+  readonly type: ExamType;
+}
+
+export function ExamsList({ type }: ExamsListProps) {
   const { t } = useTranslation();
-  const { publicExams, isLoading, updateExam, removeExam } = useExamsContext();
+  const config = EXAM_CONFIG[type];
+  const { certifications, publicExams, isLoading, updateExam, removeExam } = useExamsContext();
+  const exams = type === 'certification' ? certifications : publicExams;
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editingExam, setEditingExam] = useState<Exam | null>(null);
   const [deletingExam, setDeletingExam] = useState<Exam | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const selectedExam = publicExams.find((e) => e.id === selectedId) ?? null;
+  const selectedExam = exams.find((e) => e.id === selectedId) ?? null;
 
   const handleCardClick = useCallback((exam: Exam) => {
     setSelectedId((prev) => (prev === exam.id ? null : (exam.id ?? null)));
@@ -50,8 +57,7 @@ export function PublicExamsList() {
   const handleSectionRemoved = useCallback(
     (exam: Exam, sectionId: string) => {
       if (!exam.id) return;
-      const updatedSections = exam.sections.filter((section) => section.id !== sectionId);
-      updateExam(exam.id, { sections: updatedSections });
+      updateExam(exam.id, { sections: exam.sections.filter((s) => s.id !== sectionId) });
     },
     [updateExam]
   );
@@ -108,18 +114,29 @@ export function PublicExamsList() {
 
   const handleExamSaved = useCallback(
     (id: string, updated: EditExamModalCertResult | EditExamModalPublicExamResult) => {
-      const result = updated as EditExamModalPublicExamResult;
-      updateExam(id, {
-        name: result.name,
-        role: result.role,
-        year: result.year,
-        examBoard: result.examBoard,
-        totalQuestions: result.totalQuestions,
-        examDurationMinutes: result.examDurationMinutes,
-        passingScore: result.passingScore,
-      });
+      if (type === 'certification') {
+        const result = updated as EditExamModalCertResult;
+        updateExam(id, {
+          name: result.name,
+          provider: result.provider,
+          totalQuestions: result.totalQuestions,
+          examDurationMinutes: result.examDurationMinutes,
+          passingScore: result.passingScore,
+        });
+      } else {
+        const result = updated as EditExamModalPublicExamResult;
+        updateExam(id, {
+          name: result.name,
+          role: result.role,
+          year: result.year,
+          examBoard: result.examBoard,
+          totalQuestions: result.totalQuestions,
+          examDurationMinutes: result.examDurationMinutes,
+          passingScore: result.passingScore,
+        });
+      }
     },
-    [updateExam]
+    [type, updateExam]
   );
 
   const handleDeleteConfirm = useCallback(async () => {
@@ -129,25 +146,23 @@ export function PublicExamsList() {
       await deleteExam(deletingExam.id);
       removeExam(deletingExam.id);
       if (selectedId === deletingExam.id) setSelectedId(null);
-      notify.success(t('toast.success'), t('concurso.examDeleted', { name: deletingExam.name }));
+      notify.success(t('toast.success'), t(config.deleteSuccessKey, { name: deletingExam.name }));
       setDeletingExam(null);
     } catch {
-      notify.error(t('toast.error'), t('concurso.examDeleteError'));
+      notify.error(t('toast.error'), t(config.deleteErrorKey));
     } finally {
       setIsDeleting(false);
     }
-  }, [deletingExam, removeExam, selectedId, t]);
+  }, [deletingExam, removeExam, selectedId, config, t]);
 
-  if (isLoading) {
-    return <SkeletonListLoader />;
-  }
+  if (isLoading) return <SkeletonListLoader />;
 
-  if (publicExams.length === 0) {
+  if (exams.length === 0) {
     return (
       <EmptyState
-        action={{ label: t('concurso.tabNew'), href: '?new=true' }}
-        description={t('concurso.noExamsDescription')}
-        title={t('concurso.noExamsTitle')}
+        action={{ label: t(config.emptyActionLabel), href: '?new=true' }}
+        description={t(config.emptyDescription)}
+        title={t(config.emptyTitle)}
       />
     );
   }
@@ -156,20 +171,21 @@ export function PublicExamsList() {
     <>
       <div className="flex items-center gap-2.5 mb-5">
         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-          <FontAwesomeIcon className="text-xs text-primary" icon={faClipboardList} />
+          <FontAwesomeIcon className="text-xs text-primary" icon={config.icon} />
         </div>
-        <h2 className="text-sm font-bold text-foreground">{t('concurso.tabList')}</h2>
+        <h2 className="text-sm font-bold text-foreground">{t(config.listTitle)}</h2>
         <span className="ml-auto px-2 py-0.5 rounded-full bg-content2 border border-default-200 text-xs font-medium text-default-500">
-          {publicExams.length}
+          {exams.length}
         </span>
       </div>
 
       <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
-        {publicExams.map((exam) => (
-          <PublicExamCard
+        {exams.map((exam) => (
+          <ExamCard
             key={exam.id ?? exam.name}
             exam={exam}
             isSelected={selectedId === exam.id}
+            type={type}
             onClick={() => handleCardClick(exam)}
           />
         ))}
@@ -184,8 +200,9 @@ export function PublicExamsList() {
             initial={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
           >
-            <PublicExamDetailPanel
+            <ExamDetailPanel
               exam={selectedExam}
+              type={type}
               onClose={() => setSelectedId(null)}
               onDelete={() => setDeletingExam(selectedExam)}
               onEdit={() => setEditingExam(selectedExam)}
@@ -214,13 +231,13 @@ export function PublicExamsList() {
       <ConfirmModal
         body={
           <p className="text-sm text-default-500">
-            {t('concurso.deleteExamConfirm', { name: deletingExam?.name ?? '' })}
+            {t(config.deleteConfirmKey, { name: deletingExam?.name ?? '' })}
           </p>
         }
         confirmLabel={t('common.remove')}
         isLoading={isDeleting}
         isOpen={deletingExam !== null}
-        title={t('concurso.deleteExamTitle')}
+        title={t(config.deleteTitle)}
         onClose={() => setDeletingExam(null)}
         onConfirm={handleDeleteConfirm}
       />

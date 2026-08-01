@@ -7,10 +7,12 @@ import { Button } from '@heroui/button';
 import { ExamSectionsTable, ExamSectionsTableHandle } from '@/shared/components/ExamSectionsTable/ExamSectionsTable';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
-import { Exam, ExamSection, ExamTopic } from '@/shared/types';
+import type { Exam, ExamSection, ExamTopic, ExamType } from '@/shared/types';
+import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
 
-interface PublicExamDetailPanelProps {
+interface ExamDetailPanelProps {
   readonly exam: Exam;
+  readonly type: ExamType;
   readonly onEdit: () => void;
   readonly onDelete: () => void;
   readonly onClose: () => void;
@@ -22,8 +24,9 @@ interface PublicExamDetailPanelProps {
   readonly onTopicUpdated: (sectionId: string, topicId: string, newName: string) => void;
 }
 
-export function PublicExamDetailPanel({
+export function ExamDetailPanel({
   exam,
+  type,
   onEdit,
   onDelete,
   onClose,
@@ -33,17 +36,22 @@ export function PublicExamDetailPanel({
   onTopicAdded,
   onTopicRemoved,
   onTopicUpdated,
-}: PublicExamDetailPanelProps) {
+}: ExamDetailPanelProps) {
   const { t } = useTranslation();
+  const config = EXAM_CONFIG[type];
   const tableRef = useRef<ExamSectionsTableHandle | null>(null);
+
+  const referenceEntity = type === 'certification' ? exam.provider : exam.examBoard;
 
   return (
     <div className="mt-4 bg-content1 border border-primary/40 rounded-xl overflow-hidden">
       <div className="flex items-center justify-between px-5 py-3 border-b border-default-200 bg-content2">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-sm font-semibold text-foreground truncate">{exam.name}</span>
-          {exam.examBoard?.name && <span className="text-xs text-default-400 shrink-0">{exam.examBoard.name}</span>}
-          {exam.year != null && (
+          {referenceEntity?.name && (
+            <span className="text-xs text-default-400 shrink-0">{referenceEntity.name}</span>
+          )}
+          {config.hasYearField && exam.year != null && (
             <span className="flex items-center gap-1 text-xs text-default-400 shrink-0">
               <FontAwesomeIcon className="text-[9px]" icon={faCalendar} />
               {exam.year}
@@ -57,7 +65,7 @@ export function PublicExamDetailPanel({
             startContent={<FontAwesomeIcon className="text-xs" icon={faPen} />}
             onPress={onEdit}
           >
-            {t('concurso.editPublicExam')}
+            {t(config.editLabel)}
           </Button>
           <Button
             className={buttonStyles.dangerFlat}
@@ -65,7 +73,7 @@ export function PublicExamDetailPanel({
             startContent={<FontAwesomeIcon className="text-xs" icon={faTrash} />}
             onPress={onDelete}
           >
-            {t('concurso.deleteExamTitle')}
+            {t(config.deleteTitle)}
           </Button>
           <Button
             isIconOnly
@@ -85,7 +93,7 @@ export function PublicExamDetailPanel({
           ref={tableRef}
           selectedExam={exam}
           sectionsList={exam.sections}
-          showTopics
+          showTopics={config.showTopicsInSections}
           onSectionAdded={onSectionAdded}
           onSectionRemoved={onSectionRemoved}
           onSectionUpdated={onSectionUpdated}
@@ -101,7 +109,7 @@ export function PublicExamDetailPanel({
             startContent={<FontAwesomeIcon className="text-[10px]" icon={faPlus} />}
             onPress={() => tableRef.current?.startAdd()}
           >
-            {t('concurso.addSubject')}
+            {t(config.addSectionLabel)}
           </Button>
         </div>
       </div>

@@ -1,5 +1,5 @@
 'use client';
-import type { ExamSection } from '@/shared/types';
+import type { ExamSection, ExamType } from '@/shared/types';
 
 import { faCircleInfo, faLayerGroup, faRocket } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -7,15 +7,16 @@ import { Button } from '@heroui/button';
 import { motion } from 'framer-motion';
 
 import { StepHeader } from '@/shared/components/ui/wizard/StepHeader';
-
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
 
 interface Step3ReviewProps {
+  readonly type: ExamType;
   readonly name: string;
+  readonly referenceEntityName: string;
   readonly role: string;
   readonly year: string;
-  readonly examBoardName: string;
   readonly totalQuestions: number;
   readonly examDurationMinutes?: number;
   readonly passingScore?: number;
@@ -27,10 +28,11 @@ interface Step3ReviewProps {
 }
 
 export function Step3Review({
+  type,
   name,
+  referenceEntityName,
   role,
   year,
-  examBoardName,
   totalQuestions,
   examDurationMinutes,
   passingScore,
@@ -41,38 +43,49 @@ export function Step3Review({
   onDiscard,
 }: Step3ReviewProps) {
   const { t } = useTranslation();
-  const hasDraft = !!(name || examBoardName || role || year || sections.length > 0);
+  const config = EXAM_CONFIG[type];
+  const hasDraft = !!(name || referenceEntityName || role || year || sections.length > 0);
   const visibleSections = sections.filter((section) => section.name && section.maxQuestions);
 
   return (
     <div className="flex flex-col gap-6">
-      <StepHeader currentStep={3} namespace="concurso" onBack={onBack} />
+      <StepHeader currentStep={3} namespace={type === 'certification' ? 'certification' : 'concurso'} onBack={onBack} />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         <div className="lg:col-span-5 bg-content1 border border-default-200 rounded-xl overflow-hidden">
           <div className="flex items-center gap-3 px-6 py-5 border-b border-default-200">
             <FontAwesomeIcon className="text-primary text-base" icon={faCircleInfo} />
-            <h3 className="text-lg font-semibold text-foreground">{t('concurso.basicInformation')}</h3>
+            <h3 className="text-lg font-semibold text-foreground">
+              {t(type === 'certification' ? 'certification.basicInformation' : 'concurso.basicInformation')}
+            </h3>
           </div>
           <div className="flex flex-col gap-6 p-6">
             <div className="flex flex-col gap-1">
-              <p className="text-xs font-medium text-default-400">{t('concurso.nameLabel')}</p>
+              <p className="text-xs font-medium text-default-400">
+                {t(type === 'certification' ? 'certification.certNameLabel' : 'concurso.nameLabel')}
+              </p>
               <p className="text-base font-semibold text-foreground">{name || '—'}</p>
             </div>
             <div className="flex flex-col gap-2">
-              <p className="text-xs font-medium text-default-400">{t('exam.examBoardLabel')}</p>
-              <p className="text-base text-foreground">{examBoardName || '—'}</p>
+              <p className="text-xs font-medium text-default-400">
+                {t(type === 'certification' ? 'exam.providerLabel' : 'exam.examBoardLabel')}
+              </p>
+              <p className="text-base text-foreground">{referenceEntityName || '—'}</p>
             </div>
-            <div className="flex flex-col gap-2">
-              <p className="text-xs font-medium text-default-400">{t('concurso.cargoLabel')}</p>
-              <p className="text-base text-foreground">{role || '—'}</p>
-            </div>
-            <div className="flex flex-col gap-2">
-              <p className="text-xs font-medium text-default-400">{t('concurso.yearLabel')}</p>
-              <span className="inline-flex w-fit bg-content2 border border-default-200 rounded px-3 py-1 font-mono text-primary text-sm">
-                {year || '—'}
-              </span>
-            </div>
+            {config.hasRoleField && (
+              <div className="flex flex-col gap-2">
+                <p className="text-xs font-medium text-default-400">{t('concurso.cargoLabel')}</p>
+                <p className="text-base text-foreground">{role || '—'}</p>
+              </div>
+            )}
+            {config.hasYearField && (
+              <div className="flex flex-col gap-2">
+                <p className="text-xs font-medium text-default-400">{t('concurso.yearLabel')}</p>
+                <span className="inline-flex w-fit bg-content2 border border-default-200 rounded px-3 py-1 font-mono text-primary text-sm">
+                  {year || '—'}
+                </span>
+              </div>
+            )}
             <div className="flex flex-col gap-2">
               <p className="text-xs font-medium text-default-400">{t('certification.totalQuestions')}</p>
               <p className="text-base text-foreground">{totalQuestions}</p>
@@ -98,17 +111,15 @@ export function Step3Review({
           <div className="flex items-center justify-between px-6 py-5 border-b border-default-200">
             <div className="flex items-center gap-3">
               <FontAwesomeIcon className="text-primary text-base" icon={faLayerGroup} />
-              <h3 className="text-lg font-semibold text-foreground">{t('concurso.subjectsTitle')}</h3>
+              <h3 className="text-lg font-semibold text-foreground">{t(config.step3SectionsTitle)}</h3>
             </div>
             <span className="text-xs font-medium text-default-400">
-              {t('concurso.subjectsCount', {
-                count: String(visibleSections.length),
-              })}
+              {t(config.step3SectionsCountKey, { count: String(visibleSections.length) })}
             </span>
           </div>
           <div className="flex flex-col p-6 gap-6">
             {visibleSections.length === 0 && (
-              <p className="text-sm text-default-400 text-center py-4">{t('concurso.noSubjects')}</p>
+              <p className="text-sm text-default-400 text-center py-4">{t(config.step2NoSections)}</p>
             )}
             {visibleSections.map((section, index) => (
               <motion.div
@@ -134,7 +145,7 @@ export function Step3Review({
             ))}
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 flex gap-3 items-start">
               <FontAwesomeIcon className="text-primary mt-0.5 shrink-0 text-sm" icon={faCircleInfo} />
-              <p className="text-sm text-default-500">{t('concurso.studyPathNote')}</p>
+              <p className="text-sm text-default-500">{t(config.step3StudyPathNote)}</p>
             </div>
           </div>
         </div>
@@ -148,11 +159,11 @@ export function Step3Review({
             isDisabled={isLoading}
             onPress={onDiscard}
           >
-            {t('concurso.discardDraft')}
+            {t(config.discardDraftLabel)}
           </Button>
         )}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <p className="text-xs text-default-400 text-center sm:text-left">{t('concurso.readyToDeploy')}</p>
+          <p className="text-xs text-default-400 text-center sm:text-left">{t(config.step3ReadyToDeploy)}</p>
           <Button
             data-testid="exam-save-btn"
             className={buttonStyles.primary}
@@ -161,7 +172,7 @@ export function Step3Review({
             isLoading={isLoading}
             onPress={onSave}
           >
-            {t('concurso.finalizeAndCreate')}
+            {t(config.step3FinalizeBtn)}
           </Button>
         </div>
       </div>

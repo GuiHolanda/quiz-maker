@@ -32,7 +32,7 @@ test.describe('empty states', () => {
         route.continue();
       }
     });
-    await page.goto('/certifications');
+    await page.goto('/exams?type=certification');
     await expect(page.locator(tid(TID.emptyState))).toBeVisible();
   });
 });
