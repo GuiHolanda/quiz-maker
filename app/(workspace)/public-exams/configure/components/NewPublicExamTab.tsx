@@ -16,7 +16,7 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
 
 interface NewPublicExamTabProps {
-  readonly onBackToLibrary: () => void;
+  readonly onSaved: () => void;
 }
 
 interface PublicExamDraft {
@@ -63,7 +63,7 @@ function readDraft(): PublicExamDraft {
   return EMPTY_DRAFT;
 }
 
-export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
+export function NewPublicExamTab({ onSaved }: NewPublicExamTabProps) {
   const { publicExams, addExam } = useExamsContext();
   const { loading, request } = useRequest(saveExam);
   const { t } = useTranslation();
@@ -154,14 +154,14 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
       addExam(saved);
       resetDraft();
       notify.success(t('toast.success'), t('toast.savedSuccessfully', { title: name }));
-      onBackToLibrary();
+      onSaved();
     }
   };
 
   const handleConfirmDiscard = () => {
     resetDraft();
     setIsDiscardOpen(false);
-    onBackToLibrary();
+    onSaved();
   };
 
   const stepContent =
@@ -174,7 +174,7 @@ export function NewPublicExamTab({ onBackToLibrary }: NewPublicExamTabProps) {
         role={draft.role}
         totalQuestions={draft.totalQuestions}
         year={draft.year}
-        onBack={onBackToLibrary}
+        onBack={onSaved}
         onDiscard={() => setIsDiscardOpen(true)}
         onExamBoardChange={(v) => patch({ examBoardName: v })}
         onExamDurationMinutesChange={(v) => patch({ examDurationMinutes: v })}
