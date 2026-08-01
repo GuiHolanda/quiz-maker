@@ -15,7 +15,7 @@ import { notify } from '@/shared/lib/notify';
 import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
 
 interface NewCertificationTabProps {
-  readonly onBackToLibrary: () => void;
+  readonly onSaved: () => void;
 }
 
 interface CertificationDraft {
@@ -58,7 +58,7 @@ function readDraft(): CertificationDraft {
   return EMPTY_DRAFT;
 }
 
-export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProps) {
+export function NewCertificationTab({ onSaved }: NewCertificationTabProps) {
   const { certifications, addExam } = useExamsContext();
   const { loading, request } = useRequest(saveExam);
   const { t } = useTranslation();
@@ -140,14 +140,14 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
       addExam(saved);
       resetDraft();
       notify.success(t('toast.success'), t('toast.savedSuccessfully', { title: name }));
-      onBackToLibrary();
+      onSaved();
     }
   };
 
   const handleConfirmDiscard = () => {
     resetDraft();
     setIsDiscardOpen(false);
-    onBackToLibrary();
+    onSaved();
   };
 
   const stepContent =
@@ -158,7 +158,7 @@ export function NewCertificationTab({ onBackToLibrary }: NewCertificationTabProp
         passingScore={draft.passingScore}
         provider={draft.provider}
         totalQuestions={draft.totalQuestions}
-        onBack={onBackToLibrary}
+        onBack={onSaved}
         onDiscard={() => setIsDiscardOpen(true)}
         onExamDurationMinutesChange={(v) => patch({ examDurationMinutes: v })}
         onNameChange={(v) => patch({ name: v })}
