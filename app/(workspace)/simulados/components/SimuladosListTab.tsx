@@ -80,7 +80,7 @@ function matchesCount(total: number, filter: CountFilter): boolean {
 
 // All simulados run through the unified mock-exam attempt/result routes.
 function basePath(): string {
-  return '/public-exams/simulados';
+  return '/simulados';
 }
 
 interface SimuladosListTabProps {
