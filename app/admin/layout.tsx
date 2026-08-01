@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -6,6 +7,10 @@ import { faGear, faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { AdminNavLink } from '@/app/admin/components/AdminNavLink';
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function AdminLayout({ children }: { readonly children: React.ReactNode }) {
   const session = await auth();
