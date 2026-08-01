@@ -107,7 +107,7 @@ export default function SimuladoTentativaPage() {
       await finishMockExamAttempt(Number(params.id), Number(params.attemptId), { answers: attemptAnswers });
       clearProgress();
       bypassNext();
-      router.push(`/public-exams/simulados/${params.id}/resultado/${params.attemptId}`);
+      router.push(`/simulados/${params.id}/resultado/${params.attemptId}`);
     } catch (e: unknown) {
       notify.error(
         t('toast.error'),
