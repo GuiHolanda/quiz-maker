@@ -5,7 +5,7 @@ import { Avatar } from '@heroui/avatar';
 import NextLink from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -38,6 +38,8 @@ export function Sidebar({ defaultCollapsed = false }: { readonly defaultCollapse
   const { t } = useTranslation();
   const { usage } = useUsageContext();
   const pathname = usePathname() ?? '';
+  const searchParams = useSearchParams();
+  const currentExamType = searchParams.get('type') ?? 'certification';
   const isAdminScope = pathname.startsWith('/admin');
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -163,8 +165,8 @@ export function Sidebar({ defaultCollapsed = false }: { readonly defaultCollapse
 
         {/* Certifications */}
         <NextLink
-          className={navLinkClass(pathname.startsWith('/certifications'), collapsed)}
-          href="/certifications"
+          className={navLinkClass(pathname === '/exams' && currentExamType !== 'public_exam', collapsed)}
+          href="/exams?type=certification"
           title={collapsed ? t('nav.certificates') : undefined}
           onClick={closeDrawer}
         >
@@ -174,8 +176,8 @@ export function Sidebar({ defaultCollapsed = false }: { readonly defaultCollapse
 
         {/* Concursos */}
         <NextLink
-          className={navLinkClass(pathname.startsWith('/public-exams'), collapsed)}
-          href="/public-exams"
+          className={navLinkClass(pathname === '/exams' && currentExamType === 'public_exam', collapsed)}
+          href="/exams?type=public_exam"
           title={collapsed ? t('nav.concursos') : undefined}
           onClick={closeDrawer}
         >
