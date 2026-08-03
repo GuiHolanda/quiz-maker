@@ -26,10 +26,10 @@ export function CtaSectionCta() {
       {session?.user && (
         <Button
           as={NextLink}
-          className="font-medium text-sm text-navy-400 hover:text-white tracking-wide"
+          className="font-medium text-sm text-navy-400 hover:text-white border border-navy-700 hover:border-navy-600 rounded tracking-wide"
           href="/exams"
           size="lg"
-          variant="light"
+          variant="bordered"
         >
           {t('homepage.cta2.setupCertification')}
         </Button>

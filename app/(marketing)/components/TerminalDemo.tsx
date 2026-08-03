@@ -157,10 +157,7 @@ export function TerminalDemo() {
           )}
         </div>
       </div>
-      <div
-        className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-3/4 h-8 rounded-full pointer-events-none"
-        style={{ background: 'rgba(0,212,255,0.08)', filter: 'blur(16px)' }}
-      />
+      <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-3/4 h-8 rounded-full pointer-events-none bg-accent/[0.08] blur-lg" />
     </div>
   );
 }

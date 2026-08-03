@@ -83,7 +83,7 @@ export function HomepagePricingSection() {
           {/* Toggle */}
           <div className="inline-flex items-center border border-navy-700 rounded p-1 mt-6">
             <button
-              className={`text-sm px-4 py-2 rounded transition-all min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${period === 'monthly' ? 'bg-navy-800 text-[#e8edf3]' : 'text-navy-400 hover:text-navy-200'}`}
+              className={`text-sm px-4 py-2 rounded transition-all min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${period === 'monthly' ? 'bg-navy-800 text-foreground' : 'text-navy-400 hover:text-navy-200'}`}
               type="button"
               aria-pressed={period === 'monthly'}
               onClick={() => setPeriod('monthly')}
@@ -91,7 +91,7 @@ export function HomepagePricingSection() {
               {t('pricing.toggle.monthly')}
             </button>
             <button
-              className={`text-sm px-4 py-2 rounded transition-all flex items-center gap-2 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${period === 'yearly' ? 'bg-navy-800 text-[#e8edf3]' : 'text-navy-400 hover:text-navy-200'}`}
+              className={`text-sm px-4 py-2 rounded transition-all flex items-center gap-2 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${period === 'yearly' ? 'bg-navy-800 text-foreground' : 'text-navy-400 hover:text-navy-200'}`}
               type="button"
               aria-pressed={period === 'yearly'}
               onClick={() => setPeriod('yearly')}
@@ -106,7 +106,6 @@ export function HomepagePricingSection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {renderCard({
             planLabel: 'Free',
-            planName: t('pricing.plan.free'),
             price: t('pricing.plan.free.price'),
             subline: t('pricing.plan.free.tagline'),
             features: FREE_FEATURES,
@@ -116,17 +115,15 @@ export function HomepagePricingSection() {
           })}
           {renderCard({
             planLabel: 'Pro',
-            planName: t('pricing.plan.pro'),
             price: proPrice,
             subline: billedAnnually,
             features: PRO_FEATURES,
             ctaLabel: proCtaLabel(),
-            ctaHref: userPlan === 'pro' ? undefined : '/pricing',
+            ctaHref: userPlan === 'pro' || userPlan === 'pro_ai' ? undefined : '/pricing',
             isHighlighted: false,
           })}
           {renderCard({
             planLabel: 'Pro AI',
-            planName: t('pricing.plan.proAi'),
             price: proAiPrice,
             subline: billedAnnually,
             features: PRO_AI_FEATURES,
@@ -151,7 +148,6 @@ export function HomepagePricingSection() {
     isHighlighted,
   }: {
     planLabel: string;
-    planName: string;
     price: string;
     subline?: string;
     features: PricingFeature[];
@@ -193,7 +189,7 @@ export function HomepagePricingSection() {
                 className={`text-xs w-4 shrink-0 ${f.included ? 'text-accent' : 'text-navy-700'}`}
                 icon={f.included ? faCheck : faXmark}
               />
-              <span className={`text-sm ${f.included ? 'text-[#e8edf3]' : 'text-navy-600'}`}>
+              <span className={`text-sm ${f.included ? 'text-foreground' : 'text-navy-600'}`}>
                 {f.value ? `${f.value} ${t(f.labelKey)}` : t(f.labelKey)}
               </span>
             </div>
