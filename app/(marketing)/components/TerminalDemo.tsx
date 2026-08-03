@@ -1,162 +1,206 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCheck, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
+import { faAws } from '@fortawesome/free-brands-svg-icons';
+import { faScaleBalanced, faHeartPulse, faLandmark } from '@fortawesome/free-solid-svg-icons';
 
-const TERMINAL_AWS_QUESTION =
-  'A company is designing a highly available web application on AWS. The application requires session persistence, automatic failover across Availability Zones, and the ability to handle traffic spikes of up to 10x normal load within 60 seconds. Which combination of services BEST meets these requirements?';
-
-const TERMINAL_AWS_OPTIONS = [
-  { label: 'A', text: 'Use Amazon S3 Cross-Region Replication with S3-IA storage class for infrequent access patterns', selected: false },
-  { label: 'B', text: 'Deploy a Multi-AZ RDS instance with read replicas and ElastiCache for session management', selected: true },
-  { label: 'C', text: 'Configure AWS Global Accelerator with an ALB and Auto Scaling group across two Availability Zones', selected: false },
-  { label: 'D', text: 'Implement AWS Direct Connect with a VPN backup and Transit Gateway for hybrid connectivity', selected: false },
+const DOMAINS = [
+  {
+    id: 'aws',
+    icon: faAws,
+    tab: 'AWS',
+    area: 'Certificação · AWS SAA-C03',
+    question:
+      'Uma empresa precisa garantir alta disponibilidade para seu sistema web, com failover automático entre zonas e escalabilidade de 10x em picos de tráfego em menos de 60 segundos. Qual combinação de serviços AWS atende melhor?',
+    options: [
+      { label: 'A', text: 'S3 Cross-Region com armazenamento S3-IA', correct: false },
+      { label: 'B', text: 'RDS Multi-AZ com ElastiCache para sessões', correct: true },
+      { label: 'C', text: 'ALB + Auto Scaling em múltiplas AZs', correct: false },
+      { label: 'D', text: 'Direct Connect com VPN de backup', correct: false },
+    ],
+    meta: { level: 'Difícil', topic: 'Alta Disponibilidade' },
+  },
+  {
+    id: 'oab',
+    icon: faScaleBalanced,
+    tab: 'OAB / Direito',
+    area: 'Concurso · Direito Administrativo',
+    question:
+      'O princípio da eficiência, introduzido pela EC nº 19/1998, impõe ao agente público o dever de realizar suas atribuições com presteza e rendimento funcional. Com base nisso, é correto afirmar que a Administração pode demitir servidor estável por insuficiência de desempenho mediante processo administrativo?',
+    options: [
+      { label: 'C', text: 'Certo', correct: true },
+      { label: 'E', text: 'Errado', correct: false },
+    ],
+    meta: { level: 'Médio', topic: 'Princípios Constitucionais' },
+  },
+  {
+    id: 'saude',
+    icon: faHeartPulse,
+    tab: 'Saúde / CRM',
+    area: 'Certificação · Residência Médica',
+    question:
+      'Paciente de 58 anos, hipertenso, apresenta dor torácica em repouso há 45 minutos com irradiação para o membro superior esquerdo. ECG mostra supradesnivelamento de ST em D1, aVL, V4-V6. Qual é a conduta imediata prioritária?',
+    options: [
+      { label: 'A', text: 'Angioplastia primária dentro de 90 min', correct: true },
+      { label: 'B', text: 'Trombolítico endovenoso e observação', correct: false },
+      { label: 'C', text: 'Holter 24h e nitrato sublingual', correct: false },
+      { label: 'D', text: 'Ecocardiograma de estresse imediato', correct: false },
+    ],
+    meta: { level: 'Difícil', topic: 'Emergências Cardiovasculares' },
+  },
+  {
+    id: 'concurso',
+    icon: faLandmark,
+    tab: 'Concurso Público',
+    area: 'Banca CESPE · Analista Judiciário',
+    question:
+      'No âmbito da Lei de Responsabilidade Fiscal (LC nº 101/2000), o gestor público que não cumprir os limites de gastos com pessoal previstos na referida lei ficará sujeito à suspensão de transferências voluntárias da União até a regularização, salvo quando destinadas a ações de saúde, educação e assistência social.',
+    options: [
+      { label: 'C', text: 'Certo', correct: true },
+      { label: 'E', text: 'Errado', correct: false },
+    ],
+    meta: { level: 'Médio', topic: 'Lei de Responsabilidade Fiscal' },
+  },
 ] as const;
 
-const TERMINAL_CESPE_QUESTION =
-  'Acerca dos princípios da Administração Pública previstos no art. 37 da Constituição Federal de 1988, julgue o item a seguir. O princípio da eficiência, introduzido pela Emenda Constitucional n.º 19/1998, impõe ao agente público o dever de realizar suas atribuições com presteza, perfeição e rendimento funcional, podendo a Administração demitir servidor estável por insuficiência de desempenho mediante processo administrativo.';
-
-const TERMINAL_CESPE_OPTIONS = [
-  { label: 'C', text: 'Certo', selected: true },
-  { label: 'E', text: 'Errado', selected: false },
-] as const;
+type DomainId = (typeof DOMAINS)[number]['id'];
 
 export function TerminalDemo() {
-  const [terminalTab, setTerminalTab] = useState<'aws' | 'cespe'>('aws');
+  const [activeId, setActiveId] = useState<DomainId>('aws');
   const [displayedText, setDisplayedText] = useState('');
   const [showOptions, setShowOptions] = useState(false);
+  const [generating, setGenerating] = useState(true);
 
-  const activeQuestion = terminalTab === 'aws' ? TERMINAL_AWS_QUESTION : TERMINAL_CESPE_QUESTION;
-  const activeOptions = terminalTab === 'aws' ? TERMINAL_AWS_OPTIONS : TERMINAL_CESPE_OPTIONS;
+  const domain = DOMAINS.find((d) => d.id === activeId)!;
 
   useEffect(() => {
     setDisplayedText('');
     setShowOptions(false);
-    let interval: ReturnType<typeof setInterval>;
+    setGenerating(true);
+
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReduced) {
-      setDisplayedText(activeQuestion);
+      setGenerating(false);
+      setDisplayedText(domain.question);
       setShowOptions(true);
       return;
     }
+
     let i = 0;
-    const timeout = setTimeout(() => {
-      interval = setInterval(() => {
-        if (i < activeQuestion.length) {
-          setDisplayedText(activeQuestion.slice(0, i + 1));
-          i++;
-        } else {
-          clearInterval(interval);
-          setTimeout(() => setShowOptions(true), 300);
-        }
-      }, 18);
-    }, 600);
+    let interval: ReturnType<typeof setInterval>;
+
+    const generatingDelay = setTimeout(() => {
+      setGenerating(false);
+      const startDelay = setTimeout(() => {
+        interval = setInterval(() => {
+          if (i < domain.question.length) {
+            setDisplayedText(domain.question.slice(0, i + 1));
+            i++;
+          } else {
+            clearInterval(interval);
+            setTimeout(() => setShowOptions(true), 300);
+          }
+        }, 14);
+      }, 200);
+      return () => clearTimeout(startDelay);
+    }, 900);
+
     return () => {
-      clearTimeout(timeout);
+      clearTimeout(generatingDelay);
       clearInterval(interval);
     };
-  }, [terminalTab, activeQuestion]);
+  }, [activeId, domain.question]);
 
   return (
     <div className="relative" id="demo-terminal">
-      <div className="border border-navy-700 rounded-lg overflow-hidden bg-navy-950/80">
-        {/* Terminal header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-navy-800 bg-navy-900/60">
-          <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
-            <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
-            <div className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-            <span className="font-mono text-xs text-navy-400">certifyai · question-generator</span>
-          </div>
-          <div className="flex items-center gap-1">
+      {/* Card shell */}
+      <div className="border border-navy-700/80 rounded-xl overflow-hidden bg-navy-950/90">
+        {/* Domain tab bar */}
+        <div className="flex items-center gap-1 px-3 pt-3 pb-0">
+          {DOMAINS.map((d) => (
             <button
+              key={d.id}
               type="button"
-              aria-pressed={terminalTab === 'aws'}
-              onClick={() => setTerminalTab('aws')}
-              className={`font-mono text-xs px-2 py-0.5 rounded transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent ${terminalTab === 'aws' ? 'bg-navy-700 text-white' : 'text-navy-500 hover:text-navy-300'}`}
+              onClick={() => setActiveId(d.id)}
+              aria-pressed={activeId === d.id}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-t text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent hover:cursor-pointer ${
+                activeId === d.id
+                  ? 'bg-navy-900 text-white border border-navy-700/60 border-b-navy-900 -mb-px'
+                  : 'text-navy-500 hover:text-navy-300'
+              }`}
             >
-              IT
+              <FontAwesomeIcon icon={d.icon} className="w-3 h-3 shrink-0" />
+              <span className="hidden sm:inline">{d.tab}</span>
             </button>
-            <button
-              type="button"
-              aria-pressed={terminalTab === 'cespe'}
-              onClick={() => setTerminalTab('cespe')}
-              className={`font-mono text-xs px-2 py-0.5 rounded transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent ${terminalTab === 'cespe' ? 'bg-navy-700 text-white' : 'text-navy-500 hover:text-navy-300'}`}
-            >
-              Concurso
-            </button>
-          </div>
+          ))}
         </div>
 
-        {/* Terminal body */}
-        <div className="p-5 min-h-72">
-          <div className="mb-3">
-            <span className="font-mono text-xs text-navy-600">$</span>
-            <span className="font-mono text-xs text-navy-400 ml-2">
-              {terminalTab === 'aws'
-                ? 'generate --exam aws-saa-c03 --difficulty hard --topic "architecture"'
-                : 'generate --banca cespe --cargo "Analista Judiciário" --disciplina "Direito Administrativo"'}
+        {/* Card body */}
+        <div className="bg-navy-900 border-t border-navy-700/60 p-5 min-h-80">
+          {/* Area label + generating indicator */}
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-xs text-navy-500 font-medium">{domain.area}</span>
+            <span
+              className={`flex items-center gap-1.5 text-xs transition-opacity duration-300 ${generating ? 'opacity-100' : 'opacity-0'}`}
+              aria-live="polite"
+              aria-label="Gerando questão"
+            >
+              <FontAwesomeIcon icon={faWandMagicSparkles} className="text-accent w-3 h-3 generating-pulse" />
+              <span className="text-accent font-medium">Gerando questão...</span>
             </span>
           </div>
-          <div className="font-mono text-xs text-accent mb-2">
-            {terminalTab === 'aws'
-              ? '✓ Generating AWS Solutions Architect question...'
-              : '✓ Gerando questão CESPE · Direito Administrativo...'}
-          </div>
 
-          <div className="bg-accent/5 rounded px-4 py-3 mt-4">
-            <p className="font-mono text-xs text-navy-400 mb-2 uppercase tracking-widest">
-              {terminalTab === 'aws'
-                ? 'QUESTION #4,891 · AWS-SAA-C03 · HARD'
-                : 'QUESTÃO #2,107 · CESPE/CEBRASPE · DIR. ADMINISTRATIVO'}
-            </p>
-            <p className="font-mono text-sm text-white leading-relaxed break-words">
+          {/* Question */}
+          <div className={`mb-5 transition-opacity duration-200 ${generating ? 'opacity-0' : 'opacity-100'}`}>
+            <p className="text-sm text-navy-100 leading-relaxed">
               {displayedText}
-              {displayedText.length < activeQuestion.length && <span className="text-accent">▌</span>}
+              {displayedText.length > 0 && displayedText.length < domain.question.length && (
+                <span className="text-accent animate-pulse">▌</span>
+              )}
             </p>
           </div>
 
+          {/* Options */}
           {showOptions && (
-            <div className="mt-5 space-y-2">
-              {activeOptions.map((opt) => (
+            <div className="space-y-2">
+              {domain.options.map((opt) => (
                 <div
                   key={opt.label}
-                  className={`flex items-start gap-3 p-2.5 border rounded transition-colors ${
-                    opt.selected ? 'border-accent/30 bg-accent/5' : 'border-navy-800 hover:border-navy-600'
-                  }`}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-colors duration-150 ${opt.correct ? 'border-accent/40 bg-accent/5' : 'border-navy-800 hover:border-navy-600'}`}
                 >
-                  <span className={`font-mono text-xs mt-0.5 w-4 shrink-0 ${opt.selected ? 'text-accent' : 'text-navy-500'}`}>
-                    {opt.label}.
+                  <span
+                    className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 text-xs font-bold ${opt.correct ? 'border-accent bg-accent/10 text-accent' : 'border-navy-700 text-navy-500'}`}
+                  >
+                    {opt.correct ? <FontAwesomeIcon icon={faCheck} className="w-2.5 h-2.5" /> : opt.label}
                   </span>
-                  <span className={`font-mono text-xs ${opt.selected ? 'text-white' : 'text-navy-300'}`}>
+                  <span className={`text-sm ${opt.correct ? 'text-white font-medium' : 'text-navy-400'}`}>
                     {opt.text}
                   </span>
                 </div>
               ))}
 
-              <div className="mt-4 pt-3 border-t border-navy-800 flex items-center gap-4">
-                {terminalTab === 'aws' ? (
-                  <>
-                    <span className="font-mono text-xs text-navy-600">Difficulty:</span>
-                    <span className="font-mono text-xs text-orange-400">HARD</span>
-                    <span className="font-mono text-xs text-navy-600">Domain:</span>
-                    <span className="font-mono text-xs text-navy-300">High Availability</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="font-mono text-xs text-navy-600">Banca:</span>
-                    <span className="font-mono text-xs text-orange-400">CESPE</span>
-                    <span className="font-mono text-xs text-navy-600">Matéria:</span>
-                    <span className="font-mono text-xs text-navy-300">Dir. Administrativo</span>
-                  </>
-                )}
+              {/* Footer meta */}
+              <div className="flex items-center gap-3 pt-3 mt-1 border-t border-navy-800/60">
+                <span
+                  className={`text-xs px-2 py-0.5 rounded font-medium ${
+                    domain.meta.level === 'Difícil'
+                      ? 'text-orange-400 bg-orange-400/10'
+                      : 'text-yellow-400 bg-yellow-400/10'
+                  }`}
+                >
+                  {domain.meta.level}
+                </span>
+                <span className="text-xs text-navy-600">·</span>
+                <span className="text-xs text-navy-400">{domain.meta.topic}</span>
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Ambient glow */}
       <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-3/4 h-8 rounded-full pointer-events-none bg-accent/[0.08] blur-lg" />
     </div>
   );
