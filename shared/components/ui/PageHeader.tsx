@@ -11,7 +11,7 @@ interface PageHeaderProps {
 export function PageHeader({ title, subtitle, breadcrumbs, action, children }: PageHeaderProps) {
   return (
     <div className="app-bg">
-      <div className="w-full px-12 pt-12 pb-12">
+      <div className="w-full px-12 py-12">
         {breadcrumbs && <div className="mb-3">{breadcrumbs}</div>}
         <div className="flex items-start justify-between mb-8 gap-4">
           <div className="flex flex-col gap-1.5">
