@@ -17,11 +17,15 @@ export function NewExamPage({ type }: NewExamPageProps) {
   if (view === 'wizard') {
     return (
       <ExamsProvider>
-        <ExamWizard
-          type={type}
-          onBack={() => setView('entry')}
-          onSaved={() => router.push(`/exams?type=${type}`)}
-        />
+        <div className="app-bg">
+          <div className="w-full px-12 py-12">
+            <ExamWizard
+              type={type}
+              onBack={() => setView('entry')}
+              onSaved={() => router.push(`/exams?type=${type}`)}
+            />
+          </div>
+        </div>
       </ExamsProvider>
     );
   }
