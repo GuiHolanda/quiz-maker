@@ -9,14 +9,14 @@ export function FeaturesSection() {
   const { t } = useTranslation();
 
   return (
-    <section className="py-20 bg-navy-950 border-t border-navy-800/40">
+    <section id="features" className="scroll-mt-24 py-20 bg-navy-950 border-t border-navy-800/40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-14">
-          <h2 className="font-sora font-bold text-white text-2xl sm:text-3xl mb-3">
+          <h2 className="font-sora font-bold text-white text-2xl sm:text-3xl mb-3 text-balance">
             {t('homepage.features.title.before')}{' '}
             <span className="text-accent">{t('homepage.features.title.highlight')}</span>
           </h2>
-          <p className="text-navy-400 text-base max-w-2xl">{t('homepage.features.subtitle')}</p>
+          <p className="text-navy-400 text-base max-w-2xl text-pretty">{t('homepage.features.subtitle')}</p>
         </div>
 
         {renderFeature1()}
@@ -33,7 +33,7 @@ export function FeaturesSection() {
           <h3 className="font-sora font-bold text-white text-xl sm:text-2xl mb-4">
             {t('homepage.features.ai.heading')}
           </h3>
-          <p className="text-navy-400 text-base leading-relaxed mb-6">{t('homepage.features.ai.body')}</p>
+          <p className="text-navy-400 text-base leading-relaxed mb-6 text-pretty">{t('homepage.features.ai.body')}</p>
           <div className="space-y-3">
             {[
               t('homepage.features.feature1.bullet1'),
@@ -55,36 +55,36 @@ export function FeaturesSection() {
             <div className="p-5">
               <div className="flex items-center gap-2 mb-4">
                 <FontAwesomeIcon className="text-navy-500 text-sm" icon={faFileLines} />
-                <span className="font-mono text-xs text-navy-500">
-                  source_material.pdf → AWS_Well_Architected_Framework.pdf
-                </span>
+                <span className="font-mono text-xs text-navy-500">{t('homepage.features.mockup.sourceFile')}</span>
               </div>
               <div className="bg-navy-950/60 rounded p-4 mb-4 border border-navy-800">
                 <p className="font-mono text-xs text-navy-400 leading-relaxed">
-                  <span className="text-navy-600 select-none">01 </span>The Well-Architected Framework provides a
-                  consistent approach...
+                  <span className="text-navy-600 select-none">01 </span>
+                  {t('homepage.features.mockup.sourceLine1')}
                   <br />
                   <span className="text-navy-600 select-none">02 </span>
                   <span className="px-0.5" style={{ background: 'rgba(0,212,255,0.2)', color: '#00d4ff' }}>
-                    The five pillars include: Operational Excellence, Security, Reliability,
+                    {t('homepage.features.mockup.sourceLine2')}
                   </span>
                   <br />
                   <span className="text-navy-600 select-none">03 </span>
                   <span className="px-0.5" style={{ background: 'rgba(0,212,255,0.2)', color: '#00d4ff' }}>
-                    Performance Efficiency, and Cost Optimization.
+                    {t('homepage.features.mockup.sourceLine3')}
                   </span>
                 </p>
               </div>
               <div className="flex items-center gap-2 mb-3">
                 <div className="h-px flex-1 bg-navy-800" />
-                <span className="font-mono text-xs text-accent px-2">AI PROCESSING</span>
+                <span className="text-xs text-accent font-medium px-2">
+                  {t('homepage.features.mockup.aiProcessing')}
+                </span>
                 <div className="h-px flex-1 bg-navy-800" />
               </div>
               <div className="bg-navy-950/60 rounded p-4 border border-accent/20">
-                <p className="font-mono text-xs text-navy-500 uppercase tracking-widest mb-2">Generated Question:</p>
-                <p className="font-mono text-xs text-white">
-                  Which of the following correctly identifies the five pillars of the AWS Well-Architected Framework?
+                <p className="text-xs text-navy-500 font-medium mb-2">
+                  {t('homepage.features.mockup.generatedQuestion')}
                 </p>
+                <p className="text-xs text-white">{t('homepage.features.mockup.generatedQuestionText')}</p>
                 <div className="mt-3 flex items-center gap-2">
                   <span
                     className="font-mono text-xs px-2 py-0.5 rounded"
@@ -94,9 +94,11 @@ export function FeaturesSection() {
                       border: '1px solid rgba(74,222,128,0.2)',
                     }}
                   >
-                    Quality: 98/100
+                    {t('homepage.features.mockup.qualityScore')}
                   </span>
-                  <span className="font-mono text-xs text-navy-500">· 4 distractors generated</span>
+                  <span className="font-mono text-xs text-navy-500">
+                    {t('homepage.features.mockup.distractorsGenerated')}
+                  </span>
                 </div>
               </div>
             </div>
@@ -113,41 +115,35 @@ export function FeaturesSection() {
           <div className="border border-navy-700 rounded-lg overflow-hidden bg-navy-900/60">
             <div className="flex border-b border-navy-800">
               <div className="flex-1 p-4 border-r border-navy-800">
-                <p className="font-mono text-xs text-navy-500 uppercase tracking-widest mb-3">
-                  {t('homepage.features.mockup.yourAnswer')}
-                </p>
+                <p className="text-xs text-navy-500 font-medium mb-3">{t('homepage.features.mockup.yourAnswer')}</p>
                 <div className="rounded p-3 bg-danger/10 border border-danger/30">
                   <div className="flex items-start gap-2">
                     <FontAwesomeIcon className="text-red-400 text-xs mt-0.5 shrink-0" icon={faXmark} />
-                    <p className="font-mono text-xs text-red-300">
-                      A. SQS standard queues guarantee exactly-once delivery
-                    </p>
+                    <p className="text-xs text-red-300">{t('homepage.features.mockup.wrongAnswer')}</p>
                   </div>
                 </div>
               </div>
               <div className="flex-1 p-4">
-                <p className="font-mono text-xs text-navy-500 uppercase tracking-widest mb-3">
-                  {t('homepage.features.mockup.correctAnswer')}
-                </p>
+                <p className="text-xs text-navy-500 font-medium mb-3">{t('homepage.features.mockup.correctAnswer')}</p>
                 <div className="rounded p-3 bg-success/10 border border-success/30">
                   <div className="flex items-start gap-2">
                     <FontAwesomeIcon className="text-green-400 text-xs mt-0.5 shrink-0" icon={faCheck} />
-                    <p className="font-mono text-xs text-green-300">D. FIFO queues provide exactly-once processing</p>
+                    <p className="text-xs text-green-300">{t('homepage.features.mockup.rightAnswer')}</p>
                   </div>
                 </div>
               </div>
             </div>
             <div className="p-4">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-5 h-5 rounded flex items-center justify-center shrink-0 bg-accent/10 border border-accent/30">
+                <div className="w-5 h-5 rounded-lg flex items-center justify-center shrink-0 bg-accent/10 border border-accent/30">
                   <FontAwesomeIcon className="text-accent text-xs" icon={faRobot} />
                 </div>
-                <span className="font-mono text-xs text-accent">{t('homepage.features.mockup.aiExplanation')}</span>
+                <span className="text-xs text-accent font-medium">{t('homepage.features.mockup.aiExplanation')}</span>
               </div>
-              <p className="font-mono text-xs text-navy-300 leading-relaxed">
-                Standard SQS queues use a distributed architecture providing{' '}
-                <span className="text-white">at-least-once delivery</span>, meaning duplicates can occur. FIFO queues
-                ensure <span className="text-white">exactly-once processing</span> using message deduplication IDs.
+              <p className="text-xs text-navy-300 leading-relaxed">
+                {t('homepage.features.mockup.explanationBefore')}
+                <span className="text-white">{t('homepage.features.mockup.explanationBold')}</span>
+                {t('homepage.features.mockup.explanationAfter')}
               </p>
             </div>
           </div>
@@ -156,7 +152,9 @@ export function FeaturesSection() {
           <h3 className="font-sora font-bold text-white text-xl sm:text-2xl mb-4">
             {t('homepage.features.answers.heading')}
           </h3>
-          <p className="text-navy-400 text-base leading-relaxed mb-6">{t('homepage.features.answers.body')}</p>
+          <p className="text-navy-400 text-base leading-relaxed mb-6 text-pretty">
+            {t('homepage.features.answers.body')}
+          </p>
           <div className="space-y-3">
             {[
               t('homepage.features.feature2.bullet1'),
@@ -207,7 +205,9 @@ export function FeaturesSection() {
           <h3 className="font-sora font-bold text-white text-xl sm:text-2xl mb-4">
             {t('homepage.features.feature3.heading')}
           </h3>
-          <p className="text-navy-400 text-base leading-relaxed mb-6">{t('homepage.features.feature3.body')}</p>
+          <p className="text-navy-400 text-base leading-relaxed mb-6 text-pretty">
+            {t('homepage.features.feature3.body')}
+          </p>
           <div className="space-y-3">
             {[
               t('homepage.features.feature3.bullet1'),
@@ -224,15 +224,11 @@ export function FeaturesSection() {
 
         <div className="order-1 lg:order-2">
           <div className="border border-navy-700 rounded-lg bg-navy-900/60 p-4">
-            {/* Chart header */}
             <div className="flex items-center justify-between mb-3">
-              <span className="font-mono text-xs text-navy-400 uppercase tracking-widest">
-                {t('homepage.features.chart.title')}
-              </span>
+              <span className="text-xs text-navy-400 font-medium">{t('homepage.features.chart.title')}</span>
               <span className="font-mono text-xs text-green-400">{t('homepage.features.chart.weeklyGain')}</span>
             </div>
 
-            {/* SVG chart */}
             <svg
               viewBox={`0 0 ${W} ${H}`}
               className="w-full"
@@ -240,7 +236,6 @@ export function FeaturesSection() {
               role="img"
               aria-label={t('homepage.features.chart.ariaLabel')}
             >
-              {/* Grid lines + Y ticks */}
               {yTicks.map((v) => (
                 <g key={v}>
                   <line
@@ -257,7 +252,6 @@ export function FeaturesSection() {
                 </g>
               ))}
 
-              {/* Pass threshold dashed line */}
               <line
                 x1={PAD.l}
                 y1={sy(passLine)}
@@ -268,13 +262,10 @@ export function FeaturesSection() {
                 strokeDasharray="5,4"
               />
 
-              {/* Fill under your score */}
               <path d={fillPath} fill="rgba(0,212,255,0.06)" />
 
-              {/* Cohort avg dashed */}
               <path d={cohortPath} fill="none" stroke="#3b6fa0" strokeWidth="1.5" strokeDasharray="4,3" />
 
-              {/* Your score line */}
               <path
                 d={yourPath}
                 fill="none"
@@ -284,12 +275,10 @@ export function FeaturesSection() {
                 strokeLinejoin="round"
               />
 
-              {/* Dots on your score */}
               {yourScore.map((v, i) => (
                 <circle key={i} cx={sx(i)} cy={sy(v)} r="3.5" fill="#00d4ff" />
               ))}
 
-              {/* X-axis labels */}
               {weeks.map((w, i) => (
                 <text
                   key={w}
@@ -305,7 +294,6 @@ export function FeaturesSection() {
               ))}
             </svg>
 
-            {/* Legend */}
             <div className="flex items-center gap-5 mt-1 mb-3">
               <div className="flex items-center gap-1.5">
                 <div className="w-5 h-0.5 bg-accent rounded" />
@@ -325,7 +313,6 @@ export function FeaturesSection() {
               </div>
             </div>
 
-            {/* Stats row */}
             <div className="grid grid-cols-3 gap-3 pt-3 border-t border-navy-800">
               <div className="text-center">
                 <p className="font-mono text-sm text-white font-medium">78.4%</p>

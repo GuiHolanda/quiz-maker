@@ -16,9 +16,10 @@ import { LanguageSwitch } from '@/shared/components/ui/language-switch';
 import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
 
 const NAV_LINKS = [
-  { labelKey: 'nav.certificates', href: '/simulados' },
-  { labelKey: 'nav.concursos', href: '/simulados' },
-  { labelKey: 'nav.pricing', href: '/pricing' },
+  { labelKey: 'nav.certificates', href: '/#certificacoes' },
+  { labelKey: 'nav.concursos', href: '/#concursos' },
+  { labelKey: 'nav.features', href: '/#features' },
+  { labelKey: 'nav.pricing', href: '/#pricing' },
 ] as const;
 
 export function MarketingNavbar() {
@@ -38,7 +39,7 @@ export function MarketingNavbar() {
                 <div className="w-7 h-7 rounded flex items-center justify-center bg-accent/10 border border-accent/30">
                   <FontAwesomeIcon className="text-accent text-xs" icon={faMicrochip} />
                 </div>
-                <span className="font-sora font-bold text-white text-sm tracking-tight">CertifiqueAI</span>
+                <span className="font-sora font-bold text-white text-sm tracking-tight">Certifique AI</span>
               </NextLink>
 
               {/* Nav links — desktop */}

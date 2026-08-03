@@ -5,7 +5,8 @@ import { CtaSectionCta } from '@/app/(marketing)/components/CtaSectionCta';
 import { HomepagePricingSection } from '@/app/(marketing)/components/HomepagePricingSection';
 import { MarqueeDataStrip } from '@/app/(marketing)/components/MarqueeDataStrip';
 import { StatsStrip } from '@/app/(marketing)/components/StatsStrip';
-import { ExamGridSection } from '@/app/(marketing)/components/ExamGridSection';
+import { ConcursosSection } from '@/app/(marketing)/components/ConcursosSection';
+import { CertificationsSection } from '@/app/(marketing)/components/CertificationsSection';
 import { FeaturesSection } from '@/app/(marketing)/components/FeaturesSection';
 import { TestimonialsStrip } from '@/app/(marketing)/components/TestimonialsStrip';
 import { HeroStaticContent } from '@/app/(marketing)/components/HeroStaticContent';
@@ -26,11 +27,12 @@ export const metadata: Metadata = {
 
 export default function HeroPage() {
   return (
-    <div className="bg-navy-900 text-[#e8edf3]">
+    <div className="text-[#e8edf3]">
       <MarqueeDataStrip />
       <HeroSection />
       <StatsStrip />
-      <ExamGridSection />
+      <ConcursosSection />
+      <CertificationsSection />
       <FeaturesSection />
       <TestimonialsStrip />
       <HomepagePricingSection />
@@ -41,7 +43,7 @@ export default function HeroPage() {
 
 function HeroSection() {
   return (
-    <section className="pt-16 pb-24 relative overflow-hidden grid-bg">
+    <section className="pt-16 pb-24 relative overflow-hidden">
       <div
         className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] rounded-full pointer-events-none"
         style={{ background: 'rgba(0,212,255,0.04)', filter: 'blur(60px)' }}

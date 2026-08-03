@@ -63,15 +63,9 @@ const courseListSchema = {
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative flex flex-col min-h-screen bg-navy-900">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(courseListSchema) }}
-      />
+    <div className="grid-bg relative flex flex-col min-h-screen bg-navy-900">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseListSchema) }} />
       <MarketingNavbar />
       <main className="flex-grow pt-20">{children}</main>
       <MarketingFooter />
