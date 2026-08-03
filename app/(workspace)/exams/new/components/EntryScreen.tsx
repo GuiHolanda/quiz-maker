@@ -13,8 +13,7 @@ import { useAiChatUI } from '@/features/hooks/useAiChatUI.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
 import type { ExamType } from '@/shared/types';
-
-const AI_CHAT_PLANS = ['pro_ai', 'tester', 'admin'];
+import { AI_CHAT_ALLOWED_PLANS } from '@/config/constants';
 
 interface EntryScreenProps {
   readonly type: ExamType;
@@ -28,7 +27,7 @@ export function EntryScreen({ type, onStartManual }: EntryScreenProps) {
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
 
   const plan = session?.user?.plan ?? '';
-  const hasAiChat = AI_CHAT_PLANS.includes(plan);
+  const hasAiChat = AI_CHAT_ALLOWED_PLANS.includes(plan);
 
   const listHref = type === 'certification' ? '/exams?type=certification' : '/exams?type=public_exam';
   const listLabel = type === 'certification' ? t('nav.certifications') : t('nav.publicExams');
@@ -100,7 +99,7 @@ export function EntryScreen({ type, onStartManual }: EntryScreenProps) {
             <h2 className="text-base font-semibold">{t('exam.manualCard.title')}</h2>
             <p className="text-sm text-default-500">{t('exam.manualCard.description')}</p>
           </div>
-          <Button color="primary" variant="flat" onPress={onStartManual}>
+          <Button color="primary" data-testid="exam-entry-manual-btn" variant="flat" onPress={onStartManual}>
             {t('exam.manualCard.cta')}
           </Button>
         </CardBody>
