@@ -160,7 +160,7 @@ export function ExamsList({ type }: ExamsListProps) {
   if (exams.length === 0) {
     return (
       <EmptyState
-        action={{ label: t(config.emptyActionLabel), href: '?new=true' }}
+        action={{ label: t(config.emptyActionLabel), href: `/exams/new?type=${type}` }}
         description={t(config.emptyDescription)}
         title={t(config.emptyTitle)}
       />
