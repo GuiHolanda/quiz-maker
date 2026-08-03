@@ -92,3 +92,5 @@ export const INITIAL_MOCK_EXAMS_STATE: MockExamsState = {
 export const QUESTION_BANK_URL = '/question-bank';
 export const QUESTION_BANK_TOPICS_URL = '/question-bank/topics';
 export const QUESTION_BANK_SOURCES_URL = '/question-bank/sources';
+
+export const AI_CHAT_ALLOWED_PLANS: string[] = ['pro_ai', 'tester', 'admin'];
