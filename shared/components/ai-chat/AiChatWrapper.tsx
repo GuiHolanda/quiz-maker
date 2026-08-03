@@ -1,15 +1,15 @@
 'use client';
-import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 
 import { AiChatDrawer } from '@/shared/components/ai-chat/AiChatDrawer';
 import { AiChatFab } from '@/shared/components/ai-chat/AiChatFab';
+import { useAiChatUI } from '@/features/hooks/useAiChatUI.hook';
 
 const AI_CHAT_PLANS = ['pro_ai', 'tester', 'admin'];
 
 export function AiChatWrapper() {
   const { data: session, status } = useSession();
-  const [isOpen, setIsOpen] = useState(false);
+  const { isOpen, openChat, closeChat } = useAiChatUI();
 
   const userId = session?.user?.id ?? '';
 
@@ -18,8 +18,8 @@ export function AiChatWrapper() {
 
   return (
     <>
-      {!isOpen && <AiChatFab onPress={() => setIsOpen(true)} />}
-      <AiChatDrawer isOpen={isOpen} userId={userId} onClose={() => setIsOpen(false)} />
+      {!isOpen && <AiChatFab onPress={openChat} />}
+      <AiChatDrawer isOpen={isOpen} userId={userId} onClose={closeChat} />
     </>
   );
 }
