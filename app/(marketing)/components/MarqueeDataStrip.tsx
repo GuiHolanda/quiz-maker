@@ -16,7 +16,7 @@ export function MarqueeDataStrip() {
   const doubled = [...items, ...items];
 
   return (
-    <div className="bg-navy-950 border-b border-navy-800/40 overflow-hidden h-8">
+    <div className="bg-navy-950/60 border-b border-navy-800/40 overflow-hidden h-8">
       <div className="marquee-track flex items-center h-full whitespace-nowrap">
         {doubled.map((item, i) => (
           <span key={i} className="flex items-center gap-10 px-6 h-full font-mono text-xs text-navy-400">
