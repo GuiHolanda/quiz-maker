@@ -30,7 +30,7 @@ export function StepProgress({ currentStep, namespace }: StepProgressProps) {
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
           >
             <Chip color={isComplete ? 'success' : 'primary'} size="sm" variant="flat">
-              <span className="text-xs font-extrabold">
+              <span className="text-sm font-extrabold">
                 {t(`${namespace}.percentComplete`, { percent: String(percent) })}
               </span>
             </Chip>
