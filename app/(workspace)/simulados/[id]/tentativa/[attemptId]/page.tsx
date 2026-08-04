@@ -14,6 +14,7 @@ import { BusyDialog } from '@/shared/components/ui/BusyDialog';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { notify } from '@/shared/lib/notify';
+import { BreadcrumbItem, Breadcrumbs } from '@heroui/breadcrumbs';
 
 export default function SimuladoTentativaPage() {
   const { t } = useTranslation();
@@ -42,7 +43,17 @@ export default function SimuladoTentativaPage() {
 
   if (!mockExam) {
     return (
-      <PageHeader subtitle="" title="">
+      <PageHeader
+        breadcrumbs={
+          <Breadcrumbs>
+            <BreadcrumbItem href="/">{t('nav.dashboard')}</BreadcrumbItem>
+            <BreadcrumbItem href="/simulados">{t('nav.simulados')}</BreadcrumbItem>
+            <BreadcrumbItem>{t('nav.simuladoAttempt')}</BreadcrumbItem>
+          </Breadcrumbs>
+        }
+        subtitle=""
+        title=""
+      >
         <SkeletonListLoader count={5} height="h-32" />
       </PageHeader>
     );
@@ -147,7 +158,17 @@ export default function SimuladoTentativaPage() {
         onClose={handleModalBack}
         onConfirm={handleConfirmExit}
       />
-      <PageHeader subtitle={subtitle} title={title}>
+      <PageHeader
+        breadcrumbs={
+          <Breadcrumbs>
+            <BreadcrumbItem href="/">{t('nav.dashboard')}</BreadcrumbItem>
+            <BreadcrumbItem href="/simulados">{t('nav.simulados')}</BreadcrumbItem>
+            <BreadcrumbItem>{t('nav.simuladoAttempt')}</BreadcrumbItem>
+          </Breadcrumbs>
+        }
+        subtitle={subtitle}
+        title={title}
+      >
         <SimuladoQuestionList
           answers={answers}
           questions={questions}

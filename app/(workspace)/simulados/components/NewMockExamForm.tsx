@@ -134,7 +134,7 @@ export function NewMockExamForm({ onCreated }: NewMockExamFormProps) {
   if (exams.length === 0) {
     return (
       <EmptyState
-        action={{ href: '/certifications', label: t('exam.tabNew') }}
+        action={{ href: '/exams?type=public_exam', label: t('exam.tabNew') }}
         description={t('exam.noExamsDescription')}
         title={t('exam.noExamsTitle')}
       />

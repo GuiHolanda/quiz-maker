@@ -19,6 +19,7 @@ import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
 interface ExamWizardProps {
   readonly type: ExamType;
   readonly onSaved: () => void;
+  readonly onBack?: () => void;
 }
 
 interface ExamDraft {
@@ -61,7 +62,7 @@ function readDraft(storageKey: string): ExamDraft {
   return EMPTY_DRAFT;
 }
 
-export function ExamWizard({ type, onSaved }: ExamWizardProps) {
+export function ExamWizard({ type, onSaved, onBack }: ExamWizardProps) {
   const config = EXAM_CONFIG[type];
   const { certifications, publicExams, addExam } = useExamsContext();
   const { loading, request } = useRequest(saveExam);
@@ -199,7 +200,7 @@ export function ExamWizard({ type, onSaved }: ExamWizardProps) {
         role={draft.role}
         totalQuestions={draft.totalQuestions}
         year={draft.year}
-        onBack={onSaved}
+        onBack={onBack ?? onSaved}
         onDiscard={() => setIsDiscardOpen(true)}
         onExamDurationMinutesChange={(v) => patch({ examDurationMinutes: v })}
         onNameChange={(v) => patch({ name: v })}

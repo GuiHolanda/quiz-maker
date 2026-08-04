@@ -24,7 +24,7 @@ export function StepHeader({ currentStep, namespace, onBack }: StepHeaderProps) 
 
   return (
     <div className="flex flex-col gap-4">
-      {onBack && (
+      {onBack && currentStep > 1 && (
         <Button
           className="text-xs font-semibold text-primary w-fit px-0 min-w-0 h-auto data-[hover=true]:opacity-80 bg-transparent"
           startContent={<FontAwesomeIcon className="text-sm" icon={faArrowLeft} />}
@@ -34,10 +34,6 @@ export function StepHeader({ currentStep, namespace, onBack }: StepHeaderProps) 
           {t(`${namespace}.${BACK_LABEL_SUFFIX[currentStep]}`)}
         </Button>
       )}
-      <div className="flex flex-col">
-        <h1 className="text-2xl font-semibold">{t(`${namespace}.createNewTitle`)}</h1>
-        <p className="page-header-subtitle mt-1">{t(`${namespace}.step${currentStep}Description`)}</p>
-      </div>
       <StepProgress currentStep={currentStep} namespace={namespace} />
     </div>
   );

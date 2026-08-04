@@ -88,56 +88,103 @@ export function Step1BasicInfo({
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <StepHeader currentStep={1} namespace={type === 'certification' ? 'certification' : 'concurso'} onBack={onBack} />
-
+    <div className="flex flex-col gap-6 max-w-4xl">
       <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="col-span-full">
+        <StepHeader
+          currentStep={1}
+          namespace={type === 'certification' ? 'certification' : 'concurso'}
+          onBack={onBack}
+        />
+        <div className="flex flex-col gap-6">
+          <div className="flex gap-4 flex-wrap">
             <Input
               data-testid="wizard-title-input"
               label={t(type === 'certification' ? 'certification.certificationTitle' : 'concurso.name')}
-              placeholder={t(type === 'certification' ? 'certification.certificationTitlePlaceholder' : 'concurso.namePlaceholder')}
+              placeholder={t(
+                type === 'certification' ? 'certification.certificationTitlePlaceholder' : 'concurso.namePlaceholder'
+              )}
               value={name}
               onChange={(e) => onNameChange(e.target.value)}
               {...inputProperties.input}
+              className={`w-full ${config.hasRoleField ? 'lg:w-2/5' : 'lg:w-4/6'}`}
             />
+            <Autocomplete
+              allowsCustomValue
+              data-testid={type === 'certification' ? 'exam-provider-input' : 'exam-examboard-input'}
+              inputValue={referenceEntityName}
+              label={t(type === 'certification' ? 'exam.providerLabel' : 'exam.examBoardLabel')}
+              placeholder={t(
+                type === 'certification' ? 'certification.providerPlaceholder' : 'concurso.bancaPlaceholder'
+              )}
+              onInputChange={onReferenceEntityNameChange}
+              {...inputProperties.autocomplete}
+              className="w-2/5 lg:w-1/5"
+            >
+              {referenceEntities.map((entity) => (
+                <AutocompleteItem key={entity.name}>{entity.name}</AutocompleteItem>
+              ))}
+            </Autocomplete>
+            {config.hasRoleField && (
+              <Input
+                label={t('concurso.cargo')}
+                placeholder={t('concurso.cargoPlaceholder')}
+                value={role}
+                onChange={(e) => onRoleChange(e.target.value)}
+                {...inputProperties.input}
+                className="w-2/5 lg:w-1/5"
+              />
+            )}
           </div>
 
-          <Autocomplete
-            allowsCustomValue
-            data-testid={type === 'certification' ? 'exam-provider-input' : 'exam-examboard-input'}
-            inputValue={referenceEntityName}
-            label={t(type === 'certification' ? 'exam.providerLabel' : 'exam.examBoardLabel')}
-            placeholder={t(type === 'certification' ? 'certification.providerPlaceholder' : 'concurso.bancaPlaceholder')}
-            onInputChange={onReferenceEntityNameChange}
-            {...inputProperties.autocomplete}
-          >
-            {referenceEntities.map((entity) => (
-              <AutocompleteItem key={entity.name}>{entity.name}</AutocompleteItem>
-            ))}
-          </Autocomplete>
-
-          {config.hasRoleField && (
+          <div className="flex gap-4">
             <Input
-              label={t('concurso.cargo')}
-              placeholder={t('concurso.cargoPlaceholder')}
-              value={role}
-              onChange={(e) => onRoleChange(e.target.value)}
-              {...inputProperties.input}
-            />
-          )}
-
-          {config.hasYearField && (
-            <Input
-              label={t('concurso.year')}
-              placeholder={t('concurso.yearPlaceholder')}
+              isRequired
+              label={t('certification.totalQuestions')}
+              min={1}
+              placeholder={type === 'certification' ? 'e.g. 65' : 'e.g. 80'}
               type="number"
-              value={year}
-              onChange={(e) => onYearChange(e.target.value)}
+              value={totalQuestions}
+              onChange={(e) => onTotalQuestionsChange(e.target.value)}
               {...inputProperties.input}
+              className="w-1/4 lg:w-1/6"
             />
-          )}
+            <Input
+              endContent={
+                <span className="text-xs text-default-400 self-center">{t('certification.examDurationUnit')}</span>
+              }
+              label={t('certification.examDuration')}
+              min={1}
+              placeholder={type === 'certification' ? 'e.g. 130' : 'e.g. 240'}
+              type="number"
+              value={examDurationMinutes}
+              onChange={(e) => onExamDurationMinutesChange(e.target.value)}
+              {...inputProperties.input}
+              className="w-1/4 lg:w-1/6"
+            />
+            <Input
+              endContent={<span className="text-xs text-default-400 self-center">%</span>}
+              label={t('certification.passingScore')}
+              max={100}
+              min={0}
+              placeholder={type === 'certification' ? 'e.g. 72' : 'e.g. 70'}
+              type="number"
+              value={passingScore}
+              onChange={(e) => onPassingScoreChange(e.target.value)}
+              {...inputProperties.input}
+              className="w-1/4 lg:w-1/6"
+            />
+            {config.hasYearField && (
+              <Input
+                label={t('concurso.year')}
+                placeholder={t('concurso.yearPlaceholder')}
+                type="number"
+                value={year}
+                onChange={(e) => onYearChange(e.target.value)}
+                {...inputProperties.input}
+                className="w-1/4 lg:w-1/6"
+              />
+            )}
+          </div>
 
           <div className="col-span-full flex items-start gap-4 p-4 bg-background border border-default-200 rounded-xl">
             <div className="flex-shrink-0 w-10 h-10 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-center">
@@ -152,42 +199,6 @@ export function Step1BasicInfo({
               </p>
             </div>
           </div>
-
-          <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Input
-              isRequired
-              label={t('certification.totalQuestions')}
-              min={1}
-              placeholder={type === 'certification' ? 'e.g. 65' : 'e.g. 80'}
-              type="number"
-              value={totalQuestions}
-              onChange={(e) => onTotalQuestionsChange(e.target.value)}
-              {...inputProperties.input}
-            />
-            <Input
-              endContent={
-                <span className="text-xs text-default-400 self-center">{t('certification.examDurationUnit')}</span>
-              }
-              label={t('certification.examDuration')}
-              min={1}
-              placeholder={type === 'certification' ? 'e.g. 130' : 'e.g. 240'}
-              type="number"
-              value={examDurationMinutes}
-              onChange={(e) => onExamDurationMinutesChange(e.target.value)}
-              {...inputProperties.input}
-            />
-            <Input
-              endContent={<span className="text-xs text-default-400 self-center">%</span>}
-              label={t('certification.passingScore')}
-              max={100}
-              min={0}
-              placeholder={type === 'certification' ? 'e.g. 72' : 'e.g. 70'}
-              type="number"
-              value={passingScore}
-              onChange={(e) => onPassingScoreChange(e.target.value)}
-              {...inputProperties.input}
-            />
-          </div>
         </div>
 
         <div className="flex items-center justify-between pt-4 border-t border-default-200">
@@ -201,6 +212,7 @@ export function Step1BasicInfo({
             className={buttonStyles.primary}
             endContent={<FontAwesomeIcon icon={faArrowRight} />}
             onPress={handleNext}
+            size="sm"
           >
             {t(config.nextStepLabel)}
           </Button>

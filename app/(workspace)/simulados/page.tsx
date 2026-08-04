@@ -3,6 +3,7 @@
 import { Key, useState } from 'react';
 import { Tab, Tabs } from '@heroui/tabs';
 import { useSearchParams } from 'next/navigation';
+import { BreadcrumbItem, Breadcrumbs } from '@heroui/breadcrumbs';
 
 import { NewSimuladoTab } from './components/NewSimuladoTab';
 import { SimuladosListTab } from './components/SimuladosListTab';
@@ -18,7 +19,16 @@ function SimuladosPageContent() {
   const [selectedTab, setSelectedTab] = useState<Key>(searchParams.get('tab') === 'new' ? 'new' : 'list');
 
   return (
-    <PageHeader subtitle={t('simulado.pageSubtitle')} title={t('simulado.pageTitle')}>
+    <PageHeader
+      breadcrumbs={
+        <Breadcrumbs>
+          <BreadcrumbItem href="/">{t('nav.dashboard')}</BreadcrumbItem>
+          <BreadcrumbItem>{t('nav.simulados')}</BreadcrumbItem>
+        </Breadcrumbs>
+      }
+      subtitle={t('simulado.pageSubtitle')}
+      title={t('simulado.pageTitle')}
+    >
       <div className="flex w-full flex-col">
         <Tabs
           aria-label="Simulados tabs"

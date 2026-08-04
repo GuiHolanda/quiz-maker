@@ -16,6 +16,7 @@ import type { UnifiedQuestion, QuestionBankResponse } from '@/shared/types';
 import { QuestionBankCard } from './components/QuestionBankCard';
 import { QuestionBankFiltersBar, EMPTY_FILTERS, hasActiveFilters } from './components/QuestionBankFiltersBar';
 import type { QuestionBankFilters } from './components/QuestionBankFiltersBar';
+import { BreadcrumbItem, Breadcrumbs } from '@heroui/breadcrumbs';
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -133,7 +134,16 @@ export default function QuestionBankPage() {
   const activeFilters = hasActiveFilters(filters);
 
   return (
-    <PageHeader subtitle={t('questionBank.subtitle')} title={t('questionBank.title')}>
+    <PageHeader
+      breadcrumbs={
+        <Breadcrumbs>
+          <BreadcrumbItem href="/">{t('nav.dashboard')}</BreadcrumbItem>
+          <BreadcrumbItem>{t('nav.questionBank')}</BreadcrumbItem>
+        </Breadcrumbs>
+      }
+      subtitle={t('questionBank.subtitle')}
+      title={t('questionBank.title')}
+    >
       <div className="flex flex-col gap-4">
         <QuestionBankFiltersBar filters={filters} onClear={handleClearFilters} onFilterChange={handleFilterChange} />
 

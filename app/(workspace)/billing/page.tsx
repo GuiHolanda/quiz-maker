@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
+import { BreadcrumbItem, Breadcrumbs } from '@heroui/breadcrumbs';
 
 import { BillingOverview } from '@/app/(workspace)/billing/components/BillingOverview';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
@@ -14,7 +15,16 @@ function BillingPageContent() {
   const { t } = useTranslation();
 
   return (
-    <PageHeader subtitle={t('billing.subtitle')} title={t('billing.title')}>
+    <PageHeader
+      breadcrumbs={
+        <Breadcrumbs>
+          <BreadcrumbItem href="/">{t('nav.dashboard')}</BreadcrumbItem>
+          <BreadcrumbItem>{t('nav.billing')}</BreadcrumbItem>
+        </Breadcrumbs>
+      }
+      subtitle={t('billing.subtitle')}
+      title={t('billing.title')}
+    >
       <Suspense>
         <BillingOverview />
       </Suspense>

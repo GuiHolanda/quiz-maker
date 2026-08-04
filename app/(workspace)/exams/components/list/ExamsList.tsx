@@ -14,7 +14,7 @@ import type {
   EditExamModalPublicExamResult,
 } from '@/shared/components/EditExamModal/EditExamModal';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
-import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { ExamsEmptyState } from './ExamsEmptyState';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { deleteExam } from '@/features/connectors';
 import type { Exam, ExamSection, ExamTopic, ExamType } from '@/shared/types';
@@ -159,10 +159,13 @@ export function ExamsList({ type }: ExamsListProps) {
 
   if (exams.length === 0) {
     return (
-      <EmptyState
-        action={{ label: t(config.emptyActionLabel), href: '?new=true' }}
+      <ExamsEmptyState
+        addHref={`/exams/new?type=${type}`}
+        addLabel={t(config.emptyActionLabel)}
         description={t(config.emptyDescription)}
+        icon={config.icon}
         title={t(config.emptyTitle)}
+        type={type}
       />
     );
   }

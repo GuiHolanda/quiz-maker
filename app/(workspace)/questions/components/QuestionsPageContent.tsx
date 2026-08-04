@@ -23,6 +23,7 @@ import { InlineAlert } from '@/shared/components/ui/InlineAlert';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { notify } from '@/shared/lib/notify';
 import type { AIQuestion } from '@/shared/types';
+import { BreadcrumbItem, Breadcrumbs } from '@heroui/breadcrumbs';
 
 type QuestionsType = 'certification' | 'public_exam';
 
@@ -100,7 +101,16 @@ export function QuestionsPageContent() {
   };
 
   return (
-    <PageHeader subtitle={t('generate.pageSubtitle')} title={t('generate.pageTitle')}>
+    <PageHeader
+      breadcrumbs={
+        <Breadcrumbs>
+          <BreadcrumbItem href="/">{t('nav.dashboard')}</BreadcrumbItem>
+          <BreadcrumbItem>{t('nav.generateQuestions')}</BreadcrumbItem>
+        </Breadcrumbs>
+      }
+      subtitle={t('generate.pageSubtitle')}
+      title={t('generate.pageTitle')}
+    >
       <div className="flex flex-col gap-6">
         {renderSimuladosBanner()}
         <div>

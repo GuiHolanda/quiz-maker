@@ -15,7 +15,7 @@ export const siteConfig = {
     },
     {
       label: 'nav.configureCertification',
-      href: '/certifications',
+      href: '/exams?type=certification',
     },
     {
       label: 'nav.makeYourOwnQuiz',
@@ -33,7 +33,7 @@ export const siteConfig = {
     },
     {
       label: 'nav.configureCertification',
-      href: '/certifications',
+      href: '/exams?type=certification',
     },
   ],
   links: {

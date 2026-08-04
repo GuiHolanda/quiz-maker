@@ -18,7 +18,7 @@ import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSection 
 import NextLink from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowUp, faChevronDown, faGear, faUser } from '@fortawesome/free-solid-svg-icons';
@@ -32,13 +32,13 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 
 const PRODUCT_ITEMS = [
-  { label: 'nav.configureCertification', href: '/certifications' },
+  { label: 'nav.configureCertification', href: '/exams?type=certification' },
   { label: 'nav.questions', href: '/questions' },
   { label: 'nav.simulados', href: '/simulados' },
 ] as const;
 
 const CONCURSO_ITEMS = [
-  { label: 'nav.configureConcurso', href: '/public-exams' },
+  { label: 'nav.configureConcurso', href: '/exams?type=public_exam' },
   { label: 'nav.questions', href: '/questions?type=public_exam' },
   { label: 'nav.simulados', href: '/simulados' },
 ] as const;
@@ -53,8 +53,9 @@ export const Navbar = () => {
   const { data: session, status } = useSession();
   const { t } = useTranslation();
   const pathname = usePathname() ?? '';
-  const isCertificationsScope = pathname.startsWith('/certifications');
-  const isConcursosScope = pathname.startsWith('/public-exams');
+  const searchParams = useSearchParams();
+  const isCertificationsScope = pathname.startsWith('/exams') && searchParams.get('type') !== 'public_exam';
+  const isConcursosScope = pathname.startsWith('/exams') && searchParams.get('type') === 'public_exam';
   const isAdminScope = pathname.startsWith('/admin');
   const [usage, setUsage] = useState<UsageStats | null>(null);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);

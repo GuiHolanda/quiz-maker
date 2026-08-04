@@ -22,13 +22,13 @@ interface QuestionsContentProps {
 
 const EMPTY_COPY: Record<ExamType, { href: string; labelKey: string; titleKey: string; descriptionKey: string }> = {
   certification: {
-    href: '/certifications',
+    href: '/exams?type=certification',
     labelKey: 'certification.tabNew',
     titleKey: 'certification.noCertificationsTitle',
     descriptionKey: 'certification.noCertificationsDescription',
   },
   public_exam: {
-    href: '/public-exams',
+    href: '/exams?type=public_exam',
     labelKey: 'concurso.tabNew',
     titleKey: 'concurso.noExamsTitle',
     descriptionKey: 'concurso.noExamsDescription',
