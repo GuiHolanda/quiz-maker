@@ -51,24 +51,46 @@ TAREFA PRINCIPAL: Localize a seção de Conteúdo Programático (também chamada
 
 INSTRUÇÕES:
 1. Leia o edital completo e identifique a seção de conteúdo programático.
-2. Para o cargo especificado, extraia TODAS as matérias listadas e TODOS os tópicos de cada matéria — não resuma, não omita, não invente.
+2. Para o cargo especificado, extraia TODAS as disciplinas individuais e TODOS os tópicos de cada disciplina — não resuma, não omita, não invente.
+   - "Disciplina" significa uma matéria individual como "Língua Portuguesa", "Raciocínio Lógico", "Contabilidade Geral". NÃO é o nome de um grupo ou bloco de prova como "Conhecimentos Gerais", "Conhecimentos Específicos" ou "Prova I".
+   - Se o edital organizar as disciplinas em grupos de prova (ex: "BLOCO I — Conhecimentos Gerais" contendo Língua Portuguesa, Raciocínio Lógico, etc.), ignore os nomes dos grupos e crie um objeto "subject" separado para CADA disciplina individual.
+   - NUNCA crie um subject com o nome de um grupo/bloco de prova. SEMPRE achate: cada disciplina vira um subject independente.
 3. Se o edital apresentar provas separadas (ex: Prova Objetiva, Prova Discursiva, Prova de Títulos), inclua apenas as matérias da prova objetiva. Se não houver distinção, inclua todas.
-4. Para minQuestions e maxQuestions: se o edital informar a quantidade de questões por matéria, converta para percentual do total (ex: 10 de 50 questões = 20%). Se não informar, distribua igualmente entre as matérias (100 / número de matérias, arredondado).
-5. A soma de todos os maxQuestions deve ser igual a 100.
-6. Se o edital informar o número total de questões da prova objetiva, registre em totalQuestions (inteiro).
-7. Se o edital informar a duração da prova, registre em examDurationMinutes (inteiro em minutos, ex: 4 horas = 240).
-8. Se o edital informar a nota mínima de aprovação, registre em passingScore como percentual 0–100 (ex: 72.0 para 72%). Se expressa em nota absoluta (ex: 56 de 80), converta para percentual.
-9. Se qualquer desses campos não constar no edital, omita-o do JSON.
+4. Para minQuestions e maxQuestions: se o edital informar a quantidade de questões por disciplina, converta para percentual do total (ex: 10 de 50 questões = 20%). Se o edital informar percentuais ou questões por GRUPO de prova (não por disciplina), divida o percentual do grupo igualmente entre as disciplinas que o compõem. Se não informar nenhuma distribuição, distribua igualmente entre TODAS as disciplinas (100 / número total de disciplinas, arredondado). A soma de todos os maxQuestions deve ser exatamente 100 — use o método "largest remainder" para garantir isso (adicione 1 às disciplinas com maior resto fracionário até atingir 100).
+5. Se o edital informar o número total de questões da prova objetiva, registre em totalQuestions (inteiro).
+6. Se o edital informar a duração da prova, registre em examDurationMinutes (inteiro em minutos, ex: 4 horas = 240).
+7. Se o edital informar a nota mínima de aprovação, registre em passingScore como percentual 0–100 (ex: 72.0 para 72%). Se expressa em nota absoluta (ex: 56 de 80), converta para percentual.
+8. Se qualquer desses campos não constar no edital, omita-o do JSON.
+
+EXEMPLO DE ACHATAMENTO OBRIGATÓRIO:
+Se o edital apresentar:
+  PROVA I — Conhecimentos Gerais (50%)
+    - Língua Portuguesa
+    - Raciocínio Lógico
+    - História de Campina Grande/PB
+    - Legislação e Ética no Serviço Público
+  PROVA II — Conhecimentos Específicos de Enfermeiro do Trabalho (50%)
+    - tópico A; tópico B; tópico C
+
+O JSON correto deve ter 5 subjects (não 2):
+  - "Língua Portuguesa" com minQuestions/maxQuestions = 13 (50% ÷ 4 arredondado)
+  - "Raciocínio Lógico" com minQuestions/maxQuestions = 13
+  - "História de Campina Grande/PB" com minQuestions/maxQuestions = 12
+  - "Legislação e Ética no Serviço Público" com minQuestions/maxQuestions = 12
+  - "Conhecimentos Específicos de Enfermeiro do Trabalho" com minQuestions/maxQuestions = 50
+  (13+13+12+12+50 = 100 ✓)
+ERRADO seria retornar "Conhecimentos Gerais" como subject com as 4 disciplinas como tópicos.
 
 REGRAS PARA NOMES DE MATÉRIAS E TÓPICOS:
 - Remova qualquer prefixo de numeração dos nomes (ex: "1.", "1.1.", "2.", "a)", "I -" → não inclua no nome).
 - Cada tópico deve ser um item separado no array. Se o edital listar múltiplos assuntos separados por ponto e vírgula (";") dentro de um mesmo item numerado, crie um objeto de tópico separado para cada assunto.
 - O nome do tópico deve conter apenas o conteúdo, sem numeração.
-- Nomes de matérias genéricos como "Conhecimentos Específicos", "Conhecimentos Técnicos", "Conhecimentos Profissionais" ou similares devem ser qualificados com o nome do cargo ou área. Ex: se o cargo é "Enfermeiro do Trabalho", use "Conhecimentos Específicos de Enfermeiro do Trabalho". Se o cargo é "Analista de TI", use "Conhecimentos Específicos de Analista de TI".
+- Nomes de disciplinas genéricos como "Conhecimentos Específicos", "Conhecimentos Técnicos", "Conhecimentos Profissionais" ou similares devem ser qualificados com o nome do cargo ou área. Ex: se o cargo é "Enfermeiro do Trabalho", use "Conhecimentos Específicos de Enfermeiro do Trabalho". Se o cargo é "Analista de TI", use "Conhecimentos Específicos de Analista de TI".
 
 Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, sem texto extra, sem comentários:
 {
   "name": "string (nome do concurso identificando apenas o órgão/entidade e o ano, sem incluir o cargo — o cargo vai em 'role'. Ex: 'Concurso Público TRF 1ª Região 2024', 'Concurso Público Prefeitura Municipal de Campina Grande 2024')",
+  "key": "string ou null (número do edital, ex: '001/2025', '002/2024-SUSAM'. Se não constar no edital, retorne null)",
   "role": "string ou null (nome exato do cargo conforme o edital, ex: 'Analista Judiciário — Área Judiciária')",
   "year": number ou null,
   "totalQuestions": number ou null (total de questões da prova objetiva, se informado),
@@ -80,7 +102,7 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
   },
   "subjects": [
     {
-      "name": "string (nome da matéria/disciplina, sem prefixo de numeração)",
+      "name": "string (nome da disciplina individual — nunca um grupo/bloco de prova, sem prefixo de numeração)",
       "minQuestions": number (percentual 0-100),
       "maxQuestions": number (percentual 0-100),
       "topics": [
@@ -140,6 +162,7 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
     return {
       type: 'public_exam',
       name: this.normalizeCase(d.name),
+      key: typeof d.key === 'string' && d.key.trim() ? d.key.trim() : null,
       role: typeof d.role === 'string' ? this.normalizeCase(d.role) : null,
       year: typeof d.year === 'number' ? d.year : null,
       totalQuestions: typeof d.totalQuestions === 'number' && d.totalQuestions > 0 ? d.totalQuestions : 0,

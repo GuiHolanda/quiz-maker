@@ -22,6 +22,7 @@ interface Step1BasicInfoProps {
   readonly referenceEntityName: string;
   readonly role: string;
   readonly year: string;
+  readonly examKey: string;
   readonly totalQuestions: string;
   readonly examDurationMinutes: string;
   readonly passingScore: string;
@@ -29,6 +30,7 @@ interface Step1BasicInfoProps {
   readonly onReferenceEntityNameChange: (v: string) => void;
   readonly onRoleChange: (v: string) => void;
   readonly onYearChange: (v: string) => void;
+  readonly onExamKeyChange: (v: string) => void;
   readonly onTotalQuestionsChange: (v: string) => void;
   readonly onExamDurationMinutesChange: (v: string) => void;
   readonly onPassingScoreChange: (v: string) => void;
@@ -43,6 +45,7 @@ export function Step1BasicInfo({
   referenceEntityName,
   role,
   year,
+  examKey,
   totalQuestions,
   examDurationMinutes,
   passingScore,
@@ -50,6 +53,7 @@ export function Step1BasicInfo({
   onReferenceEntityNameChange,
   onRoleChange,
   onYearChange,
+  onExamKeyChange,
   onTotalQuestionsChange,
   onExamDurationMinutesChange,
   onPassingScoreChange,
@@ -82,6 +86,13 @@ export function Step1BasicInfo({
     const parsedTotal = parseInt(totalQuestions, 10);
     if (!totalQuestions.trim() || isNaN(parsedTotal) || parsedTotal < 1) {
       notify.error(t('toast.validationError'), t('error.totalQuestionsRequired'));
+      return;
+    }
+    if (!examKey.trim()) {
+      notify.error(
+        t('toast.validationError'),
+        type === 'certification' ? t('error.keyRequired') : t('error.editalKeyRequired')
+      );
       return;
     }
     onNext();
@@ -124,6 +135,16 @@ export function Step1BasicInfo({
                 <AutocompleteItem key={entity.name}>{entity.name}</AutocompleteItem>
               ))}
             </Autocomplete>
+            <Input
+              isRequired
+              data-testid="wizard-key-input"
+              label={t(type === 'certification' ? 'exam.keyLabel' : 'exam.editalKeyLabel')}
+              placeholder={t(type === 'certification' ? 'exam.certKeyPlaceholder' : 'exam.editalKeyPlaceholder')}
+              value={examKey}
+              onChange={(e) => onExamKeyChange(e.target.value)}
+              {...inputProperties.input}
+              className="w-2/5 lg:w-1/5"
+            />
             {config.hasRoleField && (
               <Input
                 label={t('concurso.cargo')}

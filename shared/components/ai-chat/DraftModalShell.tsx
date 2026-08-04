@@ -44,7 +44,7 @@ export function DraftModalShell({
   const { t } = useTranslation();
 
   return (
-    <Modal className="p-4" isOpen={isOpen} scrollBehavior="inside" size="5xl" onClose={onClose}>
+    <Modal className="p-4" isOpen={isOpen} scrollBehavior="inside" size="4xl" onClose={onClose}>
       <ModalContent>
         <ModalHeader className="flex flex-col gap-1">
           <p className="text-base font-bold text-foreground">{t('chat.draftReviewTitle')}</p>

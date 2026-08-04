@@ -13,7 +13,7 @@ export type ExamDraftSaveResult = 'success' | 'duplicate' | 'error';
 interface UseExamDraftCardReturn {
   readonly draft: Exam;
   readonly status: ExamDraftStatus;
-  readonly updateField: (field: keyof Pick<Exam, 'name' | 'role' | 'year'>, value: string | number | null) => void;
+  readonly updateField: (field: keyof Pick<Exam, 'name' | 'role' | 'year' | 'key'>, value: string | number | null) => void;
   readonly updateNumericField: (
     field: 'totalQuestions' | 'examDurationMinutes' | 'passingScore',
     value: number | undefined
@@ -36,7 +36,7 @@ export function useExamDraftCard(initialDraft: Exam): UseExamDraftCardReturn {
   const { t } = useTranslation();
 
   const updateField = useCallback(
-    (field: keyof Pick<Exam, 'name' | 'role' | 'year'>, value: string | number | null) => {
+    (field: keyof Pick<Exam, 'name' | 'role' | 'year' | 'key'>, value: string | number | null) => {
       setDraft((prev) => ({ ...prev, [field]: value }));
     },
     []
@@ -139,6 +139,13 @@ export function useExamDraftCard(initialDraft: Exam): UseExamDraftCardReturn {
   }, []);
 
   const handleSave = useCallback(async (): Promise<ExamDraftSaveResult> => {
+    if (!draft.key?.trim()) {
+      notify.error(
+        t('toast.validationError'),
+        draft.type === 'certification' ? t('error.keyRequired') : t('error.editalKeyRequired')
+      );
+      return 'error';
+    }
     setStatus('saving');
     try {
       const saved = await saveExam(draft);

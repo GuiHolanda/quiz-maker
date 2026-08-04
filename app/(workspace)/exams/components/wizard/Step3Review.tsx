@@ -17,6 +17,7 @@ interface Step3ReviewProps {
   readonly referenceEntityName: string;
   readonly role: string;
   readonly year: string;
+  readonly examKey: string;
   readonly totalQuestions: number;
   readonly examDurationMinutes?: number;
   readonly passingScore?: number;
@@ -33,6 +34,7 @@ export function Step3Review({
   referenceEntityName,
   role,
   year,
+  examKey,
   totalQuestions,
   examDurationMinutes,
   passingScore,
@@ -66,6 +68,16 @@ export function Step3Review({
               </p>
               <p className="text-base font-semibold text-foreground">{name || '—'}</p>
             </div>
+            {examKey && (
+              <div className="flex flex-col gap-1">
+                <p className="text-xs font-medium text-default-400">
+                  {t(type === 'certification' ? 'exam.keyLabel' : 'exam.editalKeyLabel')}
+                </p>
+                <span className="inline-flex w-fit bg-content2 border border-default-200 rounded px-3 py-1 font-mono text-primary text-sm">
+                  {examKey}
+                </span>
+              </div>
+            )}
             <div className="flex flex-col gap-2">
               <p className="text-xs font-medium text-default-400">
                 {t(type === 'certification' ? 'exam.providerLabel' : 'exam.examBoardLabel')}

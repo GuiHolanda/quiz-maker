@@ -27,6 +27,7 @@ interface ExamDraft {
   referenceEntityName: string;
   role: string;
   year: string;
+  key: string;
   totalQuestions: string;
   examDurationMinutes: string;
   passingScore: string;
@@ -39,6 +40,7 @@ const EMPTY_DRAFT: ExamDraft = {
   referenceEntityName: '',
   role: '',
   year: '',
+  key: '',
   totalQuestions: '',
   examDurationMinutes: '',
   passingScore: '',
@@ -156,6 +158,7 @@ export function ExamWizard({ type, onSaved, onBack }: ExamWizardProps) {
         ? {
             type: 'certification',
             name,
+            key: draft.key.trim(),
             provider: referenceEntityName ? { name: referenceEntityName } : null,
             totalQuestions,
             examDurationMinutes,
@@ -165,6 +168,7 @@ export function ExamWizard({ type, onSaved, onBack }: ExamWizardProps) {
         : {
             type: 'public_exam',
             name,
+            key: draft.key.trim(),
             role: draft.role.trim() || null,
             year: yearNum ?? null,
             totalQuestions,
@@ -210,6 +214,8 @@ export function ExamWizard({ type, onSaved, onBack }: ExamWizardProps) {
         onRoleChange={(v) => patch({ role: v })}
         onTotalQuestionsChange={(v) => patch({ totalQuestions: v })}
         onYearChange={(v) => patch({ year: v })}
+        examKey={draft.key}
+        onExamKeyChange={(v) => patch({ key: v })}
       />
     ) : draft.step === 2 ? (
       <Step2DefineSections
@@ -238,6 +244,7 @@ export function ExamWizard({ type, onSaved, onBack }: ExamWizardProps) {
         sections={draft.sections}
         totalQuestions={parseInt(draft.totalQuestions, 10) || 0}
         year={draft.year}
+        examKey={draft.key}
         onBack={() => goToStep(2)}
         onDiscard={() => setIsDiscardOpen(true)}
         onSave={handleSave}

@@ -192,11 +192,14 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
         </div>
 
         <div className="flex flex-col min-w-0 flex-1">
-          <span className="text-sm font-medium text-foreground truncate leading-snug">
+          <span className="text-sm text-foreground truncate leading-snug font-semibold">
             {item.topicName ?? item.refName ?? '—'}
           </span>
           {item.topicName && (
-            <span className="text-xs text-default-400 truncate leading-snug mt-0.5">{item.refName}</span>
+            <span className="text-xs text-default-400 truncate leading-snug mt-0.5 font-semibold">
+              {item.refName}
+              {item.refRole ? ` - ${item.refRole}` : ''}
+            </span>
           )}
         </div>
 

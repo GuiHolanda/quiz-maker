@@ -45,6 +45,7 @@ vi.mock('next/server', () => ({
 vi.mock('@/config/constants', () => ({
   GENERATION_MAX_CONCURRENT_TOPICS: 10,
   GENERATION_MAX_TOPICS_PER_USER: 5,
+  GENERATION_MAX_PROMPT_TOPICS: 20,
 }));
 
 import { claimSlots, processTopic, claimGlobalSlotsAndDispatch, extractJson, sanitizeError } from '@/features/services/generation-job.service';
@@ -165,6 +166,7 @@ describe('processTopic — pipeline e finalização', () => {
     prismaMock.generationJobTopic.updateMany.mockResolvedValue({ count: 0 } as any);
     prismaMock.generationJobTopic.count.mockResolvedValue(0);
     prismaMock.generationJobTopic.findMany.mockResolvedValue([]);
+    prismaMock.examSection.findFirst.mockResolvedValue(null);
     prismaMock.usageLogStep.create.mockResolvedValue({} as any);
     prismaMock.usageLog.update.mockResolvedValue({} as any);
   });
@@ -290,6 +292,7 @@ describe('processTopic — branch public_exam', () => {
     prismaMock.generationJobTopic.updateMany.mockResolvedValue({ count: 0 } as any);
     prismaMock.generationJobTopic.count.mockResolvedValue(0);
     prismaMock.generationJobTopic.findMany.mockResolvedValue([]);
+    prismaMock.examSection.findFirst.mockResolvedValue(null);
     prismaMock.usageLogStep.create.mockResolvedValue({} as any);
     prismaMock.usageLog.update.mockResolvedValue({} as any);
   });

@@ -87,6 +87,7 @@ model Exam {
   name                String
   role                String?
   year                Int?
+  key                 String?
   totalQuestions      Int
   examDurationMinutes Int?
   passingScore        Float?
@@ -102,7 +103,7 @@ model Exam {
   questions           ExamQuestion[]
   mockExams           MockExam[]
 
-  @@unique([userId, type, name, year])
+  @@unique([userId, type, name, role, year])
 }
 
 model ExamSection {

@@ -6,7 +6,7 @@ import { QuotaService } from '@/features/services/quota.service';
 import { MetricsService } from '@/features/services/metrics.service';
 import { validateAiQuestions } from '@/features/services/exam-question.service';
 import { EXAM_PROMPTS } from '@/config/prompts';
-import { GENERATION_MAX_CONCURRENT_TOPICS, GENERATION_MAX_TOPICS_PER_USER } from '@/config/constants';
+import { GENERATION_MAX_CONCURRENT_TOPICS, GENERATION_MAX_TOPICS_PER_USER, GENERATION_MAX_PROMPT_TOPICS } from '@/config/constants';
 import type { AIExamQuestion } from '@/shared/types';
 
 export function extractJson(raw: string): string {
@@ -198,6 +198,28 @@ export async function processTopic(topicId: string): Promise<void> {
   const { job } = topic;
   const { userId, type, refName, examBoardName } = job;
 
+  // Fetch the sub-topics for this section so they can be included in the prompts.
+  const sectionTopics = await prisma.examSection
+    .findFirst({
+      where: { examId: job.refKey, name: topic.topicName },
+      select: { topics: { select: { name: true }, orderBy: { id: 'asc' } } },
+    })
+    .then((s) => s?.topics ?? []);
+
+  let promptTopics = sectionTopics;
+  if (sectionTopics.length > GENERATION_MAX_PROMPT_TOPICS) {
+    // Fisher-Yates shuffle then take the first N — avoids always picking the same slice.
+    const shuffled = [...sectionTopics];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    promptTopics = shuffled.slice(0, GENERATION_MAX_PROMPT_TOPICS);
+  }
+
+  const topicsList =
+    promptTopics.length > 0 ? promptTopics.map((t: { name: string }) => `- ${t.name}`).join('\n') : undefined;
+
   let logId: string | null = null;
 
   try {
@@ -222,9 +244,9 @@ export async function processTopic(topicId: string): Promise<void> {
     const buildInput = (step: 'research' | 'review' | 'format', priorText?: string): Record<string, unknown> => {
       if (type === 'certification') {
         if (step === 'research')
-          return { certification_name: refName, topic_name: topic.topicName, num_questions: numStr };
+          return { certification_name: refName, topic_name: topic.topicName, num_questions: numStr, topics_list: topicsList };
         if (step === 'review')
-          return { certification_name: refName, topic_name: topic.topicName, draft_questions: priorText };
+          return { certification_name: refName, topic_name: topic.topicName, draft_questions: priorText, topics_list: topicsList };
         return { certification_name: refName, topic_name: topic.topicName, reviewed_questions: priorText };
       }
       if (step === 'research') {
@@ -233,6 +255,7 @@ export async function processTopic(topicId: string): Promise<void> {
           exam_board_name: examBoardName ?? '',
           subject_name: topic.topicName,
           num_questions: numStr,
+          topics_list: topicsList,
         };
       }
       if (step === 'review') {
@@ -241,6 +264,7 @@ export async function processTopic(topicId: string): Promise<void> {
           exam_board_name: examBoardName ?? '',
           subject_name: topic.topicName,
           draft_questions: priorText,
+          topics_list: topicsList,
         };
       }
       return {
@@ -285,6 +309,12 @@ export async function processTopic(topicId: string): Promise<void> {
     );
 
     questions = validateAiQuestions(JSON.parse(extractJson(format.text))) as AIExamQuestion[];
+
+    // Defense: the review step may return more questions than requested despite prompt constraints.
+    // Truncate to the requested count so saved count never exceeds what was charged to quota.
+    if (questions.length > topic.questionCount) {
+      questions = questions.slice(0, topic.questionCount);
+    }
 
     await metricsService.finalize(logId, Date.now() - startTime);
 

@@ -26,7 +26,7 @@ export function DraftExamMetricsFields({
   const { t } = useTranslation();
 
   return (
-    <div className="flex w-1/2 gap-2">
+    <div className="flex w-1/2 gap-4">
       <div className="w-1/3">
         <Input
           isRequired

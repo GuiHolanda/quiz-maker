@@ -4,13 +4,17 @@ export interface CertificationQuestionsReviewInput {
   readonly certification_name: string;
   readonly topic_name: string;
   readonly draft_questions: string;
+  readonly topics_list?: string;
 }
 
 export const certificationQuestionsReviewPrompt = {
   build: (input: CertificationQuestionsReviewInput): string => {
-    const { certification_name, topic_name, draft_questions } = input;
+    const { certification_name, topic_name, draft_questions, topics_list } = input;
+    const topicsContext = topics_list
+      ? ` The sub-topics that should be covered are:\n${topics_list}\nEnsure questions are distributed across these sub-topics.`
+      : '';
 
-    return `You are a senior certification exam editor reviewing a draft set of practice questions for the "${certification_name}" certification, topic "${topic_name}".
+    return `You are a senior certification exam editor reviewing a draft set of practice questions for the "${certification_name}" certification, topic "${topic_name}".${topicsContext}
 
 ## DRAFT QUESTIONS TO REVIEW
 
@@ -29,6 +33,8 @@ For each question, check and correct if needed:
 
 ## OUTPUT
 
-Return the complete revised question list in the exact same structured plain-text format as the input. Apply all corrections inline. Do not add commentary, scores, or explanations outside the question blocks. If a question is already perfect, reproduce it unchanged.`;
+Return the revised question list in the exact same structured plain-text format as the input. Apply all corrections inline. Do not add commentary, scores, or explanations outside the question blocks. If a question is already perfect, reproduce it unchanged.
+
+**Critical constraint:** The output must contain **exactly the same number of questions** as the input — no more, no less. You may rewrite a question entirely, but you must not add new questions or drop existing ones. Count the input questions before starting and verify the output count matches before responding.`;
   },
 } satisfies PromptDefinition<CertificationQuestionsReviewInput>;

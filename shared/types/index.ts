@@ -102,6 +102,7 @@ export interface Exam {
   readonly name: string;
   readonly role?: string | null;
   readonly year?: number | null;
+  readonly key?: string | null;
   readonly totalQuestions: number;
   readonly examDurationMinutes?: number | null;
   readonly passingScore?: number | null;
@@ -485,6 +486,7 @@ export interface GenerationHistoryItem {
   type: 'individual' | 'full_exam';
   domain: 'certification' | 'public_exam';
   refName: string | null;
+  refRole: string | null;
   topicName: string | null;
   questionsGenerated: number;
   questionsSaved: number;
