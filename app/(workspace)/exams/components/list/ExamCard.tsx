@@ -139,7 +139,7 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
   function renderAvatar() {
     if (type === 'certification' && exam.provider?.logoUrl) {
       return (
-        <div className="w-10 h-10 rounded-xl bg-content1 border border-default-200 flex items-center justify-center shrink-0 overflow-hidden p-1">
+        <div className="w-10 h-10 rounded-xl bg-white border border-default-200 flex items-center justify-center shrink-0 overflow-hidden p-1">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img alt={exam.provider.name} className="w-8 h-8 object-contain" src={exam.provider.logoUrl} />
         </div>

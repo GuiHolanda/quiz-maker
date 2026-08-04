@@ -182,7 +182,7 @@ export function ExamsList({ type }: ExamsListProps) {
         </span>
       </div>
 
-      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))' }}>
         {exams.map((exam) => (
           <ExamCard
             key={exam.id ?? exam.name}
