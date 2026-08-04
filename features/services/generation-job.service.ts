@@ -6,7 +6,7 @@ import { QuotaService } from '@/features/services/quota.service';
 import { MetricsService } from '@/features/services/metrics.service';
 import { validateAiQuestions } from '@/features/services/exam-question.service';
 import { EXAM_PROMPTS } from '@/config/prompts';
-import { GENERATION_MAX_CONCURRENT_TOPICS, GENERATION_MAX_TOPICS_PER_USER } from '@/config/constants';
+import { GENERATION_MAX_CONCURRENT_TOPICS, GENERATION_MAX_TOPICS_PER_USER, GENERATION_MAX_PROMPT_TOPICS } from '@/config/constants';
 import type { AIExamQuestion } from '@/shared/types';
 
 export function extractJson(raw: string): string {
@@ -206,8 +206,19 @@ export async function processTopic(topicId: string): Promise<void> {
     })
     .then((s) => s?.topics ?? []);
 
+  let promptTopics = sectionTopics;
+  if (sectionTopics.length > GENERATION_MAX_PROMPT_TOPICS) {
+    // Fisher-Yates shuffle then take the first N — avoids always picking the same slice.
+    const shuffled = [...sectionTopics];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    promptTopics = shuffled.slice(0, GENERATION_MAX_PROMPT_TOPICS);
+  }
+
   const topicsList =
-    sectionTopics.length > 0 ? sectionTopics.map((t: { name: string }) => `- ${t.name}`).join('\n') : undefined;
+    promptTopics.length > 0 ? promptTopics.map((t: { name: string }) => `- ${t.name}`).join('\n') : undefined;
 
   let logId: string | null = null;
 

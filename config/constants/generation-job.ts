@@ -21,3 +21,7 @@ export const GENERATION_MAX_QUESTIONS_PER_TOPIC = 50;
 
 // Active jobs (queued + running + awaiting_review) a single user may hold.
 export const GENERATION_MAX_ACTIVE_JOBS_PER_USER = 3;
+
+// Max sub-topics included in the generation prompt. Above this the list dilutes focus
+// rather than guiding the model; a random sample is used instead.
+export const GENERATION_MAX_PROMPT_TOPICS = 20;
