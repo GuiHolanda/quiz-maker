@@ -60,6 +60,7 @@ function parseCertificationData(text: string): ParsedCertResponse | null {
     const examDraft: Exam = {
       type: 'certification',
       name: cert.label,
+      key: cert.key as string,
       role: null,
       year: typeof cert.year === 'number' ? cert.year : null,
       totalQuestions: typeof cert.totalQuestions === 'number' ? cert.totalQuestions : 0,
