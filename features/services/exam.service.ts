@@ -2,6 +2,16 @@ import { prisma, PrismaService } from '@/lib/prisma';
 import { Exam, ExamType, SectionUpdatePayload } from '@/shared/types';
 import { normalizeName } from '@/shared/utils';
 
+function dedupeByName<T extends { name: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const key = normalizeName(item.name);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 export class ExamService {
   constructor(private readonly prismaService: PrismaService = prisma) {}
 
@@ -131,12 +141,12 @@ export class ExamService {
           examBoardId,
           userId,
           sections: {
-            create: sections.map((section) => ({
+            create: dedupeByName(sections).map((section) => ({
               name: normalizeName(section.name),
               minQuestions: section.minQuestions,
               maxQuestions: section.maxQuestions,
               topics: section.topics?.length
-                ? { create: section.topics.map((t) => ({ name: normalizeName(t.name) })) }
+                ? { create: dedupeByName(section.topics).map((t) => ({ name: normalizeName(t.name) })) }
                 : undefined,
             })),
           },
