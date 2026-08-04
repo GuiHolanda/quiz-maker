@@ -37,7 +37,6 @@ export const TID = {
   notificationItem: 'notification-item',
 
   // Wizard (configure)
-  examEntryManualBtn: 'exam-entry-manual-btn',
   configureListSection: 'configure-list-section',
   wizardTitleInput: 'wizard-title-input',
   wizardDiscardBtn: 'wizard-discard-btn',
