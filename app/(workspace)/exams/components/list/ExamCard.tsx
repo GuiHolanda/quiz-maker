@@ -42,15 +42,19 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
       aria-label={exam.name}
       classNames={{
         base: [
-          'bg-content1 border rounded-xl transition-all duration-150',
+          'bg-content1 border rounded-xl transition-all duration-150 cursor-pointer hover:bg-content2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
           isSelected
             ? 'border-primary bg-content2 ring-1 ring-primary/20'
             : 'border-default-200 hover:border-default-300',
         ].join(' '),
       }}
-      isPressable
+      role="button"
       shadow="none"
-      onPress={onClick}
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') onClick();
+      }}
     >
       <CardBody className="p-4 pb-0 gap-8">
         {/* Header row */}
@@ -142,7 +146,7 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
 
     if (logoUrl && logoAlt) {
       return (
-        <div className="w-10 h-10 rounded-xl bg-white border border-default-200 flex items-center justify-center shrink-0 overflow-hidden p-1">
+        <div className="w-10 h-10 rounded-xl border border-default-200 flex items-center justify-center shrink-0 overflow-hidden p-1">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img alt={logoAlt} className="w-8 h-8 object-contain" src={logoUrl} />
         </div>
