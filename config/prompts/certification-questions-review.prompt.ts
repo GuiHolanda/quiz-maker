@@ -33,6 +33,8 @@ For each question, check and correct if needed:
 
 ## OUTPUT
 
-Return the complete revised question list in the exact same structured plain-text format as the input. Apply all corrections inline. Do not add commentary, scores, or explanations outside the question blocks. If a question is already perfect, reproduce it unchanged.`;
+Return the revised question list in the exact same structured plain-text format as the input. Apply all corrections inline. Do not add commentary, scores, or explanations outside the question blocks. If a question is already perfect, reproduce it unchanged.
+
+**Critical constraint:** The output must contain **exactly the same number of questions** as the input — no more, no less. You may rewrite a question entirely, but you must not add new questions or drop existing ones. Count the input questions before starting and verify the output count matches before responding.`;
   },
 } satisfies PromptDefinition<CertificationQuestionsReviewInput>;

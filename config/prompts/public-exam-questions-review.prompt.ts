@@ -35,6 +35,8 @@ Para cada questão, verifique e corrija se necessário:
 
 ## SAÍDA
 
-Retorne a lista completa de questões revisadas no mesmo formato estruturado em texto simples do input. Aplique todas as correções inline. Não adicione comentários, notas ou explicações fora dos blocos de questão. Se uma questão já estiver perfeita, reproduza-a sem alterações.`;
+Retorne a lista de questões revisadas no mesmo formato estruturado em texto simples do input. Aplique todas as correções inline. Não adicione comentários, notas ou explicações fora dos blocos de questão. Se uma questão já estiver perfeita, reproduza-a sem alterações.
+
+**Restrição crítica:** A saída deve conter **exatamente o mesmo número de questões** que o input — nem mais, nem menos. Você pode reescrever uma questão inteiramente, mas não pode adicionar novas questões nem remover as existentes. Conte as questões do input antes de começar e verifique se a contagem da saída é igual antes de responder.`;
   },
 } satisfies PromptDefinition<PublicExamQuestionsReviewInput>;

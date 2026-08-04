@@ -310,6 +310,12 @@ export async function processTopic(topicId: string): Promise<void> {
 
     questions = validateAiQuestions(JSON.parse(extractJson(format.text))) as AIExamQuestion[];
 
+    // Defense: the review step may return more questions than requested despite prompt constraints.
+    // Truncate to the requested count so saved count never exceeds what was charged to quota.
+    if (questions.length > topic.questionCount) {
+      questions = questions.slice(0, topic.questionCount);
+    }
+
     await metricsService.finalize(logId, Date.now() - startTime);
 
     await prisma.generationJobTopic.update({
