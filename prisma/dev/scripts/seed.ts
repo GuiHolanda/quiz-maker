@@ -200,6 +200,115 @@ async function main() {
     },
   });
 
+  await prisma.provider.upsert({
+    where: { name: 'Google' },
+    update: { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg' },
+    create: {
+      name: 'Google',
+      fullName: 'Google LLC',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg',
+    },
+  });
+
+  await prisma.provider.upsert({
+    where: { name: 'Oracle' },
+    update: { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/50/Oracle_logo.svg' },
+    create: {
+      name: 'Oracle',
+      fullName: 'Oracle Corporation',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/50/Oracle_logo.svg',
+    },
+  });
+
+  await prisma.provider.upsert({
+    where: { name: 'Cisco' },
+    update: { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Cisco_logo_blue_2016.svg' },
+    create: {
+      name: 'Cisco',
+      fullName: 'Cisco Systems',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Cisco_logo_blue_2016.svg',
+    },
+  });
+
+  await prisma.provider.upsert({
+    where: { name: 'CompTIA' },
+    update: { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f2/CompTIA_Logo.svg' },
+    create: {
+      name: 'CompTIA',
+      fullName: 'Computing Technology Industry Association',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f2/CompTIA_Logo.svg',
+    },
+  });
+
+  await prisma.provider.upsert({
+    where: { name: 'VMware' },
+    update: { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/9a/Vmware.svg' },
+    create: {
+      name: 'VMware',
+      fullName: 'VMware by Broadcom',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/9a/Vmware.svg',
+    },
+  });
+
+  await prisma.provider.upsert({
+    where: { name: 'Salesforce' },
+    update: { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f9/Salesforce.com_logo.svg' },
+    create: {
+      name: 'Salesforce',
+      fullName: 'Salesforce Inc.',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f9/Salesforce.com_logo.svg',
+    },
+  });
+
+  // Bancas brasileiras
+  await prisma.examBoard.upsert({
+    where: { name: 'CESPE' },
+    update: { fullName: 'Centro de Seleção e de Promoção de Eventos — UnB' },
+    create: { name: 'CESPE', fullName: 'Centro de Seleção e de Promoção de Eventos — UnB' },
+  });
+
+  await prisma.examBoard.upsert({
+    where: { name: 'CESGRANRIO' },
+    update: { fullName: 'Fundação Cesgranrio' },
+    create: { name: 'CESGRANRIO', fullName: 'Fundação Cesgranrio' },
+  });
+
+  await prisma.examBoard.upsert({
+    where: { name: 'VUNESP' },
+    update: { fullName: 'Fundação para o Vestibular da UNESP' },
+    create: { name: 'VUNESP', fullName: 'Fundação para o Vestibular da UNESP' },
+  });
+
+  await prisma.examBoard.upsert({
+    where: { name: 'FUNRIO' },
+    update: { fullName: 'Fundação de Apoio à Pesquisa e ao Desenvolvimento' },
+    create: { name: 'FUNRIO', fullName: 'Fundação de Apoio à Pesquisa e ao Desenvolvimento' },
+  });
+
+  await prisma.examBoard.upsert({
+    where: { name: 'IBFC' },
+    update: { fullName: 'Instituto Brasileiro de Formação e Capacitação' },
+    create: { name: 'IBFC', fullName: 'Instituto Brasileiro de Formação e Capacitação' },
+  });
+
+  await prisma.examBoard.upsert({
+    where: { name: 'IADES' },
+    update: { fullName: 'Instituto Americano de Desenvolvimento' },
+    create: { name: 'IADES', fullName: 'Instituto Americano de Desenvolvimento' },
+  });
+
+  await prisma.examBoard.upsert({
+    where: { name: 'QUADRIX' },
+    update: { fullName: 'Quadrix Consultoria em Tecnologia da Informação' },
+    create: { name: 'QUADRIX', fullName: 'Quadrix Consultoria em Tecnologia da Informação' },
+  });
+
+  await prisma.examBoard.upsert({
+    where: { name: 'Instituto Aocp' },
+    update: { fullName: 'Instituto Aocp Concursos Públicos' },
+    create: { name: 'Instituto Aocp', fullName: 'Instituto Aocp Concursos Públicos' },
+  });
+
   const certExam = await prisma.exam.create({
     data: {
       type: 'certification',
