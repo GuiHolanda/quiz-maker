@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 
 import { Sidebar } from '@/shared/components/ui/sidebar';
-import { WorkspaceHeader } from '@/shared/components/ui/workspace-header';
+import { WorkspaceHeader } from '@/shared/components/ui/workspace-header/WorkspaceHeader';
 import { AiChatWrapper } from '@/shared/components/ai-chat/AiChatWrapper';
 import { AiChatUIProvider } from '@/features/providers/ai-chat-ui.provider';
 import { UsageProvider } from '@/features/providers/usage.provider';
