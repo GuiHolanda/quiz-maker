@@ -52,9 +52,9 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
       shadow="none"
       onPress={onClick}
     >
-      <CardBody className="p-4 pb-0 gap-0">
+      <CardBody className="p-4 pb-0 gap-8">
         {/* Header row */}
-        <div className="flex items-start gap-3 mb-3">
+        <div className="flex items-start gap-3">
           {renderAvatar()}
           <div className="flex-1 min-w-0 pt-0.5">
             <span className="block text-sm font-semibold text-foreground leading-snug line-clamp-2 text-left">
@@ -62,7 +62,15 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
             </span>
             <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
               {referenceEntity?.name && (
-                <span className="text-xs text-default-400 truncate">{referenceEntity.name}</span>
+                <>
+                  <span className="text-xs text-default-400 truncate">{referenceEntity.name}</span>
+                </>
+              )}
+              {config.hasRoleField && exam.role != null && (
+                <>
+                  <span className="text-default-300 text-[9px]">•</span>
+                  <span className="text-xs text-default-400">{exam.role}</span>
+                </>
               )}
               {config.hasYearField && exam.year != null && (
                 <>
@@ -85,15 +93,6 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
             </Chip>
           )}
         </div>
-
-        {/* Role pill — concurso only */}
-        {type === 'public_exam' && exam.role && (
-          <div className="mb-3">
-            <span className="inline-block px-3 py-1 bg-content2 border border-default-200 rounded-full text-xs font-medium text-default-500 truncate max-w-full">
-              {exam.role}
-            </span>
-          </div>
-        )}
 
         {/* Stats row */}
         {hasStats && (
@@ -138,11 +137,14 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
   );
 
   function renderAvatar() {
-    if (type === 'certification' && exam.provider?.logoUrl) {
+    const logoUrl = type === 'certification' ? exam.provider?.logoUrl : exam.examBoard?.logoUrl;
+    const logoAlt = type === 'certification' ? exam.provider?.name : exam.examBoard?.name;
+
+    if (logoUrl && logoAlt) {
       return (
         <div className="w-10 h-10 rounded-xl bg-white border border-default-200 flex items-center justify-center shrink-0 overflow-hidden p-1">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img alt={exam.provider.name} className="w-8 h-8 object-contain" src={exam.provider.logoUrl} />
+          <img alt={logoAlt} className="w-8 h-8 object-contain" src={logoUrl} />
         </div>
       );
     }

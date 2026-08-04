@@ -13,10 +13,11 @@ export async function GET() {
 
   try {
     const records = await prisma.examBoard.findMany({ orderBy: { name: 'asc' } });
-    const examBoards = records.map(({ id, name, fullName }) => ({
+    const examBoards = records.map(({ id, name, fullName, logoUrl }) => ({
       id,
       name,
       fullName: fullName ?? undefined,
+      logoUrl: logoUrl ?? undefined,
     }));
 
     return NextResponse.json({ examBoards });

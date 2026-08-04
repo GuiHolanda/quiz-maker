@@ -221,6 +221,7 @@ export interface ExamBoard {
   id?: string;
   name: string;
   fullName?: string | null;
+  logoUrl?: string | null;
 }
 
 export interface AIExamQuestion {

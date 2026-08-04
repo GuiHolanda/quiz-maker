@@ -263,14 +263,41 @@ async function main() {
   // Bancas brasileiras
   await prisma.examBoard.upsert({
     where: { name: 'CESPE' },
-    update: { fullName: 'Centro de Seleção e de Promoção de Eventos — UnB' },
-    create: { name: 'CESPE', fullName: 'Centro de Seleção e de Promoção de Eventos — UnB' },
+    update: {
+      fullName: 'Centro de Seleção e de Promoção de Eventos — UnB',
+      logoUrl: 'https://cdn.cebraspe.org.br/wp-content/uploads/2018/12/logo-cebraspe.png',
+    },
+    create: {
+      name: 'CESPE',
+      fullName: 'Centro de Seleção e de Promoção de Eventos — UnB',
+      logoUrl: 'https://cdn.cebraspe.org.br/wp-content/uploads/2018/12/logo-cebraspe.png',
+    },
   });
 
   await prisma.examBoard.upsert({
     where: { name: 'CESGRANRIO' },
-    update: { fullName: 'Fundação Cesgranrio' },
-    create: { name: 'CESGRANRIO', fullName: 'Fundação Cesgranrio' },
+    update: {
+      fullName: 'Fundação Cesgranrio',
+      logoUrl: 'https://www.cesgranrio.org.br/wp-content/uploads/2023/09/cesgranrio-mono-01.png',
+    },
+    create: {
+      name: 'CESGRANRIO',
+      fullName: 'Fundação Cesgranrio',
+      logoUrl: 'https://www.cesgranrio.org.br/wp-content/uploads/2023/09/cesgranrio-mono-01.png',
+    },
+  });
+
+  await prisma.examBoard.upsert({
+    where: { name: 'FGV' },
+    update: {
+      fullName: 'Fundação Getulio Vargas',
+      logoUrl: 'https://portal.fgv.br/sites/default/themes/custom/portal/logo.svg',
+    },
+    create: {
+      name: 'FGV',
+      fullName: 'Fundação Getulio Vargas',
+      logoUrl: 'https://portal.fgv.br/sites/default/themes/custom/portal/logo.svg',
+    },
   });
 
   await prisma.examBoard.upsert({
@@ -299,14 +326,41 @@ async function main() {
 
   await prisma.examBoard.upsert({
     where: { name: 'QUADRIX' },
-    update: { fullName: 'Quadrix Consultoria em Tecnologia da Informação' },
-    create: { name: 'QUADRIX', fullName: 'Quadrix Consultoria em Tecnologia da Informação' },
+    update: {
+      fullName: 'Quadrix Consultoria em Tecnologia da Informação',
+      logoUrl: 'https://static-cdn.selecao.net.br/uploads/861/configs/ef49ac7d3a8d53aae6b7f7fd92703f9e.png',
+    },
+    create: {
+      name: 'QUADRIX',
+      fullName: 'Quadrix Consultoria em Tecnologia da Informação',
+      logoUrl: 'https://static-cdn.selecao.net.br/uploads/861/configs/ef49ac7d3a8d53aae6b7f7fd92703f9e.png',
+    },
   });
 
   await prisma.examBoard.upsert({
     where: { name: 'Instituto Aocp' },
-    update: { fullName: 'Instituto Aocp Concursos Públicos' },
-    create: { name: 'Instituto Aocp', fullName: 'Instituto Aocp Concursos Públicos' },
+    update: {
+      fullName: 'Instituto Aocp Concursos Públicos',
+      logoUrl: 'https://cdn-instituto.s3.sa-east-1.amazonaws.com/images/logo.svg',
+    },
+    create: {
+      name: 'Instituto Aocp',
+      fullName: 'Instituto Aocp Concursos Públicos',
+      logoUrl: 'https://cdn-instituto.s3.sa-east-1.amazonaws.com/images/logo.svg',
+    },
+  });
+
+  await prisma.examBoard.upsert({
+    where: { name: 'IDECAN' },
+    update: {
+      fullName: 'Instituto de Desenvolvimento Educacional, Cultural e Assistencial Nacional',
+      logoUrl: 'https://idecan.org.br/wp-content/uploads/2025/02/Apresentacao-Idecan.webp',
+    },
+    create: {
+      name: 'IDECAN',
+      fullName: 'Instituto de Desenvolvimento Educacional, Cultural e Assistencial Nacional',
+      logoUrl: 'https://idecan.org.br/wp-content/uploads/2025/02/Apresentacao-Idecan.webp',
+    },
   });
 
   const certExam = await prisma.exam.create({
