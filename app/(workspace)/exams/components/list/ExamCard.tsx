@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import { faBullseye, faClock, faHashtag, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button } from '@heroui/button';
@@ -22,6 +23,7 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
   const { t } = useTranslation();
   const config = EXAM_CONFIG[type];
   const hasNoSections = exam.sections.length === 0;
+  const [logoError, setLogoError] = useState(false);
 
   const referenceEntity = type === 'certification' ? exam.provider : exam.examBoard;
   const initials = referenceEntity?.name
@@ -144,11 +146,16 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
     const logoUrl = type === 'certification' ? exam.provider?.logoUrl : exam.examBoard?.logoUrl;
     const logoAlt = type === 'certification' ? exam.provider?.name : exam.examBoard?.name;
 
-    if (logoUrl && logoAlt) {
+    if (logoUrl && logoAlt && !logoError) {
       return (
         <div className="w-10 h-10 rounded-xl bg-white border border-default-200 flex items-center justify-center shrink-0 overflow-hidden p-1.5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img alt={logoAlt} className="w-full h-full object-contain" src={logoUrl} />
+          <img
+            alt={logoAlt}
+            className="w-full h-full object-contain"
+            src={logoUrl}
+            onError={() => setLogoError(true)}
+          />
         </div>
       );
     }

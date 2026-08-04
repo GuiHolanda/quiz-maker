@@ -354,12 +354,10 @@ async function main() {
     where: { name: 'IDECAN' },
     update: {
       fullName: 'Instituto de Desenvolvimento Educacional, Cultural e Assistencial Nacional',
-      logoUrl: 'https://idecan.org.br/wp-content/uploads/2025/02/Apresentacao-Idecan.webp',
     },
     create: {
       name: 'IDECAN',
       fullName: 'Instituto de Desenvolvimento Educacional, Cultural e Assistencial Nacional',
-      logoUrl: 'https://idecan.org.br/wp-content/uploads/2025/02/Apresentacao-Idecan.webp',
     },
   });
 
