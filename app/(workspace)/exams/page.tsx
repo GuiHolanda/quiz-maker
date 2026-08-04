@@ -9,6 +9,7 @@ import { ExamsList } from './components/list/ExamsList';
 import { EXAM_CONFIG } from './exam-config';
 
 import { ExamsProvider } from '@/features/providers/exams.provider';
+import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import type { ExamType } from '@/shared/types';
@@ -30,6 +31,10 @@ function ExamsContent() {
   const rawType = searchParams.get('type');
   const type: ExamType = rawType === 'public_exam' ? 'public_exam' : 'certification';
   const config = EXAM_CONFIG[type];
+  const { certifications, publicExams, isLoading } = useExamsContext();
+
+  const exams = type === 'certification' ? certifications : publicExams;
+  const hasExams = isLoading || exams.length > 0;
 
   const addButtonLabel = type === 'certification' ? t('exam.addNewCertification') : t('exam.addNewConcurso');
   const breadcrumbListLabel = type === 'certification' ? t('nav.certifications') : t('nav.publicExams');
@@ -37,9 +42,11 @@ function ExamsContent() {
   return (
     <PageHeader
       action={
-        <Button color="primary" data-testid="add-new-exam-btn" onPress={() => router.push(`/exams/new?type=${type}`)}>
-          {addButtonLabel}
-        </Button>
+        hasExams ? (
+          <Button color="primary" data-testid="add-new-exam-btn" onPress={() => router.push(`/exams/new?type=${type}`)}>
+            {addButtonLabel}
+          </Button>
+        ) : undefined
       }
       breadcrumbs={
         <Breadcrumbs>
