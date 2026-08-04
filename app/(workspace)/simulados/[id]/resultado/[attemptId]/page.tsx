@@ -19,6 +19,7 @@ import {
 import { MockExamResult, SimuladoResultQuestion } from '@/shared/types';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+import { BreadcrumbItem, Breadcrumbs } from '@heroui/breadcrumbs';
 
 function scoreColor(percent: number): 'success' | 'warning' | 'danger' {
   if (percent >= 70) return 'success';
@@ -74,7 +75,17 @@ export default function SimuladoResultadoPage() {
 
   if (!result) {
     return (
-      <PageHeader subtitle="" title={t('simulado.scoreTitle')}>
+      <PageHeader
+        breadcrumbs={
+          <Breadcrumbs>
+            <BreadcrumbItem href="/">{t('nav.dashboard')}</BreadcrumbItem>
+            <BreadcrumbItem href="/simulados">{t('nav.simulados')}</BreadcrumbItem>
+            <BreadcrumbItem>{t('nav.simuladoResult')}</BreadcrumbItem>
+          </Breadcrumbs>
+        }
+        subtitle=""
+        title={t('simulado.scoreTitle')}
+      >
         <div className="flex flex-col gap-4">
           <Progress
             isIndeterminate
@@ -174,7 +185,17 @@ export default function SimuladoResultadoPage() {
 
   return (
     <>
-      <PageHeader subtitle={examName} title={t('simulado.scoreTitle')}>
+      <PageHeader
+        breadcrumbs={
+          <Breadcrumbs>
+            <BreadcrumbItem href="/">{t('nav.dashboard')}</BreadcrumbItem>
+            <BreadcrumbItem href="/simulados">{t('nav.simulados')}</BreadcrumbItem>
+            <BreadcrumbItem>{t('nav.simuladoResult')}</BreadcrumbItem>
+          </Breadcrumbs>
+        }
+        subtitle={examName}
+        title={t('simulado.scoreTitle')}
+      >
         <div className="flex flex-col gap-6">
           {renderInfoCard()}
           {renderSubjectAccordion()}
