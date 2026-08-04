@@ -4,11 +4,15 @@ export interface CertificationQuestionsResearchInput {
   readonly certification_name: string;
   readonly topic_name: string;
   readonly num_questions: string;
+  readonly topics_list?: string;
 }
 
 export const certificationQuestionsResearchPrompt = {
   build: (input: CertificationQuestionsResearchInput): string => {
-    const { certification_name, topic_name, num_questions } = input;
+    const { certification_name, topic_name, num_questions, topics_list } = input;
+    const topicsBlock = topics_list
+      ? `\nSub-topics to cover (distribute questions across these):\n${topics_list}\n`
+      : '';
 
     return `You are an expert exam question writer for professional certification exams across any domain (technology, finance, engineering, healthcare, law, and others).
 
@@ -24,7 +28,7 @@ Analyze found questions to identify: question style, common distractors, key con
 
 Based on the research, write exactly ${num_questions} **original** questions (do not copy found questions) for:
 - Certification: ${certification_name}
-- Topic: ${topic_name}
+- Topic: ${topic_name}${topicsBlock}
 
 Rules:
 1. Use the same language as the official exam (search if unsure — some certifications test in the local language).

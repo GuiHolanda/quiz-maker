@@ -198,6 +198,17 @@ export async function processTopic(topicId: string): Promise<void> {
   const { job } = topic;
   const { userId, type, refName, examBoardName } = job;
 
+  // Fetch the sub-topics for this section so they can be included in the prompts.
+  const sectionTopics = await prisma.examSection
+    .findFirst({
+      where: { examId: job.refKey, name: topic.topicName },
+      select: { topics: { select: { name: true }, orderBy: { id: 'asc' } } },
+    })
+    .then((s) => s?.topics ?? []);
+
+  const topicsList =
+    sectionTopics.length > 0 ? sectionTopics.map((t: { name: string }) => `- ${t.name}`).join('\n') : undefined;
+
   let logId: string | null = null;
 
   try {
@@ -222,9 +233,9 @@ export async function processTopic(topicId: string): Promise<void> {
     const buildInput = (step: 'research' | 'review' | 'format', priorText?: string): Record<string, unknown> => {
       if (type === 'certification') {
         if (step === 'research')
-          return { certification_name: refName, topic_name: topic.topicName, num_questions: numStr };
+          return { certification_name: refName, topic_name: topic.topicName, num_questions: numStr, topics_list: topicsList };
         if (step === 'review')
-          return { certification_name: refName, topic_name: topic.topicName, draft_questions: priorText };
+          return { certification_name: refName, topic_name: topic.topicName, draft_questions: priorText, topics_list: topicsList };
         return { certification_name: refName, topic_name: topic.topicName, reviewed_questions: priorText };
       }
       if (step === 'research') {
@@ -233,6 +244,7 @@ export async function processTopic(topicId: string): Promise<void> {
           exam_board_name: examBoardName ?? '',
           subject_name: topic.topicName,
           num_questions: numStr,
+          topics_list: topicsList,
         };
       }
       if (step === 'review') {
@@ -241,6 +253,7 @@ export async function processTopic(topicId: string): Promise<void> {
           exam_board_name: examBoardName ?? '',
           subject_name: topic.topicName,
           draft_questions: priorText,
+          topics_list: topicsList,
         };
       }
       return {

@@ -6,12 +6,16 @@ export interface PublicExamQuestionsResearchInput {
   readonly subject_name: string;
   readonly topic_name?: string;
   readonly num_questions: string;
+  readonly topics_list?: string;
 }
 
 export const publicExamQuestionsResearchPrompt = {
   build: (input: PublicExamQuestionsResearchInput): string => {
-    const { public_exam_name, exam_board_name, subject_name, topic_name, num_questions } = input;
+    const { public_exam_name, exam_board_name, subject_name, topic_name, num_questions, topics_list } = input;
     const topicoLine = topic_name ? `focadas no tópico "${topic_name}"` : 'cobrindo a matéria de forma ampla';
+    const topicsBlock = topics_list
+      ? `\nTópicos a cobrir (distribua as questões entre eles):\n${topics_list}\n`
+      : '';
 
     return `Você é um especialista em concursos públicos brasileiros e vai gerar questões de alta fidelidade.
 
@@ -29,7 +33,7 @@ Com base na pesquisa, escreva exatamente ${num_questions} questões **inéditas*
 - Concurso: ${public_exam_name}
 - Banca: ${exam_board_name}
 - Matéria: ${subject_name}
-- Foco: ${topicoLine}
+- Foco: ${topicoLine}${topicsBlock}
 
 Regras:
 1. Português brasileiro formal, no padrão de prova oficial.

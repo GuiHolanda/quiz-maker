@@ -165,6 +165,7 @@ describe('processTopic — pipeline e finalização', () => {
     prismaMock.generationJobTopic.updateMany.mockResolvedValue({ count: 0 } as any);
     prismaMock.generationJobTopic.count.mockResolvedValue(0);
     prismaMock.generationJobTopic.findMany.mockResolvedValue([]);
+    prismaMock.examSection.findFirst.mockResolvedValue(null);
     prismaMock.usageLogStep.create.mockResolvedValue({} as any);
     prismaMock.usageLog.update.mockResolvedValue({} as any);
   });
@@ -290,6 +291,7 @@ describe('processTopic — branch public_exam', () => {
     prismaMock.generationJobTopic.updateMany.mockResolvedValue({ count: 0 } as any);
     prismaMock.generationJobTopic.count.mockResolvedValue(0);
     prismaMock.generationJobTopic.findMany.mockResolvedValue([]);
+    prismaMock.examSection.findFirst.mockResolvedValue(null);
     prismaMock.usageLogStep.create.mockResolvedValue({} as any);
     prismaMock.usageLog.update.mockResolvedValue({} as any);
   });

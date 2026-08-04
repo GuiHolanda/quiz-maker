@@ -6,13 +6,17 @@ export interface PublicExamQuestionsReviewInput {
   readonly subject_name: string;
   readonly topic_name?: string;
   readonly draft_questions: string;
+  readonly topics_list?: string;
 }
 
 export const publicExamQuestionsReviewPrompt = {
   build: (input: PublicExamQuestionsReviewInput): string => {
-    const { public_exam_name, exam_board_name, subject_name, topic_name, draft_questions } = input;
+    const { public_exam_name, exam_board_name, subject_name, topic_name, draft_questions, topics_list } = input;
+    const topicsContext = topics_list
+      ? ` Os tópicos que devem ser cobertos são:\n${topics_list}\nVerifique se as questões estão distribuídas entre esses tópicos.`
+      : '';
 
-    return `Você é um editor sênior de questões de concurso público revisando um rascunho de questões para o concurso "${public_exam_name}", banca "${exam_board_name}", matéria "${subject_name}"${topic_name ? `, tópico "${topic_name}"` : ''}.
+    return `Você é um editor sênior de questões de concurso público revisando um rascunho de questões para o concurso "${public_exam_name}", banca "${exam_board_name}", matéria "${subject_name}"${topic_name ? `, tópico "${topic_name}"` : ''}.${topicsContext}
 
 ## QUESTÕES EM RASCUNHO
 
