@@ -18,7 +18,10 @@ interface ExamsEmptyStateProps {
 
 export function ExamsEmptyState({ icon, title, description, addHref, addLabel }: ExamsEmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center gap-5 py-20 bg-content1 border border-dashed border-default-200 rounded-xl text-center px-6">
+    <div
+      data-testid="empty-state"
+      className="flex flex-col items-center justify-center gap-5 py-20 bg-content1 border border-dashed border-default-200 rounded-xl text-center px-6"
+    >
       <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
         <FontAwesomeIcon className="text-primary" icon={icon} size="2x" />
       </div>
