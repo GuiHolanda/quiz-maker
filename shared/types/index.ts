@@ -102,6 +102,7 @@ export interface Exam {
   readonly name: string;
   readonly role?: string | null;
   readonly year?: number | null;
+  readonly key?: string | null;
   readonly totalQuestions: number;
   readonly examDurationMinutes?: number | null;
   readonly passingScore?: number | null;
