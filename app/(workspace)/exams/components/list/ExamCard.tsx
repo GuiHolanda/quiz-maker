@@ -123,7 +123,7 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
       )}
 
       {/* Footer */}
-      <div className={`flex items-center justify-between border-t border-default-200 ${hasStats ? 'mt-3 pt-3' : 'mt-2 pt-2'}`}>
+      <div className="flex items-center justify-between border-t border-default-200 mt-3 pt-3">
         <span className="text-xs text-default-400">
           {dateValue ? <RelativeDate date={dateValue} /> : null}
         </span>
