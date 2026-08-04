@@ -92,7 +92,7 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
 
       {/* Stats row */}
       {hasStats && (
-        <div className="flex items-center flex-wrap gap-x-0 mb-0 text-xs text-default-400 row-gap-1">
+        <div className="flex items-center flex-wrap gap-y-1 text-xs text-default-400">
           {exam.totalQuestions > 0 && (
             <span className="inline-flex items-center gap-1">
               <FontAwesomeIcon className="text-[9px] text-default-400" icon={faHashtag} />
@@ -127,7 +127,7 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
         <span className="text-xs text-default-400">
           {dateValue ? <RelativeDate date={dateValue} /> : null}
         </span>
-        <Button className={buttonStyles.primarySm} size="sm" onClick={onClick}>
+        <Button className={buttonStyles.primarySm} size="sm" onClick={(e) => { e.stopPropagation(); onClick(); }}>
           {t('common.viewDetails')}
         </Button>
       </div>
@@ -137,7 +137,7 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
   function renderAvatar() {
     if (type === 'certification' && exam.provider?.logoUrl) {
       return (
-        <div className="w-10 h-10 rounded-xl bg-white border border-default-200 flex items-center justify-center shrink-0 overflow-hidden p-1">
+        <div className="w-10 h-10 rounded-xl bg-content1 border border-default-200 flex items-center justify-center shrink-0 overflow-hidden p-1">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img alt={exam.provider.name} className="w-8 h-8 object-contain" src={exam.provider.logoUrl} />
         </div>
