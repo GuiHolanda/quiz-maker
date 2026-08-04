@@ -46,11 +46,19 @@ export function ExamModal({ data, isOpen, onClose, onSaved }: ExamModalProps) {
     return section.name.trim() && section.maxQuestions >= section.minQuestions;
   });
 
-  const canSave =
-    draft.name.trim() !== '' &&
-    referenceName.trim() !== '' &&
-    (draft.key?.trim() ?? '') !== '' &&
-    isDistributionValid;
+  const hasRequiredFields = isCertification
+    ? draft.name.trim() !== '' &&
+      referenceName.trim() !== '' &&
+      (draft.key?.trim() ?? '') !== '' &&
+      (draft.totalQuestions ?? 0) > 0
+    : draft.name.trim() !== '' &&
+      referenceName.trim() !== '' &&
+      (draft.role?.trim() ?? '') !== '' &&
+      (draft.key?.trim() ?? '') !== '' &&
+      draft.year != null &&
+      (draft.totalQuestions ?? 0) > 0;
+
+  const canSave = hasRequiredFields && isDistributionValid;
 
   const handleSaveAndClose = async () => {
     const result = await handleSave();
@@ -89,63 +97,55 @@ export function ExamModal({ data, isOpen, onClose, onSaved }: ExamModalProps) {
 
   function renderHeaderFields() {
     return (
-      <div className="flex flex-col gap-3">
-        <div className="flex gap-2">
-          <div className="flex w-3/5">
-            <Input
-              {...inputProperties.input}
-              classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
-              isDisabled={isSaving}
-              label={t('exam.name')}
-              placeholder=" "
-              value={draft.name}
-              onValueChange={(v) => updateField('name', v)}
-              size="sm"
-            />
-          </div>
-          {!isCertification && (
-            <div className="flex w-1/5">
-              <Input
-                {...inputProperties.input}
-                classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
-                isDisabled={isSaving}
-                label={t('exam.year')}
-                placeholder=" "
-                type="number"
-                value={draft.year?.toString() ?? ''}
-                onValueChange={(v) => updateField('year', v ? parseInt(v, 10) : null)}
-                size="sm"
-              />
-            </div>
-          )}
-          <div className="flex w-1/5">
-            <Input
-              {...inputProperties.input}
-              classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
-              isDisabled={isSaving}
-              label={referenceLabel}
-              placeholder=" "
-              value={referenceName}
-              onValueChange={updateReferenceName}
-              size="sm"
-            />
-          </div>
+      <div className="flex flex-col gap-6">
+        <div className="flex gap-4">
+          <Input
+            {...inputProperties.input}
+            classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
+            isDisabled={isSaving}
+            label={t('exam.name')}
+            placeholder=" "
+            value={draft.name}
+            onValueChange={(v) => updateField('name', v)}
+            size="sm"
+            className="grow"
+          />
+          <Input
+            {...inputProperties.input}
+            classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
+            isDisabled={isSaving}
+            label={t('exam.year')}
+            placeholder=" "
+            type="number"
+            value={draft.year?.toString() ?? ''}
+            onValueChange={(v) => updateField('year', v ? parseInt(v, 10) : null)}
+            size="sm"
+          />
           {isCertification && (
-            <div className="flex w-1/5">
-              <Input
-                {...inputProperties.input}
-                classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
-                isDisabled={isSaving}
-                label={t('exam.keyLabel')}
-                placeholder={t('exam.certKeyPlaceholder')}
-                value={draft.key ?? ''}
-                onValueChange={(v) => updateField('key', v || null)}
-                size="sm"
-              />
-            </div>
+            <Input
+              {...inputProperties.input}
+              classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
+              isDisabled={isSaving}
+              label={t('exam.keyLabel')}
+              placeholder={t('exam.certKeyPlaceholder')}
+              value={draft.key ?? ''}
+              onValueChange={(v) => updateField('key', v || null)}
+              size="sm"
+              className="w-2/5"
+            />
           )}
         </div>
         <div className="flex gap-2 justify-between">
+          <Input
+            {...inputProperties.input}
+            classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
+            isDisabled={isSaving}
+            label={referenceLabel}
+            placeholder=" "
+            value={referenceName}
+            onValueChange={updateReferenceName}
+            size="sm"
+          />
           {!isCertification && (
             <>
               <div className="flex w-2/5">
@@ -174,16 +174,16 @@ export function ExamModal({ data, isOpen, onClose, onSaved }: ExamModalProps) {
               </div>
             </>
           )}
-          <DraftExamMetricsFields
-            examDurationMinutes={draft.examDurationMinutes}
-            isSaving={isSaving}
-            passingScore={draft.passingScore}
-            totalQuestions={draft.totalQuestions}
-            onExamDurationChange={(v) => updateNumericField('examDurationMinutes', v)}
-            onPassingScoreChange={(v) => updateNumericField('passingScore', v)}
-            onTotalQuestionsChange={(v) => updateNumericField('totalQuestions', v)}
-          />
         </div>
+        <DraftExamMetricsFields
+          examDurationMinutes={draft.examDurationMinutes}
+          isSaving={isSaving}
+          passingScore={draft.passingScore}
+          totalQuestions={draft.totalQuestions}
+          onExamDurationChange={(v) => updateNumericField('examDurationMinutes', v)}
+          onPassingScoreChange={(v) => updateNumericField('passingScore', v)}
+          onTotalQuestionsChange={(v) => updateNumericField('totalQuestions', v)}
+        />
       </div>
     );
   }
