@@ -78,6 +78,7 @@ model ExamBoard {
   id       String  @id @default(cuid())
   name     String  @unique
   fullName String?
+  logoUrl  String?
   exams    Exam[]
 }
 

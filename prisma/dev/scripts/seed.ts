@@ -172,8 +172,193 @@ async function main() {
 
   const aws = await prisma.provider.upsert({
     where: { name: 'AWS' },
-    update: {},
-    create: { name: 'AWS', fullName: 'Amazon Web Services' },
+    update: { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/93/Amazon_Web_Services_Logo.svg' },
+    create: {
+      name: 'AWS',
+      fullName: 'Amazon Web Services',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/93/Amazon_Web_Services_Logo.svg',
+    },
+  });
+
+  await prisma.provider.upsert({
+    where: { name: 'SAP' },
+    update: { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/59/SAP_2011_logo.svg' },
+    create: {
+      name: 'SAP',
+      fullName: 'SAP SE',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/59/SAP_2011_logo.svg',
+    },
+  });
+
+  await prisma.provider.upsert({
+    where: { name: 'Microsoft' },
+    update: { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg' },
+    create: {
+      name: 'Microsoft',
+      fullName: 'Microsoft Corporation',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg',
+    },
+  });
+
+  await prisma.provider.upsert({
+    where: { name: 'Google' },
+    update: { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg' },
+    create: {
+      name: 'Google',
+      fullName: 'Google LLC',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg',
+    },
+  });
+
+  await prisma.provider.upsert({
+    where: { name: 'Oracle' },
+    update: { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/50/Oracle_logo.svg' },
+    create: {
+      name: 'Oracle',
+      fullName: 'Oracle Corporation',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/50/Oracle_logo.svg',
+    },
+  });
+
+  await prisma.provider.upsert({
+    where: { name: 'Cisco' },
+    update: { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Cisco_logo_blue_2016.svg' },
+    create: {
+      name: 'Cisco',
+      fullName: 'Cisco Systems',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Cisco_logo_blue_2016.svg',
+    },
+  });
+
+  await prisma.provider.upsert({
+    where: { name: 'CompTIA' },
+    update: { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f2/CompTIA_Logo.svg' },
+    create: {
+      name: 'CompTIA',
+      fullName: 'Computing Technology Industry Association',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f2/CompTIA_Logo.svg',
+    },
+  });
+
+  await prisma.provider.upsert({
+    where: { name: 'VMware' },
+    update: { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/9a/Vmware.svg' },
+    create: {
+      name: 'VMware',
+      fullName: 'VMware by Broadcom',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/9a/Vmware.svg',
+    },
+  });
+
+  await prisma.provider.upsert({
+    where: { name: 'Salesforce' },
+    update: { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f9/Salesforce.com_logo.svg' },
+    create: {
+      name: 'Salesforce',
+      fullName: 'Salesforce Inc.',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f9/Salesforce.com_logo.svg',
+    },
+  });
+
+  // Bancas brasileiras
+  await prisma.examBoard.upsert({
+    where: { name: 'CESPE' },
+    update: {
+      fullName: 'Centro de Seleção e de Promoção de Eventos — UnB',
+      logoUrl: 'https://cdn.cebraspe.org.br/wp-content/uploads/2018/12/logo-cebraspe.png',
+    },
+    create: {
+      name: 'CESPE',
+      fullName: 'Centro de Seleção e de Promoção de Eventos — UnB',
+      logoUrl: 'https://cdn.cebraspe.org.br/wp-content/uploads/2018/12/logo-cebraspe.png',
+    },
+  });
+
+  await prisma.examBoard.upsert({
+    where: { name: 'CESGRANRIO' },
+    update: {
+      fullName: 'Fundação Cesgranrio',
+      logoUrl: 'https://www.cesgranrio.org.br/wp-content/uploads/2023/09/cesgranrio-mono-01.png',
+    },
+    create: {
+      name: 'CESGRANRIO',
+      fullName: 'Fundação Cesgranrio',
+      logoUrl: 'https://www.cesgranrio.org.br/wp-content/uploads/2023/09/cesgranrio-mono-01.png',
+    },
+  });
+
+  await prisma.examBoard.upsert({
+    where: { name: 'FGV' },
+    update: {
+      fullName: 'Fundação Getulio Vargas',
+      logoUrl: 'https://portal.fgv.br/sites/default/themes/custom/portal/logo.svg',
+    },
+    create: {
+      name: 'FGV',
+      fullName: 'Fundação Getulio Vargas',
+      logoUrl: 'https://portal.fgv.br/sites/default/themes/custom/portal/logo.svg',
+    },
+  });
+
+  await prisma.examBoard.upsert({
+    where: { name: 'VUNESP' },
+    update: { fullName: 'Fundação para o Vestibular da UNESP' },
+    create: { name: 'VUNESP', fullName: 'Fundação para o Vestibular da UNESP' },
+  });
+
+  await prisma.examBoard.upsert({
+    where: { name: 'FUNRIO' },
+    update: { fullName: 'Fundação de Apoio à Pesquisa e ao Desenvolvimento' },
+    create: { name: 'FUNRIO', fullName: 'Fundação de Apoio à Pesquisa e ao Desenvolvimento' },
+  });
+
+  await prisma.examBoard.upsert({
+    where: { name: 'IBFC' },
+    update: { fullName: 'Instituto Brasileiro de Formação e Capacitação' },
+    create: { name: 'IBFC', fullName: 'Instituto Brasileiro de Formação e Capacitação' },
+  });
+
+  await prisma.examBoard.upsert({
+    where: { name: 'IADES' },
+    update: { fullName: 'Instituto Americano de Desenvolvimento' },
+    create: { name: 'IADES', fullName: 'Instituto Americano de Desenvolvimento' },
+  });
+
+  await prisma.examBoard.upsert({
+    where: { name: 'QUADRIX' },
+    update: {
+      fullName: 'Quadrix Consultoria em Tecnologia da Informação',
+      logoUrl: 'https://static-cdn.selecao.net.br/uploads/861/configs/ef49ac7d3a8d53aae6b7f7fd92703f9e.png',
+    },
+    create: {
+      name: 'QUADRIX',
+      fullName: 'Quadrix Consultoria em Tecnologia da Informação',
+      logoUrl: 'https://static-cdn.selecao.net.br/uploads/861/configs/ef49ac7d3a8d53aae6b7f7fd92703f9e.png',
+    },
+  });
+
+  await prisma.examBoard.upsert({
+    where: { name: 'Instituto Aocp' },
+    update: {
+      fullName: 'Instituto Aocp Concursos Públicos',
+      logoUrl: 'https://cdn-instituto.s3.sa-east-1.amazonaws.com/images/logo.svg',
+    },
+    create: {
+      name: 'Instituto Aocp',
+      fullName: 'Instituto Aocp Concursos Públicos',
+      logoUrl: 'https://cdn-instituto.s3.sa-east-1.amazonaws.com/images/logo.svg',
+    },
+  });
+
+  await prisma.examBoard.upsert({
+    where: { name: 'IDECAN' },
+    update: {
+      fullName: 'Instituto de Desenvolvimento Educacional, Cultural e Assistencial Nacional',
+    },
+    create: {
+      name: 'IDECAN',
+      fullName: 'Instituto de Desenvolvimento Educacional, Cultural e Assistencial Nacional',
+    },
   });
 
   const certExam = await prisma.exam.create({
