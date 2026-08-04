@@ -104,7 +104,7 @@ export function SidebarNav({ collapsed = false, isMobile = false, onClose }: Sid
         <>
           {!col && (
             <div className="pt-4 pb-1">
-              <p className="px-3 font-mono text-xs text-default-400 uppercase tracking-widest">{t('nav.settings')}</p>
+              <p className="px-3 text-xs font-semibold text-default-400">{t('nav.settings')}</p>
             </div>
           )}
           <NextLink
