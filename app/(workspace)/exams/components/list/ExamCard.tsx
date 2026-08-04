@@ -36,17 +36,19 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
   const dateValue = exam.updatedAt && exam.updatedAt !== exam.createdAt ? exam.updatedAt : exam.createdAt;
 
   return (
-    <button
+    <div
       aria-expanded={isSelected}
       aria-label={exam.name}
       className={[
-        'group text-left w-full bg-content1 border rounded-xl p-4 transition-all duration-150 hover:bg-content2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
+        'group text-left w-full bg-content1 border rounded-xl p-4 transition-all duration-150 hover:bg-content2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
         isSelected
           ? 'border-primary bg-content2 ring-1 ring-primary/20'
           : 'border-default-200 hover:border-default-300',
       ].join(' ')}
-      type="button"
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); }}
     >
       {/* Header row */}
       <div className="flex items-start gap-3 mb-3">
@@ -131,7 +133,7 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
           {t('common.viewDetails')}
         </Button>
       </div>
-    </button>
+    </div>
   );
 
   function renderAvatar() {
