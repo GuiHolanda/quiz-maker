@@ -172,8 +172,32 @@ async function main() {
 
   const aws = await prisma.provider.upsert({
     where: { name: 'AWS' },
-    update: {},
-    create: { name: 'AWS', fullName: 'Amazon Web Services' },
+    update: { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/93/Amazon_Web_Services_Logo.svg' },
+    create: {
+      name: 'AWS',
+      fullName: 'Amazon Web Services',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/93/Amazon_Web_Services_Logo.svg',
+    },
+  });
+
+  await prisma.provider.upsert({
+    where: { name: 'SAP' },
+    update: { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/59/SAP_2011_logo.svg' },
+    create: {
+      name: 'SAP',
+      fullName: 'SAP SE',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/59/SAP_2011_logo.svg',
+    },
+  });
+
+  await prisma.provider.upsert({
+    where: { name: 'Microsoft' },
+    update: { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg' },
+    create: {
+      name: 'Microsoft',
+      fullName: 'Microsoft Corporation',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg',
+    },
   });
 
   const certExam = await prisma.exam.create({
