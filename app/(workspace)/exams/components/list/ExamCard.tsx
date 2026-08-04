@@ -146,9 +146,9 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
 
     if (logoUrl && logoAlt) {
       return (
-        <div className="w-10 h-10 rounded-xl border border-default-200 flex items-center justify-center shrink-0 overflow-hidden p-1">
+        <div className="w-10 h-10 rounded-xl bg-white border border-default-200 flex items-center justify-center shrink-0 overflow-hidden p-1.5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img alt={logoAlt} className="w-8 h-8 object-contain" src={logoUrl} />
+          <img alt={logoAlt} className="w-full h-full object-contain" src={logoUrl} />
         </div>
       );
     }
