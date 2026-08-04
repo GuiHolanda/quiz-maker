@@ -110,6 +110,32 @@ export function ExamModal({ data, isOpen, onClose, onSaved }: ExamModalProps) {
             size="sm"
             className="grow"
           />
+          {renderKeyField(isCertification)}
+        </div>
+        <div className="flex gap-4">
+          {!isCertification && (
+            <Input
+              {...inputProperties.input}
+              classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
+              isDisabled={isSaving}
+              label={t('exam.role')}
+              placeholder=" "
+              value={draft.role ?? ''}
+              onValueChange={(v) => updateField('role', v || null)}
+              size="sm"
+            />
+          )}
+          <Input
+            {...inputProperties.input}
+            classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
+            isDisabled={isSaving}
+            label={referenceLabel}
+            placeholder=" "
+            value={referenceName}
+            onValueChange={updateReferenceName}
+            size="sm"
+            className="w-2/5"
+          />
           <Input
             {...inputProperties.input}
             classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
@@ -120,60 +146,8 @@ export function ExamModal({ data, isOpen, onClose, onSaved }: ExamModalProps) {
             value={draft.year?.toString() ?? ''}
             onValueChange={(v) => updateField('year', v ? parseInt(v, 10) : null)}
             size="sm"
+            className="w-1/5"
           />
-          {isCertification && (
-            <Input
-              {...inputProperties.input}
-              classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
-              isDisabled={isSaving}
-              label={t('exam.keyLabel')}
-              placeholder={t('exam.certKeyPlaceholder')}
-              value={draft.key ?? ''}
-              onValueChange={(v) => updateField('key', v || null)}
-              size="sm"
-              className="w-2/5"
-            />
-          )}
-        </div>
-        <div className="flex gap-2 justify-between">
-          <Input
-            {...inputProperties.input}
-            classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
-            isDisabled={isSaving}
-            label={referenceLabel}
-            placeholder=" "
-            value={referenceName}
-            onValueChange={updateReferenceName}
-            size="sm"
-          />
-          {!isCertification && (
-            <>
-              <div className="flex w-2/5">
-                <Input
-                  {...inputProperties.input}
-                  classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
-                  isDisabled={isSaving}
-                  label={t('exam.role')}
-                  placeholder=" "
-                  value={draft.role ?? ''}
-                  onValueChange={(v) => updateField('role', v || null)}
-                  size="sm"
-                />
-              </div>
-              <div className="flex w-1/5">
-                <Input
-                  {...inputProperties.input}
-                  classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
-                  isDisabled={isSaving}
-                  label={t('exam.editalKeyLabel')}
-                  placeholder={t('exam.editalKeyPlaceholder')}
-                  value={draft.key ?? ''}
-                  onValueChange={(v) => updateField('key', v || null)}
-                  size="sm"
-                />
-              </div>
-            </>
-          )}
         </div>
         <DraftExamMetricsFields
           examDurationMinutes={draft.examDurationMinutes}
@@ -185,6 +159,25 @@ export function ExamModal({ data, isOpen, onClose, onSaved }: ExamModalProps) {
           onTotalQuestionsChange={(v) => updateNumericField('totalQuestions', v)}
         />
       </div>
+    );
+  }
+
+  function renderKeyField(isCertification: boolean): JSX.Element {
+    const label = isCertification ? t('exam.keyLabel') : t('exam.editalKeyLabel');
+    const placeholder = isCertification ? t('exam.certKeyPlaceholder') : t('exam.editalKeyPlaceholder');
+
+    return (
+      <Input
+        {...inputProperties.input}
+        classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
+        isDisabled={isSaving}
+        label={label}
+        placeholder={placeholder}
+        value={draft.key ?? ''}
+        onValueChange={(v) => updateField('key', v || null)}
+        size="sm"
+        className="w-1/5"
+      />
     );
   }
 }

@@ -299,10 +299,11 @@ export function ExamDistributionTable({
     return (
       <tr key={`add-topic-${si}`} className="bg-content1">
         <td className={tdClass} colSpan={4}>
-          <div className="flex gap-1.5 items-center pl-7">
+          <div className="flex justify-between items-center pl-7">
             <Input
               {...inputProperties.input}
               className="w-52"
+              classNames={{ inputWrapper: 'h-8 bg-background', input: 'text-xs font-semibold' }}
               isDisabled={isSaving}
               placeholder={t('exam.addTopic')}
               size="sm"
