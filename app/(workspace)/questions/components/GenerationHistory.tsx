@@ -196,7 +196,10 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
             {item.topicName ?? item.refName ?? '—'}
           </span>
           {item.topicName && (
-            <span className="text-xs text-default-400 truncate leading-snug mt-0.5">{item.refName}</span>
+            <span className="text-xs text-default-400 truncate leading-snug mt-0.5">
+              {item.refName}
+              {item.refRole ? ` · ${item.refRole}` : ''}
+            </span>
           )}
         </div>
 

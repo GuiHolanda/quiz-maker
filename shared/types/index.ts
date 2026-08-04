@@ -486,6 +486,7 @@ export interface GenerationHistoryItem {
   type: 'individual' | 'full_exam';
   domain: 'certification' | 'public_exam';
   refName: string | null;
+  refRole: string | null;
   topicName: string | null;
   questionsGenerated: number;
   questionsSaved: number;

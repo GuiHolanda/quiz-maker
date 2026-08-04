@@ -46,6 +46,23 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
+    // Build a refKey → role lookup for public_exam entries (one DB call for all unique keys).
+    const publicExamRefKeys = new Set<string>();
+    for (const job of generationJobs) {
+      if (job.type === 'public_exam' && job.refKey) publicExamRefKeys.add(job.refKey);
+    }
+    for (const log of usageLogs) {
+      if (log.type === 'public_exam' && log.refKey) publicExamRefKeys.add(log.refKey);
+    }
+    const examRoles = new Map<string, string | null>();
+    if (publicExamRefKeys.size > 0) {
+      const exams = await prisma.exam.findMany({
+        where: { id: { in: Array.from(publicExamRefKeys) } },
+        select: { id: true, role: true },
+      });
+      for (const exam of exams) examRoles.set(exam.id, exam.role ?? null);
+    }
+
     // UsageLog rows created by the GenerationJob pipeline (via checkAndRecordQuestions) are
     // already represented as GenerationJob topic rows. Dedup by excluding UsageLogs that
     // match a known (refName, topicName, count) tuple from any generation job topic.
@@ -67,6 +84,7 @@ export async function GET(request: NextRequest) {
         type: 'full_exam' as const,
         domain: (job.type === 'public_exam' ? 'public_exam' : 'certification') as 'certification' | 'public_exam',
         refName: job.refName,
+        refRole: job.type === 'public_exam' ? (examRoles.get(job.refKey) ?? null) : null,
         topicName: topic.topicName,
         questionsGenerated: topic.status === 'done' ? topic.questionCount : 0,
         questionsSaved: topic.savedCount,
@@ -98,6 +116,7 @@ export async function GET(request: NextRequest) {
           type: 'individual',
           domain: (log.type === 'public_exam' ? 'public_exam' : 'certification') as 'certification' | 'public_exam',
           refName: log.refName ?? null,
+          refRole: log.type === 'public_exam' && log.refKey ? (examRoles.get(log.refKey) ?? null) : null,
           topicName: log.topicName ?? null,
           questionsGenerated: log.count,
           questionsSaved: log.count,
