@@ -69,6 +69,7 @@ REGRAS PARA NOMES DE MATÉRIAS E TÓPICOS:
 Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, sem texto extra, sem comentários:
 {
   "name": "string (nome do concurso identificando apenas o órgão/entidade e o ano, sem incluir o cargo — o cargo vai em 'role'. Ex: 'Concurso Público TRF 1ª Região 2024', 'Concurso Público Prefeitura Municipal de Campina Grande 2024')",
+  "key": "string ou null (número do edital, ex: '001/2025', '002/2024-SUSAM'. Se não constar no edital, retorne null)",
   "role": "string ou null (nome exato do cargo conforme o edital, ex: 'Analista Judiciário — Área Judiciária')",
   "year": number ou null,
   "totalQuestions": number ou null (total de questões da prova objetiva, se informado),
@@ -140,6 +141,7 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
     return {
       type: 'public_exam',
       name: this.normalizeCase(d.name),
+      key: typeof d.key === 'string' && d.key.trim() ? d.key.trim() : null,
       role: typeof d.role === 'string' ? this.normalizeCase(d.role) : null,
       year: typeof d.year === 'number' ? d.year : null,
       totalQuestions: typeof d.totalQuestions === 'number' && d.totalQuestions > 0 ? d.totalQuestions : 0,
