@@ -17,12 +17,12 @@ export const metadata: Metadata = {
   description: siteConfig.description,
   openGraph: {
     type: 'website',
-    siteName: 'CertifiqueAI',
+    siteName: 'Certifique AI',
     url: 'https://www.certifiqueai.com',
     locale: 'pt_BR',
     title: siteConfig.name,
     description: siteConfig.description,
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'CertifiqueAI' }],
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Certifique AI' }],
   },
   twitter: {
     card: 'summary_large_image',
