@@ -51,7 +51,7 @@ export const EXAM_CONFIG: Record<ExamType, ExamTypeConfig> = {
   certification: {
     draftStorageKey: 'NEW_CERTIFICATION_DRAFT',
     referenceEntityLabel: 'provider',
-    hasYearField: false,
+    hasYearField: true,
     hasRoleField: false,
     pageTitle: 'certification.pageTitle',
     pageSubtitle: 'certification.pageSubtitle',

@@ -172,17 +172,7 @@ export function ExamsList({ type }: ExamsListProps) {
 
   return (
     <>
-      <div className="flex items-center gap-2.5 mb-5">
-        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-          <FontAwesomeIcon className="text-xs text-primary" icon={config.icon} />
-        </div>
-        <h2 className="text-sm font-bold text-foreground">{t(config.listTitle)}</h2>
-        <span className="ml-auto px-2 py-0.5 rounded-full bg-content2 border border-default-200 text-xs font-medium text-default-500">
-          {exams.length}
-        </span>
-      </div>
-
-      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))' }}>
+      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(480px, 1fr))' }}>
         {exams.map((exam) => (
           <ExamCard
             key={exam.id ?? exam.name}
@@ -233,9 +223,7 @@ export function ExamsList({ type }: ExamsListProps) {
 
       <ConfirmModal
         body={
-          <p className="text-sm text-default-500">
-            {t(config.deleteConfirmKey, { name: deletingExam?.name ?? '' })}
-          </p>
+          <p className="text-sm text-default-500">{t(config.deleteConfirmKey, { name: deletingExam?.name ?? '' })}</p>
         }
         confirmLabel={t('common.remove')}
         isLoading={isDeleting}
