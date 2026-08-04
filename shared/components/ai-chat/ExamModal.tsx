@@ -46,7 +46,11 @@ export function ExamModal({ data, isOpen, onClose, onSaved }: ExamModalProps) {
     return section.name.trim() && section.maxQuestions >= section.minQuestions;
   });
 
-  const canSave = draft.name.trim() !== '' && referenceName.trim() !== '' && isDistributionValid;
+  const canSave =
+    draft.name.trim() !== '' &&
+    referenceName.trim() !== '' &&
+    (draft.key?.trim() ?? '') !== '' &&
+    isDistributionValid;
 
   const handleSaveAndClose = async () => {
     const result = await handleSave();
@@ -99,19 +103,21 @@ export function ExamModal({ data, isOpen, onClose, onSaved }: ExamModalProps) {
               size="sm"
             />
           </div>
-          <div className="flex w-1/5">
-            <Input
-              {...inputProperties.input}
-              classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
-              isDisabled={isSaving}
-              label={t('exam.year')}
-              placeholder=" "
-              type="number"
-              value={draft.year?.toString() ?? ''}
-              onValueChange={(v) => updateField('year', v ? parseInt(v, 10) : null)}
-              size="sm"
-            />
-          </div>
+          {!isCertification && (
+            <div className="flex w-1/5">
+              <Input
+                {...inputProperties.input}
+                classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
+                isDisabled={isSaving}
+                label={t('exam.year')}
+                placeholder=" "
+                type="number"
+                value={draft.year?.toString() ?? ''}
+                onValueChange={(v) => updateField('year', v ? parseInt(v, 10) : null)}
+                size="sm"
+              />
+            </div>
+          )}
           <div className="flex w-1/5">
             <Input
               {...inputProperties.input}
@@ -124,20 +130,50 @@ export function ExamModal({ data, isOpen, onClose, onSaved }: ExamModalProps) {
               size="sm"
             />
           </div>
+          {isCertification && (
+            <div className="flex w-1/5">
+              <Input
+                {...inputProperties.input}
+                classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
+                isDisabled={isSaving}
+                label={t('exam.keyLabel')}
+                placeholder={t('exam.certKeyPlaceholder')}
+                value={draft.key ?? ''}
+                onValueChange={(v) => updateField('key', v || null)}
+                size="sm"
+              />
+            </div>
+          )}
         </div>
         <div className="flex gap-2 justify-between">
-          <div className="w-3/5">
-            <Input
-              {...inputProperties.input}
-              classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
-              isDisabled={isSaving}
-              label={t('exam.role')}
-              placeholder=" "
-              value={draft.role ?? ''}
-              onValueChange={(v) => updateField('role', v || null)}
-              size="sm"
-            />
-          </div>
+          {!isCertification && (
+            <>
+              <div className="flex w-2/5">
+                <Input
+                  {...inputProperties.input}
+                  classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
+                  isDisabled={isSaving}
+                  label={t('exam.role')}
+                  placeholder=" "
+                  value={draft.role ?? ''}
+                  onValueChange={(v) => updateField('role', v || null)}
+                  size="sm"
+                />
+              </div>
+              <div className="flex w-1/5">
+                <Input
+                  {...inputProperties.input}
+                  classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
+                  isDisabled={isSaving}
+                  label={t('exam.editalKeyLabel')}
+                  placeholder={t('exam.editalKeyPlaceholder')}
+                  value={draft.key ?? ''}
+                  onValueChange={(v) => updateField('key', v || null)}
+                  size="sm"
+                />
+              </div>
+            </>
+          )}
           <DraftExamMetricsFields
             examDurationMinutes={draft.examDurationMinutes}
             isSaving={isSaving}
