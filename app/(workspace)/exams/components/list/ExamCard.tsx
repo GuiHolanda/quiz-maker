@@ -2,6 +2,7 @@
 import { faBullseye, faClock, faHashtag, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button } from '@heroui/button';
+import { Card, CardBody, CardFooter } from '@heroui/card';
 import { Chip } from '@heroui/chip';
 
 import { RelativeDate } from '@/shared/components/ui/RelativeDate';
@@ -36,104 +37,104 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
   const dateValue = exam.updatedAt && exam.updatedAt !== exam.createdAt ? exam.updatedAt : exam.createdAt;
 
   return (
-    <div
+    <Card
       aria-expanded={isSelected}
       aria-label={exam.name}
-      className={[
-        'group text-left w-full bg-content1 border rounded-xl p-4 transition-all duration-150 hover:bg-content2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
-        isSelected
-          ? 'border-primary bg-content2 ring-1 ring-primary/20'
-          : 'border-default-200 hover:border-default-300',
-      ].join(' ')}
-      role="button"
-      tabIndex={0}
-      onClick={onClick}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); }}
+      classNames={{
+        base: [
+          'bg-content1 border rounded-xl transition-all duration-150',
+          isSelected
+            ? 'border-primary bg-content2 ring-1 ring-primary/20'
+            : 'border-default-200 hover:border-default-300',
+        ].join(' '),
+      }}
+      isPressable
+      shadow="none"
+      onPress={onClick}
     >
-      {/* Header row */}
-      <div className="flex items-start gap-3 mb-3">
-        {renderAvatar()}
-        <div className="flex-1 min-w-0 pt-0.5">
-          <span className="block text-sm font-semibold text-foreground leading-snug line-clamp-2">
-            {exam.name}
-          </span>
-          <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-            {referenceEntity?.name && (
-              <span className="text-xs text-default-400 truncate">{referenceEntity.name}</span>
+      <CardBody className="p-4 pb-0 gap-0">
+        {/* Header row */}
+        <div className="flex items-start gap-3 mb-3">
+          {renderAvatar()}
+          <div className="flex-1 min-w-0 pt-0.5">
+            <span className="block text-sm font-semibold text-foreground leading-snug line-clamp-2 text-left">
+              {exam.name}
+            </span>
+            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+              {referenceEntity?.name && (
+                <span className="text-xs text-default-400 truncate">{referenceEntity.name}</span>
+              )}
+              {config.hasYearField && exam.year != null && (
+                <>
+                  <span className="text-default-300 text-[9px]">•</span>
+                  <span className="text-xs text-default-400">{exam.year}</span>
+                </>
+              )}
+            </div>
+          </div>
+          {hasNoSections ? (
+            <Chip className="shrink-0 mt-0.5" color="warning" size="sm" variant="flat">
+              {t(config.cardEmptyChipKey)}
+            </Chip>
+          ) : (
+            <Chip className="shrink-0 mt-0.5" color="primary" size="sm" variant="flat">
+              <span className="flex items-center gap-1">
+                <FontAwesomeIcon className="text-[9px]" icon={faLayerGroup} />
+                {exam.sections.length}
+              </span>
+            </Chip>
+          )}
+        </div>
+
+        {/* Role pill — concurso only */}
+        {type === 'public_exam' && exam.role && (
+          <div className="mb-3">
+            <span className="inline-block px-3 py-1 bg-content2 border border-default-200 rounded-full text-xs font-medium text-default-500 truncate max-w-full">
+              {exam.role}
+            </span>
+          </div>
+        )}
+
+        {/* Stats row */}
+        {hasStats && (
+          <div className="flex items-center flex-wrap gap-y-1 text-xs text-default-400">
+            {exam.totalQuestions > 0 && (
+              <span className="inline-flex items-center gap-1">
+                <FontAwesomeIcon className="text-[9px] text-default-400" icon={faHashtag} />
+                {t(type === 'certification' ? 'certification.questionsCount' : 'concurso.questionsCount', {
+                  count: String(exam.totalQuestions),
+                })}
+              </span>
             )}
-            {config.hasYearField && exam.year != null && (
-              <>
-                <span className="text-default-300 text-[9px]">•</span>
-                <span className="text-xs text-default-400">{exam.year}</span>
-              </>
+            {exam.totalQuestions > 0 && exam.examDurationMinutes && (
+              <span className="mx-2 text-default-300 text-[9px]">•</span>
+            )}
+            {exam.examDurationMinutes && (
+              <span className="inline-flex items-center gap-1">
+                <FontAwesomeIcon className="text-[9px] text-default-400" icon={faClock} />
+                {t('certification.durationValue', { minutes: String(exam.examDurationMinutes) })}
+              </span>
+            )}
+            {(exam.totalQuestions > 0 || exam.examDurationMinutes) && exam.passingScore != null && (
+              <span className="mx-2 text-default-300 text-[9px]">•</span>
+            )}
+            {exam.passingScore != null && (
+              <span className="inline-flex items-center gap-1 text-primary font-semibold">
+                <FontAwesomeIcon className="text-[9px]" icon={faBullseye} />
+                {t('certification.passingScoreValue', { score: String(exam.passingScore) })}
+              </span>
             )}
           </div>
-        </div>
-        {hasNoSections ? (
-          <Chip className="shrink-0 mt-0.5" color="warning" size="sm" variant="flat">
-            {t(config.cardEmptyChipKey)}
-          </Chip>
-        ) : (
-          <Chip className="shrink-0 mt-0.5" color="primary" size="sm" variant="flat">
-            <span className="flex items-center gap-1">
-              <FontAwesomeIcon className="text-[9px]" icon={faLayerGroup} />
-              {exam.sections.length}
-            </span>
-          </Chip>
         )}
-      </div>
+      </CardBody>
 
-      {/* Role pill — concurso only */}
-      {type === 'public_exam' && exam.role && (
-        <div className="mb-3">
-          <span className="inline-block px-3 py-1 bg-content2 border border-default-200 rounded-full text-xs font-medium text-default-500 truncate max-w-full">
-            {exam.role}
-          </span>
-        </div>
-      )}
-
-      {/* Stats row */}
-      {hasStats && (
-        <div className="flex items-center flex-wrap gap-y-1 text-xs text-default-400">
-          {exam.totalQuestions > 0 && (
-            <span className="inline-flex items-center gap-1">
-              <FontAwesomeIcon className="text-[9px] text-default-400" icon={faHashtag} />
-              {t(type === 'certification' ? 'certification.questionsCount' : 'concurso.questionsCount', {
-                count: String(exam.totalQuestions),
-              })}
-            </span>
-          )}
-          {exam.totalQuestions > 0 && exam.examDurationMinutes && (
-            <span className="mx-2 text-default-300 text-[9px]">•</span>
-          )}
-          {exam.examDurationMinutes && (
-            <span className="inline-flex items-center gap-1">
-              <FontAwesomeIcon className="text-[9px] text-default-400" icon={faClock} />
-              {t('certification.durationValue', { minutes: String(exam.examDurationMinutes) })}
-            </span>
-          )}
-          {(exam.totalQuestions > 0 || exam.examDurationMinutes) && exam.passingScore != null && (
-            <span className="mx-2 text-default-300 text-[9px]">•</span>
-          )}
-          {exam.passingScore != null && (
-            <span className="inline-flex items-center gap-1 text-primary font-semibold">
-              <FontAwesomeIcon className="text-[9px]" icon={faBullseye} />
-              {t('certification.passingScoreValue', { score: String(exam.passingScore) })}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Footer */}
-      <div className="flex items-center justify-between border-t border-default-200 mt-3 pt-3">
-        <span className="text-xs text-default-400">
-          {dateValue ? <RelativeDate date={dateValue} /> : null}
-        </span>
-        <Button className={buttonStyles.primarySm} size="sm" onClick={(e) => { e.stopPropagation(); onClick(); }}>
+      <CardFooter className="px-4 py-3 flex items-center justify-between border-t border-default-200 mt-3">
+        <span className="text-xs text-default-400">{dateValue ? <RelativeDate date={dateValue} /> : null}</span>
+        <Button className={buttonStyles.primarySm} size="sm" onPress={onClick}>
           {t('common.viewDetails')}
         </Button>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 
   function renderAvatar() {
