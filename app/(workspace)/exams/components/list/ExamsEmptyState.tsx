@@ -23,8 +23,8 @@ export function ExamsEmptyState({ icon, title, description, addHref, addLabel }:
 
   return (
     <div className="flex flex-col items-center justify-center gap-5 py-20 bg-content1 border border-default-200 rounded-xl text-center px-6">
-      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-        <FontAwesomeIcon className="text-primary w-7 h-7" icon={icon} />
+      <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
+        <FontAwesomeIcon className="text-primary" icon={icon} size="2x" />
       </div>
       <div className="flex flex-col gap-2 max-w-md">
         <h2 className="text-xl font-bold text-foreground">{title}</h2>
@@ -33,15 +33,6 @@ export function ExamsEmptyState({ icon, title, description, addHref, addLabel }:
       <div className="flex items-center gap-3 flex-wrap justify-center">
         <Button as={NextLink} className={buttonStyles.primary} href={addHref} startContent={<span>+</span>}>
           {addLabel}
-        </Button>
-        <Button
-          as={NextLink}
-          className={buttonStyles.secondary}
-          endContent={<FontAwesomeIcon className="w-3 h-3" icon={faArrowRight} />}
-          href="/questions"
-          variant="bordered"
-        >
-          {t('exam.browseCatalog')}
         </Button>
       </div>
     </div>
