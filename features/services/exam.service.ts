@@ -10,7 +10,7 @@ export class ExamService {
       throw new Error('Invalid request body');
     }
 
-    const { type, name, role, year, totalQuestions, examDurationMinutes, passingScore, provider, examBoard, sections } =
+    const { type, name, role, year, key, totalQuestions, examDurationMinutes, passingScore, provider, examBoard, sections } =
       body as Record<string, unknown>;
 
     if (type !== 'certification' && type !== 'public_exam') {
@@ -46,6 +46,7 @@ export class ExamService {
       name: normalizeName(name),
       role: typeof role === 'string' && role.trim() ? normalizeName(role) : null,
       year: typeof year === 'number' ? year : null,
+      key: typeof key === 'string' && key.trim() ? key.trim() : null,
       totalQuestions: Math.round(totalQuestions),
       examDurationMinutes:
         typeof examDurationMinutes === 'number' && examDurationMinutes > 0 ? Math.round(examDurationMinutes) : null,
@@ -79,10 +80,14 @@ export class ExamService {
   }
 
   public async save(exam: Exam, userId: string) {
-    const { type, name, role, year, totalQuestions, examDurationMinutes, passingScore, provider, examBoard, sections } =
+    const { type, name, role, year, key, totalQuestions, examDurationMinutes, passingScore, provider, examBoard, sections } =
       exam;
 
     return this.prismaService.$transaction(async (tx) => {
+      if (!key || !key.trim()) {
+        throw Object.assign(new Error('key is required'), { status: 400 });
+      }
+
       let providerId: string | null = null;
       let examBoardId: string | null = null;
 
@@ -106,7 +111,7 @@ export class ExamService {
         examBoardId = b.id;
       }
 
-      const existing = await tx.exam.findFirst({ where: { userId, type, name, year: year ?? null } });
+      const existing = await tx.exam.findFirst({ where: { userId, type, name, role: role ?? null, year: year ?? null } });
 
       if (existing) {
         throw Object.assign(new Error(`Exam "${name}" already exists for this user`), { status: 409 });
@@ -118,6 +123,7 @@ export class ExamService {
           name,
           role: role ?? null,
           year: year ?? null,
+          key: key.trim(),
           totalQuestions,
           examDurationMinutes: examDurationMinutes ?? null,
           passingScore: passingScore ?? null,
@@ -384,6 +390,7 @@ export class ExamService {
       newName?: string;
       newRole?: string | null;
       newYear?: number | null;
+      newKey?: string | null;
       newProviderName?: string | null;
       newExamBoardName?: string | null;
       newTotalQuestions?: number;
@@ -463,6 +470,7 @@ export class ExamService {
           ...(normalizedNewName !== undefined && { name: normalizedNewName }),
           ...(normalizedNewRole !== undefined && { role: normalizedNewRole }),
           ...(updates.newYear !== undefined && { year: updates.newYear }),
+          ...(updates.newKey !== undefined && { key: updates.newKey }),
           ...(providerId !== undefined && { providerId }),
           ...(examBoardId !== undefined && { examBoardId }),
           ...(updates.newTotalQuestions !== undefined && { totalQuestions: updates.newTotalQuestions }),
@@ -483,6 +491,7 @@ export class ExamService {
       name: row.name,
       role: row.role,
       year: row.year,
+      key: row.key ?? null,
       totalQuestions: row.totalQuestions,
       examDurationMinutes: row.examDurationMinutes,
       passingScore: row.passingScore,
