@@ -196,22 +196,24 @@ export function ActiveJobStatus({
     return (
       <div>
         <div className="flex items-stretch gap-8">
-          <div className="flex items-center gap-3 rounded-lg py-3">
+          <div className="flex items-end gap-3 rounded-lg py-3">
             <div className="w-7 h-7 rounded-md bg-success/15 flex items-center justify-center shrink-0">
               <FontAwesomeIcon className="w-3.5 h-3.5 text-success" icon={faCheckCircle} />
             </div>
-            <div className="flex flex-col">
+            <div className="flex gap-2 items-end">
               <span className="text-xl font-bold text-foreground tabular-nums leading-none">{questionsReady}</span>
-              <span className="text-xs text-default-400 mt-0.5">{t('generate.historyGeneratedLabel')}</span>
+              <span className="text-xs text-default-400 mt-0.5 font-semibold">
+                {t('generate.historyGeneratedLabel')}
+              </span>
             </div>
           </div>
-          <div className="flex items-center gap-3 rounded-lg py-3">
+          <div className="flex items-end gap-3 rounded-lg py-3">
             <div className="w-7 h-7 rounded-md bg-primary/15 flex items-center justify-center shrink-0">
               <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={faLayerGroup} />
             </div>
-            <div className="flex flex-col">
+            <div className="flex gap-2 items-end">
               <span className="text-xl font-bold text-foreground tabular-nums leading-none">{topicsDone}</span>
-              <span className="text-xs text-default-400 mt-0.5">{t('generate.topicsDoneLabel')}</span>
+              <span className="text-xs text-default-400 mt-0.5 font-semibold">{t('generate.topicsDoneLabel')}</span>
             </div>
           </div>
         </div>
