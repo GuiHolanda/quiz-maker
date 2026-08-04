@@ -2,7 +2,6 @@
 
 import type { UserPlan } from '@/shared/types';
 
-import { Avatar } from '@heroui/avatar';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSection } from '@heroui/dropdown';
 import NextLink from 'next/link';
 import { useState } from 'react';
@@ -44,16 +43,9 @@ export function UserDropdown() {
       <Dropdown isOpen={isDropdownOpen} placement="bottom-end" onOpenChange={setIsDropdownOpen}>
         <DropdownTrigger>
           <button className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-content2 transition-colors duration-200 cursor-pointer">
-            <Avatar
-              name={session.user.name ?? session.user.email ?? undefined}
-              size="sm"
-              src={session.user.image ?? undefined}
-            />
             <div className="flex flex-col items-start">
               <span className="text-sm font-semibold text-foreground leading-tight">{name}</span>
-              {planLabel && (
-                <span className="text-xs text-default-400 leading-tight">{planLabel}</span>
-              )}
+              {planLabel && <span className="text-xs text-default-400 leading-tight">{planLabel}</span>}
             </div>
           </button>
         </DropdownTrigger>
