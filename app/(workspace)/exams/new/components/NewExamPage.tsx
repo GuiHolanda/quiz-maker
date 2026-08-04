@@ -6,6 +6,7 @@ import type { ExamType } from '@/shared/types';
 import { ExamsProvider } from '@/features/providers/exams.provider';
 import { ExamWizard } from '@/app/(workspace)/exams/components/wizard/ExamWizard';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { EntryScreen } from './EntryScreen';
 
 interface NewExamPageProps {
@@ -24,22 +25,21 @@ export function NewExamPage({ type }: NewExamPageProps) {
   if (view === 'wizard') {
     return (
       <ExamsProvider>
-        <div className="app-bg">
-          <div className="w-full px-12 py-12">
-            <div className="mb-3">
-              <Breadcrumbs>
-                <BreadcrumbItem href="/">{t('nav.dashboard')}</BreadcrumbItem>
-                <BreadcrumbItem href={listHref}>{listLabel}</BreadcrumbItem>
-                <BreadcrumbItem>{newLabel}</BreadcrumbItem>
-              </Breadcrumbs>
-            </div>
-            <ExamWizard
-              type={type}
-              onBack={() => setView('entry')}
-              onSaved={() => router.push(`/exams?type=${type}`)}
-            />
-          </div>
-        </div>
+        <PageHeader
+          breadcrumbs={
+            <Breadcrumbs>
+              <BreadcrumbItem href="/">{t('nav.dashboard')}</BreadcrumbItem>
+              <BreadcrumbItem href={listHref}>{listLabel}</BreadcrumbItem>
+              <BreadcrumbItem>{newLabel}</BreadcrumbItem>
+            </Breadcrumbs>
+          }
+        >
+          <ExamWizard
+            type={type}
+            onBack={() => setView('entry')}
+            onSaved={() => router.push(`/exams?type=${type}`)}
+          />
+        </PageHeader>
       </ExamsProvider>
     );
   }
