@@ -1,12 +1,14 @@
 'use client';
-import { faBullseye, faCalendar, faClock, faHashtag, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
+import { faBullseye, faClock, faHashtag, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 
 import { RelativeDate } from '@/shared/components/ui/RelativeDate';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import type { Exam, ExamType } from '@/shared/types';
 import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface ExamCardProps {
   readonly exam: Exam;
@@ -31,6 +33,7 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
     : null;
 
   const hasStats = exam.totalQuestions > 0 || !!exam.examDurationMinutes || exam.passingScore != null;
+  const dateValue = exam.updatedAt && exam.updatedAt !== exam.createdAt ? exam.updatedAt : exam.createdAt;
 
   return (
     <button
@@ -45,19 +48,22 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
       type="button"
       onClick={onClick}
     >
-      <div className="flex items-start gap-3 mb-4">
+      {/* Header row */}
+      <div className="flex items-start gap-3 mb-3">
         {renderAvatar()}
         <div className="flex-1 min-w-0 pt-0.5">
-          <span className="block text-sm font-semibold text-foreground leading-snug line-clamp-2">{exam.name}</span>
-          <div className="flex items-center gap-2 flex-wrap mt-0.5">
+          <span className="block text-sm font-semibold text-foreground leading-snug line-clamp-2">
+            {exam.name}
+          </span>
+          <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
             {referenceEntity?.name && (
               <span className="text-xs text-default-400 truncate">{referenceEntity.name}</span>
             )}
             {config.hasYearField && exam.year != null && (
-              <span className="flex items-center gap-1 text-xs text-default-400">
-                <FontAwesomeIcon className="text-[9px]" icon={faCalendar} />
-                {exam.year}
-              </span>
+              <>
+                <span className="text-default-300 text-[9px]">•</span>
+                <span className="text-xs text-default-400">{exam.year}</span>
+              </>
             )}
           </div>
         </div>
@@ -75,24 +81,40 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
         )}
       </div>
 
+      {/* Role pill — concurso only */}
+      {type === 'public_exam' && exam.role && (
+        <div className="mb-3">
+          <span className="inline-block px-3 py-1 bg-content2 border border-default-200 rounded-full text-xs font-medium text-default-500 truncate max-w-full">
+            {exam.role}
+          </span>
+        </div>
+      )}
+
+      {/* Stats row */}
       {hasStats && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex items-center flex-wrap gap-x-0 mb-0 text-xs text-default-400 row-gap-1">
           {exam.totalQuestions > 0 && (
-            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-content2 border border-default-200 text-xs text-default-500 group-hover:border-default-300 transition-colors duration-150">
+            <span className="inline-flex items-center gap-1">
               <FontAwesomeIcon className="text-[9px] text-default-400" icon={faHashtag} />
               {t(type === 'certification' ? 'certification.questionsCount' : 'concurso.questionsCount', {
                 count: String(exam.totalQuestions),
               })}
             </span>
           )}
+          {exam.totalQuestions > 0 && exam.examDurationMinutes && (
+            <span className="mx-2 text-default-300 text-[9px]">•</span>
+          )}
           {exam.examDurationMinutes && (
-            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-content2 border border-default-200 text-xs text-default-500 group-hover:border-default-300 transition-colors duration-150">
+            <span className="inline-flex items-center gap-1">
               <FontAwesomeIcon className="text-[9px] text-default-400" icon={faClock} />
               {t('certification.durationValue', { minutes: String(exam.examDurationMinutes) })}
             </span>
           )}
+          {(exam.totalQuestions > 0 || exam.examDurationMinutes) && exam.passingScore != null && (
+            <span className="mx-2 text-default-300 text-[9px]">•</span>
+          )}
           {exam.passingScore != null && (
-            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/8 border border-primary/20 text-xs text-primary font-medium transition-colors duration-150">
+            <span className="inline-flex items-center gap-1 text-primary font-semibold">
               <FontAwesomeIcon className="text-[9px]" icon={faBullseye} />
               {t('certification.passingScoreValue', { score: String(exam.passingScore) })}
             </span>
@@ -100,18 +122,22 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
         </div>
       )}
 
-      {exam.createdAt && (
-        <div className={`text-xs text-default-400 ${hasStats ? 'mt-3 pt-3 border-t border-default-200' : 'mt-1'}`}>
-          <RelativeDate date={exam.updatedAt && exam.updatedAt !== exam.createdAt ? exam.updatedAt : exam.createdAt} />
-        </div>
-      )}
+      {/* Footer */}
+      <div className={`flex items-center justify-between border-t border-default-200 ${hasStats ? 'mt-3 pt-3' : 'mt-2 pt-2'}`}>
+        <span className="text-xs text-default-400">
+          {dateValue ? <RelativeDate date={dateValue} /> : null}
+        </span>
+        <Button className={buttonStyles.primarySm} size="sm" onClick={onClick}>
+          {t('common.viewDetails')}
+        </Button>
+      </div>
     </button>
   );
 
   function renderAvatar() {
     if (type === 'certification' && exam.provider?.logoUrl) {
       return (
-        <div className="w-10 h-10 rounded-xl bg-content2 border border-default-200 flex items-center justify-center shrink-0 overflow-hidden">
+        <div className="w-10 h-10 rounded-xl bg-white border border-default-200 flex items-center justify-center shrink-0 overflow-hidden p-1">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img alt={exam.provider.name} className="w-8 h-8 object-contain" src={exam.provider.logoUrl} />
         </div>
