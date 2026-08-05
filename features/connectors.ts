@@ -78,6 +78,7 @@ export async function updateExamMeta(
   examId: string,
   updates: {
     newName?: string;
+    newKey?: string | null;
     newRole?: string | null;
     newYear?: number | null;
     newProviderName?: string | null;

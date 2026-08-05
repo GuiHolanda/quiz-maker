@@ -4,6 +4,8 @@ import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { BreadcrumbItem, Breadcrumbs } from '@heroui/breadcrumbs';
 import { Button } from '@heroui/button';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlusSquare } from '@fortawesome/free-solid-svg-icons';
 
 import { ExamsList } from './components/list/ExamsList';
 import { EXAM_CONFIG } from './exam-config';
@@ -12,6 +14,7 @@ import { ExamsProvider } from '@/features/providers/exams.provider';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 import type { ExamType } from '@/shared/types';
 
 export default function ExamsPage() {
@@ -43,7 +46,13 @@ function ExamsContent() {
     <PageHeader
       action={
         hasExams ? (
-          <Button color="primary" data-testid="add-new-exam-btn" onPress={() => router.push(`/exams/new?type=${type}`)}>
+          <Button
+            className={buttonStyles.primary}
+            data-testid="add-new-exam-btn"
+            onPress={() => router.push(`/exams/new?type=${type}`)}
+            radius="sm"
+            startContent={<FontAwesomeIcon icon={faPlusSquare} />}
+          >
             {addButtonLabel}
           </Button>
         ) : undefined

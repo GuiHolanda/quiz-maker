@@ -15,6 +15,7 @@ import { buttonStyles } from '@/config/constants/buttonStyles';
 
 export interface EditExamModalCertResult {
   name: string;
+  key?: string | null;
   provider?: Provider | null;
   totalQuestions: number;
   examDurationMinutes?: number;
@@ -23,6 +24,7 @@ export interface EditExamModalCertResult {
 
 export interface EditExamModalPublicExamResult {
   name: string;
+  key?: string | null;
   role?: string;
   year?: number;
   examBoard: ExamBoard;
@@ -43,6 +45,7 @@ export function EditExamModal({ exam, isOpen, onClose, onSaved }: EditExamModalP
   const isCert = exam?.type === 'certification';
 
   const [name, setName] = useState('');
+  const [examKey, setExamKey] = useState('');
   const [provider, setProvider] = useState('');
   const [examBoardName, setExamBoardName] = useState('');
   const [role, setRole] = useState('');
@@ -57,6 +60,7 @@ export function EditExamModal({ exam, isOpen, onClose, onSaved }: EditExamModalP
   useEffect(() => {
     if (exam) {
       setName(exam.name);
+      setExamKey(exam.key ?? '');
       setProvider(exam.provider?.name ?? '');
       setExamBoardName(exam.examBoard?.name ?? '');
       setRole(exam.role ?? '');
@@ -96,6 +100,7 @@ export function EditExamModal({ exam, isOpen, onClose, onSaved }: EditExamModalP
       if (isCert) {
         await updateExamMeta(exam.id, {
           newName: name.trim(),
+          newKey: examKey.trim() || null,
           newProviderName: provider.trim() || null,
           newTotalQuestions: totalQuestionsNum,
           newExamDurationMinutes: parseInt(examDurationMinutes, 10) || null,
@@ -103,6 +108,7 @@ export function EditExamModal({ exam, isOpen, onClose, onSaved }: EditExamModalP
         });
         onSaved(exam.id, {
           name: name.trim(),
+          key: examKey.trim() || null,
           provider: provider.trim() ? { name: provider.trim() } : null,
           totalQuestions: totalQuestionsNum,
           examDurationMinutes: parseInt(examDurationMinutes, 10) || undefined,
@@ -113,6 +119,7 @@ export function EditExamModal({ exam, isOpen, onClose, onSaved }: EditExamModalP
 
         await updateExamMeta(exam.id, {
           newName: name.trim(),
+          newKey: examKey.trim() || null,
           newRole: role.trim() || null,
           newYear: yearNum,
           newExamBoardName: examBoardName.trim(),
@@ -122,6 +129,7 @@ export function EditExamModal({ exam, isOpen, onClose, onSaved }: EditExamModalP
         });
         onSaved(exam.id, {
           name: name.trim(),
+          key: examKey.trim() || null,
           role: role.trim() || undefined,
           year: yearNum ?? undefined,
           examBoard: { name: examBoardName.trim() },
@@ -158,6 +166,17 @@ export function EditExamModal({ exam, isOpen, onClose, onSaved }: EditExamModalP
             size="sm"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+          />
+
+          <Input
+            {...inputProperties.input}
+            classNames={{ inputWrapper: 'h-8 bg-background', input: 'text-xs font-semibold' }}
+            label={isCert ? t('exam.keyLabel') : t('exam.editalKeyLabel')}
+            placeholder={isCert ? t('exam.certKeyPlaceholder') : t('exam.editalKeyPlaceholder')}
+            size="sm"
+            value={examKey}
+            onChange={(e) => setExamKey(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
           />
 

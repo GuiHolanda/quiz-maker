@@ -60,7 +60,7 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
     >
       <CardBody className="p-4 pb-0 gap-8">
         {/* Header row */}
-        <div className="flex items-start gap-3">
+        <div className="flex items-center gap-3">
           {renderAvatar()}
           <div className="flex-1 min-w-0 pt-0.5">
             <span className="block text-sm font-semibold text-foreground leading-snug line-clamp-2 text-left">
@@ -86,17 +86,10 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
               )}
             </div>
           </div>
-          {hasNoSections ? (
-            <Chip className="shrink-0 mt-0.5" color="warning" size="sm" variant="flat">
-              {t(config.cardEmptyChipKey)}
-            </Chip>
-          ) : (
-            <Chip className="shrink-0 mt-0.5" color="primary" size="sm" variant="flat">
-              <span className="flex items-center gap-1">
-                <FontAwesomeIcon className="text-[9px]" icon={faLayerGroup} />
-                {exam.sections.length}
-              </span>
-            </Chip>
+          {exam.key && (
+            <span className="block text-xs font-semibold text-foreground leading-snug line-clamp-2 text-left">
+              {exam.key}
+            </span>
           )}
         </div>
 
@@ -128,6 +121,18 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
                 <FontAwesomeIcon className="text-[9px]" icon={faBullseye} />
                 {t('certification.passingScoreValue', { score: String(exam.passingScore) })}
               </span>
+            )}
+            {hasNoSections ? (
+              <Chip className="shrink-0 mt-0.5" color="warning" size="sm" variant="flat">
+                {t(config.cardEmptyChipKey)}
+              </Chip>
+            ) : (
+              <Chip className="shrink-0 mt-0.5 ml-auto" color="primary" size="sm" variant="flat">
+                <span className="flex items-center gap-1">
+                  <FontAwesomeIcon className="text-[9px]" icon={faLayerGroup} />
+                  {exam.sections.length}
+                </span>
+              </Chip>
             )}
           </div>
         )}

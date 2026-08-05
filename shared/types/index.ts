@@ -424,6 +424,7 @@ export interface UnifiedQuestion {
     explanations: Record<string, string>;
   } | null;
   createdAt: string;
+  correctCount: number;
 }
 
 export interface QuestionBankParams {
@@ -434,6 +435,7 @@ export interface QuestionBankParams {
   difficulty?: string[];
   hasAnswer?: boolean;
   hasExplanation?: boolean;
+  sort?: 'asc' | 'desc';
   page: number;
   pageSize: number;
 }
