@@ -54,6 +54,7 @@ export function CollapsibleFilterPanel({
           <Button
             aria-label={t('common.filters')}
             className={buttonStyles.flat}
+            data-testid="filter-panel-toggle"
             size="sm"
             startContent={<FontAwesomeIcon className="w-3.5 h-3.5" icon={faSliders} />}
             onPress={onToggle}
