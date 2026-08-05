@@ -23,10 +23,10 @@ const COMPANY_LINKS = [
 ] as const;
 
 const LEGAL_LINKS = [
-  { labelKey: 'footer.privacy' },
-  { labelKey: 'footer.terms' },
-  { labelKey: 'footer.lgpd' },
-  { labelKey: 'footer.security' },
+  { labelKey: 'footer.privacy', href: '/privacy' },
+  { labelKey: 'footer.terms', href: '/terms' },
+  { labelKey: 'footer.lgpd', href: '/lgpd' },
+  { labelKey: 'footer.security', href: '/security' },
 ] as const;
 
 export function MarketingFooter() {
@@ -82,19 +82,18 @@ export function MarketingFooter() {
             </ul>
           </div>
 
-          {/* Legal column — not yet live */}
+          {/* Legal column */}
           <div>
             <p className="text-xs font-medium text-navy-400 mb-4">{t('footer.legal')}</p>
             <ul className="space-y-2.5">
               {LEGAL_LINKS.map((item) => (
                 <li key={item.labelKey}>
-                  <span
-                    className="text-xs text-navy-700 cursor-default select-none"
-                    title={t('footer.comingSoon')}
-                    aria-disabled="true"
+                  <NextLink
+                    className="text-xs text-navy-400 hover:text-white transition-colors duration-200"
+                    href={item.href}
                   >
                     {t(item.labelKey)}
-                  </span>
+                  </NextLink>
                 </li>
               ))}
             </ul>
