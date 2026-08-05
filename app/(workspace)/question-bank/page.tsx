@@ -141,6 +141,7 @@ export default function QuestionBankPage() {
   const totalPages = result ? Math.max(1, Math.ceil(result.total / pageSize)) : 1;
   const questions: UnifiedQuestion[] = result?.questions ?? [];
   const activeFilters = hasActiveFilters(filters);
+  const shouldShowFilterPanel = !loadError && (questions.length > 0 || activeFilters);
 
   return (
     <PageHeader
@@ -154,7 +155,26 @@ export default function QuestionBankPage() {
       title={t('questionBank.title')}
     >
       <div className="flex flex-col gap-4">
-        {renderContent()}
+        <div className="flex flex-col">
+          {shouldShowFilterPanel && (
+            <CollapsibleFilterPanel
+              hasActiveFilters={activeFilters}
+              isOpen={isFiltersOpen}
+              sort={filters.sort}
+              sortAscLabel={t('questionBank.sortOldest')}
+              sortDescLabel={t('questionBank.sortNewest')}
+              onToggle={() => setIsFiltersOpen((prev) => !prev)}
+              onToggleSort={toggleSort}
+            >
+              <QuestionBankFiltersBar
+                filters={filters}
+                onClear={handleClearFilters}
+                onFilterChange={handleFilterChange}
+              />
+            </CollapsibleFilterPanel>
+          )}
+          {renderContent()}
+        </div>
 
         {!isLoading && questions.length > 0 && (
           <div className="flex flex-wrap items-center justify-center gap-3">
@@ -212,17 +232,6 @@ export default function QuestionBankPage() {
 
     return (
       <div className="flex flex-col">
-        <CollapsibleFilterPanel
-          hasActiveFilters={activeFilters}
-          isOpen={isFiltersOpen}
-          sort={filters.sort}
-          sortAscLabel={t('questionBank.sortOldest')}
-          sortDescLabel={t('questionBank.sortNewest')}
-          onToggle={() => setIsFiltersOpen((prev) => !prev)}
-          onToggleSort={toggleSort}
-        >
-          <QuestionBankFiltersBar filters={filters} onClear={handleClearFilters} onFilterChange={handleFilterChange} />
-        </CollapsibleFilterPanel>
         <p className="text-xs text-default-400 mb-2">{t('questionBank.totalCount', { count: result?.total ?? 0 })}</p>
         {questions.map((q) => (
           <QuestionBankCard

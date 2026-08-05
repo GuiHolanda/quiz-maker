@@ -54,8 +54,17 @@ export class QuestionBankService {
     } = params;
     const skip = (page - 1) * pageSize;
 
+    const isSQLite = (process.env.DATABASE_URL ?? '').startsWith('file:');
     const where: Record<string, unknown> = { userId };
-    if (search) where['text'] = { contains: search };
+    if (search) {
+      const textFilter = isSQLite ? { contains: search } : { contains: search, mode: 'insensitive' };
+      where['OR'] = [
+        { text: textFilter },
+        { examName: textFilter },
+        { sectionName: textFilter },
+        { options: { some: { text: textFilter } } },
+      ];
+    }
     if (source && source.length > 0) where['examName'] = { in: source };
     if (topic && topic.length > 0) where['sectionName'] = { in: topic };
     if (difficulty && difficulty.length > 0) where['difficulty'] = { in: difficulty };
