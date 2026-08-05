@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 
 import { AI_CHAT_IDENTIFY_PROMPT } from '@/config/prompts/ai-chat-identify.prompt';
 import { AI_CHAT_TOPICS_PROMPT } from '@/config/prompts/ai-chat-topics.prompt';
+import { MetricsService } from '@/features/services/metrics.service';
 
 const ALLOWED_ROLES = new Set(['user', 'assistant']);
 const MAX_MESSAGES = 50;
@@ -9,9 +10,11 @@ const MAX_CONTENT_LENGTH = 10_000;
 
 export class AiChatService {
   private readonly openai: OpenAI;
+  private readonly metricsService: MetricsService;
 
   constructor() {
     this.openai = new OpenAI();
+    this.metricsService = new MetricsService();
   }
 
   validate(body: unknown): { messages: { role: 'user' | 'assistant'; content: string }[]; language: string } {
@@ -67,6 +70,7 @@ export class AiChatService {
   }
 
   async streamChat(
+    userId: string,
     messages: { role: 'user' | 'assistant'; content: string }[],
     language: string
   ): Promise<ReadableStream> {
@@ -85,7 +89,10 @@ export class AiChatService {
       stream: true,
     });
 
+    const logId = await this.metricsService.createLog(userId, 'ai_chat');
+    const startMs = Date.now();
     const encoder = new TextEncoder();
+    const metricsService = this.metricsService;
 
     return new ReadableStream({
       async start(controller) {
@@ -93,6 +100,14 @@ export class AiChatService {
           for await (const event of stream) {
             if (event.type === 'response.output_text.delta' && event.delta) {
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: event.delta })}\n\n`));
+            }
+
+            if (event.type === 'response.completed') {
+              const durationMs = Date.now() - startMs;
+              const inputTokens = event.response.usage?.input_tokens ?? 0;
+              const outputTokens = event.response.usage?.output_tokens ?? 0;
+              void metricsService.recordStep(logId, 'chat', { inputTokens, outputTokens }, durationMs);
+              await metricsService.finalize(logId, durationMs);
             }
           }
 
