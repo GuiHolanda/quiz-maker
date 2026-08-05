@@ -96,6 +96,9 @@ export class AiChatService {
 
     return new ReadableStream({
       async start(controller) {
+        let metricsFinalized = false;
+        let durationMs = 0;
+
         try {
           for await (const event of stream) {
             if (event.type === 'response.output_text.delta' && event.delta) {
@@ -103,17 +106,21 @@ export class AiChatService {
             }
 
             if (event.type === 'response.completed') {
-              const durationMs = Date.now() - startMs;
+              durationMs = Date.now() - startMs;
               const inputTokens = event.response.usage?.input_tokens ?? 0;
               const outputTokens = event.response.usage?.output_tokens ?? 0;
               void metricsService.recordStep(logId, 'chat', { inputTokens, outputTokens }, durationMs);
-              await metricsService.finalize(logId, durationMs);
             }
           }
 
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`));
           controller.close();
+          void metricsService.finalize(logId, durationMs);
+          metricsFinalized = true;
         } catch {
+          if (!metricsFinalized) {
+            void metricsService.finalize(logId, Date.now() - startMs);
+          }
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: 'Stream interrupted' })}\n\n`));
           controller.close();
         }
