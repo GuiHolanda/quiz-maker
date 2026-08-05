@@ -88,5 +88,7 @@ test.describe('question bank', () => {
     await page.locator(tid(TID.filterPanelToggle)).click();
     await page.locator(tid(TID.questionBankSearch)).fill('zzz-no-such-question-zzz');
     await expect(page.locator(tid(TID.emptyState))).toBeVisible();
+    // filter panel must remain visible even when search returns zero results
+    await expect(page.locator(tid(TID.filterPanelToggle))).toBeVisible();
   });
 });
