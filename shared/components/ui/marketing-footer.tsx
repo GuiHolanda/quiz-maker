@@ -23,29 +23,29 @@ export function MarketingFooter() {
   const { t } = useTranslation();
 
   return (
-    <footer className="bg-navy-950 border-t border-navy-800/40 py-10">
+    <footer className="bg-navy-950 border-t border-navy-800/40 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-8 mb-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
 
-          {/* Brand column */}
-          <div className="col-span-2 md:col-span-1">
+          {/* Brand column — spans 2 cols on desktop for visual weight balance */}
+          <div className="col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-6 h-6 rounded flex items-center justify-center bg-accent/10 border border-accent/30">
                 <FontAwesomeIcon className="text-accent text-xs" icon={faMicrochip} />
               </div>
               <span className="font-sora font-bold text-white text-sm">{t('footer.brand')}</span>
             </div>
-            <p className="text-xs text-navy-500 leading-relaxed max-w-52">{t('footer.description')}</p>
+            <p className="text-sm text-navy-500 leading-relaxed max-w-xs">{t('footer.description')}</p>
           </div>
 
           {/* Platform column */}
           <div>
             <p className="text-xs font-medium text-navy-400 mb-4">{t('footer.platform')}</p>
-            <ul className="space-y-2.5">
+            <ul className="space-y-3">
               {PLATFORM_LINKS.map((item) => (
                 <li key={item.labelKey}>
                   <NextLink
-                    className="text-xs text-navy-400 hover:text-white transition-colors duration-200"
+                    className="text-sm text-navy-500 hover:text-white transition-colors duration-200"
                     href={item.href}
                   >
                     {t(item.labelKey)}
@@ -58,11 +58,11 @@ export function MarketingFooter() {
           {/* Legal column */}
           <div>
             <p className="text-xs font-medium text-navy-400 mb-4">{t('footer.legal')}</p>
-            <ul className="space-y-2.5">
+            <ul className="space-y-3">
               {LEGAL_LINKS.map((item) => (
                 <li key={item.labelKey}>
                   <NextLink
-                    className="text-xs text-navy-400 hover:text-white transition-colors duration-200"
+                    className="text-sm text-navy-500 hover:text-white transition-colors duration-200"
                     href={item.href}
                   >
                     {t(item.labelKey)}
