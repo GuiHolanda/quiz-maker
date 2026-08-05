@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
     editalExtractorService.validateFile(file);
 
     const exam = await editalExtractorService.extract(
+      session.user.id,
       file,
       typeof role === 'string' && role.trim() ? role.trim() : undefined
     );
