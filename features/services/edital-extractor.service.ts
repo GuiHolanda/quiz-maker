@@ -24,14 +24,15 @@ export class EditalExtractorService {
   }
 
   async extract(userId: string, file: File, role?: string): Promise<Exam> {
+    const logId = await this.metricsService.createLog(userId, 'extract_edital');
+    const startMs = Date.now();
+
     const uploadedFile = await this.openai.files.create({
       file,
       purpose: 'user_data',
     });
 
-    const logId = await this.metricsService.createLog(userId, 'extract_edital');
-    const startMs = Date.now();
-
+    let metricsFinalized = false;
     try {
       const roleInstruction = role
         ? `O usuário busca o cargo: "${role}". Extraia dados EXCLUSIVAMENTE para este cargo. Ignore todos os outros cargos presentes no edital.`
@@ -128,7 +129,8 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
       const outputTokens = response.usage?.output_tokens ?? 0;
 
       void this.metricsService.recordStep(logId, 'extract', { inputTokens, outputTokens }, durationMs);
-      void this.metricsService.finalize(logId, durationMs);
+      await this.metricsService.finalize(logId, durationMs);
+      metricsFinalized = true;
 
       const raw = response.output_text?.trim() ?? '';
       const text = raw
@@ -144,6 +146,11 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
       }
 
       return this.validateExtracted(parsed);
+    } catch (err) {
+      if (!metricsFinalized) {
+        await this.metricsService.finalize(logId, Date.now() - startMs);
+      }
+      throw err;
     } finally {
       await this.openai.files.delete(uploadedFile.id).catch(() => {
         // Cleanup failure is non-fatal
