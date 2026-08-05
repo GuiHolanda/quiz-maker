@@ -12,7 +12,7 @@ export default function LgpdPage() {
     <LegalPageShell title="Conformidade LGPD" lastUpdated="5 de agosto de 2026">
       <p>
         A CertifiqueAI trata dados pessoais em conformidade com a{' '}
-        <strong>Lei Geral de Proteção de Dados (Lei nº 13.709/2018 — LGPD)</strong>. Esta página detalha seus
+        <strong>Lei Geral de Proteção de Dados (Lei nº 13.709/2018, LGPD)</strong>. Esta página detalha seus
         direitos como titular de dados e como exercê-los.
       </p>
 

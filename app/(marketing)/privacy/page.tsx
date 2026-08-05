@@ -13,7 +13,7 @@ export default function PrivacyPage() {
       <p>
         A CertifiqueAI (<strong>certifiqueai.com</strong>) é uma plataforma de preparação para certificações e
         concursos públicos. Esta Política de Privacidade explica como coletamos, usamos, compartilhamos e protegemos
-        seus dados pessoais, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018 — LGPD).
+        seus dados pessoais, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, LGPD).
       </p>
 
       <h2>1. Dados que coletamos</h2>
@@ -32,7 +32,7 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong>Dados técnicos:</strong> endereço IP, tipo de navegador, sistema operacional, páginas acessadas e
-          data/hora de acesso — coletados automaticamente pelos servidores.
+          data/hora de acesso, coletados automaticamente pelos servidores.
         </li>
         <li>
           <strong>Preferências de sessão:</strong> idioma escolhido e estado da interface, armazenados no
