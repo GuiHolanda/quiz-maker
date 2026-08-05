@@ -1,10 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { Chip } from '@heroui/chip';
-import { Button } from '@heroui/button';
-import { Badge } from '@heroui/badge';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faClipboardList,
@@ -12,9 +9,6 @@ import {
   faCheckCircle,
   faFloppyDisk,
   faHistory,
-  faSliders,
-  faArrowDownWideShort,
-  faArrowUpWideShort,
 } from '@fortawesome/free-solid-svg-icons';
 
 import type {
@@ -30,7 +24,7 @@ import { RelativeDate } from '@/shared/components/ui/RelativeDate';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
-import { buttonStyles } from '@/config/constants/buttonStyles';
+import { CollapsibleFilterPanel } from '@/shared/components/ui/CollapsibleFilterPanel';
 import { GenerationHistoryFiltersBar, hasActiveHistoryFilters } from './GenerationHistoryFiltersBar';
 
 const LIMIT = 10;
@@ -98,30 +92,27 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
     <section aria-labelledby="history-heading" className="mt-4">
       {renderSectionHeader()}
 
-      <AnimatePresence initial={false}>
-        {isFiltersOpen && (
-          <motion.div
-            key="filters-panel"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: 'easeInOut' }}
-            className="overflow-hidden mb-3"
-          >
-            <GenerationHistoryFiltersBar
-              filters={filters}
-              filterOptions={filterOptions}
-              onFilterChange={handleFilterChange}
-              onClear={handleClearFilters}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <CollapsibleFilterPanel
+        hasActiveFilters={hasActiveFilters}
+        isOpen={isFiltersOpen}
+        sort={filters.sort}
+        sortAscLabel={t('generate.historySortOldest')}
+        sortDescLabel={t('generate.historySortNewest')}
+        onToggle={() => setIsFiltersOpen((prev) => !prev)}
+        onToggleSort={toggleSort}
+      >
+        <GenerationHistoryFiltersBar
+          filterOptions={filterOptions}
+          filters={filters}
+          onClear={handleClearFilters}
+          onFilterChange={handleFilterChange}
+        />
+      </CollapsibleFilterPanel>
 
       <div
         aria-live="polite"
         aria-atomic="false"
-        className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4"
+        className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4 mt-4"
       >
         {isLoading && <SkeletonListLoader count={5} />}
 
@@ -151,31 +142,6 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
             {t('generate.historySection')}
           </h2>
           <p className="text-sm text-default-500 mt-0.5">{t('generate.historySectionSubtitle')}</p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Button
-            isIconOnly
-            aria-label={filters.sort === 'desc' ? t('generate.historySortNewest') : t('generate.historySortOldest')}
-            className={buttonStyles.flat}
-            size="sm"
-            onPress={toggleSort}
-          >
-            <FontAwesomeIcon
-              className="w-3.5 h-3.5"
-              icon={filters.sort === 'desc' ? faArrowDownWideShort : faArrowUpWideShort}
-            />
-          </Button>
-          <Badge color="danger" content="" isInvisible={!hasActiveFilters} size="sm" shape="circle">
-            <Button
-              aria-label={t('generate.historyFilters')}
-              className={buttonStyles.flat}
-              size="sm"
-              startContent={<FontAwesomeIcon className="w-3.5 h-3.5" icon={faSliders} />}
-              onPress={() => setIsFiltersOpen((prev) => !prev)}
-            >
-              {t('generate.historyFilters')}
-            </Button>
-          </Badge>
         </div>
       </div>
     );

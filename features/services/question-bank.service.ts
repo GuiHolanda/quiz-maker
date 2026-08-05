@@ -13,6 +13,7 @@ export interface UnifiedQuestion {
     explanations: Record<string, string>;
   } | null;
   createdAt: string;
+  correctCount: number;
 }
 
 export interface QuestionBankParams {
@@ -24,6 +25,7 @@ export interface QuestionBankParams {
   difficulty?: string[];
   hasAnswer?: boolean;
   hasExplanation?: boolean;
+  sort?: 'asc' | 'desc';
   page: number;
   pageSize: number;
 }
@@ -46,6 +48,7 @@ export class QuestionBankService {
       difficulty,
       hasAnswer,
       hasExplanation,
+      sort = 'desc',
       page,
       pageSize,
     } = params;
@@ -62,7 +65,7 @@ export class QuestionBankService {
 
     const rows = await prisma.examQuestion.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: sort },
       include: { options: true, answer: { include: { explanations: true } }, exam: { select: { type: true } } },
     });
 
@@ -100,6 +103,7 @@ export class QuestionBankService {
             }
           : null,
         createdAt: q.createdAt.toISOString(),
+        correctCount: q.correctCount,
       };
     });
 

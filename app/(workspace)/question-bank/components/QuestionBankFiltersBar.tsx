@@ -20,6 +20,7 @@ export interface QuestionBankFilters {
   readonly difficulty: string[];
   readonly hasAnswer: '' | 'true' | 'false';
   readonly hasExplanation: '' | 'true' | 'false';
+  readonly sort: 'asc' | 'desc';
 }
 
 export const EMPTY_FILTERS: QuestionBankFilters = {
@@ -30,6 +31,7 @@ export const EMPTY_FILTERS: QuestionBankFilters = {
   difficulty: [],
   hasAnswer: '',
   hasExplanation: '',
+  sort: 'desc',
 };
 
 export function hasActiveFilters(filters: QuestionBankFilters): boolean {
@@ -43,7 +45,6 @@ export function hasActiveFilters(filters: QuestionBankFilters): boolean {
     filters.hasExplanation !== ''
   );
 }
-
 interface QuestionBankFiltersBarProps {
   readonly filters: QuestionBankFilters;
   readonly onFilterChange: <K extends keyof QuestionBankFilters>(key: K, value: QuestionBankFilters[K]) => void;
