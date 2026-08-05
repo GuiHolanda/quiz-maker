@@ -45,7 +45,7 @@ export function UserDropdown() {
           <button className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-content2 transition-colors duration-200 cursor-pointer">
             <div className="flex flex-col items-start">
               <span className="text-sm font-semibold text-foreground leading-tight">{name}</span>
-              {planLabel && <span className="text-xs text-default-400 leading-tight">{planLabel}</span>}
+              {planLabel && <span className="text-xs text-default-400 leading-tight font-semibold">{planLabel}</span>}
             </div>
           </button>
         </DropdownTrigger>

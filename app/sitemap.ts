@@ -6,5 +6,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: 'https://www.certifiqueai.com/pricing', lastModified: new Date(), priority: 0.8 },
     { url: 'https://www.certifiqueai.com/register', lastModified: new Date(), priority: 0.7 },
     { url: 'https://www.certifiqueai.com/login', lastModified: new Date(), priority: 0.5 },
+    { url: 'https://www.certifiqueai.com/privacy', lastModified: new Date(), priority: 0.3 },
+    { url: 'https://www.certifiqueai.com/terms', lastModified: new Date(), priority: 0.3 },
+    { url: 'https://www.certifiqueai.com/lgpd', lastModified: new Date(), priority: 0.3 },
+    { url: 'https://www.certifiqueai.com/security', lastModified: new Date(), priority: 0.3 },
   ];
 }

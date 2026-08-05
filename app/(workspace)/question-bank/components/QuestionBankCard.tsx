@@ -4,13 +4,7 @@ import { useId, useState } from 'react';
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faTrash,
-  faCheck,
-  faTriangleExclamation,
-  faGraduationCap,
-  faClipboardList,
-} from '@fortawesome/free-solid-svg-icons';
+import { faTrash, faCheck, faGraduationCap, faClipboardList } from '@fortawesome/free-solid-svg-icons';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -41,7 +35,10 @@ export function QuestionBankCard({ question, onDeleteRequest }: QuestionBankCard
   const explanations = question.answer?.explanations ?? {};
 
   return (
-    <div data-testid="question-bank-card" className="bg-content1 border border-default-200 rounded-xl overflow-hidden">
+    <div
+      data-testid="question-bank-card"
+      className="bg-content1 border border-default-200 rounded-xl overflow-hidden mb-4"
+    >
       {renderHeader()}
       {renderQuestionText()}
       {renderOptions()}
@@ -68,7 +65,7 @@ export function QuestionBankCard({ question, onDeleteRequest }: QuestionBankCard
               <span aria-hidden="true" className="text-default-300 text-xs shrink-0">
                 ·
               </span>
-              <span className="text-xs text-default-500 truncate">{question.topic}</span>
+              <span className="text-xs text-default-500 truncate font-semibold">{question.topic}</span>
             </>
           )}
         </div>
@@ -89,8 +86,11 @@ export function QuestionBankCard({ question, onDeleteRequest }: QuestionBankCard
 
   function renderQuestionText() {
     return (
-      <div className="px-5 pt-4 pb-3">
-        <p className="text-sm font-semibold text-foreground leading-relaxed">{question.text}</p>
+      <div className="px-5 pt-4 pb-4 mb-2">
+        <p className="text-sm text-foreground leading-relaxed">{question.text}</p>
+        <p className="text-xs text-default-500 font-semibold leading-relaxed mt-1">
+          Alternativas corretas: {question.correctCount}
+        </p>
       </div>
     );
   }
@@ -113,7 +113,7 @@ export function QuestionBankCard({ question, onDeleteRequest }: QuestionBankCard
         className={
           isCorrect
             ? 'flex gap-3 items-start p-3 rounded-lg border border-success-500/60 bg-success-100 dark:bg-success-500/15 dark:border-success-500/40'
-            : 'flex gap-3 items-start p-3 rounded-lg border border-default-200'
+            : 'flex gap-3 items-start rounded-lg'
         }
       >
         <span
@@ -133,42 +133,30 @@ export function QuestionBankCard({ question, onDeleteRequest }: QuestionBankCard
             icon={faCheck}
           />
         )}
-        <span className="text-sm text-foreground leading-relaxed">{text}</span>
+        <span className="text-xs font-semibold text-default-500 leading-relaxed">{text}</span>
       </li>
     );
   }
 
   function renderFooter() {
     return (
-      <div className="px-5 pb-4 flex items-center gap-2 flex-wrap border-t border-default-100 pt-3">
-        <Chip className="capitalize" color={difficultyColor(question.difficulty)} size="sm" variant="flat">
-          {question.difficulty}
+      <div className="px-5 pb-4 flex items-center gap-2 flex-wrap border-t border-default-100 pt-4">
+        <Chip
+          className="capitalize font-semibold"
+          color={difficultyColor(question.difficulty)}
+          size="sm"
+          variant="bordered"
+        >
+          <span className="font-bold">{question.difficulty}</span>
         </Chip>
-        <Chip color={hasAnswer ? 'success' : 'warning'} size="sm" variant="flat">
-          {hasAnswer ? t('browse.hasAnswer') : t('browse.noAnswer')}
+        <Chip color={hasAnswer ? 'success' : 'default'} size="sm" variant="flat">
+          <span className="font-semibold">{hasAnswer ? t('browse.hasAnswer') : t('browse.noAnswer')}</span>
         </Chip>
         {hasExplanations && (
           <Chip color="secondary" size="sm" variant="flat">
             {t('questionBank.hasExplanation')}
           </Chip>
         )}
-        {!hasAnswer && renderNoAnswerNote()}
-      </div>
-    );
-  }
-
-  function renderNoAnswerNote() {
-    return (
-      <div
-        role="status"
-        className="w-full mt-2 flex items-start gap-2 rounded-lg border border-warning-300 bg-warning-100 dark:bg-warning-500/15 dark:border-warning-500/40 p-3"
-      >
-        <FontAwesomeIcon
-          aria-hidden="true"
-          className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-warning-600 dark:text-warning-300"
-          icon={faTriangleExclamation}
-        />
-        <span className="text-xs text-foreground leading-relaxed">{t('browse.noAnswerBanner')}</span>
       </div>
     );
   }

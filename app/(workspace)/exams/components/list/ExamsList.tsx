@@ -118,6 +118,7 @@ export function ExamsList({ type }: ExamsListProps) {
         const result = updated as EditExamModalCertResult;
         updateExam(id, {
           name: result.name,
+          key: result.key,
           provider: result.provider,
           totalQuestions: result.totalQuestions,
           examDurationMinutes: result.examDurationMinutes,
@@ -127,6 +128,7 @@ export function ExamsList({ type }: ExamsListProps) {
         const result = updated as EditExamModalPublicExamResult;
         updateExam(id, {
           name: result.name,
+          key: result.key,
           role: result.role,
           year: result.year,
           examBoard: result.examBoard,

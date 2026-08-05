@@ -5,6 +5,7 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
+import { Checkbox } from '@heroui/checkbox';
 import { Divider } from '@heroui/divider';
 import { Link } from '@heroui/link';
 import NextLink from 'next/link';
@@ -23,11 +24,16 @@ export function RegisterForm() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [consentChecked, setConsentChecked] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!consentChecked) {
+      setError(t('register.consentRequired'));
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -116,6 +122,22 @@ export function RegisterForm() {
             <p className="text-danger text-xs">{error}</p>
           </div>
         )}
+
+        <Checkbox
+          isSelected={consentChecked}
+          size="sm"
+          classNames={{ label: 'text-xs text-default-500' }}
+          onValueChange={setConsentChecked}
+        >
+          {t('register.consentLabel')}{' '}
+          <NextLink className="text-primary hover:underline font-medium" href="/terms" target="_blank">
+            {t('register.consentTerms')}
+          </NextLink>{' '}
+          {t('register.consentAnd')}{' '}
+          <NextLink className="text-primary hover:underline font-medium" href="/privacy" target="_blank">
+            {t('register.consentPrivacy')}
+          </NextLink>
+        </Checkbox>
 
         <Button
           fullWidth

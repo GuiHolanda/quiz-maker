@@ -49,6 +49,9 @@ export const TID = {
   questionBankDifficultyFilter: 'question-bank-difficulty-filter',
   questionBankDeleteBtn: 'question-bank-delete-btn',
 
+  // Collapsible filter panel
+  filterPanelToggle: 'filter-panel-toggle',
+
   // Shared empty state
   emptyState: 'empty-state',
 

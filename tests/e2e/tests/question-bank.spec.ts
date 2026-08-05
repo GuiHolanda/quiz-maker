@@ -48,6 +48,9 @@ test.describe('question bank', () => {
     await page.goto('/question-bank');
     await expect(page.locator(tid(TID.questionBankCard)).filter({ hasText: BANK_Q1 })).toBeVisible();
 
+    // open filter panel before searching
+    await page.locator(tid(TID.filterPanelToggle)).click();
+
     // search narrows to one card
     await page.locator(tid(TID.questionBankSearch)).fill('BANK_Q1');
     // wait for debounce + network
@@ -61,8 +64,31 @@ test.describe('question bank', () => {
   });
 
   test('search with no match shows the empty state', async ({ authedPage: page }) => {
+    // Seed one question so the filter panel renders (it only shows when questions exist).
+    const res = await page.request.post('/api/exam/save-questions', {
+      data: {
+        type: 'certification',
+        questions: [
+          {
+            examName: E2E_CERT_LABEL,
+            sectionName: E2E_CERT_TOPIC,
+            text: 'BANK_SEARCH: seed for empty-state test',
+            topic: E2E_CERT_TOPIC,
+            difficulty: 'easy',
+            correctCount: 1,
+            options: { A: 'S3', B: 'EC2', C: 'RDS', D: 'Lambda' },
+          },
+        ],
+      },
+    });
+    expect(res.ok()).toBeTruthy();
+
     await page.goto('/question-bank');
+    await expect(page.locator(tid(TID.filterPanelToggle))).toBeVisible();
+    await page.locator(tid(TID.filterPanelToggle)).click();
     await page.locator(tid(TID.questionBankSearch)).fill('zzz-no-such-question-zzz');
     await expect(page.locator(tid(TID.emptyState))).toBeVisible();
+    // filter panel must remain visible even when search returns zero results
+    await expect(page.locator(tid(TID.filterPanelToggle))).toBeVisible();
   });
 });

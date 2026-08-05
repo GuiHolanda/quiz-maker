@@ -13,6 +13,7 @@ export interface UnifiedQuestion {
     explanations: Record<string, string>;
   } | null;
   createdAt: string;
+  correctCount: number;
 }
 
 export interface QuestionBankParams {
@@ -24,6 +25,7 @@ export interface QuestionBankParams {
   difficulty?: string[];
   hasAnswer?: boolean;
   hasExplanation?: boolean;
+  sort?: 'asc' | 'desc';
   page: number;
   pageSize: number;
 }
@@ -46,13 +48,23 @@ export class QuestionBankService {
       difficulty,
       hasAnswer,
       hasExplanation,
+      sort = 'desc',
       page,
       pageSize,
     } = params;
     const skip = (page - 1) * pageSize;
 
+    const isSQLite = (process.env.DATABASE_URL ?? '').startsWith('file:');
     const where: Record<string, unknown> = { userId };
-    if (search) where['text'] = { contains: search };
+    if (search) {
+      const textFilter = isSQLite ? { contains: search } : { contains: search, mode: 'insensitive' };
+      where['OR'] = [
+        { text: textFilter },
+        { examName: textFilter },
+        { sectionName: textFilter },
+        { options: { some: { text: textFilter } } },
+      ];
+    }
     if (source && source.length > 0) where['examName'] = { in: source };
     if (topic && topic.length > 0) where['sectionName'] = { in: topic };
     if (difficulty && difficulty.length > 0) where['difficulty'] = { in: difficulty };
@@ -62,7 +74,7 @@ export class QuestionBankService {
 
     const rows = await prisma.examQuestion.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: sort },
       include: { options: true, answer: { include: { explanations: true } }, exam: { select: { type: true } } },
     });
 
@@ -100,6 +112,7 @@ export class QuestionBankService {
             }
           : null,
         createdAt: q.createdAt.toISOString(),
+        correctCount: q.correctCount,
       };
     });
 

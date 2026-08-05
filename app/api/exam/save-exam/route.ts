@@ -155,6 +155,7 @@ export async function PATCH(request: NextRequest) {
       const {
         examId,
         newName,
+        newKey,
         newRole,
         newYear,
         newProviderName,
@@ -171,6 +172,7 @@ export async function PATCH(request: NextRequest) {
         examId,
         {
           newName: typeof newName === 'string' ? newName : undefined,
+          newKey: newKey === null ? null : typeof newKey === 'string' ? newKey : undefined,
           newRole: newRole === null ? null : typeof newRole === 'string' ? newRole : undefined,
           newYear: newYear === null ? null : typeof newYear === 'number' ? newYear : undefined,
           newProviderName:

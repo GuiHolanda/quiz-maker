@@ -51,6 +51,7 @@ export function ExamDetailPanel({
           {referenceEntity?.name && (
             <span className="text-xs text-default-400 shrink-0">{referenceEntity.name}</span>
           )}
+          {exam.key && <span className="text-xs text-default-400 font-medium shrink-0">{exam.key}</span>}
           {config.hasYearField && exam.year != null && (
             <span className="flex items-center gap-1 text-xs text-default-400 shrink-0">
               <FontAwesomeIcon className="text-[9px]" icon={faCalendar} />

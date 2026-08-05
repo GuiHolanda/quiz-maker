@@ -9,6 +9,7 @@ import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
 import { ItemsPerPageSelect } from '@/shared/components/ui/ItemsPerPageSelect';
+import { CollapsibleFilterPanel } from '@/shared/components/ui/CollapsibleFilterPanel';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { getQuestionBank, deleteBrowseQuestion } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
@@ -32,6 +33,7 @@ export default function QuestionBankPage() {
   const [result, setResult] = useState<QuestionBankResponse | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   // Debounce search: defer only the search string so dropdowns remain instant
   const deferredSearch = useDeferredValue(filters.search);
@@ -61,6 +63,7 @@ export default function QuestionBankPage() {
               : currentFilters.hasExplanation === 'false'
                 ? false
                 : undefined,
+          sort: currentFilters.sort,
           page: currentPage,
           pageSize: currentPageSize,
         });
@@ -91,6 +94,7 @@ export default function QuestionBankPage() {
     filters.difficulty.join(','),
     filters.hasAnswer,
     filters.hasExplanation,
+    filters.sort,
     page,
     pageSize,
   ]);
@@ -102,7 +106,12 @@ export default function QuestionBankPage() {
 
   function handleClearFilters() {
     setPage(1);
-    setFilters(EMPTY_FILTERS);
+    setFilters((prev) => ({ ...EMPTY_FILTERS, sort: prev.sort }));
+  }
+
+  function toggleSort() {
+    setPage(1);
+    setFilters((prev) => ({ ...prev, sort: prev.sort === 'desc' ? 'asc' : 'desc' }));
   }
 
   function handlePageSizeChange(e: React.ChangeEvent<HTMLSelectElement>) {
@@ -132,6 +141,7 @@ export default function QuestionBankPage() {
   const totalPages = result ? Math.max(1, Math.ceil(result.total / pageSize)) : 1;
   const questions: UnifiedQuestion[] = result?.questions ?? [];
   const activeFilters = hasActiveFilters(filters);
+  const shouldShowFilterPanel = !loadError && (questions.length > 0 || activeFilters);
 
   return (
     <PageHeader
@@ -145,12 +155,29 @@ export default function QuestionBankPage() {
       title={t('questionBank.title')}
     >
       <div className="flex flex-col gap-4">
-        <QuestionBankFiltersBar filters={filters} onClear={handleClearFilters} onFilterChange={handleFilterChange} />
-
-        {renderContent()}
+        <div className="flex flex-col">
+          {shouldShowFilterPanel && (
+            <CollapsibleFilterPanel
+              hasActiveFilters={activeFilters}
+              isOpen={isFiltersOpen}
+              sort={filters.sort}
+              sortAscLabel={t('questionBank.sortOldest')}
+              sortDescLabel={t('questionBank.sortNewest')}
+              onToggle={() => setIsFiltersOpen((prev) => !prev)}
+              onToggleSort={toggleSort}
+            >
+              <QuestionBankFiltersBar
+                filters={filters}
+                onClear={handleClearFilters}
+                onFilterChange={handleFilterChange}
+              />
+            </CollapsibleFilterPanel>
+          )}
+          {renderContent()}
+        </div>
 
         {!isLoading && questions.length > 0 && (
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <div className="flex flex-wrap items-center justify-center gap-3">
             <PaginationControls currentPage={page} totalPages={totalPages} onChange={(p) => setPage(p)} />
             <ItemsPerPageSelect isDisabled={isLoading} value={pageSize} onChange={handlePageSizeChange} />
           </div>
@@ -204,8 +231,8 @@ export default function QuestionBankPage() {
     }
 
     return (
-      <div className="flex flex-col gap-4">
-        <p className="text-xs text-default-400">{t('questionBank.totalCount', { count: result?.total ?? 0 })}</p>
+      <div className="flex flex-col">
+        <p className="text-xs text-default-400 mb-2">{t('questionBank.totalCount', { count: result?.total ?? 0 })}</p>
         {questions.map((q) => (
           <QuestionBankCard
             key={`${q.type}-${q.id}`}

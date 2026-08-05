@@ -35,6 +35,8 @@ export async function GET(request: NextRequest) {
   const hasExplanationRaw = searchParams.get('hasExplanation');
   const page = parseInt(searchParams.get('page') ?? '1', 10);
   const pageSize = parseInt(searchParams.get('pageSize') ?? '10', 10);
+  const sortRaw = searchParams.get('sort');
+  const sort: 'asc' | 'desc' = sortRaw === 'asc' ? 'asc' : 'desc';
 
   if (!['all', 'certification', 'public_exam'].includes(type)) {
     return NextResponse.json({ message: 'Invalid type filter' }, { status: 400 });
@@ -59,6 +61,7 @@ export async function GET(request: NextRequest) {
       difficulty,
       hasAnswer,
       hasExplanation,
+      sort,
       page,
       pageSize,
     });
