@@ -351,6 +351,21 @@ export interface UserAdminRow {
   totalQuestionsGeneratedAllTime: number;
 }
 
+export interface AdminStepStats {
+  inputTokens: number;
+  outputTokens: number;
+  count: number;
+  avgDurationMs: number;
+}
+
+export interface AdminActionStats {
+  inputTokens: number;
+  outputTokens: number;
+  count: number;
+  avgDurationMs: number;
+  steps: Record<string, AdminStepStats>;
+}
+
 export interface AdminOverviewStats {
   totalUsers: number;
   byPlan: Record<UserPlan, number>;
@@ -361,6 +376,7 @@ export interface AdminOverviewStats {
   totalOutputTokens: number;
   avgTokensPerQuestion: number;
   tokensByPlan: Record<UserPlan, { inputTokens: number; outputTokens: number; questionsGenerated: number }>;
+  tokensByAction: Record<string, AdminActionStats>;
 }
 
 export interface AdminAuditEntry {

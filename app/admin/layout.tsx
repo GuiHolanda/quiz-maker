@@ -25,22 +25,13 @@ export default async function AdminLayout({ children }: { readonly children: Rea
   if (dbUser?.plan !== 'admin') redirect('/');
 
   return (
-    <div className="flex min-h-screen" style={{ background: '#070e20' }}>
-      <aside
-        className="w-56 shrink-0 flex flex-col"
-        style={{ background: '#0f1b3d', borderRight: '1px solid rgba(30,58,95,0.6)' }}
-      >
-        <div className="py-5 px-5 flex items-center gap-2.5" style={{ borderBottom: '1px solid rgba(30,58,95,0.6)' }}>
-          <span
-            className="rounded p-1.5"
-            style={{
-              background: 'rgba(0,212,255,0.1)',
-              border: '1px solid rgba(0,212,255,0.15)',
-            }}
-          >
-            <FontAwesomeIcon icon={faGear} className="w-3.5 h-3.5" style={{ color: '#00d4ff' }} />
+    <div className="flex min-h-screen bg-background2">
+      <aside className="w-56 shrink-0 flex flex-col bg-background2 border-r border-divider">
+        <div className="py-5 px-5 flex items-center gap-2.5 border-b border-divider">
+          <span className="rounded-lg p-1.5 bg-primary/10 border border-primary/20">
+            <FontAwesomeIcon icon={faGear} className="w-3.5 h-3.5 text-primary" />
           </span>
-          <span className="font-sora font-bold text-white text-sm tracking-tight">Admin</span>
+          <span className="font-semibold text-foreground text-sm">Admin</span>
         </div>
         <nav className="flex flex-col gap-0.5 p-2 flex-1">
           <AdminNavLink href="/admin/overview" label="Visão Geral" />
@@ -48,18 +39,17 @@ export default async function AdminLayout({ children }: { readonly children: Rea
           <AdminNavLink href="/admin/analytics" label="Analytics" />
           <AdminNavLink href="/admin/audit-log" label="Audit Log" />
         </nav>
-        <div className="p-4" style={{ borderTop: '1px solid rgba(30,58,95,0.6)' }}>
+        <div className="p-4 border-t border-divider">
           <Link
             href="/"
-            className="flex items-center gap-1.5 font-mono text-xs transition-colors duration-200 hover:text-white"
-            style={{ color: '#6a9fc8' }}
+            className="flex items-center gap-1.5 text-xs text-default-400 hover:text-foreground transition-colors duration-200"
           >
             <FontAwesomeIcon icon={faArrowLeft} className="w-3 h-3 shrink-0" />
             Voltar ao app
           </Link>
         </div>
       </aside>
-      <main className="flex-1 p-8 overflow-auto" style={{ background: '#070e20' }}>
+      <main className="flex-1 p-8 overflow-auto bg-background">
         {children}
       </main>
     </div>
