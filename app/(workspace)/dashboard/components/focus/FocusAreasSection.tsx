@@ -31,6 +31,12 @@ export function FocusAreasSection({ domainBreakdown }: FocusAreasSectionProps) {
       <div className="p-5 space-y-4 flex-1">
         {focusAreas === null ? (
           <SkeletonListLoader count={3} height="h-28" />
+        ) : domainBreakdown!.length === 0 ? (
+          <EmptyState
+            title={t('dashboard.noFocusAreasYet')}
+            description={t('dashboard.noFocusAreasYetDescription')}
+            action={{ label: t('dashboard.mockExam'), href: '/simulados' }}
+          />
         ) : focusAreas.length === 0 ? (
           <EmptyState
             title={t('dashboard.noFocusAreas')}
