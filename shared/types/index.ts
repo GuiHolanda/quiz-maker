@@ -255,6 +255,20 @@ export interface ExamQuestionParams {
   num_questions: string;
 }
 
+export type SearchResultType = 'question' | 'certification' | 'publicExam' | 'topic' | 'simulado';
+
+export interface SearchResultItem {
+  readonly id: string;
+  readonly label: string;
+  readonly subtitle?: string;
+  readonly href: string;
+  readonly type: SearchResultType;
+}
+
+export interface SearchResponse {
+  readonly results: SearchResultItem[];
+}
+
 export type ExamFormErrors = {
   examName?: string;
   section?: string;

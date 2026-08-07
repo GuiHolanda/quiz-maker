@@ -93,6 +93,8 @@ export const QUESTION_BANK_URL = '/question-bank';
 export const QUESTION_BANK_TOPICS_URL = '/question-bank/topics';
 export const QUESTION_BANK_SOURCES_URL = '/question-bank/sources';
 
+export const SEARCH_URL = '/search';
+
 export const DASHBOARD_STATS_URL = '/dashboard/stats';
 
 export const AI_CHAT_ALLOWED_PLANS: string[] = ['pro_ai', 'tester', 'admin'];
