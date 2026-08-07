@@ -26,6 +26,7 @@ import {
   USAGE_HISTORY_FILTERS_URL,
   GENERATION_JOB_SAVE_URL,
   DASHBOARD_STATS_URL,
+  SEARCH_URL,
 } from '@/config/constants';
 import {
   AIExamQuestion,
@@ -59,6 +60,7 @@ import {
   GenerationHistoryFilters,
   GenerationHistoryFilterOptions,
   DashboardStats,
+  SearchResponse,
 } from '@/shared/types';
 import api from '@/lib/bff.api';
 
@@ -425,5 +427,12 @@ export const getGenerationHistoryFilters = (): Promise<GenerationHistoryFilterOp
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   const { data } = await api.get<DashboardStats>(DASHBOARD_STATS_URL);
+  return data;
+}
+
+// — Search —
+
+export async function globalSearch(q: string): Promise<SearchResponse> {
+  const { data } = await api.get<SearchResponse>(SEARCH_URL, { params: { q } });
   return data;
 }
