@@ -11,7 +11,6 @@ export function useGlobalSearch() {
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const abortRef = useRef<AbortController | null>(null);
 
   const deferredQuery = useDeferredValue(query);
 
@@ -36,8 +35,6 @@ export function useGlobalSearch() {
       return;
     }
 
-    abortRef.current?.abort();
-    abortRef.current = new AbortController();
     setIsLoading(true);
 
     globalSearch(deferredQuery)
@@ -46,7 +43,6 @@ export function useGlobalSearch() {
       .finally(() => setIsLoading(false));
   }, [deferredQuery]);
 
-  // Fechar ao clicar fora
   useEffect(() => {
     function handleMouseDown(e: MouseEvent) {
       const target = e.target as Node;
@@ -58,7 +54,6 @@ export function useGlobalSearch() {
     return () => document.removeEventListener('mousedown', handleMouseDown);
   }, [close]);
 
-  // ⌘K / Ctrl+K foca o input
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
