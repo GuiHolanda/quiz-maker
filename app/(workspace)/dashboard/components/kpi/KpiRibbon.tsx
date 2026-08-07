@@ -24,7 +24,7 @@ export function KpiRibbon({ stats, usage }: KpiRibbonProps) {
   const isLoading = stats === null;
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-testid="dashboard-kpi-ribbon">
       {/* Slot 1: Questões salvas */}
       <KpiCard
         icon={

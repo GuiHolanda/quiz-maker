@@ -19,7 +19,7 @@ export function FocusAreasSection({ domainBreakdown }: FocusAreasSectionProps) {
   const focusAreas = domainBreakdown !== null ? domainBreakdown.filter((d) => d.avgScore < 70) : null;
 
   return (
-    <div className="lg:col-span-3 bg-content1 border border-default-200 rounded-xl flex flex-col">
+    <div className="lg:col-span-3 bg-content1 border border-default-200 rounded-xl flex flex-col" data-testid="dashboard-focus-areas">
       <div className="px-5 pt-5 pb-3 border-b border-default-200">
         <div className="flex items-center gap-2 mb-0.5">
           <FontAwesomeIcon className="text-warning text-xs" icon={faTriangleExclamation} />

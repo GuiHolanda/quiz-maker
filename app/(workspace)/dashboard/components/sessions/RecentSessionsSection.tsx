@@ -15,7 +15,7 @@ export function RecentSessionsSection({ sessions }: RecentSessionsSectionProps) 
   const { t } = useTranslation();
 
   return (
-    <div className="bg-content1 border border-default-200 rounded-xl flex flex-col flex-1">
+    <div className="bg-content1 border border-default-200 rounded-xl flex flex-col flex-1" data-testid="dashboard-recent-sessions">
       <div className="px-5 pt-5 pb-3">
         <p className="text-xs font-semibold text-primary">{t('dashboard.recentSessions')}</p>
         <p className="text-[11px] text-default-400 mt-0.5">{t('dashboard.recentSessionsSubtitle')}</p>

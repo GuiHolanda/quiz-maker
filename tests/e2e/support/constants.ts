@@ -9,3 +9,5 @@ export const E2E_CERT_TOPIC = 'E2E Topic';
 export const E2E_PUBLIC_EXAM_NAME = 'Concurso E2E 2026';
 export const E2E_EXAM_BOARD = 'BANCA_E2E';
 export const E2E_SUBJECT = 'Direito E2E';
+
+export const E2E_MOCK_EXAM_NAME = 'E2E Simulado';

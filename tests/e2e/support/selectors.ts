@@ -52,6 +52,14 @@ export const TID = {
   // Collapsible filter panel
   filterPanelToggle: 'filter-panel-toggle',
 
+  // Dashboard (/dashboard)
+  dashboardRoot: 'dashboard-root',
+  dashboardKpiRibbon: 'dashboard-kpi-ribbon',
+  dashboardFocusAreas: 'dashboard-focus-areas',
+  dashboardRecentSessions: 'dashboard-recent-sessions',
+  dashboardSessionRow: 'dashboard-session-row',
+  dashboardDomainBreakdown: 'dashboard-domain-breakdown',
+
   // Shared empty state
   emptyState: 'empty-state',
 

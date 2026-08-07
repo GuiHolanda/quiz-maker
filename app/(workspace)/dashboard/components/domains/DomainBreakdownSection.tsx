@@ -15,7 +15,7 @@ export function DomainBreakdownSection({ domainBreakdown }: DomainBreakdownSecti
   const { t } = useTranslation();
 
   return (
-    <section className="bg-content1 border border-default-200 rounded-xl">
+    <section className="bg-content1 border border-default-200 rounded-xl" data-testid="dashboard-domain-breakdown">
       <div className="px-5 pt-5 pb-3 border-b border-default-200">
         <p className="text-xs font-semibold text-primary">{t('dashboard.domainBreakdown')}</p>
         <p className="text-[11px] text-default-400 mt-0.5">{t('dashboard.domainBreakdownSubtitle')}</p>

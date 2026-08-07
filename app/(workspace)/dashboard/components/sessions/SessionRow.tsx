@@ -21,7 +21,7 @@ export function SessionRow({ session }: SessionRowProps) {
   const durationMin = Math.round(session.durationMs / 60000);
 
   return (
-    <div className="flex items-center gap-3 px-5 py-3 hover:bg-content2 transition-colors">
+    <div className="flex items-center gap-3 px-5 py-3 hover:bg-content2 transition-colors" data-testid="dashboard-session-row">
       <div className="w-8 h-8 rounded-lg bg-content2 border border-default-200 flex items-center justify-center shrink-0">
         <FontAwesomeIcon className="text-primary text-xs" icon={faPlay} />
       </div>
