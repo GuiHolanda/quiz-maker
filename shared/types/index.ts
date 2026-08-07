@@ -175,6 +175,7 @@ export interface UsageStats {
   certificationsUsed: number; // display only
   publicExamsUsed: number; // display only
   periodStartDate: string;
+  hasStripePortalAccess: boolean; // true only if user has a stripeCustomerId (not all paid plans do)
 }
 
 export interface QuotaError {
