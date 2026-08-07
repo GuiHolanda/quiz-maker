@@ -28,7 +28,7 @@ export function KpiCard({ icon, badge, value, label, detail, comingSoon = false 
           badge
         )}
       </div>
-      <p className="font-bold text-foreground text-2xl leading-none mb-1">{comingSoon ? '—' : value}</p>
+      <p className="font-bold text-foreground text-2xl leading-none mb-1">{comingSoon ? '-' : value}</p>
       <p className="text-xs text-default-400">{label}</p>
       <p className="font-mono text-[9px] text-default-400 mt-1">{detail}</p>
     </div>
