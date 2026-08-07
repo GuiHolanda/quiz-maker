@@ -1,11 +1,11 @@
-import type { UserPlan, UserAdminRow, AdminOverviewStats, AdminAuditEntry } from '@/shared/types';
+import type { UserPlan, UserAdminRow, AdminOverviewStats, AdminAuditEntry, AdminActionStats } from '@/shared/types';
 
 import { prisma } from '@/lib/prisma';
 import { PLAN_LIMITS } from '@/config/constants';
 
 export class AdminService {
   async getOverview(): Promise<AdminOverviewStats> {
-    const [allUsers, usageLogs, tokenAgg, allStepsByLog, allCountsByUser] = await Promise.all([
+    const [allUsers, usageLogs, tokenAgg, allStepsByLog, allCountsByUser, actionGroups, stepGroups] = await Promise.all([
       prisma.user.findMany({ select: { plan: true, questionsGeneratedThisPeriod: true, subscriptionStatus: true } }),
       prisma.usageLog.aggregate({ _sum: { count: true }, where: { action: 'generate_questions' } }),
       prisma.usageLogStep.aggregate({ _sum: { inputTokens: true, outputTokens: true } }),
@@ -17,6 +17,19 @@ export class AdminService {
         by: ['userId'],
         _sum: { count: true },
         where: { action: 'generate_questions' },
+      }),
+      // per-action aggregation
+      prisma.usageLog.groupBy({
+        by: ['action'],
+        _sum: { count: true },
+        _avg: { totalDurationMs: true },
+        _count: { id: true },
+      }),
+      // per-action per-step aggregation
+      prisma.usageLogStep.groupBy({
+        by: ['step', 'usageLogId'],
+        _sum: { inputTokens: true, outputTokens: true },
+        _avg: { durationMs: true },
       }),
     ]);
 
@@ -94,6 +107,57 @@ export class AdminService {
       }
     }
 
+    // Build tokensByAction: resolve usageLogId → action, then aggregate steps per (action, step)
+    const stepLogIds = stepGroups.map((s) => s.usageLogId);
+    const stepLogRows = await prisma.usageLog.findMany({
+      where: { id: { in: stepLogIds } },
+      select: { id: true, action: true },
+    });
+    const actionByLogId = new Map(stepLogRows.map((l) => [l.id, l.action]));
+
+    const tokensByAction: Record<string, AdminActionStats> = {};
+
+    for (const actionGroup of actionGroups) {
+      const action = actionGroup.action;
+      tokensByAction[action] = {
+        inputTokens: 0,
+        outputTokens: 0,
+        count: actionGroup._sum.count ?? 0,
+        avgDurationMs: Math.round(actionGroup._avg.totalDurationMs ?? 0),
+        steps: {},
+      };
+    }
+
+    const stepAccum: Record<string, Record<string, { inputTokens: number; outputTokens: number; durationSum: number; durationCount: number }>> = {};
+    for (const row of stepGroups) {
+      const action = actionByLogId.get(row.usageLogId);
+      if (!action) continue;
+      if (!stepAccum[action]) stepAccum[action] = {};
+      if (!stepAccum[action][row.step]) stepAccum[action][row.step] = { inputTokens: 0, outputTokens: 0, durationSum: 0, durationCount: 0 };
+      const acc = stepAccum[action][row.step];
+      acc.inputTokens += row._sum.inputTokens ?? 0;
+      acc.outputTokens += row._sum.outputTokens ?? 0;
+      acc.durationSum += row._avg.durationMs ?? 0;
+      acc.durationCount += 1;
+
+      if (!tokensByAction[action]) {
+        tokensByAction[action] = { inputTokens: 0, outputTokens: 0, count: 0, avgDurationMs: 0, steps: {} };
+      }
+      tokensByAction[action].inputTokens += row._sum.inputTokens ?? 0;
+      tokensByAction[action].outputTokens += row._sum.outputTokens ?? 0;
+    }
+
+    for (const [action, steps] of Object.entries(stepAccum)) {
+      for (const [step, acc] of Object.entries(steps)) {
+        tokensByAction[action].steps[step] = {
+          inputTokens: acc.inputTokens,
+          outputTokens: acc.outputTokens,
+          count: acc.durationCount,
+          avgDurationMs: acc.durationCount > 0 ? Math.round(acc.durationSum / acc.durationCount) : 0,
+        };
+      }
+    }
+
     return {
       totalUsers: allUsers.length,
       byPlan,
@@ -104,6 +168,7 @@ export class AdminService {
       totalOutputTokens,
       avgTokensPerQuestion,
       tokensByPlan,
+      tokensByAction,
     };
   }
 

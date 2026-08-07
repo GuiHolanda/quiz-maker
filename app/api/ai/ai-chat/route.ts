@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null);
     const { messages, language } = aiChatService.validate(body);
-    const stream = await aiChatService.streamChat(messages, language);
+    const stream = await aiChatService.streamChat(session.user.id, messages, language);
 
     return new Response(stream, {
       headers: {

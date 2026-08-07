@@ -1,14 +1,17 @@
 import OpenAI from 'openai';
 
 import { Exam } from '@/shared/types';
+import { MetricsService } from '@/features/services/metrics.service';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
 export class EditalExtractorService {
   private readonly openai: OpenAI;
+  private readonly metricsService: MetricsService;
 
   constructor() {
     this.openai = new OpenAI();
+    this.metricsService = new MetricsService();
   }
 
   validateFile(file: File): void {
@@ -20,12 +23,16 @@ export class EditalExtractorService {
     }
   }
 
-  async extract(file: File, role?: string): Promise<Exam> {
+  async extract(userId: string, file: File, role?: string): Promise<Exam> {
+    const logId = await this.metricsService.createLog(userId, 'extract_edital');
+    const startMs = Date.now();
+
     const uploadedFile = await this.openai.files.create({
       file,
       purpose: 'user_data',
     });
 
+    let metricsFinalized = false;
     try {
       const roleInstruction = role
         ? `O usuário busca o cargo: "${role}". Extraia dados EXCLUSIVAMENTE para este cargo. Ignore todos os outros cargos presentes no edital.`
@@ -117,6 +124,14 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
         ],
       });
 
+      const durationMs = Date.now() - startMs;
+      const inputTokens = response.usage?.input_tokens ?? 0;
+      const outputTokens = response.usage?.output_tokens ?? 0;
+
+      void this.metricsService.recordStep(logId, 'extract', { inputTokens, outputTokens }, durationMs);
+      await this.metricsService.finalize(logId, durationMs);
+      metricsFinalized = true;
+
       const raw = response.output_text?.trim() ?? '';
       const text = raw
         .replace(/^```(?:json)?\s*/i, '')
@@ -131,6 +146,11 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
       }
 
       return this.validateExtracted(parsed);
+    } catch (err) {
+      if (!metricsFinalized) {
+        await this.metricsService.finalize(logId, Date.now() - startMs);
+      }
+      throw err;
     } finally {
       await this.openai.files.delete(uploadedFile.id).catch(() => {
         // Cleanup failure is non-fatal

@@ -9,6 +9,7 @@ import {
   E2E_PUBLIC_EXAM_NAME,
   E2E_EXAM_BOARD,
   E2E_SUBJECT,
+  E2E_MOCK_EXAM_NAME,
 } from './support/constants';
 import { cleanupUserData } from './support/db-cleanup';
 
@@ -118,6 +119,58 @@ async function seedPublicExamData(userId: string) {
   return exam;
 }
 
+// Seeds a completed MockExamAttempt so the dashboard has data to display.
+// Creates a MockExam linked to the cert exam, 3 MockExamQuestions, one finished
+// attempt with answers (2/3 correct → score = 67), and one section config.
+async function seedCompletedMockExamAttempt(userId: string, certExamId: string) {
+  const examQuestions = await prisma.examQuestion.findMany({
+    where: { userId, examName: E2E_CERT_LABEL },
+    include: { answer: true },
+    take: 3,
+  });
+
+  const mockExam = await prisma.mockExam.create({
+    data: {
+      name: E2E_MOCK_EXAM_NAME,
+      examId: certExamId,
+      userId,
+      sections: {
+        create: [{ sectionName: E2E_CERT_TOPIC, questionCount: examQuestions.length }],
+      },
+      questions: {
+        create: examQuestions.map((q, i) => ({
+          examQuestionId: q.id,
+          order: i,
+        })),
+      },
+    },
+    include: { questions: true },
+  });
+
+  const startedAt = new Date('2024-06-01T10:00:00Z');
+  const finishedAt = new Date('2024-06-01T10:30:00Z');
+
+  await prisma.mockExamAttempt.create({
+    data: {
+      mockExamId: mockExam.id,
+      userId,
+      startedAt,
+      finishedAt,
+      score: 67,
+      answers: {
+        create: mockExam.questions.map((mq, i) => ({
+          mockExamQuestionId: mq.id,
+          // Answer the first 2 correctly (matching their correctOptions), last one wrong
+          selectedOptions:
+            i < 2
+              ? (examQuestions[i].answer?.correctOptions as string) ?? JSON.stringify(['A'])
+              : JSON.stringify(['D']),
+        })),
+      },
+    },
+  });
+}
+
 async function globalSetup(config: FullConfig) {
   if (!E2E_USER_EMAIL || !E2E_USER_PASSWORD) {
     throw new Error('E2E_USER_EMAIL and E2E_USER_PASSWORD must be set in .env.test');
@@ -144,8 +197,10 @@ async function globalSetup(config: FullConfig) {
   await cleanupUserData(prisma, user.id);
 
   // Seed cert + questions and exam + questions so simulado creation works without real LLM calls.
-  await seedCertificationData(user.id);
+  const certExam = await seedCertificationData(user.id);
   await seedPublicExamData(user.id);
+  // Seed a completed attempt so the dashboard has real stats to display.
+  await seedCompletedMockExamAttempt(user.id, certExam.id);
 
   await prisma.$disconnect();
 

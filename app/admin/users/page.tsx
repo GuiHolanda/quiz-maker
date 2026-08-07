@@ -11,6 +11,7 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
 import type { UserAdminRow, UserPlan, AdminUsersResponse } from '@/shared/types';
 import { inputProperties } from '@/config/constants/inputStyles';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 import { ACTIVE_MODEL_PRICING_USD, USD_TO_BRL_FALLBACK } from '@/config/constants';
 
 const PLAN_OPTIONS: UserPlan[] = ['free', 'pro', 'pro_ai', 'tester', 'admin'];
@@ -124,8 +125,9 @@ export default function AdminUsersPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-extrabold text-foreground mb-2">Usuários</h1>
-      {data && <p className="text-sm text-default-400 mb-6">{data.total} usuários cadastrados</p>}
+      <h1 className="page-header-title text-foreground mb-2">Usuários</h1>
+      {data && <p className="text-sm text-default-500 mb-6">{data.total} usuários cadastrados</p>}
+      {!data && <p className="text-sm text-default-500 mb-6">Gerenciar planos e quotas</p>}
 
       <div className="flex gap-3 mb-6 flex-wrap">
         <Input
@@ -259,7 +261,7 @@ export default function AdminUsersPage() {
           <Button
             size="sm"
             isLoading={saving[user.id]}
-            className="bg-primary text-primary-foreground text-xs font-semibold rounded-lg hover:opacity-90 h-8 px-4 transition-opacity duration-200"
+            className={buttonStyles.primarySm}
             onPress={() => handleSave(user)}
           >
             Salvar

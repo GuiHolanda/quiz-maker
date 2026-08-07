@@ -163,7 +163,7 @@ export interface ChatMessage {
 
 export type UserPlan = 'free' | 'pro' | 'pro_ai' | 'tester' | 'admin';
 
-export type QuotaAction = 'generate_questions' | 'create_exam';
+export type QuotaAction = 'generate_questions' | 'create_exam' | 'extract_edital' | 'ai_chat';
 
 export interface UsageStats {
   plan: UserPlan;
@@ -351,6 +351,21 @@ export interface UserAdminRow {
   totalQuestionsGeneratedAllTime: number;
 }
 
+export interface AdminStepStats {
+  inputTokens: number;
+  outputTokens: number;
+  count: number;
+  avgDurationMs: number;
+}
+
+export interface AdminActionStats {
+  inputTokens: number;
+  outputTokens: number;
+  count: number;
+  avgDurationMs: number;
+  steps: Record<string, AdminStepStats>;
+}
+
 export interface AdminOverviewStats {
   totalUsers: number;
   byPlan: Record<UserPlan, number>;
@@ -361,6 +376,7 @@ export interface AdminOverviewStats {
   totalOutputTokens: number;
   avgTokensPerQuestion: number;
   tokensByPlan: Record<UserPlan, { inputTokens: number; outputTokens: number; questionsGenerated: number }>;
+  tokensByAction: Record<string, AdminActionStats>;
 }
 
 export interface AdminAuditEntry {
@@ -523,4 +539,32 @@ export const EMPTY_HISTORY_FILTERS: GenerationHistoryFilters = {
 export interface GenerationHistoryFilterOptions {
   sources: string[];
   topics: string[];
+}
+
+export interface DashboardRecentSession {
+  readonly simuladoName: string;
+  readonly examName: string;
+  readonly score: number;
+  readonly totalQuestions: number;
+  readonly durationMs: number;
+  readonly finishedAt: string;
+}
+
+export interface DashboardScoreTrendPoint {
+  readonly score: number;
+  readonly finishedAt: string;
+}
+
+export interface DashboardDomainStat {
+  readonly sectionName: string;
+  readonly avgScore: number;
+  readonly totalAttempts: number;
+}
+
+export interface DashboardStats {
+  readonly totalSimuladosCompleted: number;
+  readonly bestScore: number | null;
+  readonly recentSessions: DashboardRecentSession[];
+  readonly scoreTrend: DashboardScoreTrendPoint[];
+  readonly domainBreakdown: DashboardDomainStat[];
 }
