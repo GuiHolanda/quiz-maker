@@ -5,8 +5,14 @@ describe('SearchService', () => {
   const service = new SearchService(prismaMock as any);
   const userId = 'user-1';
 
+  function mockExams(certRows: any[] = [], pubRows: any[] = []) {
+    prismaMock.exam.findMany
+      .mockResolvedValueOnce(certRows)
+      .mockResolvedValueOnce(pubRows);
+  }
+
   it('retorna array vazio quando não há resultados', async () => {
-    prismaMock.exam.findMany.mockResolvedValue([]);
+    mockExams([], []);
     prismaMock.examTopic.findMany.mockResolvedValue([]);
     prismaMock.examQuestion.findMany.mockResolvedValue([]);
     prismaMock.mockExam.findMany.mockResolvedValue([]);
@@ -16,11 +22,11 @@ describe('SearchService', () => {
     expect(results).toEqual([]);
   });
 
-  it('mapeia certificação com href correto', async () => {
-    prismaMock.exam.findMany.mockResolvedValue([
-      { id: 'e1', name: 'AWS CCP', type: 'certification' } as any,
-      { id: 'e2', name: 'OAB', type: 'public_exam' } as any,
-    ]);
+  it('mapeia certificação e publicExam com href correto', async () => {
+    mockExams(
+      [{ id: 'e1', name: 'AWS CCP', type: 'certification' }],
+      [{ id: 'e2', name: 'OAB', type: 'public_exam' }],
+    );
     prismaMock.examTopic.findMany.mockResolvedValue([]);
     prismaMock.examQuestion.findMany.mockResolvedValue([]);
     prismaMock.mockExam.findMany.mockResolvedValue([]);
@@ -45,7 +51,7 @@ describe('SearchService', () => {
   });
 
   it('mapeia tópico com subtitle do exam pai', async () => {
-    prismaMock.exam.findMany.mockResolvedValue([]);
+    mockExams([], []);
     prismaMock.examTopic.findMany.mockResolvedValue([
       {
         id: 't1',
@@ -69,7 +75,7 @@ describe('SearchService', () => {
 
   it('mapeia questão com label truncado em 10 palavras', async () => {
     const longText = 'uma duas tres quatro cinco seis sete oito nove dez onze doze';
-    prismaMock.exam.findMany.mockResolvedValue([]);
+    mockExams([], []);
     prismaMock.examTopic.findMany.mockResolvedValue([]);
     prismaMock.examQuestion.findMany.mockResolvedValue([
       { id: 1, text: longText } as any,
@@ -84,7 +90,7 @@ describe('SearchService', () => {
   });
 
   it('mapeia simulado com name e subtitle do exam pai', async () => {
-    prismaMock.exam.findMany.mockResolvedValue([]);
+    mockExams([], []);
     prismaMock.examTopic.findMany.mockResolvedValue([]);
     prismaMock.examQuestion.findMany.mockResolvedValue([]);
     prismaMock.mockExam.findMany.mockResolvedValue([
@@ -103,7 +109,7 @@ describe('SearchService', () => {
   });
 
   it('usa fallback "Simulado #id" quando MockExam.name é null', async () => {
-    prismaMock.exam.findMany.mockResolvedValue([]);
+    mockExams([], []);
     prismaMock.examTopic.findMany.mockResolvedValue([]);
     prismaMock.examQuestion.findMany.mockResolvedValue([]);
     prismaMock.mockExam.findMany.mockResolvedValue([

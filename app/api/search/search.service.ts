@@ -13,11 +13,16 @@ export class SearchService {
     const isSQLite = (process.env.DATABASE_URL ?? '').startsWith('file:');
     const contains = isSQLite ? { contains: query } : { contains: query, mode: 'insensitive' as const };
 
-    const [exams, topics, questions, mockExams] = await Promise.all([
+    const [certifications, publicExams, topics, questions, mockExams] = await Promise.all([
       this.prisma.exam.findMany({
-        where: { userId, name: contains },
+        where: { userId, name: contains, type: 'certification' },
         select: { id: true, name: true, type: true },
-        take: limit * 2,
+        take: limit,
+      }),
+      this.prisma.exam.findMany({
+        where: { userId, name: contains, type: 'public_exam' },
+        select: { id: true, name: true, type: true },
+        take: limit,
       }),
       this.prisma.examTopic.findMany({
         where: {
@@ -47,12 +52,12 @@ export class SearchService {
 
     const results: SearchResultItem[] = [];
 
-    for (const exam of exams) {
-      if (exam.type === 'certification') {
-        results.push({ id: exam.id, label: exam.name, href: '/exams?type=certification', type: 'certification' });
-      } else {
-        results.push({ id: exam.id, label: exam.name, href: '/exams?type=public_exam', type: 'publicExam' });
-      }
+    for (const exam of certifications) {
+      results.push({ id: exam.id, label: exam.name, href: '/exams?type=certification', type: 'certification' });
+    }
+
+    for (const exam of publicExams) {
+      results.push({ id: exam.id, label: exam.name, href: '/exams?type=public_exam', type: 'publicExam' });
     }
 
     for (const topic of topics) {

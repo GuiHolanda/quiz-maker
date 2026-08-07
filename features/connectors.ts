@@ -432,7 +432,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
 // — Search —
 
-export async function globalSearch(q: string): Promise<SearchResponse> {
-  const { data } = await api.get<SearchResponse>(SEARCH_URL, { params: { q } });
+export async function globalSearch(q: string, signal?: AbortSignal): Promise<SearchResponse> {
+  const { data } = await api.get<SearchResponse>(SEARCH_URL, { params: { q }, signal });
   return data;
 }
