@@ -18,8 +18,14 @@ export function KpiCard({ icon, badge, value, label, detail, comingSoon = false 
 
   return (
     <div className={`bg-content1 border border-default-200 rounded-xl p-5 ${comingSoon ? 'opacity-50' : ''}`}>
-      <div className="flex items-center justify-between mb-3">
-        {icon}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-2.5">
+          {icon}
+          <div>
+            <p className="text-xs font-semibold text-foreground leading-tight">{label}</p>
+            <p className="font-mono text-[9px] text-default-400 leading-tight mt-0.5">{detail}</p>
+          </div>
+        </div>
         {comingSoon ? (
           <Chip color="default" size="sm" variant="flat">
             {t('dashboard.comingSoon')}
@@ -28,9 +34,7 @@ export function KpiCard({ icon, badge, value, label, detail, comingSoon = false 
           badge
         )}
       </div>
-      <p className="font-bold text-foreground text-2xl leading-none mb-1">{comingSoon ? '-' : value}</p>
-      <p className="text-xs text-default-400">{label}</p>
-      <p className="font-mono text-[9px] text-default-400 mt-1">{detail}</p>
+      <p className="font-bold text-foreground text-2xl leading-none">{comingSoon ? '-' : value}</p>
     </div>
   );
 }
