@@ -424,6 +424,6 @@ export const getGenerationHistoryFilters = (): Promise<GenerationHistoryFilterOp
 // — Dashboard —
 
 export async function getDashboardStats(): Promise<DashboardStats> {
-  const response = await api.get<DashboardStats>(DASHBOARD_STATS_URL);
-  return response.data;
+  const { data } = await api.get<DashboardStats>(DASHBOARD_STATS_URL);
+  return data;
 }
