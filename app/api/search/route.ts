@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ results }, { status: 200 });
   } catch (err: unknown) {
     console.error('search GET error:', err);
-    return NextResponse.json(toApiErrorResponse(err), { status: toApiErrorResponse(err).status });
+    const { status, ...body } = toApiErrorResponse(err);
+    return NextResponse.json(body, { status });
   }
 }
