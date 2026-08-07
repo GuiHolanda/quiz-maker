@@ -540,3 +540,31 @@ export interface GenerationHistoryFilterOptions {
   sources: string[];
   topics: string[];
 }
+
+export interface DashboardRecentSession {
+  readonly simuladoName: string;
+  readonly examName: string;
+  readonly score: number;
+  readonly totalQuestions: number;
+  readonly durationMs: number;
+  readonly finishedAt: string;
+}
+
+export interface DashboardScoreTrendPoint {
+  readonly score: number;
+  readonly finishedAt: string;
+}
+
+export interface DashboardDomainStat {
+  readonly sectionName: string;
+  readonly avgScore: number;
+  readonly totalAttempts: number;
+}
+
+export interface DashboardStats {
+  readonly totalSimuladosCompleted: number;
+  readonly bestScore: number | null;
+  readonly recentSessions: DashboardRecentSession[];
+  readonly scoreTrend: DashboardScoreTrendPoint[];
+  readonly domainBreakdown: DashboardDomainStat[];
+}
