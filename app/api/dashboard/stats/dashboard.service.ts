@@ -38,7 +38,7 @@ export class DashboardService {
     }));
 
     const scoreTrend: DashboardScoreTrendPoint[] = [...attempts]
-      .filter((a) => a.score !== null && a.finishedAt !== null)
+      .filter((a) => a.score !== null)
       .slice(0, 10)
       .reverse()
       .map((a) => ({
@@ -52,7 +52,7 @@ export class DashboardService {
   }
 
   private computeDomainBreakdown(attempts: any[]): DashboardDomainStat[] {
-    const sectionMap = new Map<string, { correctSum: number; totalSum: number; attemptCount: number }>();
+    const sectionMap = new Map<string, { correctSum: number; attemptCount: number }>();
 
     for (const attempt of attempts) {
       const sectionCorrect = new Map<string, { correct: number; total: number }>();
@@ -77,11 +77,10 @@ export class DashboardService {
       }
 
       for (const [section, { correct, total }] of Array.from(sectionCorrect.entries())) {
-        const existing = sectionMap.get(section) ?? { correctSum: 0, totalSum: 0, attemptCount: 0 };
+        const existing = sectionMap.get(section) ?? { correctSum: 0, attemptCount: 0 };
         const sectionScore = total > 0 ? Math.round((correct / total) * 100) : 0;
         sectionMap.set(section, {
           correctSum: existing.correctSum + sectionScore,
-          totalSum: existing.totalSum + total,
           attemptCount: existing.attemptCount + 1,
         });
       }

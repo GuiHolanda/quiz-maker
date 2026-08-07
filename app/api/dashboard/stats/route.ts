@@ -15,8 +15,9 @@ export async function GET() {
   try {
     const stats = await service.getStats(session.user.id);
     return NextResponse.json(stats);
-  } catch (e: unknown) {
-    const { status, ...body } = toApiErrorResponse(e);
+  } catch (err: unknown) {
+    console.error('Failed to fetch dashboard stats:', err);
+    const { status, ...body } = toApiErrorResponse(err);
     return NextResponse.json(body, { status });
   }
 }
