@@ -21,10 +21,9 @@ import { EMPTY_HISTORY_FILTERS } from '@/shared/types';
 import { getGenerationHistory, getGenerationHistoryFilters } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { RelativeDate } from '@/shared/components/ui/RelativeDate';
-import { PaginationControls } from '@/shared/components/ui/PaginationControls';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
-import { CollapsibleFilterPanel } from '@/shared/components/ui/CollapsibleFilterPanel';
+import { EntityListShell } from '@/shared/components/ui/EntityListShell';
 import { GenerationHistoryFiltersBar, hasActiveHistoryFilters } from './GenerationHistoryFiltersBar';
 
 const LIMIT = 10;
@@ -92,42 +91,54 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
     <section aria-labelledby="history-heading" className="mt-4">
       {renderSectionHeader()}
 
-      <CollapsibleFilterPanel
+      <EntityListShell
+        title=""
+        isLoading={isLoading}
+        skeleton={<SkeletonListLoader count={5} />}
+        emptyState={
+          <EmptyState title={t('generate.historyEmpty')} description={t('generate.historyEmptyDescription')} />
+        }
+        filterContent={
+          <GenerationHistoryFiltersBar
+            filterOptions={filterOptions}
+            filters={filters}
+            onClear={handleClearFilters}
+            onFilterChange={handleFilterChange}
+          />
+        }
         hasActiveFilters={hasActiveFilters}
-        isOpen={isFiltersOpen}
+        onClearFilters={handleClearFilters}
+        isFiltersOpen={isFiltersOpen}
+        onToggleFilters={() => setIsFiltersOpen((prev) => !prev)}
         sort={filters.sort}
         sortAscLabel={t('generate.historySortOldest')}
         sortDescLabel={t('generate.historySortNewest')}
-        onToggle={() => setIsFiltersOpen((prev) => !prev)}
         onToggleSort={toggleSort}
+        pagination={
+          data && data.total > LIMIT
+            ? {
+                currentPage: page,
+                totalPages: Math.ceil(data.total / LIMIT),
+                totalItems: data.total,
+                itemsPerPage: LIMIT,
+                onPageChange: setPage,
+                onItemsPerPageChange: () => {},
+              }
+            : undefined
+        }
       >
-        <GenerationHistoryFiltersBar
-          filterOptions={filterOptions}
-          filters={filters}
-          onClear={handleClearFilters}
-          onFilterChange={handleFilterChange}
-        />
-      </CollapsibleFilterPanel>
-
-      <div
-        aria-live="polite"
-        aria-atomic="false"
-        className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4 mt-4"
-      >
-        {isLoading && <SkeletonListLoader count={5} />}
-
-        {!isLoading && (!data || data.items.length === 0) && (
-          <EmptyState title={t('generate.historyEmpty')} description={t('generate.historyEmptyDescription')} />
-        )}
-
-        {!isLoading && data && data.items.length > 0 && (
-          <div className="flex flex-col divide-y divide-divider" role="list">
-            {data.items.map((item) => renderHistoryRow(item))}
+        {data && data.items.length > 0 && (
+          <div
+            aria-live="polite"
+            aria-atomic="false"
+            className="bg-content1 border border-default-200 rounded-xl p-6"
+          >
+            <div className="flex flex-col divide-y divide-divider" role="list">
+              {data.items.map((item) => renderHistoryRow(item))}
+            </div>
           </div>
         )}
-      </div>
-
-      {!isLoading && data && data.total > LIMIT && renderPagination(data.total)}
+      </EntityListShell>
     </section>
   );
 
@@ -178,20 +189,6 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
           <Chip color={statusColor(item.status)} size="sm" variant="flat">
             {statusLabel(item.status, t)}
           </Chip>
-        </div>
-      </div>
-    );
-  }
-
-  function renderPagination(total: number) {
-    const totalPages = Math.ceil(total / LIMIT);
-    return (
-      <div className="flex items-center justify-between gap-4 px-1 pt-1">
-        <span className="text-xs text-default-400 tabular-nums">
-          {t('generate.historyPageInfo', { page, totalPages, total })}
-        </span>
-        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-          <PaginationControls currentPage={page} totalPages={totalPages} onChange={setPage} />
         </div>
       </div>
     );
