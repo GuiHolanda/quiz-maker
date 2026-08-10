@@ -21,7 +21,9 @@ import { ExamCard } from '../list/ExamCard';
 import { getCatalogExams, forkCatalogExam } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
+import { EntityListShell } from '@/shared/components/ui/EntityListShell';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
+import { usePaginatedItems } from '@/features/hooks/usePaginatedItems.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { notify } from '@/shared/lib/notify';
 import type { CatalogExam, ExamType } from '@/shared/types';
@@ -39,6 +41,8 @@ export function CatalogSection({ type }: CatalogSectionProps) {
   const [forkingId, setForkingId] = useState<string | null>(null);
 
   const selectedExam = templates.find((e) => e.id === selectedId) ?? null;
+
+  const { pageItems, page, totalPages, perPage, setPage, setPerPage } = usePaginatedItems(templates);
 
   useEffect(() => {
     getCatalogExams()
@@ -62,62 +66,60 @@ export function CatalogSection({ type }: CatalogSectionProps) {
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="mt-10">
-        <div className="mb-4">
-          <h2 className="text-xl font-bold text-foreground">
-            {t(type === 'certification' ? 'catalog.sectionTitleCert' : 'catalog.sectionTitleConcurso')}
-          </h2>
-          <p className="text-sm text-default-500 mt-0.5">
-            {t(type === 'certification' ? 'catalog.sectionSubtitleCert' : 'catalog.sectionSubtitleConcurso')}
-          </p>
-        </div>
-        <SkeletonListLoader count={3} height="h-36" />
-      </div>
-    );
-  }
-
-  if (templates.length === 0) return null;
+  const titleKey = type === 'certification' ? 'catalog.sectionTitleCert' : 'catalog.sectionTitleConcurso';
 
   return (
     <div className="mt-10" data-testid="catalog-section">
-      <div className="mb-4">
-        <h2 className="text-xl font-bold text-foreground">
-          {t(type === 'certification' ? 'catalog.sectionTitleCert' : 'catalog.sectionTitleConcurso')}
-        </h2>
-        <p className="text-sm text-default-500 mt-0.5">
-          {t(type === 'certification' ? 'catalog.sectionSubtitleCert' : 'catalog.sectionSubtitleConcurso')}
-        </p>
-      </div>
+      <p className="text-sm text-default-500 mb-4">
+        {t(type === 'certification' ? 'catalog.sectionSubtitleCert' : 'catalog.sectionSubtitleConcurso')}
+      </p>
 
-      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(480px, 1fr))' }}>
-        {templates.map((exam) => (
-          <ExamCard
-            key={exam.id}
-            exam={exam}
-            footerAction={renderFooterAction(exam)}
-            isSelected={selectedId === exam.id}
-            type={exam.type}
-            onClick={() => setSelectedId((prev) => (prev === exam.id ? null : exam.id))}
-          />
-        ))}
-      </div>
+      <EntityListShell
+        title={t(titleKey)}
+        totalItems={isLoading ? undefined : templates.length}
+        isLoading={isLoading}
+        skeleton={<SkeletonListLoader count={3} height="h-36" />}
+        pagination={
+          totalPages > 1
+            ? {
+                currentPage: page,
+                totalPages,
+                totalItems: templates.length,
+                itemsPerPage: perPage,
+                onPageChange: setPage,
+                onItemsPerPageChange: (e) => setPerPage(Number(e.target.value)),
+              }
+            : undefined
+        }
+      >
+        <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(480px, 1fr))' }}>
+          {pageItems.map((exam) => (
+            <ExamCard
+              key={exam.id}
+              exam={exam}
+              footerAction={renderFooterAction(exam)}
+              isSelected={selectedId === exam.id}
+              type={exam.type}
+              onClick={() => setSelectedId((prev) => (prev === exam.id ? null : exam.id))}
+            />
+          ))}
+        </div>
 
-      <AnimatePresence>
-        {selectedExam && (
-          <motion.div
-            key={selectedExam.id}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            initial={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-4"
-          >
-            {renderDetailPanel(selectedExam)}
-          </motion.div>
-        )}
-      </AnimatePresence>
+        <AnimatePresence>
+          {selectedExam && (
+            <motion.div
+              key={selectedExam.id}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              initial={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-4"
+            >
+              {renderDetailPanel(selectedExam)}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </EntityListShell>
     </div>
   );
 
@@ -160,7 +162,6 @@ export function CatalogSection({ type }: CatalogSectionProps) {
   function renderDetailPanel(exam: CatalogExam) {
     return (
       <div className="bg-content1 border border-default-200 rounded-xl overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between gap-4 px-6 py-3 border-b border-default-200 bg-content2">
           <div className="flex items-center gap-4 flex-wrap">
             {exam.examDurationMinutes && (
@@ -200,7 +201,6 @@ export function CatalogSection({ type }: CatalogSectionProps) {
           </Button>
         </div>
 
-        {/* Sections grid */}
         <div className="px-6 py-4">
           {exam.sections.length === 0 ? (
             <p className="text-xs text-default-400 italic">{t('exam.noSections')}</p>
