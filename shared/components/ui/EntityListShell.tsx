@@ -30,6 +30,10 @@ interface EntityListShellProps {
   readonly onClearFilters?: () => void;
   readonly isFiltersOpen?: boolean;
   readonly onToggleFilters?: () => void;
+  readonly sort?: 'asc' | 'desc';
+  readonly sortAscLabel?: string;
+  readonly sortDescLabel?: string;
+  readonly onToggleSort?: () => void;
   readonly children: React.ReactNode;
   readonly pagination?: EntityListPaginationConfig;
 }
@@ -45,6 +49,10 @@ export function EntityListShell({
   onClearFilters,
   isFiltersOpen = false,
   onToggleFilters,
+  sort,
+  sortAscLabel,
+  sortDescLabel,
+  onToggleSort,
   children,
   pagination,
 }: EntityListShellProps) {
@@ -94,7 +102,11 @@ export function EntityListShell({
         <CollapsibleFilterPanel
           hasActiveFilters={hasActiveFilters}
           isOpen={isFiltersOpen}
+          sort={sort}
+          sortAscLabel={sortAscLabel}
+          sortDescLabel={sortDescLabel}
           onToggle={onToggleFilters}
+          onToggleSort={onToggleSort}
         >
           {filterContent}
         </CollapsibleFilterPanel>
