@@ -1,8 +1,8 @@
-# MyQuiz — Agent Context
+# CertifiqueAI — Agent Context
 
 ## Purpose
 
-MyQuiz is a **certification exam prep platform** being built for public launch. It generates AI-powered practice questions for IT certifications (SAP, AWS, etc.), allows users to create and manage custom certifications with topics, and provides configurable quiz generation with answer tracking and explanations.
+**CertifiqueAI** (`www.certifiqueai.com`) is a **certification and concursos públicos prep platform** being built for public launch. It generates AI-powered practice questions for IT certifications (AWS, Azure, SAP), healthcare boards, finance exams, law, and engineering, as well as Brazilian concursos públicos.
 
 ---
 
@@ -12,7 +12,7 @@ MyQuiz is a **certification exam prep platform** being built for public launch. 
 |---|---|
 | Framework | Next.js 15 (App Router) + React 18 |
 | Language | TypeScript 5 (strict mode) |
-| UI | [HeroUI](https://heroui.com/docs/react/components) component library + Tailwind CSS 4 |
+| UI | [HeroUI](https://heroui.com/docs/react/components) + Tailwind CSS 4 |
 | Icons | FontAwesome (`@fortawesome/react-fontawesome`) |
 | Animations | Framer Motion |
 | State | React Context + useReducer (no Redux/Zustand) |
@@ -25,29 +25,37 @@ MyQuiz is a **certification exam prep platform** being built for public launch. 
 ## Project Structure
 
 ```
-app/                   # Next.js App Router (pages + API routes)
-  api/                 # Route handlers — one folder per endpoint
-  (pages)/page.tsx     # Page components
-components/            # React components grouped by domain
-  quiz/                # Quiz flow components
-  certification-management/  # Certification CRUD components
-  ui/                  # Generic UI utilities
+app/
+  api/               # Route handlers — one folder per endpoint
+  admin/             # Admin dashboard (separate layout, plan=admin guard)
+  (auth)/            # Public auth pages
+  (workspace)/       # Authenticated workspace pages
+  (marketing)/       # Public marketing pages
+shared/
+  components/ui/     # Generic UI primitives
+  types/index.ts     # ALL shared TypeScript types
+  lib/notify.ts      # Toast helper (notify.success/error/warning/info)
 config/
-  constants/index.ts   # App-wide constants, API URLs, initial certifications state (10 SAP certs pre-loaded), localStorage keys
-  promptSchemas/       # LLM prompt templates
-  site.ts              # Site metadata and nav config
+  constants/index.ts        # URLs, PLAN_LIMITS, localStorage keys
+  constants/inputStyles.ts  # inputProperties spread (HeroUI inputs)
+  constants/buttonStyles.ts # buttonStyles.* constants (HeroUI buttons)
+  prompts/                  # LLM prompt files (PromptDefinition pattern)
 features/
-  connectors.ts        # All HTTP client calls (single file)
-  hooks/               # Custom React hooks (*.hook.ts)
-  providers/           # Context providers (*.provider.tsx)
-  reducers/            # State reducers (*.reducer.ts)
+  connectors.ts      # ALL HTTP calls — single file, no exceptions
+  hooks/             # *.hook.ts
+  providers/         # *.provider.tsx
+  reducers/          # *.reducer.ts
+  services/          # Server-side services (*.service.ts)
 lib/
-  prisma.ts            # Prisma client singleton
-  bff.api.ts           # Axios instance (baseURL: "/api")
+  prisma.ts          # Prisma client singleton
+  bff.api.ts         # Axios client (baseURL: "/api") — client-side ONLY
+  api-error.ts       # toApiErrorResponse(err)
 prisma/
-  dev/                 # SQLite dev schema + migrations
-  prod/                # LibSQL prod schema + migrations
-types/index.ts         # All shared TypeScript types (AIQuestion, StoredQuestion, Certification, CertificationTopic, QuizParams, etc.)
+  dev/               # SQLite dev schema + migrations
+  prod/              # LibSQL prod schema + migrations
+tests/
+  unit/              # Vitest — service unit tests
+  e2e/               # Playwright — full journey tests
 ```
 
 ---
@@ -58,54 +66,54 @@ types/index.ts         # All shared TypeScript types (AIQuestion, StoredQuestion
 |---|---|---|
 | Components | PascalCase `.tsx` | `QuestionCard.tsx` |
 | Custom hooks | camelCase `.hook.ts` | `useRequest.hook.ts` |
-| Providers | camelCase `.provider.tsx` | `certifications.provider.tsx` |
-| Reducers | camelCase `.reducer.ts` | `certifications.reducer.ts` |
-| Services | PascalCase `.service.ts` | `certification.service.ts` |
-| API routes | kebab-case folder + `route.ts` | `save-certification/route.ts` |
-| Pages | kebab-case folder + `page.tsx` | `configure-certification/page.tsx` |
-| Branches | `feature/<kebab-case>` | `feature/separate-questions` |
+| Providers | camelCase `.provider.tsx` | `exams.provider.tsx` |
+| Reducers | camelCase `.reducer.ts` | `exams.reducer.ts` |
+| Services | PascalCase `.service.ts` | `exam.service.ts` |
+| API routes | kebab-case folder + `route.ts` | `save-exam/route.ts` |
+| Pages | kebab-case folder + `page.tsx` | `configure-exam/page.tsx` |
+| Branches | `feature/<kebab-case>` | `feature/exam-catalog` |
 
 ---
 
 ## Code Patterns
 
 ### Components
-- **Named exports only** — no default exports on components
-- Props interfaces with `readonly` modifiers: `interface XyzProps { readonly foo: string }`
+- **Named exports only** — no `export default` on components
+- Props with `readonly` modifiers: `interface XyzProps { readonly foo: string }`
 - `'use client'` at the top of interactive components
-- No barrel `index.ts` files in component directories
-- No JSDoc or multi-line comment blocks
-- UI built exclusively with **[HeroUI](https://heroui.com/docs/react/components)** — always check available components there before building custom ones
+- No barrel `index.ts` in component directories
+- No JSDoc or multi-line comments
+- UI exclusively with **HeroUI** — check docs before building custom
 
 ### State Management
-- Context + Reducer pattern everywhere
-- One provider per domain: `CertificationsProvider`, `QuizProvider`
-- Providers composed in `app/layout.tsx`
-- UI-only state (selected item) → localStorage
-- Domain data (certifications, questions) → database (source of truth)
-- All HTTP calls go through `features/connectors.ts`
+- Context + Reducer — never Redux/Zustand
+- One provider per domain: `ExamsProvider`, `MockExamsProvider`
+- **Prefer `useContext`** over `useState` for domain data — consume `useExamsContext()`, `useUsageContext()`, `useMockExamsContext()` before reaching for local state
+- `useState` only for truly local, ephemeral UI (hover, transient flags)
+- All HTTP calls through `features/connectors.ts`
+
+### Toasts
+- Always `notify` from `shared/lib/notify.ts` — never `addToast` directly
+- `notify.success(t('key'), t('description'))` / `notify.error(...)` etc.
 
 ### API Routes
-- Each route lives in its own folder under `app/api/`
-- Business logic in a co-located `.service.ts` file, not in the route handler
-- Route handlers: validate → call service → return `NextResponse.json()`
-- Error responses: `{ error, message }` with appropriate HTTP status
-- Validation errors: `Object.assign(new Error(...), { status: 409 })`
+- Each route in its own folder under `app/api/`
+- Business logic in `features/services/*.service.ts` or co-located `.service.ts`
+- Route handler pattern: `auth check → service call → NextResponse.json()`
+- **Every catch block**: `toApiErrorResponse(err)` from `lib/api-error.ts` — never raw `err.message`
 
 ### Imports
-- All absolute imports use `@/` alias (maps to project root)
-- Never use relative `../..` for cross-directory imports
+- Absolute `@/` alias — never `../..` cross-directory
 
 ---
 
 ## Critical Constraints
 
-1. **Do not modify the Prisma schema** without explicit approval — changes require migrations.
-2. **Do not add tests** — no test infrastructure, not a current priority.
-3. **Do not introduce state management libraries** (Redux, Zustand, etc.) — Context + Reducer is intentional.
-4. **Ask before implementing** when multiple valid approaches exist.
-5. **Prefer editing existing files** over creating new ones.
-6. **No speculative refactors** — implement only what is asked.
+1. **Do not modify the Prisma schema** without explicit approval — changes require migrations
+2. **Do not introduce state management libraries** — Context + Reducer is intentional
+3. **Ask before implementing** when multiple valid approaches exist
+4. **Prefer editing existing files** over creating new ones
+5. **No speculative features** — implement only what is asked
 
 ---
 
@@ -124,4 +132,6 @@ types/index.ts         # All shared TypeScript types (AIQuestion, StoredQuestion
 <type>: <short description>
 ```
 
-Types used: `feat`, `fix`, `refactor`, `chore`, `docs`
+Types: `feat`, `fix`, `refactor`, `chore`, `docs`, `test`
+
+Single line, ≤72 chars, no body.

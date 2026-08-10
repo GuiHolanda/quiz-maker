@@ -1,24 +1,33 @@
 import { prisma, PrismaService } from '@/lib/prisma';
-import type { CatalogExam, AdminCatalogEntry, ExamType, ExamSection } from '@/shared/types';
+import type { CatalogExam, AdminCatalogEntry, AdminCatalogExamDetail, ExamType, ExamSection, Exam } from '@/shared/types';
 
 export class ExamCatalogService {
   constructor(private readonly prismaService: PrismaService = prisma) {}
 
-  public async getTemplates(): Promise<CatalogExam[]> {
-    const templates = await this.prismaService.exam.findMany({
-      where: { isTemplate: true },
-      include: {
-        provider: true,
-        examBoard: true,
-        sections: { include: { topics: true } },
-      },
-      orderBy: { updatedAt: 'desc' },
-    });
+  public async getTemplates(userId: string): Promise<CatalogExam[]> {
+    const [templates, userExams] = await Promise.all([
+      this.prismaService.exam.findMany({
+        where: { isTemplate: true },
+        include: {
+          provider: true,
+          examBoard: true,
+          sections: { include: { topics: true } },
+        },
+        orderBy: { updatedAt: 'desc' },
+      }),
+      this.prismaService.exam.findMany({
+        where: { userId, isTemplate: false },
+        select: { name: true, type: true },
+      }),
+    ]);
+
+    const userExamKeys = new Set(userExams.map((e) => `${e.type}::${e.name}`));
+    const visible = templates.filter((t) => !userExamKeys.has(`${t.type}::${t.name}`));
 
     const poolCounts = await this.prismaService.examQuestion.groupBy({
       by: ['examId'],
       where: {
-        examId: { in: templates.map((t) => t.id) },
+        examId: { in: visible.map((t) => t.id) },
         poolId: { not: null },
       },
       _count: { id: true },
@@ -26,7 +35,7 @@ export class ExamCatalogService {
 
     const countByExam = new Map(poolCounts.map((r) => [r.examId!, r._count.id]));
 
-    return templates.map((t) => ({
+    return visible.map((t) => ({
       id: t.id,
       type: t.type as ExamType,
       name: t.name,
@@ -34,6 +43,10 @@ export class ExamCatalogService {
       year: t.year,
       key: t.key,
       totalQuestions: t.totalQuestions,
+      examDurationMinutes: t.examDurationMinutes,
+      passingScore: t.passingScore,
+      createdAt: t.createdAt.toISOString(),
+      updatedAt: t.updatedAt.toISOString(),
       provider: t.provider,
       examBoard: t.examBoard,
       sections: t.sections.map((s) => ({
@@ -47,7 +60,7 @@ export class ExamCatalogService {
     }));
   }
 
-  public async forkExam(templateId: string, userId: string): Promise<string> {
+  public async forkExam(templateId: string, userId: string): Promise<Exam> {
     const template = await this.prismaService.exam.findFirst({
       where: { id: templateId, isTemplate: true },
       include: { sections: { include: { topics: true } } },
@@ -110,9 +123,31 @@ export class ExamCatalogService {
             })),
           },
         },
+        include: { provider: true, examBoard: true, sections: { include: { topics: true } } },
       });
 
-      return forked.id;
+      return {
+        id: forked.id,
+        type: forked.type as Exam['type'],
+        name: forked.name,
+        role: forked.role,
+        year: forked.year,
+        key: forked.key,
+        totalQuestions: forked.totalQuestions,
+        examDurationMinutes: forked.examDurationMinutes,
+        passingScore: forked.passingScore,
+        provider: forked.provider ?? null,
+        examBoard: forked.examBoard ?? null,
+        createdAt: forked.createdAt.toISOString(),
+        updatedAt: forked.updatedAt.toISOString(),
+        sections: forked.sections.map((s) => ({
+          id: s.id,
+          name: s.name,
+          minQuestions: s.minQuestions,
+          maxQuestions: s.maxQuestions,
+          topics: s.topics.map((t) => ({ id: t.id, name: t.name })),
+        })),
+      };
     });
   }
 
@@ -190,6 +225,54 @@ export class ExamCatalogService {
         }
       }
     });
+  }
+
+  public async getAdminExamDetail(examId: string): Promise<AdminCatalogExamDetail> {
+    const exam = await this.prismaService.exam.findFirst({
+      where: { id: examId },
+      include: {
+        provider: true,
+        examBoard: true,
+        sections: { include: { topics: true } },
+        user: { select: { email: true } },
+        questions: { select: { id: true } },
+      },
+    });
+
+    if (!exam) {
+      throw Object.assign(new Error('Exam not found'), { status: 404 });
+    }
+
+    const poolCount = await this.prismaService.examQuestion.count({
+      where: { examId, poolId: { not: null } },
+    });
+
+    return {
+      id: exam.id,
+      type: exam.type as ExamType,
+      name: exam.name,
+      role: exam.role,
+      year: exam.year,
+      key: exam.key,
+      totalQuestions: exam.totalQuestions,
+      examDurationMinutes: exam.examDurationMinutes,
+      passingScore: exam.passingScore,
+      isTemplate: exam.isTemplate,
+      ownerEmail: exam.user?.email ?? null,
+      createdAt: exam.createdAt.toISOString(),
+      updatedAt: exam.updatedAt.toISOString(),
+      provider: exam.provider,
+      examBoard: exam.examBoard,
+      sections: exam.sections.map((s) => ({
+        id: s.id,
+        name: s.name,
+        minQuestions: s.minQuestions,
+        maxQuestions: s.maxQuestions,
+        topics: s.topics.map((t) => ({ id: t.id, name: t.name })),
+      })) as ExamSection[],
+      questionCount: exam.questions.length,
+      poolQuestionCount: poolCount,
+    };
   }
 
   public async getAdminCatalogEntries(): Promise<AdminCatalogEntry[]> {

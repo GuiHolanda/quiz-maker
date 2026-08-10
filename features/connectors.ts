@@ -62,6 +62,7 @@ import {
   CatalogExam,
   CatalogListResponse,
   AdminCatalogListResponse,
+  AdminCatalogExamDetail,
 } from '@/shared/types';
 import api from '@/lib/bff.api';
 
@@ -412,9 +413,9 @@ export async function getCatalogExams(): Promise<CatalogExam[]> {
   return data.templates;
 }
 
-export async function forkCatalogExam(templateId: string): Promise<string> {
-  const { data } = await api.post<{ examId: string }>(FORK_EXAM_URL, { templateId });
-  return data.examId;
+export async function forkCatalogExam(templateId: string): Promise<Exam> {
+  const { data } = await api.post<{ exam: Exam }>(FORK_EXAM_URL, { templateId });
+  return data.exam;
 }
 
 // — Admin catalog —
@@ -426,4 +427,9 @@ export async function getAdminCatalog(): Promise<AdminCatalogListResponse> {
 
 export async function promoteExamToCatalog(examId: string): Promise<void> {
   await api.patch(`${ADMIN_CATALOG_URL}/${examId}`, {});
+}
+
+export async function getAdminCatalogExamDetail(examId: string): Promise<AdminCatalogExamDetail> {
+  const { data } = await api.get<AdminCatalogExamDetail>(`${ADMIN_CATALOG_URL}/${examId}`);
+  return data;
 }

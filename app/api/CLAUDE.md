@@ -1,240 +1,8 @@
 # Backend Structure — `app/api/`
 
-## Overview
+All API routes live under `app/api/` (one `route.ts` per folder). Business logic in `features/services/` — route handlers only validate session, call service, return `NextResponse`.
 
-All API routes live under `app/api/` following Next.js App Router conventions (one `route.ts` per folder). Routes are grouped by domain. Business logic lives in `features/services/` — route handlers only validate the session, delegate to a service, and return a `NextResponse`.
-
----
-
-## Domain groups
-
-### `auth/`
-
-Authentication flows. Services stay co-located here (not in `features/services/`) because they are not shared with other domains.
-
-| Route | Method | Description |
-|---|---|---|
-| `auth/[...nextauth]` | — | NextAuth.js catch-all |
-| `auth/register` | POST | Register new user (bcrypt, duplicate check) |
-| `auth/forgot-password` | POST | Send password-reset email via Resend |
-| `auth/reset-password` | POST | Validate token and update password |
-
----
-
-### `billing/`
-
-Stripe integration and quota tracking. Service: `features/services/quota.service.ts`.
-
-| Route | Method | Description |
-|---|---|---|
-| `billing/checkout` | GET | Create Stripe checkout session, returns `{ url }` |
-| `billing/portal` | GET | Create Stripe customer portal URL, returns `{ url }` |
-| `billing/usage` | GET | Returns current quota usage (`UsageStats`) |
-
----
-
-### `certification/`
-
-Everything related to professional certification exam preparation (any domain: IT, finance, engineering, healthcare, law, and others).
-
-| Route | Method | Description |
-|---|---|---|
-| `certification/certifications` | GET | List user's certifications with topics |
-| `certification/save-certification` | POST | Create new certification |
-| `certification/save-certification` | PUT | Add topic to certification |
-| `certification/save-certification` | PATCH | Update certification or topic metadata |
-| `certification/save-certification` | DELETE | Delete certification or topic (`?certificationKey=` or `?topicId=`) |
-| `certification/question-generator` | GET | Generate questions via OpenAI (web search) for a topic |
-| `certification/save-questions` | POST | Persist generated questions to DB |
-| `certification/get-answers` | POST | Generate and save correct answers via OpenAI |
-| `certification/questions/[questionId]/explanation` | GET | Generate and cache per-option explanations for a question |
-| `certification/quiz-generator` | GET | Fetch stored questions distributed across topics for a quiz |
-| `certification/browse-questions/questions` | GET | Paginated list of stored questions (filterable by cert + topic) |
-| `certification/browse-questions/questions` | DELETE | Delete a stored question (ownership check) |
-| `certification/browse-questions/summary` | GET | Question counts grouped by certification and topic |
-
-Services: `features/services/certification.service.ts`, `features/services/question.service.ts` (`CertificationQuestionService`), `features/services/quiz-generator.service.ts`, `features/services/browse.service.ts` (`BrowseQuestionsService`, `BrowseSummaryService`).
-
----
-
-### `public-exam/`
-
-Everything related to Brazilian public-sector competitive exams (concursos públicos).
-
-| Route | Method | Description |
-|---|---|---|
-| `public-exam/public-exams` | GET | List user's public exams (with exam board + subjects + topics) |
-| `public-exam/exam-boards` | GET | List all exam boards |
-| `public-exam/exam-boards` | POST | Create or upsert an exam board |
-| `public-exam/save-public-exam` | POST | Create new public exam |
-| `public-exam/save-public-exam` | PUT | Add subject or topic |
-| `public-exam/save-public-exam` | PATCH | Update exam, subject, or topic metadata |
-| `public-exam/save-public-exam` | DELETE | Delete public exam, subject, or topic (`?examId=`, `?subjectId=`, or `?topicId=`) |
-| `public-exam/question-generator` | GET | Generate questions via OpenAI + web search for a subject/topic |
-| `public-exam/save-questions` | POST | Persist generated questions to DB |
-| `public-exam/get-answers` | POST | Generate and save answers/explanations via OpenAI |
-| `public-exam/browse-questions/questions` | GET | Paginated list of stored public-exam questions |
-| `public-exam/browse-questions/questions` | DELETE | Delete a stored question (ownership check) |
-| `public-exam/browse-questions/summary` | GET | Question counts grouped by exam and subject |
-
-Services: `features/services/public-exam.service.ts`, `features/services/question.service.ts` (`PublicExamQuestionService`), `features/services/browse.service.ts` (`PublicExamBrowseQuestionsService`, `PublicExamBrowseSummaryService`).
-
----
-
-### `certification-simulados/`
-
-Simulados (mock exams) baseados em questões de certificação salvas pelo usuário. Cada simulado é uma seleção fixa de questões do banco, agrupadas por tópicos, que o usuário responde em tentativas separadas.
-
-| Route | Method | Description |
-|---|---|---|
-| `certification-simulados` | GET | Lista simulados do usuário com tentativas e melhor pontuação |
-| `certification-simulados` | POST | Cria simulado: valida disponibilidade de questões por tópico (consultando `Question.certificationTitle === certLabel`) e sorteia IDs |
-| `certification-simulados?id={id}` | DELETE | Remove simulado do usuário |
-| `certification-simulados/[id]` | GET | Detalhe completo do simulado (questões + opções + answer + explicações) |
-| `certification-simulados/[id]/answers` | POST | **Garante gabarito**: busca questões do simulado sem `Answer`, agrupa por tópico, chama OpenAI em batches de 10, persiste `Answer` rows. Idempotente. Retorna `{ generated: N }`. |
-| `certification-simulados/[id]/attempts` | POST | Inicia nova tentativa |
-| `certification-simulados/[id]/attempts/[attemptId]` | PATCH | Finaliza tentativa (salva respostas + score) |
-| `certification-simulados/[id]/attempts/[attemptId]` | GET | Resultado da tentativa: score, breakdown por tópico, respostas vs gabarito |
-
-**Important — `certLabel` vs `certKey`:** simulados são criados com `certKey` (slug), mas `Question.certificationTitle` armazena o **label** humano da certificação (vindo do gerador da LLM). O service resolve o label via `prisma.certification.findFirst({ key: certKey })` antes de qualquer query em `Question`. Quebra esse contrato e a criação retorna 422 "Questões insuficientes" mesmo com questões existentes no banco.
-
-**Fluxo de gabarito (ensure-answers):** o frontend chama `POST /[id]/answers` **antes** de iniciar a tentativa, garantindo que todas as questões do simulado tenham `Answer` no banco. Sem isso, a página de resultado fica sem `correctOptions` (cálculo de acerto quebra) e o endpoint `/explanation` retorna 404. A página de resultado também faz fallback chamando o endpoint quando detecta questões sem answer (cobre simulados antigos).
-
-Service: `app/api/certification-simulados/certification-simulados.service.ts` (`CertificationSimuladosService`). Co-located, não compartilhado com client. Usa `OpenAIService` + `CertificationQuestionService` (lazy-init para não exigir `OPENAI_API_KEY` em testes unitários).
-
----
-
-### `mock-exams/`
-
-Simulados (mock exams) baseados em questões de concurso público salvas pelo usuário. Mesmo padrão de `certification-simulados/`, com grouping por **subject** ao invés de **topic**.
-
-| Route | Method | Description |
-|---|---|---|
-| `mock-exams` | GET | Lista simulados do usuário |
-| `mock-exams` | POST | Cria simulado: valida disponibilidade por matéria (com fallback FK + denormalized name match) |
-| `mock-exams?id={id}` | DELETE | Remove simulado |
-| `mock-exams/[id]` | GET | Detalhe completo do simulado |
-| `mock-exams/[id]/answers` | POST | **Garante gabarito** — idêntico ao cert: questões sem `PublicExamAnswer` são agrupadas por subject, geradas via OpenAI em batches de 10, persistidas. Idempotente. Retorna `{ generated: N }`. |
-| `mock-exams/[id]/attempts` | POST | Inicia nova tentativa |
-| `mock-exams/[id]/attempts/[attemptId]` | PATCH | Finaliza tentativa |
-| `mock-exams/[id]/attempts/[attemptId]` | GET | Resultado da tentativa com breakdown por matéria |
-
-Service: `app/api/mock-exams/mock-exam.service.ts` (`MockExamService`). Mesmo padrão lazy-init de `OpenAIService` + `PublicExamQuestionService` do cert.
-
----
-
-### `admin/`
-
-Admin dashboard API. All routes verify `plan === 'admin'` via a direct DB lookup before executing. Business logic lives in the co-located `admin.service.ts`.
-
-| Route | Method | Description |
-|---|---|---|
-| `admin/overview` | GET | Aggregate metrics including `tokensByPlan` (per-plan input/output token sums and question counts, joined from `UsageLog` + `User` in application code) |
-| `admin/users` | GET | Paginated user list; each row includes `totalInputTokens`, `totalOutputTokens`, `totalQuestionsGeneratedAllTime` from a `usageLog.groupBy(['userId'])` scoped to the current page |
-| `admin/users/[id]` | PATCH | Update a user's `plan` and/or `customQuotaOverride` (-1 = ∞, null = remove override). Writes to `AdminAuditLog`. |
-| `admin/audit-log` | GET | Paginated history of admin actions with admin/target user details |
-| `admin/exchange-rate` | GET | Returns `{ rate: number }` — live USD/BRL rate from `economia.awesomeapi.com.br` with `next: { revalidate: 3600 }` (1h ISR cache). Falls back to `USD_TO_BRL_FALLBACK` (5.70) on error. Used by the client-side users page. |
-
-Service: `app/api/admin/admin.service.ts` (`AdminService`).
-
-**Important:** The `AdminService` can also be called directly from server components (e.g. `app/admin/analytics/page.tsx`). Do NOT use `features/connectors.ts` in server components — the axios client uses a relative `baseURL` and will fail server-side.
-
----
-
-| Route | Method | Description |
-|---|---|---|
-| `ai/ai-chat` | POST | Streaming SSE chat powered by OpenAI with web search. Returns `text/event-stream`. Requires plan `pro_ai`, `tester`, or `admin` — returns 403 otherwise. |
-
-Service: `features/services/aiChat.service.ts`.
-
----
-
-### `webhooks/`
-
-| Route | Method | Description |
-|---|---|---|
-| `webhooks/stripe` | POST | Handle Stripe subscription events (`checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`). Updates `user.plan` in DB. Differentiates `pro` vs `pro_ai` by price ID (`STRIPE_PRICE_ID_PRO_AI_MONTHLY/YEARLY`). |
-
----
-
-### `full-exam-job/`
-
-Server-side batch generation (Prova Completa). Accepts a distribution of topics/subjects, creates a `FullExamJob` + `FullExamJobTopic` rows, fires the processing via `after()` (Next.js 15 background task), and returns `{ jobId }` immediately. The client then streams progress via SSE.
-
-| Route | Method | Description |
-|---|---|---|
-| `full-exam-job` | POST | Create job + fire `processFullExamJob` via `after()`. Returns `{ jobId }`. Body: `{ type, refKey, refName, examBoardName?, distribution[] }` |
-| `full-exam-job` | GET | Get active `running` job for `?type=&refKey=` (used for reconnect on page reload). Returns `null` if none. |
-| `full-exam-job/[jobId]` | GET | Polling fallback — returns current job status + topics array. |
-| `full-exam-job/[jobId]` | DELETE | Cancel a running job: sets `status: 'error'`, marks all `pending/running` topics as `error` with `errorMessage: 'Cancelled by user'`. |
-| `full-exam-job/[jobId]/stream` | GET | SSE stream. Polls DB every 1.5s, emits `progress`/`done`/`error` events (each with `topics[]`). `maxDuration = 300`. |
-| `cron/cleanup-stale-jobs` | GET | Marks as `error` all `FullExamJob` rows stuck in `running` for > 30 min. Protected by `CRON_SECRET` bearer token. Scheduled via `vercel.json` at `0 3 * * *`. |
-
-Service: `features/services/full-exam-job.service.ts` (`processFullExamJob`). Processes distribution in batches of 5 (parallel within batch, sequential between batches). Uses same 3-step OpenAI pipeline as `certification/question-generator` and `public-exam/question-generator`. Per-topic status tracked in `FullExamJobTopic` — errors in one topic don't abort the rest.
-
-SSE event shape:
-```ts
-// progress / done / error
-{ doneTopics: number; totalTopics: number; savedCount: number; topics: FullExamJobTopicStatus[] }
-```
-
----
-
-## Service layer (`features/services/`)
-
-Route handlers never contain business logic — they delegate to services.
-
-| File | Responsibility |
-|---|---|
-| `openAI.service.ts` | OpenAI client wrapper — single `call(prompt, input)` method using Responses API with `web_search_preview`. Returns `{ text: string; inputTokens: number; outputTokens: number }`. Never returns a plain string. |
-| `quota.service.ts` | Check and record usage quota per user per period. Supports `customQuotaOverride` (sentinel `-1` = ∞). Key methods: `checkAndRecordQuestions(userId, count)` returns `{ logId }` for later token recording; `recordTokens(logId, { inputTokens, outputTokens })` patches the `UsageLog` row after the LLM call completes. |
-| `certification.service.ts` | CRUD for certifications and topics. Child mutations (addTopic, updateTopic, deleteTopic) call `certification.update({ data: { updatedAt: new Date() } })` after the main operation to propagate the timestamp to the parent. |
-| `public-exam.service.ts` | CRUD for public exams, subjects, and topics. Same parent-touch pattern: all 6 child mutation methods (add/update/delete subject and topic) call `publicExam.update({ data: { updatedAt: new Date() } })`. For methods using `$transaction`, the touch runs inside the same transaction. |
-| `question.service.ts` | `validateAiQuestions` (shared), `CertificationQuestionService` (with `saveExplanations`), `PublicExamQuestionService` |
-| `browse.service.ts` | `BrowseQuestionsService`, `PublicExamBrowseQuestionsService`, `BrowseSummaryService`, `PublicExamBrowseSummaryService` |
-| `quiz-generator.service.ts` | Parse params, distribute questions across topics, fetch stored questions |
-| `aiChat.service.ts` | Validate chat messages, select prompt, stream OpenAI response |
-| `full-exam-job.service.ts` | `processFullExamJob(jobId, userId, type, refName, examBoardName, distribution)` — server-side batch generation. Creates `FullExamJobTopic` rows upfront, processes batches of 5 in parallel, updates `status`/`savedCount`/`errorMessage` per topic. Uses the same 3-step OpenAI pipeline as the question-generator routes. Lazy-init pattern NOT needed here (called only via `after()`, no unit test coverage). |
-
-### Token recording pattern (question-generator routes)
-
-The two generator routes (`certification/question-generator` and `public-exam/question-generator`) follow a pattern to record per-step token usage and total duration via `MetricsService`:
-
-```ts
-// 1. Atomic quota check + UsageLog row creation (before LLM call)
-const { logId } = await quotaService.checkAndRecordQuestions(session.user.id, count);
-
-// 2. LLM calls — 3 steps: research → review → format
-
-// 3. Record per-step tokens and duration via MetricsService (fire-and-forget)
-void metricsService.recordStep(logId, 'research', { inputTokens: research.inputTokens, outputTokens: research.outputTokens }, researchDurationMs);
-void metricsService.recordStep(logId, 'review', { inputTokens: review.inputTokens, outputTokens: review.outputTokens }, reviewDurationMs);
-void metricsService.recordStep(logId, 'format', { inputTokens: format.inputTokens, outputTokens: format.outputTokens }, formatDurationMs);
-
-// 4. Finalize total duration (awaited — last write before topic is marked done)
-await metricsService.finalize(logId, totalDurationMs);
-```
-
-The three `recordStep` calls are fire-and-forget (`void`) — each writes a `UsageLogStep` row with per-step token counts and duration, and should not delay the response to the user. If one fails silently, that step's row will be missing but the rest of the flow continues unaffected.
-
-`finalize` is awaited because it is the last write before the topic is marked `done` — it patches `UsageLog.totalDurationMs` so the full pipeline duration is available for analytics.
-
-Admin service is co-located in `app/api/admin/admin.service.ts` (not in `features/services/`) because it is not shared with client code.
-
-Auth services (`register.service.ts`, `forgot-password.service.ts`, `reset-password.service.ts`) remain co-located in `app/api/auth/` and are not shared.
-
-Simulado services (`app/api/certification-simulados/certification-simulados.service.ts`, `app/api/mock-exams/mock-exam.service.ts`) também são co-located. Ambos seguem o mesmo contrato `ensureAnswers(id, userId)` para garantir gabarito antes da tentativa — método idempotente que só gera para questões sem `Answer`.
-
----
-
-## Conventions
-
-- Route handler pattern: `auth check → quota check (if needed) → service call → NextResponse.json()`
-- Error shape: always produced by `toApiErrorResponse(err)` from `lib/api-error.ts` — never hand-rolled `{ error, message }` in a catch block
-- All imports use `@/` absolute paths — no relative `../../` across directories
-- No barrel `index.ts` files
-
-### Catch block pattern (all route handlers)
+**Error handling:** every `catch` uses `toApiErrorResponse(err)` from `lib/api-error.ts` — never raw `err.message`.
 
 ```ts
 } catch (err: unknown) {
@@ -244,25 +12,157 @@ Simulado services (`app/api/certification-simulados/certification-simulados.serv
 }
 ```
 
-`toApiErrorResponse` strips the `message` field for Prisma/unexpected errors so raw schema details never reach the client. Business-logic errors (thrown with `.status` by service layer) pass their message through unchanged. Full classification table is in the root `CLAUDE.md` → **Error sanitization** section.
+---
+
+## Domain groups
+
+### `auth/`
+
+| Route | Method | Description |
+|---|---|---|
+| `auth/[...nextauth]` | — | NextAuth.js catch-all |
+| `auth/register` | POST | Register new user (bcrypt, duplicate check) |
+| `auth/forgot-password` | POST | Send reset email via Resend |
+| `auth/reset-password` | POST | Validate token and update password |
+| `auth/resend-verification` | POST | Resend email verification link |
+| `auth/verify-email` | POST | Verify email via token |
+
+### `billing/`
+
+Service: `features/services/quota.service.ts`.
+
+| Route | Method | Description |
+|---|---|---|
+| `billing/checkout` | GET | Create Stripe checkout session, returns `{ url }` |
+| `billing/portal` | GET | Create Stripe customer portal URL, returns `{ url }` |
+| `billing/usage` | GET | Returns current quota usage (`UsageStats`) |
+
+### `exam/`
+
+Unified domain for `ExamType: 'certification' | 'public_exam'`.
+
+| Route | Method | Description |
+|---|---|---|
+| `exam/exams` | GET | List user's exams (filtered by `?type=`) |
+| `exam/save-exam` | POST/PUT/PATCH/DELETE | Create exam; add section; update exam/section/topic; delete |
+| `exam/providers` | GET | List all providers |
+| `exam/exam-boards` | GET/POST | List / create exam boards |
+| `exam/save-questions` | POST | Persist generated questions to DB |
+| `exam/questions/[questionId]/explanation` | GET | Generate and cache per-option explanation |
+| `exam/browse-questions/questions` | GET/DELETE | Paginated list + delete (ownership check) |
+| `exam/browse-questions/summary` | GET | Question counts grouped by exam/section |
+| `exam/catalog` | GET | List exam templates (`isTemplate=true`), filtered by userId |
+| `exam/fork-exam` | POST | Fork catalog template into user's exam; returns full `Exam` object |
+| `exam/extract-from-edital` | POST | Extract exam structure from uploaded edital via OpenAI |
+
+Services: `exam.service.ts`, `exam-question.service.ts`, `exam-catalog.service.ts`, `quiz-generator.service.ts`.
+
+### `generation-job/`
+
+Async question generation with SSE progress streaming.
+
+| Route | Method | Description |
+|---|---|---|
+| `generation-job` | POST | Create job (returns `{ jobId }` immediately) |
+| `generation-job` | GET | Get active job for `?type=&refKey=` (reconnect on reload) |
+| `generation-job/[jobId]` | GET | Polling fallback — current status + topics array |
+| `generation-job/[jobId]` | DELETE | Cancel running job |
+| `generation-job/[jobId]/stream` | GET | SSE stream: `progress`/`done`/`error` with `topics[]`. `maxDuration = 300`. |
+| `generation-job/[jobId]/save` | POST | Persist approved questions from completed job |
+
+Service: `features/services/generation-job.service.ts`.
+
+### `mock-exams/`
+
+Simulados based on saved questions. Each mock exam is a fixed question selection answered in separate attempts.
+
+| Route | Method | Description |
+|---|---|---|
+| `mock-exams` | GET | List user's mock exams with attempts and best score |
+| `mock-exams` | POST | Create mock exam (validates question availability) |
+| `mock-exams?id={id}` | DELETE | Delete mock exam |
+| `mock-exams/[id]` | GET | Full detail (questions + options + answers + explanations) |
+| `mock-exams/[id]/answers` | POST | **Ensure answers** — generate missing `Answer` rows idempotently. Returns `{ generated: N }`. |
+| `mock-exams/[id]/attempts` | POST | Start new attempt |
+| `mock-exams/[id]/attempts/[attemptId]` | PATCH/GET | Finish attempt / Get result with score and breakdown |
+
+Service: `app/api/mock-exams/mock-exam.service.ts` (co-located).
+
+**Ensure-answers:** frontend calls `POST /[id]/answers` before every attempt. Without it, result page has no `correctOptions` and `/explanation` returns 404.
+
+### `question-bank/`
+
+| Route | Method | Description |
+|---|---|---|
+| `question-bank` | GET | Paginated + filterable list (search, source, type, topic, difficulty, hasAnswer) |
+| `question-bank/topics` | GET | Distinct topics for filter select |
+| `question-bank/sources` | GET | Distinct cert/exam names for filter select |
+
+**Array params:** `paramsSerializer: { indexes: null }` in `lib/bff.api.ts` — arrays arrive without brackets (`difficulty=easy&difficulty=hard`). Route handler reads with `searchParams.getAll('difficulty')`. Do not remove the paramsSerializer.
+
+### `admin/`
+
+All routes verify `plan === 'admin'` via direct DB lookup. Service: `app/api/admin/admin.service.ts` (co-located).
+
+| Route | Method | Description |
+|---|---|---|
+| `admin/overview` | GET | Aggregate KPIs + `tokensByPlan` |
+| `admin/users` | GET | Paginated user list with token/cost columns |
+| `admin/users/[id]` | PATCH | Update `plan`/`customQuotaOverride`. Writes to `AdminAuditLog`. |
+| `admin/audit-log` | GET | Paginated admin action history |
+| `admin/exchange-rate` | GET | Live USD/BRL from AwesomeAPI (1h ISR), fallback `USD_TO_BRL_FALLBACK` |
+| `admin/catalog` | GET | List all catalog entries |
+| `admin/catalog/[examId]` | PATCH | Promote exam to catalog template (`isTemplate = true`) |
+
+**Critical:** `AdminService` can be called from server components directly. Do NOT use `features/connectors.ts` server-side — the axios client uses a relative `baseURL` and will fail.
+
+### Other routes
+
+| Route | Method | Description |
+|---|---|---|
+| `ai/ai-chat` | POST | Streaming SSE chat. Requires `pro_ai`, `tester`, or `admin`. |
+| `dashboard/stats` | GET | Dashboard metrics |
+| `usage/history` | GET | Paginated usage log for current user |
+| `usage/history/filters` | GET | Filter options for usage history page |
+| `search` | GET | Global search across exams and questions |
+| `cron/cleanup-stale-jobs` | GET | Marks stuck `running` jobs >30min as `error`. Protected by `CRON_SECRET`. Runs at `0 3 * * *`. |
+| `webhooks/stripe` | POST | Handle Stripe subscription events — updates `user.plan`. |
 
 ---
 
-## Testes
+## Service layer (`features/services/`)
 
-Os services da camada de negócio têm cobertura de testes unitários em `tests/api/services/`. Ao modificar um service coberto, rodar `npm test` para garantir que não há regressão.
+| File | Responsibility |
+|---|---|
+| `openAI.service.ts` | `call(prompt, input)` via Responses API with `web_search_preview`. Returns `{ text, inputTokens, outputTokens }`. |
+| `quota.service.ts` | `checkAndRecordQuestions(userId, count)` → `{ logId }`. Also enforces `create_exam`. |
+| `metrics.service.ts` | `recordStep(logId, step, tokens, durationMs)` (fire-and-forget) + `finalize(logId, ms)`. |
+| `exam.service.ts` | Unified CRUD for Exam/Section/Topic (both types). |
+| `exam-question.service.ts` | `saveAnswers`, `saveExplanations`. |
+| `exam-catalog.service.ts` | `getTemplates(userId)`, `forkExam`, `promoteExam`, admin catalog entries. |
+| `quiz-generator.service.ts` | Distribute questions across sections. |
+| `question-bank.service.ts` | Unified question search across exam types. |
+| `generation-job.service.ts` | Async batch generation — batches of 5 topics, per-topic status tracking. |
+| `aiChat.service.ts` | Validate messages, select prompt, stream response. |
 
-Services cobertos: `quota`, `certification`, `public-exam`, `quiz-generator`, `register`, `reset-password`, `mock-exam`, `certification-simulados`.
+Co-located services (not in `features/services/`): auth services in `app/api/auth/`, mock exam in `app/api/mock-exams/`, admin in `app/api/admin/`.
 
-**Lazy init no constructor:** services que instanciam `OpenAIService` ou outros services pesados devem usar **getters com lazy init** (instância criada na primeira leitura), nunca `private readonly x = new X()` na class field. `new OpenAI()` exige `OPENAI_API_KEY` no boot e quebra os testes unitários (que rodam sem env vars). Padrão usado em `CertificationSimuladosService` e `MockExamService`:
+---
+
+## Lazy-init pattern (services with OpenAI)
+
+Services used in unit tests must not call `new OpenAI()` at construction time (requires `OPENAI_API_KEY`):
 
 ```ts
-private openAIServiceInstance: OpenAIService | null = null;
-
+private _openAIService: OpenAIService | null = null;
 private get openAIService(): OpenAIService {
-  this.openAIServiceInstance ??= new OpenAIService();
-  return this.openAIServiceInstance;
+  this._openAIService ??= new OpenAIService();
+  return this._openAIService;
 }
 ```
 
-Padrões de mock (Prisma, `$transaction`, dependências externas) estão documentados na seção **Testes Unitários** do `CLAUDE.md` raiz.
+---
+
+## Tests
+
+Unit tests for service logic in `tests/unit/api/services/`. Run `npm test` after modifying a covered service. Patterns documented in [`tests/CLAUDE.md`](../../tests/CLAUDE.md).

@@ -21,9 +21,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'templateId is required' }, { status: 400 });
     }
 
-    const forkedId = await catalogService.forkExam(templateId, session.user.id);
+    const forked = await catalogService.forkExam(templateId, session.user.id);
 
-    return NextResponse.json({ examId: forkedId }, { status: 201 });
+    return NextResponse.json({ exam: forked }, { status: 201 });
   } catch (err: unknown) {
     console.error('Failed to fork exam:', err);
     const { status, ...body } = toApiErrorResponse(err);

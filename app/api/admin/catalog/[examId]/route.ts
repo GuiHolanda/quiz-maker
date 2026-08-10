@@ -7,32 +7,44 @@ import { prisma } from '@/lib/prisma';
 
 const catalogService = new ExamCatalogService();
 
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ examId: string }> }) {
+async function requireAdmin() {
   const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+  if (!session?.user?.id) return null;
   const dbUser = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: { plan: true },
   });
+  return dbUser?.plan === 'admin' ? session : null;
+}
 
-  if (dbUser?.plan !== 'admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ examId: string }> }) {
+  const session = await requireAdmin();
+  if (!session) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+  const { examId } = await params;
+
+  try {
+    const detail = await catalogService.getAdminExamDetail(examId);
+    return NextResponse.json(detail);
+  } catch (err: unknown) {
+    console.error('Failed to get exam detail:', err);
+    const { status, ...body } = toApiErrorResponse(err);
+    return NextResponse.json(body, { status });
   }
+}
+
+export async function PATCH(_request: NextRequest, { params }: { params: Promise<{ examId: string }> }) {
+  const session = await requireAdmin();
+  if (!session) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const { examId } = await params;
 
   try {
     await catalogService.promoteExam(examId);
-
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
     console.error('Failed to promote exam:', err);
     const { status, ...body } = toApiErrorResponse(err);
-
     return NextResponse.json(body, { status });
   }
 }

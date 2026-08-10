@@ -38,19 +38,16 @@ shared/
     ui/                       # Generic UI primitives (sidebar, workspace-header, PageHeader, etc.)
   types/
     index.ts                  # All shared TypeScript types
-  styles/
-    globals.css
 config/
   constants/index.ts          # App-wide constants, API URLs, localStorage keys, PLAN_LIMITS
   constants/inputStyles.ts    # Shared HeroUI input/select props (inputProperties)
-  promptSchemas/              # JSON output validation schemas (questionSchema.json, etc.)
-  site.ts                     # Site metadata and nav config
+  promptSchemas/              # JSON output validation schemas
 features/
   connectors.ts               # All HTTP client calls (single file)
   hooks/                      # Custom React hooks (*.hook.ts)
   providers/                  # Context providers (*.provider.tsx)
   reducers/                   # State reducers (*.reducer.ts)
-  services/                   # Server-side services (quota.service.ts, etc.)
+  services/                   # Server-side services
 lib/
   prisma.ts                   # Prisma client singleton
   bff.api.ts                  # Axios instance (baseURL: "/api") — client-side only
@@ -59,15 +56,9 @@ prisma/
   prod/                       # LibSQL (Turso) prod schema + migrations
 ```
 
-### Component co-location rule
+**Component co-location:** page-specific components in `app/(workspace)/<domain>/<page>/components/`; components used by 2+ pages in `shared/components/`. Group 3+ related files in a subfolder (`wizard/`, `list/`).
 
-Page-specific components live in `app/(workspace)/<domain>/<page>/components/`. Components used by more than one page live in `shared/components/`. Never put page-specific components in `shared/components/`.
-
-Group related page components into subfolders when there are 3+ files for the same concern — e.g. `components/wizard/`, `components/list/`. This keeps the flat `components/` directory scannable and each subfolder self-contained.
-
-### `lib/bff.api.ts` — client-side only
-
-The Axios instance uses `baseURL: '/api'` (relative URL). **Never import it in server components or API routes.** Server components that need data must call services directly (e.g. `new AdminService().getOverview()`) or use `prisma` directly.
+**`lib/bff.api.ts` — client-side only.** Uses `baseURL: '/api'`. Never import in server components or API routes. Server components call services directly.
 
 ---
 
@@ -98,146 +89,60 @@ The Axios instance uses `baseURL: '/api'` (relative URL). **Never import it in s
 
 ### Código declarativo e legível
 
-Prefira código que lê como uma descrição do que está acontecendo, não como uma sequência de operações.
+Em callbacks de array (`map`, `filter`, `some`, `reduce`), extraia variáveis locais descritivas:
 
-**Regras práticas:**
-- Em callbacks de array (`map`, `filter`, `some`, `reduce`), extraia variáveis locais para dar nome ao que está sendo acessado antes de operar sobre ele:
-  ```ts
-  // ❌ difícil de ler — referências repetidas e indexadas
-  distribution.some((s, i) => !originalDistribution[i] || originalDistribution[i].questionCount !== s.questionCount)
+```ts
+// ✅ nome revela a intenção
+distribution.some((entry, i) => {
+  const original = originalDistribution[i];
+  return !original || original.questionCount !== entry.questionCount;
+});
+```
 
-  // ✅ legível — nome revela a intenção
-  distribution.some((entry, i) => {
-    const original = originalDistribution[i];
-    return !original || original.questionCount !== entry.questionCount;
-  })
-  ```
-- Prefira nomes descritivos como `entry`, `original`, `current` a `s`, `a`, `x` em callbacks que não são triviais (uma única expressão)
-- Condicionais booleanas com múltiplas cláusulas devem usar variáveis intermediárias nomeadas quando a intenção não é imediatamente óbvia:
-  ```ts
-  // ❌
-  const isDistributionModified = distribution.length !== originalDistribution.length || distribution.some((s, i) => !originalDistribution[i] || ...)
-
-  // ✅
-  const isDistributionModified =
-    distribution.length !== originalDistribution.length ||
-    distribution.some((entry, i) => {
-      const original = originalDistribution[i];
-      return !original || original.topicName !== entry.topicName || original.questionCount !== entry.questionCount;
-    });
-  ```
+Prefira `entry`, `original`, `current` a `s`, `a`, `x`. Condicionais com múltiplas cláusulas usam variáveis intermediárias nomeadas quando a intenção não é óbvia.
 
 ### Component decomposition
 
-Prefer **extracting sub-components to their own files** whenever a piece of JSX has a clear responsibility boundary, receives identifiable props, or would appear in more than one place. Put related components in a subfolder (`wizard/`, `list/`, etc.) rather than growing a flat `components/` directory.
+Extract to a new file when: the piece has its own props interface; it manages its own state or refs; it appears in 2+ pages; the file grows past ~150 lines.
 
-**Extract to a new file when:**
-- The piece has its own props interface (presentational: a card, a panel, a row)
-- The piece manages its own local state or refs (e.g. a detail panel with `useRef`)
-- The same shape appears in multiple pages or domains → move to `shared/components/`
-- A component file is growing past ~150 lines
-
-**Use renderer functions** (declared inside the component, after `return`) only for smaller intra-component splits where extracting a file would be overkill:
-
-Rules:
-- Declare them **after the main `return`** statement, inside the component function body
-- Name them `render<What>` — e.g. `renderHeader()`, `renderActionsCell()`, `renderEditingActions()`
-- They capture component scope (state, props, handlers) directly — no need to pass anything unless the data only exists in a loop
-- Keep each renderer **single-purpose**
-- **When to use:** conditional UI blocks or table-cell variants that share too much scope to extract cleanly, return block > ~40 lines
-- **When NOT to use:** when the piece has its own props, state, or ref — extract a file instead
-
-```tsx
-export function MyComponent({ items }: MyComponentProps) {
-  const [editing, setEditing] = useState(false);
-
-  return (
-    <div>
-      {renderHeader()}
-      {items.map((item, i) => renderItemRow(item, i))}
-      {renderFooter()}
-    </div>
-  );
-
-  function renderHeader() { ... }
-  function renderItemRow(item: Item, index: number) { ... }
-  function renderFooter() { ... }
-}
-```
+**Use renderer functions** (declared after `return`, named `render<What>`) only for conditional blocks or table-cell variants that share too much scope to extract cleanly.
 
 ### useRequest vs manual try/catch
 
-`useRequest` wraps **a single function HTTP call** — use it for simple mutations (save, update, delete) where there is one API call and an optional `onSuccess` callback.
+`useRequest` — single HTTP call + optional `onSuccess`. Do **not** use for multi-step flows with multiple sequential calls, intermediate logic between calls, or `router.push()` mid-flow.
 
-Do **not** use `useRequest` for multi-step orchestration flows that involve:
-- Multiple sequential API calls with dependencies between them
-- Intermediate business logic between calls (e.g. score calculation)
-- Conditional branching based on intermediate responses
-- `router.push()` mid-flow
-
-For those cases, use manual `try/catch` with `addToast` for error feedback:
-
-```ts
-async function handleComplexFlow() {
-  setIsBusy(true);
-  try {
-    const result1 = await step1();
-    if (needsStep2(result1)) await step2(result1);
-    const final = await step3();
-    router.push('/next-page');
-  } catch (e: unknown) {
-    addToast({
-      title: t('toast.error'),
-      description:
-        (e as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        t('toast.somethingWrong'),
-      color: 'danger',
-    });
-    setIsBusy(false);
-  }
-}
-```
-
-Note: `setIsBusy(false)` goes in the `catch` only — on success the user navigates away so there is no need to reset it.
+For multi-step flows, use manual `try/catch`:
+- `setIsBusy(false)` in `catch` only — on success the user navigates away
+- Error feedback via `notify.error` with `err?.response?.data?.message` fallback to i18n key — never `err?.message`
 
 ### State Management
 - Context + Reducer pattern everywhere
 - One provider per domain: `ExamsProvider`, `QuizProvider`
 - Providers are composed in `app/layout.tsx`
-- UI-only state (selected item, active tab) → localStorage
-- Domain data (certifications list, questions) → database (source of truth)
+- **Prefer `useContext` over `useState`** for domain data — consume existing providers before reaching for local state
+- `useState` only for truly local, ephemeral UI state
 - All HTTP calls go through `features/connectors.ts`
 
 ### API Routes
 - Each route lives in its own folder under `app/api/`
 - Business logic in a co-located `.service.ts` file, not in the route handler
 - Route handlers: validate → call service → return `NextResponse.json()`
-- Error responses: always go through `toApiErrorResponse(err)` from `lib/api-error.ts` — never construct `{ error, message }` manually in a catch block
-- Validation errors throw with a `.status` property: `Object.assign(new Error(...), { status: 409 })`
+- Error responses: always go through `toApiErrorResponse(err)` from `lib/api-error.ts`
+- Validation errors throw with `.status`: `Object.assign(new Error(...), { status: 409 })`
 
 ### Error sanitization (`lib/api-error.ts`)
 
-`toApiErrorResponse(err: unknown): { error: string; message?: string; status: number }` classifies every thrown value before it leaves the API layer:
-
 | Error type | `message` in response | `status` |
 |---|---|---|
-| Service business-logic error (has `.status`) | present — the service message, user-facing | from `.status` |
+| Service business-logic error (has `.status`) | present — user-facing | from `.status` |
 | `PrismaClientValidationError` | absent | 500 |
 | `PrismaClientKnownRequestError` P2002 | absent | 409 |
 | Other `PrismaClientKnownRequestError` | absent | 500 |
 | Any other `Error` | present (for server logs) | 500 |
 
-When `message` is absent in the response, `useRequest` falls back to `t('toast.somethingWrong')` and components with manual catches fall back to `t('toast.failedToUpdate', ...)`.
-
-**Rules:**
-- Every catch block in every route handler must use `toApiErrorResponse` — no raw `err.message` in `NextResponse.json()`
-- Never log the raw Prisma message to the response body — it exposes schema details. It is logged server-side via `console.error` (visible in Vercel Function Logs)
-- Components that use `useRequest` get error toasts automatically — do not add a second `catch`
-- Components with manual `try/catch` must read `err?.response?.data?.message` and fall back to an i18n key — never use `err?.message` (that is the axios transport error, not a domain message)
+**Rules:** every catch block uses `toApiErrorResponse` — no raw `err.message` in responses. Never log the raw Prisma message to the response body. Components with `useRequest` get error toasts automatically — do not add a second `catch`.
 
 ### HTTP timeouts (request chain)
-
-For long-running endpoints (e.g. question generation), the timeout chain is:
 
 | Layer | Setting | File |
 |---|---|---|
@@ -245,53 +150,21 @@ For long-running endpoints (e.g. question generation), the timeout chain is:
 | axios client | `timeout: 280_000` | `lib/bff.api.ts` |
 | OpenAI SDK | `timeout: 280_000`, `maxRetries: 0` | `features/services/openAI.service.ts` |
 
-The axios + OpenAI SDK timeouts are deliberately shorter than `maxDuration` so the request fails fast before the platform kills the function. **When raising one, raise the others** — they're co-dependent. `maxRetries: 0` is intentional: timeouts on the OpenAI Responses API are slow-generation, not transient network failures, so retrying just doubles the wait. Per-call overrides are possible (`api.get(url, { timeout: 30_000 })`) but not currently used.
-
-`useRequest.hook.ts` detects axios timeouts (`error.code === 'ECONNABORTED'`) and surfaces `toast.requestTimeout` instead of the generic error toast.
+**When raising one, raise the others** — they're co-dependent. `maxRetries: 0` is intentional: timeouts are slow-generation, not transient failures.
 
 ### Prompt management (LLM)
 
-All LLM prompts live in `config/prompts/` as TypeScript files. There are no prompts stored in the OpenAI dashboard.
+All prompts in `config/prompts/` as TypeScript files — none stored in the OpenAI dashboard. Each exports a `PromptDefinition<TInput>` with a `build(input): string` method.
 
-**Pattern:** one file per prompt, each exports a typed `PromptDefinition<TInput>` object:
+**Calling:** always `openAIService.call(prompt, input)` — never `openAIClient` directly. **Model:** `OPENAI_MODEL` env var (default `gpt-4o`). **Exception:** `AiChatService` uses streaming with its own `responses.create()`.
 
-```typescript
-// config/prompts/my-feature.prompt.ts
-import type { PromptDefinition } from './types';
+Dispatch by exam type via `EXAM_PROMPTS: Record<ExamType, { research, review, format, answers, explanations }>` in `config/prompts/index.ts`.
 
-export interface MyFeatureInput {
-  readonly param: string;
-}
-
-export const myFeaturePrompt = {
-  build: (input: MyFeatureInput): string => `...${input.param}...`,
-} satisfies PromptDefinition<MyFeatureInput>;
-```
-
-**Calling the LLM:** always use `OpenAIService.call(prompt, input)` — a single method that uses the Responses API with `web_search_preview`. Never call `openAIClient` directly in route handlers.
-
-```typescript
-const response = await openAIService.call(myFeaturePrompt, { param: 'value' });
-```
-
-**Model:** controlled by `OPENAI_MODEL` env var (default `gpt-4o`). One env var governs all non-streaming calls. Change model in one place.
-
-**AI chat** is the only exception — `AiChatService` uses streaming and manages its own `responses.create()` call. Its prompt strings live in `config/prompts/ai-chat-*.prompt.ts` but are not `PromptDefinition` instances.
-
-**Discovery:** `config/prompts/index.ts` re-exports all `PromptDefinition` prompts and their input types.
-
-**Dispatch by exam type:** the two prompt families stay separate (structural divergence: exam-board style, PT-BR framing) but are dispatched through a single `EXAM_PROMPTS: Record<ExamType, { research, review, format, answers, explanations }>` table in `config/prompts/index.ts`. `generation-job.service.ts` and the exam routes index into `EXAM_PROMPTS[type]` and pass the type-specific input (`provider.name` for cert, `examBoard.name` for concurso).
-
-| File | Prompt | Domain |
-|---|---|---|
-| `certification-questions.prompt.ts` | Generate certification questions | Any certification (IT, finance, health, engineering…) |
-| `certification-answers.prompt.ts` | Validate certification answers | Any certification |
-| `certification-explanations.prompt.ts` | Explain certification answers per option | Any certification |
-| `public-exam-questions.prompt.ts` | Generate concurso público questions | Concursos brasileiros |
-| `public-exam-answers.prompt.ts` | Validate concurso answers | Concursos brasileiros |
-| `public-exam-explanations.prompt.ts` | Explain concurso answers per option | Concursos brasileiros |
-| `ai-chat-identify.prompt.ts` | First-turn chat classification | AI chat (streaming) |
-| `ai-chat-topics.prompt.ts` | Topic retrieval and config chat | AI chat (streaming) |
+| File | Domain |
+|---|---|
+| `certification-questions/answers/explanations.prompt.ts` | Any certification |
+| `public-exam-questions/answers/explanations.prompt.ts` | Concursos brasileiros |
+| `ai-chat-identify/topics.prompt.ts` | AI chat (streaming) |
 
 ### Imports
 - All absolute imports use `@/` alias (maps to project root)
@@ -301,321 +174,64 @@ const response = await openAIService.call(myFeaturePrompt, { param: 'value' });
 
 ## Internacionalização (i18n)
 
-### Arquitetura
-
-i18n implementado sem dependências externas: arquivos `.properties` + Context + Reducer custom.
-
 | Arquivo | Papel |
 |---|---|
-| `public/messages/en.properties` | Strings em inglês |
-| `public/messages/pt.properties` | Strings em português (unicode escapes `\uXXXX`) |
-| `lib/properties-parser.ts` | Parser `.properties` → `Record<string, string>` (decodifica `\uXXXX`) |
-| `features/reducers/language.reducer.ts` | Reducer: `language`, `messages`, actions `setLanguage` / `setMessages` |
-| `features/providers/language.provider.tsx` | Provider central — lê localStorage no mount, faz fetch do `.properties`, expõe `LanguageContext` |
-| `features/hooks/useTranslation.hook.ts` | Hook `useTranslation()` → `{ t, language, setLanguage }` |
-| `sharedComponents/ui/language-switch.tsx` | Toggle 🇧🇷 PT / 🇺🇸 EN no navbar |
+| `public/messages/en.properties` / `pt.properties` | Strings PT/EN |
+| `features/reducers/language.reducer.ts` | Reducer com `setLanguage` / `setMessages` |
+| `features/providers/language.provider.tsx` | Provider — lê localStorage, faz fetch do `.properties` |
+| `features/hooks/useTranslation.hook.ts` | `useTranslation()` → `{ t, language, setLanguage }` |
 
-### Como usar em componentes
+**Uso:** `t('common.save')`, interpolação: `t('quiz.progress', { answered: 5, total: 20 })`. Componentes que usam `useTranslation` precisam de `'use client'`.
 
-```tsx
-'use client';
-import { useTranslation } from '@/features/hooks/useTranslation.hook';
+**Adicionar string:** 1) `en.properties` 2) `pt.properties` (unicode escapes: `ã` → `ã`) 3) `t('chave')`.
 
-const { t } = useTranslation();
-// chave simples
-t('common.save')
-// com interpolação de variáveis
-t('quiz.progress', { answered: 5, total: 20 })  // → "5 of 20"
-```
+**Plural:** chaves separadas (`generate.correctAnswer` / `generate.correctAnswers`), selecione com ternário.
 
-### Convenções de chaves
-
-Namespaces por domínio: `common.*`, `homepage.*`, `login.*`, `certification.*`, `generate.*`, `quiz.*`, `error.*`, `toast.*`, `busy.*`, `aria.*`, `nav.*`
-
-Para plural, use chaves separadas:
-```properties
-generate.correctAnswer={count} correct answer
-generate.correctAnswers={count} correct answers
-```
-```tsx
-t(count === 1 ? 'generate.correctAnswer' : 'generate.correctAnswers', { count })
-```
-
-### Adicionar nova string
-
-1. Adicionar a chave em `public/messages/en.properties`
-2. Adicionar a chave em `public/messages/pt.properties` (caracteres especiais como unicode escapes: `ã` → `\u00E3`)
-3. Usar `t('chave')` no componente
-
-### Formato `.properties`
-
-```properties
-# comentário
-chave.simples=Valor aqui
-chave.com.variavel=Olá {nome}, você tem {count} mensagens
-```
-
-### Observações
-
-- `public/messages/` é seguro e intencional — strings de UI não são dados sensíveis e precisam de acesso público para o `fetch` do cliente
-- O `middleware.ts` exclui `/messages/*.properties` do guard de autenticação
-- O idioma padrão é `pt`; preferência persiste em `localStorage` via `LANGUAGE_LOCAL_STORAGE_KEY`
-- Componentes que usam `useTranslation` precisam obrigatoriamente de `'use client'`
+**Observações:** `public/messages/` é seguro — strings de UI não são dados sensíveis. O `middleware.ts` exclui `/messages/*.properties` do guard de autenticação. Idioma padrão: `pt`.
 
 ---
 
 ## Important Constraints
 
-- **Do not modify the Prisma schema** (`prisma/dev/schema.prisma` or `prisma/prod/schema.prisma`) without explicit approval. Schema changes require migrations.
-- **Do not introduce new state management libraries** (Redux, Zustand, Jotai). The Context + Reducer pattern is intentional.
-- **Ask before implementing** when there are multiple valid approaches. Do not pick a direction silently.
-- **Prefer editing existing files** over creating new ones. Do not create abstraction layers or utility files unless the task clearly requires them.
-- **No speculative features** — implement only what is asked. No "while I'm here" refactors.
+- **Do not modify the Prisma schema** without explicit approval — schema changes require migrations.
+- **Do not introduce new state management libraries** (Redux, Zustand, Jotai).
+- **Ask before implementing** when there are multiple valid approaches.
+- **Prefer editing existing files** over creating new ones.
+- **No speculative features** — implement only what is asked.
 
 ---
 
-## Testes Unitários
+## Tests
 
-### Infraestrutura
-
-| Ferramenta | Versão | Papel |
-|---|---|---|
-| Vitest | 4.x | Test runner (Node environment, globals: true) |
-| vitest-mock-extended | 4.x | Deep mock do PrismaService |
-| @vitest/coverage-v8 | 4.x | Cobertura de código |
-
-### Scripts
+See [`tests/CLAUDE.md`](tests/CLAUDE.md) for unit test patterns, mock infrastructure, E2E setup, and coverage map.
 
 ```bash
-npm test              # roda todos os testes (CI-safe, passa com 0 arquivos)
+npm test              # unit tests (CI-safe)
 npm run test:watch    # modo watch
-npm run test:coverage # gera relatório de cobertura
+npm run test:coverage # cobertura
+DATABASE_URL="file:/caminho/absoluto/prisma/dev.db" npm run e2e
 ```
-
-### Estrutura de arquivos
-
-```
-tests/
-  unit/
-    api/
-      __mocks__/
-        prisma.ts         ← deep-mock global do prisma (setupFiles)
-      services/
-        *.service.test.ts ← um arquivo por service
-vitest.config.ts          ← raiz do projeto
-```
-
-### Padrões de teste
-
-**Mock do Prisma — services com constructor injection:**
-```ts
-import { prismaMock } from '../__mocks__/prisma';
-// ...
-const service = new MyService(prismaMock as any);
-```
-
-**Mock do Prisma — services com prisma no nível de módulo:**
-```ts
-import { prismaMock } from '../__mocks__/prisma';
-// prismaMock é injetado automaticamente via vi.mock no setupFiles
-const service = new MyService(); // usa prismaMock automaticamente
-```
-
-**Mock de `$transaction` callback (forma padrão):**
-```ts
-prismaMock.$transaction.mockImplementation(async (fn) => fn(prismaMock));
-```
-
-**Mock de `$transaction` array (batch form — ex: `finishAttempt`):**
-```ts
-prismaMock.$transaction.mockResolvedValue([undefined, undefined]);
-```
-
-**Mock de dependências externas (ex: bcryptjs):**
-```ts
-vi.mock('bcryptjs', () => ({
-  default: { hash: vi.fn().mockResolvedValue('hashed-password') },
-}));
-import bcrypt from 'bcryptjs';
-```
-
-### O que testar
-
-- Lógica de negócio em `.service.ts` — validações, guards de ownership, cálculos
-- Caminhos de erro com o `status` correto (`rejects.toMatchObject({ status: 403 })`)
-- Efeitos colaterais críticos — ex: campos desnormalizados em `updateSubject`/`updateTopic` devem incluir o `where` completo (cláusula `OR` com fallback legacy)
-
-### O que NÃO testar (fora de escopo atual)
-
-- Serviços externos com streaming (OpenAI, edital extractor)
-- Webhooks Stripe (requer assinatura real)
-- Route handlers (integração — próxima iteração)
-- Componentes React (sem infra de UI testing)
-
-### Cobertura atual
-
-| Arquivo de teste | O que cobre |
-|---|---|
-| `services/exam.service.test.ts` | CRUD de Exam/Section/Topic (ambos os tipos); propagação de `updatedAt` ao pai e reescrita de snapshots em rename de section |
-| `services/exam-question.service.test.ts` | `saveAnswers` (upsert idempotente) e `saveExplanations` |
-| `services/quota.service.test.ts` | Verificação e registro de quota; `create_exam` contra `maxExams`; `getUsage` dual (examsUsed + split por tipo) |
-| `services/quiz-generator.service.test.ts` | Distribuição de questões por seção |
-| `services/register.service.test.ts` | Registro de usuário |
-| `services/reset-password.service.test.ts` | Reset de senha |
-| `services/mock-exam.service.test.ts` | Simulados unificados (cert + concurso) — disponibilidade, score, breakdown por seção, ensureAnswers |
-| `api-error.test.ts` | `toApiErrorResponse` — todos os ramos: erros de negócio, `PrismaClientValidationError`, `PrismaClientKnownRequestError` (P2002 e outros), `Error` genérico, non-`Error` |
-
----
-
-## Testes E2E (Playwright)
-
-### Infraestrutura
-
-| Ferramenta | Versão | Papel |
-|---|---|---|
-| `@playwright/test` | 1.x | Test runner + browser automation |
-| Chromium | (bundled) | Único browser testado |
-
-### Scripts
-
-```bash
-# Rodar headless (modo padrão)
-DATABASE_URL="file:/Users/<you>/.../myquiz/prisma/dev.db" npm run e2e
-
-# Interface gráfica (ver cada step em tempo real)
-DATABASE_URL="file:/Users/<you>/.../myquiz/prisma/dev.db" npm run e2e:ui
-
-# Com browser visível
-DATABASE_URL="file:/Users/<you>/.../myquiz/prisma/dev.db" npx playwright test --headed
-
-# Spec individual
-DATABASE_URL="..." npx playwright test full-journey
-
-# Ver relatório do último run
-npx playwright show-report
-```
-
-### Estrutura de arquivos
-
-Documentação detalhada da suite E2E vive em [tests/e2e/README.md](tests/e2e/README.md).
-
-```
-tests/
-  e2e/
-    auth/
-      storageState.json        ← sessão salva (gitignored)
-    fixtures/
-      auth.fixture.ts          ← mocks fixos das rotas OpenAI/resultado
-      mock-data.ts             ← payloads estáticos + fixtures de resultado
-    support/                   ← camada de helpers reutilizáveis
-      constants.ts             ← fonte única dos 6 identificadores de seed
-      db-cleanup.ts            ← sequência FK-safe de deleteMany (setup + teardown)
-      selectors.ts             ← tid() + catálogo TID (fonte única dos data-testid)
-      journey-config.ts        ← DOMAINS map (tudo que difere entre cert e concurso)
-      fake-eventsource.ts      ← injeta EventSource fake via addInitScript
-      mocks.ts                 ← mocks do ciclo do generation-job + override de resultado
-      flows.ts                 ← helpers funcionais de jornada
-    tests/
-      full-journey.spec.ts         ← jornada completa (×2 verticais)
-      generation-errors.spec.ts    ← quota 403 + erro de rede na geração
-      sse-reconnect.spec.ts        ← cancelar job + reconectar após reload
-      wizard-validation.spec.ts    ← discard de draft + guard de título vazio
-      question-bank.spec.ts        ← seed → verificar → buscar → deletar + empty state
-      empty-states.spec.ts         ← empty state de simulados e certificações
-    global-setup.ts            ← cria usuário tester, faz login, salva sessão
-    global-teardown.ts         ← deleta todos os dados do usuário E2E
-playwright.config.ts           ← raiz do projeto
-.env.test                      ← credenciais E2E (gitignored)
-.github/workflows/e2e.yml      ← CI no push para main
-```
-
-### Setup local obrigatório
-
-Criar `.env.test` na raiz do projeto (gitignored):
-
-```
-E2E_USER_EMAIL=e2e-test@certifiqueai.test
-E2E_USER_PASSWORD=E2ePassword123!
-```
-
-Instalar browsers uma vez:
-
-```bash
-npx playwright install chromium
-```
-
-### Como funciona
-
-- **`globalSetup`**: cria/reseta usuário `tester` (sem limite de quota) no banco dev, seeda uma certificação + um concurso (cada um com tópico/matéria e 3 questões via Prisma), faz login pela UI e salva `storageState.json`. Todos os testes partem autenticados sem re-login.
-- **Mocks OpenAI/resultado**: `auth.fixture.ts` intercepta os endpoints de `question-generator`, `answers`, finish-attempt (PATCH) e resultado (GET) — retorna payloads estáticos de `mock-data.ts`. Nenhuma chamada real à OpenAI.
-- **Seleção por `data-testid`**: a estratégia primária de seletor é `data-testid` (não labels i18n). O catálogo `TID` em `tests/e2e/support/selectors.ts` é a fonte única de verdade; cada atributo `data-testid` no componente deve casar com um valor de `TID`. HeroUI encaminha `data-testid` via react-aria `filterDOMProps`.
-- **`globalTeardown`**: deleta todos os dados do usuário E2E em ordem FK-safe via `cleanupUserData` (compartilhado com o setup, em `support/db-cleanup.ts`).
-- **DATABASE_URL**: `globalSetup`, `globalTeardown` e o `next dev` precisam usar o mesmo banco — passe o path absoluto como variável de ambiente.
-
-### Jornadas cobertas
-
-Especificações organizadas por capacidade (20 testes no total). Specs que valem para as duas verticais iteram `for (const domain of ALL_DOMAINS)`.
-
-| Spec | Testes | Cobre |
-|---|---|---|
-| `full-journey.spec.ts` | 1 (×2) | gerar → salvar → simulado → responder → resultado → tentar novamente → cancelar |
-| `generation-errors.spec.ts` | 2 (×2) | quota 403 sem badge de sucesso; abort de rede no POST → toast de erro |
-| `sse-reconnect.spec.ts` | 3 (×2) | cancelar job chama DELETE; restaura job `running` e `awaiting_review` após reload |
-| `wizard-validation.spec.ts` | 2 (×2) | discard de draft volta para a lista; não avança do step 1 sem título |
-| `question-bank.spec.ts` | 2 | seed via API → verificar → buscar → deletar; busca sem resultado → empty state |
-| `empty-states.spec.ts` | 2 | empty state de simulados e de certificações |
-
-### CI (GitHub Actions)
-
-`.github/workflows/e2e.yml` — trigger: `push` em `main`.
-
-Secrets necessários no repositório: `E2E_USER_EMAIL`, `E2E_USER_PASSWORD`, `NEXTAUTH_SECRET`.
-
-Em falha, o report HTML (screenshots + traces) é salvo como artifact em `playwright-report/`.
-
-### Nota técnica — HeroUI Radio + submit do Form
-
-O `Radio` do HeroUI v2 renderiza um `<input type="radio">` com `opacity: 0.0001`, e o botão de submit é um pressable do react-aria. Playwright não aceita `.click()` no input quasi-invisível, e `.click()` no submit seleciona o radio mas **não** dispara o submit do `<Form>` react-aria — a resposta nunca é salva (progresso fica "0 respondidas" e o botão finalizar continua desabilitado). A solução é `dispatchEvent('click')` em ambos:
-
-```typescript
-await group.locator('input').first().dispatchEvent('click');
-const submit = group.locator('xpath=ancestor::form').first().locator(tid(TID.answerSubmitBtn));
-await submit.dispatchEvent('click');
-```
-
-Não use: `.click({ force: true })`, `.check({ force: true })`, `page.mouse.click()` com boundingBox, ou `page.evaluate` com eventos sintéticos — nenhum desses funciona com React Aria.
 
 ---
 
 ## Usage Provider
 
-`UsageProvider` (`features/providers/usage.provider.tsx`) wraps the entire workspace layout and provides billing usage state to all workspace pages without redundant fetches.
+`UsageProvider` (`features/providers/usage.provider.tsx`) — consumed via `useUsageContext()`:
 
-```tsx
-// features/hooks/useUsageContext.hook.ts
-const { usage, refreshUsage } = useUsageContext();
-```
+- `usage` — `UsageStats | null`, fetched once on auth
+- `refreshUsage()` — call after saving questions so counters update without reload
 
-- `usage` — `UsageStats | null`, fetched once when `status === 'authenticated'`
-- `refreshUsage()` — refetches `getBillingUsage()` and updates state; call it after the user saves questions so the sidebar/header counters update instantly without a page reload
-
-**Wiring:** `sidebar.tsx` and `workspace-header.tsx` consume `useUsageContext()` instead of fetching independently. Pages that generate + save questions call `refreshUsage()` inside the `onSaved` callback.
-
-**Do not** call `getBillingUsage()` directly in components — use `useUsageContext()` instead.
+**Never call `getBillingUsage()` directly** — always `useUsageContext()`.
 
 ---
 
 ## Plans and Quotas
 
-### `UserPlan` type
-
 ```ts
 type UserPlan = 'free' | 'pro' | 'pro_ai' | 'tester' | 'admin';
 ```
 
-### Plan limits (`config/constants/index.ts` → `PLAN_LIMITS`)
-
-| Plan | Questions/period | Exams (cert + concurso) | AI Chat | Admin panel |
+| Plan | Questions/period | Exams | AI Chat | Admin |
 |---|---|---|---|---|
 | `free` | 250 | 2 | ✗ | ✗ |
 | `pro` | 1500 | 5 | ✗ | ✗ |
@@ -623,288 +239,90 @@ type UserPlan = 'free' | 'pro' | 'pro_ai' | 'tester' | 'admin';
 | `tester` | ∞ | ∞ | ✓ | ✗ |
 | `admin` | ∞ | ∞ | ✓ | ✓ |
 
-There is a **single `maxExams` counter** shared across both exam types — a `free` user can create any mix of certifications and concursos up to 2. `tester` and `admin` are assigned manually (no Stripe product). `pro_ai` is a Stripe add-on differentiated by price ID (`STRIPE_PRICE_ID_PRO_AI_MONTHLY/YEARLY`).
+**Single `maxExams` counter** shared across both exam types. `tester`/`admin` assigned manually. `pro_ai` differentiated by Stripe price ID.
 
-### Plan prices (`config/constants/index.ts` → `PLAN_PRICES_BRL_MONTHLY`)
+**`customQuotaOverride`:** `null` = plan default, `-1` = infinity sentinel, `N > 0` = custom. Logic in `quota.service.ts → resolveQuestionsLimit()`.
 
-Monthly prices in BRL used for admin margin analysis:
+**`-1` is the "unlimited" sentinel** throughout the UI — `UsageBadge` hides when `questionsLimit === -1`.
 
-```ts
-PLAN_PRICES_BRL_MONTHLY = { free: 0, pro: 19.80, pro_ai: 39.80 }
-```
-
-Yearly plans have ~25% discount (R$14,85 and R$29,85/month). `tester` and `admin` have no price.
-
-### `customQuotaOverride` (User field)
-
-Overrides `questionsPerPeriod` for a specific user, regardless of plan:
-- `null` → use plan default
-- `-1` → infinity (sentinel value, since DB can't store `Infinity`)
-- `N > 0` → custom numeric limit
-
-Logic is in `features/services/quota.service.ts` → `resolveQuestionsLimit()`.
-
-### `QuotaAction` type
-
-```ts
-type QuotaAction = 'generate_questions' | 'create_exam';
-```
-
-`quota.service.ts` enforces both. `create_exam` counts all `Exam` rows for the user (any `type`) against `maxExams`.
-
-### `UsageStats` shape
-
-```ts
-interface UsageStats {
-  plan: UserPlan;
-  questionsUsed: number;           // questões geradas no período atual (reseta a cada 30 dias)
-  questionsLimit: number;          // -1 means unlimited
-  questionsSavedInLibrary: number; // questões salvas (count de ExamQuestion)
-  examsUsed: number;               // enforcement: total across both types
-  examsLimit: number;              // -1 means unlimited
-  certificationsUsed: number;      // display only
-  publicExamsUsed: number;         // display only
-  periodStartDate: string;
-}
-```
-
-Enforcement uses the single `examsUsed`/`examsLimit`; `certificationsUsed`/`publicExamsUsed` are display-only counts shown split by type in the sidebar/admin. `-1` is the "unlimited" sentinel throughout the UI. The `UsageBadge` hides itself when `questionsLimit === -1`.
-
-`questionsUsed` e `questionsSavedInLibrary` medem coisas diferentes: o primeiro rastreia **chamadas à LLM** (para controle de quota e custo); o segundo conta **questões que o usuário efetivamente salvou na biblioteca**. A sidebar exibe ambos lado a lado para transparência.
+`questionsUsed` rastreia chamadas à LLM (quota/custo); `questionsSavedInLibrary` conta questões salvas pelo usuário — são métricas distintas.
 
 ---
 
 ## Admin Dashboard
 
-### Route structure
+`app/admin/` — completely separate from `(workspace)`. Auth guard in `layout.tsx` (server component, reads DB directly). All `/api/admin/*` routes verify `plan === 'admin'` independently.
 
-`app/admin/` — completely separate from `(workspace)`, uses its own layout with a sidebar. Does **not** use the workspace navbar.
+Admin server components call `AdminService` **directly** — do NOT use `features/connectors.ts` server-side.
 
-```
-app/admin/
-  layout.tsx           ← server component: auth guard (plan === 'admin') + sidebar
-  page.tsx             ← redirect → /admin/overview
-  overview/page.tsx    ← KPI cards + plan distribution
-  users/page.tsx       ← user table with inline plan/quota editing
-  analytics/page.tsx   ← plan distribution bars + top 10 users
-  audit-log/page.tsx   ← paginated history of admin actions
-```
+Routes: `overview`, `users`, `users/[id]` (PATCH — writes `AdminAuditLog`), `audit-log`, `exchange-rate` (live USD/BRL, 1h cache), `catalog`, `catalog/[examId]`.
 
-### Access guard
-
-`app/admin/layout.tsx` is a **server component** that reads the DB directly:
-```ts
-const dbUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { plan: true } });
-if (dbUser?.plan !== 'admin') redirect('/');
-```
-
-All `/api/admin/*` routes perform the same check independently (defense in depth).
-
-### Admin API routes
-
-```
-app/api/admin/
-  admin.service.ts          ← AdminService: getOverview, listUsers, updateUser, getAuditLog
-  overview/route.ts         ← GET → AdminOverviewStats
-  users/route.ts            ← GET → AdminUsersResponse (paginated, searchable, filterable)
-  users/[id]/route.ts       ← PATCH → update plan and/or customQuotaOverride
-  audit-log/route.ts        ← GET → AdminAuditLogResponse (paginated)
-  exchange-rate/route.ts    ← GET → { rate: number } — fetches live USD/BRL from AwesomeAPI (1h cache), fallback USD_TO_BRL_FALLBACK
-```
-
-**Important:** Admin server components (`overview/page.tsx`, `analytics/page.tsx`) call `AdminService` **directly** — they do NOT use `features/connectors.ts` (which uses the relative-URL axios instance and would fail server-side).
-
-### Analytics page — sections
-
-`app/admin/analytics/page.tsx` is a **server component** that calls `AdminService` directly and fetches the exchange rate from AwesomeAPI at render time.
-
-| Section | Content |
-|---|---|
-| Distribuição de Planos | User count + progress bar per plan |
-| Top 10 Usuários | Sorted by `questionsGeneratedThisPeriod`; columns: #, Usuário, Plano, Questões no Período, Total Tokens (in/out), Avg/questão, Custo Total (BRL), Custo/questão (BRL) |
-| Consumo de Tokens | 5 KPI cards: Input Tokens, Output Tokens, Média tokens/questão (with formula), Custo Total (BRL), Custo Médio/questão (BRL) |
-| Margem por Plano | Table for `free`, `pro`, `pro_ai`: Usuários, Receita est./mês, Custo Tokens, Margem, % Margem, Break-even |
-
-### `AdminOverviewStats` shape
-
-```ts
-interface AdminOverviewStats {
-  totalUsers: number;
-  byPlan: Record<UserPlan, number>;
-  activeSubscriptions: number;
-  totalQuestionsGenerated: number;   // all-time, from UsageLog._sum.count
-  avgUsagePercent: number;           // avg questionsGeneratedThisPeriod / limit for finite-limit users
-  totalInputTokens: number;
-  totalOutputTokens: number;
-  avgTokensPerQuestion: number;      // (input + output) / totalQuestionsGenerated
-  tokensByPlan: Record<UserPlan, {   // per-plan token aggregation (application-side join of UsageLog + User)
-    inputTokens: number;
-    outputTokens: number;
-    questionsGenerated: number;
-  }>;
-}
-```
-
-`tokensByPlan` is computed in `getOverview()` with two queries: `usageLog.groupBy(['userId'])` then `user.findMany` to resolve plan per userId, aggregated in memory.
-
-### Audit log
-
-Every `PATCH /api/admin/users/[id]` call writes a row to `AdminAuditLog` with `adminId`, `targetId`, `action`, `before` (JSON), `after` (JSON).
-
-### Session — `plan` field
-
-`auth.ts` `session` callback fetches the user's plan from DB on every session read and exposes it as `session.user.plan`. This makes `plan` available both server-side (via `auth()`) and client-side (via `useSession()`).
+`tokensByPlan` is computed in `getOverview()` via two queries + application-side join (usageLog groupBy userId → user.findMany to resolve plan).
 
 ---
 
 ## Feature Gating (UI)
 
-Features that require specific plans are hidden at the UI layer as well as enforced at the API layer.
+Gate in two places: API (403) + UI (not rendered). `session.user.plan` client-side via `useSession()`, server components query `prisma.user` directly.
 
-| Feature | Plans | Where gated |
-|---|---|---|
-| AI Chat FAB + Drawer | `pro_ai`, `tester`, `admin` | `AiChatWrapper.tsx` — hidden unless `session.user.plan` is in allowed list |
-| Admin link in sidebar | `admin` | `sidebar.tsx` — hidden unless `session.user.plan === 'admin'` |
-| Usage badge (header) | plans with finite limit | `UsageBadge.tsx` inside `WorkspaceHeader` — hidden when `questionsLimit === -1` |
-| Upgrade CTA (user dropdown) | `free` | `workspace-header.tsx` — shown only when `usage.plan === 'free'` |
-
-The Concursos section is now visible to **all plans** — the single `maxExams` quota lets free users create both certifications and concursos, so the old `publicExamsLimit === 0` gate was removed.
+| Feature | Plans |
+|---|---|
+| AI Chat FAB + Drawer | `pro_ai`, `tester`, `admin` |
+| Admin link in sidebar | `admin` |
+| Usage badge (header) | plans with finite limit |
+| Upgrade CTA | `free` |
 
 ---
 
 ## Session & Inactivity Policy
 
-### JWT expiration (server)
+**JWT:** expires 8h after login (`auth.ts → session.maxAge`). Do not increase without approval.
 
-`auth.ts` configures `session: { strategy: 'jwt', maxAge: 8 * 60 * 60 }` — JWT cookie expires **8 hours** after login regardless of activity. On the next request after expiry, NextAuth invalidates the session and the `authorized` callback in `auth.config.ts` redirects to `/login`.
+**Inactivity:** `useInactivityLogout` → signOut after 30 min without interaction. Wired globally via `<InactivityGuard />` in `app/providers.tsx` — do not move outside `<SessionProvider>` (uses `useSession()`).
 
-Do **not** increase `maxAge` without explicit approval — it directly impacts security on shared or unattended devices.
-
-### Inactivity auto-logout (client)
-
-`features/hooks/useInactivityLogout.hook.ts` monitors `mousemove`, `mousedown`, `keydown`, `touchstart`, and `scroll` events on `window`. If no event fires within `AI_CHAT_LOGOUT_INACTIVITY_MS` (30 minutes, in `config/constants/index.ts`), it calls `signOut({ callbackUrl: '/login' })`.
-
-The hook is wired **globally** via `<InactivityGuard />` in `app/providers.tsx` — it runs for every authenticated user on every page, not just inside the AI chat. It activates when `status === 'authenticated'` and tears down cleanly on logout or unmount.
-
-**Combined policy:**
-| Trigger | Timeout | Layer |
-|---|---|---|
-| No interaction (mouse/key/touch/scroll) | 30 min | Client (`useInactivityLogout`) |
-| Absolute session ceiling from last login | 8 h | Server (JWT `maxAge`) |
-
-### AI chat history isolation
-
-Chat messages are scoped to the authenticated user via user-specific localStorage keys:
-- `AI_CHAT_MESSAGES_{userId}` — message history
-- `AI_CHAT_FOLLOWUP_TS_{userId}` — inactivity follow-up timer
-
-The keys are computed by `AI_CHAT_LOCAL_STORAGE_KEY(userId)` and `AI_CHAT_FOLLOWUP_TIMESTAMP_KEY(userId)` (both functions in `config/constants/index.ts`). When `useAiChat(userId)` detects a `userId` change (e.g., user A logs out and user B logs in on the same device), it aborts any active stream, clears all in-memory state, and loads user B's messages from their own key. User A's history is never shown to user B.
+**AI chat isolation:** `useAiChat(userId)` uses `AI_CHAT_LOCAL_STORAGE_KEY(userId)` and `AI_CHAT_FOLLOWUP_TIMESTAMP_KEY(userId)`. Never call without `userId` or with a static string — would collapse all users' history into one key.
 
 ---
 
 ## Database
-
-Two environments, two schemas:
 
 | Env | Schema | DB |
 |---|---|---|
 | Dev | `prisma/dev/schema.prisma` | SQLite (`prisma/dev.db`) |
 | Prod | `prisma/prod/schema.prisma` | LibSQL (Turso) |
 
-Useful scripts:
 ```bash
 npm run prisma:migrate:dev    # Run dev migrations
 npm run prisma:generate:dev   # Regenerate Prisma client (dev)
-npm run db:seed:dev           # Seed dev database with sample certifications + questions
+npm run db:seed:dev           # Seed dev database
 npm run db:clear:dev          # Wipe dev database
 ```
 
-### Section percentage unit
-
-`ExamSection.minQuestions` / `maxQuestions` are **integers 0–100** (e.g. `25` means 25%). This is the canonical unit across the entire stack: AI chat prompts, draft modal, manual wizard, `ExamSectionsTable` sliders/inputs, API routes, and the database all use integer 0–100. **Do not multiply or divide by 100 when reading or writing these fields.**
-
-The only exception is `QuizGeneratorService.distributeQuestions` in [features/services/quiz-generator.service.ts](features/services/quiz-generator.service.ts), which converts to a fraction internally to multiply by `total` (`Math.floor((section.minQuestions / 100) * total)`).
+**Section percentage unit:** `ExamSection.minQuestions`/`maxQuestions` are **integers 0–100** (25 = 25%). Do not multiply or divide by 100 — the entire stack uses integer 0–100. Exception: `QuizGeneratorService.distributeQuestions` divides internally (`minQuestions / 100 * total`).
 
 ---
 
 ## Prova Completa (Full Exam Job)
 
-Modo que gera questões para **todos os tópicos/matérias de uma vez** em um job server-side, com progresso via SSE e persistência que sobrevive a reloads do browser.
+Async job that generates questions for all topics at once with SSE progress and persistence across reloads.
 
-### Fluxo
+**Flow:** POST `/api/full-exam-job` → returns `{ jobId }` in <1s → front connects `EventSource` to `/[jobId]/stream` → receives `progress`/`done`/`error` with `topics[]`. On reload: GET `/api/full-exam-job?type=&refKey=` reconnects if still `running`.
 
-1. Usuário ativa o toggle "Prova Completa" no `QuestionGeneratorForm` (`data-testid="full-exam-toggle"`)
-2. Tabela `FullExamDistributionTable` aparece com distribuição proporcional calculada via **largest remainder method** (garante soma exata = `totalQuestions`)
-3. `POST /api/full-exam-job` cria `FullExamJob` + `FullExamJobTopic` (uma linha por tópico com `status: 'pending'`) e dispara `processFullExamJob` via `after()` — retorna `{ jobId }` em < 1s
-4. Front conecta `EventSource` a `GET /api/full-exam-job/:jobId/stream` e recebe eventos `progress`/`done`/`error` com array `topics[]`
-5. Ao concluir: `InlineAlert` fica verde, badge vermelho no sino, notificação no dropdown com CTA → `/simulados?tab=new`
-6. Ao recarregar a página: `useEffect` faz `GET /api/full-exam-job?type=&refKey=` e reconecta ao stream se job ainda está `running`
+**Processing:** batches of 5 topics in parallel (`Promise.allSettled`); batches sequential; per-topic `pending → running → done/error`; topic failure doesn't cancel others.
 
-### Modelos de banco
+**Cancelamento:** `DELETE /api/full-exam-job/[jobId]`. Cleanup cron at `0 3 * * *` via `vercel.json` (marks `running` jobs older than 30min as `error`, protected by `CRON_SECRET`).
 
-```prisma
-model FullExamJob {
-  id, userId, type ("certification"|"public_exam"), refKey (= Exam.id), refName,
-  examBoardName?, status ("running"|"done"|"error"),
-  totalTopics, doneTopics, savedCount, topics FullExamJobTopic[]
-}
-
-model FullExamJobTopic {
-  id, jobId, topicName, questionCount,
-  status ("pending"|"running"|"done"|"error"),
-  savedCount, errorMessage?
-}
-```
-
-### Processamento
-
-`processFullExamJob` em `features/services/full-exam-job.service.ts`:
-- Cria todas as linhas `FullExamJobTopic` com `status: 'pending'` antes de começar
-- Processa em **batches de 5** tópicos em paralelo (`Promise.allSettled`); batches são sequenciais
-- Cada tópico: `pending → running → done/error` com `savedCount` e `errorMessage` atualizados
-- Um tópico que falha não cancela os demais — job termina `done` mesmo com erros parciais
-- Usa o mesmo pipeline 3 etapas OpenAI (research → review → format) dos routes individuais
-
-### Cancelamento e cleanup
-
-- `DELETE /api/full-exam-job/[jobId]` — cancela manualmente, seta `error` no job e tópicos `pending/running`
-- `GET /api/cron/cleanup-stale-jobs` — limpa jobs `running` com `updatedAt > 30min`. Configurado em `vercel.json` para rodar às 3h UTC diariamente (`0 3 * * *`). Requer `CRON_SECRET` env var (bearer token)
-- Para destravar job preso em dev: `sqlite3 prisma/dev.db "UPDATE FullExamJob SET status='error' WHERE status='running';"`
-
-### `vercel.json`
-
-```json
-{ "crons": [{ "path": "/api/cron/cleanup-stale-jobs", "schedule": "0 3 * * *" }] }
-```
-
-Hobby plan: máximo 2 cron jobs, frequência mínima 1x/dia — está dentro do limite.
+Dev unlock: `sqlite3 prisma/dev.db "UPDATE FullExamJob SET status='error' WHERE status='running';"`
 
 ---
 
 ## Git Workflow
 
-### Branch creation
+Before any non-trivial task, ask the user whether to create a new branch: `feature/<kebab-case>` or `fix/<kebab-case>`.
 
-Before starting any non-trivial task (new feature, refactor, bug fix), ask the user whether to create a new branch. If yes, create it following the naming convention `feature/<kebab-case>` (or `fix/<kebab-case>` for bug fixes) and switch to it before writing any code.
+**Never commit directly to `main`.** All work through a feature/fix branch.
 
-```bash
-git checkout -b feature/<kebab-case-description>
-```
-
-Do **not** commit directly to `main` under any circumstances. Never push to `main` directly. All work must go through a feature or fix branch and be merged via PR or explicit user instruction.
-
-Do **not** commit directly to the current working branch unless it is already a feature or fix branch (not `main`).
-
-### Commits
-
-Group related changes into logical, cohesive commits — never one giant commit for an entire task and never micro-commits per file. A good grouping might be:
-
-- Foundation / configuration changes
-- Shared/reusable components
-- Page-specific components
-- Documentation
-
-Each commit message follows the convention below. Keep the diff reviewable: if a commit touches more than ~10 files, look for a natural split.
+Group related changes into logical commits — not one giant commit, not micro-commits per file. Keep the diff reviewable (if a commit touches more than ~10 files, look for a natural split).
 
 ---
 
@@ -916,9 +334,7 @@ Each commit message follows the convention below. Keep the diff reviewable: if a
 
 Types: `feat`, `fix`, `refactor`, `chore`, `docs`, `test`
 
-**Mensagens curtas e objetivas — uma única linha, sem corpo.** Apenas a `<short description>` (≤ 72 caracteres). Não escreva bullets, não enumere arquivos, não justifique decisões já cobertas pelo plano. O diff e o título já dizem o que mudou.
-
-Examples from this repo:
+One line only, ≤ 72 chars, no body. Examples:
 - `feat: sync certifications state with database as source of truth`
 - `refactor: Use queueMicrotask for setting errors in QuestionGeneratorForm`
 
@@ -926,34 +342,16 @@ Examples from this repo:
 
 ## GitHub Issues
 
-The project backlog is tracked as GitHub Issues at **https://github.com/GuiHolanda/quiz-maker/issues**.
+Backlog at **https://github.com/GuiHolanda/quiz-maker/issues**. Create via `gh issue create --repo GuiHolanda/quiz-maker --title "<title>" --label "<label>" --body "<body>"`.
 
-Issues are created via the `gh` CLI (authenticated to `github.com`):
-
-```bash
-gh issue create --repo GuiHolanda/quiz-maker --title "<title>" --label "<label>" --body "<body>"
-```
-
-Common labels: `bug`, `feature`, `enhancement`, `backlog`.
-
-### When to suggest creating an issue
-
-**Always ask the user** whether to create a GitHub Issue when you identify any of the following during a task:
-
-- A bug or broken behavior spotted in code that is **out of scope** for the current task
-- A gap in UX or functionality (missing button, missing feedback, missing validation, etc.)
-- A technical debt item or known limitation worth tracking
-- An inconsistency between certification and public_exam behavior in the unified `/exams` route
-
-The question should be brief and specific — name the problem, then ask: *"Quer que eu crie uma issue para isso?"*. Do **not** create issues silently without asking.
+**Always ask** before creating an issue for: out-of-scope bugs, UX gaps, tech debt, cert/public_exam inconsistencies. Never create silently.
 
 ---
 
 ## Design Context
 
-Strategic and visual context for this product lives in two files at the project root:
-
-- **[PRODUCT.md](PRODUCT.md)** — register (`brand`), platform (`web`), users, positioning, brand personality, anti-references, and design principles. Read this before any marketing/landing page work or brand-level decisions.
-- **[DESIGN.MD](app/DESIGN.MD)** — visual system: color tokens, typography scale, spacing, elevation, component specs. Read this before any UI work.
-
-Register is **brand** (the marketing landing page is the primary surface). The product workspace is the secondary surface. When working on `app/(marketing)/`, treat brand register as primary.
+- **[PRODUCT.md](PRODUCT.md)** — brand register, positioning, personality, anti-references. Read before any marketing/landing page work.
+- **[DESIGN.MD](app/DESIGN.MD)** — color tokens, typography, spacing, component specs. Read before any UI work.
+- **[app/CLAUDE.md](app/CLAUDE.md)** — frontend patterns, component inventory, visual rules.
+- **[app/api/CLAUDE.md](app/api/CLAUDE.md)** — API routes, service layer map, backend patterns.
+- **[tests/CLAUDE.md](tests/CLAUDE.md)** — test infrastructure, Prisma mock patterns, E2E setup.

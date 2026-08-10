@@ -25,7 +25,7 @@ export function ExamsEmptyState({ icon, title, description, addHref, addLabel }:
       <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
         <FontAwesomeIcon className="text-primary" icon={icon} size="2x" />
       </div>
-      <div className="flex flex-col gap-2 max-w-md">
+      <div className="flex flex-col gap-2 max-w-2xl">
         <h2 className="text-2xl font-bold text-foreground">{title}</h2>
         <p className="text-sm text-default-500">{description}</p>
       </div>

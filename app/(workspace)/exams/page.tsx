@@ -70,7 +70,7 @@ function ExamsContent() {
       <section data-testid="configure-list-section">
         <ExamsList type={type} />
       </section>
-      <CatalogSection />
+      <CatalogSection type={type} />
     </PageHeader>
   );
 }

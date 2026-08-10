@@ -14,7 +14,7 @@ export async function GET() {
   }
 
   try {
-    const templates = await catalogService.getTemplates();
+    const templates = await catalogService.getTemplates(session.user.id);
 
     return NextResponse.json({ templates });
   } catch (err: unknown) {

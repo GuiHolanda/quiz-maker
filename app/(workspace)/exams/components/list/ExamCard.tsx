@@ -11,29 +11,23 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import type { Exam, ExamType } from '@/shared/types';
 import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+import Image from 'next/image';
 
 interface ExamCardProps {
   readonly exam: Exam;
   readonly type: ExamType;
   readonly isSelected: boolean;
   readonly onClick: () => void;
+  readonly footerAction?: React.ReactNode;
 }
 
-export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
+export function ExamCard({ exam, type, isSelected, onClick, footerAction }: ExamCardProps) {
   const { t } = useTranslation();
   const config = EXAM_CONFIG[type];
   const hasNoSections = exam.sections.length === 0;
   const [logoError, setLogoError] = useState(false);
 
   const referenceEntity = type === 'certification' ? exam.provider : exam.examBoard;
-  const initials = referenceEntity?.name
-    ? referenceEntity.name
-        .trim()
-        .split(/\s+/)
-        .slice(0, 2)
-        .map((w) => w[0].toUpperCase())
-        .join('')
-    : null;
 
   const hasStats = exam.totalQuestions > 0 || !!exam.examDurationMinutes || exam.passingScore != null;
   const dateValue = exam.updatedAt && exam.updatedAt !== exam.createdAt ? exam.updatedAt : exam.createdAt;
@@ -140,9 +134,11 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
 
       <CardFooter className="px-4 py-3 flex items-center justify-between border-t border-default-200 mt-3">
         <span className="text-xs text-default-400">{dateValue ? <RelativeDate date={dateValue} /> : null}</span>
-        <Button className={buttonStyles.primarySm} size="sm" onPress={onClick}>
-          {t('common.viewDetails')}
-        </Button>
+        {footerAction ?? (
+          <Button className={buttonStyles.primarySm} size="sm" onPress={onClick}>
+            {t('common.viewDetails')}
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
@@ -153,11 +149,12 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
 
     if (logoUrl && logoAlt && !logoError) {
       return (
-        <div className="w-10 h-10 rounded-xl bg-white border border-default-200 flex items-center justify-center shrink-0 overflow-hidden p-1.5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+        <div className="w-32 h-12 rounded-lg bg-white flex items-center justify-center shrink-0 overflow-hidden p-2">
+          <Image
             alt={logoAlt}
             className="w-full h-full object-contain"
+            width={128}
+            height={128}
             src={logoUrl}
             onError={() => setLogoError(true)}
           />
@@ -165,17 +162,9 @@ export function ExamCard({ exam, type, isSelected, onClick }: ExamCardProps) {
       );
     }
 
-    if (initials) {
-      return (
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-          <span className="text-xs font-bold text-primary leading-none tracking-tight">{initials}</span>
-        </div>
-      );
-    }
-
     return (
-      <div className="w-10 h-10 rounded-xl bg-content2 border border-default-200 flex items-center justify-center shrink-0">
-        <FontAwesomeIcon className="text-sm text-default-400" icon={config.icon} />
+      <div className="w-16 h-16 rounded-xl bg-content2 border border-default-200 flex items-center justify-center shrink-0">
+        <FontAwesomeIcon className="text-sm text-default-400" icon={config.icon} size='xl'/>
       </div>
     );
   }
