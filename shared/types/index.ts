@@ -44,20 +44,6 @@ export interface Answer {
   explanations: Record<string, string>;
 }
 
-export interface QuestionParams {
-  certification_name: string;
-  topic_name: string;
-  num_questions: string;
-}
-
-export type QuizParams = {
-  certificationTitle: string;
-  topics: string[];
-  numQuestions: number;
-  difficulty?: { easy: number; medium: number; hard: number };
-  newPercent?: number;
-  timeoutMs?: number;
-};
 export interface QuizLocalStoragePayload {
   meta: { topic: string; num_questions: number };
   aiQuestions: AIQuestion[];
@@ -65,12 +51,6 @@ export interface QuizLocalStoragePayload {
   answers?: AnswersMap;
   isFinished?: boolean;
   questions?: StoredQuestion[];
-}
-
-export interface AIQuestionsStoragePayload {
-  meta: { topic: string; num_questions: number };
-  questions: AIQuestion[];
-  selectedAIQuestions: number[] | null;
 }
 
 export type ExamType = 'certification' | 'public_exam';
@@ -178,14 +158,6 @@ export interface UsageStats {
   hasStripePortalAccess: boolean; // true only if user has a stripeCustomerId (not all paid plans do)
 }
 
-export interface QuotaError {
-  error: 'quota_exceeded';
-  message: string;
-  limit: number;
-  used: number;
-  plan: UserPlan;
-}
-
 export interface BrowseSectionSummary {
   name: string;
   questionCount: number;
@@ -269,12 +241,6 @@ export interface SearchResultItem {
 export interface SearchResponse {
   readonly results: SearchResultItem[];
 }
-
-export type ExamFormErrors = {
-  examName?: string;
-  section?: string;
-  num_questions?: string;
-};
 
 export interface ExamRef {
   id: string;
@@ -477,8 +443,6 @@ export interface QuestionBankResponse {
   page: number;
   pageSize: number;
 }
-
-export type SimuladoType = 'certification' | 'concurso';
 
 export interface AppNotification {
   id: string;
