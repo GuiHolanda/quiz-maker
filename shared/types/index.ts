@@ -547,3 +547,40 @@ export interface DashboardStats {
   readonly scoreTrend: DashboardScoreTrendPoint[];
   readonly domainBreakdown: DashboardDomainStat[];
 }
+
+export interface CatalogExam {
+  readonly id: string;
+  readonly type: ExamType;
+  readonly name: string;
+  readonly role?: string | null;
+  readonly year?: number | null;
+  readonly key?: string | null;
+  readonly totalQuestions: number;
+  readonly provider?: Provider | null;
+  readonly examBoard?: ExamBoard | null;
+  readonly sections: ExamSection[];
+  readonly poolQuestionCount: number;
+}
+
+export interface CatalogListResponse {
+  readonly templates: CatalogExam[];
+}
+
+export interface AdminCatalogEntry {
+  readonly id: string;
+  readonly type: ExamType;
+  readonly name: string;
+  readonly role?: string | null;
+  readonly year?: number | null;
+  readonly provider?: Provider | null;
+  readonly examBoard?: ExamBoard | null;
+  readonly isTemplate: boolean;
+  readonly userId: string | null;
+  readonly ownerEmail?: string | null;
+  readonly sectionCount: number;
+  readonly questionCount: number;
+}
+
+export interface AdminCatalogListResponse {
+  readonly entries: AdminCatalogEntry[];
+}

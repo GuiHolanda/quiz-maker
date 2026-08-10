@@ -6,7 +6,7 @@ CREATE TABLE "QuestionPool" (
     "examBoardId" TEXT,
     "sectionName" TEXT NOT NULL,
     "topicName" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "QuestionPool_providerId_fkey" FOREIGN KEY ("providerId") REFERENCES "Provider" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT "QuestionPool_examBoardId_fkey" FOREIGN KEY ("examBoardId") REFERENCES "ExamBoard" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
