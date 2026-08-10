@@ -67,19 +67,36 @@ model VerificationToken {
 }
 
 model Provider {
-  id       String  @id @default(cuid())
-  name     String  @unique
+  id       String         @id @default(cuid())
+  name     String         @unique
   fullName String?
   logoUrl  String?
   exams    Exam[]
+  pools    QuestionPool[]
 }
 
 model ExamBoard {
-  id       String  @id @default(cuid())
-  name     String  @unique
+  id       String         @id @default(cuid())
+  name     String         @unique
   fullName String?
   logoUrl  String?
   exams    Exam[]
+  pools    QuestionPool[]
+}
+
+model QuestionPool {
+  id          String         @id @default(cuid())
+  type        String
+  providerId  String?
+  examBoardId String?
+  sectionName String
+  topicName   String?
+  createdAt   DateTime       @default(now())
+  provider    Provider?      @relation(fields: [providerId], references: [id])
+  examBoard   ExamBoard?     @relation(fields: [examBoardId], references: [id])
+  questions   ExamQuestion[]
+
+  @@unique([type, providerId, examBoardId, sectionName, topicName])
 }
 
 model Exam {
@@ -97,6 +114,7 @@ model Exam {
   userId              String?
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
+  isTemplate          Boolean        @default(false)
   provider            Provider?      @relation(fields: [providerId], references: [id])
   examBoard           ExamBoard?     @relation(fields: [examBoardId], references: [id])
   user                User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -142,6 +160,7 @@ model ExamQuestion {
   sectionId         String?
   topicId           String?
   userId            String?
+  poolId            String?
   createdAt         DateTime           @default(now())
   options           ExamOption[]
   answer            ExamAnswer?
@@ -149,6 +168,7 @@ model ExamQuestion {
   section           ExamSection?       @relation(fields: [sectionId], references: [id], onDelete: SetNull)
   topic             ExamTopic?         @relation(fields: [topicId], references: [id], onDelete: SetNull)
   user              User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pool              QuestionPool?      @relation(fields: [poolId], references: [id])
   mockExamQuestions MockExamQuestion[]
 
   @@index([examId])
