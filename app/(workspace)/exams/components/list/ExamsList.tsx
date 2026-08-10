@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import { ExamCard } from './ExamCard';
 import { ExamDetailPanel } from './ExamDetailPanel';
@@ -13,8 +12,9 @@ import type {
   EditExamModalCertResult,
   EditExamModalPublicExamResult,
 } from '@/shared/components/EditExamModal/EditExamModal';
-import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { ExamsEmptyState } from './ExamsEmptyState';
+import { EntityListShell } from '@/shared/components/ui/EntityListShell';
+import { usePaginatedItems } from '@/features/hooks/usePaginatedItems.hook';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { deleteExam } from '@/features/connectors';
 import type { Exam, ExamSection, ExamTopic, ExamType } from '@/shared/types';
@@ -37,6 +37,7 @@ export function ExamsList({ type }: ExamsListProps) {
   const [deletingExam, setDeletingExam] = useState<Exam | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const { pageItems, page, totalPages, perPage, setPage, setPerPage } = usePaginatedItems(exams);
   const selectedExam = exams.find((e) => e.id === selectedId) ?? null;
 
   const handleCardClick = useCallback((exam: Exam) => {
@@ -157,64 +158,77 @@ export function ExamsList({ type }: ExamsListProps) {
     }
   }, [deletingExam, removeExam, selectedId, config, t]);
 
-  if (isLoading) return <SkeletonListLoader />;
-
-  if (exams.length === 0) {
-    return (
-      <ExamsEmptyState
-        addHref={`/exams/new?type=${type}`}
-        addLabel={t(config.emptyActionLabel)}
-        description={t(config.emptyDescription)}
-        icon={config.icon}
-        title={t(config.emptyTitle)}
-        type={type}
-      />
-    );
-  }
-
   return (
     <>
-      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(480px, 1fr))' }}>
-        {exams.map((exam) => (
-          <ExamCard
-            key={exam.id ?? exam.name}
-            exam={exam}
-            isSelected={selectedId === exam.id}
+      <EntityListShell
+        title={t(config.listTitle)}
+        totalItems={exams.length}
+        isLoading={isLoading}
+        emptyState={
+          <ExamsEmptyState
+            addHref={`/exams/new?type=${type}`}
+            addLabel={t(config.emptyActionLabel)}
+            description={t(config.emptyDescription)}
+            icon={config.icon}
+            title={t(config.emptyTitle)}
             type={type}
-            onClick={() => handleCardClick(exam)}
           />
-        ))}
-      </div>
-
-      <AnimatePresence>
-        {selectedExam && (
-          <motion.div
-            key={selectedExam.id}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            initial={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <ExamDetailPanel
-              exam={selectedExam}
+        }
+        pagination={
+          totalPages > 1
+            ? {
+                currentPage: page,
+                totalPages,
+                totalItems: exams.length,
+                itemsPerPage: perPage,
+                onPageChange: setPage,
+                onItemsPerPageChange: (e) => setPerPage(Number(e.target.value)),
+              }
+            : undefined
+        }
+      >
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(480px, 1fr))' }}>
+          {pageItems.map((exam) => (
+            <ExamCard
+              key={exam.id ?? exam.name}
+              exam={exam}
+              isSelected={selectedId === exam.id}
               type={type}
-              onClose={() => setSelectedId(null)}
-              onDelete={() => setDeletingExam(selectedExam)}
-              onEdit={() => setEditingExam(selectedExam)}
-              onSectionAdded={(section) => handleSectionAdded(selectedExam, section)}
-              onSectionRemoved={(sectionId) => handleSectionRemoved(selectedExam, sectionId)}
-              onSectionUpdated={(sectionId, newName, min, max) =>
-                handleSectionUpdated(selectedExam, sectionId, newName, min, max)
-              }
-              onTopicAdded={(sectionId, topic) => handleTopicAdded(selectedExam, sectionId, topic)}
-              onTopicRemoved={(sectionId, topicId) => handleTopicRemoved(selectedExam, sectionId, topicId)}
-              onTopicUpdated={(sectionId, topicId, newName) =>
-                handleTopicUpdated(selectedExam, sectionId, topicId, newName)
-              }
+              onClick={() => handleCardClick(exam)}
             />
-          </motion.div>
-        )}
-      </AnimatePresence>
+          ))}
+        </div>
+
+        <AnimatePresence>
+          {selectedExam && (
+            <motion.div
+              key={selectedExam.id}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              initial={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <ExamDetailPanel
+                exam={selectedExam}
+                type={type}
+                onClose={() => setSelectedId(null)}
+                onDelete={() => setDeletingExam(selectedExam)}
+                onEdit={() => setEditingExam(selectedExam)}
+                onSectionAdded={(section) => handleSectionAdded(selectedExam, section)}
+                onSectionRemoved={(sectionId) => handleSectionRemoved(selectedExam, sectionId)}
+                onSectionUpdated={(sectionId, newName, min, max) =>
+                  handleSectionUpdated(selectedExam, sectionId, newName, min, max)
+                }
+                onTopicAdded={(sectionId, topic) => handleTopicAdded(selectedExam, sectionId, topic)}
+                onTopicRemoved={(sectionId, topicId) => handleTopicRemoved(selectedExam, sectionId, topicId)}
+                onTopicUpdated={(sectionId, topicId, newName) =>
+                  handleTopicUpdated(selectedExam, sectionId, topicId, newName)
+                }
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </EntityListShell>
 
       <EditExamModal
         exam={editingExam}
