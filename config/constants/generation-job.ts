@@ -1,10 +1,5 @@
 // config/constants/generation-job.ts
 
-// Tier 1 OpenAI (gpt-5.4-mini): 200K TPM / 500 RPM / 2M TPD. Used for margin docs only;
-// there is no in-process TPM enforcement (serverless invocations don't share memory),
-// so concurrency is the effective throttle. Kept at 95% for reference.
-export const OPENAI_TPM_LIMIT = 190_000;
-
 // Global cap on topics generating in parallel. 200K TPM / ~12K tokens per topic/min ≈ 16;
 // 10 leaves ~30% headroom against 429s. Overridable via env for tuning without deploy.
 export const GENERATION_MAX_CONCURRENT_TOPICS = Number(process.env.GENERATION_MAX_CONCURRENT_TOPICS ?? 10);

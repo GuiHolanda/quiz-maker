@@ -6,8 +6,6 @@ export * from './generation-job';
 export const EXAMS_URL = '/exam/exams';
 export const SAVE_EXAM_URL = '/exam/save-exam';
 export const SAVE_EXAM_QUESTIONS_URL = '/exam/save-questions';
-export const GET_EXAM_ANSWERS_URL = '/exam/get-answers';
-export const EXAM_QUIZ_GENERATOR_URL = '/exam/quiz-generator';
 export const EXAM_QUESTION_EXPLANATION_URL = '/exam/questions';
 export const BROWSE_SUMMARY_URL = '/exam/browse-questions/summary';
 export const BROWSE_QUESTIONS_URL = '/exam/browse-questions/questions';
@@ -92,6 +90,8 @@ export const INITIAL_MOCK_EXAMS_STATE: MockExamsState = {
 export const QUESTION_BANK_URL = '/question-bank';
 export const QUESTION_BANK_TOPICS_URL = '/question-bank/topics';
 export const QUESTION_BANK_SOURCES_URL = '/question-bank/sources';
+
+export const SEARCH_URL = '/search';
 
 export const DASHBOARD_STATS_URL = '/dashboard/stats';
 

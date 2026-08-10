@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { signOut } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMicrochip, faBars, faXmark, faArrowUp, faUser } from '@fortawesome/free-solid-svg-icons';
+import { faMicrochip, faBars, faXmark, faArrowUp, faUser, faHouse } from '@fortawesome/free-solid-svg-icons';
 import { Avatar } from '@heroui/avatar';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSection } from '@heroui/dropdown';
 import { Button } from '@heroui/button';
@@ -58,7 +58,16 @@ export function MarketingNavbar() {
               {/* Right side */}
               <div className="flex items-center gap-3">
                 {status === 'authenticated' && session?.user ? (
-                  renderUserDropdown()
+                  <>
+                    <NextLink
+                      className="text-sm font-medium text-navy-400 hover:text-white transition-colors duration-150 hidden sm:flex items-center gap-1.5"
+                      href="/dashboard"
+                    >
+                      <FontAwesomeIcon icon={faHouse} className="text-xs" />
+                      {t('nav.dashboard')}
+                    </NextLink>
+                    {renderUserDropdown()}
+                  </>
                 ) : (
                   <>
                     <NextLink

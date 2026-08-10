@@ -1,8 +1,6 @@
 import {
   SAVE_EXAM_URL,
   SAVE_EXAM_QUESTIONS_URL,
-  GET_EXAM_ANSWERS_URL,
-  EXAM_QUIZ_GENERATOR_URL,
   EXAM_QUESTION_EXPLANATION_URL,
   EXAMS_URL,
   BILLING_USAGE_URL,
@@ -26,6 +24,7 @@ import {
   USAGE_HISTORY_FILTERS_URL,
   GENERATION_JOB_SAVE_URL,
   DASHBOARD_STATS_URL,
+  SEARCH_URL,
 } from '@/config/constants';
 import {
   AIExamQuestion,
@@ -33,12 +32,9 @@ import {
   ExamType,
   ExamSection,
   ExamTopic,
-  StoredExamQuestion,
   SectionUpdatePayload,
   UsageStats,
   BrowseSummary,
-  BrowseQuestionsParams,
-  BrowseQuestionsResponse,
   Provider,
   ExamBoard,
   MockExamListItem,
@@ -59,6 +55,7 @@ import {
   GenerationHistoryFilters,
   GenerationHistoryFilterOptions,
   DashboardStats,
+  SearchResponse,
 } from '@/shared/types';
 import api from '@/lib/bff.api';
 
@@ -154,21 +151,6 @@ export async function saveExamQuestions(type: ExamType, questions: AIExamQuestio
   await api.post(SAVE_EXAM_QUESTIONS_URL, { type, questions, ...(examId && { examId }) });
 }
 
-export async function getExamAnswers(type: ExamType, questions: AIExamQuestion[]): Promise<void> {
-  await api.post(GET_EXAM_ANSWERS_URL, { type, questions });
-}
-
-export async function getQuizQuestions(params: {
-  examName: string;
-  numQuestions: number;
-}): Promise<StoredExamQuestion[]> {
-  const { data } = await api.get<StoredExamQuestion[]>(EXAM_QUIZ_GENERATOR_URL, {
-    params: { examName: params.examName, numQuestions: params.numQuestions },
-  });
-
-  return data;
-}
-
 export async function getExamQuestionExplanation(questionId: number): Promise<Record<string, string>> {
   const { data } = await api.get<{ explanations: Record<string, string> }>(
     `${EXAM_QUESTION_EXPLANATION_URL}/${questionId}/explanation`
@@ -191,18 +173,6 @@ export async function getExamBoards(): Promise<ExamBoard[]> {
   return data.examBoards;
 }
 
-export async function createProvider(name: string, fullName?: string): Promise<Provider> {
-  const { data } = await api.post<{ provider: Provider }>(PROVIDERS_URL, { name, fullName });
-
-  return data.provider;
-}
-
-export async function createExamBoard(name: string, fullName?: string): Promise<ExamBoard> {
-  const { data } = await api.post<{ examBoard: ExamBoard }>(EXAM_BOARDS_URL, { name, fullName });
-
-  return data.examBoard;
-}
-
 export async function extractEdital(file: File, role?: string): Promise<Exam> {
   const formData = new FormData();
 
@@ -219,12 +189,6 @@ export async function extractEdital(file: File, role?: string): Promise<Exam> {
 
 export async function getBrowseSummary(): Promise<BrowseSummary> {
   const { data } = await api.get<BrowseSummary>(BROWSE_SUMMARY_URL);
-
-  return data;
-}
-
-export async function getBrowseQuestions(params: BrowseQuestionsParams): Promise<BrowseQuestionsResponse> {
-  const { data } = await api.get<BrowseQuestionsResponse>(BROWSE_QUESTIONS_URL, { params });
 
   return data;
 }
@@ -425,5 +389,12 @@ export const getGenerationHistoryFilters = (): Promise<GenerationHistoryFilterOp
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   const { data } = await api.get<DashboardStats>(DASHBOARD_STATS_URL);
+  return data;
+}
+
+// — Search —
+
+export async function globalSearch(q: string, signal?: AbortSignal): Promise<SearchResponse> {
+  const { data } = await api.get<SearchResponse>(SEARCH_URL, { params: { q }, signal });
   return data;
 }

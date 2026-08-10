@@ -29,7 +29,7 @@ export function BillingOverview() {
   const [usage, setUsage] = useState<UsageStats | null>(null);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const [isCancelOpen, setIsCancelOpen] = useState(false);
-  const [portalLoading, setPortalLoading] = useState(false);
+  const [portalLoadingKey, setPortalLoadingKey] = useState<string | null>(null);
   const toastFiredRef = useRef(false);
   const isUpgradeFlow = searchParams.get('upgraded') === 'true';
 
@@ -76,9 +76,10 @@ export function BillingOverview() {
   const resetDate = new Date(usage.periodStartDate);
 
   resetDate.setDate(resetDate.getDate() + 30);
-  const resetLabel = resetDate.toLocaleDateString();
+  const resetLabel = resetDate.toLocaleDateString('pt-BR');
 
   const isPaid = usage.plan !== 'free';
+  const hasStripeSubscription = usage.hasStripePortalAccess;
 
   const certLimitLabel = usage.examsLimit === -1 ? t('billing.unlimited') : String(usage.examsLimit);
   const qLimitLabel = usage.questionsLimit === -1 ? t('billing.unlimited') : String(usage.questionsLimit);
@@ -90,14 +91,15 @@ export function BillingOverview() {
         ? t('billing.planPro')
         : t('billing.planFree');
 
-  async function handlePortal() {
-    setPortalLoading(true);
+  async function handlePortal(key: string) {
+    setPortalLoadingKey(key);
     try {
       const url = await getPortalUrl();
 
       window.location.href = url;
     } catch {
-      setPortalLoading(false);
+      notify.error(t('toast.error'), t('toast.somethingWrong'));
+      setPortalLoadingKey(null);
     }
   }
 
@@ -105,9 +107,9 @@ export function BillingOverview() {
     <div className="flex flex-col gap-8">
       {renderPlanBanner()}
       {renderUsageSection()}
-      {isPaid && renderPaymentSection()}
-      {isPaid && renderBillingHistorySection()}
-      {isPaid && renderCancelSection()}
+      {hasStripeSubscription && renderPaymentSection()}
+      {hasStripeSubscription && renderBillingHistorySection()}
+      {hasStripeSubscription && renderCancelSection()}
       {renderCancelModal()}
       <UpgradeModal isOpen={isUpgradeOpen} onClose={() => setIsUpgradeOpen(false)} />
     </div>
@@ -131,20 +133,20 @@ export function BillingOverview() {
               : t('billing.periodResetsOn', { date: resetLabel })}
           </p>
         </div>
-        {isPaid ? (
+        {hasStripeSubscription ? (
           <Button
             className={buttonStyles.secondary}
-            isLoading={portalLoading}
+            isLoading={portalLoadingKey === 'changePlan'}
             variant="bordered"
-            onPress={handlePortal}
+            onPress={() => handlePortal('changePlan')}
           >
             {t('billing.changePlan')}
           </Button>
-        ) : (
+        ) : !isPaid ? (
           <Button className={buttonStyles.primary} onPress={() => setIsUpgradeOpen(true)}>
             {t('billing.upgradeButton')}
           </Button>
-        )}
+        ) : null}
       </section>
     );
   }
@@ -192,9 +194,9 @@ export function BillingOverview() {
           </div>
           <Button
             className={buttonStyles.secondary}
-            isLoading={portalLoading}
+            isLoading={portalLoadingKey === 'updatePayment'}
             variant="bordered"
-            onPress={handlePortal}
+            onPress={() => handlePortal('updatePayment')}
           >
             {t('billing.updatePayment')}
           </Button>
@@ -216,9 +218,9 @@ export function BillingOverview() {
           </div>
           <Button
             className={buttonStyles.secondary}
-            isLoading={portalLoading}
+            isLoading={portalLoadingKey === 'viewInvoices'}
             variant="bordered"
-            onPress={handlePortal}
+            onPress={() => handlePortal('viewInvoices')}
           >
             {t('billing.viewInvoices')}
           </Button>
@@ -265,9 +267,9 @@ export function BillingOverview() {
             </Button>
             <Button
               className={`flex-1 ${buttonStyles.danger}`}
-              isLoading={portalLoading}
+              isLoading={portalLoadingKey === 'cancel'}
               size="sm"
-              onPress={handlePortal}
+              onPress={() => handlePortal('cancel')}
             >
               {t('billing.cancelConfirmCta')}
             </Button>

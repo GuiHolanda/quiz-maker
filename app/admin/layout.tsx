@@ -41,7 +41,7 @@ export default async function AdminLayout({ children }: { readonly children: Rea
         </nav>
         <div className="p-4 border-t border-divider">
           <Link
-            href="/"
+            href="/dashboard"
             className="flex items-center gap-1.5 text-xs text-default-400 hover:text-foreground transition-colors duration-200"
           >
             <FontAwesomeIcon icon={faArrowLeft} className="w-3 h-3 shrink-0" />
@@ -49,9 +49,7 @@ export default async function AdminLayout({ children }: { readonly children: Rea
           </Link>
         </div>
       </aside>
-      <main className="flex-1 p-8 overflow-auto bg-background">
-        {children}
-      </main>
+      <main className="flex-1 p-8 overflow-auto bg-background">{children}</main>
     </div>
   );
 }

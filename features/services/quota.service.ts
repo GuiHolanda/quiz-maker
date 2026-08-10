@@ -185,6 +185,7 @@ export class QuotaService {
       certificationsUsed: certCount,
       publicExamsUsed: examConcursoCount,
       periodStartDate: user.periodStartDate.toISOString(),
+      hasStripePortalAccess: !!user.stripeCustomerId,
     };
   }
 }

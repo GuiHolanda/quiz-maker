@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useCallback, useDeferredValue, useEffect, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useDeferredValue, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
 import { faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 
@@ -24,8 +25,25 @@ const DEFAULT_PAGE_SIZE = 10;
 type DeleteTarget = { id: number; type: 'certification' | 'public_exam' } | null;
 
 export default function QuestionBankPage() {
+  return (
+    <Suspense>
+      <QuestionBankContent />
+    </Suspense>
+  );
+}
+
+function QuestionBankContent() {
+  const searchParams = useSearchParams();
   const { t } = useTranslation();
-  const [filters, setFilters] = useState<QuestionBankFilters>(EMPTY_FILTERS);
+  const [filters, setFilters] = useState<QuestionBankFilters>(() => {
+    const searchFromUrl = searchParams.get('search') ?? '';
+    const topicFromUrl = searchParams.get('topic');
+    return {
+      ...EMPTY_FILTERS,
+      search: searchFromUrl,
+      topic: topicFromUrl ? [topicFromUrl] : [],
+    };
+  });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [isLoading, setIsLoading] = useState(true);
