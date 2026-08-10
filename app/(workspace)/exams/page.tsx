@@ -8,6 +8,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlusSquare } from '@fortawesome/free-solid-svg-icons';
 
 import { ExamsList } from './components/list/ExamsList';
+import { CatalogSection } from './components/catalog/CatalogSection';
 import { EXAM_CONFIG } from './exam-config';
 
 import { ExamsProvider } from '@/features/providers/exams.provider';
@@ -69,6 +70,7 @@ function ExamsContent() {
       <section data-testid="configure-list-section">
         <ExamsList type={type} />
       </section>
+      <CatalogSection />
     </PageHeader>
   );
 }
