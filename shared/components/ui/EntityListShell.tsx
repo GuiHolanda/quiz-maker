@@ -58,7 +58,7 @@ export function EntityListShell({
 }: EntityListShellProps) {
   const { t } = useTranslation();
 
-  const isEmpty = !isLoading && React.Children.count(children) === 0;
+  const isEmpty = !isLoading && (totalItems !== undefined ? totalItems === 0 : React.Children.count(children) === 0);
 
   function renderBody() {
     if (isLoading) {
@@ -79,7 +79,7 @@ export function EntityListShell({
         );
       }
 
-      return emptyState ?? <EmptyState title={t('common.noResultsForFilters')} />;
+      return emptyState ?? null;
     }
 
     return children;

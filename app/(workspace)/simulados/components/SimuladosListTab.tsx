@@ -200,7 +200,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
     <>
       <EntityListShell
         title={t('simulado.mySimulados')}
-        totalItems={isLoading ? undefined : simulados.length}
+        totalItems={isLoading ? undefined : filtered.length}
         isLoading={isLoading}
         emptyState={
           <EmptyState
