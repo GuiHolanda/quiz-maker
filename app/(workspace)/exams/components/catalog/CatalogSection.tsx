@@ -23,6 +23,7 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { EntityListShell } from '@/shared/components/ui/EntityListShell';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
+import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
 import { usePaginatedItems } from '@/features/hooks/usePaginatedItems.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { notify } from '@/shared/lib/notify';
@@ -66,60 +67,59 @@ export function CatalogSection({ type }: CatalogSectionProps) {
     }
   }
 
-  const titleKey = type === 'certification' ? 'catalog.sectionTitleCert' : 'catalog.sectionTitleConcurso';
-
-  if (!isLoading && templates.length === 0) return null;
-
   return (
-    <div className="mt-10" data-testid="catalog-section">
-      <EntityListShell
-        title={t(titleKey)}
-        subtitle={t(type === 'certification' ? 'catalog.sectionSubtitleCert' : 'catalog.sectionSubtitleConcurso')}
-        totalItems={isLoading ? undefined : templates.length}
-        isLoading={isLoading}
-        skeleton={<SkeletonListLoader count={3} height="h-36" />}
-        pagination={
-          totalPages > 1
-            ? {
-                currentPage: page,
-                totalPages,
-                totalItems: templates.length,
-                itemsPerPage: perPage,
-                onPageChange: setPage,
-                onItemsPerPageChange: (e) => setPerPage(Number(e.target.value)),
-              }
-            : undefined
-        }
-      >
-        <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(480px, 1fr))' }}>
-          {pageItems.map((exam) => (
-            <ExamCard
-              key={exam.id}
-              exam={exam}
-              footerAction={renderFooterAction(exam)}
-              isSelected={selectedId === exam.id}
-              type={exam.type}
-              onClick={() => setSelectedId((prev) => (prev === exam.id ? null : exam.id))}
-            />
-          ))}
-        </div>
+    <EntityListShell
+      totalItems={isLoading ? undefined : templates.length}
+      isLoading={isLoading}
+      skeleton={<SkeletonListLoader count={3} height="h-36" />}
+      emptyState={
+        <IllustratedEmptyState
+          icon={faLayerGroup}
+          title={t('catalog.noTemplates')}
+          description={t('catalog.noTemplatesDescription')}
+        />
+      }
+      pagination={
+        totalPages > 1
+          ? {
+              currentPage: page,
+              totalPages,
+              totalItems: templates.length,
+              itemsPerPage: perPage,
+              onPageChange: setPage,
+              onItemsPerPageChange: (e) => setPerPage(Number(e.target.value)),
+            }
+          : undefined
+      }
+    >
+      <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(480px, 1fr))' }}>
+        {pageItems.map((exam) => (
+          <ExamCard
+            key={exam.id}
+            exam={exam}
+            footerAction={renderFooterAction(exam)}
+            isSelected={selectedId === exam.id}
+            type={exam.type}
+            onClick={() => setSelectedId((prev) => (prev === exam.id ? null : exam.id))}
+          />
+        ))}
+      </div>
 
-        <AnimatePresence>
-          {selectedExam && (
-            <motion.div
-              key={selectedExam.id}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              initial={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-              className="mt-4"
-            >
-              {renderDetailPanel(selectedExam)}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </EntityListShell>
-    </div>
+      <AnimatePresence>
+        {selectedExam && (
+          <motion.div
+            key={selectedExam.id}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            initial={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-4"
+          >
+            {renderDetailPanel(selectedExam)}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </EntityListShell>
   );
 
   function renderFooterAction(exam: CatalogExam) {
