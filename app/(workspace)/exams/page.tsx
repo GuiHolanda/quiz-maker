@@ -38,7 +38,7 @@ function ExamsContent() {
   const { certifications, publicExams, isLoading } = useExamsContext();
 
   const exams = type === 'certification' ? certifications : publicExams;
-  const hasExams = isLoading || exams.length > 0;
+  const hasExams = !isLoading && exams.length > 0;
 
   const addButtonLabel = type === 'certification' ? t('exam.addNewCertification') : t('exam.addNewConcurso');
   const breadcrumbListLabel = type === 'certification' ? t('nav.certifications') : t('nav.publicExams');

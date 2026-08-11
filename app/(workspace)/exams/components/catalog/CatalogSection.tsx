@@ -68,14 +68,13 @@ export function CatalogSection({ type }: CatalogSectionProps) {
 
   const titleKey = type === 'certification' ? 'catalog.sectionTitleCert' : 'catalog.sectionTitleConcurso';
 
+  if (!isLoading && templates.length === 0) return null;
+
   return (
     <div className="mt-10" data-testid="catalog-section">
-      <p className="text-sm text-default-500 mb-4">
-        {t(type === 'certification' ? 'catalog.sectionSubtitleCert' : 'catalog.sectionSubtitleConcurso')}
-      </p>
-
       <EntityListShell
         title={t(titleKey)}
+        subtitle={t(type === 'certification' ? 'catalog.sectionSubtitleCert' : 'catalog.sectionSubtitleConcurso')}
         totalItems={isLoading ? undefined : templates.length}
         isLoading={isLoading}
         skeleton={<SkeletonListLoader count={3} height="h-36" />}
@@ -92,7 +91,7 @@ export function CatalogSection({ type }: CatalogSectionProps) {
             : undefined
         }
       >
-        <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(480px, 1fr))' }}>
+        <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(480px, 1fr))' }}>
           {pageItems.map((exam) => (
             <ExamCard
               key={exam.id}
