@@ -169,12 +169,12 @@ export class ExamService {
       const mockExamIds = mockExams.map((m) => m.id);
 
       if (mockExamIds.length > 0) {
-        // MockExamAttemptAnswer.mockExamQuestionId → MockExamQuestion has no onDelete —
-        // SQLite tries to delete MockExamQuestion before the answers are gone, causing P2003.
-        // Delete the answers first so the cascade can proceed.
+        // MockExamAttemptAnswer.mockExamQuestionId → MockExamQuestion has no onDelete:
+        // delete answers first, then MockExam (which cascades MockExamQuestion), then Exam.
         await tx.mockExamAttemptAnswer.deleteMany({
           where: { mockExamQuestion: { mockExamId: { in: mockExamIds } } },
         });
+        await tx.mockExam.deleteMany({ where: { id: { in: mockExamIds } } });
       }
 
       await tx.exam.delete({ where: { id: examId } });
