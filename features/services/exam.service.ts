@@ -163,7 +163,12 @@ export class ExamService {
 
     if (!exam) throw Object.assign(new Error('Exam not found'), { status: 404 });
     if (exam.userId !== userId) throw Object.assign(new Error('Forbidden'), { status: 403 });
-    await this.prismaService.exam.delete({ where: { id: examId } });
+
+    // MockExam references Exam without cascade — delete before the exam
+    await this.prismaService.$transaction([
+      this.prismaService.mockExam.deleteMany({ where: { examId } }),
+      this.prismaService.exam.delete({ where: { id: examId } }),
+    ]);
   }
 
   // — Sections —
