@@ -21,8 +21,8 @@ import { EMPTY_HISTORY_FILTERS } from '@/shared/types';
 import { getGenerationHistory, getGenerationHistoryFilters } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { RelativeDate } from '@/shared/components/ui/RelativeDate';
-import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
+import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
 import { EntityListShell } from '@/shared/components/ui/EntityListShell';
 import { GenerationHistoryFiltersBar, hasActiveHistoryFilters } from './GenerationHistoryFiltersBar';
 
@@ -92,11 +92,15 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
       {renderSectionHeader()}
 
       <EntityListShell
-        title=""
+        totalItems={data?.total}
         isLoading={isLoading}
         skeleton={<SkeletonListLoader count={5} />}
         emptyState={
-          <EmptyState title={t('generate.historyEmpty')} description={t('generate.historyEmptyDescription')} />
+          <IllustratedEmptyState
+            icon={faHistory}
+            title={t('generate.historyEmpty')}
+            description={t('generate.historyEmptyDescription')}
+          />
         }
         filterContent={
           <GenerationHistoryFiltersBar

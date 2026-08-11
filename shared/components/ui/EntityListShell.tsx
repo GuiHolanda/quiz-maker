@@ -20,7 +20,8 @@ export interface EntityListPaginationConfig {
 }
 
 interface EntityListShellProps {
-  readonly title: string;
+  readonly title?: string;
+  readonly subtitle?: string;
   readonly totalItems?: number;
   readonly isLoading?: boolean;
   readonly skeleton?: React.ReactNode;
@@ -36,10 +37,12 @@ interface EntityListShellProps {
   readonly onToggleSort?: () => void;
   readonly children: React.ReactNode;
   readonly pagination?: EntityListPaginationConfig;
+  readonly paginationLabel?: string;
 }
 
 export function EntityListShell({
   title,
+  subtitle,
   totalItems,
   isLoading = false,
   skeleton,
@@ -55,6 +58,7 @@ export function EntityListShell({
   onToggleSort,
   children,
   pagination,
+  paginationLabel = 'items',
 }: EntityListShellProps) {
   const { t } = useTranslation();
 
@@ -70,11 +74,7 @@ export function EntityListShell({
         return (
           <EmptyState
             title={t('common.noResultsForFilters')}
-            action={
-              onClearFilters
-                ? { label: t('common.clearFilters'), onPress: onClearFilters }
-                : undefined
-            }
+            action={onClearFilters ? { label: t('common.clearFilters'), onPress: onClearFilters } : undefined}
           />
         );
       }
@@ -87,13 +87,26 @@ export function EntityListShell({
 
   return (
     <div className="flex flex-col gap-4">
-      {title && (
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <h2 className="text-xl font-bold text-foreground">{title}</h2>
-          {totalItems !== undefined && (
-            <Chip size="sm" variant="flat">
-              {totalItems}
-            </Chip>
+      {(title || subtitle) && (
+        <div className="flex flex-col gap-2 flex-wrap">
+          <div className="flex flex-col gap-0.5">
+            {title && <h2 className="text-xl font-bold text-foreground">{title}</h2>}
+            {subtitle && <p className="text-sm text-default-500">{subtitle}</p>}
+          </div>
+          {pagination && (
+            <div className="flex justify-between items-end">
+              <p className="text-sm text-default-500 font-semibold">
+                {t('common.paginationItems', {
+                  current: Math.min(
+                    pagination.itemsPerPage,
+                    pagination.totalItems - (pagination.currentPage - 1) * pagination.itemsPerPage
+                  ),
+                  total: pagination.totalItems,
+                  label: paginationLabel,
+                })}
+              </p>
+              <ItemsPerPageSelect value={pagination.itemsPerPage} onChange={pagination.onItemsPerPageChange} />
+            </div>
           )}
         </div>
       )}
@@ -115,15 +128,11 @@ export function EntityListShell({
       {renderBody()}
 
       {!isLoading && !isEmpty && pagination && (
-        <div className="flex flex-wrap items-center justify-center gap-3">
+        <div className="flex flex-wrap gap-3 mt-2">
           <PaginationControls
             currentPage={pagination.currentPage}
             totalPages={pagination.totalPages}
             onChange={pagination.onPageChange}
-          />
-          <ItemsPerPageSelect
-            value={pagination.itemsPerPage}
-            onChange={pagination.onItemsPerPageChange}
           />
         </div>
       )}

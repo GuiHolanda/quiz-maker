@@ -12,7 +12,7 @@ import type {
   EditExamModalCertResult,
   EditExamModalPublicExamResult,
 } from '@/shared/components/EditExamModal/EditExamModal';
-import { ExamsEmptyState } from './ExamsEmptyState';
+import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
 import { EntityListShell } from '@/shared/components/ui/EntityListShell';
 import { usePaginatedItems } from '@/features/hooks/usePaginatedItems.hook';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
@@ -161,17 +161,14 @@ export function ExamsList({ type }: ExamsListProps) {
   return (
     <>
       <EntityListShell
-        title={t(config.listTitle)}
         totalItems={exams.length}
         isLoading={isLoading}
         emptyState={
-          <ExamsEmptyState
-            addHref={`/exams/new?type=${type}`}
-            addLabel={t(config.emptyActionLabel)}
-            description={t(config.emptyDescription)}
+          <IllustratedEmptyState
             icon={config.icon}
             title={t(config.emptyTitle)}
-            type={type}
+            description={t(config.emptyDescription)}
+            action={{ label: t(config.emptyActionLabel), href: `/exams/new?type=${type}` }}
           />
         }
         pagination={

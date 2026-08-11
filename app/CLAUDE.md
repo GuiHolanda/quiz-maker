@@ -119,15 +119,27 @@ Use `<PageHeader>` de `shared/components/ui/PageHeader.tsx` — inclui `.app-bg`
 
 ---
 
-## Empty state
+## Empty states — dois tiers
 
-Use `<EmptyState>` de `shared/components/ui/EmptyState.tsx` — nunca markup inline.
+Nunca markup inline. Escolha o tier pelo contexto:
+
+### `EmptyState` (`shared/components/ui/EmptyState.tsx`)
+
+Compacto, sem ícone. Para feedback contextual dentro de widgets, seções de formulário ou resultados de filtro.
 
 API: `title` (obrigatório), `description?`, `action?: { label, href?, onPress?, icon? }`.
 
-- `href` → navegação para outra rota
-- `onPress` → troca de aba ou ação local na mesma página
-- Sem nenhum dos dois → botão não renderiza
+Exemplos de uso: seções do dashboard (`ScoreTrendSection`, `DomainBreakdownSection`), `NewMockExamForm`, `question-bank` para erro de carga e "nenhum resultado para estes filtros".
+
+### `IllustratedEmptyState` (`shared/components/ui/IllustratedEmptyState.tsx`)
+
+Grande, com círculo de ícone e borda dashed. Para o estado primário de uma lista ou página — o usuário ainda não tem nenhum dado e precisa ser guiado ao primeiro CTA.
+
+API: `icon: IconDefinition` (obrigatório), `title`, `description`, `action?: { label, href?, onPress? }`.
+
+Exemplos de uso: lista de exames, lista de simulados, banco de questões vazio, histórico de gerações vazio, geração de questões sem exames cadastrados.
+
+**Regra de decisão:** se o empty state está dentro de um card ou widget pequeno → `EmptyState`. Se ocupa uma seção inteira ou é o único conteúdo visível na página → `IllustratedEmptyState`.
 
 Copy via `t()` sempre. Descrição deve dizer o que fazer a seguir, não repetir o título.
 
@@ -277,7 +289,7 @@ Não precisa chamar em: quiz Generate (gabarito incluído no fluxo), browse/libr
 - [ ] Tokens semânticos, dark + light mode verificados
 - [ ] HTTP via `useRequest`; toast de sucesso em toda mutation
 - [ ] Lista com provider → `<SkeletonListLoader />` durante `isLoading`
-- [ ] Estado vazio via `<EmptyState>` com `title` + `description` + CTA
+- [ ] Estado vazio: `<EmptyState>` para feedback contextual (filtros, erros, widgets); `<IllustratedEmptyState>` para estado primário de lista/página
 
 ---
 

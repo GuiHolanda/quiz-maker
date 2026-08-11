@@ -10,14 +10,14 @@ import { Progress } from '@heroui/progress';
 import { Select, SelectItem } from '@heroui/select';
 import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMagnifyingGlass, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faMagnifyingGlass, faTrash, faGraduationCap } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useMockExamsContext } from '@/features/providers/mockExams.provider';
 import { deleteMockExam, ensureMockExamAnswers, startMockExamAttempt } from '@/features/connectors';
 import { EntityListShell } from '@/shared/components/ui/EntityListShell';
 import { usePaginatedItems } from '@/features/hooks/usePaginatedItems.hook';
-import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
 import { notify } from '@/shared/lib/notify';
 import { ExamType, MockExamListItem } from '@/shared/types';
 import { buttonStyles } from '@/config/constants/buttonStyles';
@@ -199,14 +199,14 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
   return (
     <>
       <EntityListShell
-        title={t('simulado.mySimulados')}
         totalItems={isLoading ? undefined : filtered.length}
         isLoading={isLoading}
         emptyState={
-          <EmptyState
-            action={onCreateNew ? { label: t('simulado.tabNew'), onPress: onCreateNew } : undefined}
-            description={t('simulado.noSimuladosDescription')}
+          <IllustratedEmptyState
+            icon={faGraduationCap}
             title={t('simulado.noSimulados')}
+            description={t('simulado.noSimuladosDescription')}
+            action={onCreateNew ? { label: t('simulado.tabNew'), onPress: onCreateNew } : undefined}
           />
         }
         filterContent={renderFilterContent()}

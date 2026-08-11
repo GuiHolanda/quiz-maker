@@ -8,6 +8,7 @@ import { faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
 import { EntityListShell } from '@/shared/components/ui/EntityListShell';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { getQuestionBank, deleteBrowseQuestion } from '@/features/connectors';
@@ -171,7 +172,6 @@ function QuestionBankContent() {
       title={t('questionBank.title')}
     >
       <EntityListShell
-        title={t('questionBank.title')}
         totalItems={result?.total}
         isLoading={isLoading}
         skeleton={<SkeletonListLoader count={5} height="h-[480px]" />}
@@ -249,14 +249,11 @@ function QuestionBankContent() {
     }
 
     return (
-      <EmptyState
+      <IllustratedEmptyState
+        icon={faLayerGroup}
         title={t('questionBank.emptyTitle')}
         description={t('questionBank.emptyDescription')}
-        action={{
-          label: t('questionBank.emptyCta'),
-          href: '/questions?type=certification',
-          icon: faLayerGroup,
-        }}
+        action={{ label: t('questionBank.emptyCta'), href: '/questions?type=certification' }}
       />
     );
   }
