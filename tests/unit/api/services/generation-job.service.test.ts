@@ -493,3 +493,195 @@ describe('sanitizeError — categorização de erro', () => {
     });
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// processTopic — pool-serving path
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('processTopic — pool-serving path', () => {
+  const makeTopicWithRefKey = (overrides = {}) => ({
+    id: 'topic-pool-1',
+    jobId: 'job-pool-1',
+    topicName: 'Cloud Concepts',
+    questionCount: 3,
+    status: 'running',
+    savedCount: 0,
+    errorMessage: null,
+    pendingQuestionsJson: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    job: {
+      id: 'job-pool-1',
+      userId: 'user-1',
+      type: 'certification',
+      refKey: 'exam-1',
+      refName: 'AWS SAA-C03',
+      examBoardName: null,
+    },
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    openAICallMock.mockClear();
+    prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+    prismaMock.generationJobTopic.update.mockResolvedValue({} as any);
+    prismaMock.generationJob.update.mockResolvedValue({} as any);
+    prismaMock.generationJob.updateMany.mockResolvedValue({ count: 0 } as any);
+    prismaMock.generationJobTopic.updateMany.mockResolvedValue({ count: 0 } as any);
+    prismaMock.generationJobTopic.count.mockResolvedValue(0);
+    prismaMock.generationJobTopic.findMany.mockResolvedValue([]);
+    prismaMock.examSection.findFirst.mockResolvedValue(null);
+    prismaMock.usageLogStep.create.mockResolvedValue({} as any);
+    prismaMock.usageLog.update.mockResolvedValue({} as any);
+  });
+
+  it('marca o tópico como done sem chamar a LLM quando o pool serve o total solicitado', async () => {
+    prismaMock.generationJobTopic.findUnique.mockResolvedValue(makeTopicWithRefKey() as any);
+
+    // Pool lookup: exam has providerId
+    prismaMock.exam.findFirst.mockResolvedValue({ providerId: 'prov-1', examBoardId: null } as any);
+    prismaMock.questionPool.findMany.mockResolvedValue([{ id: 'pool-1' }] as any);
+
+    // User already has 0 questions from this pool
+    prismaMock.examQuestion.findMany
+      .mockResolvedValueOnce([]) // alreadyHas
+      .mockResolvedValueOnce([   // candidates (3 questions)
+        makePoolQuestion('q-1'),
+        makePoolQuestion('q-2'),
+        makePoolQuestion('q-3'),
+      ]);
+    prismaMock.examQuestion.create.mockResolvedValue({} as any);
+
+    await processTopic('topic-pool-1');
+
+    // LLM must NOT be called
+    expect(openAICallMock).not.toHaveBeenCalled();
+
+    // Topic marked done with savedCount 0 (pool questions, no pending JSON)
+    expect(prismaMock.generationJobTopic.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'topic-pool-1' },
+        data: expect.objectContaining({ status: 'done', savedCount: 0, pendingQuestionsJson: null }),
+      }),
+    );
+  });
+
+  it('cria questões com o examId do usuário, não do template', async () => {
+    prismaMock.generationJobTopic.findUnique.mockResolvedValue(makeTopicWithRefKey() as any);
+    prismaMock.exam.findFirst.mockResolvedValue({ providerId: 'prov-1', examBoardId: null } as any);
+    prismaMock.questionPool.findMany.mockResolvedValue([{ id: 'pool-1' }] as any);
+
+    prismaMock.examQuestion.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([makePoolQuestion('q-1'), makePoolQuestion('q-2'), makePoolQuestion('q-3')]);
+    prismaMock.examQuestion.create.mockResolvedValue({} as any);
+
+    await processTopic('topic-pool-1');
+
+    // All created questions must use the user's exam id (job.refKey = 'exam-1'), not the template's
+    for (const call of prismaMock.examQuestion.create.mock.calls) {
+      expect(call[0].data.examId).toBe('exam-1');
+    }
+  });
+
+  it('chama a LLM somente para o déficit quando o pool serve parcialmente', async () => {
+    // Pool serves 1 of 3 requested → LLM must be called for remaining 2
+    prismaMock.generationJobTopic.findUnique.mockResolvedValue(makeTopicWithRefKey() as any);
+    prismaMock.exam.findFirst.mockResolvedValue({ providerId: 'prov-1', examBoardId: null } as any);
+    prismaMock.questionPool.findMany.mockResolvedValue([{ id: 'pool-1' }] as any);
+
+    prismaMock.examQuestion.findMany
+      .mockResolvedValueOnce([]) // alreadyHas
+      .mockResolvedValueOnce([makePoolQuestion('q-1')]); // only 1 candidate available
+    prismaMock.examQuestion.create.mockResolvedValue({} as any);
+
+    await processTopic('topic-pool-1');
+
+    // LLM is called for the remaining 2 questions
+    expect(openAICallMock).toHaveBeenCalled();
+    const llmCall = openAICallMock.mock.calls[0];
+    expect(llmCall[1].num_questions).toBe('2');
+  });
+
+  it('cai no caminho LLM normal quando o exam não tem providerId nem examBoardId', async () => {
+    prismaMock.generationJobTopic.findUnique.mockResolvedValue(makeTopicWithRefKey() as any);
+
+    // Exam has neither providerId nor examBoardId → pool path skipped entirely
+    prismaMock.exam.findFirst.mockResolvedValue({ providerId: null, examBoardId: null } as any);
+
+    await processTopic('topic-pool-1');
+
+    expect(openAICallMock).toHaveBeenCalled();
+  });
+
+  it('cai no caminho LLM normal quando não existe pool entry para o contexto', async () => {
+    prismaMock.generationJobTopic.findUnique.mockResolvedValue(makeTopicWithRefKey() as any);
+    prismaMock.exam.findFirst.mockResolvedValue({ providerId: 'prov-1', examBoardId: null } as any);
+    prismaMock.questionPool.findMany.mockResolvedValue([]); // no pools
+
+    await processTopic('topic-pool-1');
+
+    expect(openAICallMock).toHaveBeenCalled();
+  });
+
+  it('agrega candidatos de múltiplos pools da mesma seção', async () => {
+    prismaMock.generationJobTopic.findUnique.mockResolvedValue(makeTopicWithRefKey() as any);
+    prismaMock.exam.findFirst.mockResolvedValue({ providerId: 'prov-1', examBoardId: null } as any);
+    // Two pools for the same section (topic-level pools: VPC and Subnets)
+    prismaMock.questionPool.findMany.mockResolvedValue([{ id: 'pool-vpc' }, { id: 'pool-subnets' }] as any);
+
+    prismaMock.examQuestion.findMany
+      .mockResolvedValueOnce([]) // alreadyHas
+      .mockResolvedValueOnce([makePoolQuestion('q-1'), makePoolQuestion('q-2'), makePoolQuestion('q-3')]);
+    prismaMock.examQuestion.create.mockResolvedValue({} as any);
+
+    await processTopic('topic-pool-1');
+
+    // candidates query must use `in` with all pool ids
+    const alreadyHasCall = prismaMock.examQuestion.findMany.mock.calls[0][0];
+    expect(alreadyHasCall.where.poolId.in).toEqual(['pool-vpc', 'pool-subnets']);
+    const candidateCall = prismaMock.examQuestion.findMany.mock.calls[1][0];
+    expect(candidateCall.where.poolId.in).toEqual(['pool-vpc', 'pool-subnets']);
+  });
+
+  it('exclui questões que o usuário já recebeu ao selecionar candidatos do pool', async () => {
+    prismaMock.generationJobTopic.findUnique.mockResolvedValue(makeTopicWithRefKey() as any);
+    prismaMock.exam.findFirst.mockResolvedValue({ providerId: 'prov-1', examBoardId: null } as any);
+    prismaMock.questionPool.findMany.mockResolvedValue([{ id: 'pool-1' }] as any);
+
+    // User already has question 'q-old' from this pool
+    prismaMock.examQuestion.findMany
+      .mockResolvedValueOnce([{ id: 'q-old' }]) // alreadyHas
+      .mockResolvedValueOnce([                   // candidates excluding q-old
+        makePoolQuestion('q-new-1'),
+        makePoolQuestion('q-new-2'),
+        makePoolQuestion('q-new-3'),
+      ]);
+    prismaMock.examQuestion.create.mockResolvedValue({} as any);
+
+    await processTopic('topic-pool-1');
+
+    // candidates query must exclude the IDs the user already has
+    const candidateCall = prismaMock.examQuestion.findMany.mock.calls[1][0];
+    expect(candidateCall.where.id.notIn).toEqual(['q-old']);
+  });
+});
+
+// Helper for pool tests
+function makePoolQuestion(id: string) {
+  return {
+    id,
+    text: `Question ${id}`,
+    correctCount: 1,
+    difficulty: 'medium',
+    examName: 'AWS SAA-C03',
+    sectionName: 'Cloud Concepts',
+    topicName: null,
+    userId: 'admin',
+    examId: 'tmpl-1',
+    sectionId: null,
+    topicId: null,
+    poolId: 'pool-1',
+    options: [{ label: 'A', text: 'Option A' }],
+  };
+}

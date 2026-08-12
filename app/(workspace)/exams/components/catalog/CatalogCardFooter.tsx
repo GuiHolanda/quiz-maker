@@ -23,7 +23,7 @@ export function CatalogCardFooter({ exam, isSelected, isForking, onToggleDetails
   return (
     <div className="flex items-center gap-2">
       {exam.poolQuestionCount > 0 && (
-        <Chip color="success" size="sm" variant="flat">
+        <Chip color="success" data-testid="catalog-pool-chip" size="sm" variant="flat">
           {t('catalog.poolCount', { count: String(exam.poolQuestionCount) })}
         </Chip>
       )}
@@ -42,6 +42,7 @@ export function CatalogCardFooter({ exam, isSelected, isForking, onToggleDetails
       </Button>
       <Button
         className={buttonStyles.primarySm}
+        data-testid="catalog-fork-btn"
         isLoading={isForking}
         size="sm"
         startContent={!isForking ? <FontAwesomeIcon icon={faUserPlus} /> : undefined}

@@ -62,6 +62,11 @@ export const TID = {
 
   // Shared empty state
   emptyState: 'empty-state',
+  illustratedEmptyState: 'illustrated-empty-state',
+
+  // Catalog (/exams/catalog)
+  catalogForkBtn: 'catalog-fork-btn',
+  catalogPoolChip: 'catalog-pool-chip',
 
   // Confirmation dialogs
   confirmDiscardBtn: 'confirm-discard-btn',
