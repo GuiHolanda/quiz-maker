@@ -86,8 +86,8 @@ export function EntityListShell({
 
   return (
     <div className="flex flex-col gap-4">
-      {(title || subtitle || pagination) && (
-        <div className="flex flex-col gap-2 flex-wrap">
+      {(title || subtitle || pagination || (filterContent && onToggleFilters)) && (
+        <div className="flex flex-col gap-2">
           {(title || subtitle) && (
             <div className="flex flex-col gap-0.5">
               {title && <h2 className="text-xl font-bold text-foreground">{title}</h2>}
@@ -95,8 +95,8 @@ export function EntityListShell({
             </div>
           )}
           {pagination && (
-            <div className="flex justify-between items-end">
-              <p className="text-sm text-default-500 font-semibold">
+            <div className="flex justify-between items-center">
+              <p className="text-xs text-default-500 font-semibold ps-2">
                 {t('common.paginationItems', {
                   current: Math.min(
                     pagination.itemsPerPage,
@@ -109,21 +109,20 @@ export function EntityListShell({
               <ItemsPerPageSelect value={pagination.itemsPerPage} onChange={pagination.onItemsPerPageChange} />
             </div>
           )}
+          {filterContent && onToggleFilters && (
+            <CollapsibleFilterPanel
+              hasActiveFilters={hasActiveFilters}
+              isOpen={isFiltersOpen}
+              sort={sort}
+              sortAscLabel={sortAscLabel}
+              sortDescLabel={sortDescLabel}
+              onToggle={onToggleFilters}
+              onToggleSort={onToggleSort}
+            >
+              {filterContent}
+            </CollapsibleFilterPanel>
+          )}
         </div>
-      )}
-
-      {filterContent && onToggleFilters && (
-        <CollapsibleFilterPanel
-          hasActiveFilters={hasActiveFilters}
-          isOpen={isFiltersOpen}
-          sort={sort}
-          sortAscLabel={sortAscLabel}
-          sortDescLabel={sortDescLabel}
-          onToggle={onToggleFilters}
-          onToggleSort={onToggleSort}
-        >
-          {filterContent}
-        </CollapsibleFilterPanel>
       )}
 
       {renderBody()}
