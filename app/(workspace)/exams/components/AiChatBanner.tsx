@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Button } from '@heroui/button';
-import { Chip } from '@heroui/chip';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faRobot } from '@fortawesome/free-solid-svg-icons';
 
@@ -39,11 +38,6 @@ export function AiChatBanner({ hasAiChat }: AiChatBannerProps) {
           <p className="text-sm text-default-500">{t('exam.aiChatCard.description')}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {!hasAiChat && (
-            <Chip color="secondary" size="sm" variant="flat">
-              PRO AI
-            </Chip>
-          )}
           <Button className={buttonStyles.secondary} variant="bordered" onPress={handlePress}>
             {t('exam.aiChatCard.cta')}
           </Button>

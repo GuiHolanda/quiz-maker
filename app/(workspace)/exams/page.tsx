@@ -8,7 +8,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlusSquare } from '@fortawesome/free-solid-svg-icons';
 
 import { ExamsList } from './components/list/ExamsList';
-import { CatalogDiscoveryCard } from './components/catalog/CatalogDiscoveryCard';
 import { EXAM_CONFIG } from './exam-config';
 
 import { ExamsProvider } from '@/features/providers/exams.provider';
@@ -70,7 +69,6 @@ function ExamsContent() {
       <section data-testid="configure-list-section">
         <ExamsList type={type} />
       </section>
-      {hasExams && <CatalogDiscoveryCard type={type} />}
     </PageHeader>
   );
 }

@@ -99,7 +99,7 @@ export function Step1BasicInfo({
   };
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl">
+    <div className="flex flex-col gap-6">
       <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6">
         <StepHeader
           currentStep={1}
