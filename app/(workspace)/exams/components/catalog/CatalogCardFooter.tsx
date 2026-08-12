@@ -3,7 +3,7 @@
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUserPlus, faChevronDown } from '@fortawesome/free-solid-svg-icons';
+import { faUserPlus } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
@@ -11,13 +11,11 @@ import type { CatalogExam } from '@/shared/types';
 
 interface CatalogCardFooterProps {
   readonly exam: CatalogExam;
-  readonly isSelected: boolean;
   readonly isForking: boolean;
-  readonly onToggleDetails: () => void;
   readonly onFork: () => void;
 }
 
-export function CatalogCardFooter({ exam, isSelected, isForking, onToggleDetails, onFork }: CatalogCardFooterProps) {
+export function CatalogCardFooter({ exam, isForking, onFork }: CatalogCardFooterProps) {
   const { t } = useTranslation();
 
   return (
@@ -28,23 +26,9 @@ export function CatalogCardFooter({ exam, isSelected, isForking, onToggleDetails
         </Chip>
       )}
       <Button
-        className={buttonStyles.flat}
-        size="sm"
-        startContent={
-          <FontAwesomeIcon
-            className={`transition-transform duration-150 ${isSelected ? 'rotate-180' : ''}`}
-            icon={faChevronDown}
-          />
-        }
-        onPress={onToggleDetails}
-      >
-        {t('common.viewDetails')}
-      </Button>
-      <Button
-        className={buttonStyles.primarySm}
+        className={buttonStyles.primary}
         data-testid="catalog-fork-btn"
         isLoading={isForking}
-        size="sm"
         startContent={!isForking ? <FontAwesomeIcon icon={faUserPlus} /> : undefined}
         onPress={onFork}
       >

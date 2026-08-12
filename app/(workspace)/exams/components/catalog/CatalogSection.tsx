@@ -1,11 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 
 import { ExamCard } from '../list/ExamCard';
 import { CatalogCardFooter } from './CatalogCardFooter';
-import { CatalogExamDetail } from './CatalogExamDetail';
 
 import { getCatalogExams, forkCatalogExam } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -27,10 +25,7 @@ export function CatalogSection({ type }: CatalogSectionProps) {
   const { addExam } = useExamsContext();
   const [templates, setTemplates] = useState<CatalogExam[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [forkingId, setForkingId] = useState<string | null>(null);
-
-  const selectedExam = templates.find((e) => e.id === selectedId) ?? null;
 
   const { pageItems, page, totalPages, perPage, setPage, setPerPage } = usePaginatedItems(templates);
 
@@ -47,7 +42,6 @@ export function CatalogSection({ type }: CatalogSectionProps) {
       const forked = await forkCatalogExam(examId);
       addExam(forked);
       setTemplates((prev) => prev.filter((t) => t.id !== examId));
-      setSelectedId((prev) => (prev === examId ? null : prev));
       notify.success(t('catalog.forkSuccessTitle'), t('catalog.forkSuccessDescription'));
     } catch {
       notify.error(t('catalog.forkErrorTitle'));
@@ -82,41 +76,20 @@ export function CatalogSection({ type }: CatalogSectionProps) {
           : undefined
       }
     >
-      <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(480px, 1fr))' }}>
+      <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(760px, 100%), 760px))' }}>
         {pageItems.map((exam) => (
           <ExamCard
             key={exam.id}
             exam={exam}
             footerAction={
-              <CatalogCardFooter
-                exam={exam}
-                isForking={forkingId === exam.id}
-                isSelected={selectedId === exam.id}
-                onFork={() => handleFork(exam.id)}
-                onToggleDetails={() => setSelectedId((prev) => (prev === exam.id ? null : exam.id))}
-              />
+              <CatalogCardFooter exam={exam} isForking={forkingId === exam.id} onFork={() => handleFork(exam.id)} />
             }
-            isSelected={selectedId === exam.id}
+            isSelected={false}
             type={exam.type}
-            onClick={() => setSelectedId((prev) => (prev === exam.id ? null : exam.id))}
+            onClick={() => {}}
           />
         ))}
       </div>
-
-      <AnimatePresence>
-        {selectedExam && (
-          <motion.div
-            key={selectedExam.id}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            initial={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-4"
-          >
-            <CatalogExamDetail exam={selectedExam} onClose={() => setSelectedId(null)} />
-          </motion.div>
-        )}
-      </AnimatePresence>
     </EntityListShell>
   );
 }

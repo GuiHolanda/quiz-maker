@@ -188,7 +188,10 @@ export function ExamsList({ type }: ExamsListProps) {
             : undefined
         }
       >
-        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(480px, 1fr))' }}>
+        <div
+          className="grid gap-3"
+          style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(760px, 100%), 760px))' }}
+        >
           {pageItems.map((exam) => (
             <ExamCard
               key={exam.id ?? exam.name}

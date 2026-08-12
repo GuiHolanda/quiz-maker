@@ -134,6 +134,15 @@
 	appearance: textfield;
 }
 
+/* ── Scrollbar Utilities ─────────────────────────────────── */
+
+.scrollbar-hide {
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* ── App Page Background ─────────────────────────────────── */
 
 .app-bg {
