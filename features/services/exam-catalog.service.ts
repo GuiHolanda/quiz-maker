@@ -126,6 +126,12 @@ export class ExamCatalogService {
         include: { provider: true, examBoard: true, sections: { include: { topics: true } } },
       });
 
+      await this.ensurePoolEntries(
+        tx,
+        { type: forked.type, providerId: providerId ?? null, examBoardId: examBoardId ?? null },
+        template.sections
+      );
+
       return {
         id: forked.id,
         type: forked.type as Exam['type'],
@@ -164,67 +170,76 @@ export class ExamCatalogService {
     await this.prismaService.$transaction(async (tx) => {
       await tx.exam.update({ where: { id: examId }, data: { isTemplate: true } });
 
+      const poolKey = {
+        type: exam.type,
+        providerId: exam.providerId ?? null,
+        examBoardId: exam.examBoardId ?? null,
+      };
+
+      await this.ensurePoolEntries(tx, poolKey, exam.sections);
+
+      const ownerFilter = {
+        OR: [
+          ...(exam.providerId ? [{ providerId: exam.providerId }] : []),
+          ...(exam.examBoardId ? [{ examBoardId: exam.examBoardId }] : []),
+        ],
+      };
+
       for (const section of exam.sections) {
         if (section.topics.length === 0) {
-          await tx.questionPool.upsert({
-            where: {
-              type_providerId_examBoardId_sectionName_topicName: {
-                type: exam.type,
-                providerId: exam.providerId ?? '',
-                examBoardId: exam.examBoardId ?? '',
-                sectionName: section.name,
-                topicName: '',
-              },
-            },
-            update: {},
-            create: {
-              type: exam.type,
-              providerId: exam.providerId ?? null,
-              examBoardId: exam.examBoardId ?? null,
-              sectionName: section.name,
-              topicName: null,
-            },
+          const sectionPool = await tx.questionPool.findFirst({
+            where: { ...poolKey, sectionName: section.name, topicName: null },
+          });
+
+          await tx.examQuestion.updateMany({
+            where: { poolId: null, sectionName: section.name, topicName: null, exam: ownerFilter },
+            data: { poolId: sectionPool!.id },
           });
         }
 
         for (const topic of section.topics) {
-          const pool = await tx.questionPool.upsert({
-            where: {
-              type_providerId_examBoardId_sectionName_topicName: {
-                type: exam.type,
-                providerId: exam.providerId ?? '',
-                examBoardId: exam.examBoardId ?? '',
-                sectionName: section.name,
-                topicName: topic.name,
-              },
-            },
-            update: {},
-            create: {
-              type: exam.type,
-              providerId: exam.providerId ?? null,
-              examBoardId: exam.examBoardId ?? null,
-              sectionName: section.name,
-              topicName: topic.name,
-            },
+          const pool = await tx.questionPool.findFirst({
+            where: { ...poolKey, sectionName: section.name, topicName: topic.name },
           });
 
           await tx.examQuestion.updateMany({
-            where: {
-              poolId: null,
-              sectionName: section.name,
-              topicName: topic.name,
-              exam: {
-                OR: [
-                  ...(exam.providerId ? [{ providerId: exam.providerId }] : []),
-                  ...(exam.examBoardId ? [{ examBoardId: exam.examBoardId }] : []),
-                ],
-              },
-            },
-            data: { poolId: pool.id },
+            where: { poolId: null, sectionName: section.name, topicName: topic.name, exam: ownerFilter },
+            data: { poolId: pool!.id },
           });
         }
       }
     });
+  }
+
+  private async ensurePoolEntries(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    tx: any,
+    poolKey: { type: string; providerId: string | null; examBoardId: string | null },
+    sections: Array<{ name: string; topics: Array<{ name: string }> }>
+  ): Promise<void> {
+    for (const section of sections) {
+      if (section.topics.length === 0) {
+        const existing = await tx.questionPool.findFirst({
+          where: { ...poolKey, sectionName: section.name, topicName: null },
+        });
+        if (!existing) {
+          await tx.questionPool.create({
+            data: { ...poolKey, sectionName: section.name, topicName: null },
+          });
+        }
+      }
+
+      for (const topic of section.topics) {
+        const existing = await tx.questionPool.findFirst({
+          where: { ...poolKey, sectionName: section.name, topicName: topic.name },
+        });
+        if (!existing) {
+          await tx.questionPool.create({
+            data: { ...poolKey, sectionName: section.name, topicName: topic.name },
+          });
+        }
+      }
+    }
   }
 
   public async getAdminExamDetail(examId: string): Promise<AdminCatalogExamDetail> {

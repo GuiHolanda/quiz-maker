@@ -396,7 +396,7 @@ async function tryServeFromPool(
     return { served: 0 };
   }
 
-  const pool = await prisma.questionPool.findFirst({
+  const pools = await prisma.questionPool.findMany({
     where: {
       type,
       providerId: exam.providerId ?? null,
@@ -405,24 +405,26 @@ async function tryServeFromPool(
     },
   });
 
-  if (!pool) return { served: 0 };
+  if (pools.length === 0) return { served: 0 };
 
-  // Find pooled questions this user has NOT yet received.
+  const poolIds = pools.map((p) => p.id);
+
+  // Find pooled questions this user has NOT yet received across all pools for the section.
   const alreadyHas = await prisma.examQuestion.findMany({
-    where: { poolId: pool.id, userId },
+    where: { poolId: { in: poolIds }, userId },
     select: { id: true },
   });
   const alreadyHasIds = alreadyHas.map((q) => q.id);
 
   const candidates = await prisma.examQuestion.findMany({
-    where: { poolId: pool.id, id: { notIn: alreadyHasIds } },
+    where: { poolId: { in: poolIds }, id: { notIn: alreadyHasIds } },
     include: { options: true },
     take: requested,
   });
 
   if (candidates.length === 0) return { served: 0 };
 
-  // Create ExamQuestion copies for this user, linking them to the same pool.
+  // Create ExamQuestion copies for this user, linked to the user's exam and original pool.
   for (const src of candidates) {
     await prisma.examQuestion.create({
       data: {
@@ -433,10 +435,10 @@ async function tryServeFromPool(
         sectionName: src.sectionName,
         topicName: src.topicName,
         userId,
-        examId: src.examId,
+        examId,
         sectionId: src.sectionId,
         topicId: src.topicId,
-        poolId: pool.id,
+        poolId: src.poolId,
         options: { create: src.options.map((o) => ({ label: o.label, text: o.text })) },
       },
     });
