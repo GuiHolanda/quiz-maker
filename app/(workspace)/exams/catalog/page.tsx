@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { BreadcrumbItem, Breadcrumbs } from '@heroui/breadcrumbs';
 
-import { CatalogSection } from '../components/catalog/CatalogSection';
+import { CatalogSection } from '@/app/(workspace)/exams/components/catalog/CatalogSection';
 
 import { ExamsProvider } from '@/features/providers/exams.provider';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
