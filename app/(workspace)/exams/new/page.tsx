@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import type { ExamType } from '@/shared/types';
 import { ExamsProvider } from '@/features/providers/exams.provider';
-import { NewExamPage } from './components/NewExamPage';
+import { NewExamPage } from '@/app/(workspace)/exams/components/NewExamPage';
 
 interface NewExamRouteProps {
   readonly searchParams: Promise<{ type?: string }>;
