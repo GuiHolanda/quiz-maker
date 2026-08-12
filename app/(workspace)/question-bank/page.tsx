@@ -193,6 +193,7 @@ function QuestionBankContent() {
         sortAscLabel={t('questionBank.sortOldest')}
         sortDescLabel={t('questionBank.sortNewest')}
         onToggleSort={toggleSort}
+        paginationLabel={t('nav.questions')}
         pagination={
           questions.length > 0
             ? {
@@ -208,7 +209,6 @@ function QuestionBankContent() {
       >
         {questions.length > 0 && (
           <div className="flex flex-col">
-            <p className="text-xs text-default-400 mb-2">{t('questionBank.totalCount', { count: result?.total ?? 0 })}</p>
             {questions.map((q) => (
               <QuestionBankCard
                 key={`${q.type}-${q.id}`}

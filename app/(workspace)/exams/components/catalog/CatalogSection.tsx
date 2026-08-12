@@ -68,6 +68,7 @@ export function CatalogSection({ type }: CatalogSectionProps) {
           description={t('catalog.noTemplatesDescription')}
         />
       }
+      paginationLabel={t('common.templates')}
       pagination={
         totalPages > 1
           ? {

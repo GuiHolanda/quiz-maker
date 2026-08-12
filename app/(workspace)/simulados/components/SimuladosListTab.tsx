@@ -214,6 +214,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
         onClearFilters={() => setFilters(EMPTY_FILTERS)}
         isFiltersOpen={isFiltersOpen}
         onToggleFilters={() => setIsFiltersOpen((prev) => !prev)}
+        paginationLabel={t('nav.simulados')}
         pagination={
           totalPages > 1
             ? {

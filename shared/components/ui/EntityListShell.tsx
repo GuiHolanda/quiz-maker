@@ -57,11 +57,17 @@ export function EntityListShell({
   onToggleSort,
   children,
   pagination,
-  paginationLabel = 'items',
+  paginationLabel = '',
 }: EntityListShellProps) {
   const { t } = useTranslation();
 
   const isEmpty = !isLoading && (totalItems !== undefined ? totalItems === 0 : React.Children.count(children) === 0);
+
+  const countTotal = pagination?.totalItems ?? totalItems ?? 0;
+  const countCurrent = pagination
+    ? Math.min(pagination.itemsPerPage, pagination.totalItems - (pagination.currentPage - 1) * pagination.itemsPerPage)
+    : (totalItems ?? 0);
+  const shouldShowCount = countTotal > 0 && !!paginationLabel;
 
   function renderBody() {
     if (isLoading) {
@@ -86,7 +92,7 @@ export function EntityListShell({
 
   return (
     <div className="flex flex-col gap-4">
-      {(title || subtitle || pagination || (filterContent && onToggleFilters)) && (
+      {(title || subtitle || pagination || (filterContent && onToggleFilters) || shouldShowCount) && (
         <div className="flex flex-col gap-2">
           {(title || subtitle) && (
             <div className="flex flex-col gap-0.5">
@@ -94,18 +100,13 @@ export function EntityListShell({
               {subtitle && <p className="text-sm text-default-500">{subtitle}</p>}
             </div>
           )}
-          {(pagination || (filterContent && onToggleFilters)) && (
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              {pagination && (
+          {(pagination || (filterContent && onToggleFilters) || shouldShowCount) && (
+            <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
+              {shouldShowCount && (
                 <p className="text-xs text-default-500 font-semibold ps-2 flex-1 min-w-0">
-                  {t('common.paginationItems', {
-                    current: Math.min(
-                      pagination.itemsPerPage,
-                      pagination.totalItems - (pagination.currentPage - 1) * pagination.itemsPerPage
-                    ),
-                    total: pagination.totalItems,
-                    label: paginationLabel,
-                  })}
+                  {pagination
+                    ? t('common.paginationItems', { current: countCurrent, total: countTotal, label: paginationLabel })
+                    : t('common.paginationItemsTotal', { total: countTotal, label: paginationLabel })}
                 </p>
               )}
               {pagination && (

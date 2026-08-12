@@ -21,6 +21,7 @@ import type { Exam, ExamSection, ExamTopic, ExamType } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
 import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
+import { CatalogDiscoveryCard } from '../catalog/CatalogDiscoveryCard';
 
 interface ExamsListProps {
   readonly type: ExamType;
@@ -31,6 +32,7 @@ export function ExamsList({ type }: ExamsListProps) {
   const config = EXAM_CONFIG[type];
   const { certifications, publicExams, isLoading, updateExam, removeExam } = useExamsContext();
   const exams = type === 'certification' ? certifications : publicExams;
+  const hasExams = !isLoading && exams.length > 0;
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editingExam, setEditingExam] = useState<Exam | null>(null);
@@ -172,6 +174,7 @@ export function ExamsList({ type }: ExamsListProps) {
             secondaryAction={{ label: t('catalog.browseAction'), href: `/exams/catalog?type=${type}` }}
           />
         }
+        paginationLabel={type === 'certification' ? t('nav.certifications') : t('nav.publicExams')}
         pagination={
           totalPages > 1
             ? {
@@ -195,6 +198,7 @@ export function ExamsList({ type }: ExamsListProps) {
               onClick={() => handleCardClick(exam)}
             />
           ))}
+          {hasExams && <CatalogDiscoveryCard type={type} />}
         </div>
 
         <AnimatePresence>

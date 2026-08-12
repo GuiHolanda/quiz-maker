@@ -17,8 +17,8 @@ export function ItemsPerPageSelect({ value, onChange, isDisabled }: ItemsPerPage
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col items-center gap-2 ml-auto">
-      <label className="text-xs font-bold" htmlFor="questionsPerPage">
+    <div className="flex items-end gap-2 ml-auto">
+      <label className="text-xs text-default-500 font-semibold pb-0.5" htmlFor="questionsPerPage">
         {t('common.questionsPerPage')}
       </label>
       <Select
@@ -29,6 +29,11 @@ export function ItemsPerPageSelect({ value, onChange, isDisabled }: ItemsPerPage
         selectedKeys={[String(value)]}
         onChange={onChange}
         {...inputProperties.select}
+        size="sm"
+        classNames={{
+          ...inputProperties.select.classNames,
+          trigger: inputProperties.select.classNames.trigger.replace('h-11', '').trim(),
+        }}
       >
         {(item) => <SelectItem key={item.key}>{item.label}</SelectItem>}
       </Select>
