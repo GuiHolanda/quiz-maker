@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { Chip } from '@heroui/chip';
 
 import { CollapsibleFilterPanel } from '@/shared/components/ui/CollapsibleFilterPanel';
 import { PaginationControls } from '@/shared/components/ui/PaginationControls';
