@@ -224,7 +224,12 @@ export function ExamsList({ type }: ExamsListProps) {
               transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
               className="mt-6"
             >
-              <SectionHeader className="mb-4" icon={faPenToSquare} title={t('exam.detailsSectionLabel')} />
+              <SectionHeader
+                className="mb-4"
+                icon={faPenToSquare}
+                subtitle={t('exam.detailsSectionSubtitle')}
+                title={t('exam.detailsSectionLabel')}
+              />
               <ExamDetailPanel
                 exam={selectedExam}
                 type={type}

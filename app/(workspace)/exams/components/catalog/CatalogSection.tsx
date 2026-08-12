@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Chip } from '@heroui/chip';
 
 import { ExamCard } from '../list/ExamCard';
 
@@ -85,19 +86,30 @@ export function CatalogSection({ type }: CatalogSectionProps) {
           style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(760px, 100%), 760px))' }}
         >
           {pageItems.map((exam) => (
-            <ExamCard
-              key={exam.id}
-              exam={exam}
-              isSelected={false}
-              type={exam.type}
-              onClick={() => setConfirmingExam(exam)}
-            />
+            <div key={exam.id} data-testid="exam-card">
+              <ExamCard
+                exam={exam}
+                isSelected={false}
+                type={exam.type}
+                onClick={() => setConfirmingExam(exam)}
+                footerAction={
+                  exam.poolQuestionCount > 0 ? (
+                    <span data-testid="catalog-pool-chip">
+                      <Chip color="success" size="sm" variant="flat">
+                        {t('catalog.poolCount', { count: String(exam.poolQuestionCount) })}
+                      </Chip>
+                    </span>
+                  ) : undefined
+                }
+              />
+            </div>
           ))}
         </div>
       </EntityListShell>
 
       <ConfirmModal
         confirmLabel={t('catalog.useTemplate')}
+        confirmTestId="catalog-fork-confirm-btn"
         confirmVariant="primary"
         isLoading={isForking}
         isOpen={confirmingExam !== null}

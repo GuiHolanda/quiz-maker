@@ -72,19 +72,19 @@ test.describe('catalog', () => {
 
   test('exibe templates com contagem de questões do pool', async ({ authedPage: page }) => {
     await page.route('**/api/exam/catalog', (route) => {
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([MOCK_TEMPLATE]) });
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ templates: [MOCK_TEMPLATE] }) });
     });
 
     await page.goto('/exams/catalog?type=certification');
 
-    await expect(page.locator(tid(TID.catalogForkBtn))).toBeVisible();
+    await expect(page.locator(tid(TID.examCard))).toBeVisible();
     await expect(page.locator(tid(TID.catalogPoolChip))).toBeVisible();
     await expect(page.locator(tid(TID.catalogPoolChip))).toContainText('42');
   });
 
   test('fork bem-sucedido: remove o card da lista e exibe empty state', async ({ authedPage: page }) => {
     await page.route('**/api/exam/catalog', (route) => {
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([MOCK_TEMPLATE]) });
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ templates: [MOCK_TEMPLATE] }) });
     });
     await page.route('**/api/exam/fork-exam', (route) => {
       if (route.request().method() === 'POST') {
@@ -95,18 +95,20 @@ test.describe('catalog', () => {
     });
 
     await page.goto('/exams/catalog?type=certification');
-    await expect(page.locator(tid(TID.catalogForkBtn))).toBeVisible();
+    await expect(page.locator(tid(TID.examCard))).toBeVisible();
 
-    await page.locator(tid(TID.catalogForkBtn)).click();
+    await page.locator(tid(TID.examCard)).click();
+    await expect(page.locator(tid(TID.catalogForkConfirmBtn))).toBeVisible();
+    await page.locator(tid(TID.catalogForkConfirmBtn)).click();
 
     // After fork the template is removed from the list; with no more templates, empty state appears.
     await expect(page.locator(tid(TID.illustratedEmptyState))).toBeVisible({ timeout: 8_000 });
-    await expect(page.locator(tid(TID.catalogForkBtn))).not.toBeVisible();
+    await expect(page.locator(tid(TID.examCard))).not.toBeVisible();
   });
 
   test('fork com erro: card permanece visível', async ({ authedPage: page }) => {
     await page.route('**/api/exam/catalog', (route) => {
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([MOCK_TEMPLATE]) });
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ templates: [MOCK_TEMPLATE] }) });
     });
     await page.route('**/api/exam/fork-exam', (route) => {
       if (route.request().method() === 'POST') {
@@ -117,12 +119,14 @@ test.describe('catalog', () => {
     });
 
     await page.goto('/exams/catalog?type=certification');
-    await expect(page.locator(tid(TID.catalogForkBtn))).toBeVisible();
+    await expect(page.locator(tid(TID.examCard))).toBeVisible();
 
-    await page.locator(tid(TID.catalogForkBtn)).click();
+    await page.locator(tid(TID.examCard)).click();
+    await expect(page.locator(tid(TID.catalogForkConfirmBtn))).toBeVisible();
+    await page.locator(tid(TID.catalogForkConfirmBtn)).click();
 
-    // On error the card is NOT removed — fork button stays visible.
-    await expect(page.locator(tid(TID.catalogForkBtn))).toBeVisible({ timeout: 8_000 });
+    // On error the card is NOT removed — it stays visible.
+    await expect(page.locator(tid(TID.examCard))).toBeVisible({ timeout: 8_000 });
   });
 
   test('exibe empty state quando não há templates para o tipo', async ({ authedPage: page }) => {
