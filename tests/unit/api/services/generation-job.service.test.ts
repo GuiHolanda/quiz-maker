@@ -546,9 +546,9 @@ describe('processTopic — pool-serving path', () => {
     prismaMock.examQuestion.findMany
       .mockResolvedValueOnce([]) // alreadyHas
       .mockResolvedValueOnce([   // candidates (3 questions)
-        makePoolQuestion('q-1'),
-        makePoolQuestion('q-2'),
-        makePoolQuestion('q-3'),
+        makePoolQuestion(1),
+        makePoolQuestion(2),
+        makePoolQuestion(3),
       ]);
     prismaMock.examQuestion.create.mockResolvedValue({} as any);
 
@@ -573,7 +573,7 @@ describe('processTopic — pool-serving path', () => {
 
     prismaMock.examQuestion.findMany
       .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([makePoolQuestion('q-1'), makePoolQuestion('q-2'), makePoolQuestion('q-3')]);
+      .mockResolvedValueOnce([makePoolQuestion(1), makePoolQuestion(2), makePoolQuestion(3)]);
     prismaMock.examQuestion.create.mockResolvedValue({} as any);
 
     await processTopic('topic-pool-1');
@@ -592,7 +592,7 @@ describe('processTopic — pool-serving path', () => {
 
     prismaMock.examQuestion.findMany
       .mockResolvedValueOnce([]) // alreadyHas
-      .mockResolvedValueOnce([makePoolQuestion('q-1')]); // only 1 candidate available
+      .mockResolvedValueOnce([makePoolQuestion(1)]); // only 1 candidate available
     prismaMock.examQuestion.create.mockResolvedValue({} as any);
 
     await processTopic('topic-pool-1');
@@ -632,16 +632,16 @@ describe('processTopic — pool-serving path', () => {
 
     prismaMock.examQuestion.findMany
       .mockResolvedValueOnce([]) // alreadyHas
-      .mockResolvedValueOnce([makePoolQuestion('q-1'), makePoolQuestion('q-2'), makePoolQuestion('q-3')]);
+      .mockResolvedValueOnce([makePoolQuestion(1), makePoolQuestion(2), makePoolQuestion(3)]);
     prismaMock.examQuestion.create.mockResolvedValue({} as any);
 
     await processTopic('topic-pool-1');
 
     // candidates query must use `in` with all pool ids
     const alreadyHasCall = prismaMock.examQuestion.findMany.mock.calls[0][0];
-    expect(alreadyHasCall.where.poolId.in).toEqual(['pool-vpc', 'pool-subnets']);
+    expect((alreadyHasCall!.where as any).poolId.in).toEqual(['pool-vpc', 'pool-subnets']);
     const candidateCall = prismaMock.examQuestion.findMany.mock.calls[1][0];
-    expect(candidateCall.where.poolId.in).toEqual(['pool-vpc', 'pool-subnets']);
+    expect((candidateCall!.where as any).poolId.in).toEqual(['pool-vpc', 'pool-subnets']);
   });
 
   it('exclui questões que o usuário já recebeu ao selecionar candidatos do pool', async () => {
@@ -649,13 +649,13 @@ describe('processTopic — pool-serving path', () => {
     prismaMock.exam.findFirst.mockResolvedValue({ providerId: 'prov-1', examBoardId: null } as any);
     prismaMock.questionPool.findMany.mockResolvedValue([{ id: 'pool-1' }] as any);
 
-    // User already has question 'q-old' from this pool
+    // User already has question id=1 from this pool
     prismaMock.examQuestion.findMany
-      .mockResolvedValueOnce([{ id: 'q-old' }]) // alreadyHas
-      .mockResolvedValueOnce([                   // candidates excluding q-old
-        makePoolQuestion('q-new-1'),
-        makePoolQuestion('q-new-2'),
-        makePoolQuestion('q-new-3'),
+      .mockResolvedValueOnce([{ id: 1 }] as any) // alreadyHas
+      .mockResolvedValueOnce([             // candidates excluding id=1
+        makePoolQuestion(2),
+        makePoolQuestion(3),
+        makePoolQuestion(4),
       ]);
     prismaMock.examQuestion.create.mockResolvedValue({} as any);
 
@@ -663,14 +663,15 @@ describe('processTopic — pool-serving path', () => {
 
     // candidates query must exclude the IDs the user already has
     const candidateCall = prismaMock.examQuestion.findMany.mock.calls[1][0];
-    expect(candidateCall.where.id.notIn).toEqual(['q-old']);
+    expect((candidateCall!.where as any).id.notIn).toEqual([1]);
   });
 });
 
 // Helper for pool tests
-function makePoolQuestion(id: string) {
+function makePoolQuestion(id: number) {
   return {
     id,
+    createdAt: new Date(),
     text: `Question ${id}`,
     correctCount: 1,
     difficulty: 'medium',

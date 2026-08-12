@@ -17,7 +17,7 @@ describe('ExamCatalogService', () => {
       prismaMock.exam.findMany
         .mockResolvedValueOnce([]) // templates
         .mockResolvedValueOnce([]); // userExams
-      prismaMock.examQuestion.groupBy.mockResolvedValue([]);
+      (prismaMock.examQuestion.groupBy as any).mockResolvedValue([]);
 
       const result = await service.getTemplates('user-1');
 
@@ -29,7 +29,7 @@ describe('ExamCatalogService', () => {
       prismaMock.exam.findMany
         .mockResolvedValueOnce([template]) // templates
         .mockResolvedValueOnce([]); // userExams
-      prismaMock.examQuestion.groupBy.mockResolvedValue([]);
+      (prismaMock.examQuestion.groupBy as any).mockResolvedValue([]);
 
       const result = await service.getTemplates('user-1');
 
@@ -41,8 +41,8 @@ describe('ExamCatalogService', () => {
       const template = makeTemplate({ id: 'tmpl-1', type: 'certification', name: 'AWS SAA' });
       prismaMock.exam.findMany
         .mockResolvedValueOnce([template]) // templates
-        .mockResolvedValueOnce([{ name: 'AWS SAA', type: 'certification' }]); // userExams already has it
-      prismaMock.examQuestion.groupBy.mockResolvedValue([]);
+        .mockResolvedValueOnce([{ name: 'AWS SAA', type: 'certification' }] as any); // userExams already has it
+      (prismaMock.examQuestion.groupBy as any).mockResolvedValue([]);
 
       const result = await service.getTemplates('user-1');
 
@@ -54,8 +54,8 @@ describe('ExamCatalogService', () => {
       const template2 = makeTemplate({ id: 'tmpl-2', type: 'certification', name: 'Azure AZ-900' });
       prismaMock.exam.findMany
         .mockResolvedValueOnce([template1, template2]) // templates
-        .mockResolvedValueOnce([{ name: 'AWS SAA', type: 'certification' }]); // user already has AWS SAA
-      prismaMock.examQuestion.groupBy.mockResolvedValue([]);
+        .mockResolvedValueOnce([{ name: 'AWS SAA', type: 'certification' }] as any); // user already has AWS SAA
+      (prismaMock.examQuestion.groupBy as any).mockResolvedValue([]);
 
       const result = await service.getTemplates('user-1');
 
@@ -68,7 +68,7 @@ describe('ExamCatalogService', () => {
       prismaMock.exam.findMany
         .mockResolvedValueOnce([template])
         .mockResolvedValueOnce([]);
-      prismaMock.examQuestion.groupBy.mockResolvedValue([
+      (prismaMock.examQuestion.groupBy as any).mockResolvedValue([
         { examId: 'tmpl-1', _count: { id: 42 } } as any,
       ]);
 
@@ -82,7 +82,7 @@ describe('ExamCatalogService', () => {
       prismaMock.exam.findMany
         .mockResolvedValueOnce([template])
         .mockResolvedValueOnce([]);
-      prismaMock.examQuestion.groupBy.mockResolvedValue([]); // no pool entries
+      (prismaMock.examQuestion.groupBy as any).mockResolvedValue([]); // no pool entries
 
       const result = await service.getTemplates('user-1');
 
@@ -105,13 +105,13 @@ describe('ExamCatalogService', () => {
       prismaMock.exam.findMany
         .mockResolvedValueOnce([template])
         .mockResolvedValueOnce([]);
-      prismaMock.examQuestion.groupBy.mockResolvedValue([]);
+      (prismaMock.examQuestion.groupBy as any).mockResolvedValue([]);
 
       const result = await service.getTemplates('user-1');
 
-      expect(result[0].sections).toHaveLength(1);
-      expect(result[0].sections[0].name).toBe('Cloud Concepts');
-      expect(result[0].sections[0].topics[0].name).toBe('VPC');
+      expect(result[0]!.sections).toHaveLength(1);
+      expect(result[0]!.sections[0]!.name).toBe('Cloud Concepts');
+      expect(result[0]!.sections[0]!.topics![0]!.name).toBe('VPC');
     });
   });
 
@@ -206,7 +206,7 @@ describe('ExamCatalogService', () => {
       await service.forkExam('tmpl-1', 'user-1');
 
       const createArg = prismaMock.exam.create.mock.calls[0][0];
-      const sectionPayload = createArg.data.sections.create[0];
+      const sectionPayload = (createArg.data.sections as any).create[0];
       expect(sectionPayload.name).toBe('Cloud');
       expect(sectionPayload.topics.create[0].name).toBe('VPC');
     });
@@ -224,7 +224,7 @@ describe('ExamCatalogService', () => {
       await service.forkExam('tmpl-1', 'user-1');
 
       const createArg = prismaMock.exam.create.mock.calls[0][0];
-      const sectionPayload = createArg.data.sections.create[0];
+      const sectionPayload = (createArg.data.sections as any).create[0];
       expect(sectionPayload.topics).toBeUndefined();
     });
 
