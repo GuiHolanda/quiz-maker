@@ -16,7 +16,7 @@ test.describe('empty states', () => {
       }
     });
     await page.goto('/simulados');
-    await expect(page.locator(tid(TID.emptyState))).toBeVisible();
+    await expect(page.locator(tid(TID.illustratedEmptyState))).toBeVisible();
   });
 
   test('certifications list shows empty state when there are none', async ({ authedPage: page }) => {
@@ -33,6 +33,6 @@ test.describe('empty states', () => {
       }
     });
     await page.goto('/exams?type=certification');
-    await expect(page.locator(tid(TID.emptyState))).toBeVisible();
+    await expect(page.locator(tid(TID.illustratedEmptyState))).toBeVisible();
   });
 });

@@ -16,6 +16,9 @@ export const GENERATION_JOB_URL = '/generation-job';
 export const USAGE_HISTORY_URL = '/usage/history';
 export const USAGE_HISTORY_FILTERS_URL = '/usage/history/filters';
 export const GENERATION_JOB_SAVE_URL = (jobId: string) => `/generation-job/${jobId}/save`;
+export const CATALOG_URL = '/exam/catalog';
+export const FORK_EXAM_URL = '/exam/fork-exam';
+export const ADMIN_CATALOG_URL = '/admin/catalog';
 
 export const QUIZ_LOCAL_STORAGE_KEY = 'QUIZ';
 export const EXAMS_LOCAL_STORAGE_KEY = 'EXAMS';

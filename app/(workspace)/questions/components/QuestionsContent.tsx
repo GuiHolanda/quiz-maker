@@ -9,8 +9,10 @@ import type { Exam, ExamType } from '@/shared/types';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { EntitySelect } from '@/shared/components/EntitySelect';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import { faGraduationCap, faClipboardList } from '@fortawesome/free-solid-svg-icons';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
-import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
 import { useGenerationJobsContext } from '@/features/hooks/useGenerationJobsContext.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 
@@ -20,18 +22,20 @@ interface QuestionsContentProps {
   readonly type: ExamType;
 }
 
-const EMPTY_COPY: Record<ExamType, { href: string; labelKey: string; titleKey: string; descriptionKey: string }> = {
+const EMPTY_COPY: Record<ExamType, { href: string; labelKey: string; titleKey: string; descriptionKey: string; icon: IconDefinition }> = {
   certification: {
     href: '/exams?type=certification',
     labelKey: 'certification.tabNew',
     titleKey: 'certification.noCertificationsTitle',
     descriptionKey: 'certification.noCertificationsDescription',
+    icon: faGraduationCap,
   },
   public_exam: {
     href: '/exams?type=public_exam',
     labelKey: 'concurso.tabNew',
     titleKey: 'concurso.noExamsTitle',
     descriptionKey: 'concurso.noExamsDescription',
+    icon: faClipboardList,
   },
 };
 
@@ -55,10 +59,11 @@ export function QuestionsContent({ type }: Readonly<QuestionsContentProps>) {
     const copy = EMPTY_COPY[type];
 
     return (
-      <EmptyState
-        action={{ href: copy.href, label: t(copy.labelKey) }}
-        description={t(copy.descriptionKey)}
+      <IllustratedEmptyState
+        icon={copy.icon}
         title={t(copy.titleKey)}
+        description={t(copy.descriptionKey)}
+        action={{ href: copy.href, label: t(copy.labelKey) }}
       />
     );
   }

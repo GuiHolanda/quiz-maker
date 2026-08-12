@@ -8,9 +8,8 @@ import { faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
-import { PaginationControls } from '@/shared/components/ui/PaginationControls';
-import { ItemsPerPageSelect } from '@/shared/components/ui/ItemsPerPageSelect';
-import { CollapsibleFilterPanel } from '@/shared/components/ui/CollapsibleFilterPanel';
+import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
+import { EntityListShell } from '@/shared/components/ui/EntityListShell';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { getQuestionBank, deleteBrowseQuestion } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
@@ -172,45 +171,60 @@ function QuestionBankContent() {
       subtitle={t('questionBank.subtitle')}
       title={t('questionBank.title')}
     >
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col">
-          {shouldShowFilterPanel && (
-            <CollapsibleFilterPanel
-              hasActiveFilters={activeFilters}
-              isOpen={isFiltersOpen}
-              sort={filters.sort}
-              sortAscLabel={t('questionBank.sortOldest')}
-              sortDescLabel={t('questionBank.sortNewest')}
-              onToggle={() => setIsFiltersOpen((prev) => !prev)}
-              onToggleSort={toggleSort}
-            >
-              <QuestionBankFiltersBar
-                filters={filters}
-                onClear={handleClearFilters}
-                onFilterChange={handleFilterChange}
+      <EntityListShell
+        totalItems={result?.total}
+        isLoading={isLoading}
+        skeleton={<SkeletonListLoader count={5} height="h-[480px]" />}
+        emptyState={renderEmptyState()}
+        filterContent={
+          shouldShowFilterPanel ? (
+            <QuestionBankFiltersBar
+              filters={filters}
+              onClear={handleClearFilters}
+              onFilterChange={handleFilterChange}
+            />
+          ) : undefined
+        }
+        hasActiveFilters={activeFilters}
+        onClearFilters={handleClearFilters}
+        isFiltersOpen={isFiltersOpen}
+        onToggleFilters={() => setIsFiltersOpen((prev) => !prev)}
+        sort={filters.sort}
+        sortAscLabel={t('questionBank.sortOldest')}
+        sortDescLabel={t('questionBank.sortNewest')}
+        onToggleSort={toggleSort}
+        paginationLabel={t('nav.questions')}
+        pagination={
+          questions.length > 0
+            ? {
+                currentPage: page,
+                totalPages,
+                totalItems: result?.total ?? 0,
+                itemsPerPage: pageSize,
+                onPageChange: setPage,
+                onItemsPerPageChange: handlePageSizeChange,
+              }
+            : undefined
+        }
+      >
+        {questions.length > 0 && (
+          <div className="flex flex-col">
+            {questions.map((q) => (
+              <QuestionBankCard
+                key={`${q.type}-${q.id}`}
+                question={q}
+                onDeleteRequest={(id, type) => setDeleteTarget({ id, type })}
               />
-            </CollapsibleFilterPanel>
-          )}
-          {renderContent()}
-        </div>
-
-        {!isLoading && questions.length > 0 && (
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <PaginationControls currentPage={page} totalPages={totalPages} onChange={(p) => setPage(p)} />
-            <ItemsPerPageSelect isDisabled={isLoading} value={pageSize} onChange={handlePageSizeChange} />
+            ))}
           </div>
         )}
-      </div>
+      </EntityListShell>
 
       {renderDeleteModal()}
     </PageHeader>
   );
 
-  function renderContent() {
-    if (isLoading) {
-      return <SkeletonListLoader count={5} height="h-[480px]" />;
-    }
-
+  function renderEmptyState() {
     if (loadError) {
       return (
         <EmptyState
@@ -224,41 +238,23 @@ function QuestionBankContent() {
       );
     }
 
-    if (questions.length === 0) {
-      if (activeFilters) {
-        return (
-          <EmptyState
-            title={t('questionBank.noResultsTitle')}
-            description={t('questionBank.noResultsDescription')}
-            action={{ label: t('questionBank.clearFilters'), onPress: handleClearFilters }}
-          />
-        );
-      }
-
+    if (activeFilters) {
       return (
         <EmptyState
-          title={t('questionBank.emptyTitle')}
-          description={t('questionBank.emptyDescription')}
-          action={{
-            label: t('questionBank.emptyCta'),
-            href: '/questions?type=certification',
-            icon: faLayerGroup,
-          }}
+          title={t('questionBank.noResultsTitle')}
+          description={t('questionBank.noResultsDescription')}
+          action={{ label: t('questionBank.clearFilters'), onPress: handleClearFilters }}
         />
       );
     }
 
     return (
-      <div className="flex flex-col">
-        <p className="text-xs text-default-400 mb-2">{t('questionBank.totalCount', { count: result?.total ?? 0 })}</p>
-        {questions.map((q) => (
-          <QuestionBankCard
-            key={`${q.type}-${q.id}`}
-            question={q}
-            onDeleteRequest={(id, type) => setDeleteTarget({ id, type })}
-          />
-        ))}
-      </div>
+      <IllustratedEmptyState
+        icon={faLayerGroup}
+        title={t('questionBank.emptyTitle')}
+        description={t('questionBank.emptyDescription')}
+        action={{ label: t('questionBank.emptyCta'), href: '/questions?type=certification' }}
+      />
     );
   }
 

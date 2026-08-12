@@ -98,6 +98,72 @@ describe('ExamService', () => {
     });
   });
 
+  describe('deleteExam()', () => {
+    it('deletes associated MockExamAttemptAnswers and MockExams in a transaction before deleting the Exam', async () => {
+      prismaMock.exam.findUnique.mockResolvedValue({
+        id: 'exam-del',
+        userId: 'user-1',
+        name: 'AWS SAA',
+      } as any);
+      prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+      prismaMock.mockExam.findMany.mockResolvedValue([
+        { id: 'mock-1' },
+        { id: 'mock-2' },
+      ] as any);
+      prismaMock.mockExamAttemptAnswer.deleteMany.mockResolvedValue({ count: 5 } as any);
+      prismaMock.mockExam.deleteMany.mockResolvedValue({ count: 2 } as any);
+      prismaMock.exam.delete.mockResolvedValue({} as any);
+
+      const service = new ExamService(prismaMock as any);
+      await service.deleteExam('exam-del', 'user-1');
+
+      // attempt answers must be cleared first (FK constraint workaround for SQLite)
+      expect(prismaMock.mockExamAttemptAnswer.deleteMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { mockExamQuestion: { mockExamId: { in: ['mock-1', 'mock-2'] } } },
+        }),
+      );
+      expect(prismaMock.mockExam.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ['mock-1', 'mock-2'] } } });
+      expect(prismaMock.exam.delete).toHaveBeenCalledWith({ where: { id: 'exam-del' } });
+    });
+
+    it('skips MockExam cleanup and deletes directly when exam has no simulados', async () => {
+      prismaMock.exam.findUnique.mockResolvedValue({
+        id: 'exam-no-mocks',
+        userId: 'user-1',
+        name: 'Azure AZ-900',
+      } as any);
+      prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+      prismaMock.mockExam.findMany.mockResolvedValue([]); // no mock exams
+      prismaMock.exam.delete.mockResolvedValue({} as any);
+
+      const service = new ExamService(prismaMock as any);
+      await service.deleteExam('exam-no-mocks', 'user-1');
+
+      expect(prismaMock.mockExamAttemptAnswer.deleteMany).not.toHaveBeenCalled();
+      expect(prismaMock.mockExam.deleteMany).not.toHaveBeenCalled();
+      expect(prismaMock.exam.delete).toHaveBeenCalledWith({ where: { id: 'exam-no-mocks' } });
+    });
+
+    it('throws 403 when userId does not match exam owner', async () => {
+      prismaMock.exam.findUnique.mockResolvedValue({
+        id: 'exam-other',
+        userId: 'user-owner',
+        name: 'AWS SAA',
+      } as any);
+
+      const service = new ExamService(prismaMock as any);
+      await expect(service.deleteExam('exam-other', 'user-attacker')).rejects.toMatchObject({ status: 403 });
+    });
+
+    it('throws 404 when exam does not exist', async () => {
+      prismaMock.exam.findUnique.mockResolvedValue(null);
+
+      const service = new ExamService(prismaMock as any);
+      await expect(service.deleteExam('missing', 'user-1')).rejects.toMatchObject({ status: 404 });
+    });
+  });
+
   it('propagates updatedAt to parent Exam when renaming a section', async () => {
     prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
     prismaMock.examSection.findUnique.mockResolvedValue({

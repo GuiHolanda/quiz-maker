@@ -224,7 +224,8 @@ export async function processTopic(topicId: string): Promise<void> {
 
   try {
     const startTime = Date.now();
-    const numStr = String(topic.questionCount);
+    // Quota is recorded for the full requested count regardless of whether questions
+    // come from the pool or the LLM — recycled questions still consume quota.
     const recorded = await quotaService.checkAndRecordQuestions(userId, topic.questionCount, {
       refKey: job.refKey,
       refName: job.refName,
@@ -232,6 +233,30 @@ export async function processTopic(topicId: string): Promise<void> {
       topicName: topic.topicName,
     });
     logId = recorded.logId;
+
+    // Check whether the pool has questions this user hasn't seen yet for this context.
+    // Serve from pool first; only call LLM for any remaining shortfall.
+    const poolResult = await tryServeFromPool(
+      userId,
+      job.type as 'certification' | 'public_exam',
+      job.refKey,
+      topic.topicName,
+      topic.questionCount
+    );
+
+    if (poolResult.served === topic.questionCount) {
+      await metricsService.finalize(logId, Date.now() - startTime);
+      await prisma.generationJobTopic.update({
+        where: { id: topicId },
+        data: { status: 'done', savedCount: 0, pendingQuestionsJson: null },
+      });
+      await maybeFinalizeJob(job.id);
+      await releaseAndClaimNext(userId);
+      return;
+    }
+
+    const remainingCount = topic.questionCount - poolResult.served;
+    const numStr = String(remainingCount);
 
     let questions: AIExamQuestion[];
 
@@ -312,8 +337,8 @@ export async function processTopic(topicId: string): Promise<void> {
 
     // Defense: the review step may return more questions than requested despite prompt constraints.
     // Truncate to the requested count so saved count never exceeds what was charged to quota.
-    if (questions.length > topic.questionCount) {
-      questions = questions.slice(0, topic.questionCount);
+    if (questions.length > remainingCount) {
+      questions = questions.slice(0, remainingCount);
     }
 
     await metricsService.finalize(logId, Date.now() - startTime);
@@ -349,4 +374,75 @@ export async function processTopic(topicId: string): Promise<void> {
       console.error('[generation-job] releaseAndClaimNext failed:', e);
     }
   }
+}
+
+interface PoolServeResult {
+  served: number;
+}
+
+async function tryServeFromPool(
+  userId: string,
+  type: 'certification' | 'public_exam',
+  examId: string,
+  sectionName: string,
+  requested: number
+): Promise<PoolServeResult> {
+  const exam = await prisma.exam.findFirst({
+    where: { id: examId },
+    select: { providerId: true, examBoardId: true },
+  });
+
+  if (!exam || (!exam.providerId && !exam.examBoardId)) {
+    return { served: 0 };
+  }
+
+  const pools = await prisma.questionPool.findMany({
+    where: {
+      type,
+      providerId: exam.providerId ?? null,
+      examBoardId: exam.examBoardId ?? null,
+      sectionName,
+    },
+  });
+
+  if (pools.length === 0) return { served: 0 };
+
+  const poolIds = pools.map((p) => p.id);
+
+  // Find pooled questions this user has NOT yet received across all pools for the section.
+  const alreadyHas = await prisma.examQuestion.findMany({
+    where: { poolId: { in: poolIds }, userId },
+    select: { id: true },
+  });
+  const alreadyHasIds = alreadyHas.map((q) => q.id);
+
+  const candidates = await prisma.examQuestion.findMany({
+    where: { poolId: { in: poolIds }, id: { notIn: alreadyHasIds } },
+    include: { options: true },
+    take: requested,
+  });
+
+  if (candidates.length === 0) return { served: 0 };
+
+  // Create ExamQuestion copies for this user, linked to the user's exam and original pool.
+  for (const src of candidates) {
+    await prisma.examQuestion.create({
+      data: {
+        text: src.text,
+        correctCount: src.correctCount,
+        difficulty: src.difficulty,
+        examName: src.examName,
+        sectionName: src.sectionName,
+        topicName: src.topicName,
+        userId,
+        examId,
+        sectionId: src.sectionId,
+        topicId: src.topicId,
+        poolId: src.poolId,
+        options: { create: src.options.map((o) => ({ label: o.label, text: o.text })) },
+      },
+    });
+  }
+
+  return { served: candidates.length };
 }

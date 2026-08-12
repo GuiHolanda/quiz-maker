@@ -163,7 +163,22 @@ export class ExamService {
 
     if (!exam) throw Object.assign(new Error('Exam not found'), { status: 404 });
     if (exam.userId !== userId) throw Object.assign(new Error('Forbidden'), { status: 403 });
-    await this.prismaService.exam.delete({ where: { id: examId } });
+
+    await this.prismaService.$transaction(async (tx) => {
+      const mockExams = await tx.mockExam.findMany({ where: { examId }, select: { id: true } });
+      const mockExamIds = mockExams.map((m) => m.id);
+
+      if (mockExamIds.length > 0) {
+        // MockExamAttemptAnswer.mockExamQuestionId → MockExamQuestion has no onDelete:
+        // delete answers first, then MockExam (which cascades MockExamQuestion), then Exam.
+        await tx.mockExamAttemptAnswer.deleteMany({
+          where: { mockExamQuestion: { mockExamId: { in: mockExamIds } } },
+        });
+        await tx.mockExam.deleteMany({ where: { id: { in: mockExamIds } } });
+      }
+
+      await tx.exam.delete({ where: { id: examId } });
+    });
   }
 
   // — Sections —

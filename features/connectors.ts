@@ -25,6 +25,9 @@ import {
   GENERATION_JOB_SAVE_URL,
   DASHBOARD_STATS_URL,
   SEARCH_URL,
+  CATALOG_URL,
+  FORK_EXAM_URL,
+  ADMIN_CATALOG_URL,
 } from '@/config/constants';
 import {
   AIExamQuestion,
@@ -56,6 +59,10 @@ import {
   GenerationHistoryFilterOptions,
   DashboardStats,
   SearchResponse,
+  CatalogExam,
+  CatalogListResponse,
+  AdminCatalogListResponse,
+  AdminCatalogExamDetail,
 } from '@/shared/types';
 import api from '@/lib/bff.api';
 
@@ -396,5 +403,33 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
 export async function globalSearch(q: string, signal?: AbortSignal): Promise<SearchResponse> {
   const { data } = await api.get<SearchResponse>(SEARCH_URL, { params: { q }, signal });
+  return data;
+}
+
+// — Catalog —
+
+export async function getCatalogExams(): Promise<CatalogExam[]> {
+  const { data } = await api.get<CatalogListResponse>(CATALOG_URL);
+  return data.templates;
+}
+
+export async function forkCatalogExam(templateId: string): Promise<Exam> {
+  const { data } = await api.post<{ exam: Exam }>(FORK_EXAM_URL, { templateId });
+  return data.exam;
+}
+
+// — Admin catalog —
+
+export async function getAdminCatalog(): Promise<AdminCatalogListResponse> {
+  const { data } = await api.get<AdminCatalogListResponse>(ADMIN_CATALOG_URL);
+  return data;
+}
+
+export async function promoteExamToCatalog(examId: string): Promise<void> {
+  await api.patch(`${ADMIN_CATALOG_URL}/${examId}`, {});
+}
+
+export async function getAdminCatalogExamDetail(examId: string): Promise<AdminCatalogExamDetail> {
+  const { data } = await api.get<AdminCatalogExamDetail>(`${ADMIN_CATALOG_URL}/${examId}`);
   return data;
 }

@@ -84,6 +84,23 @@ export class ExamQuestionService {
         const canonicalTopicName = matchedTopic?.name ?? incomingTopic;
         const topicId = matchedTopic?.id ?? null;
 
+        // Look up a matching QuestionPool entry so this question joins the shared pool.
+        // Only attempts the lookup when the exam has a provider or examBoard (pool key requires one).
+        let poolId: string | null = null;
+        if (exam && (exam.providerId || exam.examBoardId)) {
+          const matchingPool = await tx.questionPool.findFirst({
+            where: {
+              type: exam.type,
+              providerId: exam.providerId ?? null,
+              examBoardId: exam.examBoardId ?? null,
+              sectionName: canonicalSectionName,
+              topicName: canonicalTopicName ?? null,
+            },
+            select: { id: true },
+          });
+          poolId = matchingPool?.id ?? null;
+        }
+
         const createdQuestion = await tx.examQuestion.create({
           data: {
             examName: normalizeName(qExamName ?? ''),
@@ -96,6 +113,7 @@ export class ExamQuestionService {
             examId: exam?.id ?? null,
             sectionId,
             topicId,
+            poolId,
           },
         });
 

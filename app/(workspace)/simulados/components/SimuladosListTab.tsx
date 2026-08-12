@@ -10,13 +10,14 @@ import { Progress } from '@heroui/progress';
 import { Select, SelectItem } from '@heroui/select';
 import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSliders, faXmark, faMagnifyingGlass, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faMagnifyingGlass, faTrash, faGraduationCap } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useMockExamsContext } from '@/features/providers/mockExams.provider';
 import { deleteMockExam, ensureMockExamAnswers, startMockExamAttempt } from '@/features/connectors';
-import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
-import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { EntityListShell } from '@/shared/components/ui/EntityListShell';
+import { usePaginatedItems } from '@/features/hooks/usePaginatedItems.hook';
+import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
 import { notify } from '@/shared/lib/notify';
 import { ExamType, MockExamListItem } from '@/shared/types';
 import { buttonStyles } from '@/config/constants/buttonStyles';
@@ -97,6 +98,7 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [startingKey, setStartingKey] = useState<string | null>(null);
   const [historyTarget, setHistoryTarget] = useState<UnifiedSimulado | null>(null);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   useEffect(() => {
     mock.refresh();
@@ -139,6 +141,8 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
       return true;
     });
   }, [simulados, filters]);
+
+  const { pageItems, page, totalPages, perPage, setPage, setPerPage } = usePaginatedItems(filtered);
 
   function updateFilter<K extends keyof Filters>(key: K, value: Filters[K]) {
     setFilters((prev) => {
@@ -192,31 +196,40 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
     }
   }
 
-  if (isLoading) return <SkeletonListLoader />;
-
-  if (simulados.length === 0) {
-    return (
-      <EmptyState
-        action={onCreateNew ? { label: t('simulado.tabNew'), onPress: onCreateNew } : undefined}
-        description={t('simulado.noSimuladosDescription')}
-        title={t('simulado.noSimulados')}
-      />
-    );
-  }
-
   return (
-    <div className="flex flex-col gap-4">
-      {renderFilter()}
-
-      {filtered.length === 0 ? (
-        <EmptyState
-          action={{ label: t('simulado.clearFilter'), onPress: () => setFilters(EMPTY_FILTERS) }}
-          description={t('simulado.noResultsForFilterDescription')}
-          title={t('simulado.noResultsForFilter')}
-        />
-      ) : (
-        <div className="flex flex-col gap-4">{filtered.map((s) => renderCard(s))}</div>
-      )}
+    <>
+      <EntityListShell
+        totalItems={isLoading ? undefined : filtered.length}
+        isLoading={isLoading}
+        emptyState={
+          <IllustratedEmptyState
+            icon={faGraduationCap}
+            title={t('simulado.noSimulados')}
+            description={t('simulado.noSimuladosDescription')}
+            action={onCreateNew ? { label: t('simulado.tabNew'), onPress: onCreateNew } : undefined}
+          />
+        }
+        filterContent={renderFilterContent()}
+        hasActiveFilters={activeFilterCount > 0}
+        onClearFilters={() => setFilters(EMPTY_FILTERS)}
+        isFiltersOpen={isFiltersOpen}
+        onToggleFilters={() => setIsFiltersOpen((prev) => !prev)}
+        paginationLabel={t('nav.simulados')}
+        pagination={
+          totalPages > 1
+            ? {
+                currentPage: page,
+                totalPages,
+                totalItems: filtered.length,
+                itemsPerPage: perPage,
+                onPageChange: setPage,
+                onItemsPerPageChange: (e) => setPerPage(Number(e.target.value)),
+              }
+            : undefined
+        }
+      >
+        {pageItems.map((s) => renderCard(s))}
+      </EntityListShell>
 
       <ConfirmModal
         body={
@@ -236,28 +249,12 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
       <Modal isOpen={!!historyTarget} size="lg" onClose={() => setHistoryTarget(null)}>
         <ModalContent>{historyTarget && renderHistoryModal(historyTarget)}</ModalContent>
       </Modal>
-    </div>
+    </>
   );
 
-  function renderFilter() {
+  function renderFilterContent() {
     return (
-      <div className="bg-content1 border border-default-200 rounded-xl p-4 flex flex-col gap-3">
-        <div className="flex items-center gap-3">
-          <FontAwesomeIcon className="w-3.5 h-3.5 text-default-400 shrink-0" icon={faSliders} />
-          <span className="text-xs font-semibold text-default-500">{t('simulado.filters')}</span>
-          {activeFilterCount > 0 && (
-            <Button
-              className={`${buttonStyles.flat} ml-auto h-7 px-3 text-xs`}
-              size="sm"
-              startContent={<FontAwesomeIcon className="w-3 h-3" icon={faXmark} />}
-              onPress={() => setFilters(EMPTY_FILTERS)}
-            >
-              {t('simulado.clearFilter')}
-            </Button>
-          )}
-        </div>
-
-        {/* Row 1: search + source */}
+      <div className="flex flex-col gap-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input
             {...inputProperties.input}
@@ -282,7 +279,6 @@ export function SimuladosListTab({ onCreateNew }: SimuladosListTabProps = {}) {
           </Select>
         </div>
 
-        {/* Row 2: type + count + status */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:grid-cols-3">
           <Select
             {...inputProperties.select}

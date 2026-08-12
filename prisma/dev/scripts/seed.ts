@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { ExamCatalogService } from '@/features/services/exam-catalog.service';
 
 interface SeedQuestion {
   text: string;
@@ -446,6 +447,14 @@ async function main() {
     topicId: direitosTopic.id,
   });
   console.log(`  Seeded ${PUBLIC_EXAM_QUESTIONS.length} public exam questions`);
+
+  // Promote both exams to the catalog: sets isTemplate=true, creates QuestionPool
+  // entries per section/topic, and backfills poolId on all seeded questions.
+  const catalogService = new ExamCatalogService();
+  await catalogService.promoteExam(certExam.id);
+  console.log(`  Promoted ${certExam.name} to catalog template`);
+  await catalogService.promoteExam(examConcurso.id);
+  console.log(`  Promoted ${examConcurso.name} to catalog template`);
 
   console.log('\n✅ Seed complete.');
 }

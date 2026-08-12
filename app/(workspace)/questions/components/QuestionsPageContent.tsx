@@ -22,6 +22,7 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { InlineAlert } from '@/shared/components/ui/InlineAlert';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { notify } from '@/shared/lib/notify';
+import { SectionHeader } from '@/shared/components/ui/SectionHeader';
 import type { AIQuestion } from '@/shared/types';
 import { BreadcrumbItem, Breadcrumbs } from '@heroui/breadcrumbs';
 
@@ -222,19 +223,17 @@ export function QuestionsPageContent() {
     const icon = isPublicExam ? faClipboardList : faGraduationCap;
 
     return (
-      <div className="flex items-start gap-3">
-        <div className="mt-0.5 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-          <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={icon} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h2 className="text-xl font-bold text-foreground">{t('generate.reviewSectionTitle')}</h2>
-          {refName && <p className="text-sm font-semibold text-primary mt-0.5 truncate">{refName}</p>}
-          <p className="text-sm text-default-500 mt-0.5">{t('generate.reviewSectionSubtitle')}</p>
-        </div>
-        <Chip color="primary" size="sm" variant="flat">
-          {t('generate.reviewCount', { count: aiQuestions.length })}
-        </Chip>
-      </div>
+      <SectionHeader
+        action={
+          <Chip color="primary" size="sm" variant="flat">
+            {t('generate.reviewCount', { count: aiQuestions.length })}
+          </Chip>
+        }
+        icon={icon}
+        label={refName || undefined}
+        subtitle={t('generate.reviewSectionSubtitle')}
+        title={t('generate.reviewSectionTitle')}
+      />
     );
   }
 

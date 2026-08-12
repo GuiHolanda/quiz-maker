@@ -37,6 +37,7 @@ export default async function AdminLayout({ children }: { readonly children: Rea
           <AdminNavLink href="/admin/overview" label="Visão Geral" />
           <AdminNavLink href="/admin/users" label="Usuários" />
           <AdminNavLink href="/admin/analytics" label="Analytics" />
+          <AdminNavLink href="/admin/catalog" label="Catálogo" />
           <AdminNavLink href="/admin/audit-log" label="Audit Log" />
         </nav>
         <div className="p-4 border-t border-divider">

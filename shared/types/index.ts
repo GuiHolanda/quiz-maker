@@ -547,3 +547,65 @@ export interface DashboardStats {
   readonly scoreTrend: DashboardScoreTrendPoint[];
   readonly domainBreakdown: DashboardDomainStat[];
 }
+
+export interface CatalogExam {
+  readonly id: string;
+  readonly type: ExamType;
+  readonly name: string;
+  readonly role?: string | null;
+  readonly year?: number | null;
+  readonly key?: string | null;
+  readonly totalQuestions: number;
+  readonly examDurationMinutes?: number | null;
+  readonly passingScore?: number | null;
+  readonly createdAt?: string;
+  readonly updatedAt?: string;
+  readonly provider?: Provider | null;
+  readonly examBoard?: ExamBoard | null;
+  readonly sections: ExamSection[];
+  readonly poolQuestionCount: number;
+}
+
+export interface CatalogListResponse {
+  readonly templates: CatalogExam[];
+}
+
+export interface AdminCatalogEntry {
+  readonly id: string;
+  readonly type: ExamType;
+  readonly name: string;
+  readonly role?: string | null;
+  readonly year?: number | null;
+  readonly provider?: Provider | null;
+  readonly examBoard?: ExamBoard | null;
+  readonly isTemplate: boolean;
+  readonly userId: string | null;
+  readonly ownerEmail?: string | null;
+  readonly sectionCount: number;
+  readonly questionCount: number;
+}
+
+export interface AdminCatalogListResponse {
+  readonly entries: AdminCatalogEntry[];
+}
+
+export interface AdminCatalogExamDetail {
+  readonly id: string;
+  readonly type: ExamType;
+  readonly name: string;
+  readonly role?: string | null;
+  readonly year?: number | null;
+  readonly key?: string | null;
+  readonly totalQuestions?: number | null;
+  readonly examDurationMinutes?: number | null;
+  readonly passingScore?: number | null;
+  readonly isTemplate: boolean;
+  readonly ownerEmail?: string | null;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly provider?: Provider | null;
+  readonly examBoard?: ExamBoard | null;
+  readonly sections: ExamSection[];
+  readonly questionCount: number;
+  readonly poolQuestionCount: number;
+}
