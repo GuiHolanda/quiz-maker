@@ -41,7 +41,7 @@ async function main() {
     create: {
       name: 'CompTIA',
       fullName: 'Computing Technology Industry Association',
-      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f2/CompTIA_Logo.svg',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/6/62/Comptia-logo.svg',
     },
   });
 
@@ -61,7 +61,7 @@ async function main() {
     create: {
       name: 'HashiCorp',
       fullName: 'HashiCorp Inc.',
-      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/12/HashiCorp_logo.svg',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a0/HashiCorp_horizontal_logo.svg',
     },
   });
 
@@ -71,7 +71,7 @@ async function main() {
     create: {
       name: 'CNCF',
       fullName: 'Cloud Native Computing Foundation',
-      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/7/73/CNCF-logo.svg',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/c/c3/Cloud_Native_Computing_Foundation_2023_logo.svg',
     },
   });
 
@@ -81,7 +81,7 @@ async function main() {
     create: {
       name: 'CFA Institute',
       fullName: 'CFA Institute',
-      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/18/CFA_Institute_Logo.svg',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/d/d9/Cfa-institute-logo.svg',
     },
   });
 
@@ -92,7 +92,7 @@ async function main() {
       name: 'GARP',
       fullName: 'Global Association of Risk Professionals',
       logoUrl:
-        'https://upload.wikimedia.org/wikipedia/en/thumb/2/26/Global_Association_of_Risk_Professionals_%28GARP%29_Logo.png/330px-Global_Association_of_Risk_Professionals_%28GARP%29_Logo.png',
+        'https://upload.wikimedia.org/wikipedia/en/2/26/Global_Association_of_Risk_Professionals_%28GARP%29_Logo.png',
     },
   });
 
@@ -144,7 +144,7 @@ async function main() {
       key: 'AZ-104',
       year: 2024,
       totalQuestions: 60,
-      examDurationMinutes: 120,
+      examDurationMinutes: 100,
       passingScore: 70,
       providerId: microsoft.id,
       sections: [
@@ -160,7 +160,7 @@ async function main() {
       key: 'AZ-900',
       year: 2024,
       totalQuestions: 60,
-      examDurationMinutes: 65,
+      examDurationMinutes: 45,
       passingScore: 70,
       providerId: microsoft.id,
       sections: [
@@ -178,11 +178,12 @@ async function main() {
       passingScore: 70,
       providerId: google.id,
       sections: [
-        { name: 'Designing and Planning a Cloud Solution Architecture', minQuestions: 24, maxQuestions: 24 },
-        { name: 'Managing and Provisioning Cloud Infrastructure', minQuestions: 15, maxQuestions: 15 },
-        { name: 'Designing for Security and Compliance', minQuestions: 18, maxQuestions: 18 },
-        { name: 'Analyzing and Optimizing Technical and Business Processes', minQuestions: 18, maxQuestions: 18 },
-        { name: 'Ensuring Solution and Operations Reliability', minQuestions: 25, maxQuestions: 25 },
+        { name: 'Designing and planning a cloud solution architecture',          minQuestions: 25, maxQuestions: 25 },
+        { name: 'Managing and provisioning a cloud solution infrastructure',     minQuestions: 18, maxQuestions: 18 },
+        { name: 'Designing for security and compliance',                         minQuestions: 18, maxQuestions: 18 },
+        { name: 'Analyzing and optimizing technical and business processes',     minQuestions: 15, maxQuestions: 15 },
+        { name: 'Managing implementation',                                       minQuestions: 12, maxQuestions: 12 },
+        { name: 'Ensuring solution and operations excellence',                   minQuestions: 12, maxQuestions: 12 },
       ],
     },
     {
@@ -191,7 +192,7 @@ async function main() {
       year: 2024,
       totalQuestions: 90,
       examDurationMinutes: 90,
-      passingScore: 75,
+      passingScore: 83,
       providerId: comptia.id,
       sections: [
         { name: 'General Security Concepts', minQuestions: 12, maxQuestions: 12 },
@@ -220,18 +221,21 @@ async function main() {
     },
     {
       name: 'HashiCorp Terraform Associate',
-      key: '003',
-      year: 2024,
+      key: '004',
+      year: 2025,
       totalQuestions: 57,
       examDurationMinutes: 60,
       passingScore: 70,
       providerId: hashicorp.id,
       sections: [
-        { name: 'Understand Infrastructure as Code Concepts', minQuestions: 10, maxQuestions: 10 },
-        { name: 'Understand Terraform Purpose and Concepts', minQuestions: 15, maxQuestions: 15 },
-        { name: 'Use the Terraform CLI', minQuestions: 15, maxQuestions: 15 },
-        { name: 'Interact with Terraform Modules', minQuestions: 8, maxQuestions: 8 },
-        { name: 'Use and Create Terraform Configurations', minQuestions: 9, maxQuestions: 9 },
+        { name: 'Infrastructure as Code (IaC) with Terraform', minQuestions: 12, maxQuestions: 12 },
+        { name: 'Terraform fundamentals',                       minQuestions: 13, maxQuestions: 13 },
+        { name: 'Core Terraform workflow',                      minQuestions: 13, maxQuestions: 13 },
+        { name: 'Terraform configuration',                      minQuestions: 14, maxQuestions: 14 },
+        { name: 'Terraform modules',                            minQuestions: 12, maxQuestions: 12 },
+        { name: 'Terraform state management',                   minQuestions: 14, maxQuestions: 14 },
+        { name: 'Maintain infrastructure with Terraform',       minQuestions: 13, maxQuestions: 13 },
+        { name: 'HCP Terraform',                                minQuestions:  9, maxQuestions:  9 },
       ],
     },
     {
@@ -296,18 +300,18 @@ async function main() {
       key: 'CFP',
       year: 2025,
       totalQuestions: 170,
-      examDurationMinutes: 370,
+      examDurationMinutes: 360,
       passingScore: 64,
       providerId: cfpBoard.id,
       sections: [
-        { name: 'Financial Planning Process', minQuestions: 8, maxQuestions: 8 },
-        { name: 'Investment Planning', minQuestions: 17, maxQuestions: 17 },
-        { name: 'Tax Planning', minQuestions: 14, maxQuestions: 14 },
-        { name: 'Retirement and Employee Benefits Planning', minQuestions: 18, maxQuestions: 18 },
-        { name: 'Estate Planning', minQuestions: 10, maxQuestions: 10 },
-        { name: 'Risk Management and Insurance', minQuestions: 13, maxQuestions: 13 },
-        { name: 'Psychology of Financial Planning', minQuestions: 7, maxQuestions: 7 },
-        { name: 'General Financial Planning Principles', minQuestions: 13, maxQuestions: 13 },
+        { name: 'Professional Conduct and Regulation',       minQuestions:  8, maxQuestions:  8 },
+        { name: 'General Principles of Financial Planning',  minQuestions: 15, maxQuestions: 15 },
+        { name: 'Risk Management and Insurance Planning',    minQuestions: 11, maxQuestions: 11 },
+        { name: 'Investment Planning',                       minQuestions: 17, maxQuestions: 17 },
+        { name: 'Tax Planning',                              minQuestions: 14, maxQuestions: 14 },
+        { name: 'Retirement Savings and Income Planning',    minQuestions: 18, maxQuestions: 18 },
+        { name: 'Estate Planning',                           minQuestions: 10, maxQuestions: 10 },
+        { name: 'Psychology of Financial Planning',          minQuestions:  7, maxQuestions:  7 },
       ],
     },
   ];
