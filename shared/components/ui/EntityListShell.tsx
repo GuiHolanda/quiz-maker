@@ -94,33 +94,37 @@ export function EntityListShell({
               {subtitle && <p className="text-sm text-default-500">{subtitle}</p>}
             </div>
           )}
-          {pagination && (
-            <div className="flex justify-between items-center">
-              <p className="text-xs text-default-500 font-semibold ps-2">
-                {t('common.paginationItems', {
-                  current: Math.min(
-                    pagination.itemsPerPage,
-                    pagination.totalItems - (pagination.currentPage - 1) * pagination.itemsPerPage
-                  ),
-                  total: pagination.totalItems,
-                  label: paginationLabel,
-                })}
-              </p>
-              <ItemsPerPageSelect value={pagination.itemsPerPage} onChange={pagination.onItemsPerPageChange} />
+          {(pagination || (filterContent && onToggleFilters)) && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              {pagination && (
+                <p className="text-xs text-default-500 font-semibold ps-2 flex-1 min-w-0">
+                  {t('common.paginationItems', {
+                    current: Math.min(
+                      pagination.itemsPerPage,
+                      pagination.totalItems - (pagination.currentPage - 1) * pagination.itemsPerPage
+                    ),
+                    total: pagination.totalItems,
+                    label: paginationLabel,
+                  })}
+                </p>
+              )}
+              {pagination && (
+                <ItemsPerPageSelect value={pagination.itemsPerPage} onChange={pagination.onItemsPerPageChange} />
+              )}
+              {filterContent && onToggleFilters && (
+                <CollapsibleFilterPanel
+                  hasActiveFilters={hasActiveFilters}
+                  isOpen={isFiltersOpen}
+                  sort={sort}
+                  sortAscLabel={sortAscLabel}
+                  sortDescLabel={sortDescLabel}
+                  onToggle={onToggleFilters}
+                  onToggleSort={onToggleSort}
+                >
+                  {filterContent}
+                </CollapsibleFilterPanel>
+              )}
             </div>
-          )}
-          {filterContent && onToggleFilters && (
-            <CollapsibleFilterPanel
-              hasActiveFilters={hasActiveFilters}
-              isOpen={isFiltersOpen}
-              sort={sort}
-              sortAscLabel={sortAscLabel}
-              sortDescLabel={sortDescLabel}
-              onToggle={onToggleFilters}
-              onToggleSort={onToggleSort}
-            >
-              {filterContent}
-            </CollapsibleFilterPanel>
           )}
         </div>
       )}

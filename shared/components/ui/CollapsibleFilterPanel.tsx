@@ -34,8 +34,8 @@ export function CollapsibleFilterPanel({
   const { t } = useTranslation();
 
   return (
-    <div className={`flex flex-col gap-3 ${isOpen ? 'mb-4' : 'mb-0'}`}>
-      <div className="flex items-center justify-end gap-2">
+    <>
+      <div className="flex items-center gap-2 shrink-0 ml-auto">
         {sort !== undefined && onToggleSort && (
           <Button
             isIconOnly
@@ -69,7 +69,7 @@ export function CollapsibleFilterPanel({
           <motion.div
             key="filter-panel"
             animate={{ height: 'auto', opacity: 1 }}
-            className="overflow-hidden"
+            className="overflow-hidden basis-full"
             exit={{ height: 0, opacity: 0 }}
             initial={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: 'easeInOut' }}
@@ -78,6 +78,6 @@ export function CollapsibleFilterPanel({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 }
