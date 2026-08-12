@@ -38,7 +38,7 @@ export function ExamCard({ exam, type, isSelected, onClick, footerAction }: Exam
       aria-label={exam.name}
       classNames={{
         base: [
-          'bg-content1 border rounded-xl transition-all duration-150 cursor-pointer hover:bg-content2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
+          'bg-content1 border rounded-xl transition-all duration-150 cursor-pointer hover:bg-content2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 h-full',
           isSelected
             ? 'border-primary bg-content2 ring-1 ring-primary/20'
             : 'border-default-200 hover:border-default-300',
