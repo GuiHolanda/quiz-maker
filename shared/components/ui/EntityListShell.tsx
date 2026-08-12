@@ -87,12 +87,14 @@ export function EntityListShell({
 
   return (
     <div className="flex flex-col gap-4">
-      {(title || subtitle) && (
+      {(title || subtitle || pagination) && (
         <div className="flex flex-col gap-2 flex-wrap">
-          <div className="flex flex-col gap-0.5">
-            {title && <h2 className="text-xl font-bold text-foreground">{title}</h2>}
-            {subtitle && <p className="text-sm text-default-500">{subtitle}</p>}
-          </div>
+          {(title || subtitle) && (
+            <div className="flex flex-col gap-0.5">
+              {title && <h2 className="text-xl font-bold text-foreground">{title}</h2>}
+              {subtitle && <p className="text-sm text-default-500">{subtitle}</p>}
+            </div>
+          )}
           {pagination && (
             <div className="flex justify-between items-end">
               <p className="text-sm text-default-500 font-semibold">
