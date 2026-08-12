@@ -18,9 +18,10 @@ interface IllustratedEmptyStateProps {
   readonly title: string;
   readonly description: string;
   readonly action?: IllustratedEmptyStateAction;
+  readonly secondaryAction?: IllustratedEmptyStateAction;
 }
 
-export function IllustratedEmptyState({ icon, title, description, action }: IllustratedEmptyStateProps) {
+export function IllustratedEmptyState({ icon, title, description, action, secondaryAction }: IllustratedEmptyStateProps) {
   return (
     <div
       data-testid="illustrated-empty-state"
@@ -33,16 +34,31 @@ export function IllustratedEmptyState({ icon, title, description, action }: Illu
         <h2 className="text-xl font-bold text-foreground">{title}</h2>
         <p className="text-sm text-default-500">{description}</p>
       </div>
-      {action && (
-        <Button
-          as={action.href ? NextLink : undefined}
-          className={buttonStyles.primary}
-          href={action.href}
-          startContent={<span>+</span>}
-          onPress={action.onPress}
-        >
-          {action.label}
-        </Button>
+      {(action || secondaryAction) && (
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          {action && (
+            <Button
+              as={action.href ? NextLink : undefined}
+              className={buttonStyles.primary}
+              href={action.href}
+              startContent={<span>+</span>}
+              onPress={action.onPress}
+            >
+              {action.label}
+            </Button>
+          )}
+          {secondaryAction && (
+            <Button
+              as={secondaryAction.href ? NextLink : undefined}
+              className={buttonStyles.secondary}
+              href={secondaryAction.href}
+              variant="bordered"
+              onPress={secondaryAction.onPress}
+            >
+              {secondaryAction.label}
+            </Button>
+          )}
+        </div>
       )}
     </div>
   );

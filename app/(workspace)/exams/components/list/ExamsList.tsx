@@ -169,6 +169,7 @@ export function ExamsList({ type }: ExamsListProps) {
             title={t(config.emptyTitle)}
             description={t(config.emptyDescription)}
             action={{ label: t(config.emptyActionLabel), href: `/exams/new?type=${type}` }}
+            secondaryAction={{ label: t('catalog.browseAction'), href: `/exams/catalog?type=${type}` }}
           />
         }
         pagination={

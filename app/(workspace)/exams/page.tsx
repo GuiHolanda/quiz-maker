@@ -70,7 +70,7 @@ function ExamsContent() {
       <section data-testid="configure-list-section">
         <ExamsList type={type} />
       </section>
-      <CatalogDiscoveryCard type={type} />
+      {hasExams && <CatalogDiscoveryCard type={type} />}
     </PageHeader>
   );
 }
