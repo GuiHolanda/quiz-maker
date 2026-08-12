@@ -22,6 +22,7 @@ import { getGenerationHistory, getGenerationHistoryFilters } from '@/features/co
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { RelativeDate } from '@/shared/components/ui/RelativeDate';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
+import { SectionHeader } from '@/shared/components/ui/SectionHeader';
 import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
 import { EntityListShell } from '@/shared/components/ui/EntityListShell';
 import { GenerationHistoryFiltersBar, hasActiveHistoryFilters } from './GenerationHistoryFiltersBar';
@@ -145,17 +146,12 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
 
   function renderSectionHeader() {
     return (
-      <div className="flex items-center gap-3 mb-3">
-        <div className="mt-0.5 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-          <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={faHistory} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h2 className="text-xl font-bold text-foreground" id="history-heading">
-            {t('generate.historySection')}
-          </h2>
-          <p className="text-sm text-default-500 mt-0.5">{t('generate.historySectionSubtitle')}</p>
-        </div>
-      </div>
+      <SectionHeader
+        className="mb-3"
+        icon={faHistory}
+        subtitle={t('generate.historySectionSubtitle')}
+        title={t('generate.historySection')}
+      />
     );
   }
 

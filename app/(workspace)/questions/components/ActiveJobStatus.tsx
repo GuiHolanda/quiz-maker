@@ -20,6 +20,7 @@ import type { GenerationJobTopicStatus } from '@/shared/types';
 import { InlineAlert } from '@/shared/components/ui/InlineAlert';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+import { SectionHeader } from '@/shared/components/ui/SectionHeader';
 
 interface ActiveJobStatusProps {
   readonly refName: string;
@@ -70,15 +71,12 @@ export function ActiveJobStatus({
   return (
     <section aria-live="polite" className="mt-8" data-testid="question-gen-status">
       {showSectionHeader && (
-        <div className="flex items-start gap-3 mb-3">
-          <div className={`mt-0.5 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0`}>
-            <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={faBolt} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-bold text-foreground">{t('generate.statusSection')}</h2>
-            <p className="text-sm text-default-500 mt-0.5">{t('generate.statusSectionSubtitleRunning')}</p>
-          </div>
-        </div>
+        <SectionHeader
+          className="mb-3"
+          icon={faBolt}
+          subtitle={t('generate.statusSectionSubtitleRunning')}
+          title={t('generate.statusSection')}
+        />
       )}
 
       <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4">

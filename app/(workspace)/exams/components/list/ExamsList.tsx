@@ -7,6 +7,8 @@ import { ExamCard } from './ExamCard';
 import { ExamDetailPanel } from './ExamDetailPanel';
 
 import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
+import { SectionHeader } from '@/shared/components/ui/SectionHeader';
+import { faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 import { EditExamModal } from '@/shared/components/EditExamModal/EditExamModal';
 import type {
   EditExamModalCertResult,
@@ -222,10 +224,7 @@ export function ExamsList({ type }: ExamsListProps) {
               transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
               className="mt-6"
             >
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-xs font-semibold text-primary">{t('exam.detailsSectionLabel')}</span>
-                <div className="flex-1 h-px bg-default-200" />
-              </div>
+              <SectionHeader className="mb-4" icon={faPenToSquare} title={t('exam.detailsSectionLabel')} />
               <ExamDetailPanel
                 exam={selectedExam}
                 type={type}
