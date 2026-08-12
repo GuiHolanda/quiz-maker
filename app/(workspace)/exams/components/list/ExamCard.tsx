@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { faCheckCircle, faClock, faClockRotateLeft, faHashtag, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Button } from '@heroui/button';
 import { Card, CardBody, CardFooter } from '@heroui/card';
 import { Chip } from '@heroui/chip';
 
@@ -43,10 +42,12 @@ export function ExamCard({ exam, type, isSelected, onClick, footerAction }: Exam
             : 'border-default-200 hover:border-default-300',
         ].join(' '),
       }}
+      disableAnimation
+      isPressable
       role="button"
       shadow="none"
       tabIndex={0}
-      onClick={onClick}
+      onPress={onClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') onClick();
       }}
@@ -90,16 +91,16 @@ export function ExamCard({ exam, type, isSelected, onClick, footerAction }: Exam
                 })}
               </span>
             )}
-            {exam.passingScore != null && (
-              <span className="inline-flex items-center gap-1">
-                <FontAwesomeIcon icon={faCheckCircle} size="sm" />
-                {t('certification.passingScoreValue', { score: String(exam.passingScore) })}
-              </span>
-            )}
             {exam.examDurationMinutes && (
               <span className="inline-flex items-center gap-1">
                 <FontAwesomeIcon icon={faClock} size="sm" />
                 {t('certification.durationValue', { minutes: String(exam.examDurationMinutes) })}
+              </span>
+            )}
+            {exam.passingScore != null && (
+              <span className="inline-flex items-center gap-1 text-primary font-semibold">
+                <FontAwesomeIcon icon={faCheckCircle} size="sm" />
+                {t('certification.passingScoreValue', { score: String(exam.passingScore) })}
               </span>
             )}
           </div>
@@ -143,11 +144,7 @@ export function ExamCard({ exam, type, isSelected, onClick, footerAction }: Exam
           <FontAwesomeIcon className="text-default-400" icon={faClockRotateLeft} />
           <p className="text-sm text-default-400">{dateValue ? <RelativeDate date={dateValue} /> : null}</p>
         </div>
-        {footerAction ?? (
-          <Button className={buttonStyles.primary} onPress={onClick}>
-            {t('common.viewDetails')}
-          </Button>
-        )}
+        {footerAction ?? null}
       </CardFooter>
     </Card>
   );

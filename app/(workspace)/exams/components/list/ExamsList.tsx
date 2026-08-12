@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { ExamCard } from './ExamCard';
@@ -39,8 +39,15 @@ export function ExamsList({ type }: ExamsListProps) {
   const [deletingExam, setDeletingExam] = useState<Exam | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const detailRef = useRef<HTMLDivElement>(null);
   const { pageItems, page, totalPages, perPage, setPage, setPerPage } = usePaginatedItems(exams);
   const selectedExam = exams.find((e) => e.id === selectedId) ?? null;
+
+  useEffect(() => {
+    if (selectedExam) {
+      detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [selectedExam]);
 
   const handleCardClick = useCallback((exam: Exam) => {
     setSelectedId((prev) => (prev === exam.id ? null : (exam.id ?? null)));
@@ -208,11 +215,17 @@ export function ExamsList({ type }: ExamsListProps) {
           {selectedExam && (
             <motion.div
               key={selectedExam.id}
+              ref={detailRef}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               initial={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-6"
             >
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-xs font-semibold text-primary">{t('exam.detailsSectionLabel')}</span>
+                <div className="flex-1 h-px bg-default-200" />
+              </div>
               <ExamDetailPanel
                 exam={selectedExam}
                 type={type}
