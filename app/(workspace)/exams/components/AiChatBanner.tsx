@@ -30,12 +30,7 @@ export function AiChatBanner({ hasAiChat }: AiChatBannerProps) {
 
   return (
     <>
-      <div className="relative bg-content1 border border-default-200 rounded-xl p-6 flex flex-col sm:flex-row sm:items-center gap-4">
-        {!hasAiChat && (
-          <Chip className="absolute top-4 right-4" color="secondary" size="sm" variant="flat">
-            PRO AI
-          </Chip>
-        )}
+      <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col sm:flex-row sm:items-center gap-4">
         <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center shrink-0">
           <FontAwesomeIcon className="text-secondary" icon={faRobot} size="lg" />
         </div>
@@ -43,9 +38,16 @@ export function AiChatBanner({ hasAiChat }: AiChatBannerProps) {
           <h2 className="text-sm font-semibold text-foreground">{t('exam.aiChatCard.title')}</h2>
           <p className="text-sm text-default-500">{t('exam.aiChatCard.description')}</p>
         </div>
-        <Button className={buttonStyles.secondary} variant="bordered" onPress={handlePress}>
-          {t('exam.aiChatCard.cta')}
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          {!hasAiChat && (
+            <Chip color="secondary" size="sm" variant="flat">
+              PRO AI
+            </Chip>
+          )}
+          <Button className={buttonStyles.secondary} variant="bordered" onPress={handlePress}>
+            {t('exam.aiChatCard.cta')}
+          </Button>
+        </div>
       </div>
 
       <UpgradeModal isOpen={isUpgradeOpen} onClose={() => setIsUpgradeOpen(false)} />
