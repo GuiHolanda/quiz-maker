@@ -103,7 +103,7 @@ export function DemoQuizQuestion({
           size="lg"
           onPress={onNext}
         >
-          {isLast ? 'Ver resultado' : t('landing.demo.next')}
+          {isLast ? t('landing.demo.seeResults') : t('landing.demo.next')}
         </Button>
       )}
     </div>

@@ -20,7 +20,7 @@ type QuizPhase =
   | { kind: 'idle' }
   | { kind: 'generating' }
   | { kind: 'error'; message: string }
-  | { kind: 'active'; questions: readonly DemoQuestion[]; currentIndex: number; answers: (number | null)[] }
+  | { kind: 'active'; questions: readonly DemoQuestion[]; currentIndex: number; answers: readonly (number | null)[] }
   | { kind: 'results'; questions: readonly DemoQuestion[]; answers: readonly number[] };
 
 const STORAGE_KEY = 'dq_count';
@@ -43,9 +43,7 @@ function incrementDemoCount(): void {
   try {
     const current = getDemoCount();
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ count: current + 1, ts: Date.now() }));
-  } catch {
-    // localStorage unavailable
-  }
+  } catch {}
 }
 
 export function DemoQuizFlow({ config }: DemoQuizFlowProps) {
@@ -63,7 +61,7 @@ export function DemoQuizFlow({ config }: DemoQuizFlowProps) {
       const { data } = await bffApi.post<{ questions: DemoQuestion[] }>('/marketing/demo-quiz', { slug: config.slug });
       incrementDemoCount();
       setDemoCount((prev) => prev + 1);
-      setPhase({ kind: 'active', questions: data.questions, currentIndex: 0, answers: new Array(data.questions.length).fill(null) });
+      setPhase({ kind: 'active', questions: data.questions, currentIndex: 0, answers: new Array<number | null>(data.questions.length).fill(null) as (number | null)[] });
     } catch {
       setPhase({ kind: 'error', message: t('landing.demo.error') });
     }
@@ -134,7 +132,6 @@ export function DemoQuizFlow({ config }: DemoQuizFlowProps) {
     <DemoQuizResults
       questions={phase.questions}
       answers={phase.answers}
-      examName={config.name}
       onTryAgain={handleTryAgain}
       canTryAgain={canTryAgain}
     />

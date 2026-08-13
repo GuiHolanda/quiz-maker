@@ -11,7 +11,6 @@ import type { DemoQuestion, DemoQuizResult } from '@/shared/types';
 interface DemoQuizResultsProps {
   readonly questions: readonly DemoQuestion[];
   readonly answers: readonly number[];
-  readonly examName: string;
   readonly onTryAgain: () => void;
   readonly canTryAgain: boolean;
 }
@@ -40,7 +39,7 @@ function scoreColorClass(pct: number): string {
   return 'text-danger';
 }
 
-export function DemoQuizResults({ questions, answers, examName: _examName, onTryAgain, canTryAgain }: DemoQuizResultsProps) {
+export function DemoQuizResults({ questions, answers, onTryAgain, canTryAgain }: DemoQuizResultsProps) {
   const { t } = useTranslation();
   const result = computeResult(questions, answers);
   const pct = Math.round((result.score / result.total) * 100);
