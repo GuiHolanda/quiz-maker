@@ -614,7 +614,7 @@ export interface AdminCatalogExamDetail {
 // ─── Demo Quiz (marketing landing pages) ─────────────────────────────────
 export interface DemoQuestion {
   readonly text: string;
-  readonly options: [string, string, string, string];
+  readonly options: readonly [string, string, string, string];
   readonly correctIndex: number; // 0–3
   readonly topic: string;
   readonly explanation: string;
@@ -629,8 +629,8 @@ export interface DemoQuizTopicResult {
 export interface DemoQuizResult {
   readonly score: number;
   readonly total: number;
-  readonly byTopic: DemoQuizTopicResult[];
-  readonly weakTopics: string[]; // topics with accuracy < 60%
+  readonly byTopic: readonly DemoQuizTopicResult[];
+  readonly weakTopics: readonly string[]; // topics with accuracy < 60%
 }
 
 // ─── Exam Landing Pages ───────────────────────────────────────────────────
@@ -644,14 +644,14 @@ export interface ExamLandingConfig {
   readonly name: string;             // short display name, e.g. "CEA"
   readonly fullName: string;         // full certification name
   readonly provider: string;         // e.g. "ANBIMA", "Amazon Web Services"
-  readonly examType: 'certification' | 'public_exam';
+  readonly examType: ExamType;
   readonly totalQuestions: number;
   readonly examDurationMinutes: number;
   readonly passingScore: number;     // percentage, e.g. 70
-  readonly topics: string[];
+  readonly topics: readonly string[];
   readonly heroHeadline: string;
   readonly heroSubheadline: string;
   readonly seoTitle: string;
   readonly seoDescription: string;
-  readonly faqs: ExamLandingFaq[];
+  readonly faqs: readonly ExamLandingFaq[];
 }
