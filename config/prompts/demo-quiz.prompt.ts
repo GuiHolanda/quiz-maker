@@ -19,7 +19,7 @@ export const demoQuizPrompt = {
     return `Generate ${count} multiple-choice practice questions for ${examContext}.
 
 TOPICS TO COVER (distribute questions proportionally):
-${topics.map((t) => `- ${t}`).join('\n')}
+${topics.map((topic) => `- ${topic}`).join('\n')}
 
 REQUIREMENTS:
 - Write all questions and answers in Brazilian Portuguese
