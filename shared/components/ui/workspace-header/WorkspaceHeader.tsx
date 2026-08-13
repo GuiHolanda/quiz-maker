@@ -14,7 +14,7 @@ export function WorkspaceHeader() {
   const { usage } = useUsageContext();
 
   return (
-    <header className="hidden md:flex shrink-0 bg-background border-b border-divider px-6 py-3 items-center gap-4 z-20 h-14 sticky top-0">
+    <header className="hidden md:flex shrink-0 bg-background/90 border-b border-divider px-6 py-3 items-center gap-4 z-20 h-14 sticky top-0">
       <HeaderSearch />
       <div className="flex items-center space-x-4 ml-auto">
         {status === 'authenticated' && usage && <UsageBadge usage={usage} />}
