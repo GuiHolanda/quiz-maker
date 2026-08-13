@@ -19,6 +19,8 @@ export { publicExamAnswersPrompt } from './public-exam-answers.prompt';
 export type { PublicExamAnswersInput } from './public-exam-answers.prompt';
 export { publicExamExplanationsPrompt } from './public-exam-explanations.prompt';
 export type { PublicExamExplanationsInput } from './public-exam-explanations.prompt';
+export { demoQuizPrompt } from './demo-quiz.prompt';
+export type { DemoQuizPromptInput } from './demo-quiz.prompt';
 
 import type { ExamType } from '@/shared/types';
 import type { PromptDefinition } from './types';
