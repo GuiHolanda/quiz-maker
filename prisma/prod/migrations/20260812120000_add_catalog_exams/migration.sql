@@ -55,6 +55,10 @@ BEGIN
   UPDATE "Provider" SET "logoUrl" = 'https://upload.wikimedia.org/wikipedia/en/2/26/Global_Association_of_Risk_Professionals_%28GARP%29_Logo.png'
     WHERE name = 'GARP';
 
+  -- AWS logo was missing because provider already existed — ON CONFLICT DO NOTHING silently skipped it
+  UPDATE "Provider" SET "logoUrl" = 'https://upload.wikimedia.org/wikipedia/commons/9/93/Amazon_Web_Services_Logo.svg'
+    WHERE name = 'AWS';
+
 
   -- ─────────────────────────────────────────────────────────────────────────
   -- STEP 2: Upsert providers
@@ -62,7 +66,7 @@ BEGIN
   INSERT INTO "Provider" (id, name, "fullName", "logoUrl")
   VALUES (gen_random_uuid()::text, 'AWS', 'Amazon Web Services',
           'https://upload.wikimedia.org/wikipedia/commons/9/93/Amazon_Web_Services_Logo.svg')
-  ON CONFLICT (name) DO NOTHING;
+  ON CONFLICT (name) DO UPDATE SET "logoUrl" = EXCLUDED."logoUrl";
   SELECT id INTO v_aws_id FROM "Provider" WHERE name = 'AWS';
 
   INSERT INTO "Provider" (id, name, "fullName", "logoUrl")
