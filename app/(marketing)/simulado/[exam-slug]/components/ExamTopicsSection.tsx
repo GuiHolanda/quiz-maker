@@ -24,7 +24,7 @@ export function ExamTopicsSection({ config }: ExamTopicsSectionProps) {
               key={topic}
               className="flex items-center gap-3 bg-navy-900/60 border border-navy-800 rounded-lg px-4 py-3"
             >
-              <FontAwesomeIcon className="text-[#e07820] text-xs shrink-0" icon={faCheck} />
+              <FontAwesomeIcon className="text-primary text-xs shrink-0" icon={faCheck} />
               <span className="text-sm text-navy-200">{topic}</span>
             </div>
           ))}

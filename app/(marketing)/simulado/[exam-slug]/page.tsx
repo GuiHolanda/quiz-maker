@@ -41,7 +41,7 @@ export default async function ExamLandingPage({ params }: PageProps) {
   if (!config) notFound();
 
   return (
-    <div className="text-[#e8edf3]">
+    <div className="text-foreground">
       <ExamLandingHero config={config} />
       <ExamLandingStats config={config} />
       <ExamTopicsSection config={config} />

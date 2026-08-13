@@ -16,14 +16,10 @@ export function ExamLandingHero({ config }: ExamLandingHeroProps) {
   const { t } = useTranslation();
 
   return (
-    <section className="pt-16 pb-20 relative overflow-hidden">
-      <div
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[250px] rounded-full pointer-events-none"
-        style={{ background: 'rgba(224,120,32,0.06)', filter: 'blur(80px)' }}
-      />
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+    <section className="pt-16 pb-20">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="inline-flex items-center gap-2 border border-navy-700 rounded-full px-3 py-1 mb-8">
-          <FontAwesomeIcon className="text-[#e07820] text-xs" icon={faBolt} />
+          <FontAwesomeIcon className="text-primary text-xs" icon={faBolt} />
           <span className="font-mono text-xs text-navy-400 uppercase tracking-widest">{config.provider}</span>
         </div>
 
@@ -37,7 +33,7 @@ export function ExamLandingHero({ config }: ExamLandingHeroProps) {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Button
-            className="font-semibold text-sm bg-[#e07820] hover:opacity-90 text-white rounded w-full sm:w-auto transition-opacity duration-200"
+            className="font-semibold text-sm bg-primary hover:opacity-90 text-white rounded w-full sm:w-auto transition-opacity duration-200"
             href="#demo-simulado"
             as="a"
             size="lg"

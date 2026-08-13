@@ -28,7 +28,7 @@ export function ExamLandingStats({ config }: ExamLandingStatsProps) {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
           {stats.map((stat) => (
             <div key={stat.label} className="text-center">
-              <FontAwesomeIcon className="text-[#e07820] text-lg mb-2" icon={stat.icon} />
+              <FontAwesomeIcon className="text-primary text-lg mb-2" icon={stat.icon} />
               <div className="font-mono text-2xl font-bold text-white">{stat.value}</div>
               <div className="text-xs text-navy-500 mt-1">{stat.label}</div>
             </div>
