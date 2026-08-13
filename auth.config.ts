@@ -13,6 +13,8 @@ const publicRoutePrefixes = [
   '/terms',
   '/lgpd',
   '/security',
+  '/simulado',
+  '/api/marketing',
 ];
 
 export default {
