@@ -13,6 +13,7 @@ function isValidQuestion(q: unknown): q is DemoQuestion {
     obj.options.length === 4 &&
     obj.options.every((option: unknown) => typeof option === 'string' && (option as string).trim().length > 0) &&
     typeof obj.correctIndex === 'number' &&
+    Number.isInteger(obj.correctIndex) &&
     obj.correctIndex >= 0 &&
     obj.correctIndex <= 3 &&
     typeof obj.topic === 'string' &&

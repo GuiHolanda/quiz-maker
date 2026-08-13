@@ -91,4 +91,14 @@ describe('DemoQuizService', () => {
     expect(result).toHaveLength(1);
     expect(result[0].text).toBe('Valid question?');
   });
+
+  it('returns empty array when all questions are invalid', async () => {
+    mockCall.mockResolvedValue({
+      text: JSON.stringify({ questions: [{ text: '', options: ['A'], correctIndex: 0, topic: 'x', explanation: 'y' }] }),
+      inputTokens: 0,
+      outputTokens: 0,
+    });
+    const result = await service.generate(validInput);
+    expect(result).toHaveLength(0);
+  });
 });
