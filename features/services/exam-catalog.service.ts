@@ -22,12 +22,11 @@ export class ExamCatalogService {
     ]);
 
     const userExamKeys = new Set(userExams.map((e) => `${e.type}::${e.name}`));
-    const visible = templates.filter((t) => !userExamKeys.has(`${t.type}::${t.name}`));
 
     const poolCounts = await this.prismaService.examQuestion.groupBy({
       by: ['examId'],
       where: {
-        examId: { in: visible.map((t) => t.id) },
+        examId: { in: templates.map((t) => t.id) },
         poolId: { not: null },
       },
       _count: { id: true },
@@ -35,7 +34,7 @@ export class ExamCatalogService {
 
     const countByExam = new Map(poolCounts.map((r) => [r.examId!, r._count.id]));
 
-    return visible.map((t) => ({
+    return templates.map((t) => ({
       id: t.id,
       type: t.type as ExamType,
       name: t.name,
@@ -57,6 +56,7 @@ export class ExamCatalogService {
         topics: s.topics.map((tp) => ({ id: tp.id, name: tp.name })),
       })) as ExamSection[],
       poolQuestionCount: countByExam.get(t.id) ?? 0,
+      isSubscribed: userExamKeys.has(`${t.type}::${t.name}`),
     }));
   }
 

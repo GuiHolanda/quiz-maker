@@ -134,7 +134,7 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
         }
       >
         {data && data.items.length > 0 && (
-          <div aria-live="polite" aria-atomic="false" className="bg-content1 border border-default-200 rounded-xl p-6">
+          <div aria-live="polite" aria-atomic="false" className="bg-content1 border border-content2 rounded-xl p-6">
             <div className="flex flex-col divide-y divide-divider" role="list">
               {data.items.map((item) => renderHistoryRow(item))}
             </div>

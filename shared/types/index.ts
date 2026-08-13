@@ -564,6 +564,7 @@ export interface CatalogExam {
   readonly examBoard?: ExamBoard | null;
   readonly sections: ExamSection[];
   readonly poolQuestionCount: number;
+  readonly isSubscribed: boolean;
 }
 
 export interface CatalogListResponse {

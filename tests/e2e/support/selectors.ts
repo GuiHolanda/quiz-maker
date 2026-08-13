@@ -69,6 +69,7 @@ export const TID = {
   catalogForkBtn: 'catalog-fork-btn',
   catalogForkConfirmBtn: 'catalog-fork-confirm-btn',
   catalogPoolChip: 'catalog-pool-chip',
+  catalogEnrolledChip: 'catalog-enrolled-chip',
 
   // Confirmation dialogs
   confirmDiscardBtn: 'confirm-discard-btn',

@@ -37,7 +37,7 @@ describe('ExamCatalogService', () => {
       expect(result[0].id).toBe('tmpl-1');
     });
 
-    it('hides a template whose type+name the user already has forked', async () => {
+    it('marks a template as isSubscribed when the user has already forked it', async () => {
       const template = makeTemplate({ id: 'tmpl-1', type: 'certification', name: 'AWS SAA' });
       prismaMock.exam.findMany
         .mockResolvedValueOnce([template]) // templates
@@ -46,10 +46,11 @@ describe('ExamCatalogService', () => {
 
       const result = await service.getTemplates('user-1');
 
-      expect(result).toHaveLength(0);
+      expect(result).toHaveLength(1);
+      expect(result[0].isSubscribed).toBe(true);
     });
 
-    it('keeps templates the user has not forked even when other exams exist', async () => {
+    it('returns all templates and marks only forked ones as isSubscribed', async () => {
       const template1 = makeTemplate({ id: 'tmpl-1', type: 'certification', name: 'AWS SAA' });
       const template2 = makeTemplate({ id: 'tmpl-2', type: 'certification', name: 'Azure AZ-900' });
       prismaMock.exam.findMany
@@ -59,8 +60,9 @@ describe('ExamCatalogService', () => {
 
       const result = await service.getTemplates('user-1');
 
-      expect(result).toHaveLength(1);
-      expect(result[0].id).toBe('tmpl-2');
+      expect(result).toHaveLength(2);
+      expect(result.find((t) => t.id === 'tmpl-1')?.isSubscribed).toBe(true);
+      expect(result.find((t) => t.id === 'tmpl-2')?.isSubscribed).toBe(false);
     });
 
     it('attaches poolQuestionCount from groupBy result', async () => {

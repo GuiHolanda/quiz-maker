@@ -28,6 +28,7 @@ const MOCK_TEMPLATE = {
     },
   ],
   poolQuestionCount: 42,
+  isSubscribed: false,
 };
 
 const MOCK_FORKED_EXAM = {
@@ -82,7 +83,7 @@ test.describe('catalog', () => {
     await expect(page.locator(tid(TID.catalogPoolChip))).toContainText('42');
   });
 
-  test('fork bem-sucedido: remove o card da lista e exibe empty state', async ({ authedPage: page }) => {
+  test('fork bem-sucedido: card fica visível com tag Inscrito', async ({ authedPage: page }) => {
     await page.route('**/api/exam/catalog', (route) => {
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ templates: [MOCK_TEMPLATE] }) });
     });
@@ -101,9 +102,9 @@ test.describe('catalog', () => {
     await expect(page.locator(tid(TID.catalogForkConfirmBtn))).toBeVisible();
     await page.locator(tid(TID.catalogForkConfirmBtn)).click();
 
-    // After fork the template is removed from the list; with no more templates, empty state appears.
-    await expect(page.locator(tid(TID.illustratedEmptyState))).toBeVisible({ timeout: 8_000 });
-    await expect(page.locator(tid(TID.examCard))).not.toBeVisible();
+    // After fork the template stays in the list — now showing the enrolled chip.
+    await expect(page.locator(tid(TID.catalogEnrolledChip))).toBeVisible({ timeout: 8_000 });
+    await expect(page.locator(tid(TID.examCard))).toBeVisible();
   });
 
   test('fork com erro: card permanece visível', async ({ authedPage: page }) => {

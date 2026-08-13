@@ -9,7 +9,6 @@ import { RelativeDate } from '@/shared/components/ui/RelativeDate';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import type { Exam, ExamType } from '@/shared/types';
 import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
-import { buttonStyles } from '@/config/constants/buttonStyles';
 import Image from 'next/image';
 
 interface ExamCardProps {
@@ -18,9 +17,10 @@ interface ExamCardProps {
   readonly isSelected: boolean;
   readonly onClick: () => void;
   readonly footerAction?: React.ReactNode;
+  readonly isDisabled?: boolean;
 }
 
-export function ExamCard({ exam, type, isSelected, onClick, footerAction }: ExamCardProps) {
+export function ExamCard({ exam, type, isSelected, onClick, footerAction, isDisabled = false }: ExamCardProps) {
   const { t } = useTranslation();
   const config = EXAM_CONFIG[type];
   const hasNoSections = exam.sections.length === 0;
@@ -33,17 +33,22 @@ export function ExamCard({ exam, type, isSelected, onClick, footerAction }: Exam
   return (
     <Card
       aria-expanded={isSelected}
+      className="border border-content2"
       aria-label={exam.name}
+      isDisabled={isDisabled}
       classNames={{
         base: [
-          'bg-content1 border rounded-xl transition-all duration-150 cursor-pointer hover:bg-content2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 h-full max-w-[760px] max-h-[520px] p-0',
+          'bg-content1 rounded-xl transition-all duration-150 w-full h-[420px] lg:h-[520px] p-0',
+          isDisabled
+            ? 'cursor-default border-default-200'
+            : 'cursor-pointer hover:bg-content2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
           isSelected
             ? 'border-primary bg-content2 ring-1 ring-primary/20'
             : 'border-default-200 hover:border-default-300',
         ].join(' '),
       }}
       disableAnimation
-      isPressable
+      isPressable={!isDisabled}
       role="button"
       shadow="none"
       tabIndex={0}
@@ -52,12 +57,12 @@ export function ExamCard({ exam, type, isSelected, onClick, footerAction }: Exam
         if (e.key === 'Enter' || e.key === ' ') onClick();
       }}
     >
-      <CardBody className="p-0">
+      <CardBody className="p-0 flex flex-col overflow-hidden">
         {/* Header row */}
-        <div className="flex items-center gap-3 p-6 min-h-28">
+        <div className="flex items-center gap-3 p-4 lg:p-6 h-20 lg:h-28 shrink-0">
           {renderAvatar()}
           <div className="flex-1 min-w-0">
-            <span className="block text-lg font-semibold text-foreground leading-snug line-clamp-2 text-left">
+            <span className="block text-base lg:text-lg font-semibold text-foreground leading-snug line-clamp-2 text-left">
               {exam.name}
             </span>
             <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
@@ -82,7 +87,7 @@ export function ExamCard({ exam, type, isSelected, onClick, footerAction }: Exam
 
         {/* Stats row */}
         {hasStats && (
-          <div className="flex items-center bg-content2 flex-wrap gap-4 text-sm text-default-400 px-6 py-4 border-y border-default-200">
+          <div className="flex items-center bg-content2 flex-wrap gap-3 lg:gap-4 text-xs lg:text-sm text-default-400 px-4 lg:px-6 py-3 lg:py-4 border-y border-content2 shrink-0">
             {exam.totalQuestions > 0 && (
               <span className="inline-flex items-center gap-1">
                 <FontAwesomeIcon icon={faHashtag} size="sm" />
@@ -107,8 +112,8 @@ export function ExamCard({ exam, type, isSelected, onClick, footerAction }: Exam
         )}
 
         {/* Sections area */}
-        <div className="flex flex-col gap-6 p-6">
-          <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 lg:gap-4 p-4 lg:p-6 flex-1 min-h-0">
+          <div className="flex items-center justify-between shrink-0">
             <span className="text-base font-semibold text-foreground">{t(config.step2SectionsTitle)}</span>
             {hasNoSections ? (
               <Chip color="warning" size="sm" variant="flat">
@@ -124,10 +129,10 @@ export function ExamCard({ exam, type, isSelected, onClick, footerAction }: Exam
             )}
           </div>
           {!hasNoSections && (
-            <div className="flex flex-col gap-4 max-h-32 overflow-y-auto scrollbar-hide">
+            <div className="flex flex-col gap-3 lg:gap-4 flex-1 min-h-0 overflow-y-auto scrollbar-hide">
               {exam.sections.map((section) => (
-                <div key={section.id ?? section.name} className="flex items-center gap-4">
-                  <span className="text-sm text-default-500 shrink-0">{section.name}</span>
+                <div key={section.id ?? section.name} className="flex items-center gap-3">
+                  <span className="text-xs lg:text-sm text-default-500 min-w-0 truncate">{section.name}</span>
                   <div className="flex-1 h-1 bg-default-100 rounded-full overflow-hidden">
                     <div className="h-full bg-primary rounded-full" style={{ width: `${section.minQuestions}%` }} />
                   </div>
@@ -139,7 +144,7 @@ export function ExamCard({ exam, type, isSelected, onClick, footerAction }: Exam
         </div>
       </CardBody>
 
-      <CardFooter className="p-6 bg-content2 flex items-center justify-between border-t border-default-200 mt-3">
+      <CardFooter className="p-4 lg:p-6 bg-content2 flex items-center justify-between border-t border-default-200 shrink-0">
         <div className="flex gap-2 items-center">
           <FontAwesomeIcon className="text-default-400" icon={faClockRotateLeft} />
           <p className="text-sm text-default-400">{dateValue ? <RelativeDate date={dateValue} /> : null}</p>
@@ -155,7 +160,7 @@ export function ExamCard({ exam, type, isSelected, onClick, footerAction }: Exam
 
     if (logoUrl && logoAlt && !logoError) {
       return (
-        <div className="w-32 h-16 rounded-lg bg-white flex items-center justify-center shrink-0 overflow-hidden p-2">
+        <div className="w-20 h-12 lg:w-32 lg:h-16 rounded-lg bg-white flex items-center justify-center shrink-0 overflow-hidden p-1.5 lg:p-2">
           <Image
             alt={logoAlt}
             className="w-full h-full object-contain"
