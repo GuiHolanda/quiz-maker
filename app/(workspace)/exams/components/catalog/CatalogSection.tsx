@@ -92,7 +92,7 @@ export function CatalogSection({ type }: CatalogSectionProps) {
                 onClick={() => !exam.isSubscribed && setConfirmingExam(exam)}
                 footerAction={
                   exam.isSubscribed ? (
-                    <Chip color="primary" size="md" variant="flat">
+                    <Chip color="primary" data-testid="catalog-enrolled-chip" size="md" variant="flat">
                       {t('catalog.enrolled')}
                     </Chip>
                   ) : exam.poolQuestionCount > 0 ? (
