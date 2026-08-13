@@ -37,7 +37,7 @@ export function QuestionBankCard({ question, onDeleteRequest }: QuestionBankCard
   return (
     <div
       data-testid="question-bank-card"
-      className="bg-content1 border border-default-200 rounded-xl overflow-hidden mb-4"
+      className="bg-content1 border border-content2 rounded-xl overflow-hidden mb-4"
     >
       {renderHeader()}
       {renderQuestionText()}

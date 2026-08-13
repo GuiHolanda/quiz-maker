@@ -44,7 +44,7 @@ export function CatalogSection({ type }: CatalogSectionProps) {
     try {
       const forked = await forkCatalogExam(confirmingExam.id);
       addExam(forked);
-      setTemplates((prev) => prev.filter((t) => t.id !== confirmingExam.id));
+      setTemplates((prev) => prev.map((t) => (t.id === confirmingExam.id ? { ...t, isSubscribed: true } : t)));
       setConfirmingExam(null);
       notify.success(t('catalog.forkSuccessTitle'), t('catalog.forkSuccessDescription'));
     } catch {
@@ -81,19 +81,21 @@ export function CatalogSection({ type }: CatalogSectionProps) {
             : undefined
         }
       >
-        <div
-          className="grid gap-6"
-          style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(760px, 100%), 760px))' }}
-        >
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
           {pageItems.map((exam) => (
             <div key={exam.id} data-testid="exam-card">
               <ExamCard
                 exam={exam}
                 isSelected={false}
+                isDisabled={exam.isSubscribed}
                 type={exam.type}
-                onClick={() => setConfirmingExam(exam)}
+                onClick={() => !exam.isSubscribed && setConfirmingExam(exam)}
                 footerAction={
-                  exam.poolQuestionCount > 0 ? (
+                  exam.isSubscribed ? (
+                    <Chip color="primary" size="md" variant="flat">
+                      {t('catalog.enrolled')}
+                    </Chip>
+                  ) : exam.poolQuestionCount > 0 ? (
                     <span data-testid="catalog-pool-chip">
                       <Chip color="success" size="sm" variant="flat">
                         {t('catalog.poolCount', { count: String(exam.poolQuestionCount) })}
