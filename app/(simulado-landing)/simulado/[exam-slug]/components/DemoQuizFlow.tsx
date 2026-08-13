@@ -150,7 +150,7 @@ function DemoIdleScreen({
   return (
     <div className="text-center py-4">
       <FontAwesomeIcon className="text-primary text-3xl mb-4" icon={faWandMagicSparkles} />
-      <h3 className="font-sora font-bold text-foreground text-xl mb-2">
+      <h3 className="font-playfair font-bold text-foreground text-xl mb-2">
         {t('landing.demo.heading')}
       </h3>
       <p className="text-default-500 text-sm mb-8">{t('landing.demo.subheading')}</p>
@@ -173,7 +173,7 @@ function DemoGenerating({ t }: { t: (key: string) => string }) {
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="w-2 h-2 rounded-full bg-primary animate-bounce"
+            className="w-2 h-2 rounded-full bg-primary animate-pulse"
             style={{ animationDelay: `${i * 150}ms` }}
           />
         ))}

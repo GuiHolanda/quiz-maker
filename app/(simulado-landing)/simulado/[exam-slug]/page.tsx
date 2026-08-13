@@ -3,10 +3,13 @@ import { notFound } from 'next/navigation';
 
 import { EXAM_LANDING_PAGES, EXAM_LANDING_PAGE_MAP } from '@/config/exam-landing-pages';
 import { ExamLandingHero } from './components/ExamLandingHero';
-import { ExamLandingStats } from './components/ExamLandingStats';
-import { ExamTopicsSection } from './components/ExamTopicsSection';
+import { SocialProofSection } from './components/SocialProofSection';
+import { ExamFeaturesSection } from './components/ExamFeaturesSection';
+import { ExamHowItWorksSection } from './components/ExamHowItWorksSection';
 import { DemoSimuladoSection } from './components/DemoSimuladoSection';
+import { ExamDiagnosisSection } from './components/ExamDiagnosisSection';
 import { ExamFaqSection } from './components/ExamFaqSection';
+import { ExamFinalCtaSection } from './components/ExamFinalCtaSection';
 
 interface PageProps {
   readonly params: Promise<{ 'exam-slug': string }>;
@@ -41,12 +44,15 @@ export default async function ExamLandingPage({ params }: PageProps) {
   if (!config) notFound();
 
   return (
-    <div className="text-foreground">
+    <div>
       <ExamLandingHero config={config} />
-      <ExamLandingStats config={config} />
-      <ExamTopicsSection config={config} />
+      <SocialProofSection config={config} />
       <DemoSimuladoSection config={config} />
+      <ExamDiagnosisSection config={config} />
+      <ExamFeaturesSection config={config} />
+      <ExamHowItWorksSection config={config} />
       <ExamFaqSection config={config} />
+      <ExamFinalCtaSection config={config} />
     </div>
   );
 }

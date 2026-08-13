@@ -1,4 +1,4 @@
-import { Fira_Code as FontMono, Inter as FontSans, Sora as FontSora } from 'next/font/google';
+import { Fira_Code as FontMono, Inter as FontSans, Playfair_Display as FontPlayfair, Sora as FontSora } from 'next/font/google';
 
 export const fontSans = FontSans({
   subsets: ['latin', 'latin-ext'],
@@ -16,5 +16,12 @@ export const fontSora = FontSora({
   subsets: ['latin'],
   variable: '--font-sora',
   weight: ['300', '400', '500', '600', '700', '800'],
+  display: 'swap',
+});
+
+export const fontPlayfair = FontPlayfair({
+  subsets: ['latin'],
+  variable: '--font-playfair',
+  weight: ['400', '700', '800', '900'],
   display: 'swap',
 });

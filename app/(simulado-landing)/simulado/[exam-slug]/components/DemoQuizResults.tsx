@@ -48,7 +48,7 @@ export function DemoQuizResults({ questions, answers, onTryAgain, canTryAgain }:
   return (
     <div>
       <div className="text-center mb-8">
-        <div className={`font-sora font-extrabold text-5xl mb-2 ${scoreColorClass(pct)}`}>
+        <div className={`font-playfair font-extrabold text-5xl mb-2 ${scoreColorClass(pct)}`}>
           {result.score}/{result.total}
         </div>
         <div className={`font-mono text-2xl font-bold ${scoreColorClass(pct)}`}>{pct}%</div>
@@ -118,7 +118,7 @@ export function DemoQuizResults({ questions, answers, onTryAgain, canTryAgain }:
         <Button
           as={NextLink}
           className="w-full font-medium text-sm border border-divider rounded"
-          href="/register"
+          href="/pricing"
           size="lg"
           variant="bordered"
         >

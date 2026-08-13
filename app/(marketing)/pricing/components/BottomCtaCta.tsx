@@ -14,7 +14,7 @@ export function BottomCtaCta() {
     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
       <Button
         as={NextLink}
-        className="font-semibold text-sm bg-accent hover:bg-electric text-navy-950 rounded tracking-wide transition-colors duration-200"
+        className="font-semibold text-sm bg-primary hover:opacity-90 text-[#0f172a] rounded tracking-wide transition-opacity duration-200"
         href="/register"
         size="lg"
       >
@@ -22,7 +22,7 @@ export function BottomCtaCta() {
       </Button>
       <Button
         as={NextLink}
-        className="font-medium text-sm text-navy-400 hover:text-white border border-navy-700 hover:border-navy-600 rounded tracking-wide"
+        className="font-medium text-sm text-slate-600 hover:text-slate-900 border border-slate-200 hover:border-slate-400 rounded tracking-wide"
         href={session?.user ? '/simulados' : '/register'}
         size="lg"
         variant="bordered"

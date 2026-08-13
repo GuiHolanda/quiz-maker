@@ -49,14 +49,14 @@ function FeatureCell({ value }: FeatureCellProps) {
   if (typeof value === 'boolean') {
     return (
       <div className="flex justify-center">
-        <FontAwesomeIcon className={value ? 'text-accent' : 'text-navy-700'} icon={value ? faCheck : faXmark} />
+        <FontAwesomeIcon className={value ? 'text-primary' : 'text-slate-300'} icon={value ? faCheck : faXmark} />
       </div>
     );
   }
 
   return (
     <div className="flex justify-center">
-      <span className="font-mono text-sm font-semibold text-white">{t(value)}</span>
+      <span className="font-mono text-sm font-semibold text-slate-900">{t(value)}</span>
     </div>
   );
 }
@@ -67,36 +67,33 @@ export function FeatureComparisonTable() {
   return (
     <div>
       <div className="flex items-center gap-3 mb-8">
-        <div className="w-px h-4 bg-accent" />
-        <span className="font-mono text-xs text-navy-400 tracking-widest uppercase">
+        <div className="w-px h-4 bg-primary" />
+        <span className="font-mono text-xs text-slate-500 tracking-widest uppercase">
           {t('pricing.features.sectionLabel')}
         </span>
       </div>
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-navy-800/60">
-              <th className="py-4 text-left font-mono text-xs text-navy-500 uppercase tracking-widest w-2/5">
+            <tr className="border-b border-slate-200">
+              <th className="py-4 text-left font-mono text-xs text-slate-500 uppercase tracking-widest w-2/5">
                 {t('pricing.features.sectionLabel')}
               </th>
-              <th className="py-4 text-center font-mono text-xs text-navy-400 uppercase tracking-widest w-1/5">
+              <th className="py-4 text-center font-mono text-xs text-slate-600 uppercase tracking-widest w-1/5">
                 {t('pricing.plan.free')}
               </th>
-              <th className="py-4 text-center font-mono text-xs text-navy-400 uppercase tracking-widest w-1/5">
+              <th className="py-4 text-center font-mono text-xs text-slate-600 uppercase tracking-widest w-1/5">
                 {t('pricing.plan.pro')}
               </th>
-              <th
-                className="py-4 text-center font-mono text-xs uppercase tracking-widest w-1/5"
-                style={{ color: '#00d4ff' }}
-              >
+              <th className="py-4 text-center font-mono text-xs text-primary uppercase tracking-widest w-1/5">
                 {t('pricing.plan.proAi')}
               </th>
             </tr>
           </thead>
           <tbody>
             {FEATURES.map((row, i) => (
-              <tr key={row.labelKey} className={`border-b border-navy-800/40 ${i % 2 === 0 ? '' : 'bg-navy-950/30'}`}>
-                <td className="py-3.5 font-mono text-xs text-navy-400">{t(row.labelKey)}</td>
+              <tr key={row.labelKey} className={`border-b border-slate-100 ${i % 2 === 0 ? '' : 'bg-slate-50'}`}>
+                <td className="py-3.5 font-mono text-xs text-slate-600">{t(row.labelKey)}</td>
                 <td className="py-3.5">
                   <FeatureCell value={row.free} />
                 </td>
