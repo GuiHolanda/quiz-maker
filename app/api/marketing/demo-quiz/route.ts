@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ questions });
   } catch (err: unknown) {
+    console.error('Failed to generate demo quiz:', err);
     const { status, ...body } = toApiErrorResponse(err);
     return NextResponse.json(body, { status });
   }
