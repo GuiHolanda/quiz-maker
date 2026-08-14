@@ -2,12 +2,18 @@ import NextLink from 'next/link';
 
 import { BlueprintCorners } from '@/app/(marketing)/components/BlueprintCorners';
 
-const OPTIONS = [
+interface QuestionOption {
+  readonly letter: string;
+  readonly text: string;
+  readonly correct?: boolean;
+}
+
+const OPTIONS: readonly QuestionOption[] = [
   { letter: 'A', text: 'Amazon S3 com Cross-Region Replication' },
   { letter: 'B', text: 'Amazon EFS', correct: true },
   { letter: 'C', text: 'Amazon EBS Multi-Attach' },
   { letter: 'D', text: 'AWS Storage Gateway' },
-] as const;
+];
 
 export function HeroQuestionCard() {
   return (
@@ -22,7 +28,8 @@ export function HeroQuestionCard() {
       <div className="p-5">
         <span className="kick">Questão · AWS SAA-C03 · Armazenamento</span>
         <p className="ds-heading text-mkt-text text-lg mt-2 mb-5 leading-snug">
-          Uma aplicação precisa de armazenamento compartilhado entre várias instâncias EC2 em Zonas de Disponibilidade diferentes. Qual serviço atende ao requisito?
+          Uma aplicação precisa de armazenamento compartilhado entre várias instâncias EC2 em Zonas de Disponibilidade
+          diferentes. Qual serviço atende ao requisito?
         </p>
 
         <div className="flex flex-col gap-2">
@@ -46,7 +53,9 @@ export function HeroQuestionCard() {
 
         <div className="border-t border-mkt-divider pt-4 mt-4">
           <p className="text-xs text-mkt-text opacity-55 leading-relaxed">
-            EFS é um sistema de arquivos NFS gerenciado e elástico, acessível simultaneamente de múltiplas AZs. EBS Multi-Attach suporta apenas uma AZ; S3 não é sistema de arquivos; Storage Gateway é para ambientes on-premises.
+            EFS é um sistema de arquivos NFS gerenciado e elástico, acessível simultaneamente de múltiplas AZs. EBS
+            Multi-Attach suporta apenas uma AZ; S3 não é sistema de arquivos; Storage Gateway é para ambientes
+            on-premises.
           </p>
         </div>
 

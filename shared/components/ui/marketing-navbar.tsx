@@ -16,7 +16,7 @@ const NAV_LINKS = [
   { labelKey: 'nav.certificates', href: '/#certificacoes' },
   { labelKey: 'nav.concursos', href: '/#concursos' },
   { labelKey: 'nav.features', href: '/#features' },
-  { labelKey: 'nav.pricing', href: '/#pricing' },
+  { labelKey: 'nav.pricing', href: '/pricing' },
 ] as const;
 
 const navLinkClass = 'text-sm font-medium text-mkt-text opacity-60 hover:opacity-100 transition-opacity duration-150';

@@ -172,8 +172,9 @@ Filtros: `search` (deferido), `source` (multi), `type`, `topic` (multi), `diffic
 
 | Group | Chrome | Rotas |
 |---|---|---|
-| `(marketing)` | Navbar + Footer | `/`, `/privacy`, `/terms` |
-| `(simulado-landing)` | Landing Navbar sem auth | `/simulado/[exam-slug]`, `/pricing` |
+| `(marketing)` | `layout.tsx` fino: `.marketing-ds` + fontes Barlow + JSON-LD (sem navbar/footer) | contém os sub-grupos `(site)` e `(focused-cta)` |
+| `(marketing)/(site)` | `MarketingNavbar` + `MarketingFooter` | `/`, `/pricing`, `/privacy`, `/terms`, `/security`, `/lgpd` |
+| `(marketing)/(focused-cta)` | `FocusedCtaNavbar` minimal + mesmo `MarketingFooter` | `/simulado/[exam-slug]` |
 | `(workspace)` | Sidebar + WorkspaceHeader + AiChatWrapper | `/dashboard`, `/exams`, `/questions`, `/simulados`, `/question-bank`, `/billing` |
 | `(auth)` | Top bar discreta | `/login`, `/register`, `/forgot-password`, `/reset-password` |
 | `admin/` | Sidebar admin própria | `/admin/*` |
