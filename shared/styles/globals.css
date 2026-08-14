@@ -96,6 +96,14 @@
   --color-accent-700: oklch(35% 0.08 220);
   --color-accent-100: #EEF6FF;
   --color-divider: color-mix(in srgb, #1d1f20 16%, transparent);
+
+  /* Demo quiz feedback colors */
+  --fb-ok-bg:      oklch(95% 0.04 145);
+  --fb-ok-border:  oklch(55% 0.14 145);
+  --fb-ok-text:    oklch(30% 0.10 145);
+  --fb-err-bg:     oklch(95% 0.04 27);
+  --fb-err-border: oklch(55% 0.14 27);
+  --fb-err-text:   oklch(35% 0.10 27);
   --font-heading: var(--font-barlow-condensed, "Barlow Condensed", system-ui, sans-serif);
   --font-heading-weight: 600;
   --font-body: var(--font-barlow, "Barlow", system-ui, sans-serif);
@@ -179,6 +187,11 @@
 @keyframes scanline {
   0%   { top: 0%;   opacity: 0.8; }
   100% { top: 100%; opacity: 0; }
+}
+
+@keyframes sweep {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
 }
 
 .marquee-track { animation: marquee 30s linear infinite; }
