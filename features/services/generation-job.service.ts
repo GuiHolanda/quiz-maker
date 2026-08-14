@@ -6,7 +6,11 @@ import { QuotaService } from '@/features/services/quota.service';
 import { MetricsService } from '@/features/services/metrics.service';
 import { validateAiQuestions } from '@/features/services/exam-question.service';
 import { EXAM_PROMPTS } from '@/config/prompts';
-import { GENERATION_MAX_CONCURRENT_TOPICS, GENERATION_MAX_TOPICS_PER_USER, GENERATION_MAX_PROMPT_TOPICS } from '@/config/constants';
+import {
+  GENERATION_MAX_CONCURRENT_TOPICS,
+  GENERATION_MAX_TOPICS_PER_USER,
+  GENERATION_MAX_PROMPT_TOPICS,
+} from '@/config/constants';
 import type { AIExamQuestion } from '@/shared/types';
 
 export function extractJson(raw: string): string {
@@ -269,9 +273,19 @@ export async function processTopic(topicId: string): Promise<void> {
     const buildInput = (step: 'research' | 'review' | 'format', priorText?: string): Record<string, unknown> => {
       if (type === 'certification') {
         if (step === 'research')
-          return { certification_name: refName, topic_name: topic.topicName, num_questions: numStr, topics_list: topicsList };
+          return {
+            certification_name: refName,
+            topic_name: topic.topicName,
+            num_questions: numStr,
+            topics_list: topicsList,
+          };
         if (step === 'review')
-          return { certification_name: refName, topic_name: topic.topicName, draft_questions: priorText, topics_list: topicsList };
+          return {
+            certification_name: refName,
+            topic_name: topic.topicName,
+            draft_questions: priorText,
+            topics_list: topicsList,
+          };
         return { certification_name: refName, topic_name: topic.topicName, reviewed_questions: priorText };
       }
       if (step === 'research') {

@@ -12,45 +12,43 @@ export function QualitySection() {
 
           <div className="flex flex-col gap-6">
             <div>
-              <h3 className="ds-heading text-mkt-text text-base mb-1">
-                Base: conteúdo programático público
-              </h3>
+              <h3 className="ds-heading text-mkt-text text-base mb-1">Base: conteúdo programático público</h3>
               <p className="text-sm text-mkt-text opacity-55 leading-relaxed">
-                As questões são geradas a partir dos editais, guias de certificação e conteúdos programáticos oficiais de cada exame. Nenhuma questão é copiada de prova anterior.
+                As questões são geradas a partir dos editais, guias de certificação e conteúdos programáticos oficiais
+                de cada exame. Nenhuma questão é copiada de prova anterior.
               </p>
             </div>
             <div>
-              <h3 className="ds-heading text-mkt-text text-base mb-1">
-                Pipeline de validação
-              </h3>
+              <h3 className="ds-heading text-mkt-text text-base mb-1">Pipeline de validação</h3>
               <p className="text-sm text-mkt-text opacity-55 leading-relaxed">
-                Cada questão gerada passa por verificação automática de consistência: gabarito único, distratores plausíveis e alinhamento ao domínio do exame.
+                Cada questão gerada passa por verificação automática de consistência: gabarito único, distratores
+                plausíveis e alinhamento ao domínio do exame.
               </p>
             </div>
           </div>
 
           <div className="flex flex-col gap-6">
             <div>
-              <h3 className="ds-heading text-mkt-text text-base mb-1">
-                Revisão humana disponível
-              </h3>
+              <h3 className="ds-heading text-mkt-text text-base mb-1">Revisão humana disponível</h3>
               <p className="text-sm text-mkt-text opacity-55 leading-relaxed">
-                Questões selecionadas por especialistas são marcadas como revisadas. O volume gerado por IA é indicado com transparência na interface.
+                Questões selecionadas por especialistas são marcadas como revisadas. O volume gerado por IA é indicado
+                com transparência na interface.
               </p>
             </div>
             <div>
-              <h3 className="ds-heading text-mkt-text text-base mb-1">
-                Correção reportável
-              </h3>
+              <h3 className="ds-heading text-mkt-text text-base mb-1">Correção reportável</h3>
               <p className="text-sm text-mkt-text opacity-55 leading-relaxed">
-                Encontrou um erro? Reporte diretamente na questão. O feedback alimenta a melhoria contínua do pipeline de geração.
+                Encontrou um erro? Reporte diretamente na questão. O feedback alimenta a melhoria contínua do pipeline
+                de geração.
               </p>
             </div>
           </div>
         </div>
 
         <p className="border-t border-mkt-divider mt-8 pt-6 text-xs text-mkt-text opacity-40 leading-relaxed">
-          As questões geradas pela Certifique AI são produzidas por inteligência artificial com base em conteúdo programático público e não substituem material oficial das bancas examinadoras. Recomendamos uso complementar ao estudo tradicional.
+          As questões geradas pela Certifique AI são produzidas por inteligência artificial com base em conteúdo
+          programático público e não substituem material oficial das bancas examinadoras. Recomendamos uso complementar
+          ao estudo tradicional.
         </p>
       </div>
     </section>

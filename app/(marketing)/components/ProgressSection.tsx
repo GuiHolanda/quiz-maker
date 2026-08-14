@@ -13,10 +13,12 @@ export function ProgressSection() {
               Acompanhe seu progresso semana a semana
             </h2>
             <p className="text-mkt-text opacity-60 mb-4 leading-relaxed">
-              Cada sessão de estudo alimenta seu histórico de acertos por tópico. Você vê onde evoluiu e onde ainda precisa de reforço.
+              Cada sessão de estudo alimenta seu histórico de acertos por tópico. Você vê onde evoluiu e onde ainda
+              precisa de reforço.
             </p>
             <p className="text-mkt-text opacity-60 leading-relaxed">
-              O diagnóstico direciona a geração das próximas questões — mais peso onde o desempenho ainda não atingiu a meta.
+              O diagnóstico direciona a geração das próximas questões — mais peso onde o desempenho ainda não atingiu a
+              meta.
             </p>
           </div>
 
@@ -46,15 +48,23 @@ export function ProgressSection() {
             <div className="grid grid-cols-3 gap-px bg-mkt-divider mt-1">
               <div className="bg-mkt-surface px-3 py-3 text-center">
                 <p className="mono text-sm font-medium text-mkt-text">78,4%</p>
-                <p className="kick mt-0.5" style={{ fontSize: 9 }}>Acerto atual</p>
+                <p className="kick mt-0.5" style={{ fontSize: 9 }}>
+                  Acerto atual
+                </p>
               </div>
               <div className="bg-mkt-surface px-3 py-3 text-center">
-                <p className="mono text-sm font-medium" style={{ color: 'var(--color-accent)' }}>82,1%</p>
-                <p className="kick mt-0.5" style={{ fontSize: 9 }}>Projeção</p>
+                <p className="mono text-sm font-medium" style={{ color: 'var(--color-accent)' }}>
+                  82,1%
+                </p>
+                <p className="kick mt-0.5" style={{ fontSize: 9 }}>
+                  Projeção
+                </p>
               </div>
               <div className="bg-mkt-surface px-3 py-3 text-center">
                 <p className="mono text-sm font-medium text-mkt-text opacity-60">72%</p>
-                <p className="kick mt-0.5" style={{ fontSize: 9 }}>Linha de aprovação</p>
+                <p className="kick mt-0.5" style={{ fontSize: 9 }}>
+                  Linha de aprovação
+                </p>
               </div>
             </div>
           </div>

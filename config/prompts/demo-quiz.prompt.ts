@@ -12,9 +12,7 @@ export const demoQuizPrompt = {
     const { examName, examType, topics, count } = input;
 
     const examContext =
-      examType === 'public_exam'
-        ? `a Brazilian concurso público (${examName})`
-        : `the ${examName} certification exam`;
+      examType === 'public_exam' ? `a Brazilian concurso público (${examName})` : `the ${examName} certification exam`;
 
     return `Generate ${count} multiple-choice practice questions for ${examContext}.
 

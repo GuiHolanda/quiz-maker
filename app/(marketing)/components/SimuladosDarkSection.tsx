@@ -1,7 +1,5 @@
 import NextLink from 'next/link';
 
-import { BlueprintCorners } from '@/app/(marketing)/components/BlueprintCorners';
-
 const DOMAIN_ROWS = [
   { label: 'Redes e Armazenamento', count: '18 questões' },
   { label: 'Computação e Serverless', count: '22 questões' },
@@ -14,16 +12,13 @@ export function SimuladosDarkSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <span
-              className="kick mb-2"
-            >
-              Simulados
-            </span>
+            <span className="kick mb-2">Simulados</span>
             <h2 className="ds-heading text-4xl text-white mt-2 mb-4 leading-tight">
               O ensaio completo, no formato e no tempo da prova.
             </h2>
             <p className="text-white/60 mb-8 leading-relaxed">
-              Resolva um simulado completo com cronômetro, distribuição por matéria e gabarito comentado. Idêntico ao que você vai encontrar na prova real.
+              Resolva um simulado completo com cronômetro, distribuição por matéria e gabarito comentado. Idêntico ao
+              que você vai encontrar na prova real.
             </p>
             <NextLink
               className="inline-flex items-center text-sm font-semibold bg-mkt-accent text-white px-6 py-3 hover:opacity-90 transition-opacity"
@@ -46,7 +41,10 @@ export function SimuladosDarkSection() {
             <span className="corner bl" style={{ color: 'rgba(89,128,166,0.5)' }} />
             <span className="corner br" style={{ color: 'rgba(89,128,166,0.5)' }} />
 
-            <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: 'rgba(89,128,166,0.2)' }}>
+            <div
+              className="flex items-center justify-between px-5 py-3 border-b"
+              style={{ borderColor: 'rgba(89,128,166,0.2)' }}
+            >
               <span className="kick">Simulado · AWS SAA-C03</span>
               <span className="mono text-xs text-white/40">01:42:07</span>
             </div>

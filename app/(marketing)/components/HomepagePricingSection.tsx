@@ -16,9 +16,7 @@ export function HomepagePricingSection() {
     <section id="pricing" className="py-20 bg-mkt-bg border-t border-mkt-divider">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <span className="kick mb-2">{t('homepage.pricing.kick')}</span>
-        <h2 className="ds-heading text-mkt-text text-3xl mt-1 mb-12">
-          {t('homepage.pricing.headline')}
-        </h2>
+        <h2 className="ds-heading text-mkt-text text-3xl mt-1 mb-12">{t('homepage.pricing.headline')}</h2>
 
         <div className="grid sm:grid-cols-2 gap-px bg-mkt-divider border border-mkt-divider">
           <div className="bg-mkt-bg p-8">
@@ -59,9 +57,7 @@ export function HomepagePricingSection() {
           </div>
         </div>
 
-        <p className="text-xs text-mkt-text opacity-40 mt-4 text-center">
-          {t('homepage.pricing.tagline')}
-        </p>
+        <p className="text-xs text-mkt-text opacity-40 mt-4 text-center">{t('homepage.pricing.tagline')}</p>
       </div>
     </section>
   );

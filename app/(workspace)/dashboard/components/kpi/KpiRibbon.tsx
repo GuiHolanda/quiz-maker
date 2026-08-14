@@ -80,9 +80,7 @@ export function KpiRibbon({ stats, usage }: KpiRibbonProps) {
         }
         badge={
           !isLoading && stats.bestScore !== null ? (
-            <span
-              className={`font-mono text-[9px] border rounded px-1.5 py-0.5 ${scoreTextColor(stats.bestScore)}`}
-            >
+            <span className={`font-mono text-[9px] border rounded px-1.5 py-0.5 ${scoreTextColor(stats.bestScore)}`}>
               {t('dashboard.bestScoreDetail')}
             </span>
           ) : (

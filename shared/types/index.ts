@@ -641,13 +641,13 @@ export interface ExamLandingFaq {
 
 export interface ExamLandingConfig {
   readonly slug: string;
-  readonly name: string;             // short display name, e.g. "CEA"
-  readonly fullName: string;         // full certification name
-  readonly provider: string;         // e.g. "ANBIMA", "Amazon Web Services"
+  readonly name: string; // short display name, e.g. "CEA"
+  readonly fullName: string; // full certification name
+  readonly provider: string; // e.g. "ANBIMA", "Amazon Web Services"
   readonly examType: ExamType;
   readonly totalQuestions: number;
   readonly examDurationMinutes: number;
-  readonly passingScore: number;     // percentage, e.g. 70
+  readonly passingScore: number; // percentage, e.g. 70
   readonly topics: readonly string[];
   readonly heroHeadline: string;
   readonly heroSubheadline: string;

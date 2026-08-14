@@ -21,10 +21,7 @@ export function HowItWorksSection() {
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-7">
           {STEPS.map((step, i) => (
-            <div
-              key={step.num}
-              className={`border-t-2 pt-5 ${i === 0 ? 'border-mkt-accent' : 'border-mkt-divider'}`}
-            >
+            <div key={step.num} className={`border-t-2 pt-5 ${i === 0 ? 'border-mkt-accent' : 'border-mkt-divider'}`}>
               <span className="kick">{step.num}</span>
               <h3 className="ds-heading text-[19px] text-mkt-text mt-3 mb-2">{t(step.titleKey)}</h3>
               <p className="text-sm text-mkt-text opacity-55 leading-relaxed">{t(step.bodyKey)}</p>

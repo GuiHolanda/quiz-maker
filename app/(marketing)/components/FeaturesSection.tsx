@@ -20,7 +20,9 @@ export function FeaturesSection() {
         <div className="grid sm:grid-cols-3 gap-px bg-mkt-divider border border-mkt-divider">
           {FEATURES.map((f) => (
             <div key={f.num} className="bg-mkt-bg p-7">
-              <span className="kick" style={{ color: 'var(--color-accent-700)' }}>{f.num}</span>
+              <span className="kick" style={{ color: 'var(--color-accent-700)' }}>
+                {f.num}
+              </span>
               <h3 className="ds-heading text-mkt-text text-xl mt-3 mb-2">{t(f.titleKey)}</h3>
               <p className="text-sm text-mkt-text opacity-60 leading-relaxed">{t(f.bodyKey)}</p>
             </div>

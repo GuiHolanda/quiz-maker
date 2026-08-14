@@ -12,7 +12,6 @@ export function LegalPageShell({ title, lastUpdated, children }: LegalPageShellP
   return (
     <div className="bg-navy-900 text-[#e8edf3] min-h-screen">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" className="mb-10 flex items-center gap-1.5 text-xs text-navy-500">
           <NextLink className="hover:text-navy-300 transition-colors duration-200" href="/">

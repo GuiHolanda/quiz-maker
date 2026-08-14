@@ -67,7 +67,9 @@ export default async function AdminOverviewPage() {
           return (
             <div key={plan} className="bg-content1 border border-default-200 rounded-xl p-4">
               <div className="flex items-center justify-between mb-3">
-                <Chip color={planColors[plan]} size="sm" variant="flat">{planLabels[plan]}</Chip>
+                <Chip color={planColors[plan]} size="sm" variant="flat">
+                  {planLabels[plan]}
+                </Chip>
                 <span className="text-2xl font-extrabold text-foreground">{count}</span>
               </div>
               <Progress color={planColors[plan]} value={pct} size="sm" className="mb-1" />

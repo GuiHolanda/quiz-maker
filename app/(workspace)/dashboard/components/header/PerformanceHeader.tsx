@@ -32,9 +32,7 @@ export function PerformanceHeader() {
           <h2 className="font-bold text-foreground text-2xl lg:text-3xl mb-2 leading-snug">
             {greeting} <span className="text-primary">{t('dashboard.onTrack')}</span>
           </h2>
-          <p className="text-default-500 text-sm mb-6 max-w-sm">
-            {t('dashboard.weakAreasNote', { count: '-' })}
-          </p>
+          <p className="text-default-500 text-sm mb-6 max-w-sm">{t('dashboard.weakAreasNote', { count: '-' })}</p>
           <div className="flex gap-3 max-w-xs">
             <NextLink
               className="flex items-center gap-2 bg-foreground text-background font-semibold text-xs py-2.5 px-4 rounded-lg transition-opacity hover:opacity-80"

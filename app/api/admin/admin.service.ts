@@ -5,33 +5,35 @@ import { PLAN_LIMITS } from '@/config/constants';
 
 export class AdminService {
   async getOverview(): Promise<AdminOverviewStats> {
-    const [allUsers, usageLogs, tokenAgg, allStepsByLog, allCountsByUser, actionGroups, stepGroups] = await Promise.all([
-      prisma.user.findMany({ select: { plan: true, questionsGeneratedThisPeriod: true, subscriptionStatus: true } }),
-      prisma.usageLog.aggregate({ _sum: { count: true }, where: { action: 'generate_questions' } }),
-      prisma.usageLogStep.aggregate({ _sum: { inputTokens: true, outputTokens: true } }),
-      prisma.usageLogStep.groupBy({
-        by: ['usageLogId'],
-        _sum: { inputTokens: true, outputTokens: true },
-      }),
-      prisma.usageLog.groupBy({
-        by: ['userId'],
-        _sum: { count: true },
-        where: { action: 'generate_questions' },
-      }),
-      // per-action aggregation
-      prisma.usageLog.groupBy({
-        by: ['action'],
-        _sum: { count: true },
-        _avg: { totalDurationMs: true },
-        _count: { id: true },
-      }),
-      // per-action per-step aggregation
-      prisma.usageLogStep.groupBy({
-        by: ['step', 'usageLogId'],
-        _sum: { inputTokens: true, outputTokens: true },
-        _avg: { durationMs: true },
-      }),
-    ]);
+    const [allUsers, usageLogs, tokenAgg, allStepsByLog, allCountsByUser, actionGroups, stepGroups] = await Promise.all(
+      [
+        prisma.user.findMany({ select: { plan: true, questionsGeneratedThisPeriod: true, subscriptionStatus: true } }),
+        prisma.usageLog.aggregate({ _sum: { count: true }, where: { action: 'generate_questions' } }),
+        prisma.usageLogStep.aggregate({ _sum: { inputTokens: true, outputTokens: true } }),
+        prisma.usageLogStep.groupBy({
+          by: ['usageLogId'],
+          _sum: { inputTokens: true, outputTokens: true },
+        }),
+        prisma.usageLog.groupBy({
+          by: ['userId'],
+          _sum: { count: true },
+          where: { action: 'generate_questions' },
+        }),
+        // per-action aggregation
+        prisma.usageLog.groupBy({
+          by: ['action'],
+          _sum: { count: true },
+          _avg: { totalDurationMs: true },
+          _count: { id: true },
+        }),
+        // per-action per-step aggregation
+        prisma.usageLogStep.groupBy({
+          by: ['step', 'usageLogId'],
+          _sum: { inputTokens: true, outputTokens: true },
+          _avg: { durationMs: true },
+        }),
+      ]
+    );
 
     const byPlan: Record<UserPlan, number> = { free: 0, pro: 0, pro_ai: 0, tester: 0, admin: 0 };
 
@@ -128,12 +130,16 @@ export class AdminService {
       };
     }
 
-    const stepAccum: Record<string, Record<string, { inputTokens: number; outputTokens: number; durationSum: number; durationCount: number }>> = {};
+    const stepAccum: Record<
+      string,
+      Record<string, { inputTokens: number; outputTokens: number; durationSum: number; durationCount: number }>
+    > = {};
     for (const row of stepGroups) {
       const action = actionByLogId.get(row.usageLogId);
       if (!action) continue;
       if (!stepAccum[action]) stepAccum[action] = {};
-      if (!stepAccum[action][row.step]) stepAccum[action][row.step] = { inputTokens: 0, outputTokens: 0, durationSum: 0, durationCount: 0 };
+      if (!stepAccum[action][row.step])
+        stepAccum[action][row.step] = { inputTokens: 0, outputTokens: 0, durationSum: 0, durationCount: 0 };
       const acc = stepAccum[action][row.step];
       acc.inputTokens += row._sum.inputTokens ?? 0;
       acc.outputTokens += row._sum.outputTokens ?? 0;

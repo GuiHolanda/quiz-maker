@@ -41,9 +41,7 @@ export function NotificationsPopover() {
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="p-0 w-80">
-        {renderPanel()}
-      </PopoverContent>
+      <PopoverContent className="p-0 w-80">{renderPanel()}</PopoverContent>
     </Popover>
   );
 

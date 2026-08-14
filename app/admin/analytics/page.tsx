@@ -98,7 +98,9 @@ export default async function AdminAnalyticsPage() {
               return (
                 <div key={plan} className="bg-content1 border border-default-200 rounded-xl p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <Chip color={planColors[plan]} size="sm" variant="flat">{planLabels[plan]}</Chip>
+                    <Chip color={planColors[plan]} size="sm" variant="flat">
+                      {planLabels[plan]}
+                    </Chip>
                     <span className="text-2xl font-extrabold text-foreground">{count}</span>
                   </div>
                   <Progress color={planColors[plan]} value={pct} size="sm" />
@@ -172,13 +174,25 @@ export default async function AdminAnalyticsPage() {
                           )}
                         </td>
                         <td className="px-4 py-3 text-xs text-default-500">
-                          {avgPerQ !== null ? avgPerQ.toLocaleString('pt-BR') : <span className="text-default-400">—</span>}
+                          {avgPerQ !== null ? (
+                            avgPerQ.toLocaleString('pt-BR')
+                          ) : (
+                            <span className="text-default-400">—</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-sm font-semibold text-foreground">
-                          {totalTokens > 0 ? brlFormatter.format(totalCostBRL) : <span className="text-xs text-default-400">—</span>}
+                          {totalTokens > 0 ? (
+                            brlFormatter.format(totalCostBRL)
+                          ) : (
+                            <span className="text-xs text-default-400">—</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-xs text-default-500">
-                          {costPerQBRL !== null ? brlFormatter.format(costPerQBRL) : <span className="text-default-400">—</span>}
+                          {costPerQBRL !== null ? (
+                            brlFormatter.format(costPerQBRL)
+                          ) : (
+                            <span className="text-default-400">—</span>
+                          )}
                         </td>
                       </tr>
                     );
@@ -265,7 +279,9 @@ export default async function AdminAnalyticsPage() {
                   return (
                     <tr key={plan} className="border-b border-divider last:border-0">
                       <td className="px-4 py-3">
-                        <Chip size="sm" variant="flat" color={planColors[plan]}>{planLabels[plan]}</Chip>
+                        <Chip size="sm" variant="flat" color={planColors[plan]}>
+                          {planLabels[plan]}
+                        </Chip>
                       </td>
                       <td className="px-4 py-3 font-semibold text-foreground">{userCount}</td>
                       <td className="px-4 py-3 text-xs text-foreground">
@@ -276,7 +292,9 @@ export default async function AdminAnalyticsPage() {
                           <div className="flex flex-col gap-0.5">
                             <span className="text-xs text-foreground">{brlFormatter.format(tokenCost)}</span>
                             {userCount > 0 && (
-                              <span className="text-xs text-default-400">{brlFormatter.format(tokenCost / userCount)}/user</span>
+                              <span className="text-xs text-default-400">
+                                {brlFormatter.format(tokenCost / userCount)}/user
+                              </span>
                             )}
                           </div>
                         ) : (
@@ -287,9 +305,11 @@ export default async function AdminAnalyticsPage() {
                         {margin !== null ? brlFormatter.format(margin) : <span className="text-default-400">—</span>}
                       </td>
                       <td className={`px-4 py-3 text-xs ${marginColorClass}`}>
-                        {marginPct !== null
-                          ? `${marginPct.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`
-                          : <span className="text-default-400">—</span>}
+                        {marginPct !== null ? (
+                          `${marginPct.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`
+                        ) : (
+                          <span className="text-default-400">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-xs text-default-500">
                         {breakEven !== null ? (
@@ -297,7 +317,9 @@ export default async function AdminAnalyticsPage() {
                             <span className="text-foreground font-semibold">{breakEven.toLocaleString('pt-BR')} q</span>
                             <span className="text-default-400">
                               de{' '}
-                              {(PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS]?.questionsPerPeriod ?? 0).toLocaleString('pt-BR')}{' '}
+                              {(PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS]?.questionsPerPeriod ?? 0).toLocaleString(
+                                'pt-BR'
+                              )}{' '}
                               disponíveis
                             </span>
                           </div>
@@ -347,25 +369,24 @@ export default async function AdminAnalyticsPage() {
         <div className="flex items-center justify-between px-5 py-4 border-b border-divider bg-content2">
           <div className="flex items-center gap-3">
             <span className="text-sm font-bold text-foreground">{ACTION_LABELS[action] ?? action}</span>
-            <Chip size="sm" variant="flat" color="default">{action}</Chip>
+            <Chip size="sm" variant="flat" color="default">
+              {action}
+            </Chip>
           </div>
           <div className="flex items-center gap-6 text-xs text-default-500">
             <span>
-              <span className="text-foreground font-semibold">{stats.count.toLocaleString('pt-BR')}</span>{' '}
-              chamadas
+              <span className="text-foreground font-semibold">{stats.count.toLocaleString('pt-BR')}</span> chamadas
             </span>
             <span>
-              <span className="text-foreground font-semibold">{totalTokens.toLocaleString('pt-BR')}</span>{' '}
-              tokens totais
+              <span className="text-foreground font-semibold">{totalTokens.toLocaleString('pt-BR')}</span> tokens totais
             </span>
             <span>
-              <span className="text-foreground font-semibold">{brlFormatter.format(costBRL)}</span>{' '}
-              custo
+              <span className="text-foreground font-semibold">{brlFormatter.format(costBRL)}</span> custo
             </span>
             {stats.avgDurationMs > 0 && (
               <span>
-                <span className="text-foreground font-semibold">{formatDuration(stats.avgDurationMs)}</span>{' '}
-                duração média
+                <span className="text-foreground font-semibold">{formatDuration(stats.avgDurationMs)}</span> duração
+                média
               </span>
             )}
           </div>

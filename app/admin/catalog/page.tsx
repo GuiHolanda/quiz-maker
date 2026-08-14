@@ -128,9 +128,7 @@ export default function AdminCatalogPage() {
                           <div>
                             <div className="font-semibold text-foreground">{entry.name}</div>
                             <div className="text-xs text-default-400 mt-0.5">
-                              {entry.type === 'certification'
-                                ? entry.provider?.name
-                                : entry.examBoard?.name}
+                              {entry.type === 'certification' ? entry.provider?.name : entry.examBoard?.name}
                               {entry.role && ` — ${entry.role}`}
                               {entry.year && ` (${entry.year})`}
                             </div>
@@ -138,16 +136,11 @@ export default function AdminCatalogPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-default-500">
-                        {entry.ownerEmail ?? (
-                          <span className="text-default-300 italic">no owner</span>
-                        )}
+                        {entry.ownerEmail ?? <span className="text-default-300 italic">no owner</span>}
                       </td>
                       <td className="px-4 py-3 text-center text-default-500">{entry.sectionCount}</td>
                       <td className="px-4 py-3 text-center text-default-500">{entry.questionCount}</td>
-                      <td
-                        className="px-4 py-3 text-right"
-                        onClick={(ev) => ev.stopPropagation()}
-                      >
+                      <td className="px-4 py-3 text-right" onClick={(ev) => ev.stopPropagation()}>
                         {entry.isTemplate ? (
                           <Chip color="success" size="sm" variant="flat">
                             {t('admin.catalog.alreadyTemplate')}
@@ -191,8 +184,7 @@ export default function AdminCatalogPage() {
 
   function renderDetailPanel(entry: AdminCatalogEntry) {
     const referenceEntity = entry.type === 'certification' ? entry.provider : entry.examBoard;
-    const logoUrl =
-      entry.type === 'certification' ? entry.provider?.logoUrl : entry.examBoard?.logoUrl;
+    const logoUrl = entry.type === 'certification' ? entry.provider?.logoUrl : entry.examBoard?.logoUrl;
 
     return (
       <div className="bg-content1 border border-default-200 rounded-xl overflow-hidden">
@@ -202,11 +194,7 @@ export default function AdminCatalogPage() {
             {logoUrl ? (
               <div className="w-10 h-10 rounded-lg bg-white border border-default-200 flex items-center justify-center shrink-0 overflow-hidden p-1">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  alt={referenceEntity?.name ?? entry.name}
-                  className="w-full h-full object-contain"
-                  src={logoUrl}
-                />
+                <img alt={referenceEntity?.name ?? entry.name} className="w-full h-full object-contain" src={logoUrl} />
               </div>
             ) : (
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -215,9 +203,7 @@ export default function AdminCatalogPage() {
             )}
             <div>
               <p className="text-sm font-semibold text-foreground">{entry.name}</p>
-              {referenceEntity?.name && (
-                <p className="text-xs text-default-400 mt-0.5">{referenceEntity.name}</p>
-              )}
+              {referenceEntity?.name && <p className="text-xs text-default-400 mt-0.5">{referenceEntity.name}</p>}
             </div>
           </div>
 
@@ -344,10 +330,7 @@ export default function AdminCatalogPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {detail.sections.map((section) => (
-                <div
-                  key={section.id}
-                  className="bg-content2 border border-default-200 rounded-lg px-3 py-2.5"
-                >
+                <div key={section.id} className="bg-content2 border border-default-200 rounded-lg px-3 py-2.5">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-xs font-semibold text-foreground">{section.name}</p>
                     <span className="text-xs text-default-400 shrink-0">

@@ -13,7 +13,10 @@ export type ExamDraftSaveResult = 'success' | 'duplicate' | 'error';
 interface UseExamDraftCardReturn {
   readonly draft: Exam;
   readonly status: ExamDraftStatus;
-  readonly updateField: (field: keyof Pick<Exam, 'name' | 'role' | 'year' | 'key'>, value: string | number | null) => void;
+  readonly updateField: (
+    field: keyof Pick<Exam, 'name' | 'role' | 'year' | 'key'>,
+    value: string | number | null
+  ) => void;
   readonly updateNumericField: (
     field: 'totalQuestions' | 'examDurationMinutes' | 'passingScore',
     value: number | undefined

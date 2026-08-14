@@ -27,9 +27,7 @@ export function DomainRow({ domain }: DomainRowProps) {
         </div>
       </div>
       <div className="w-10 text-right shrink-0">
-        <span className={`font-mono font-semibold text-xs ${scoreTextColor(domain.avgScore)}`}>
-          {domain.avgScore}%
-        </span>
+        <span className={`font-mono font-semibold text-xs ${scoreTextColor(domain.avgScore)}`}>{domain.avgScore}%</span>
       </div>
     </div>
   );
