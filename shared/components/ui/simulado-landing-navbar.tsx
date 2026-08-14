@@ -9,7 +9,7 @@ import { faBars, faXmark } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
-const navLinkClass = 'text-sm font-medium text-default-400 hover:text-foreground transition-colors duration-150';
+const navLinkClass = 'text-sm font-semibold text-default-500 hover:text-foreground transition-colors duration-150';
 const LAST_EXAM_KEY = 'certiq_last_exam';
 const DEFAULT_EXAM_PATH = '/simulado/cea';
 
@@ -37,28 +37,29 @@ export function SimuladoLandingNavbar() {
   }
 
   return (
-    <div data-theme="dark" className="fixed top-3 left-4 right-4 z-50 max-w-6xl mx-auto">
-      <header className="rounded-xl border border-white/10 bg-background overflow-hidden">
-        <div className="px-4 sm:px-6">
+    <div data-theme="dark" className="fixed z-50 w-full mx-auto">
+      <header className=" border-content1 bg-background overflow-hidden border-b">
+        <div className="px-4 sm:px-8 py-4">
           <div className="flex items-center justify-between h-14">
-            <NextLink className="flex items-center gap-2.5" href="/">
-              <span className="font-sora font-bold text-white text-sm">CertifiqueAI</span>
-            </NextLink>
-
-            <nav aria-label="Page sections" className="hidden md:flex items-center gap-7">
-              <a className={navLinkClass} href={sectionHref('#how-it-works')}>
-                {t('landing.nav.howItWorks')}
-              </a>
-              <a className={navLinkClass} href={sectionHref('#demo-simulado')}>
-                {t('landing.nav.demo')}
-              </a>
-              <a className={navLinkClass} href={sectionHref('#faq')}>
-                {t('landing.nav.faq')}
-              </a>
-              <NextLink className={navLinkClass} href="/pricing">
-                {t('nav.pricing')}
+            <div className="flex gap-32">
+              <NextLink className="flex items-center gap-2.5" href="/">
+                <span className="font-sora font-bold text-white text-base">Certifique AI</span>
               </NextLink>
-            </nav>
+              <nav aria-label="Page sections" className="hidden md:flex items-center gap-7">
+                <a className={navLinkClass} href={sectionHref('#how-it-works')}>
+                  {t('landing.nav.howItWorks')}
+                </a>
+                <a className={navLinkClass} href={sectionHref('#demo-simulado')}>
+                  {t('landing.nav.demo')}
+                </a>
+                <a className={navLinkClass} href={sectionHref('#faq')}>
+                  {t('landing.nav.faq')}
+                </a>
+                <NextLink className={navLinkClass} href="/pricing">
+                  {t('nav.pricing')}
+                </NextLink>
+              </nav>
+            </div>
 
             <div className="flex items-center gap-3">
               <NextLink className={`${navLinkClass} hidden sm:block`} href="/login">

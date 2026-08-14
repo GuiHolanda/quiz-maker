@@ -53,7 +53,7 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
     examDurationMinutes: 130,
     passingScore: 72,
     topics: ['Resiliência', 'Alta Disponibilidade', 'Segurança', 'Performance', 'Otimização de Custos', 'Serviços de Computação', 'Armazenamento', 'Bancos de Dados', 'Redes', 'Integração de Aplicações'],
-    heroHeadline: 'Conquiste o AWS SAA-C03 com cenários no estilo da prova real',
+    heroHeadline: 'Conquiste sua certificação AWS SAA-C03 com cenários no estilo da prova real',
     heroSubheadline: 'Treine para o exame SAA-C03 com questões de cenário calibradas no estilo AWS. Identifique lacunas antes da prova.',
     seoTitle: 'Simulado AWS SAA-C03 Grátis - Questões com IA | CertifiqueAI',
     seoDescription: 'Gere questões de prática para o exame AWS Certified Solutions Architect Associate (SAA-C03) com IA. Cenários realistas, análise de pontos fracos.',

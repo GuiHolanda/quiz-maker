@@ -45,11 +45,13 @@ border-divider / border-default-200
 
 ## Tipografia
 
-**Fonte:** Inter (`--font-sans`). Mono: Fira Code (`--font-mono`).
+**Fontes:** Inter (`--font-sans`) — UI/workspace. Sora (`font-sora`) — logotipo, `<h1>`/`<h2>` em surfaces de marketing e landing. Fira Code (`--font-mono`) — labels de seção, contadores.
 
 Hierarquia: `.page-header-title` → `text-3xl font-extrabold` → `text-xl font-bold` → `text-xs font-semibold text-primary` (label de seção) → `text-sm text-default-500` (corpo).
 
-**Proibido:** `uppercase`, `tracking-widest`, `tracking-[0.2em]`, `tracking-[0.05em]`.
+**Proibido em títulos e corpo:** `uppercase`, `tracking-widest`, `tracking-[0.2em]`, `tracking-[0.05em]`.
+
+**Exceção (section kicker label):** `font-mono text-xs text-default-400 uppercase tracking-widest` — válido para separadores de nav e cabeçalhos de grupo.
 
 ---
 
@@ -171,6 +173,7 @@ Filtros: `search` (deferido), `source` (multi), `type`, `topic` (multi), `diffic
 | Group | Chrome | Rotas |
 |---|---|---|
 | `(marketing)` | Navbar + Footer | `/`, `/privacy`, `/terms` |
+| `(simulado-landing)` | Landing Navbar sem auth | `/simulado/[exam-slug]`, `/pricing` |
 | `(workspace)` | Sidebar + WorkspaceHeader + AiChatWrapper | `/dashboard`, `/exams`, `/questions`, `/simulados`, `/question-bank`, `/billing` |
 | `(auth)` | Top bar discreta | `/login`, `/register`, `/forgot-password`, `/reset-password` |
 | `admin/` | Sidebar admin própria | `/admin/*` |
