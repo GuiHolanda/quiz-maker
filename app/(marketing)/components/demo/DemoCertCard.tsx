@@ -30,7 +30,6 @@ export function DemoCertCard({ cert, isSelected, onSelect }: DemoCertCardProps) 
         <BlueprintCorners />
 
         <div className="flex items-start gap-4 w-full">
-          {/* Mark badge */}
           <div className="w-14 h-14 flex-shrink-0 bg-mkt-surface border border-mkt-divider flex items-center justify-center">
             <span className="mono text-xs font-bold text-mkt-text">{cert.mark}</span>
           </div>
@@ -45,7 +44,6 @@ export function DemoCertCard({ cert, isSelected, onSelect }: DemoCertCardProps) 
       </CardHeader>
 
       <CardBody>
-        {/* Status row with icons */}
         <div className="flex gap-4 flex-wrap mb-4">
           <span className="mono text-xs text-mkt-text opacity-60 flex items-center gap-1">
             <FontAwesomeIcon icon={faHashtag} className="w-3 h-3" />
@@ -61,7 +59,6 @@ export function DemoCertCard({ cert, isSelected, onSelect }: DemoCertCardProps) 
           </span>
         </div>
 
-        {/* Domains */}
         <div className="border-t border-mkt-divider pt-4">
           <div className="flex items-center justify-between mb-2">
             <span className="kick text-[10px]">Domínios de estudo</span>
