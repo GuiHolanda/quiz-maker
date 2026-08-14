@@ -14,6 +14,7 @@ const publicRoutePrefixes = [
   '/lgpd',
   '/security',
   '/simulado',
+  '/demo',
   '/api/marketing',
 ];
 
