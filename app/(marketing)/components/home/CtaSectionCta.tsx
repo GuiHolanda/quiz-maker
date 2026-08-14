@@ -1,14 +1,13 @@
 'use client';
 
-import NextLink from 'next/link';
-import { useSession } from 'next-auth/react';
-
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { BlueprintCorners } from '@/app/(marketing)/components/shared/BlueprintCorners';
+import { MktCtaLink } from '@/app/(marketing)/components/shared/MktCtaLink';
+import { usePrimaryCtaHref } from '@/app/(marketing)/components/shared/usePrimaryCtaHref';
 
 export function CtaSectionCta() {
   const { t } = useTranslation();
-  const { data: session } = useSession();
+  const primaryHref = usePrimaryCtaHref();
 
   return (
     <>
@@ -17,19 +16,11 @@ export function CtaSectionCta() {
       <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
         <div className="blueprint relative">
           <BlueprintCorners />
-          <NextLink
-            className="inline-flex items-center text-sm font-semibold bg-mkt-accent text-white px-6 py-3 hover:opacity-90 transition-opacity"
-            href={session?.user ? '/simulados' : '/register'}
-          >
-            {t('homepage.cta2.primaryCta')}
-          </NextLink>
+          <MktCtaLink href={primaryHref}>{t('homepage.cta2.primaryCta')}</MktCtaLink>
         </div>
-        <NextLink
-          className="inline-flex items-center text-sm font-medium border border-mkt-divider text-mkt-text opacity-70 hover:opacity-100 px-6 py-3 transition-opacity"
-          href="/pricing"
-        >
+        <MktCtaLink href="/pricing" variant="secondary">
           {t('homepage.cta2.secondaryCta')}
-        </NextLink>
+        </MktCtaLink>
       </div>
       <p className="kick mt-6 text-center opacity-50">{t('homepage.cta2.tagline')}</p>
     </>

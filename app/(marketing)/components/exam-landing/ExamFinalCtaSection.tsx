@@ -1,10 +1,10 @@
 'use client';
 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import type { ExamLandingConfig } from '@/shared/types';
+import { MktCtaLink } from '@/app/(marketing)/components/shared/MktCtaLink';
 
 interface ExamFinalCtaSectionProps {
   readonly config: ExamLandingConfig;
@@ -23,13 +23,9 @@ export function ExamFinalCtaSection({ config }: ExamFinalCtaSectionProps) {
         <p className="text-mkt-text opacity-60 text-base sm:text-lg">{t('landing.cta.subheading')}</p>
 
         <div className="flex flex-col items-center gap-3">
-          <a
-            href="/register"
-            className="inline-flex items-center gap-2 text-sm font-semibold bg-mkt-accent text-white px-8 py-3.5 hover:opacity-90 transition-opacity"
-          >
+          <MktCtaLink href="/register" icon={faArrowRight} size="lg">
             {t('landing.cta.primary')}
-            <FontAwesomeIcon className="text-xs" icon={faArrowRight} />
-          </a>
+          </MktCtaLink>
           <p className="text-mkt-text opacity-50 text-xs">{t('landing.cta.secondary')}</p>
         </div>
       </div>

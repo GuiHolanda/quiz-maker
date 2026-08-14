@@ -1,8 +1,7 @@
 'use client';
 
-import { Accordion, AccordionItem } from '@heroui/accordion';
-
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { FaqAccordion } from '@/app/(marketing)/components/shared/FaqAccordion';
 
 const FAQ_KEYS = [
   { q: 'homepage.faq.q1', a: 'homepage.faq.a1' },
@@ -23,22 +22,7 @@ export function FaqSection() {
         <span className="kick mb-2">FAQ</span>
         <h2 className="ds-heading text-mkt-text text-3xl mt-1 mb-12">{t('homepage.faq.title')}</h2>
 
-        <Accordion
-          className="gap-0 flex flex-col"
-          itemClasses={{
-            base: 'border-b border-mkt-divider bg-transparent border-x-0 border-t-0 first:border-t first:border-mkt-divider',
-            title: 'text-lg font-semibold text-mkt-text ds-heading',
-            trigger: 'px-0 py-4 hover:bg-transparent data-[hover=true]:bg-transparent',
-            content: 'px-0 pb-5 text-base text-mkt-text opacity-60 leading-relaxed',
-            indicator: 'text-mkt-text opacity-40',
-          }}
-        >
-          {FAQ_KEYS.map((item) => (
-            <AccordionItem key={item.q} title={t(item.q)}>
-              {t(item.a)}
-            </AccordionItem>
-          ))}
-        </Accordion>
+        <FaqAccordion items={FAQ_KEYS.map((item) => ({ question: t(item.q), answer: t(item.a) }))} />
       </div>
     </section>
   );

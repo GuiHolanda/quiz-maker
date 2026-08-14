@@ -2,13 +2,13 @@
 
 import NextLink from 'next/link';
 import { Button } from '@heroui/button';
-import { useSession } from 'next-auth/react';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { usePrimaryCtaHref } from '@/app/(marketing)/components/shared/usePrimaryCtaHref';
 
 export function BottomCtaCta() {
   const { t } = useTranslation();
-  const { data: session } = useSession();
+  const primaryHref = usePrimaryCtaHref();
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -24,7 +24,7 @@ export function BottomCtaCta() {
       <Button
         as={NextLink}
         className="font-medium text-sm text-mkt-text bg-transparent border border-mkt-divider hover:border-mkt-accent"
-        href={session?.user ? '/simulados' : '/register'}
+        href={primaryHref}
         radius="none"
         size="lg"
         variant="bordered"

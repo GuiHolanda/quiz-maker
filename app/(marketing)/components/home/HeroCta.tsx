@@ -1,28 +1,22 @@
 'use client';
 
-import NextLink from 'next/link';
 import { useSession } from 'next-auth/react';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { MktCtaLink } from '@/app/(marketing)/components/shared/MktCtaLink';
+import { usePrimaryCtaHref } from '@/app/(marketing)/components/shared/usePrimaryCtaHref';
 
 export function HeroCta() {
   const { t } = useTranslation();
   const { data: session } = useSession();
+  const primaryHref = usePrimaryCtaHref();
 
   return (
     <div className="flex flex-col sm:flex-row gap-3 mb-10">
-      <NextLink
-        className="inline-flex items-center justify-center text-sm font-semibold bg-mkt-accent text-white px-6 py-3 hover:opacity-90 transition-opacity"
-        href={session?.user ? '/simulados' : '/register'}
-      >
-        {t('homepage.cta.startFreeTrial')}
-      </NextLink>
-      <NextLink
-        className="inline-flex items-center justify-center text-sm font-medium text-mkt-text opacity-70 hover:opacity-100 border border-mkt-divider px-6 py-3 transition-opacity"
-        href={session?.user ? '/questions' : '/pricing'}
-      >
+      <MktCtaLink href={primaryHref}>{t('homepage.cta.startFreeTrial')}</MktCtaLink>
+      <MktCtaLink href={session?.user ? '/questions' : '/pricing'} variant="secondary">
         {t('homepage.cta.viewSampleQuestions')}
-      </NextLink>
+      </MktCtaLink>
     </div>
   );
 }

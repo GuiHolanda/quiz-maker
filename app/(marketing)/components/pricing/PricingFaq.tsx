@@ -1,8 +1,7 @@
 'use client';
 
-import { Accordion, AccordionItem } from '@heroui/accordion';
-
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { FaqAccordion } from '@/app/(marketing)/components/shared/FaqAccordion';
 
 const FAQ_ITEMS = [
   { q: 'pricing.faq.q1', a: 'pricing.faq.a1' },
@@ -24,22 +23,10 @@ export function PricingFaq() {
           <p className="text-sm text-mkt-text opacity-60">{t('pricing.faq.subtitle')}</p>
         </div>
 
-        <Accordion
+        <FaqAccordion
           defaultExpandedKeys={['0']}
-          itemClasses={{
-            base: 'border-b border-mkt-divider bg-transparent border-x-0 border-t-0 first:border-t',
-            title: 'text-lg font-semibold text-mkt-text ds-heading',
-            trigger: 'px-0 py-4 hover:bg-transparent',
-            content: 'px-0 pb-5 text-base text-mkt-text opacity-60',
-            indicator: 'text-mkt-text opacity-40',
-          }}
-        >
-          {FAQ_ITEMS.map((item, index) => (
-            <AccordionItem key={String(index)} aria-label={t(item.q)} title={t(item.q)}>
-              {t(item.a)}
-            </AccordionItem>
-          ))}
-        </Accordion>
+          items={FAQ_ITEMS.map((item) => ({ question: t(item.q), answer: t(item.a) }))}
+        />
 
         <div className="mt-12 border border-mkt-divider bg-mkt-surface p-6">
           <p className="text-sm font-semibold text-mkt-text mb-1">{t('pricing.faq.contactTitle')}</p>

@@ -1,9 +1,8 @@
 'use client';
 
-import { Accordion, AccordionItem } from '@heroui/accordion';
-
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import type { ExamLandingConfig } from '@/shared/types';
+import { FaqAccordion } from '@/app/(marketing)/components/shared/FaqAccordion';
 
 interface ExamFaqSectionProps {
   readonly config: ExamLandingConfig;
@@ -18,22 +17,7 @@ export function ExamFaqSection({ config }: ExamFaqSectionProps) {
         <span className="kick mb-2">{t('landing.faq.kick')}</span>
         <h2 className="ds-heading text-mkt-text text-3xl mt-1 mb-12">{t('landing.faq.heading')}</h2>
 
-        <Accordion
-          className="gap-0 flex flex-col px-0"
-          itemClasses={{
-            base: 'border-b border-mkt-divider bg-transparent border-x-0 border-t-0 first:border-t first:border-mkt-divider',
-            title: 'text-lg font-semibold text-mkt-text ds-heading',
-            trigger: 'px-0 py-4 hover:bg-transparent data-[hover=true]:bg-transparent',
-            content: 'px-0 pb-5 text-base text-mkt-text opacity-60 leading-relaxed',
-            indicator: 'text-mkt-text opacity-40',
-          }}
-        >
-          {config.faqs.map((faq, index) => (
-            <AccordionItem key={index} title={faq.question}>
-              {faq.answer}
-            </AccordionItem>
-          ))}
-        </Accordion>
+        <FaqAccordion items={config.faqs} />
       </div>
     </section>
   );
