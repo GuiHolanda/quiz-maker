@@ -18,6 +18,15 @@ const config = {
         sora: ["var(--font-sora)", "sans-serif"],
       },
       colors: {
+        mkt: {
+          bg: 'var(--color-bg)',
+          surface: 'var(--color-surface)',
+          text: 'var(--color-text)',
+          accent: 'var(--color-accent)',
+          'accent-100': 'var(--color-accent-100)',
+          'accent-700': 'var(--color-accent-700)',
+          divider: 'var(--color-divider)',
+        },
         navy: {
           950: '#070e20',
           900: '#0f1b3d',

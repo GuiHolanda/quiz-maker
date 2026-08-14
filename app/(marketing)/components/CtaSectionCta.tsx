@@ -12,20 +12,20 @@ export function CtaSectionCta() {
 
   return (
     <>
-      <h2 className="ds-heading text-[var(--color-text)] text-3xl mb-5">{t('homepage.cta2.title')}</h2>
-      <p className="text-[var(--color-text)] opacity-60 text-base mb-8 max-w-lg mx-auto">{t('homepage.cta2.body')}</p>
+      <h2 className="ds-heading text-mkt-text text-3xl mb-5">{t('homepage.cta2.title')}</h2>
+      <p className="text-mkt-text opacity-60 text-base mb-8 max-w-lg mx-auto">{t('homepage.cta2.body')}</p>
       <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
         <div className="blueprint relative">
           <BlueprintCorners />
           <NextLink
-            className="inline-flex items-center text-sm font-semibold bg-[var(--color-accent)] text-white px-6 py-3 hover:opacity-90 transition-opacity"
+            className="inline-flex items-center text-sm font-semibold bg-mkt-accent text-white px-6 py-3 hover:opacity-90 transition-opacity"
             href={session?.user ? '/simulados' : '/register'}
           >
             {t('homepage.cta2.primaryCta')}
           </NextLink>
         </div>
         <NextLink
-          className="inline-flex items-center text-sm font-medium border border-[var(--color-divider)] text-[var(--color-text)] opacity-70 hover:opacity-100 px-6 py-3 transition-opacity"
+          className="inline-flex items-center text-sm font-medium border border-mkt-divider text-mkt-text opacity-70 hover:opacity-100 px-6 py-3 transition-opacity"
           href="/pricing"
         >
           {t('homepage.cta2.secondaryCta')}

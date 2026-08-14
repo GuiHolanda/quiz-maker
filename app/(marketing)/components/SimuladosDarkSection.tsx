@@ -16,7 +16,6 @@ export function SimuladosDarkSection() {
           <div>
             <span
               className="kick mb-2"
-              style={{ color: 'var(--color-accent)' }}
             >
               Simulados
             </span>
@@ -27,7 +26,7 @@ export function SimuladosDarkSection() {
               Resolva um simulado completo com cronômetro, distribuição por matéria e gabarito comentado. Idêntico ao que você vai encontrar na prova real.
             </p>
             <NextLink
-              className="inline-flex items-center text-sm font-semibold bg-[var(--color-accent)] text-white px-6 py-3 hover:opacity-90 transition-opacity"
+              className="inline-flex items-center text-sm font-semibold bg-mkt-accent text-white px-6 py-3 hover:opacity-90 transition-opacity"
               href="/register"
             >
               Criar conta e simular
@@ -48,7 +47,7 @@ export function SimuladosDarkSection() {
             <span className="corner br" style={{ color: 'rgba(89,128,166,0.5)' }} />
 
             <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: 'rgba(89,128,166,0.2)' }}>
-              <span className="kick" style={{ color: 'var(--color-accent)' }}>Simulado · AWS SAA-C03</span>
+              <span className="kick">Simulado · AWS SAA-C03</span>
               <span className="mono text-xs text-white/40">01:42:07</span>
             </div>
 
@@ -65,7 +64,7 @@ export function SimuladosDarkSection() {
                     style={{ borderColor: 'rgba(89,128,166,0.15)' }}
                   >
                     <span className="text-sm text-white/70">{row.label}</span>
-                    <span className="mono text-xs" style={{ color: 'var(--color-accent)' }}>{row.count}</span>
+                    <span className="mono text-xs text-mkt-accent">{row.count}</span>
                   </div>
                 ))}
               </div>

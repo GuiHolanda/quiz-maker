@@ -49,7 +49,7 @@ export default function HeroPage() {
 
 function HeroSection() {
   return (
-    <section className="py-20 bg-[var(--color-bg)]">
+    <section className="py-20 bg-mkt-bg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 xl:gap-20 items-center">
           <HeroStaticContent />
@@ -62,7 +62,7 @@ function HeroSection() {
 
 function CtaSectionShell() {
   return (
-    <div className="bg-[var(--color-surface)] border-t border-[var(--color-divider)] py-20">
+    <div className="bg-mkt-surface border-t border-mkt-divider py-20">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <CtaSectionCta />
       </div>

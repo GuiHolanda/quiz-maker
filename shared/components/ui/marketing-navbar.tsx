@@ -20,7 +20,7 @@ const NAV_LINKS = [
 ] as const;
 
 const navLinkClass =
-  'text-sm font-medium text-[var(--color-text)] opacity-60 hover:opacity-100 transition-opacity duration-150';
+  'text-sm font-medium text-mkt-text opacity-60 hover:opacity-100 transition-opacity duration-150';
 
 export function MarketingNavbar() {
   const { data: session, status } = useSession();
@@ -31,12 +31,12 @@ export function MarketingNavbar() {
   return (
     <>
       <div className="fixed top-0 left-0 right-0 z-50">
-        <header className="border-b border-[var(--color-divider)] bg-[var(--color-bg)] overflow-hidden">
+        <header className="border-b border-mkt-divider bg-mkt-bg overflow-hidden">
           <div className="px-4 sm:px-8">
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center gap-10">
                 <NextLink className="flex items-center" href="/">
-                  <span className="ds-heading text-[var(--color-text)] text-base tracking-tight">Certifique AI</span>
+                  <span className="ds-heading text-mkt-text text-base tracking-tight">Certifique AI</span>
                 </NextLink>
 
                 <nav aria-label="Main navigation" className="hidden md:flex items-center gap-7">
@@ -66,7 +66,7 @@ export function MarketingNavbar() {
                       {t('nav.logIn')}
                     </NextLink>
                     <NextLink
-                      className="inline-flex items-center text-sm font-semibold bg-[var(--color-accent)] text-white px-4 py-2 leading-none hover:opacity-90 transition-opacity"
+                      className="inline-flex items-center text-sm font-semibold bg-mkt-accent text-white px-4 py-2 leading-none hover:opacity-90 transition-opacity"
                       href="/register"
                     >
                       {t('nav.startFreeTrial')}
@@ -78,7 +78,7 @@ export function MarketingNavbar() {
                   type="button"
                   aria-label={t('nav.toggleMenu')}
                   aria-expanded={menuOpen}
-                  className="md:hidden text-[var(--color-text)] opacity-60 hover:opacity-100 transition-opacity focus-visible:outline-none"
+                  className="md:hidden text-mkt-text opacity-60 hover:opacity-100 transition-opacity focus-visible:outline-none"
                   onClick={() => setMenuOpen((o) => !o)}
                 >
                   <FontAwesomeIcon icon={menuOpen ? faXmark : faBars} className="text-sm" />
@@ -88,12 +88,12 @@ export function MarketingNavbar() {
           </div>
 
           {menuOpen && (
-            <div className="md:hidden border-t border-[var(--color-divider)] bg-[var(--color-bg)] px-4 py-3">
+            <div className="md:hidden border-t border-mkt-divider bg-mkt-bg px-4 py-3">
               <nav className="flex flex-col">
                 {NAV_LINKS.map((item) => (
                   <NextLink
                     key={item.labelKey}
-                    className="text-sm text-[var(--color-text)] opacity-60 hover:opacity-100 transition-opacity py-3 border-b border-[var(--color-divider)] last:border-0"
+                    className="text-sm text-mkt-text opacity-60 hover:opacity-100 transition-opacity py-3 border-b border-mkt-divider last:border-0"
                     href={item.href}
                     onClick={() => setMenuOpen(false)}
                   >
@@ -102,7 +102,7 @@ export function MarketingNavbar() {
                 ))}
                 {!(status === 'authenticated' && session?.user) && (
                   <NextLink
-                    className="text-sm text-[var(--color-text)] opacity-60 hover:opacity-100 transition-opacity py-3"
+                    className="text-sm text-mkt-text opacity-60 hover:opacity-100 transition-opacity py-3"
                     href="/login"
                     onClick={() => setMenuOpen(false)}
                   >
@@ -124,7 +124,7 @@ export function MarketingNavbar() {
         <DropdownTrigger>
           <Avatar
             as="button"
-            classNames={{ base: 'cursor-pointer ring-2 ring-[var(--color-accent)]/30 ring-offset-1 ring-offset-transparent' }}
+            classNames={{ base: 'cursor-pointer ring-2 ring-mkt-accent/30 ring-offset-1 ring-offset-transparent' }}
             name={session?.user?.name ?? session?.user?.email ?? undefined}
             size="sm"
             src={session?.user?.image ?? undefined}

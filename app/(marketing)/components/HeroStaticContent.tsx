@@ -8,10 +8,10 @@ export function HeroStaticContent() {
 
   return (
     <div>
-      <h1 className="ds-heading text-[var(--color-text)] text-4xl xl:text-5xl leading-tight mb-6">
+      <h1 className="ds-heading text-mkt-text text-4xl xl:text-5xl leading-tight mb-6">
         {t('homepage.hero.headline')}
       </h1>
-      <p className="text-[var(--color-text)] opacity-60 text-base sm:text-lg leading-relaxed mb-8 max-w-lg">
+      <p className="text-mkt-text opacity-60 text-base sm:text-lg leading-relaxed mb-8 max-w-lg">
         {t('homepage.hero.description')}
       </p>
       <HeroCta />
@@ -20,13 +20,13 @@ export function HeroStaticContent() {
           {['AB', 'ML', 'RC', 'PK'].map((initials) => (
             <div
               key={initials}
-              className="w-8 h-8 border border-[var(--color-divider)] bg-[var(--color-surface)] flex items-center justify-center text-[10px] font-bold text-[var(--color-text)] opacity-70"
+              className="w-8 h-8 border border-mkt-divider bg-mkt-surface flex items-center justify-center text-[10px] font-bold text-mkt-text opacity-70"
             >
               {initials}
             </div>
           ))}
         </div>
-        <p className="mono text-xs text-[var(--color-text)] opacity-50">{t('homepage.hero.studyingCount')}</p>
+        <p className="mono text-xs text-mkt-text opacity-50">{t('homepage.hero.studyingCount')}</p>
       </div>
     </div>
   );

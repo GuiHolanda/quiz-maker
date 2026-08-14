@@ -33,7 +33,7 @@ All tokens live under `.marketing-ds` in `shared/styles/globals.css`. The layout
 | `--color-accent-100` | `oklch(93% 0.03 220)` | Light accent tint — featured card bg, correct option bg |
 | `--color-divider` | `color-mix(in srgb, #1d1f20 16%, transparent)` | Gap trick outer bg, border lines |
 
-Use via Tailwind arbitrary values: `bg-[var(--color-bg)]`, `text-[var(--color-text)]`, etc.
+Use via Tailwind: `bg-mkt-bg`, `text-mkt-text`, `border-mkt-divider`, etc. (definidos em `tailwind.config.mjs` como `theme.extend.colors.mkt.*`). Evite `[var(--color-*)]` — use sempre os tokens `mkt-*`.
 
 ---
 

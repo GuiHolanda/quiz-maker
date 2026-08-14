@@ -11,17 +11,17 @@ const OPTIONS = [
 
 export function HeroQuestionCard() {
   return (
-    <div className="blueprint bg-[var(--color-bg)] overflow-visible">
+    <div className="blueprint bg-mkt-bg overflow-visible">
       <BlueprintCorners />
 
-      <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--color-divider)]">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-mkt-divider">
         <span className="kick">Geração de questões</span>
-        <span className="mono text-[11px] text-[var(--color-text)] opacity-50">&lt;200ms por questão</span>
+        <span className="mono text-[11px] text-mkt-text opacity-50">&lt;200ms por questão</span>
       </div>
 
       <div className="p-5">
         <span className="kick">Questão · AWS SAA-C03 · Armazenamento</span>
-        <p className="ds-heading text-[var(--color-text)] text-lg mt-2 mb-5 leading-snug">
+        <p className="ds-heading text-mkt-text text-lg mt-2 mb-5 leading-snug">
           Uma aplicação precisa de armazenamento compartilhado entre várias instâncias EC2 em Zonas de Disponibilidade diferentes. Qual serviço atende ao requisito?
         </p>
 
@@ -31,8 +31,8 @@ export function HeroQuestionCard() {
               key={opt.letter}
               className={
                 opt.correct
-                  ? 'flex items-center justify-between px-4 py-2.5 border border-[var(--color-accent)] bg-[var(--color-accent-100)] text-sm text-[var(--color-text)]'
-                  : 'flex items-center px-4 py-2.5 border border-[var(--color-divider)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] opacity-60'
+                  ? 'flex items-center justify-between px-4 py-2.5 border border-mkt-accent bg-mkt-accent-100 text-sm text-mkt-text'
+                  : 'flex items-center px-4 py-2.5 border border-mkt-divider bg-mkt-surface text-sm text-mkt-text opacity-60'
               }
             >
               <span>
@@ -44,14 +44,14 @@ export function HeroQuestionCard() {
           ))}
         </div>
 
-        <div className="border-t border-[var(--color-divider)] pt-4 mt-4">
-          <p className="text-xs text-[var(--color-text)] opacity-55 leading-relaxed">
+        <div className="border-t border-mkt-divider pt-4 mt-4">
+          <p className="text-xs text-mkt-text opacity-55 leading-relaxed">
             EFS é um sistema de arquivos NFS gerenciado e elástico, acessível simultaneamente de múltiplas AZs. EBS Multi-Attach suporta apenas uma AZ; S3 não é sistema de arquivos; Storage Gateway é para ambientes on-premises.
           </p>
         </div>
 
         <NextLink
-          className="block w-full text-center text-sm font-semibold bg-[var(--color-accent)] text-white py-2.5 mt-4 hover:opacity-90 transition-opacity"
+          className="block w-full text-center text-sm font-semibold bg-mkt-accent text-white py-2.5 mt-4 hover:opacity-90 transition-opacity"
           href="/register"
         >
           Gerar minhas questões grátis

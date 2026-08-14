@@ -21,12 +21,12 @@ export function MarketingFooter() {
   const { t } = useTranslation();
 
   return (
-    <footer className="bg-[var(--color-bg)] border-t border-[var(--color-divider)] py-12">
+    <footer className="bg-mkt-bg border-t border-mkt-divider py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
           <div className="col-span-2">
-            <span className="ds-heading text-[var(--color-text)] text-sm block mb-4">{t('footer.brand')}</span>
-            <p className="text-sm text-[var(--color-text)] opacity-50 leading-relaxed max-w-xs">{t('footer.description')}</p>
+            <span className="ds-heading text-mkt-text text-sm block mb-4">{t('footer.brand')}</span>
+            <p className="text-sm text-mkt-text opacity-50 leading-relaxed max-w-xs">{t('footer.description')}</p>
           </div>
 
           <div>
@@ -35,7 +35,7 @@ export function MarketingFooter() {
               {PLATFORM_LINKS.map((item) => (
                 <li key={item.labelKey}>
                   <NextLink
-                    className="text-sm text-[var(--color-text)] opacity-50 hover:opacity-100 transition-opacity duration-200"
+                    className="text-sm text-mkt-text opacity-50 hover:opacity-100 transition-opacity duration-200"
                     href={item.href}
                   >
                     {t(item.labelKey)}
@@ -51,7 +51,7 @@ export function MarketingFooter() {
               {LEGAL_LINKS.map((item) => (
                 <li key={item.labelKey}>
                   <NextLink
-                    className="text-sm text-[var(--color-text)] opacity-50 hover:opacity-100 transition-opacity duration-200"
+                    className="text-sm text-mkt-text opacity-50 hover:opacity-100 transition-opacity duration-200"
                     href={item.href}
                   >
                     {t(item.labelKey)}
@@ -62,9 +62,9 @@ export function MarketingFooter() {
           </div>
         </div>
 
-        <div className="pt-6 border-t border-[var(--color-divider)] flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-[var(--color-text)] opacity-35">{t('footer.copyright')}</p>
-          <p className="text-xs text-[var(--color-text)] opacity-35">{t('footer.tagline')}</p>
+        <div className="pt-6 border-t border-mkt-divider flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs text-mkt-text opacity-35">{t('footer.copyright')}</p>
+          <p className="text-xs text-mkt-text opacity-35">{t('footer.tagline')}</p>
         </div>
       </div>
     </footer>
