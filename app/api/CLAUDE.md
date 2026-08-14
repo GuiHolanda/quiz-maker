@@ -123,7 +123,6 @@ Rotas públicas (sem auth). Service: `features/services/demo-quiz.service.ts`. C
 | Route | Method | Description |
 |---|---|---|
 | `marketing/sample-question` | GET | Questão de amostra cacheada por slug (`revalidate: 3600`) |
-| `marketing/demo-quiz` | POST | Gera quiz demo curto para um landing slug |
 
 **Rotas públicas (sem auth):** `auth.config.ts → publicPaths[]` — adicionar aqui qualquer nova rota não autenticada (ex: `/simulado`, `/api/marketing`). O middleware usa o callback `authorized` do NextAuth para bloquear o restante.
 
