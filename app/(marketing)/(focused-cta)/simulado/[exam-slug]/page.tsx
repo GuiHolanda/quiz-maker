@@ -6,7 +6,6 @@ import { ExamLandingHero } from '@/app/(marketing)/components/exam-landing/ExamL
 import { SocialProofSection } from '@/app/(marketing)/components/exam-landing/SocialProofSection';
 import { ExamFeaturesSection } from '@/app/(marketing)/components/exam-landing/ExamFeaturesSection';
 import { ExamHowItWorksSection } from '@/app/(marketing)/components/exam-landing/ExamHowItWorksSection';
-import { DemoSimuladoSection } from '@/app/(marketing)/components/exam-landing/DemoSimuladoSection';
 import { ExamDiagnosisSection } from '@/app/(marketing)/components/exam-landing/ExamDiagnosisSection';
 import { ExamFaqSection } from '@/app/(marketing)/components/exam-landing/ExamFaqSection';
 import { ExamFinalCtaSection } from '@/app/(marketing)/components/exam-landing/ExamFinalCtaSection';
@@ -47,7 +46,6 @@ export default async function ExamLandingPage({ params }: PageProps) {
     <div>
       <ExamLandingHero config={config} />
       <SocialProofSection config={config} />
-      <DemoSimuladoSection config={config} />
       <ExamDiagnosisSection config={config} />
       <ExamFeaturesSection config={config} />
       <ExamHowItWorksSection config={config} />

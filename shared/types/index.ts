@@ -620,19 +620,6 @@ export interface DemoQuestion {
   readonly explanation: string;
 }
 
-export interface DemoQuizTopicResult {
-  readonly topic: string;
-  readonly correct: number;
-  readonly total: number;
-}
-
-export interface DemoQuizResult {
-  readonly score: number;
-  readonly total: number;
-  readonly byTopic: readonly DemoQuizTopicResult[];
-  readonly weakTopics: readonly string[]; // topics with accuracy < 60%
-}
-
 // ─── Exam Landing Pages ───────────────────────────────────────────────────
 export interface ExamLandingFaq {
   readonly question: string;
