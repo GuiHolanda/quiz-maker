@@ -3,7 +3,7 @@
 import NextLink from 'next/link';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { BlueprintCorners } from '@/app/(marketing)/components/BlueprintCorners';
+import { BlueprintCorners } from '@/app/(marketing)/components/shared/BlueprintCorners';
 
 const BANCAS = [
   { name: 'CESPE / CEBRASPE', format: 'Certo / Errado', scope: 'PF, PRF, INSS, TCU, Depen' },

@@ -1,6 +1,6 @@
 import NextLink from 'next/link';
 
-import { BlueprintCorners } from '@/app/(marketing)/components/BlueprintCorners';
+import { BlueprintCorners } from '@/app/(marketing)/components/shared/BlueprintCorners';
 
 interface QuestionOption {
   readonly letter: string;

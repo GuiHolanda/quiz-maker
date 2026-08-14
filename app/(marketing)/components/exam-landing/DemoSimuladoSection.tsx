@@ -2,7 +2,7 @@
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import type { ExamLandingConfig } from '@/shared/types';
-import { BlueprintCorners } from '@/app/(marketing)/components/BlueprintCorners';
+import { BlueprintCorners } from '@/app/(marketing)/components/shared/BlueprintCorners';
 import { DemoQuizFlow } from './DemoQuizFlow';
 
 interface DemoSimuladoSectionProps {

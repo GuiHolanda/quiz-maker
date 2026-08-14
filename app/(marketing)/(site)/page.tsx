@@ -1,18 +1,18 @@
 import type { Metadata } from 'next';
 
-import { HeroQuestionCard } from '@/app/(marketing)/components/HeroQuestionCard';
-import { HeroStaticContent } from '@/app/(marketing)/components/HeroStaticContent';
-import { StatsStrip } from '@/app/(marketing)/components/StatsStrip';
-import { CertificationsSection } from '@/app/(marketing)/components/CertificationsSection';
-import { ConcursosSection } from '@/app/(marketing)/components/ConcursosSection';
-import { FeaturesSection } from '@/app/(marketing)/components/FeaturesSection';
-import { HowItWorksSection } from '@/app/(marketing)/components/HowItWorksSection';
-import { SimuladosDarkSection } from '@/app/(marketing)/components/SimuladosDarkSection';
-import { ProgressSection } from '@/app/(marketing)/components/ProgressSection';
-import { QualitySection } from '@/app/(marketing)/components/QualitySection';
-import { HomepagePricingSection } from '@/app/(marketing)/components/HomepagePricingSection';
-import { FaqSection } from '@/app/(marketing)/components/FaqSection';
-import { CtaSectionCta } from '@/app/(marketing)/components/CtaSectionCta';
+import { HeroQuestionCard } from '@/app/(marketing)/components/home/HeroQuestionCard';
+import { HeroStaticContent } from '@/app/(marketing)/components/home/HeroStaticContent';
+import { StatsStrip } from '@/app/(marketing)/components/home/StatsStrip';
+import { CertificationsSection } from '@/app/(marketing)/components/home/CertificationsSection';
+import { ConcursosSection } from '@/app/(marketing)/components/home/ConcursosSection';
+import { FeaturesSection } from '@/app/(marketing)/components/home/FeaturesSection';
+import { HowItWorksSection } from '@/app/(marketing)/components/home/HowItWorksSection';
+import { SimuladosDarkSection } from '@/app/(marketing)/components/home/SimuladosDarkSection';
+import { ProgressSection } from '@/app/(marketing)/components/home/ProgressSection';
+import { QualitySection } from '@/app/(marketing)/components/home/QualitySection';
+import { HomepagePricingSection } from '@/app/(marketing)/components/home/HomepagePricingSection';
+import { FaqSection } from '@/app/(marketing)/components/home/FaqSection';
+import { CtaSectionCta } from '@/app/(marketing)/components/home/CtaSectionCta';
 
 export const metadata: Metadata = {
   title: 'Questões com IA para Certificações e Concursos Públicos | CertifiqueAI',

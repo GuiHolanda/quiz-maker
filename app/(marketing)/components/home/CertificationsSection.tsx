@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { BlueprintCorners } from '@/app/(marketing)/components/BlueprintCorners';
+import { BlueprintCorners } from '@/app/(marketing)/components/shared/BlueprintCorners';
 
 const FEATURED = {
   title: 'TI & Cloud',

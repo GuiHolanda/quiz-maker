@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
-import { PricingCard } from '@/app/(marketing)/components/PricingCard';
-import { usePricingPeriod } from '@/app/(marketing)/components/PricingPeriodContext';
+import { PricingCard } from '@/app/(marketing)/components/pricing/PricingCard';
+import { usePricingPeriod } from '@/app/(marketing)/components/pricing/PricingPeriodContext';
 import { getCheckoutUrl } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';

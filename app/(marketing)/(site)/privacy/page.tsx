@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { LegalPageShell } from '@/app/(marketing)/components/LegalPageShell';
+import { LegalPageShell } from '@/app/(marketing)/components/legal/LegalPageShell';
 
 export const metadata: Metadata = {
   title: 'Política de Privacidade | CertifiqueAI',

@@ -55,7 +55,7 @@ Key cards use crosshair corner marks to reinforce the technical aesthetic.
 
 **Usage:**
 ```tsx
-import { BlueprintCorners } from '@/app/(marketing)/components/BlueprintCorners';
+import { BlueprintCorners } from '@/app/(marketing)/components/shared/BlueprintCorners';
 
 <div className="blueprint">
   <BlueprintCorners />

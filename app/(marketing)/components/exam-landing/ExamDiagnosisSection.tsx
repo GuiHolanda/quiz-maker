@@ -5,7 +5,7 @@ import { faChartBar, faChartLine } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import type { ExamLandingConfig } from '@/shared/types';
-import { BlueprintCorners } from '@/app/(marketing)/components/BlueprintCorners';
+import { BlueprintCorners } from '@/app/(marketing)/components/shared/BlueprintCorners';
 
 const SAMPLE_SCORES = [78, 45, 91, 33, 62] as const;
 

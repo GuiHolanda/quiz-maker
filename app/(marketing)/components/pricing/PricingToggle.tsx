@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { usePricingPeriod } from '@/app/(marketing)/components/PricingPeriodContext';
+import { usePricingPeriod } from '@/app/(marketing)/components/pricing/PricingPeriodContext';
 
 export function PricingToggle() {
   const { t } = useTranslation();

@@ -2,12 +2,12 @@ import type { Metadata } from 'next';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { PricingPeriodProvider } from '@/app/(marketing)/components/PricingPeriodContext';
-import { PricingToggle } from '@/app/(marketing)/components/PricingToggle';
-import { PricingCardList } from '@/app/(marketing)/components/PricingCardList';
-import { BottomCtaCta } from '@/app/(marketing)/components/BottomCtaCta';
-import { FeatureComparisonTable } from '@/app/(marketing)/components/FeatureComparisonTable';
-import { PricingFaq } from '@/app/(marketing)/components/PricingFaq';
+import { PricingPeriodProvider } from '@/app/(marketing)/components/pricing/PricingPeriodContext';
+import { PricingToggle } from '@/app/(marketing)/components/pricing/PricingToggle';
+import { PricingCardList } from '@/app/(marketing)/components/pricing/PricingCardList';
+import { BottomCtaCta } from '@/app/(marketing)/components/pricing/BottomCtaCta';
+import { FeatureComparisonTable } from '@/app/(marketing)/components/pricing/FeatureComparisonTable';
+import { PricingFaq } from '@/app/(marketing)/components/pricing/PricingFaq';
 import { parseProperties } from '@/lib/properties-parser';
 
 export const metadata: Metadata = {

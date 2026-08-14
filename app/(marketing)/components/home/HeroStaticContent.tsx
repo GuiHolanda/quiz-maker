@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { HeroCta } from '@/app/(marketing)/components/HeroCta';
+import { HeroCta } from '@/app/(marketing)/components/home/HeroCta';
 
 export function HeroStaticContent() {
   const { t } = useTranslation();

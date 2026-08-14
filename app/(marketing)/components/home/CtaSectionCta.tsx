@@ -4,7 +4,7 @@ import NextLink from 'next/link';
 import { useSession } from 'next-auth/react';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { BlueprintCorners } from '@/app/(marketing)/components/BlueprintCorners';
+import { BlueprintCorners } from '@/app/(marketing)/components/shared/BlueprintCorners';
 
 export function CtaSectionCta() {
   const { t } = useTranslation();

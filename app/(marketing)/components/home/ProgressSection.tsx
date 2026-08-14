@@ -1,4 +1,4 @@
-import { BlueprintCorners } from '@/app/(marketing)/components/BlueprintCorners';
+import { BlueprintCorners } from '@/app/(marketing)/components/shared/BlueprintCorners';
 
 const BAR_HEIGHTS = [40, 52, 58, 64, 68, 76, 88, 100] as const;
 

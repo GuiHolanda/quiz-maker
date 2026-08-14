@@ -2,14 +2,14 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { EXAM_LANDING_PAGES, EXAM_LANDING_PAGE_MAP } from '@/config/exam-landing-pages';
-import { ExamLandingHero } from '@/app/(marketing)/components/ExamLandingHero';
-import { SocialProofSection } from '@/app/(marketing)/components/SocialProofSection';
-import { ExamFeaturesSection } from '@/app/(marketing)/components/ExamFeaturesSection';
-import { ExamHowItWorksSection } from '@/app/(marketing)/components/ExamHowItWorksSection';
-import { DemoSimuladoSection } from '@/app/(marketing)/components/DemoSimuladoSection';
-import { ExamDiagnosisSection } from '@/app/(marketing)/components/ExamDiagnosisSection';
-import { ExamFaqSection } from '@/app/(marketing)/components/ExamFaqSection';
-import { ExamFinalCtaSection } from '@/app/(marketing)/components/ExamFinalCtaSection';
+import { ExamLandingHero } from '@/app/(marketing)/components/exam-landing/ExamLandingHero';
+import { SocialProofSection } from '@/app/(marketing)/components/exam-landing/SocialProofSection';
+import { ExamFeaturesSection } from '@/app/(marketing)/components/exam-landing/ExamFeaturesSection';
+import { ExamHowItWorksSection } from '@/app/(marketing)/components/exam-landing/ExamHowItWorksSection';
+import { DemoSimuladoSection } from '@/app/(marketing)/components/exam-landing/DemoSimuladoSection';
+import { ExamDiagnosisSection } from '@/app/(marketing)/components/exam-landing/ExamDiagnosisSection';
+import { ExamFaqSection } from '@/app/(marketing)/components/exam-landing/ExamFaqSection';
+import { ExamFinalCtaSection } from '@/app/(marketing)/components/exam-landing/ExamFinalCtaSection';
 
 interface PageProps {
   readonly params: Promise<{ 'exam-slug': string }>;
