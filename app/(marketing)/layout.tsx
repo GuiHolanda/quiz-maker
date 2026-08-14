@@ -66,7 +66,13 @@ const courseListSchema = {
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={clsx('marketing-ds relative flex flex-col min-h-screen', fontBarlow.variable, fontBarlowCondensed.variable)}>
+    <div
+      className={clsx(
+        'marketing-ds relative flex flex-col min-h-screen',
+        fontBarlow.variable,
+        fontBarlowCondensed.variable
+      )}
+    >
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseListSchema) }} />
       <MarketingNavbar />

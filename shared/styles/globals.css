@@ -94,7 +94,7 @@
   --color-text: #1d1f20;
   --color-accent: #5980a6;
   --color-accent-700: oklch(35% 0.08 220);
-  --color-accent-100: oklch(93% 0.03 220);
+  --color-accent-100: #EEF6FF;
   --color-divider: color-mix(in srgb, #1d1f20 16%, transparent);
   --font-heading: var(--font-barlow-condensed, "Barlow Condensed", system-ui, sans-serif);
   --font-heading-weight: 600;

@@ -19,8 +19,7 @@ const NAV_LINKS = [
   { labelKey: 'nav.pricing', href: '/#pricing' },
 ] as const;
 
-const navLinkClass =
-  'text-sm font-medium text-mkt-text opacity-60 hover:opacity-100 transition-opacity duration-150';
+const navLinkClass = 'text-sm font-medium text-mkt-text opacity-60 hover:opacity-100 transition-opacity duration-150';
 
 export function MarketingNavbar() {
   const { data: session, status } = useSession();
@@ -32,11 +31,11 @@ export function MarketingNavbar() {
     <>
       <div className="fixed top-0 left-0 right-0 z-50">
         <header className="border-b border-mkt-divider bg-mkt-bg overflow-hidden">
-          <div className="px-4 sm:px-8">
+          <div className="px-8 sm:px-16">
             <div className="flex items-center justify-between h-16">
-              <div className="flex items-center gap-10">
+              <div className="flex items-center gap-16">
                 <NextLink className="flex items-center" href="/">
-                  <span className="ds-heading text-mkt-text text-base tracking-tight">Certifique AI</span>
+                  <span className="ds-heading text-mkt-text text-xl tracking-tight">Certifique AI</span>
                 </NextLink>
 
                 <nav aria-label="Main navigation" className="hidden md:flex items-center gap-7">
@@ -51,10 +50,7 @@ export function MarketingNavbar() {
               <div className="flex items-center gap-3">
                 {status === 'authenticated' && session?.user ? (
                   <>
-                    <NextLink
-                      className={`${navLinkClass} hidden sm:flex items-center gap-1.5`}
-                      href="/dashboard"
-                    >
+                    <NextLink className={`${navLinkClass} hidden sm:flex items-center gap-1.5`} href="/dashboard">
                       <FontAwesomeIcon icon={faHouse} className="text-xs" />
                       {t('nav.dashboard')}
                     </NextLink>

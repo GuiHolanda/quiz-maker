@@ -57,7 +57,9 @@ export function CertificationsSection() {
             <div key={domain.title} className="bg-mkt-bg p-6">
               <div className="flex items-baseline justify-between gap-2 mb-3">
                 <h3 className="ds-heading text-mkt-text text-lg">{domain.title}</h3>
-                <span className="kick shrink-0">{domain.tracks} {t('homepage.certs.tracksLabel')}</span>
+                <span className="kick shrink-0">
+                  {domain.tracks} {t('homepage.certs.tracksLabel')}
+                </span>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {domain.exams.map((exam) => (

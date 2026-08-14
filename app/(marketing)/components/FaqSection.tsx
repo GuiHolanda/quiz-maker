@@ -18,8 +18,8 @@ export function FaqSection() {
   const { t } = useTranslation();
 
   return (
-    <section id="faq" className="scroll-mt-24 py-20 bg-mkt-surface border-t border-mkt-divider">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="faq" className="scroll-mt-24 py-20 border-t border-mkt-divider">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <span className="kick mb-2">FAQ</span>
         <h2 className="ds-heading text-mkt-text text-3xl mt-1 mb-12">{t('homepage.faq.title')}</h2>
 
@@ -27,9 +27,9 @@ export function FaqSection() {
           className="gap-0 flex flex-col"
           itemClasses={{
             base: 'border-b border-mkt-divider bg-transparent border-x-0 border-t-0 first:border-t first:border-mkt-divider',
-            title: 'text-sm font-semibold text-mkt-text ds-heading',
+            title: 'text-lg font-semibold text-mkt-text ds-heading',
             trigger: 'px-0 py-4 hover:bg-transparent data-[hover=true]:bg-transparent',
-            content: 'px-0 pb-5 text-sm text-mkt-text opacity-60 leading-relaxed',
+            content: 'px-0 pb-5 text-base text-mkt-text opacity-60 leading-relaxed',
             indicator: 'text-mkt-text opacity-40',
           }}
         >
