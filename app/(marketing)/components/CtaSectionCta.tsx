@@ -1,12 +1,10 @@
 'use client';
 
 import NextLink from 'next/link';
-import { Button } from '@heroui/button';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import { useSession } from 'next-auth/react';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { BlueprintCorners } from '@/app/(marketing)/components/BlueprintCorners';
 
 export function CtaSectionCta() {
   const { t } = useTranslation();
@@ -14,31 +12,26 @@ export function CtaSectionCta() {
 
   return (
     <>
-      <h2 className="font-sora font-extrabold text-white text-2xl sm:text-4xl mb-5">{t('homepage.cta2.title')}</h2>
-      <p className="text-navy-400 text-base mb-8 max-w-lg mx-auto">{t('homepage.cta2.subtitle')}</p>
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-        <Button
-          as={NextLink}
-          className="font-semibold text-sm bg-accent hover:bg-electric text-navy-950 rounded tracking-wide w-full sm:w-auto transition-colors duration-200"
-          href={session?.user ? '/simulados' : '/register'}
-          size="lg"
-        >
-          {t('homepage.cta2.generateQuiz')}
-          <FontAwesomeIcon className="ml-2 text-xs" icon={faArrowRight} />
-        </Button>
-        {session?.user && (
-          <Button
-            as={NextLink}
-            className="font-medium text-sm text-navy-400 hover:text-white border border-navy-700 hover:border-navy-600 rounded tracking-wide"
-            href="/exams"
-            size="lg"
-            variant="bordered"
+      <h2 className="ds-heading text-[var(--color-text)] text-3xl mb-5">{t('homepage.cta2.title')}</h2>
+      <p className="text-[var(--color-text)] opacity-60 text-base mb-8 max-w-lg mx-auto">{t('homepage.cta2.body')}</p>
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+        <div className="blueprint relative">
+          <BlueprintCorners />
+          <NextLink
+            className="inline-flex items-center text-sm font-semibold bg-[var(--color-accent)] text-white px-6 py-3 hover:opacity-90 transition-opacity"
+            href={session?.user ? '/simulados' : '/register'}
           >
-            {t('homepage.cta2.setupCertification')}
-          </Button>
-        )}
+            {t('homepage.cta2.primaryCta')}
+          </NextLink>
+        </div>
+        <NextLink
+          className="inline-flex items-center text-sm font-medium border border-[var(--color-divider)] text-[var(--color-text)] opacity-70 hover:opacity-100 px-6 py-3 transition-opacity"
+          href="/pricing"
+        >
+          {t('homepage.cta2.secondaryCta')}
+        </NextLink>
       </div>
-      <p className="text-xs text-navy-400 mt-4">{t('homepage.hero.disclaimer')}</p>
+      <p className="kick mt-6 text-center opacity-50">{t('homepage.cta2.tagline')}</p>
     </>
   );
 }

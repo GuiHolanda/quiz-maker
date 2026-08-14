@@ -1,5 +1,8 @@
+import clsx from 'clsx';
+
 import { MarketingNavbar } from '@/shared/components/ui/marketing-navbar';
 import { MarketingFooter } from '@/shared/components/ui/marketing-footer';
+import { fontBarlow, fontBarlowCondensed } from '@/config/fonts';
 
 const organizationSchema = {
   '@context': 'https://schema.org',
@@ -63,11 +66,11 @@ const courseListSchema = {
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid-bg relative flex flex-col min-h-screen bg-navy-900">
+    <div className={clsx('marketing-ds relative flex flex-col min-h-screen', fontBarlow.variable, fontBarlowCondensed.variable)}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseListSchema) }} />
       <MarketingNavbar />
-      <main className="flex-grow pt-20">{children}</main>
+      <main className="flex-grow pt-16">{children}</main>
       <MarketingFooter />
     </div>
   );

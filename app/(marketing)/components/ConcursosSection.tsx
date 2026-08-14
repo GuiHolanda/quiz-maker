@@ -1,11 +1,9 @@
 'use client';
 
 import NextLink from 'next/link';
-import { Button } from '@heroui/button';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowRight, faLandmark, faFileLines, faSitemap, faListCheck } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { BlueprintCorners } from '@/app/(marketing)/components/BlueprintCorners';
 
 const BANCAS = [
   { name: 'CESPE / CEBRASPE', format: 'Certo / Errado', scope: 'PF, PRF, INSS, TCU, Depen' },
@@ -26,70 +24,62 @@ const AREAS = [
 ] as const;
 
 const FLOW_STEPS = [
-  { icon: faFileLines, titleKey: 'homepage.concursos.flow.step1Title', bodyKey: 'homepage.concursos.flow.step1Body' },
-  { icon: faSitemap, titleKey: 'homepage.concursos.flow.step2Title', bodyKey: 'homepage.concursos.flow.step2Body' },
-  { icon: faListCheck, titleKey: 'homepage.concursos.flow.step3Title', bodyKey: 'homepage.concursos.flow.step3Body' },
+  { titleKey: 'homepage.concursos.flow.step1Title', bodyKey: 'homepage.concursos.flow.step1Body' },
+  { titleKey: 'homepage.concursos.flow.step2Title', bodyKey: 'homepage.concursos.flow.step2Body' },
+  { titleKey: 'homepage.concursos.flow.step3Title', bodyKey: 'homepage.concursos.flow.step3Body' },
+  { titleKey: 'homepage.concursos.flow.step4Title', bodyKey: 'homepage.concursos.flow.step4Body' },
 ] as const;
 
 export function ConcursosSection() {
   const { t } = useTranslation();
 
   return (
-    <section id="concursos" className="scroll-mt-24 py-20 bg-navy-900">
+    <section id="concursos" className="scroll-mt-24 py-20 bg-[var(--color-surface)] border-t border-[var(--color-divider)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-start gap-3 mb-3">
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-accent/10 border border-accent/30 shrink-0">
-            <FontAwesomeIcon className="text-accent text-base" icon={faLandmark} />
-          </div>
-          <h2 className="font-sora font-bold text-white text-2xl sm:text-3xl text-balance">
-            {t('homepage.concursos.title')}
-          </h2>
-        </div>
-        <p className="text-navy-400 text-base max-w-2xl text-pretty mb-12">{t('homepage.concursos.subtitle')}</p>
+        <span className="kick mb-2">{t('homepage.concursos.kick')}</span>
+        <h2 className="ds-heading text-[var(--color-text)] text-3xl mb-3">{t('homepage.concursos.title')}</h2>
+        <p className="text-[var(--color-text)] opacity-60 text-base max-w-2xl mb-12">{t('homepage.concursos.subtitle')}</p>
 
         <div className="grid lg:grid-cols-5 gap-4">
-          {/* Why-by-banca narrative + bancas table */}
-          <div className="lg:col-span-3 border border-navy-700/60 rounded-xl p-6 bg-navy-950/40">
-            <h3 className="font-sora font-bold text-white text-lg mb-2">{t('homepage.concursos.whyTitle')}</h3>
-            <p className="text-sm text-navy-300 leading-relaxed text-pretty mb-6">{t('homepage.concursos.whyBody')}</p>
+          <div className="lg:col-span-3 blueprint bg-[var(--color-bg)] p-6">
+            <BlueprintCorners />
+            <span className="kick mb-3">{t('homepage.concursos.bancasLabel')}</span>
+            <h3 className="ds-heading text-[var(--color-text)] text-lg mb-2">{t('homepage.concursos.whyTitle')}</h3>
+            <p className="text-sm text-[var(--color-text)] opacity-55 leading-relaxed mb-6">{t('homepage.concursos.whyBody')}</p>
 
-            <p className="text-xs text-navy-400 font-medium mb-3">{t('homepage.concursos.bancasLabel')}</p>
             <dl className="grid sm:grid-cols-2 gap-x-6 gap-y-4">
               {BANCAS.map((banca) => (
                 <div
                   key={banca.name}
-                  className="border-b border-navy-800/60 pb-3 last:border-b-0 sm:[&:nth-last-child(-n+2)]:border-b-0"
+                  className="border-b border-[var(--color-divider)] pb-3 last:border-b-0 sm:[&:nth-last-child(-n+2)]:border-b-0"
                 >
                   <div className="flex items-baseline justify-between gap-2 mb-0.5">
-                    <dt className="text-sm text-white font-medium">{banca.name}</dt>
-                    <dd className="text-xs text-accent shrink-0">{banca.format}</dd>
+                    <dt className="text-sm text-[var(--color-text)] font-medium">{banca.name}</dt>
+                    <dd className="kick shrink-0">{banca.format}</dd>
                   </div>
-                  <dd className="text-xs text-navy-400">{banca.scope}</dd>
+                  <dd className="text-xs text-[var(--color-text)] opacity-50">{banca.scope}</dd>
                 </div>
               ))}
             </dl>
           </div>
 
-          {/* 3-step flow */}
-          <div className="lg:col-span-2 flex flex-col border border-accent/20 rounded-xl p-6 bg-accent/5">
-            <p className="text-xs text-navy-400 font-medium mb-5">{t('homepage.concursos.flowLabel')}</p>
+          <div className="lg:col-span-2 blueprint bg-[var(--color-accent-100)] border-[var(--color-accent)] p-6 flex flex-col">
+            <BlueprintCorners />
+            <span className="kick mb-5">{t('homepage.concursos.flowLabel')}</span>
             <ol className="flex-1 flex flex-col">
               {FLOW_STEPS.map((step, i) => {
                 const isLast = i === FLOW_STEPS.length - 1;
                 return (
                   <li key={step.titleKey} className={`flex gap-4 ${isLast ? '' : 'flex-1'}`}>
                     <div className="flex flex-col items-center shrink-0">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-navy-950 border border-accent/30 shrink-0">
-                        <span className="font-mono text-xs text-accent font-semibold">{i + 1}</span>
+                      <div className="w-7 h-7 flex items-center justify-center bg-[var(--color-bg)] border border-[var(--color-divider)] shrink-0">
+                        <span className="mono text-xs text-[var(--color-accent)] font-semibold">{i + 1}</span>
                       </div>
-                      {!isLast && <div className="w-px flex-1 bg-navy-700/60 my-2" />}
+                      {!isLast && <div className="w-px flex-1 bg-[var(--color-divider)] my-2" />}
                     </div>
                     <div className={isLast ? '' : 'pb-6'}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <FontAwesomeIcon className="text-accent text-xs" icon={step.icon} />
-                        <h4 className="text-sm text-white font-semibold">{t(step.titleKey)}</h4>
-                      </div>
-                      <p className="text-xs text-navy-400 leading-relaxed">{t(step.bodyKey)}</p>
+                      <h4 className="ds-heading text-sm text-[var(--color-text)] mb-1">{t(step.titleKey)}</h4>
+                      <p className="text-xs text-[var(--color-text)] opacity-55 leading-relaxed">{t(step.bodyKey)}</p>
                     </div>
                   </li>
                 );
@@ -98,14 +88,14 @@ export function ConcursosSection() {
           </div>
         </div>
 
-        {/* Areas covered — full-width band below the grid */}
-        <div className="mt-8 border border-navy-700/60 rounded-xl px-6 py-5 bg-navy-950/40">
-          <p className="text-xs text-navy-400 font-medium mb-3">{t('homepage.concursos.areasLabel')}</p>
-          <div className="flex flex-wrap gap-2">
+        <div className="mt-4 blueprint bg-[var(--color-bg)] px-6 py-5">
+          <BlueprintCorners />
+          <span className="kick mb-3">{t('homepage.concursos.areasLabel')}</span>
+          <div className="flex flex-wrap gap-2 mt-3">
             {AREAS.map((area) => (
               <span
                 key={area}
-                className="text-xs text-navy-300 px-2.5 py-1 rounded-md border border-navy-700/60 bg-navy-900/60"
+                className="text-xs text-[var(--color-text)] opacity-65 px-2.5 py-1 border border-[var(--color-divider)] bg-[var(--color-surface)]"
               >
                 {area}
               </span>
@@ -113,18 +103,12 @@ export function ConcursosSection() {
           </div>
         </div>
 
-        <Button
-          as={NextLink}
+        <NextLink
+          className="inline-flex items-center text-sm font-semibold bg-[var(--color-accent)] text-white px-6 py-3 mt-10 hover:opacity-90 transition-opacity"
           href="/register"
-          size="lg"
-          className="group mt-10 font-semibold text-sm bg-accent hover:bg-electric text-navy-950 rounded-lg transition-colors duration-200"
         >
           {t('homepage.concursos.cta')}
-          <FontAwesomeIcon
-            className="ml-1 text-xs group-hover:translate-x-1 transition-transform duration-200"
-            icon={faArrowRight}
-          />
-        </Button>
+        </NextLink>
       </div>
     </section>
   );

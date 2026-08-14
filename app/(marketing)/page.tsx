@@ -1,15 +1,18 @@
 import type { Metadata } from 'next';
 
-import { TerminalDemo } from '@/app/(marketing)/components/TerminalDemo';
-import { CtaSectionCta } from '@/app/(marketing)/components/CtaSectionCta';
-import { HomepagePricingSection } from '@/app/(marketing)/components/HomepagePricingSection';
-import { MarqueeDataStrip } from '@/app/(marketing)/components/MarqueeDataStrip';
-import { StatsStrip } from '@/app/(marketing)/components/StatsStrip';
-import { ConcursosSection } from '@/app/(marketing)/components/ConcursosSection';
-import { CertificationsSection } from '@/app/(marketing)/components/CertificationsSection';
-import { FeaturesSection } from '@/app/(marketing)/components/FeaturesSection';
-import { TestimonialsStrip } from '@/app/(marketing)/components/TestimonialsStrip';
+import { HeroQuestionCard } from '@/app/(marketing)/components/HeroQuestionCard';
 import { HeroStaticContent } from '@/app/(marketing)/components/HeroStaticContent';
+import { StatsStrip } from '@/app/(marketing)/components/StatsStrip';
+import { CertificationsSection } from '@/app/(marketing)/components/CertificationsSection';
+import { ConcursosSection } from '@/app/(marketing)/components/ConcursosSection';
+import { FeaturesSection } from '@/app/(marketing)/components/FeaturesSection';
+import { HowItWorksSection } from '@/app/(marketing)/components/HowItWorksSection';
+import { SimuladosDarkSection } from '@/app/(marketing)/components/SimuladosDarkSection';
+import { ProgressSection } from '@/app/(marketing)/components/ProgressSection';
+import { QualitySection } from '@/app/(marketing)/components/QualitySection';
+import { HomepagePricingSection } from '@/app/(marketing)/components/HomepagePricingSection';
+import { FaqSection } from '@/app/(marketing)/components/FaqSection';
+import { CtaSectionCta } from '@/app/(marketing)/components/CtaSectionCta';
 
 export const metadata: Metadata = {
   title: 'Questões com IA para Certificações e Concursos Públicos | CertifiqueAI',
@@ -27,15 +30,18 @@ export const metadata: Metadata = {
 
 export default function HeroPage() {
   return (
-    <div className="text-[#e8edf3]">
-      <MarqueeDataStrip />
+    <div>
       <HeroSection />
       <StatsStrip />
-      <ConcursosSection />
       <CertificationsSection />
+      <ConcursosSection />
       <FeaturesSection />
-      <TestimonialsStrip />
+      <HowItWorksSection />
+      <SimuladosDarkSection />
+      <ProgressSection />
+      <QualitySection />
       <HomepagePricingSection />
+      <FaqSection />
       <CtaSectionShell />
     </div>
   );
@@ -43,15 +49,11 @@ export default function HeroPage() {
 
 function HeroSection() {
   return (
-    <section className="pt-16 pb-24 relative overflow-hidden">
-      <div
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] rounded-full pointer-events-none"
-        style={{ background: 'rgba(0,212,255,0.04)', filter: 'blur(60px)' }}
-      />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <section className="py-20 bg-[var(--color-bg)]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 xl:gap-20 items-center">
           <HeroStaticContent />
-          <TerminalDemo />
+          <HeroQuestionCard />
         </div>
       </div>
     </section>
@@ -60,7 +62,7 @@ function HeroSection() {
 
 function CtaSectionShell() {
   return (
-    <div className="bg-navy-950 border-t border-navy-800/40 py-14">
+    <div className="bg-[var(--color-surface)] border-t border-[var(--color-divider)] py-20">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <CtaSectionCta />
       </div>

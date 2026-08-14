@@ -5,14 +5,11 @@ import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { signOut } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMicrochip, faBars, faXmark, faArrowUp, faUser, faHouse } from '@fortawesome/free-solid-svg-icons';
+import { faBars, faXmark, faArrowUp, faUser, faHouse } from '@fortawesome/free-solid-svg-icons';
 import { Avatar } from '@heroui/avatar';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSection } from '@heroui/dropdown';
-import { Button } from '@heroui/button';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { ThemeSwitch } from '@/shared/components/ui/theme-switch';
-import { LanguageSwitch } from '@/shared/components/ui/language-switch';
 import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
 
 const NAV_LINKS = [
@@ -22,6 +19,9 @@ const NAV_LINKS = [
   { labelKey: 'nav.pricing', href: '/#pricing' },
 ] as const;
 
+const navLinkClass =
+  'text-sm font-medium text-[var(--color-text)] opacity-60 hover:opacity-100 transition-opacity duration-150';
+
 export function MarketingNavbar() {
   const { data: session, status } = useSession();
   const { t } = useTranslation();
@@ -30,37 +30,29 @@ export function MarketingNavbar() {
 
   return (
     <>
-      <div className="fixed top-3 left-4 right-4 z-50 max-w-6xl mx-auto">
-        <header className="rounded-xl border border-navy-700/60 bg-navy-950/90 backdrop-blur-md overflow-hidden">
-          <div className="px-4 sm:px-6">
-            <div className="flex items-center justify-between h-14">
-              {/* Logo */}
-              <NextLink className="flex items-center gap-2.5" href="/">
-                <div className="w-7 h-7 rounded flex items-center justify-center bg-accent/10 border border-accent/30">
-                  <FontAwesomeIcon className="text-accent text-xs" icon={faMicrochip} />
-                </div>
-                <span className="font-sora font-bold text-white text-sm tracking-tight">Certifique AI</span>
-              </NextLink>
+      <div className="fixed top-0 left-0 right-0 z-50">
+        <header className="border-b border-[var(--color-divider)] bg-[var(--color-bg)] overflow-hidden">
+          <div className="px-4 sm:px-8">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center gap-10">
+                <NextLink className="flex items-center" href="/">
+                  <span className="ds-heading text-[var(--color-text)] text-base tracking-tight">Certifique AI</span>
+                </NextLink>
 
-              {/* Nav links — desktop */}
-              <nav className="hidden md:flex items-center gap-6">
-                {NAV_LINKS.map((item) => (
-                  <NextLink
-                    key={item.labelKey}
-                    className="text-sm font-medium text-navy-400 hover:text-white transition-colors duration-150"
-                    href={item.href}
-                  >
-                    {t(item.labelKey)}
-                  </NextLink>
-                ))}
-              </nav>
+                <nav aria-label="Main navigation" className="hidden md:flex items-center gap-7">
+                  {NAV_LINKS.map((item) => (
+                    <NextLink key={item.labelKey} className={navLinkClass} href={item.href}>
+                      {t(item.labelKey)}
+                    </NextLink>
+                  ))}
+                </nav>
+              </div>
 
-              {/* Right side */}
               <div className="flex items-center gap-3">
                 {status === 'authenticated' && session?.user ? (
                   <>
                     <NextLink
-                      className="text-sm font-medium text-navy-400 hover:text-white transition-colors duration-150 hidden sm:flex items-center gap-1.5"
+                      className={`${navLinkClass} hidden sm:flex items-center gap-1.5`}
                       href="/dashboard"
                     >
                       <FontAwesomeIcon icon={faHouse} className="text-xs" />
@@ -70,29 +62,23 @@ export function MarketingNavbar() {
                   </>
                 ) : (
                   <>
-                    <NextLink
-                      className="text-sm font-medium text-navy-400 hover:text-white transition-colors duration-150 hidden sm:block"
-                      href="/login"
-                    >
+                    <NextLink className={`${navLinkClass} hidden sm:block`} href="/login">
                       {t('nav.logIn')}
                     </NextLink>
-                    <Button
-                      as={NextLink}
-                      className="font-sans text-xs font-semibold bg-accent hover:bg-electric text-navy-950 rounded-lg tracking-wide transition-colors duration-200"
+                    <NextLink
+                      className="inline-flex items-center text-sm font-semibold bg-[var(--color-accent)] text-white px-4 py-2 leading-none hover:opacity-90 transition-opacity"
                       href="/register"
-                      size="sm"
                     >
                       {t('nav.startFreeTrial')}
-                    </Button>
+                    </NextLink>
                   </>
                 )}
 
-                {/* Mobile hamburger */}
                 <button
                   type="button"
                   aria-label={t('nav.toggleMenu')}
                   aria-expanded={menuOpen}
-                  className="md:hidden text-navy-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
+                  className="md:hidden text-[var(--color-text)] opacity-60 hover:opacity-100 transition-opacity focus-visible:outline-none"
                   onClick={() => setMenuOpen((o) => !o)}
                 >
                   <FontAwesomeIcon icon={menuOpen ? faXmark : faBars} className="text-sm" />
@@ -101,14 +87,13 @@ export function MarketingNavbar() {
             </div>
           </div>
 
-          {/* Mobile menu */}
           {menuOpen && (
-            <div className="md:hidden border-t border-navy-800/60 bg-navy-950/98 px-4 py-4">
-              <nav className="flex flex-col gap-1">
+            <div className="md:hidden border-t border-[var(--color-divider)] bg-[var(--color-bg)] px-4 py-3">
+              <nav className="flex flex-col">
                 {NAV_LINKS.map((item) => (
                   <NextLink
                     key={item.labelKey}
-                    className="text-sm text-navy-400 hover:text-white transition-colors py-2.5 border-b border-navy-800/40 last:border-0"
+                    className="text-sm text-[var(--color-text)] opacity-60 hover:opacity-100 transition-opacity py-3 border-b border-[var(--color-divider)] last:border-0"
                     href={item.href}
                     onClick={() => setMenuOpen(false)}
                   >
@@ -117,7 +102,7 @@ export function MarketingNavbar() {
                 ))}
                 {!(status === 'authenticated' && session?.user) && (
                   <NextLink
-                    className="text-sm text-navy-400 hover:text-white transition-colors py-2.5"
+                    className="text-sm text-[var(--color-text)] opacity-60 hover:opacity-100 transition-opacity py-3"
                     href="/login"
                     onClick={() => setMenuOpen(false)}
                   >
@@ -139,7 +124,7 @@ export function MarketingNavbar() {
         <DropdownTrigger>
           <Avatar
             as="button"
-            classNames={{ base: 'ring-2 ring-accent/30 ring-offset-1 ring-offset-transparent cursor-pointer' }}
+            classNames={{ base: 'cursor-pointer ring-2 ring-[var(--color-accent)]/30 ring-offset-1 ring-offset-transparent' }}
             name={session?.user?.name ?? session?.user?.email ?? undefined}
             size="sm"
             src={session?.user?.image ?? undefined}
@@ -172,20 +157,6 @@ export function MarketingNavbar() {
               </DropdownItem>
             </DropdownSection>
           ) : null}
-          <DropdownSection showDivider>
-            <DropdownItem key="theme" isReadOnly className="cursor-default">
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-sm text-default-600">{t('nav.theme')}</span>
-                <ThemeSwitch />
-              </div>
-            </DropdownItem>
-            <DropdownItem key="language" isReadOnly className="cursor-default">
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-sm text-default-600">{t('nav.language')}</span>
-                <LanguageSwitch />
-              </div>
-            </DropdownItem>
-          </DropdownSection>
           <DropdownItem
             key="sign-out"
             className="text-danger"

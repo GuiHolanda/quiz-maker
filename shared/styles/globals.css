@@ -86,6 +86,89 @@
   }
 }
 
+/* ── Marketing — Industry Design System ─────────────────── */
+
+.marketing-ds {
+  --color-bg: #f2f2f3;
+  --color-surface: #e9e9ea;
+  --color-text: #1d1f20;
+  --color-accent: #5980a6;
+  --color-accent-700: oklch(35% 0.08 220);
+  --color-accent-100: oklch(93% 0.03 220);
+  --color-divider: color-mix(in srgb, #1d1f20 16%, transparent);
+  --font-heading: var(--font-barlow-condensed, "Barlow Condensed", system-ui, sans-serif);
+  --font-heading-weight: 600;
+  --font-body: var(--font-barlow, "Barlow", system-ui, sans-serif);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  background-image: none;
+}
+
+.marketing-ds .ds-heading {
+  font-family: var(--font-heading);
+  font-weight: var(--font-heading-weight);
+}
+
+.marketing-ds .kick {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  display: block;
+}
+
+.marketing-ds .mono {
+  font-family: ui-monospace, Menlo, monospace;
+}
+
+/* Blueprint corner decorations */
+.marketing-ds .blueprint {
+  position: relative;
+  border: 1px solid var(--color-divider);
+  border-radius: 0;
+}
+
+.marketing-ds .blueprint > .corner {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+  pointer-events: none;
+}
+
+.marketing-ds .blueprint > .corner::before,
+.marketing-ds .blueprint > .corner::after {
+  content: "";
+  position: absolute;
+  background: currentColor;
+}
+
+.marketing-ds .blueprint > .corner::before {
+  left: 5px;
+  top: 0;
+  width: 1px;
+  height: 100%;
+}
+
+.marketing-ds .blueprint > .corner::after {
+  top: 5px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+}
+
+.marketing-ds .blueprint > .corner.tl { top: -6px; left: -6px; }
+.marketing-ds .blueprint > .corner.tr { top: -6px; right: -6px; }
+.marketing-ds .blueprint > .corner.bl { bottom: -6px; left: -6px; }
+.marketing-ds .blueprint > .corner.br { bottom: -6px; right: -6px; }
+
+/* Blueprint on dark background — lighter corner color */
+.marketing-ds .blueprint-dark > .corner {
+  color: rgba(89, 128, 166, 0.5);
+}
+
 /* ── Marketing Page — Animations & Utilities ─────────────── */
 
 @keyframes marquee {
@@ -113,13 +196,6 @@
   height: 2px;
   background: linear-gradient(90deg, transparent, #00d4ff, transparent);
   animation: scanline 2.5s linear infinite;
-}
-
-.grid-bg {
-  background-image:
-    linear-gradient(rgba(59, 111, 160, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59, 111, 160, 0.08) 1px, transparent 1px);
-  background-size: 40px 40px;
 }
 
 .no-number-spinners input[type='number']::-webkit-outer-spin-button,

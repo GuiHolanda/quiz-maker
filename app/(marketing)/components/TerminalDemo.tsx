@@ -1,10 +1,24 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Card, CardBody, CardFooter, CardHeader } from '@heroui/card';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
+import {
+  faCheck,
+  faWandMagicSparkles,
+  faScaleBalanced,
+  faHeartPulse,
+  faLandmark,
+} from '@fortawesome/free-solid-svg-icons';
 import { faAws } from '@fortawesome/free-brands-svg-icons';
-import { faScaleBalanced, faHeartPulse, faLandmark } from '@fortawesome/free-solid-svg-icons';
+
+const GENERATING_SPINNER_MS = 900;
+const TYPING_START_DELAY_MS = 200;
+const TYPING_INTERVAL_MS = 14;
+const OPTIONS_REVEAL_DELAY_MS = 300;
+
+const prefersReducedMotion =
+  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const DOMAINS = [
   {
@@ -66,59 +80,68 @@ const DOMAINS = [
 ] as const;
 
 type DomainId = (typeof DOMAINS)[number]['id'];
+type Phase = 'generating' | 'typing' | 'done';
 
 export function TerminalDemo() {
   const [activeId, setActiveId] = useState<DomainId>('aws');
+  const [phase, setPhase] = useState<Phase>('generating');
   const [displayedText, setDisplayedText] = useState('');
-  const [showOptions, setShowOptions] = useState(false);
-  const [generating, setGenerating] = useState(true);
 
   const domain = DOMAINS.find((d) => d.id === activeId)!;
 
   useEffect(() => {
-    setDisplayedText('');
-    setShowOptions(false);
-    setGenerating(true);
+    const { question } = DOMAINS.find((d) => d.id === activeId)!;
 
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReduced) {
-      setGenerating(false);
-      setDisplayedText(domain.question);
-      setShowOptions(true);
+    setDisplayedText('');
+    setPhase('generating');
+
+    if (prefersReducedMotion) {
+      setPhase('done');
+      setDisplayedText(question);
       return;
     }
 
     let i = 0;
+    let startDelay: ReturnType<typeof setTimeout>;
+    let optionsDelay: ReturnType<typeof setTimeout>;
     let interval: ReturnType<typeof setInterval>;
 
     const generatingDelay = setTimeout(() => {
-      setGenerating(false);
-      const startDelay = setTimeout(() => {
+      setPhase('typing');
+      startDelay = setTimeout(() => {
         interval = setInterval(() => {
-          if (i < domain.question.length) {
-            setDisplayedText(domain.question.slice(0, i + 1));
+          if (i < question.length) {
+            setDisplayedText(question.slice(0, i + 1));
             i++;
           } else {
             clearInterval(interval);
-            setTimeout(() => setShowOptions(true), 300);
+            optionsDelay = setTimeout(() => setPhase('done'), OPTIONS_REVEAL_DELAY_MS);
           }
-        }, 14);
-      }, 200);
-      return () => clearTimeout(startDelay);
-    }, 900);
+        }, TYPING_INTERVAL_MS);
+      }, TYPING_START_DELAY_MS);
+    }, GENERATING_SPINNER_MS);
 
     return () => {
       clearTimeout(generatingDelay);
+      clearTimeout(startDelay);
+      clearTimeout(optionsDelay);
       clearInterval(interval);
     };
-  }, [activeId, domain.question]);
+  }, [activeId]);
 
   return (
-    <div className="relative" id="demo-terminal">
-      {/* Card shell */}
-      <div className="border border-navy-700/80 rounded-xl overflow-hidden bg-navy-950/90">
+    <div className="relative h-full" id="demo-terminal">
+      <Card
+        shadow="none"
+        classNames={{
+          base: 'border border-navy-700/80 bg-navy-950/90 h-full',
+          header: 'px-3 pt-3 pb-0 gap-1',
+          body: 'bg-navy-900 border-t border-navy-700/60 p-5 overflow-hidden',
+          footer: 'border-t border-navy-800/60 bg-navy-900 px-5 py-3 gap-3',
+        }}
+      >
         {/* Domain tab bar */}
-        <div className="flex items-center gap-1 px-3 pt-3 pb-0">
+        <CardHeader>
           {DOMAINS.map((d) => (
             <button
               key={d.id}
@@ -135,15 +158,15 @@ export function TerminalDemo() {
               <span className="hidden sm:inline">{d.tab}</span>
             </button>
           ))}
-        </div>
+        </CardHeader>
 
-        {/* Card body */}
-        <div className="bg-navy-900 border-t border-navy-700/60 p-5 min-h-80">
+        {/* Content */}
+        <CardBody>
           {/* Area label + generating indicator */}
           <div className="flex items-center justify-between mb-4">
             <span className="text-xs text-navy-500 font-medium">{domain.area}</span>
             <span
-              className={`flex items-center gap-1.5 text-xs transition-opacity duration-300 ${generating ? 'opacity-100' : 'opacity-0'}`}
+              className={`flex items-center gap-1.5 text-xs transition-opacity duration-300 ${phase === 'generating' ? 'opacity-100' : 'opacity-0'}`}
               aria-live="polite"
               aria-label="Gerando questão"
             >
@@ -153,8 +176,10 @@ export function TerminalDemo() {
           </div>
 
           {/* Question */}
-          <div className={`mb-5 transition-opacity duration-200 ${generating ? 'opacity-0' : 'opacity-100'}`}>
-            <p className="text-sm text-navy-100 leading-relaxed">
+          <div
+            className={`mb-5 transition-opacity duration-200 ${phase === 'generating' ? 'opacity-0' : 'opacity-100'}`}
+          >
+            <p className="text-sm text-navy-300 font-semibold leading-relaxed">
               {displayedText}
               {displayedText.length > 0 && displayedText.length < domain.question.length && (
                 <span className="text-accent animate-pulse">▌</span>
@@ -163,7 +188,7 @@ export function TerminalDemo() {
           </div>
 
           {/* Options */}
-          {showOptions && (
+          {phase === 'done' && (
             <div className="space-y-2">
               {domain.options.map((opt) => (
                 <div
@@ -180,25 +205,27 @@ export function TerminalDemo() {
                   </span>
                 </div>
               ))}
-
-              {/* Footer meta */}
-              <div className="flex items-center gap-3 pt-3 mt-1 border-t border-navy-800/60">
-                <span
-                  className={`text-xs px-2 py-0.5 rounded font-medium ${
-                    domain.meta.level === 'Difícil'
-                      ? 'text-orange-400 bg-orange-400/10'
-                      : 'text-yellow-400 bg-yellow-400/10'
-                  }`}
-                >
-                  {domain.meta.level}
-                </span>
-                <span className="text-xs text-navy-600">·</span>
-                <span className="text-xs text-navy-400">{domain.meta.topic}</span>
-              </div>
             </div>
           )}
-        </div>
-      </div>
+        </CardBody>
+
+        {/* Meta footer */}
+        {phase === 'done' && (
+          <CardFooter>
+            <span
+              className={`text-xs px-2 py-0.5 rounded font-medium ${
+                domain.meta.level === 'Difícil'
+                  ? 'text-orange-400 bg-orange-400/10'
+                  : 'text-yellow-400 bg-yellow-400/10'
+              }`}
+            >
+              {domain.meta.level}
+            </span>
+            <span className="text-xs text-navy-600">·</span>
+            <span className="text-xs text-navy-400">{domain.meta.topic}</span>
+          </CardFooter>
+        )}
+      </Card>
 
       {/* Ambient glow */}
       <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-3/4 h-8 rounded-full pointer-events-none bg-accent/[0.08] blur-lg" />
