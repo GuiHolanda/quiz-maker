@@ -5,6 +5,9 @@ import type { DemoQuestion } from '@/shared/types';
 import type { DemoCert } from './data/demoCatalog';
 import { BlueprintCorners } from '@/app/(marketing)/components/shared/BlueprintCorners';
 import { DemoStickyBar } from './DemoStickyBar';
+import { DemoStepHeader } from './DemoStepHeader';
+import { DemoBackButton } from './DemoBackButton';
+import { DemoPagination } from './DemoPagination';
 
 interface DemoStep3QuizProps {
   readonly cert: DemoCert;
@@ -39,17 +42,10 @@ export function DemoStep3Quiz({
   return (
     <div className="min-h-screen pb-24">
       {/* Header */}
-      <div className="max-w-3xl mx-auto px-6 pt-8 pb-6 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+      <div className="max-w-6xl mx-auto px-6 pt-8 pb-6 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div>
-          <button
-            onClick={onBack}
-            className="mono text-xs text-mkt-accent uppercase tracking-widest hover:opacity-70 transition-opacity mb-3 block"
-          >
-            ← {t('demo.step3.backBtn')}
-          </button>
-          <span className="kick">{t('demo.step3.kick')}</span>
-          <h1 className="ds-heading text-mkt-text text-4xl mt-2">{t('demo.step3.heading')}</h1>
-          <p className="mono text-xs text-mkt-text opacity-50 mt-1">{cert.name}</p>
+          <DemoBackButton onClick={onBack} label={t('demo.step3.backBtn')} className="mb-3 block" />
+          <DemoStepHeader kick={t('demo.step3.kick')} heading={t('demo.step3.heading')} note={cert.name} />
         </div>
         <div className="flex-shrink-0 text-right">
           <p className="mono text-xs text-mkt-text opacity-50">
@@ -62,13 +58,13 @@ export function DemoStep3Quiz({
       </div>
 
       {/* Questions */}
-      <div className="max-w-3xl mx-auto px-6 space-y-6">
+      <div className="max-w-6xl mx-auto px-6 space-y-6">
         {pageQuestions.map((question, i) => {
           const globalIndex = page * PAGE_SIZE + i;
           const userAnswer = answers[globalIndex] ?? null;
 
           return (
-            <div key={globalIndex} className="relative border border-mkt-divider p-6">
+            <div key={globalIndex} className="blueprint overflow-visible p-6">
               <BlueprintCorners />
               <div className="flex items-start justify-between gap-4 mb-4">
                 <span className="mono text-xs text-mkt-text opacity-40">
@@ -108,14 +104,14 @@ export function DemoStep3Quiz({
       </div>
 
       {/* Pagination */}
-      <div className="max-w-3xl mx-auto px-6 mt-6 flex items-center justify-between">
-        <button
-          onClick={() => onPageChange(page - 1)}
-          disabled={page === 0}
-          className="mono text-xs text-mkt-text opacity-60 hover:opacity-100 disabled:opacity-20 transition-opacity"
-        >
-          ← {t('demo.step3.prevPage')}
-        </button>
+      <DemoPagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
+        prevLabel={t('demo.step3.prevPage')}
+        nextLabel={t('demo.step3.nextPage')}
+        className="max-w-5xl mx-auto px-6 mt-6"
+      >
         <span className="mono text-xs text-mkt-text opacity-40">
           {t('demo.step3.questionRange', {
             from: page * PAGE_SIZE + 1,
@@ -123,14 +119,7 @@ export function DemoStep3Quiz({
             total: questions.length,
           })}
         </span>
-        <button
-          onClick={() => onPageChange(page + 1)}
-          disabled={page >= totalPages - 1}
-          className="mono text-xs text-mkt-text opacity-60 hover:opacity-100 disabled:opacity-20 transition-opacity"
-        >
-          {t('demo.step3.nextPage')} →
-        </button>
-      </div>
+      </DemoPagination>
 
       <DemoStickyBar
         leftLabel={`${answered}/${questions.length} ${t('demo.step3.stickyAnswered')}`}
