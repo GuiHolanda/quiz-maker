@@ -20,15 +20,14 @@ export function DemoCertCard({ cert, isSelected, onSelect }: DemoCertCardProps) 
       shadow="none"
       data-sel={isSelected ? '1' : undefined}
       classNames={{
-        base: `rounded-none border transition-colors ${isSelected ? 'border-mkt-accent bg-mkt-accent/5' : 'border-mkt-divider bg-mkt-bg hover:border-mkt-accent/50'}`,
+        base: `blueprint rounded-none overflow-visible transition-colors ${isSelected ? '!border-mkt-accent bg-mkt-accent/5' : '!border-mkt-divider bg-mkt-bg hover:!border-mkt-accent/50'}`,
         header: 'rounded-none px-5 pt-5 pb-3 flex-col items-start gap-0',
-        body: 'rounded-none px-5 pt-0 pb-4',
+        body: 'rounded-none px-5 pt-0 pb-4 flex flex-col gap-4',
         footer: 'rounded-none px-5 py-3 border-t border-mkt-divider',
       }}
     >
+      <BlueprintCorners />
       <CardHeader>
-        <BlueprintCorners />
-
         <div className="flex items-start gap-4 w-full">
           <div className="w-14 h-14 flex-shrink-0 bg-mkt-surface border border-mkt-divider flex items-center justify-center">
             <span className="mono text-xs font-bold text-mkt-text">{cert.mark}</span>
@@ -44,7 +43,7 @@ export function DemoCertCard({ cert, isSelected, onSelect }: DemoCertCardProps) 
       </CardHeader>
 
       <CardBody>
-        <div className="flex gap-4 flex-wrap mb-4">
+        <div className="flex gap-4 flex-wrap border-y py-4 border-mkt-divider">
           <span className="mono text-xs text-mkt-text opacity-60 flex items-center gap-1">
             <FontAwesomeIcon icon={faHashtag} className="w-3 h-3" />
             {cert.questions} questões
@@ -59,7 +58,7 @@ export function DemoCertCard({ cert, isSelected, onSelect }: DemoCertCardProps) 
           </span>
         </div>
 
-        <div className="border-t border-mkt-divider pt-4">
+        <div>
           <div className="flex items-center justify-between mb-2">
             <span className="kick text-[10px]">Domínios de estudo</span>
             <span className="mono text-xs text-mkt-text opacity-40 border border-mkt-divider px-1.5">
