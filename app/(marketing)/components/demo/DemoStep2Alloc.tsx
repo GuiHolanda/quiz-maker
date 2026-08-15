@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFileLines, faClock, faCircleCheck, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
+import { faFileLines, faClock, faCircleCheck, faRectangleList } from '@fortawesome/free-regular-svg-icons';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import type { DemoCert } from './data/demoCatalog';
 import { BlueprintCorners } from '@/app/(marketing)/components/shared/BlueprintCorners';
@@ -110,7 +110,7 @@ export function DemoStep2Alloc({ cert, onGenerate, onBack }: DemoStep2AllocProps
     { icon: faClock, label: t('demo.step2.statMinutes'), value: `${cert.minutes} min` },
     { icon: faCircleCheck, label: t('demo.step2.statPassing'), value: cert.passing, accent: true },
     {
-      icon: faLayerGroup,
+      icon: faRectangleList,
       label: t('demo.step2.statTopics'),
       value: `${activeDomains.length} de ${cert.domains.length}`,
     },
@@ -137,7 +137,7 @@ export function DemoStep2Alloc({ cert, onGenerate, onBack }: DemoStep2AllocProps
         style={{ display: 'grid', gridTemplateColumns: '0.65fr 1.35fr', gap: '24px', alignItems: 'start' }}
       >
         {/* Left: exam info card */}
-        <div className="relative border border-mkt-divider p-5">
+        <div className="blueprint overflow-visible p-5">
           <BlueprintCorners />
           <span className="kick text-[10px]">{t('demo.step2.examSelected')}</span>
           <p className="ds-heading text-mkt-text text-lg mt-1 leading-tight">{cert.name}</p>
@@ -149,7 +149,7 @@ export function DemoStep2Alloc({ cert, onGenerate, onBack }: DemoStep2AllocProps
             {stats.map(({ icon, label, value, accent }) => (
               <div key={label} className="flex items-center justify-between">
                 <span className="flex items-center gap-2 text-xs text-mkt-text opacity-60">
-                  <FontAwesomeIcon icon={icon} className="w-3 h-3 flex-shrink-0" />
+                  <FontAwesomeIcon icon={icon} className="w-3 h-3 flex-shrink-0 text-mkt-accent" />
                   {label}
                 </span>
                 <span className={`mono text-xs font-medium ${accent ? 'text-mkt-accent' : 'text-mkt-text'}`}>
@@ -169,7 +169,7 @@ export function DemoStep2Alloc({ cert, onGenerate, onBack }: DemoStep2AllocProps
         </div>
 
         {/* Right: allocation table */}
-        <div className="relative border border-mkt-divider">
+        <div className="blueprint overflow-visible">
           <BlueprintCorners />
           <div
             className="grid border-b border-mkt-divider px-4 py-2.5 bg-mkt-surface"
@@ -244,20 +244,18 @@ export function DemoStep2Alloc({ cert, onGenerate, onBack }: DemoStep2AllocProps
 
         <span className="mono text-xs text-mkt-text opacity-40 flex-1">{stickyHint}</span>
 
-        <div className="relative flex-shrink-0">
+        <button
+          onClick={() => onGenerate(alloc)}
+          disabled={!isFull}
+          className={`blueprint overflow-visible flex-shrink-0 mono text-xs uppercase tracking-widest px-5 py-2.5 transition-colors ${
+            !isFull
+              ? '!border-mkt-divider text-mkt-text opacity-30 cursor-not-allowed'
+              : '!border-mkt-accent bg-mkt-accent text-white hover:bg-mkt-accent/90'
+          }`}
+        >
           <BlueprintCorners />
-          <button
-            onClick={() => onGenerate(alloc)}
-            disabled={!isFull}
-            className={`mono text-xs uppercase tracking-widest px-5 py-2.5 border transition-colors ${
-              !isFull
-                ? 'border-mkt-divider text-mkt-text opacity-30 cursor-not-allowed'
-                : 'border-mkt-accent bg-mkt-accent text-white hover:bg-mkt-accent/90'
-            }`}
-          >
-            {t('demo.step2.generateBtn')}
-          </button>
-        </div>
+          {t('demo.step2.generateBtn')}
+        </button>
       </div>
     </div>
   );
