@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFileLines, faClock, faCircleCheck, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import type { DemoCert } from './data/demoCatalog';
 import { BlueprintCorners } from '@/app/(marketing)/components/shared/BlueprintCorners';
-import { DemoStickyBar } from './DemoStickyBar';
 
 interface DemoStep2AllocProps {
   readonly cert: DemoCert;
@@ -53,8 +54,12 @@ export function DemoStep2Alloc({ cert, onGenerate, onBack }: DemoStep2AllocProps
     const newAlloc = autoDistribute(activeDomains);
     setAlloc((prev) => {
       const updated = { ...prev };
-      removedDomains.forEach((name) => { updated[name] = 0; });
-      Object.entries(newAlloc).forEach(([name, count]) => { updated[name] = count; });
+      removedDomains.forEach((name) => {
+        updated[name] = 0;
+      });
+      Object.entries(newAlloc).forEach(([name, count]) => {
+        updated[name] = count;
+      });
       return updated;
     });
   }
@@ -70,7 +75,9 @@ export function DemoStep2Alloc({ cert, onGenerate, onBack }: DemoStep2AllocProps
       const newAlloc = autoDistribute(newActive);
       setAlloc((prev) => {
         const updated = { ...prev, [domainName]: 0 };
-        Object.entries(newAlloc).forEach(([name, count]) => { updated[name] = count; });
+        Object.entries(newAlloc).forEach(([name, count]) => {
+          updated[name] = count;
+        });
         return updated;
       });
     } else {
@@ -85,7 +92,9 @@ export function DemoStep2Alloc({ cert, onGenerate, onBack }: DemoStep2AllocProps
     const newAlloc = autoDistribute(newActive);
     setAlloc((prev) => {
       const updated = { ...prev };
-      newActive.forEach((domain) => { updated[domain.name] = newAlloc[domain.name] ?? 0; });
+      newActive.forEach((domain) => {
+        updated[domain.name] = newAlloc[domain.name] ?? 0;
+      });
       return updated;
     });
   }
@@ -96,9 +105,19 @@ export function DemoStep2Alloc({ cert, onGenerate, onBack }: DemoStep2AllocProps
       ? t('demo.step2.stickyNeed', { n: TOTAL - total })
       : t('demo.step2.stickyReduce', { n: total - TOTAL });
 
+  const stats = [
+    { icon: faFileLines, label: t('demo.step2.statQuestions'), value: `${cert.questions} questões` },
+    { icon: faClock, label: t('demo.step2.statMinutes'), value: `${cert.minutes} min` },
+    { icon: faCircleCheck, label: t('demo.step2.statPassing'), value: cert.passing, accent: true },
+    {
+      icon: faLayerGroup,
+      label: t('demo.step2.statTopics'),
+      value: `${activeDomains.length} de ${cert.domains.length}`,
+    },
+  ];
+
   return (
-    <div className="min-h-screen pb-24">
-      {/* Back */}
+    <div className="min-h-screen pb-16">
       <div className="max-w-6xl mx-auto px-6 pt-8">
         <button
           onClick={onBack}
@@ -108,13 +127,11 @@ export function DemoStep2Alloc({ cert, onGenerate, onBack }: DemoStep2AllocProps
         </button>
       </div>
 
-      {/* Header */}
       <div className="max-w-6xl mx-auto px-6 pt-4 pb-8">
         <span className="kick">{t('demo.step2.kick')}</span>
         <h1 className="ds-heading text-mkt-text text-4xl mt-2">{t('demo.step2.heading')}</h1>
       </div>
 
-      {/* Two-column layout */}
       <div
         className="max-w-6xl mx-auto px-6"
         style={{ display: 'grid', gridTemplateColumns: '0.65fr 1.35fr', gap: '24px', alignItems: 'start' }}
@@ -128,16 +145,16 @@ export function DemoStep2Alloc({ cert, onGenerate, onBack }: DemoStep2AllocProps
             {cert.vendor} · {cert.year}
           </p>
 
-          <div className="mt-4 space-y-2 border-t border-mkt-divider pt-4">
-            {[
-              { label: t('demo.step2.statQuestions'), value: String(cert.questions) },
-              { label: t('demo.step2.statMinutes'), value: `${cert.minutes} min` },
-              { label: t('demo.step2.statPassing'), value: cert.passing, accent: true },
-              { label: t('demo.step2.statTopics'), value: String(activeDomains.length) },
-            ].map(({ label, value, accent }) => (
+          <div className="mt-4 space-y-2.5 border-t border-mkt-divider pt-4">
+            {stats.map(({ icon, label, value, accent }) => (
               <div key={label} className="flex items-center justify-between">
-                <span className="text-xs text-mkt-text opacity-60">{label}</span>
-                <span className={`mono text-xs ${accent ? 'text-mkt-accent' : 'text-mkt-text'}`}>{value}</span>
+                <span className="flex items-center gap-2 text-xs text-mkt-text opacity-60">
+                  <FontAwesomeIcon icon={icon} className="w-3 h-3 flex-shrink-0" />
+                  {label}
+                </span>
+                <span className={`mono text-xs font-medium ${accent ? 'text-mkt-accent' : 'text-mkt-text'}`}>
+                  {value}
+                </span>
               </div>
             ))}
           </div>
@@ -148,15 +165,12 @@ export function DemoStep2Alloc({ cert, onGenerate, onBack }: DemoStep2AllocProps
           >
             {t('demo.step2.distributeBtn')}
           </button>
-          <p className="text-mkt-text opacity-40 text-xs mt-3 leading-relaxed">
-            {t('demo.step2.planNote')}
-          </p>
+          <p className="text-mkt-text opacity-40 text-xs mt-3 leading-relaxed">{t('demo.step2.planNote')}</p>
         </div>
 
         {/* Right: allocation table */}
         <div className="relative border border-mkt-divider">
           <BlueprintCorners />
-          {/* Header row */}
           <div
             className="grid border-b border-mkt-divider px-4 py-2.5 bg-mkt-surface"
             style={{ gridTemplateColumns: '1fr 80px 40px 80px 28px' }}
@@ -216,14 +230,35 @@ export function DemoStep2Alloc({ cert, onGenerate, onBack }: DemoStep2AllocProps
         </div>
       </div>
 
-      <DemoStickyBar
-        leftLabel={`${total}/${TOTAL} ${t('demo.step2.stickyDistributed')}`}
-        leftAccent={isFull}
-        rightHint={stickyHint}
-        buttonLabel={t('demo.step2.generateBtn')}
-        buttonDisabled={!isFull}
-        onAction={() => onGenerate(alloc)}
-      />
+      {/* Footer bar — inline, not fixed */}
+      <div className="max-w-6xl mx-auto px-6 mt-6 border-t border-mkt-divider pt-4 flex items-center gap-4">
+        <span
+          className={`mono text-xs px-2 py-1 border flex-shrink-0 ${
+            isFull
+              ? 'border-mkt-accent bg-mkt-accent/10 text-mkt-accent'
+              : 'border-mkt-divider text-mkt-text opacity-60'
+          }`}
+        >
+          {total}/{TOTAL} {t('demo.step2.stickyDistributed')}
+        </span>
+
+        <span className="mono text-xs text-mkt-text opacity-40 flex-1">{stickyHint}</span>
+
+        <div className="relative flex-shrink-0">
+          <BlueprintCorners />
+          <button
+            onClick={() => onGenerate(alloc)}
+            disabled={!isFull}
+            className={`mono text-xs uppercase tracking-widest px-5 py-2.5 border transition-colors ${
+              !isFull
+                ? 'border-mkt-divider text-mkt-text opacity-30 cursor-not-allowed'
+                : 'border-mkt-accent bg-mkt-accent text-white hover:bg-mkt-accent/90'
+            }`}
+          >
+            {t('demo.step2.generateBtn')}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
