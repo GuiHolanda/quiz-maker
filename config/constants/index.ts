@@ -20,6 +20,20 @@ export const CATALOG_URL = '/exam/catalog';
 export const FORK_EXAM_URL = '/exam/fork-exam';
 export const ADMIN_CATALOG_URL = '/admin/catalog';
 
+export const DEMO_CATALOG_URL = '/marketing/demo/catalog';
+export const DEMO_QUIZ_URL = '/marketing/demo/quiz';
+
+// A demo exam must be able to fill one whole quiz, otherwise the catalog would
+// advertise a certification the quiz cannot serve. The ceiling caps how much of
+// the paid pool a public, unauthenticated demo can expose.
+export const DEMO_SLICE_MIN = 10;
+export const DEMO_SLICE_MAX = 30;
+export const DEMO_QUIZ_SIZE = 10;
+
+// Floor, not a format: the CFA Level I exam legitimately uses three choices.
+// Per-exam fidelity to the real option count is enforced by the seed script.
+export const DEMO_MIN_OPTIONS = 3;
+
 export const QUIZ_LOCAL_STORAGE_KEY = 'QUIZ';
 export const EXAMS_LOCAL_STORAGE_KEY = 'EXAMS';
 export const LANGUAGE_LOCAL_STORAGE_KEY = 'app-language';

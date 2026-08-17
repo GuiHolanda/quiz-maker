@@ -118,11 +118,12 @@ All routes verify `plan === 'admin'` via direct DB lookup. Service: `app/api/adm
 
 ### `marketing/`
 
-Rotas públicas (sem auth). Service: `features/services/demo-quiz.service.ts`. Config: `config/exam-landing-pages.ts` (`EXAM_LANDING_PAGE_MAP`).
+Rotas públicas (sem auth). Service: `features/services/demo-catalog.service.ts`. Config: `config/exam-landing-pages.ts` (`EXAM_LANDING_PAGE_MAP`).
 
 | Route | Method | Description |
 |---|---|---|
-| `marketing/sample-question` | GET | Questão de amostra cacheada por slug (`revalidate: 3600`) |
+| `marketing/demo/catalog` | GET | Lista exames elegíveis para a demo (pool com explicações) |
+| `marketing/demo/quiz` | POST | Monta quiz a partir do pool, sem chamada à LLM |
 
 **Rotas públicas (sem auth):** `auth.config.ts → publicPaths[]` — adicionar aqui qualquer nova rota não autenticada (ex: `/simulado`, `/api/marketing`). O middleware usa o callback `authorized` do NextAuth para bloquear o restante.
 

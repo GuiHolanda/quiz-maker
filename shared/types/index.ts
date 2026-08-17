@@ -614,10 +614,39 @@ export interface AdminCatalogExamDetail {
 // ─── Demo Quiz (marketing landing pages) ─────────────────────────────────
 export interface DemoQuestion {
   readonly text: string;
-  readonly options: readonly [string, string, string, string];
-  readonly correctIndex: number; // 0–3
+  readonly options: readonly string[];
+  readonly correctIndexes: readonly number[];
   readonly topic: string;
   readonly explanation: string;
+}
+
+export interface DemoCatalogDomain {
+  readonly name: string;
+  readonly weight: number;
+  readonly available: number;
+}
+
+export interface DemoCatalogExam {
+  readonly id: string;
+  readonly name: string;
+  readonly mark: string;
+  readonly vendor: string;
+  readonly logoUrl: string | null;
+  readonly year: string;
+  readonly questions: number;
+  readonly minutes: number;
+  readonly passing: string;
+  readonly updatedAt: string;
+  readonly poolSize: number;
+  readonly domains: readonly DemoCatalogDomain[];
+}
+
+export interface DemoCatalogResponse {
+  readonly exams: readonly DemoCatalogExam[];
+}
+
+export interface DemoQuizResponse {
+  readonly questions: readonly DemoQuestion[];
 }
 
 // ─── Exam Landing Pages ───────────────────────────────────────────────────
@@ -631,6 +660,11 @@ export interface ExamLandingConfig {
   readonly name: string; // short display name, e.g. "CEA"
   readonly fullName: string; // full certification name
   readonly provider: string; // e.g. "ANBIMA", "Amazon Web Services"
+  // Exact `Exam.name` of the catalog template backing this landing page, used to
+  // deep-link into the demo. Absent when no template covers the exam yet — the
+  // CTA then falls back to the full demo catalog. Matched by name rather than id
+  // because ids are cuids and differ between dev and prod.
+  readonly demoExamName?: string;
   readonly examType: ExamType;
   readonly totalQuestions: number;
   readonly examDurationMinutes: number;
