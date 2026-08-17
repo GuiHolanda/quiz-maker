@@ -25,6 +25,7 @@ const config = {
           accent: 'var(--color-accent)',
           'accent-100': 'var(--color-accent-100)',
           'accent-700': 'var(--color-accent-700)',
+          'accent-800': 'var(--color-accent-800)',
           divider: 'var(--color-divider)',
         },
         navy: {

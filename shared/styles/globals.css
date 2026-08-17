@@ -94,6 +94,7 @@
   --color-text: #1d1f20;
   --color-accent: #5980a6;
   --color-accent-700: oklch(35% 0.08 220);
+  --color-accent-800: #273747;
   --color-accent-100: #EEF6FF;
   --color-divider: color-mix(in srgb, #1d1f20 16%, transparent);
 
@@ -138,7 +139,11 @@
   border-radius: 0;
 }
 
-.marketing-ds .blueprint > .corner {
+/* Corners style themselves rather than depending on a `.blueprint` parent — the
+   old `.blueprint > .corner` selector silently rendered nothing whenever the
+   wrapper used a plain `relative border` instead. The parent still has to be a
+   positioning context; <BlueprintFrame> guarantees that. */
+.marketing-ds .corner {
   position: absolute;
   width: 11px;
   height: 11px;
@@ -146,35 +151,73 @@
   pointer-events: none;
 }
 
-.marketing-ds .blueprint > .corner::before,
-.marketing-ds .blueprint > .corner::after {
+.marketing-ds .corner::before,
+.marketing-ds .corner::after {
   content: "";
   position: absolute;
   background: currentColor;
 }
 
-.marketing-ds .blueprint > .corner::before {
+.marketing-ds .corner::before {
   left: 5px;
   top: 0;
   width: 1px;
   height: 100%;
 }
 
-.marketing-ds .blueprint > .corner::after {
+.marketing-ds .corner::after {
   top: 5px;
   left: 0;
   width: 100%;
   height: 1px;
 }
 
-.marketing-ds .blueprint > .corner.tl { top: -6px; left: -6px; }
-.marketing-ds .blueprint > .corner.tr { top: -6px; right: -6px; }
-.marketing-ds .blueprint > .corner.bl { bottom: -6px; left: -6px; }
-.marketing-ds .blueprint > .corner.br { bottom: -6px; right: -6px; }
+.marketing-ds .corner.tl { top: -6px; left: -6px; }
+.marketing-ds .corner.tr { top: -6px; right: -6px; }
+.marketing-ds .corner.bl { bottom: -6px; left: -6px; }
+.marketing-ds .corner.br { bottom: -6px; right: -6px; }
 
-/* Blueprint on dark background — lighter corner color */
-.marketing-ds .blueprint-dark > .corner {
+/* Corners on a dark surface, where the default text-derived color disappears */
+.marketing-ds .corner-dark {
   color: rgba(89, 128, 166, 0.5);
+}
+
+/* ── Answer feedback surfaces ───────────────────────────── */
+
+.marketing-ds .fb-ok {
+  background-color: var(--fb-ok-bg);
+  border-color: var(--fb-ok-border);
+  color: var(--fb-ok-text);
+}
+
+.marketing-ds .fb-err {
+  background-color: var(--fb-err-bg);
+  border-color: var(--fb-err-border);
+  color: var(--fb-err-text);
+}
+
+.marketing-ds .fb-ok-soft {
+  background-color: var(--fb-ok-bg);
+  border-color: var(--fb-ok-border);
+}
+
+.marketing-ds .fb-err-soft {
+  background-color: var(--fb-err-bg);
+  border-color: var(--fb-err-border);
+}
+
+.marketing-ds .fb-surface {
+  background-color: var(--color-surface);
+}
+
+.marketing-ds .fb-rule-ok {
+  border-left-color: var(--fb-ok-border);
+  background-color: var(--color-surface);
+}
+
+.marketing-ds .fb-rule-err {
+  border-left-color: var(--fb-err-border);
+  background-color: var(--color-surface);
 }
 
 /* ── Marketing Page — Animations & Utilities ─────────────── */
