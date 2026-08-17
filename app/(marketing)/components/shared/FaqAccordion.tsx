@@ -13,11 +13,7 @@ interface FaqAccordionProps {
   readonly className?: string;
 }
 
-export function FaqAccordion({
-  items,
-  defaultExpandedKeys,
-  className = 'gap-0 flex flex-col',
-}: FaqAccordionProps) {
+export function FaqAccordion({ items, defaultExpandedKeys, className = 'gap-0 flex flex-col' }: FaqAccordionProps) {
   return (
     <Accordion
       className={className}

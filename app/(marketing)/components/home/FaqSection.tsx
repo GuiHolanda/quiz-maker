@@ -18,7 +18,7 @@ export function FaqSection() {
 
   return (
     <section id="faq" className="scroll-mt-24 py-20 border-t border-mkt-divider">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <span className="kick mb-2">FAQ</span>
         <h2 className="ds-heading text-mkt-text text-3xl mt-1 mb-12">{t('homepage.faq.title')}</h2>
 

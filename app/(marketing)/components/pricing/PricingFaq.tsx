@@ -27,11 +27,6 @@ export function PricingFaq() {
           defaultExpandedKeys={['0']}
           items={FAQ_ITEMS.map((item) => ({ question: t(item.q), answer: t(item.a) }))}
         />
-
-        <div className="mt-12 border border-mkt-divider bg-mkt-surface p-6">
-          <p className="text-sm font-semibold text-mkt-text mb-1">{t('pricing.faq.contactTitle')}</p>
-          <p className="text-sm text-mkt-text opacity-60">{t('pricing.faq.contactDescription')}</p>
-        </div>
       </div>
     </section>
   );
