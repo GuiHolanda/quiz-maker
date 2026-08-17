@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { shuffleItems } from '@/lib/shuffle-options';
 import { CreateMockExamPayload, MockExamSectionConfig, ExamType } from '@/shared/types';
 import { normalizeName, looseKey } from '@/shared/utils';
 import { OpenAIService } from '@/features/services/openAI.service';
@@ -212,9 +213,13 @@ export class MockExamService {
             select: { id: true },
           });
 
-      const shuffled = questions.sort(() => Math.random() - 0.5).slice(0, s.questionCount);
+      // Fisher-Yates, never sort() with a random comparator: an inconsistent comparator
+      // leaves elements near their original index, and the slice right after would then
+      // keep drawing the questions the query happened to return first — the same oldest
+      // rows on every simulado.
+      const drawn = shuffleItems(questions).slice(0, s.questionCount);
 
-      ids.push(...shuffled.map((q) => q.id));
+      ids.push(...drawn.map((q) => q.id));
     }
 
     return ids;

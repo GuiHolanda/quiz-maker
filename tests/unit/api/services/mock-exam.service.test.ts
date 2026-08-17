@@ -206,6 +206,50 @@ describe('MockExamService', () => {
     );
   });
 
+  // Behaviour 4b: drawQuestions samples the whole pool, not just the head of the query
+  it('create() eventually draws every available question across repeated simulados', async () => {
+    // The regression: drawing with sort(() => Math.random() - 0.5) leaves rows near their
+    // original index, so the slice kept returning the same oldest questions and most of
+    // the bank was unreachable.
+    const exam = { id: 'exam-1', name: 'Concurso ABC', provider: null, examBoard: null } as any;
+    const available = [1, 2, 3, 4, 5, 6, 7, 8].map((id) => ({ id }));
+
+    prismaMock.examSection.findMany.mockResolvedValue([{ id: 'sec-1', name: 'Matemática' } as any]);
+    prismaMock.exam.findFirst.mockResolvedValue(exam);
+    prismaMock.examQuestion.count.mockResolvedValue(available.length);
+    prismaMock.exam.findFirstOrThrow.mockResolvedValue(exam);
+    prismaMock.mockExam.create.mockResolvedValue({
+      id: 42,
+      name: 'Test',
+      exam: { id: 'exam-1', name: 'Concurso ABC', type: 'public_exam', examBoard: null },
+      _count: { questions: 2 },
+      createdAt: new Date(),
+    } as any);
+
+    const drawnIds = new Set<number>();
+
+    for (let run = 0; run < 60; run++) {
+      // Fresh copy each run: a draw must never consume or reorder the caller's rows.
+      prismaMock.examQuestion.findMany.mockResolvedValue(available.map((q) => ({ ...q })) as any);
+
+      await service.create(
+        {
+          examId: 'exam-1',
+          name: 'Test',
+          totalQuestions: 2,
+          sections: [{ sectionName: 'Matemática', questionCount: 2 }],
+        },
+        'user-1',
+      );
+
+      const { data } = prismaMock.mockExam.create.mock.calls.at(-1)![0] as any;
+
+      data.questions.create.forEach((q: { examQuestionId: number }) => drawnIds.add(q.examQuestionId));
+    }
+
+    expect(Array.from(drawnIds).sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+  });
+
   // Behaviour 5: ensureAnswers — idempotent gabarito generation
   describe('ensureAnswers', () => {
     it('throws 404 when mockExam not found', async () => {

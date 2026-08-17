@@ -57,7 +57,7 @@ vi.mock('bcryptjs', () => ({ default: { hash: vi.fn().mockResolvedValue('hashed'
 | `quiz-generator.service.test.ts` | Distribuição de questões por seção |
 | `register.service.test.ts` | Registro de usuário |
 | `reset-password.service.test.ts` | Reset de senha |
-| `mock-exam.service.test.ts` | Simulados — disponibilidade, score, breakdown, ensureAnswers |
+| `mock-exam.service.test.ts` | Simulados — disponibilidade, score, breakdown, ensureAnswers, sorteio uniforme das questões |
 | `api-error.test.ts` | Todos os ramos de `toApiErrorResponse` |
 
 ---
