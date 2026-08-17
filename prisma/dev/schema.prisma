@@ -115,6 +115,7 @@ model Exam {
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
   isTemplate          Boolean        @default(false)
+  questionFormat      String         @default("mc_5")
   provider            Provider?      @relation(fields: [providerId], references: [id])
   examBoard           ExamBoard?     @relation(fields: [examBoardId], references: [id])
   user                User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -153,6 +154,7 @@ model ExamQuestion {
   text              String
   correctCount      Int
   difficulty        String
+  format            String             @default("mc_5")
   examName          String
   sectionName       String
   topicName         String?

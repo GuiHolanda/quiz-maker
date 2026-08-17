@@ -675,6 +675,7 @@ function makePoolQuestion(id: number) {
     text: `Question ${id}`,
     correctCount: 1,
     difficulty: 'medium',
+    format: 'mc_5',
     examName: 'AWS SAA-C03',
     sectionName: 'Cloud Concepts',
     topicName: null,
