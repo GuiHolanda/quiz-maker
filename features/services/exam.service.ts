@@ -1,4 +1,5 @@
 import { prisma, PrismaService } from '@/lib/prisma';
+import { defaultFormatForSource, isQuestionFormatKey, resolveQuestionFormat } from '@/config/question-formats';
 import { Exam, ExamType, SectionUpdatePayload } from '@/shared/types';
 import { normalizeName } from '@/shared/utils';
 
@@ -29,6 +30,7 @@ export class ExamService {
       totalQuestions,
       examDurationMinutes,
       passingScore,
+      questionFormat,
       provider,
       examBoard,
       sections,
@@ -72,6 +74,13 @@ export class ExamService {
       examDurationMinutes:
         typeof examDurationMinutes === 'number' && examDurationMinutes > 0 ? Math.round(examDurationMinutes) : null,
       passingScore: typeof passingScore === 'number' && passingScore >= 0 && passingScore <= 100 ? passingScore : null,
+      // An unrecognized key falls back to the writing body's usual style, then to mc_5,
+      // so a client that omits the field still lands on a sensible format.
+      questionFormat: isQuestionFormatKey(questionFormat)
+        ? questionFormat
+        : defaultFormatForSource(
+            (boardRecord?.name as string | undefined) ?? (providerRecord?.name as string | undefined)
+          ),
       provider:
         providerRecord && typeof providerRecord.name === 'string'
           ? { name: normalizeName(providerRecord.name as string) }
@@ -110,6 +119,7 @@ export class ExamService {
       totalQuestions,
       examDurationMinutes,
       passingScore,
+      questionFormat,
       provider,
       examBoard,
       sections,
@@ -161,6 +171,7 @@ export class ExamService {
           totalQuestions,
           examDurationMinutes: examDurationMinutes ?? null,
           passingScore: passingScore ?? null,
+          ...(questionFormat ? { questionFormat } : {}),
           providerId,
           examBoardId,
           userId,
@@ -544,6 +555,7 @@ export class ExamService {
       totalQuestions: row.totalQuestions,
       examDurationMinutes: row.examDurationMinutes,
       passingScore: row.passingScore,
+      questionFormat: resolveQuestionFormat(row.questionFormat).key,
       createdAt: row.createdAt?.toISOString?.() ?? row.createdAt,
       updatedAt: row.updatedAt?.toISOString?.() ?? row.updatedAt,
       provider: row.provider ?? null,

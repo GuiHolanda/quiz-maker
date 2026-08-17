@@ -1,5 +1,6 @@
 'use client';
 import type { ExamSection, ExamType } from '@/shared/types';
+import type { QuestionFormatKey } from '@/config/question-formats';
 
 import { faCircleInfo, faLayerGroup, faRocket } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -11,6 +12,12 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
 
+const QUESTION_FORMAT_LABEL_KEYS: Record<QuestionFormatKey, string> = {
+  mc_5: 'exam.questionFormatMc5',
+  mc_4: 'exam.questionFormatMc4',
+  true_false: 'exam.questionFormatTrueFalse',
+};
+
 interface Step3ReviewProps {
   readonly type: ExamType;
   readonly name: string;
@@ -21,6 +28,7 @@ interface Step3ReviewProps {
   readonly totalQuestions: number;
   readonly examDurationMinutes?: number;
   readonly passingScore?: number;
+  readonly questionFormat: QuestionFormatKey;
   readonly sections: ExamSection[];
   readonly isLoading: boolean;
   readonly onBack: () => void;
@@ -38,6 +46,7 @@ export function Step3Review({
   totalQuestions,
   examDurationMinutes,
   passingScore,
+  questionFormat,
   sections,
   isLoading,
   onBack,
@@ -116,6 +125,10 @@ export function Step3Review({
                 <p className="text-base text-foreground">{passingScore}%</p>
               </div>
             )}
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-medium text-default-400">{t('exam.questionFormat')}</p>
+              <p className="text-base text-foreground">{t(QUESTION_FORMAT_LABEL_KEYS[questionFormat])}</p>
+            </div>
           </div>
         </div>
 

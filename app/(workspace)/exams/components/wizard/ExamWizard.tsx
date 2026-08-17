@@ -1,8 +1,11 @@
 'use client';
 import type { Exam, ExamSection, ExamType } from '@/shared/types';
+import type { QuestionFormatKey } from '@/config/question-formats';
 
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+
+import { DEFAULT_QUESTION_FORMAT, resolveQuestionFormat } from '@/config/question-formats';
 
 import { Step1BasicInfo } from './Step1BasicInfo';
 import { Step2DefineSections } from './Step2DefineSections';
@@ -31,6 +34,7 @@ interface ExamDraft {
   totalQuestions: string;
   examDurationMinutes: string;
   passingScore: string;
+  questionFormat: QuestionFormatKey;
   sections: ExamSection[];
   step: 1 | 2 | 3;
 }
@@ -44,6 +48,7 @@ const EMPTY_DRAFT: ExamDraft = {
   totalQuestions: '',
   examDurationMinutes: '',
   passingScore: '',
+  questionFormat: DEFAULT_QUESTION_FORMAT,
   sections: [],
   step: 1,
 };
@@ -57,7 +62,14 @@ const variants = {
 function readDraft(storageKey: string): ExamDraft {
   try {
     const raw = localStorage.getItem(storageKey);
-    if (raw) return { ...EMPTY_DRAFT, ...JSON.parse(raw) };
+    if (raw) {
+      const stored = { ...EMPTY_DRAFT, ...JSON.parse(raw) };
+
+      // Drafts saved before the format field existed, or carrying a retired key, must
+      // still open the wizard — an unknown key would leave the Select with nothing
+      // selected instead of falling back.
+      return { ...stored, questionFormat: resolveQuestionFormat(stored.questionFormat).key };
+    }
   } catch {
     /* corrupted or unavailable storage */
   }
@@ -163,6 +175,7 @@ export function ExamWizard({ type, onSaved, onBack }: ExamWizardProps) {
             totalQuestions,
             examDurationMinutes,
             passingScore,
+            questionFormat: draft.questionFormat,
             sections: draft.sections,
           }
         : {
@@ -174,6 +187,7 @@ export function ExamWizard({ type, onSaved, onBack }: ExamWizardProps) {
             totalQuestions,
             examDurationMinutes,
             passingScore,
+            questionFormat: draft.questionFormat,
             examBoard: { name: referenceEntityName },
             sections: draft.sections,
           };
@@ -200,6 +214,7 @@ export function ExamWizard({ type, onSaved, onBack }: ExamWizardProps) {
         examDurationMinutes={draft.examDurationMinutes}
         name={draft.name}
         passingScore={draft.passingScore}
+        questionFormat={draft.questionFormat}
         referenceEntityName={draft.referenceEntityName}
         role={draft.role}
         totalQuestions={draft.totalQuestions}
@@ -210,6 +225,7 @@ export function ExamWizard({ type, onSaved, onBack }: ExamWizardProps) {
         onNameChange={(v) => patch({ name: v })}
         onNext={() => goToStep(2)}
         onPassingScoreChange={(v) => patch({ passingScore: v })}
+        onQuestionFormatChange={(v) => patch({ questionFormat: v })}
         onReferenceEntityNameChange={(v) => patch({ referenceEntityName: v })}
         onRoleChange={(v) => patch({ role: v })}
         onTotalQuestionsChange={(v) => patch({ totalQuestions: v })}
@@ -239,6 +255,7 @@ export function ExamWizard({ type, onSaved, onBack }: ExamWizardProps) {
         isLoading={loading}
         name={draft.name}
         passingScore={parseFloat(draft.passingScore) || undefined}
+        questionFormat={draft.questionFormat}
         referenceEntityName={draft.referenceEntityName}
         role={draft.role}
         sections={draft.sections}

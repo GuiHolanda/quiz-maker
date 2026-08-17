@@ -1,4 +1,5 @@
 import type { QuizState } from '@/features/reducers/quiz.reducer';
+import type { QuestionFormatKey } from '@/config/question-formats';
 
 import { SVGProps } from 'react';
 
@@ -86,6 +87,7 @@ export interface Exam {
   readonly totalQuestions: number;
   readonly examDurationMinutes?: number | null;
   readonly passingScore?: number | null;
+  readonly questionFormat?: QuestionFormatKey;
   readonly provider?: Provider | null;
   readonly examBoard?: ExamBoard | null;
   readonly createdAt?: string;
