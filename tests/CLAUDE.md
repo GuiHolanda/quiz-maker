@@ -53,6 +53,8 @@ vi.mock('bcryptjs', () => ({ default: { hash: vi.fn().mockResolvedValue('hashed'
 | `exam.service.test.ts` | CRUD Exam/Section/Topic; propagação `updatedAt`; snapshot em rename |
 | `exam-question.service.test.ts` | `saveAnswers` (upsert idempotente), `saveExplanations`, embaralhamento das alternativas ao persistir |
 | `shuffle-options.test.ts` | Permutação de alternativas — preserva labels e textos, quebra o viés posicional |
+| `question-formats.test.ts` | Registry de formatos — labels, teto de corretas, flag semântica, default por banca |
+| `validate-ai-questions.test.ts` | `validateAiQuestions` — checagens estruturais, teto de `correctCount`, conjunto de labels do formato |
 | `quota.service.test.ts` | Verificação e registro; `create_exam` vs `maxExams`; `getUsage` dual |
 | `quiz-generator.service.test.ts` | Distribuição de questões por seção |
 | `register.service.test.ts` | Registro de usuário |
