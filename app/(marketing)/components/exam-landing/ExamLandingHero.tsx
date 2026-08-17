@@ -1,11 +1,13 @@
 'use client';
 
+import NextLink from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import type { ExamLandingConfig } from '@/shared/types';
 import { BlueprintCorners } from '@/app/(marketing)/components/shared/BlueprintCorners';
+import { demoHrefForSlug } from '@/config/demo-links';
 
 interface ExamLandingHeroProps {
   readonly config: ExamLandingConfig;
@@ -36,13 +38,13 @@ export function ExamLandingHero({ config }: ExamLandingHeroProps) {
             </p>
 
             <div className="flex flex-col items-start gap-2 pt-2">
-              <a
-                href="#demo-simulado"
+              <NextLink
+                href={demoHrefForSlug(config.slug)}
                 className="inline-flex items-center gap-2 text-sm font-semibold bg-mkt-accent text-white px-6 py-3 hover:opacity-90 transition-opacity"
               >
                 {t('landing.hero.ctaPrimary')}
                 <FontAwesomeIcon className="text-xs" icon={faArrowRight} />
-              </a>
+              </NextLink>
               <p className="text-mkt-text opacity-50 text-xs">{t('landing.hero.ctaDisclaimer')}</p>
             </div>
           </div>

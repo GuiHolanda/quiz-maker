@@ -4,6 +4,7 @@ import type { ExamLandingConfig } from '@/shared/types';
 export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
   {
     slug: 'cea',
+    demoExamName: 'CEA — Certificação de Especialista em Investimentos ANBIMA',
     name: 'CEA',
     fullName: 'Certificação de Especialista em Investimentos',
     provider: 'ANBIMA',
@@ -49,6 +50,7 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
   },
   {
     slug: 'cpa-20',
+    demoExamName: 'CPA-20 — Certificação Profissional ANBIMA Série 20',
     name: 'CPA-20',
     fullName: 'Certificação Profissional ANBIMA - Série 20',
     provider: 'ANBIMA',
@@ -90,6 +92,7 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
   },
   {
     slug: 'aws-solutions-architect',
+    demoExamName: 'AWS Certified Solutions Architect – Associate',
     name: 'AWS SAA-C03',
     fullName: 'AWS Certified Solutions Architect - Associate',
     provider: 'Amazon Web Services',
@@ -168,6 +171,7 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
   },
   {
     slug: 'azure-fundamentals',
+    demoExamName: 'Microsoft Azure Fundamentals',
     name: 'AZ-900',
     fullName: 'Microsoft Azure Fundamentals',
     provider: 'Microsoft',

@@ -2,25 +2,33 @@
 
 import { useState } from 'react';
 import NextLink from 'next/link';
+import { usePathname } from 'next/navigation';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faXmark } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { DEMO_PATH, demoHrefForSlug } from '@/config/demo-links';
 
 const navLinkClass = 'text-sm font-medium text-mkt-text opacity-60 hover:opacity-100 transition-opacity duration-150';
 
+// On-page anchors; the demo link is a route, handled separately below.
 const SECTION_LINKS = [
   { labelKey: 'landing.nav.howItWorks', href: '#how-it-works' },
-  { labelKey: 'landing.nav.demo', href: '#demo-simulado' },
   { labelKey: 'landing.nav.faq', href: '#faq' },
 ] as const;
 
 export function FocusedCtaNavbar() {
   const { t } = useTranslation();
+  const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const closeMenu = () => setIsMenuOpen(false);
+
+  // This navbar only renders under /simulado/[exam-slug], so the slug in the
+  // path is what deep-links the demo to the exam the visitor is reading about.
+  const examSlug = pathname?.startsWith('/simulado/') ? pathname.split('/')[2] : undefined;
+  const demoHref = examSlug ? demoHrefForSlug(examSlug) : DEMO_PATH;
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50">
@@ -38,6 +46,9 @@ export function FocusedCtaNavbar() {
                     {t(item.labelKey)}
                   </a>
                 ))}
+                <NextLink className={navLinkClass} href={demoHref}>
+                  {t('landing.nav.demo')}
+                </NextLink>
                 <NextLink className={navLinkClass} href="/pricing">
                   {t('nav.pricing')}
                 </NextLink>
@@ -80,6 +91,13 @@ export function FocusedCtaNavbar() {
                   {t(item.labelKey)}
                 </a>
               ))}
+              <NextLink
+                className="text-sm text-mkt-text opacity-60 hover:opacity-100 transition-opacity py-3 border-b border-mkt-divider"
+                href={demoHref}
+                onClick={closeMenu}
+              >
+                {t('landing.nav.demo')}
+              </NextLink>
               <NextLink
                 className="text-sm text-mkt-text opacity-60 hover:opacity-100 transition-opacity py-3 border-b border-mkt-divider"
                 href="/pricing"
