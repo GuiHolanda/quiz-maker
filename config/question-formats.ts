@@ -60,6 +60,22 @@ export const QUESTION_FORMATS: Record<QuestionFormatKey, QuestionFormat> = {
 
 export const DEFAULT_QUESTION_FORMAT: QuestionFormatKey = 'mc_5';
 
+// Prompt fragments derived from the format, so the label set is written in one place
+// and every step of the pipeline describes the same question shape to the model.
+export function labelList(format: QuestionFormat): string {
+  return format.labels.join(', ');
+}
+
+export function jsonOptionsSkeleton(format: QuestionFormat, placeholder: string): string {
+  return format.labels.map((label) => `"${label}":"<${placeholder}>"`).join(',');
+}
+
+// "1" when only one option may be correct, "1|2|3" when three may. Keeps the drafting
+// template from offering the model a correctCount the format cannot hold.
+export function correctCountRange(format: QuestionFormat): string {
+  return Array.from({ length: format.maxCorrect }, (_, index) => index + 1).join('|');
+}
+
 export function isQuestionFormatKey(value: unknown): value is QuestionFormatKey {
   return typeof value === 'string' && value in QUESTION_FORMATS;
 }

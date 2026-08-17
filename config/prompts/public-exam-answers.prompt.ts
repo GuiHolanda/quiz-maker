@@ -1,5 +1,7 @@
 import type { AIExamQuestion } from '@/shared/types';
 import type { PromptDefinition } from './types';
+import { labelList, resolveQuestionFormat } from '@/config/question-formats';
+import type { QuestionFormatKey } from '@/config/question-formats';
 
 export interface PublicExamAnswersInput {
   readonly public_exam_name: string;
@@ -8,11 +10,13 @@ export interface PublicExamAnswersInput {
   readonly subject_name: string;
   readonly topic_name?: string;
   readonly questions: AIExamQuestion[];
+  readonly format?: QuestionFormatKey;
 }
 
 export const publicExamAnswersPrompt = {
   build: (input: PublicExamAnswersInput): string => {
     const { public_exam_name, exam_board_name, role, subject_name, topic_name, questions } = input;
+    const format = resolveQuestionFormat(input.format);
     const topicoLine = topic_name ? `\n- Tópico: ${topic_name}` : '';
     const cargoLine = role ? `\n- Cargo pretendido: ${role}` : '';
 
@@ -28,7 +32,7 @@ ${JSON.stringify(questions, null, 2)}
 
 OBJETIVO: Para cada questão acima, retorne:
 1. "questionId": o id da questão.
-2. "correctOptions": array com as letras corretas (de 1 a "correctCount" entradas, dentro de A–E).
+2. "correctOptions": array com as letras corretas (de 1 a "correctCount" entradas, apenas dentro de ${labelList(format)}).
 
 REGRAS:
 1. Responda em português brasileiro formal.

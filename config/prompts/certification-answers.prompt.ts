@@ -1,14 +1,18 @@
 import type { PromptDefinition } from './types';
+import { labelList, resolveQuestionFormat } from '@/config/question-formats';
+import type { QuestionFormatKey } from '@/config/question-formats';
 
 export interface CertificationAnswersInput {
   readonly certification_name: string;
   readonly topic: string;
   readonly questions: string;
+  readonly format?: QuestionFormatKey;
 }
 
 export const certificationAnswersPrompt = {
   build: (input: CertificationAnswersInput): string => {
     const { certification_name, topic, questions } = input;
+    const format = resolveQuestionFormat(input.format);
 
     return `You are a professional certification exam expert validating correct answers for exam questions across any domain (technology, finance, engineering, healthcare, law, and others).
 
@@ -21,7 +25,7 @@ ${questions}
 
 OBJECTIVE: For each question above, return:
 1. "questionId": the id of the question.
-2. "correctOptions": array with the correct letter(s) (exactly "correctCount" entries, from A–E).
+2. "correctOptions": array with the correct letter(s) (exactly "correctCount" entries, drawn only from ${labelList(format)}).
 
 RULES:
 1. Use the same language as the exam questions.
