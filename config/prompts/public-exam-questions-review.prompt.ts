@@ -1,4 +1,6 @@
 import type { PromptDefinition } from './types';
+import { labelList, resolveQuestionFormat } from '@/config/question-formats';
+import type { QuestionFormatKey } from '@/config/question-formats';
 
 export interface PublicExamQuestionsReviewInput {
   readonly public_exam_name: string;
@@ -7,11 +9,13 @@ export interface PublicExamQuestionsReviewInput {
   readonly topic_name?: string;
   readonly draft_questions: string;
   readonly topics_list?: string;
+  readonly format?: QuestionFormatKey;
 }
 
 export const publicExamQuestionsReviewPrompt = {
   build: (input: PublicExamQuestionsReviewInput): string => {
     const { public_exam_name, exam_board_name, subject_name, topic_name, draft_questions, topics_list } = input;
+    const format = resolveQuestionFormat(input.format);
     const topicsContext = topics_list
       ? ` Os tópicos que devem ser cobertos são:\n${topics_list}\nVerifique se as questões estão distribuídas entre esses tópicos.`
       : '';
@@ -32,6 +36,7 @@ Para cada questão, verifique e corrija se necessário:
 5. **Calibração de dificuldade** — o rótulo (easy/medium/hard) está adequado.
 6. **Consistência de correctCount** — o número de alternativas corretas declarado é realista para a questão.
 7. **Autocontida** — cada questão é respondível sem contexto externo.
+8. **Fidelidade ao formato** — toda questão deve manter exatamente as alternativas ${labelList(format)}. Nunca adicione, remova ou renomeie uma alternativa. ${format.labelsAreSemantic ? 'Essas letras carregam significado e seus textos são fixos — o critério 3 não se aplica a este formato.' : ''}
 
 ## SAÍDA
 

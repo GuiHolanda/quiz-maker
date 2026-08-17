@@ -1,5 +1,6 @@
 import { prisma, PrismaService } from '@/lib/prisma';
 import { shuffleOptionTexts } from '@/lib/shuffle-options';
+import { resolveQuestionFormat } from '@/config/question-formats';
 import type { QuestionFormat } from '@/config/question-formats';
 import { AIExamQuestion, Answer, ExamQuestionParams, ExamType } from '@/shared/types';
 import { toSafeString, normalizeName, looseKey } from '@/shared/utils';
@@ -85,6 +86,11 @@ export class ExamQuestionService {
         }
       }
 
+      // The exam declares what to generate; the question records what it actually is,
+      // because ExamQuestion.examId is ON DELETE SET NULL and pooled questions travel
+      // between exams. An unresolvable exam falls back to the legacy A–E shape.
+      const format = resolveQuestionFormat(exam?.questionFormat);
+
       type Canonical = { id: string; name: string };
       const sectionCanonical = new Map<string, Canonical>();
       const topicCanonical = new Map<string, Canonical>();
@@ -139,6 +145,7 @@ export class ExamQuestionService {
             text,
             correctCount,
             difficulty,
+            format: format.key,
             userId,
             examId: exam?.id ?? null,
             sectionId,
@@ -156,7 +163,10 @@ export class ExamQuestionService {
         // Persist a shuffled letter assignment, never the model's own ordering — the
         // drafting LLM puts the correct alternative first, and the gabarito is derived
         // later from these stored options, so it follows the shuffle.
-        const optionsObj = shuffleOptionTexts(sanitizedOptions);
+        //
+        // Formats whose labels carry meaning are exempt: in Certo/Errado "C" must stay
+        // on "Certo", so reassigning texts across labels would invert the gabarito.
+        const optionsObj = format.labelsAreSemantic ? sanitizedOptions : shuffleOptionTexts(sanitizedOptions);
 
         for (const [label, text] of Object.entries(optionsObj)) {
           await tx.examOption.create({ data: { questionId: createdQuestion.id, label, text } });

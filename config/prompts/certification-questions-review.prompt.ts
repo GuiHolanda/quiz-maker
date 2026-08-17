@@ -1,15 +1,19 @@
 import type { PromptDefinition } from './types';
+import { labelList, resolveQuestionFormat } from '@/config/question-formats';
+import type { QuestionFormatKey } from '@/config/question-formats';
 
 export interface CertificationQuestionsReviewInput {
   readonly certification_name: string;
   readonly topic_name: string;
   readonly draft_questions: string;
   readonly topics_list?: string;
+  readonly format?: QuestionFormatKey;
 }
 
 export const certificationQuestionsReviewPrompt = {
   build: (input: CertificationQuestionsReviewInput): string => {
     const { certification_name, topic_name, draft_questions, topics_list } = input;
+    const format = resolveQuestionFormat(input.format);
     const topicsContext = topics_list
       ? ` The sub-topics that should be covered are:\n${topics_list}\nEnsure questions are distributed across these sub-topics.`
       : '';
@@ -30,6 +34,7 @@ For each question, check and correct if needed:
 5. **Difficulty calibration** — difficulty label (easy/medium/hard) is appropriate.
 6. **Correctness of correctCount** — the number of correct options declared is realistic for this question.
 7. **Self-containment** — each question is answerable without external context.
+8. **Format fidelity** — every question must keep exactly the options ${labelList(format)}. Never add, drop, or relabel an option. ${format.labelsAreSemantic ? 'These labels carry meaning and their texts are fixed — criterion 3 does not apply to this format.' : ''}
 
 ## OUTPUT
 
