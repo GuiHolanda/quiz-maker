@@ -1,5 +1,6 @@
 import { prisma, PrismaService } from '@/lib/prisma';
 import { distributeByWeight } from '@/lib/largest-remainder';
+import { shuffleItems } from '@/lib/shuffle-options';
 import { DEMO_MIN_OPTIONS, DEMO_QUIZ_SIZE, DEMO_SLICE_MAX, DEMO_SLICE_MIN } from '@/config/constants';
 import type { DemoCatalogExam, DemoQuestion } from '@/shared/types';
 
@@ -60,10 +61,14 @@ export function isDemoEligible(question: PoolQuestion): boolean {
 }
 
 function toDemoQuestion(question: PoolQuestion, topic: string): DemoQuestion {
-  const options = [...question.options].sort((a, b) => a.label.localeCompare(b.label));
   const correctOptions = parseCorrectOptions(question.answer?.correctOptions);
 
-  const correctIndexes = options
+  // The pool stores the letters the drafting LLM chose, and it puts the correct
+  // alternative first almost every time. The demo is scored by position, so the
+  // options are presented in a random order and the indexes follow it.
+  const presentedOptions = shuffleItems(question.options);
+
+  const correctIndexes = presentedOptions
     .map((option, index) => (correctOptions.includes(option.label) ? index : -1))
     .filter((index) => index >= 0);
 
@@ -78,22 +83,11 @@ function toDemoQuestion(question: PoolQuestion, topic: string): DemoQuestion {
 
   return {
     text: question.text,
-    options: options.map((option) => option.text),
+    options: presentedOptions.map((option) => option.text),
     correctIndexes,
     topic,
     explanation,
   };
-}
-
-function shuffle<T>(items: readonly T[]): T[] {
-  const copy = [...items];
-
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-
-  return copy;
 }
 
 export class DemoCatalogService {
@@ -136,12 +130,12 @@ export class DemoCatalogService {
         );
       }
 
-      shuffle(domain.questions)
+      shuffleItems(domain.questions)
         .slice(0, count)
         .forEach((question) => selected.push(toDemoQuestion(question, name)));
     }
 
-    return shuffle(selected);
+    return shuffleItems(selected);
   }
 
   private async buildSlices(examId?: string): Promise<DemoExamSlice[]> {

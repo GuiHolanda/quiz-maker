@@ -242,13 +242,27 @@ describe('DemoCatalogService', () => {
       expect(resilient).toHaveLength(7);
     });
 
-    it('maps correct option labels to zero-based indexes', async () => {
+    it('points correctIndexes at the correct option whatever order it is presented in', async () => {
       const questions = await service.buildQuiz('tmpl-1', {
         'Design Resilient Architectures': 10,
       });
 
-      expect(questions[0].correctIndexes).toEqual([0]);
-      expect(questions[0].options).toHaveLength(4);
+      const [question] = questions;
+
+      expect(question.options).toHaveLength(4);
+      expect(question.correctIndexes.map((index) => question.options[index])).toEqual(['Option A']);
+    });
+
+    it('does not always present the correct option first', async () => {
+      // The pool stores every gabarito under "A", so serving it as-is made the demo
+      // winnable by always clicking the first alternative.
+      const questions = await service.buildQuiz('tmpl-1', {
+        'Design Resilient Architectures': 10,
+      });
+
+      const positions = new Set(questions.flatMap((question) => question.correctIndexes));
+
+      expect(positions.size).toBeGreaterThan(1);
     });
 
     it('maps multiple correct labels to multiple indexes', async () => {
@@ -271,7 +285,10 @@ describe('DemoCatalogService', () => {
 
       const questions = await service.buildQuiz('tmpl-1', { 'Design Resilient Architectures': 10 });
 
-      expect(questions[0].correctIndexes).toEqual([1, 3]);
+      const [question] = questions;
+      const correctTexts = question.correctIndexes.map((index) => question.options[index]).sort();
+
+      expect(correctTexts).toEqual(['Option B', 'Option D']);
     });
 
     it('excludes a pool question whose correct option has no explanation', async () => {
@@ -290,9 +307,9 @@ describe('DemoCatalogService', () => {
     });
 
     it('rejects a distribution that does not sum to the quiz size', async () => {
-      await expect(
-        service.buildQuiz('tmpl-1', { 'Design Resilient Architectures': 3 })
-      ).rejects.toMatchObject({ status: 400 });
+      await expect(service.buildQuiz('tmpl-1', { 'Design Resilient Architectures': 3 })).rejects.toMatchObject({
+        status: 400,
+      });
     });
 
     it('rejects an unknown domain', async () => {
@@ -316,9 +333,9 @@ describe('DemoCatalogService', () => {
     it('returns 404 when the exam is not demo-eligible', async () => {
       prismaMock.exam.findMany.mockResolvedValue([]);
 
-      await expect(
-        service.buildQuiz('missing', { 'Design Resilient Architectures': 10 })
-      ).rejects.toMatchObject({ status: 404 });
+      await expect(service.buildQuiz('missing', { 'Design Resilient Architectures': 10 })).rejects.toMatchObject({
+        status: 404,
+      });
     });
   });
 });
