@@ -1,11 +1,13 @@
 'use client';
 import type { ExamBoard, ExamType, Provider } from '@/shared/types';
+import type { QuestionFormatKey } from '@/config/question-formats';
 
 import { useEffect, useState } from 'react';
 import { faArrowRight, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
+import { Select, SelectItem } from '@heroui/select';
 import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
 
 import { StepHeader } from '@/shared/components/ui/wizard/StepHeader';
@@ -15,6 +17,12 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { getProviders, getExamBoards } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
 import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
+
+const QUESTION_FORMAT_OPTIONS: ReadonlyArray<{ key: QuestionFormatKey; labelKey: string }> = [
+  { key: 'mc_5', labelKey: 'exam.questionFormatMc5' },
+  { key: 'mc_4', labelKey: 'exam.questionFormatMc4' },
+  { key: 'true_false', labelKey: 'exam.questionFormatTrueFalse' },
+];
 
 interface Step1BasicInfoProps {
   readonly type: ExamType;
@@ -26,6 +34,7 @@ interface Step1BasicInfoProps {
   readonly totalQuestions: string;
   readonly examDurationMinutes: string;
   readonly passingScore: string;
+  readonly questionFormat: QuestionFormatKey;
   readonly onNameChange: (v: string) => void;
   readonly onReferenceEntityNameChange: (v: string) => void;
   readonly onRoleChange: (v: string) => void;
@@ -34,6 +43,7 @@ interface Step1BasicInfoProps {
   readonly onTotalQuestionsChange: (v: string) => void;
   readonly onExamDurationMinutesChange: (v: string) => void;
   readonly onPassingScoreChange: (v: string) => void;
+  readonly onQuestionFormatChange: (v: QuestionFormatKey) => void;
   readonly onBack: () => void;
   readonly onNext: () => void;
   readonly onDiscard: () => void;
@@ -49,6 +59,7 @@ export function Step1BasicInfo({
   totalQuestions,
   examDurationMinutes,
   passingScore,
+  questionFormat,
   onNameChange,
   onReferenceEntityNameChange,
   onRoleChange,
@@ -57,6 +68,7 @@ export function Step1BasicInfo({
   onTotalQuestionsChange,
   onExamDurationMinutesChange,
   onPassingScoreChange,
+  onQuestionFormatChange,
   onBack,
   onNext,
   onDiscard,
@@ -205,6 +217,31 @@ export function Step1BasicInfo({
                 className="w-1/4 lg:w-1/6"
               />
             )}
+          </div>
+
+          <div className="flex flex-col gap-1.5 w-full sm:w-1/2 lg:w-1/3">
+            <Select
+              {...inputProperties.select}
+              disallowEmptySelection
+              label={t('exam.questionFormat')}
+              placeholder={t('exam.questionFormat')}
+              selectedKeys={[questionFormat]}
+              onSelectionChange={(keys) => {
+                const selected = Array.from(keys)[0];
+
+                if (selected) onQuestionFormatChange(selected as QuestionFormatKey);
+              }}
+            >
+              {QUESTION_FORMAT_OPTIONS.map((option) => (
+                <SelectItem key={option.key} textValue={t(option.labelKey)}>
+                  {t(option.labelKey)}
+                </SelectItem>
+              ))}
+            </Select>
+            {/* Rendered as a sibling, not via `description`: a helper on a Select with
+                labelPlacement="outside" sets data-has-helper, which cancels the label's
+                lift transform and drops it on top of the trigger. */}
+            <p className="text-xs text-default-500">{t('exam.questionFormatHint')}</p>
           </div>
 
           <div className="col-span-full flex items-start gap-4 p-4 bg-background border border-default-200 rounded-xl">

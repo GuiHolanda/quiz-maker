@@ -179,4 +179,50 @@ describe('ExamService', () => {
     expect(prismaMock.examQuestion.updateMany).toHaveBeenCalled();
     expect(prismaMock.exam.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'e1' } }));
   });
+
+  describe('validate() — questionFormat', () => {
+    const body = (overrides: Record<string, unknown> = {}) => ({
+      type: 'public_exam',
+      name: 'TRF 1',
+      totalQuestions: 80,
+      sections: [{ name: 'Direito Administrativo', minQuestions: 20, maxQuestions: 30 }],
+      ...overrides,
+    });
+
+    it('keeps an explicit format chosen by the user', () => {
+      const service = new ExamService(prismaMock as any);
+
+      expect(service.validate(body({ questionFormat: 'mc_4' })).questionFormat).toBe('mc_4');
+    });
+
+    it('defaults a Cebraspe exam to Certo/Errado when no format is sent', () => {
+      const service = new ExamService(prismaMock as any);
+
+      expect(service.validate(body({ examBoard: { name: 'Cebraspe' } })).questionFormat).toBe('true_false');
+    });
+
+    it('lets an explicit choice override the exam board default', () => {
+      // The board map is a starting point, not a rule — Cebraspe also runs
+      // multiple-choice provas, so the user's pick wins.
+      const service = new ExamService(prismaMock as any);
+      const parsed = service.validate(body({ examBoard: { name: 'Cebraspe' }, questionFormat: 'mc_5' }));
+
+      expect(parsed.questionFormat).toBe('mc_5');
+    });
+
+    it('falls back to mc_5 for an unmapped board and for a bogus key', () => {
+      const service = new ExamService(prismaMock as any);
+
+      expect(service.validate(body({ examBoard: { name: 'FGV' } })).questionFormat).toBe('mc_5');
+      expect(service.validate(body({ questionFormat: 'mc_9' })).questionFormat).toBe('mc_5');
+      expect(service.validate(body()).questionFormat).toBe('mc_5');
+    });
+
+    it('reads the certification provider when there is no exam board', () => {
+      const service = new ExamService(prismaMock as any);
+      const parsed = service.validate(body({ type: 'certification', provider: { name: 'CESPE Certificações' } }));
+
+      expect(parsed.questionFormat).toBe('true_false');
+    });
+  });
 });

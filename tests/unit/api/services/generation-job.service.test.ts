@@ -665,6 +665,49 @@ describe('processTopic — pool-serving path', () => {
     const candidateCall = prismaMock.examQuestion.findMany.mock.calls[1][0];
     expect((candidateCall!.where as any).id.notIn).toEqual([1]);
   });
+
+  it('restringe os candidatos do pool ao formato do exame', async () => {
+    // The pool key is (type, provider, examBoard, section, topic) — format is not part
+    // of it, so a 4-option exam and a 5-option exam of the same provider share a pool.
+    // Without this filter the user would be served questions of the wrong shape.
+    prismaMock.generationJobTopic.findUnique.mockResolvedValue(makeTopicWithRefKey() as any);
+    prismaMock.exam.findFirst.mockResolvedValue({
+      providerId: 'prov-1',
+      examBoardId: null,
+      questionFormat: 'mc_4',
+    } as any);
+    prismaMock.questionPool.findMany.mockResolvedValue([{ id: 'pool-1' }] as any);
+
+    prismaMock.examQuestion.findMany
+      .mockResolvedValueOnce([]) // alreadyHas
+      .mockResolvedValueOnce([makePoolQuestion(2)]);
+    prismaMock.examQuestion.create.mockResolvedValue({} as any);
+
+    await processTopic('topic-pool-1');
+
+    const candidateCall = prismaMock.examQuestion.findMany.mock.calls[1][0];
+
+    expect((candidateCall!.where as any).format).toBe('mc_4');
+  });
+
+  it('copia o formato da questão original para a cópia do usuário', async () => {
+    prismaMock.generationJobTopic.findUnique.mockResolvedValue(makeTopicWithRefKey() as any);
+    prismaMock.exam.findFirst.mockResolvedValue({
+      providerId: 'prov-1',
+      examBoardId: null,
+      questionFormat: 'mc_5',
+    } as any);
+    prismaMock.questionPool.findMany.mockResolvedValue([{ id: 'pool-1' }] as any);
+
+    prismaMock.examQuestion.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([makePoolQuestion(2)]);
+    prismaMock.examQuestion.create.mockResolvedValue({} as any);
+
+    await processTopic('topic-pool-1');
+
+    expect(prismaMock.examQuestion.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ format: 'mc_5' }) })
+    );
+  });
 });
 
 // Helper for pool tests
@@ -675,6 +718,7 @@ function makePoolQuestion(id: number) {
     text: `Question ${id}`,
     correctCount: 1,
     difficulty: 'medium',
+    format: 'mc_5',
     examName: 'AWS SAA-C03',
     sectionName: 'Cloud Concepts',
     topicName: null,

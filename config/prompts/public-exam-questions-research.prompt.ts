@@ -1,4 +1,6 @@
 import type { PromptDefinition } from './types';
+import { correctCountRange, resolveQuestionFormat } from '@/config/question-formats';
+import type { QuestionFormatKey } from '@/config/question-formats';
 
 export interface PublicExamQuestionsResearchInput {
   readonly public_exam_name: string;
@@ -7,11 +9,13 @@ export interface PublicExamQuestionsResearchInput {
   readonly topic_name?: string;
   readonly num_questions: string;
   readonly topics_list?: string;
+  readonly format?: QuestionFormatKey;
 }
 
 export const publicExamQuestionsResearchPrompt = {
   build: (input: PublicExamQuestionsResearchInput): string => {
     const { public_exam_name, exam_board_name, subject_name, topic_name, num_questions, topics_list } = input;
+    const format = resolveQuestionFormat(input.format);
     const topicoLine = topic_name ? `focadas no tópico "${topic_name}"` : 'cobrindo a matéria de forma ampla';
     const topicsBlock = topics_list ? `\nTópicos a cobrir (distribua as questões entre eles):\n${topics_list}\n` : '';
 
@@ -39,6 +43,8 @@ Regras:
 3. Apenas conteúdo factualmente correto (leis, artigos, súmulas vigentes).
 4. Não indique a resposta correta.
 5. Cada questão deve ser autocontida.
+6. ${format.draftRule}
+7. correctCount deve ficar entre 1 e ${format.maxCorrect}.
 
 Perfis de banca:
 - Cebraspe/CESPE: afirmações longas; "exceto/não/apenas"; troca sutil de termos legais.
@@ -57,13 +63,9 @@ publicExamName: ${public_exam_name}
 examBoardName: ${exam_board_name}
 subject: ${subject_name}${topic_name ? `\ntopic: ${topic_name}` : ''}
 difficulty: <easy|medium|hard>
-correctCount: <1|2|3>
+correctCount: <${correctCountRange(format)}>
 text: <enunciado>
-A: <texto>
-B: <texto>
-C: <texto>
-D: <texto>
-E: <texto>
+${format.draftTemplate}
 ---
 QUESTÃO 2
 ...`;

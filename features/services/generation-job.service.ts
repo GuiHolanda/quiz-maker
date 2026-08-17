@@ -2,6 +2,8 @@ import { after } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
 import { shuffleOptionTexts } from '@/lib/shuffle-options';
+import { resolveQuestionFormat } from '@/config/question-formats';
+import type { QuestionFormat } from '@/config/question-formats';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { QuotaService } from '@/features/services/quota.service';
 import { MetricsService } from '@/features/services/metrics.service';
@@ -203,6 +205,14 @@ export async function processTopic(topicId: string): Promise<void> {
   const { job } = topic;
   const { userId, type, refName, examBoardName } = job;
 
+  // One lookup serves both the pool query and the prompts: the exam declares the
+  // question shape every step of the pipeline must produce.
+  const exam = await prisma.exam.findFirst({
+    where: { id: job.refKey },
+    select: { providerId: true, examBoardId: true, questionFormat: true },
+  });
+  const examFormat = resolveQuestionFormat(exam?.questionFormat);
+
   // Fetch the sub-topics for this section so they can be included in the prompts.
   const sectionTopics = await prisma.examSection
     .findFirst({
@@ -245,6 +255,8 @@ export async function processTopic(topicId: string): Promise<void> {
       userId,
       job.type as 'certification' | 'public_exam',
       job.refKey,
+      exam,
+      examFormat,
       topic.topicName,
       topic.questionCount
     );
@@ -271,7 +283,11 @@ export async function processTopic(topicId: string): Promise<void> {
     // Build the per-type input for each of the three pipeline steps. The prompt
     // objects come from the type-keyed dispatch table; the input shapes differ
     // (certification vs concurso), so they are constructed per branch.
+    // Every step carries the format: research writes the options, review must not
+    // reshape them, and format emits the JSON skeleton for that same label set.
     const buildInput = (step: 'research' | 'review' | 'format', priorText?: string): Record<string, unknown> => {
+      const format = examFormat.key;
+
       if (type === 'certification') {
         if (step === 'research')
           return {
@@ -279,6 +295,7 @@ export async function processTopic(topicId: string): Promise<void> {
             topic_name: topic.topicName,
             num_questions: numStr,
             topics_list: topicsList,
+            format,
           };
         if (step === 'review')
           return {
@@ -286,8 +303,9 @@ export async function processTopic(topicId: string): Promise<void> {
             topic_name: topic.topicName,
             draft_questions: priorText,
             topics_list: topicsList,
+            format,
           };
-        return { certification_name: refName, topic_name: topic.topicName, reviewed_questions: priorText };
+        return { certification_name: refName, topic_name: topic.topicName, reviewed_questions: priorText, format };
       }
       if (step === 'research') {
         return {
@@ -296,6 +314,7 @@ export async function processTopic(topicId: string): Promise<void> {
           subject_name: topic.topicName,
           num_questions: numStr,
           topics_list: topicsList,
+          format,
         };
       }
       if (step === 'review') {
@@ -305,6 +324,7 @@ export async function processTopic(topicId: string): Promise<void> {
           subject_name: topic.topicName,
           draft_questions: priorText,
           topics_list: topicsList,
+          format,
         };
       }
       return {
@@ -312,6 +332,7 @@ export async function processTopic(topicId: string): Promise<void> {
         exam_board_name: examBoardName ?? '',
         subject_name: topic.topicName,
         reviewed_questions: priorText,
+        format,
       };
     };
 
@@ -348,7 +369,7 @@ export async function processTopic(topicId: string): Promise<void> {
       Date.now() - t0
     );
 
-    questions = validateAiQuestions(JSON.parse(extractJson(format.text))) as AIExamQuestion[];
+    questions = validateAiQuestions(JSON.parse(extractJson(format.text)), examFormat) as AIExamQuestion[];
 
     // Defense: the review step may return more questions than requested despite prompt constraints.
     // Truncate to the requested count so saved count never exceeds what was charged to quota.
@@ -399,14 +420,11 @@ async function tryServeFromPool(
   userId: string,
   type: 'certification' | 'public_exam',
   examId: string,
+  exam: { providerId: string | null; examBoardId: string | null } | null,
+  format: QuestionFormat,
   sectionName: string,
   requested: number
 ): Promise<PoolServeResult> {
-  const exam = await prisma.exam.findFirst({
-    where: { id: examId },
-    select: { providerId: true, examBoardId: true },
-  });
-
   if (!exam || (!exam.providerId && !exam.examBoardId)) {
     return { served: 0 };
   }
@@ -431,8 +449,11 @@ async function tryServeFromPool(
   });
   const alreadyHasIds = alreadyHas.map((q) => q.id);
 
+  // The pool key is (type, provider, examBoard, section, topic) — format is NOT part of
+  // it, so one pool holds questions of every shape the provider has ever produced.
+  // Without this filter a 4-option exam would be served 5-option questions.
   const candidates = await prisma.examQuestion.findMany({
-    where: { poolId: { in: poolIds }, id: { notIn: alreadyHasIds } },
+    where: { poolId: { in: poolIds }, id: { notIn: alreadyHasIds }, format: format.key },
     include: { options: true },
     take: requested,
   });
@@ -444,15 +465,16 @@ async function tryServeFromPool(
     // Each copy gets its own letter assignment: the pool row carries the ordering the
     // drafting LLM chose, and the copy has no answer yet, so shuffling here is safe and
     // decorrelates the gabarito letter between users served the same pooled question.
-    const shuffledOptions = shuffleOptionTexts(
-      Object.fromEntries(src.options.map((option) => [option.label, option.text]))
-    );
+    // Semantic labels (Certo/Errado) are exempt — there the label is the meaning.
+    const sourceOptions = Object.fromEntries(src.options.map((option) => [option.label, option.text]));
+    const copyOptions = format.labelsAreSemantic ? sourceOptions : shuffleOptionTexts(sourceOptions);
 
     await prisma.examQuestion.create({
       data: {
         text: src.text,
         correctCount: src.correctCount,
         difficulty: src.difficulty,
+        format: src.format,
         examName: src.examName,
         sectionName: src.sectionName,
         topicName: src.topicName,
@@ -461,7 +483,7 @@ async function tryServeFromPool(
         sectionId: src.sectionId,
         topicId: src.topicId,
         poolId: src.poolId,
-        options: { create: Object.entries(shuffledOptions).map(([label, text]) => ({ label, text })) },
+        options: { create: Object.entries(copyOptions).map(([label, text]) => ({ label, text })) },
       },
     });
   }

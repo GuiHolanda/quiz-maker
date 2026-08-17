@@ -96,6 +96,8 @@ Variantes do objeto: `inputProperties.input`, `.select`, `.autocomplete`.
 
 **Gotcha crítico:** `labelPlacement: 'outside'` requer `placeholder` — sem ele o label flutua para dentro do campo. Use `placeholder=" "` como fallback mínimo.
 
+**Gotcha `<Select>` + `description`:** não passe `description` num `Select` com `labelPlacement: 'outside'`. O helper liga `data-has-helper` no wrapper, que aplica `group-data-[has-helper=true]:-translate-y-0` e `:relative` no label — o deslocamento é cancelado e o label cai **em cima** do campo. Não quebra tsc nem build, só aparece na tela. Renderize a dica como `<p className="text-xs text-default-500">` irmã do `Select`. Vale só para `Select`; em `Input` o `description` funciona.
+
 **Senha:** sempre `<PasswordInput>` (toggle incluso), nunca `<Input type="password">`.
 
 ---

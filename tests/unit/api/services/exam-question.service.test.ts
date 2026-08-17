@@ -163,3 +163,84 @@ describe('createFromPayload — option shuffling', () => {
     expect(labels.size).toBeGreaterThan(1);
   });
 });
+
+describe('createFromPayload — question format', () => {
+  const trueFalseQuestion = {
+    id: 1,
+    examName: 'TRF 1',
+    sectionName: 'Direito Administrativo',
+    text: 'A Administração pode anular seus próprios atos.',
+    correctCount: 1,
+    difficulty: 'easy',
+    options: { C: 'Certo', E: 'Errado' },
+  };
+
+  function persistedOptions() {
+    return prismaMock.examOption.create.mock.calls.map(([call]: any) => call.data);
+  }
+
+  beforeEach(() => {
+    prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+    prismaMock.questionPool.findFirst.mockResolvedValue(null);
+    prismaMock.examQuestion.create.mockResolvedValue({ id: 1 } as any);
+    prismaMock.examOption.create.mockResolvedValue({} as any);
+    prismaMock.examOption.create.mockClear();
+    prismaMock.examQuestion.create.mockClear();
+  });
+
+  it('stamps the exam format onto the persisted question', async () => {
+    prismaMock.exam.findFirst.mockResolvedValue({
+      id: 'exam-1',
+      type: 'public_exam',
+      questionFormat: 'true_false',
+      providerId: null,
+      examBoardId: null,
+      sections: [],
+    } as any);
+
+    const service = new ExamQuestionService(prismaMock as any);
+
+    await service.createFromPayload([trueFalseQuestion] as any, 'user-1', 'exam-1');
+
+    expect(prismaMock.examQuestion.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ format: 'true_false' }) })
+    );
+  });
+
+  it('falls back to mc_5 when the exam cannot be resolved', async () => {
+    prismaMock.exam.findFirst.mockResolvedValue(null);
+
+    const service = new ExamQuestionService(prismaMock as any);
+
+    await service.createFromPayload([trueFalseQuestion] as any, 'user-1', 'exam-1');
+
+    expect(prismaMock.examQuestion.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ format: 'mc_5' }) })
+    );
+  });
+
+  it('never moves the text off a semantic label', async () => {
+    // In Certo/Errado the label IS the meaning. Reassigning texts across C and E the way
+    // the position-bias shuffle does for multiple choice would invert every gabarito.
+    prismaMock.exam.findFirst.mockResolvedValue({
+      id: 'exam-1',
+      type: 'public_exam',
+      questionFormat: 'true_false',
+      providerId: null,
+      examBoardId: null,
+      sections: [],
+    } as any);
+
+    const service = new ExamQuestionService(prismaMock as any);
+
+    for (let run = 0; run < 40; run++) {
+      prismaMock.examOption.create.mockClear();
+      await service.createFromPayload([trueFalseQuestion] as any, 'user-1', 'exam-1');
+
+      const persisted = persistedOptions();
+
+      expect(persisted.find((option: any) => option.label === 'C').text).toBe('Certo');
+      expect(persisted.find((option: any) => option.label === 'E').text).toBe('Errado');
+    }
+  });
+});

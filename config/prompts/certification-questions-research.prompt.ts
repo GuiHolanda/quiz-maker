@@ -1,15 +1,19 @@
 import type { PromptDefinition } from './types';
+import { correctCountRange, resolveQuestionFormat } from '@/config/question-formats';
+import type { QuestionFormatKey } from '@/config/question-formats';
 
 export interface CertificationQuestionsResearchInput {
   readonly certification_name: string;
   readonly topic_name: string;
   readonly num_questions: string;
   readonly topics_list?: string;
+  readonly format?: QuestionFormatKey;
 }
 
 export const certificationQuestionsResearchPrompt = {
   build: (input: CertificationQuestionsResearchInput): string => {
     const { certification_name, topic_name, num_questions, topics_list } = input;
+    const format = resolveQuestionFormat(input.format);
     const topicsBlock = topics_list
       ? `\nSub-topics to cover (distribute questions across these):\n${topics_list}\n`
       : '';
@@ -36,8 +40,8 @@ Rules:
 3. Only factually correct content based on current official documentation or standards.
 4. Do NOT indicate the correct answer.
 5. Each question must be self-contained.
-6. Questions may be single-choice (correctCount: 1) or multiple-choice (correctCount: 2 or 3). Vary across the set.
-7. Each question must have exactly 5 options labeled A, B, C, D, E.
+6. correctCount must be between 1 and ${format.maxCorrect}. Vary across the set when the format allows more than one.
+7. ${format.draftRule}
 8. Vary difficulty: mix easy, medium, and hard questions.
 9. Favor scenario-based questions over pure recall when the domain allows.
 10. Never use "All of the above" or "None of the above".
@@ -51,13 +55,9 @@ QUESTION 1
 certificationTitle: ${certification_name}
 topic: ${topic_name}
 difficulty: <easy|medium|hard>
-correctCount: <1|2|3>
+correctCount: <${correctCountRange(format)}>
 text: <question text>
-A: <option text>
-B: <option text>
-C: <option text>
-D: <option text>
-E: <option text>
+${format.draftTemplate}
 ---
 QUESTION 2
 ...`;
