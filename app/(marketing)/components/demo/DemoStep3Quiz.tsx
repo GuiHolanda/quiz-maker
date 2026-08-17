@@ -1,18 +1,18 @@
 'use client';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import type { DemoQuestion } from '@/shared/types';
-import type { DemoCert } from './data/demoCatalog';
+import type { DemoCatalogExam, DemoQuestion } from '@/shared/types';
 import { BlueprintCorners } from '@/app/(marketing)/components/shared/BlueprintCorners';
 import { DemoStickyBar } from './DemoStickyBar';
 import { DemoStepHeader } from './DemoStepHeader';
 import { DemoBackButton } from './DemoBackButton';
 import { DemoPagination } from './DemoPagination';
+import { isAnswerComplete, selectionLimit } from './demoScoring';
 
 interface DemoStep3QuizProps {
-  readonly cert: DemoCert;
+  readonly exam: DemoCatalogExam;
   readonly questions: DemoQuestion[];
-  readonly answers: Record<string, number | null>;
+  readonly answers: Record<string, number[]>;
   readonly page: number;
   readonly onAnswer: (questionIndex: number, optionIndex: number) => void;
   readonly onPageChange: (page: number) => void;
@@ -23,7 +23,7 @@ interface DemoStep3QuizProps {
 const PAGE_SIZE = 5;
 
 export function DemoStep3Quiz({
-  cert,
+  exam,
   questions,
   answers,
   page,
@@ -36,7 +36,7 @@ export function DemoStep3Quiz({
 
   const totalPages = Math.ceil(questions.length / PAGE_SIZE);
   const pageQuestions = questions.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-  const answered = Object.values(answers).filter((v) => v !== null && v !== undefined).length;
+  const answered = questions.filter((question, index) => isAnswerComplete(answers[index], question)).length;
   const allAnswered = answered === questions.length;
 
   return (
@@ -45,7 +45,7 @@ export function DemoStep3Quiz({
       <div className="max-w-6xl mx-auto px-6 pt-8 pb-6 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div>
           <DemoBackButton onClick={onBack} label={t('demo.step3.backBtn')} className="mb-3 block" />
-          <DemoStepHeader kick={t('demo.step3.kick')} heading={t('demo.step3.heading')} note={cert.name} />
+          <DemoStepHeader kick={t('demo.step3.kick')} heading={t('demo.step3.heading')} note={exam.name} />
         </div>
         <div className="flex-shrink-0 text-right">
           <p className="mono text-xs text-mkt-text opacity-50">
@@ -61,13 +61,14 @@ export function DemoStep3Quiz({
       <div className="max-w-6xl mx-auto px-6 space-y-6">
         {pageQuestions.map((question, i) => {
           const globalIndex = page * PAGE_SIZE + i;
-          const userAnswer = answers[globalIndex] ?? null;
+          const userAnswer = answers[globalIndex] ?? [];
+          const limit = selectionLimit(question);
 
           return (
             <div key={globalIndex} className="blueprint overflow-visible p-6">
               <BlueprintCorners />
-              <div className="flex items-start justify-between gap-4 mb-4">
-                <span className="mono text-xs text-mkt-text opacity-40">
+              <div className="flex items-start justify-between gap-4 mb-2">
+                <span className="mono text-xs text-mkt-accent font-semibold">
                   {t('demo.step3.questionLabel', { n: globalIndex + 1, total: questions.length })}
                 </span>
                 <span className="mono text-xs text-mkt-accent border border-mkt-accent/30 px-2 py-0.5 flex-shrink-0">
@@ -75,11 +76,15 @@ export function DemoStep3Quiz({
                 </span>
               </div>
 
-              <p className="text-mkt-text text-sm leading-relaxed mb-5">{question.text}</p>
+              <p className="text-mkt-text text-lg leading-relaxed mb-6">{question.text}</p>
+
+              {limit > 1 && (
+                <p className="mono text-xs text-mkt-accent mb-3">{t('demo.step3.selectCount', { n: limit })}</p>
+              )}
 
               <div className="space-y-2">
                 {question.options.map((option, optIdx) => {
-                  const isSelected = userAnswer === optIdx;
+                  const isSelected = userAnswer.includes(optIdx);
                   return (
                     <button
                       key={optIdx}

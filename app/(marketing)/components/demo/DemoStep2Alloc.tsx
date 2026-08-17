@@ -4,49 +4,38 @@ import { useState, useCallback } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFileLines, faClock, faCircleCheck, faRectangleList } from '@fortawesome/free-regular-svg-icons';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import type { DemoCert } from './data/demoCatalog';
+import type { DemoCatalogExam, DemoCatalogDomain } from '@/shared/types';
+import { distributeByWeight } from '@/lib/largest-remainder';
 import { BlueprintCorners } from '@/app/(marketing)/components/shared/BlueprintCorners';
+import { DemoProgressBar } from './DemoProgressBar';
+import { DemoStepHeader } from './DemoStepHeader';
+import { DemoBackButton } from './DemoBackButton';
 
 interface DemoStep2AllocProps {
-  readonly cert: DemoCert;
+  readonly exam: DemoCatalogExam;
   readonly onGenerate: (alloc: Record<string, number>) => void;
   readonly onBack: () => void;
 }
 
 const TOTAL = 10;
 
-function autoDistribute(
-  domains: ReadonlyArray<{ readonly name: string; readonly weight: number }>,
-): Record<string, number> {
-  const weightSum = domains.reduce((sum, domain) => sum + domain.weight, 0);
-  if (weightSum === 0) return Object.fromEntries(domains.map((domain) => [domain.name, 0]));
-
-  const items = domains.map((domain) => {
-    const exact = (domain.weight / weightSum) * TOTAL;
-    return { name: domain.name, floor: Math.floor(exact), remainder: exact % 1 };
-  });
-
-  let remaining = TOTAL - items.reduce((sum, item) => sum + item.floor, 0);
-  const byRemainder = [...items].sort((a, b) => b.remainder - a.remainder);
-
-  for (const item of byRemainder) {
-    if (remaining <= 0) break;
-    const original = items.find((i) => i.name === item.name)!;
-    original.floor += 1;
-    remaining -= 1;
-  }
-
-  return Object.fromEntries(items.map((item) => [item.name, item.floor]));
+// Shares the apportionment used server-side to build the slice, so the split
+// suggested here can always be served — `available` is the ceiling per domain.
+function autoDistribute(domains: readonly DemoCatalogDomain[]): Record<string, number> {
+  return distributeByWeight(
+    domains.map((domain) => ({ key: domain.name, weight: domain.weight, capacity: domain.available })),
+    TOTAL
+  );
 }
 
-export function DemoStep2Alloc({ cert, onGenerate, onBack }: DemoStep2AllocProps) {
+export function DemoStep2Alloc({ exam, onGenerate, onBack }: DemoStep2AllocProps) {
   const { t } = useTranslation();
 
-  const getInitialAlloc = useCallback(() => autoDistribute(cert.domains), [cert.domains]);
+  const getInitialAlloc = useCallback(() => autoDistribute(exam.domains), [exam.domains]);
   const [alloc, setAlloc] = useState<Record<string, number>>(getInitialAlloc);
   const [removedDomains, setRemovedDomains] = useState<string[]>([]);
 
-  const activeDomains = cert.domains.filter((domain) => !removedDomains.includes(domain.name));
+  const activeDomains = exam.domains.filter((domain) => !removedDomains.includes(domain.name));
   const total = Object.values(alloc).reduce((sum, v) => sum + v, 0);
   const isFull = total === TOTAL;
 
@@ -65,10 +54,23 @@ export function DemoStep2Alloc({ cert, onGenerate, onBack }: DemoStep2AllocProps
   }
 
   function handleChange(domainName: string, value: number) {
-    setAlloc((prev) => ({ ...prev, [domainName]: Math.max(0, Math.min(TOTAL, value)) }));
+    const available = exam.domains.find((domain) => domain.name === domainName)?.available ?? 0;
+    const ceiling = Math.min(TOTAL, available);
+
+    setAlloc((prev) => ({ ...prev, [domainName]: Math.max(0, Math.min(ceiling, value)) }));
+  }
+
+  function canRemove(domainName: string): boolean {
+    const remainingCapacity = activeDomains
+      .filter((domain) => domain.name !== domainName)
+      .reduce((sum, domain) => sum + domain.available, 0);
+
+    return remainingCapacity >= TOTAL;
   }
 
   function handleRemove(domainName: string) {
+    if (!canRemove(domainName)) return;
+
     const newActive = activeDomains.filter((domain) => domain.name !== domainName);
     setRemovedDomains((prev) => [...prev, domainName]);
     if (newActive.length > 0) {
@@ -86,7 +88,7 @@ export function DemoStep2Alloc({ cert, onGenerate, onBack }: DemoStep2AllocProps
   }
 
   function handleRestore(domainName: string) {
-    const restoredDomain = cert.domains.find((domain) => domain.name === domainName)!;
+    const restoredDomain = exam.domains.find((domain) => domain.name === domainName)!;
     const newActive = [...activeDomains, restoredDomain];
     setRemovedDomains((prev) => prev.filter((name) => name !== domainName));
     const newAlloc = autoDistribute(newActive);
@@ -106,46 +108,40 @@ export function DemoStep2Alloc({ cert, onGenerate, onBack }: DemoStep2AllocProps
       : t('demo.step2.stickyReduce', { n: total - TOTAL });
 
   const stats = [
-    { icon: faFileLines, label: t('demo.step2.statQuestions'), value: `${cert.questions} questões` },
-    { icon: faClock, label: t('demo.step2.statMinutes'), value: `${cert.minutes} min` },
-    { icon: faCircleCheck, label: t('demo.step2.statPassing'), value: cert.passing, accent: true },
+    { icon: faFileLines, label: t('demo.step2.statQuestions'), value: `${exam.questions} questões` },
+    { icon: faClock, label: t('demo.step2.statMinutes'), value: `${exam.minutes} min` },
+    { icon: faCircleCheck, label: t('demo.step2.statPassing'), value: exam.passing, accent: true },
     {
       icon: faRectangleList,
       label: t('demo.step2.statTopics'),
-      value: `${activeDomains.length} de ${cert.domains.length}`,
+      value: `${activeDomains.length} de ${exam.domains.length}`,
     },
   ];
 
   return (
     <div className="min-h-screen pb-16">
       <div className="max-w-6xl mx-auto px-6 pt-8">
-        <button
-          onClick={onBack}
-          className="mono text-xs text-mkt-accent uppercase tracking-widest hover:opacity-70 transition-opacity"
-        >
-          ← {t('demo.step2.backBtn')}
-        </button>
+        <DemoBackButton onClick={onBack} label={t('demo.step2.backBtn')} />
       </div>
 
       <div className="max-w-6xl mx-auto px-6 pt-4 pb-8">
-        <span className="kick">{t('demo.step2.kick')}</span>
-        <h1 className="ds-heading text-mkt-text text-4xl mt-2">{t('demo.step2.heading')}</h1>
+        <DemoStepHeader kick={t('demo.step2.kick')} heading={t('demo.step2.heading')} headingSize="5xl" />
       </div>
 
       <div
         className="max-w-6xl mx-auto px-6"
-        style={{ display: 'grid', gridTemplateColumns: '0.65fr 1.35fr', gap: '24px', alignItems: 'start' }}
+        style={{ display: 'grid', gridTemplateColumns: '0.50fr 1.35fr', gap: '24px', alignItems: 'start' }}
       >
         {/* Left: exam info card */}
         <div className="blueprint overflow-visible p-5">
           <BlueprintCorners />
-          <span className="kick text-[10px]">{t('demo.step2.examSelected')}</span>
-          <p className="ds-heading text-mkt-text text-lg mt-1 leading-tight">{cert.name}</p>
-          <p className="text-mkt-text opacity-50 text-xs mt-0.5">
-            {cert.vendor} · {cert.year}
+          <span className="kick text-xs mb-2">{t('demo.step2.examSelected')}</span>
+          <p className="ds-heading text-mkt-text text-lg mt-1 leading-tight">{exam.name}</p>
+          <p className="text-mkt-text opacity-50 text-xs mt-1">
+            {exam.vendor} · {exam.year}
           </p>
 
-          <div className="mt-4 space-y-2.5 border-t border-mkt-divider pt-4">
+          <div className="mt-6 space-y-2.5 border-t border-mkt-divider pt-4">
             {stats.map(({ icon, label, value, accent }) => (
               <div key={label} className="flex items-center justify-between">
                 <span className="flex items-center gap-2 text-xs text-mkt-text opacity-60">
@@ -161,11 +157,11 @@ export function DemoStep2Alloc({ cert, onGenerate, onBack }: DemoStep2AllocProps
 
           <button
             onClick={handleDistribute}
-            className="w-full mt-5 border border-mkt-divider text-mkt-text text-xs mono uppercase tracking-widest py-2 hover:border-mkt-accent hover:text-mkt-accent transition-colors"
+            className="w-full mt-6 border border-mkt-divider text-sm font-semibold py-2 hover:border-mkt-accent text-mkt-text hover:text-mkt-accent transition-colors tracking-tight"
           >
             {t('demo.step2.distributeBtn')}
           </button>
-          <p className="text-mkt-text opacity-40 text-xs mt-3 leading-relaxed">{t('demo.step2.planNote')}</p>
+          <p className="text-mkt-text opacity-40 text-xs mt-4 leading-relaxed">{t('demo.step2.planNote')}</p>
         </div>
 
         {/* Right: allocation table */}
@@ -173,12 +169,13 @@ export function DemoStep2Alloc({ cert, onGenerate, onBack }: DemoStep2AllocProps
           <BlueprintCorners />
           <div
             className="grid border-b border-mkt-divider px-4 py-2.5 bg-mkt-surface"
-            style={{ gridTemplateColumns: '1fr 80px 40px 80px 28px' }}
+            style={{ gridTemplateColumns: '1fr 269px 40px 80px 28px' }}
           >
-            <span className="text-xs text-mkt-text opacity-50">{t('demo.step2.colTopic')}</span>
-            <span className="text-xs text-mkt-text opacity-50">{t('demo.step2.colWeight')}</span>
-            <span className="text-xs text-mkt-text opacity-50">{t('demo.step2.colPct')}</span>
-            <span className="text-xs text-mkt-text opacity-50 text-center">{t('demo.step2.colQuestions')}</span>
+            <span className="text-sm text-mkt-text opacity-50">{t('demo.step2.colTopic')}</span>
+            <span className="text-sm text-mkt-text opacity-50" style={{ gridColumn: 'span 2' }}>
+              {t('demo.step2.colWeight')}
+            </span>
+            <span className="text-sm text-mkt-text opacity-50 text-center">{t('demo.step2.colQuestions')}</span>
             <span />
           </div>
 
@@ -186,25 +183,29 @@ export function DemoStep2Alloc({ cert, onGenerate, onBack }: DemoStep2AllocProps
             <div
               key={domain.name}
               className="grid border-b border-mkt-divider px-4 py-3 items-center last:border-b-0"
-              style={{ gridTemplateColumns: '1fr 80px 40px 80px 28px' }}
+              style={{ gridTemplateColumns: '1fr 269px 40px 80px 28px' }}
             >
-              <span className="text-xs text-mkt-text truncate pr-2">{domain.name}</span>
-              <div className="h-1.5 bg-mkt-divider">
-                <div className="h-full bg-mkt-accent" style={{ width: `${domain.weight}%` }} />
-              </div>
+              <span className="text-base text-mkt-text truncate pr-2 py-2">{domain.name}</span>
+              <DemoProgressBar pct={domain.weight} className="h-1.5 mr-2" />
               <span className="mono text-xs text-mkt-text opacity-50">{domain.weight}%</span>
               <input
                 type="number"
                 min={0}
-                max={TOTAL}
+                max={Math.min(TOTAL, domain.available)}
                 value={alloc[domain.name] ?? 0}
                 onChange={(e) => handleChange(domain.name, Number(e.target.value))}
                 className="w-14 border border-mkt-divider text-center mono text-xs text-mkt-text bg-transparent py-0.5 focus:border-mkt-accent focus:outline-none"
               />
               <button
                 onClick={() => handleRemove(domain.name)}
+                disabled={!canRemove(domain.name)}
                 aria-label={`Remove ${domain.name}`}
-                className="text-mkt-text opacity-30 hover:opacity-70 text-xs text-center transition-opacity"
+                title={canRemove(domain.name) ? undefined : t('demo.step2.removeDisabled', { n: TOTAL })}
+                className={`text-xs text-center transition-opacity ${
+                  canRemove(domain.name)
+                    ? 'text-mkt-text opacity-30 hover:opacity-70'
+                    : 'text-mkt-text opacity-10 cursor-not-allowed'
+                }`}
               >
                 ✕
               </button>

@@ -2,18 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import type { DemoCert } from './data/demoCatalog';
+import type { DemoCatalogExam } from '@/shared/types';
 import { BlueprintCorners } from '@/app/(marketing)/components/shared/BlueprintCorners';
 
 interface DemoLoadingStateProps {
-  readonly cert: DemoCert;
+  readonly exam: DemoCatalogExam;
   readonly onDone: () => void;
 }
 
 const STEP_TIMINGS_MS = [700, 1300, 1900] as const;
 const DONE_MS = 2500;
 
-export function DemoLoadingState({ cert, onDone }: DemoLoadingStateProps) {
+export function DemoLoadingState({ exam, onDone }: DemoLoadingStateProps) {
   const { t } = useTranslation();
   const [activeStep, setActiveStep] = useState(0);
 
@@ -28,12 +28,7 @@ export function DemoLoadingState({ cert, onDone }: DemoLoadingStateProps) {
     return () => timers.forEach(clearTimeout);
   }, [onDone]);
 
-  const steps = [
-    t('demo.loading.step1'),
-    t('demo.loading.step2'),
-    t('demo.loading.step3'),
-    t('demo.loading.step4'),
-  ];
+  const steps = [t('demo.loading.step1'), t('demo.loading.step2'), t('demo.loading.step3'), t('demo.loading.step4')];
 
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-16">
@@ -41,15 +36,14 @@ export function DemoLoadingState({ cert, onDone }: DemoLoadingStateProps) {
         <BlueprintCorners />
 
         <span className="kick">{t('demo.loading.kick')}</span>
-        <h2 className="ds-heading text-mkt-text text-2xl mt-2">{cert.name}</h2>
+        <h2 className="ds-heading text-mkt-text text-2xl mt-2">{exam.name}</h2>
 
         {/* Sweep progress bar */}
         <div className="mt-6 h-1 bg-mkt-divider overflow-hidden">
           <div
             className="h-full"
             style={{
-              backgroundImage:
-                'linear-gradient(90deg, transparent 0%, var(--color-accent) 50%, transparent 100%)',
+              backgroundImage: 'linear-gradient(90deg, transparent 0%, var(--color-accent) 50%, transparent 100%)',
               backgroundSize: '200% 100%',
               animation: 'sweep 1.1s linear infinite',
             }}

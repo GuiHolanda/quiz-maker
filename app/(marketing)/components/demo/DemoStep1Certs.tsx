@@ -1,39 +1,47 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { DEMO_CATALOG } from './data/demoCatalog';
+import type { DemoCatalogExam } from '@/shared/types';
 import { DemoCertCard } from './DemoCertCard';
 import { DemoStickyBar } from './DemoStickyBar';
+import { DemoStepHeader } from './DemoStepHeader';
 
 interface DemoStep1CertsProps {
-  readonly onSelect: (certId: string) => void;
+  readonly exams: readonly DemoCatalogExam[];
+  readonly onSelect: (examId: string) => void;
 }
 
-const ALL_TRACKS = ['Todos', 'Cloud', 'Ágil', 'Segurança', 'DevOps'] as const;
+const ALL_VENDORS = '__all__';
 
-export function DemoStep1Certs({ onSelect }: DemoStep1CertsProps) {
+export function DemoStep1Certs({ exams, onSelect }: DemoStep1CertsProps) {
   const { t } = useTranslation();
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [activeTrack, setActiveTrack] = useState<string>('Todos');
+  const [activeVendor, setActiveVendor] = useState<string>(ALL_VENDORS);
 
-  const filtered =
-    activeTrack === 'Todos' ? DEMO_CATALOG : DEMO_CATALOG.filter((cert) => cert.track === activeTrack);
+  // The catalog has no track taxonomy, so the vendor — which is real data —
+  // is what the filter offers.
+  const vendors = useMemo(() => {
+    const unique = new Set(exams.map((exam) => exam.vendor).filter(Boolean));
+    return Array.from(unique).sort((a, b) => a.localeCompare(b));
+  }, [exams]);
 
-  const selectedCert = selectedId ? (DEMO_CATALOG.find((cert) => cert.id === selectedId) ?? null) : null;
+  const filtered = activeVendor === ALL_VENDORS ? exams : exams.filter((exam) => exam.vendor === activeVendor);
+  const selectedExam = selectedId ? (exams.find((exam) => exam.id === selectedId) ?? null) : null;
 
-  function handleCardClick(certId: string) {
-    setSelectedId((prev) => (prev === certId ? null : certId));
+  function handleCardClick(examId: string) {
+    setSelectedId((prev) => (prev === examId ? null : examId));
   }
 
   return (
     <div className="min-h-screen pb-24">
-      {/* Header */}
-      <div className="max-w-6xl mx-auto px-6 pt-12 pb-8 flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+      <div className="max-w-7xl mx-auto px-6 pt-12 pb-8 flex flex-col md:flex-row md:items-start md:justify-between gap-6">
         <div className="max-w-xl">
-          <span className="kick">{t('demo.step1.kick')}</span>
-          <h1 className="ds-heading text-mkt-text text-4xl mt-2">{t('demo.step1.heading')}</h1>
-          <p className="text-mkt-text opacity-60 text-sm mt-3">{t('demo.step1.subtext')}</p>
+          <DemoStepHeader
+            kick={t('demo.step1.kick')}
+            heading={t('demo.step1.heading')}
+            subtext={t('demo.step1.subtext')}
+          />
         </div>
         <div className="mono text-xs text-mkt-text md:text-right mt-2 space-y-0.5">
           <div className="text-mkt-accent">01 EXAME</div>
@@ -42,38 +50,38 @@ export function DemoStep1Certs({ onSelect }: DemoStep1CertsProps) {
         </div>
       </div>
 
-      {/* Filter tabs */}
-      <div className="max-w-6xl mx-auto px-6 mb-6 flex gap-2 flex-wrap">
-        {ALL_TRACKS.map((track) => (
-          <button
-            key={track}
-            onClick={() => setActiveTrack(track)}
-            className={`mono text-xs uppercase tracking-widest px-3 py-1.5 border transition-colors ${
-              activeTrack === track
-                ? 'bg-mkt-accent text-white border-mkt-accent'
-                : 'bg-transparent text-mkt-text border-mkt-divider opacity-60 hover:opacity-100'
-            }`}
-          >
-            {track}
-          </button>
-        ))}
-      </div>
+      {vendors.length > 1 && (
+        <div className="max-w-7xl mx-auto px-6 mb-6 flex gap-2 flex-wrap">
+          {[ALL_VENDORS, ...vendors].map((vendor) => (
+            <button
+              key={vendor}
+              onClick={() => setActiveVendor(vendor)}
+              className={`mono text-xs uppercase tracking-widest px-3 py-1.5 border transition-colors ${
+                activeVendor === vendor
+                  ? 'bg-mkt-accent text-white border-mkt-accent'
+                  : 'bg-transparent text-mkt-text border-mkt-divider opacity-60 hover:opacity-100'
+              }`}
+            >
+              {vendor === ALL_VENDORS ? t('demo.step1.filterAll') : vendor}
+            </button>
+          ))}
+        </div>
+      )}
 
-      {/* Cert grid */}
-      <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filtered.map((cert) => (
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+        {filtered.map((exam) => (
           <DemoCertCard
-            key={cert.id}
-            cert={cert}
-            isSelected={selectedId === cert.id}
-            onSelect={() => handleCardClick(cert.id)}
+            key={exam.id}
+            exam={exam}
+            isSelected={selectedId === exam.id}
+            onSelect={() => handleCardClick(exam.id)}
           />
         ))}
       </div>
 
       <DemoStickyBar
-        leftLabel={selectedCert ? selectedCert.name : t('demo.step1.stickyPlaceholder')}
-        leftAccent={!!selectedCert}
+        leftLabel={selectedExam ? selectedExam.name : t('demo.step1.stickyPlaceholder')}
+        leftAccent={!!selectedExam}
         rightHint={t('demo.step1.stickyHint')}
         buttonLabel={t('demo.step1.continueBtn')}
         buttonDisabled={!selectedId}

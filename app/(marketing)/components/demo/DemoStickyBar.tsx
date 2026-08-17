@@ -20,7 +20,7 @@ export function DemoStickyBar({
   onAction,
 }: DemoStickyBarProps) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-mkt-divider bg-mkt-bg">
+    <div className="max-w-6xl mx-auto mt-8 sticky bottom-0 z-40 border-t border-mkt-divider bg-mkt-bg">
       <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
         <span
           className={`mono text-xs px-2 py-1 border ${

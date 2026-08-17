@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { DemoFlowClient } from '@/app/(marketing)/components/demo/DemoFlowClient';
+import { DemoCatalogSkeleton } from '@/app/(marketing)/components/demo/DemoCatalogSkeleton';
 
 export const metadata: Metadata = {
   title: 'Demonstração interativa · CertifiqueAI',
@@ -16,5 +18,11 @@ export const metadata: Metadata = {
 };
 
 export default function DemoPage() {
-  return <DemoFlowClient />;
+  // DemoFlowClient reads the ?exam= deep link via useSearchParams, which needs a
+  // Suspense boundary to keep this route statically renderable.
+  return (
+    <Suspense fallback={<DemoCatalogSkeleton />}>
+      <DemoFlowClient />
+    </Suspense>
+  );
 }
