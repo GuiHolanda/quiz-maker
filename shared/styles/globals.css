@@ -86,6 +86,140 @@
   }
 }
 
+/* ── Marketing — Industry Design System ─────────────────── */
+
+.marketing-ds {
+  --color-bg: #f2f2f3;
+  --color-surface: #e9e9ea;
+  --color-text: #1d1f20;
+  --color-accent: #5980a6;
+  --color-accent-700: oklch(35% 0.08 220);
+  --color-accent-800: #273747;
+  --color-accent-100: #EEF6FF;
+  --color-divider: color-mix(in srgb, #1d1f20 16%, transparent);
+
+  /* Demo quiz feedback colors */
+  --fb-ok-bg:      oklch(95% 0.04 145);
+  --fb-ok-border:  oklch(55% 0.14 145);
+  --fb-ok-text:    oklch(30% 0.10 145);
+  --fb-err-bg:     oklch(95% 0.04 27);
+  --fb-err-border: oklch(55% 0.14 27);
+  --fb-err-text:   oklch(35% 0.10 27);
+  --font-heading: var(--font-barlow-condensed, "Barlow Condensed", system-ui, sans-serif);
+  --font-heading-weight: 600;
+  --font-body: var(--font-barlow, "Barlow", system-ui, sans-serif);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  background-image: none;
+}
+
+.marketing-ds .ds-heading {
+  font-family: var(--font-heading);
+  font-weight: var(--font-heading-weight);
+}
+
+.marketing-ds .kick {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  display: block;
+}
+
+.marketing-ds .mono {
+  font-family: ui-monospace, Menlo, monospace;
+}
+
+/* Blueprint corner decorations */
+.marketing-ds .blueprint {
+  position: relative;
+  border: 1px solid var(--color-divider);
+  border-radius: 0;
+}
+
+/* Corners style themselves rather than depending on a `.blueprint` parent — the
+   old `.blueprint > .corner` selector silently rendered nothing whenever the
+   wrapper used a plain `relative border` instead. The parent still has to be a
+   positioning context; <BlueprintFrame> guarantees that. */
+.marketing-ds .corner {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+  pointer-events: none;
+}
+
+.marketing-ds .corner::before,
+.marketing-ds .corner::after {
+  content: "";
+  position: absolute;
+  background: currentColor;
+}
+
+.marketing-ds .corner::before {
+  left: 5px;
+  top: 0;
+  width: 1px;
+  height: 100%;
+}
+
+.marketing-ds .corner::after {
+  top: 5px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+}
+
+.marketing-ds .corner.tl { top: -6px; left: -6px; }
+.marketing-ds .corner.tr { top: -6px; right: -6px; }
+.marketing-ds .corner.bl { bottom: -6px; left: -6px; }
+.marketing-ds .corner.br { bottom: -6px; right: -6px; }
+
+/* Corners on a dark surface, where the default text-derived color disappears */
+.marketing-ds .corner-dark {
+  color: rgba(89, 128, 166, 0.5);
+}
+
+/* ── Answer feedback surfaces ───────────────────────────── */
+
+.marketing-ds .fb-ok {
+  background-color: var(--fb-ok-bg);
+  border-color: var(--fb-ok-border);
+  color: var(--fb-ok-text);
+}
+
+.marketing-ds .fb-err {
+  background-color: var(--fb-err-bg);
+  border-color: var(--fb-err-border);
+  color: var(--fb-err-text);
+}
+
+.marketing-ds .fb-ok-soft {
+  background-color: var(--fb-ok-bg);
+  border-color: var(--fb-ok-border);
+}
+
+.marketing-ds .fb-err-soft {
+  background-color: var(--fb-err-bg);
+  border-color: var(--fb-err-border);
+}
+
+.marketing-ds .fb-surface {
+  background-color: var(--color-surface);
+}
+
+.marketing-ds .fb-rule-ok {
+  border-left-color: var(--fb-ok-border);
+  background-color: var(--color-surface);
+}
+
+.marketing-ds .fb-rule-err {
+  border-left-color: var(--fb-err-border);
+  background-color: var(--color-surface);
+}
+
 /* ── Marketing Page — Animations & Utilities ─────────────── */
 
 @keyframes marquee {
@@ -96,6 +230,11 @@
 @keyframes scanline {
   0%   { top: 0%;   opacity: 0.8; }
   100% { top: 100%; opacity: 0; }
+}
+
+@keyframes sweep {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
 }
 
 .marquee-track { animation: marquee 30s linear infinite; }
@@ -113,13 +252,6 @@
   height: 2px;
   background: linear-gradient(90deg, transparent, #00d4ff, transparent);
   animation: scanline 2.5s linear infinite;
-}
-
-.grid-bg {
-  background-image:
-    linear-gradient(rgba(59, 111, 160, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59, 111, 160, 0.08) 1px, transparent 1px);
-  background-size: 40px 40px;
 }
 
 .no-number-spinners input[type='number']::-webkit-outer-spin-button,

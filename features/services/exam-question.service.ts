@@ -1,4 +1,5 @@
 import { prisma, PrismaService } from '@/lib/prisma';
+import { shuffleOptionTexts } from '@/lib/shuffle-options';
 import { AIExamQuestion, Answer, ExamQuestionParams, ExamType } from '@/shared/types';
 import { toSafeString, normalizeName, looseKey } from '@/shared/utils';
 
@@ -117,13 +118,19 @@ export class ExamQuestionService {
           },
         });
 
-        const optionsObj: Record<string, string> = {};
+        const sanitizedOptions = Object.entries(options).reduce<Record<string, string>>((acc, [label, txt]) => {
+          acc[label] = toSafeString(txt);
 
-        for (const [label, txt] of Object.entries(options)) {
-          const textVal = toSafeString(txt);
+          return acc;
+        }, {});
 
-          await tx.examOption.create({ data: { questionId: createdQuestion.id, label, text: textVal } });
-          optionsObj[label] = textVal;
+        // Persist a shuffled letter assignment, never the model's own ordering — the
+        // drafting LLM puts the correct alternative first, and the gabarito is derived
+        // later from these stored options, so it follows the shuffle.
+        const optionsObj = shuffleOptionTexts(sanitizedOptions);
+
+        for (const [label, text] of Object.entries(optionsObj)) {
+          await tx.examOption.create({ data: { questionId: createdQuestion.id, label, text } });
         }
 
         results.push({ question: createdQuestion, options: optionsObj });

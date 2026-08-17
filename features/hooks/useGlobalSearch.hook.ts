@@ -30,7 +30,7 @@ export function useGlobalSearch() {
       close();
       router.push(href);
     },
-    [close, router],
+    [close, router]
   );
 
   function handleInputKeyDown(e: ReactKeyboardEvent<HTMLInputElement>) {

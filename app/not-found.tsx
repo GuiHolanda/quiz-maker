@@ -6,12 +6,8 @@ export default function NotFound() {
     <div className="min-h-screen bg-navy-900 text-[#e8edf3] flex items-center justify-center px-6">
       <div className="text-center max-w-md">
         <p className="font-mono text-xs text-navy-400 mb-4">404</p>
-        <h1 className="font-sora font-extrabold text-white text-3xl sm:text-4xl mb-4">
-          Página não encontrada
-        </h1>
-        <p className="text-navy-400 text-base mb-8">
-          A página que você está procurando não existe ou foi movida.
-        </p>
+        <h1 className="font-sora font-extrabold text-white text-3xl sm:text-4xl mb-4">Página não encontrada</h1>
+        <p className="text-navy-400 text-base mb-8">A página que você está procurando não existe ou foi movida.</p>
         <Button
           as={NextLink}
           href="/"

@@ -22,7 +22,10 @@ interface QuestionsContentProps {
   readonly type: ExamType;
 }
 
-const EMPTY_COPY: Record<ExamType, { href: string; labelKey: string; titleKey: string; descriptionKey: string; icon: IconDefinition }> = {
+const EMPTY_COPY: Record<
+  ExamType,
+  { href: string; labelKey: string; titleKey: string; descriptionKey: string; icon: IconDefinition }
+> = {
   certification: {
     href: '/exams?type=certification',
     labelKey: 'certification.tabNew',

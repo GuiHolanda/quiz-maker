@@ -34,12 +34,7 @@ export function HeaderSearch() {
         </span>
       )}
       {isOpen && (
-        <SearchDropdown
-          focusedIndex={focusedIndex}
-          isLoading={isLoading}
-          results={results}
-          onSelect={navigate}
-        />
+        <SearchDropdown focusedIndex={focusedIndex} isLoading={isLoading} results={results} onSelect={navigate} />
       )}
     </div>
   );

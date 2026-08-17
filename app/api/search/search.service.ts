@@ -40,10 +40,7 @@ export class SearchService {
       this.prisma.mockExam.findMany({
         where: {
           userId,
-          OR: [
-            { name: contains },
-            { exam: { name: contains } },
-          ],
+          OR: [{ name: contains }, { exam: { name: contains } }],
         },
         select: { id: true, name: true, exam: { select: { name: true } } },
         take: limit,

@@ -26,6 +26,8 @@ import {
   DASHBOARD_STATS_URL,
   SEARCH_URL,
   CATALOG_URL,
+  DEMO_CATALOG_URL,
+  DEMO_QUIZ_URL,
   FORK_EXAM_URL,
   ADMIN_CATALOG_URL,
 } from '@/config/constants';
@@ -63,6 +65,10 @@ import {
   CatalogListResponse,
   AdminCatalogListResponse,
   AdminCatalogExamDetail,
+  DemoCatalogExam,
+  DemoCatalogResponse,
+  DemoQuestion,
+  DemoQuizResponse,
 } from '@/shared/types';
 import api from '@/lib/bff.api';
 
@@ -432,4 +438,14 @@ export async function promoteExamToCatalog(examId: string): Promise<void> {
 export async function getAdminCatalogExamDetail(examId: string): Promise<AdminCatalogExamDetail> {
   const { data } = await api.get<AdminCatalogExamDetail>(`${ADMIN_CATALOG_URL}/${examId}`);
   return data;
+}
+
+export async function getDemoCatalog(): Promise<DemoCatalogExam[]> {
+  const { data } = await api.get<DemoCatalogResponse>(DEMO_CATALOG_URL);
+  return [...data.exams];
+}
+
+export async function generateDemoQuiz(examId: string, alloc: Record<string, number>): Promise<DemoQuestion[]> {
+  const { data } = await api.post<DemoQuizResponse>(DEMO_QUIZ_URL, { examId, alloc });
+  return [...data.questions];
 }

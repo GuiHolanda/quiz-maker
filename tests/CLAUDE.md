@@ -51,12 +51,13 @@ vi.mock('bcryptjs', () => ({ default: { hash: vi.fn().mockResolvedValue('hashed'
 | Arquivo de teste | O que cobre |
 |---|---|
 | `exam.service.test.ts` | CRUD Exam/Section/Topic; propagação `updatedAt`; snapshot em rename |
-| `exam-question.service.test.ts` | `saveAnswers` (upsert idempotente) e `saveExplanations` |
+| `exam-question.service.test.ts` | `saveAnswers` (upsert idempotente), `saveExplanations`, embaralhamento das alternativas ao persistir |
+| `shuffle-options.test.ts` | Permutação de alternativas — preserva labels e textos, quebra o viés posicional |
 | `quota.service.test.ts` | Verificação e registro; `create_exam` vs `maxExams`; `getUsage` dual |
 | `quiz-generator.service.test.ts` | Distribuição de questões por seção |
 | `register.service.test.ts` | Registro de usuário |
 | `reset-password.service.test.ts` | Reset de senha |
-| `mock-exam.service.test.ts` | Simulados — disponibilidade, score, breakdown, ensureAnswers |
+| `mock-exam.service.test.ts` | Simulados — disponibilidade, score, breakdown, ensureAnswers, sorteio uniforme das questões |
 | `api-error.test.ts` | Todos os ramos de `toApiErrorResponse` |
 
 ---

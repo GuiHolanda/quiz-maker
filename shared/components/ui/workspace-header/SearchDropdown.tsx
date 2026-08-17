@@ -46,7 +46,7 @@ export function SearchDropdown({ results, isLoading, focusedIndex, onSelect }: S
       acc[type] = results.filter((r) => r.type === type);
       return acc;
     },
-    { certification: [], publicExam: [], simulado: [], topic: [], question: [] },
+    { certification: [], publicExam: [], simulado: [], topic: [], question: [] }
   );
 
   return (
@@ -68,9 +68,7 @@ export function SearchDropdown({ results, isLoading, focusedIndex, onSelect }: S
 
         return (
           <div key={type}>
-            <p className="px-4 pt-3 pb-1 text-xs font-semibold text-primary">
-              {t(CATEGORY_I18N_KEYS[type])}
-            </p>
+            <p className="px-4 pt-3 pb-1 text-xs font-semibold text-primary">{t(CATEGORY_I18N_KEYS[type])}</p>
             {items.map((item) => {
               const flatIndex = results.indexOf(item);
               const isFocused = flatIndex === focusedIndex;
@@ -87,9 +85,7 @@ export function SearchDropdown({ results, isLoading, focusedIndex, onSelect }: S
                   />
                   <div className="min-w-0">
                     <p className="text-sm text-foreground line-clamp-1">{item.label}</p>
-                    {item.subtitle && (
-                      <p className="text-xs text-default-400 line-clamp-1">{item.subtitle}</p>
-                    )}
+                    {item.subtitle && <p className="text-xs text-default-400 line-clamp-1">{item.subtitle}</p>}
                   </div>
                 </button>
               );

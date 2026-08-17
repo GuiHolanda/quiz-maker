@@ -13,9 +13,7 @@ export const publicExamQuestionsResearchPrompt = {
   build: (input: PublicExamQuestionsResearchInput): string => {
     const { public_exam_name, exam_board_name, subject_name, topic_name, num_questions, topics_list } = input;
     const topicoLine = topic_name ? `focadas no tópico "${topic_name}"` : 'cobrindo a matéria de forma ampla';
-    const topicsBlock = topics_list
-      ? `\nTópicos a cobrir (distribua as questões entre eles):\n${topics_list}\n`
-      : '';
+    const topicsBlock = topics_list ? `\nTópicos a cobrir (distribua as questões entre eles):\n${topics_list}\n` : '';
 
     return `Você é um especialista em concursos públicos brasileiros e vai gerar questões de alta fidelidade.
 

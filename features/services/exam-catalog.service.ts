@@ -1,5 +1,12 @@
 import { prisma, PrismaService } from '@/lib/prisma';
-import type { CatalogExam, AdminCatalogEntry, AdminCatalogExamDetail, ExamType, ExamSection, Exam } from '@/shared/types';
+import type {
+  CatalogExam,
+  AdminCatalogEntry,
+  AdminCatalogExamDetail,
+  ExamType,
+  ExamSection,
+  Exam,
+} from '@/shared/types';
 
 export class ExamCatalogService {
   constructor(private readonly prismaService: PrismaService = prisma) {}
@@ -117,9 +124,7 @@ export class ExamCatalogService {
               name: s.name,
               minQuestions: s.minQuestions,
               maxQuestions: s.maxQuestions,
-              topics: s.topics.length
-                ? { create: s.topics.map((t) => ({ name: t.name })) }
-                : undefined,
+              topics: s.topics.length ? { create: s.topics.map((t) => ({ name: t.name })) } : undefined,
             })),
           },
         },
@@ -212,7 +217,6 @@ export class ExamCatalogService {
   }
 
   private async ensurePoolEntries(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tx: any,
     poolKey: { type: string; providerId: string | null; examBoardId: string | null },
     sections: Array<{ name: string; topics: Array<{ name: string }> }>

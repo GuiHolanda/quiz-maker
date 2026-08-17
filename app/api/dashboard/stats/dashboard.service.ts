@@ -1,5 +1,10 @@
 import { prisma } from '@/lib/prisma';
-import type { DashboardStats, DashboardDomainStat, DashboardRecentSession, DashboardScoreTrendPoint } from '@/shared/types';
+import type {
+  DashboardStats,
+  DashboardDomainStat,
+  DashboardRecentSession,
+  DashboardScoreTrendPoint,
+} from '@/shared/types';
 
 export class DashboardService {
   async getStats(userId: string): Promise<DashboardStats> {
@@ -60,9 +65,7 @@ export class DashboardService {
       for (const answer of attempt.answers) {
         const question = answer.mockExamQuestion.examQuestion;
         const section = question.sectionName;
-        const correctOptions: string[] = question.answer
-          ? (question.answer.correctOptions as string[])
-          : [];
+        const correctOptions: string[] = question.answer ? (question.answer.correctOptions as string[]) : [];
         const selectedOptions: string[] = JSON.parse(answer.selectedOptions);
         const isCorrect =
           correctOptions.length > 0 &&

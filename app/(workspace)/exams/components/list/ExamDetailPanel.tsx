@@ -48,9 +48,7 @@ export function ExamDetailPanel({
       <div className="flex items-center justify-between px-5 py-3 border-b border-default-200 bg-content2">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-sm font-semibold text-foreground truncate">{exam.name}</span>
-          {referenceEntity?.name && (
-            <span className="text-xs text-default-400 shrink-0">{referenceEntity.name}</span>
-          )}
+          {referenceEntity?.name && <span className="text-xs text-default-400 shrink-0">{referenceEntity.name}</span>}
           {exam.key && <span className="text-xs text-default-400 font-medium shrink-0">{exam.key}</span>}
           {config.hasYearField && exam.year != null && (
             <span className="flex items-center gap-1 text-xs text-default-400 shrink-0">

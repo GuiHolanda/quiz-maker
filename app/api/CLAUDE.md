@@ -116,6 +116,17 @@ All routes verify `plan === 'admin'` via direct DB lookup. Service: `app/api/adm
 
 **Critical:** `AdminService` can be called from server components directly. Do NOT use `features/connectors.ts` server-side — the axios client uses a relative `baseURL` and will fail.
 
+### `marketing/`
+
+Rotas públicas (sem auth). Service: `features/services/demo-catalog.service.ts`. Config: `config/exam-landing-pages.ts` (`EXAM_LANDING_PAGE_MAP`).
+
+| Route | Method | Description |
+|---|---|---|
+| `marketing/demo/catalog` | GET | Lista exames elegíveis para a demo (pool com explicações) |
+| `marketing/demo/quiz` | POST | Monta quiz a partir do pool, sem chamada à LLM |
+
+**Rotas públicas (sem auth):** `auth.config.ts → publicPaths[]` — adicionar aqui qualquer nova rota não autenticada (ex: `/simulado`, `/api/marketing`). O middleware usa o callback `authorized` do NextAuth para bloquear o restante.
+
 ### Other routes
 
 | Route | Method | Description |

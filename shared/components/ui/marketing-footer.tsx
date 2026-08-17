@@ -1,8 +1,6 @@
 'use client';
 
 import NextLink from 'next/link';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMicrochip } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
@@ -23,29 +21,21 @@ export function MarketingFooter() {
   const { t } = useTranslation();
 
   return (
-    <footer className="bg-navy-950 border-t border-navy-800/40 py-12">
+    <footer className="bg-mkt-bg border-t border-mkt-divider py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
-
-          {/* Brand column — spans 2 cols on desktop for visual weight balance */}
           <div className="col-span-2">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-6 h-6 rounded flex items-center justify-center bg-accent/10 border border-accent/30">
-                <FontAwesomeIcon className="text-accent text-xs" icon={faMicrochip} />
-              </div>
-              <span className="font-sora font-bold text-white text-sm">{t('footer.brand')}</span>
-            </div>
-            <p className="text-sm text-navy-500 leading-relaxed max-w-xs">{t('footer.description')}</p>
+            <span className="ds-heading text-mkt-text text-sm block mb-4">{t('footer.brand')}</span>
+            <p className="text-sm text-mkt-text opacity-50 leading-relaxed max-w-xs">{t('footer.description')}</p>
           </div>
 
-          {/* Platform column */}
           <div>
-            <p className="text-xs font-medium text-navy-400 mb-4">{t('footer.platform')}</p>
+            <p className="kick mb-4">{t('footer.platform')}</p>
             <ul className="space-y-3">
               {PLATFORM_LINKS.map((item) => (
                 <li key={item.labelKey}>
                   <NextLink
-                    className="text-sm text-navy-500 hover:text-white transition-colors duration-200"
+                    className="text-sm text-mkt-text opacity-50 hover:opacity-100 transition-opacity duration-200"
                     href={item.href}
                   >
                     {t(item.labelKey)}
@@ -55,14 +45,13 @@ export function MarketingFooter() {
             </ul>
           </div>
 
-          {/* Legal column */}
           <div>
-            <p className="text-xs font-medium text-navy-400 mb-4">{t('footer.legal')}</p>
+            <p className="kick mb-4">{t('footer.legal')}</p>
             <ul className="space-y-3">
               {LEGAL_LINKS.map((item) => (
                 <li key={item.labelKey}>
                   <NextLink
-                    className="text-sm text-navy-500 hover:text-white transition-colors duration-200"
+                    className="text-sm text-mkt-text opacity-50 hover:opacity-100 transition-opacity duration-200"
                     href={item.href}
                   >
                     {t(item.labelKey)}
@@ -73,10 +62,9 @@ export function MarketingFooter() {
           </div>
         </div>
 
-        {/* Bottom bar */}
-        <div className="pt-6 border-t border-navy-800/40 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-navy-600">{t('footer.copyright')}</p>
-          <p className="text-xs text-navy-600">{t('footer.tagline')}</p>
+        <div className="pt-6 border-t border-mkt-divider flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs text-mkt-text opacity-35">{t('footer.copyright')}</p>
+          <p className="text-xs text-mkt-text opacity-35">{t('footer.tagline')}</p>
         </div>
       </div>
     </footer>

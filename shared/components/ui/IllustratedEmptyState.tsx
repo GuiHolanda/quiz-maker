@@ -21,7 +21,13 @@ interface IllustratedEmptyStateProps {
   readonly secondaryAction?: IllustratedEmptyStateAction;
 }
 
-export function IllustratedEmptyState({ icon, title, description, action, secondaryAction }: IllustratedEmptyStateProps) {
+export function IllustratedEmptyState({
+  icon,
+  title,
+  description,
+  action,
+  secondaryAction,
+}: IllustratedEmptyStateProps) {
   return (
     <div
       data-testid="illustrated-empty-state"

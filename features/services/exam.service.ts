@@ -20,8 +20,19 @@ export class ExamService {
       throw new Error('Invalid request body');
     }
 
-    const { type, name, role, year, key, totalQuestions, examDurationMinutes, passingScore, provider, examBoard, sections } =
-      body as Record<string, unknown>;
+    const {
+      type,
+      name,
+      role,
+      year,
+      key,
+      totalQuestions,
+      examDurationMinutes,
+      passingScore,
+      provider,
+      examBoard,
+      sections,
+    } = body as Record<string, unknown>;
 
     if (type !== 'certification' && type !== 'public_exam') {
       throw Object.assign(new Error('type must be "certification" or "public_exam"'), { status: 400 });
@@ -90,8 +101,19 @@ export class ExamService {
   }
 
   public async save(exam: Exam, userId: string) {
-    const { type, name, role, year, key, totalQuestions, examDurationMinutes, passingScore, provider, examBoard, sections } =
-      exam;
+    const {
+      type,
+      name,
+      role,
+      year,
+      key,
+      totalQuestions,
+      examDurationMinutes,
+      passingScore,
+      provider,
+      examBoard,
+      sections,
+    } = exam;
 
     return this.prismaService.$transaction(async (tx) => {
       if (!key || !key.trim()) {
@@ -121,7 +143,9 @@ export class ExamService {
         examBoardId = b.id;
       }
 
-      const existing = await tx.exam.findFirst({ where: { userId, type, name, role: role ?? null, year: year ?? null } });
+      const existing = await tx.exam.findFirst({
+        where: { userId, type, name, role: role ?? null, year: year ?? null },
+      });
 
       if (existing) {
         throw Object.assign(new Error(`Exam "${name}" already exists for this user`), { status: 409 });

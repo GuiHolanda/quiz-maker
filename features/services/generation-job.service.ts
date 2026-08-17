@@ -1,12 +1,17 @@
 import { after } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
+import { shuffleOptionTexts } from '@/lib/shuffle-options';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { QuotaService } from '@/features/services/quota.service';
 import { MetricsService } from '@/features/services/metrics.service';
 import { validateAiQuestions } from '@/features/services/exam-question.service';
 import { EXAM_PROMPTS } from '@/config/prompts';
-import { GENERATION_MAX_CONCURRENT_TOPICS, GENERATION_MAX_TOPICS_PER_USER, GENERATION_MAX_PROMPT_TOPICS } from '@/config/constants';
+import {
+  GENERATION_MAX_CONCURRENT_TOPICS,
+  GENERATION_MAX_TOPICS_PER_USER,
+  GENERATION_MAX_PROMPT_TOPICS,
+} from '@/config/constants';
 import type { AIExamQuestion } from '@/shared/types';
 
 export function extractJson(raw: string): string {
@@ -269,9 +274,19 @@ export async function processTopic(topicId: string): Promise<void> {
     const buildInput = (step: 'research' | 'review' | 'format', priorText?: string): Record<string, unknown> => {
       if (type === 'certification') {
         if (step === 'research')
-          return { certification_name: refName, topic_name: topic.topicName, num_questions: numStr, topics_list: topicsList };
+          return {
+            certification_name: refName,
+            topic_name: topic.topicName,
+            num_questions: numStr,
+            topics_list: topicsList,
+          };
         if (step === 'review')
-          return { certification_name: refName, topic_name: topic.topicName, draft_questions: priorText, topics_list: topicsList };
+          return {
+            certification_name: refName,
+            topic_name: topic.topicName,
+            draft_questions: priorText,
+            topics_list: topicsList,
+          };
         return { certification_name: refName, topic_name: topic.topicName, reviewed_questions: priorText };
       }
       if (step === 'research') {
@@ -426,6 +441,13 @@ async function tryServeFromPool(
 
   // Create ExamQuestion copies for this user, linked to the user's exam and original pool.
   for (const src of candidates) {
+    // Each copy gets its own letter assignment: the pool row carries the ordering the
+    // drafting LLM chose, and the copy has no answer yet, so shuffling here is safe and
+    // decorrelates the gabarito letter between users served the same pooled question.
+    const shuffledOptions = shuffleOptionTexts(
+      Object.fromEntries(src.options.map((option) => [option.label, option.text]))
+    );
+
     await prisma.examQuestion.create({
       data: {
         text: src.text,
@@ -439,7 +461,7 @@ async function tryServeFromPool(
         sectionId: src.sectionId,
         topicId: src.topicId,
         poolId: src.poolId,
-        options: { create: src.options.map((o) => ({ label: o.label, text: o.text })) },
+        options: { create: Object.entries(shuffledOptions).map(([label, text]) => ({ label, text })) },
       },
     });
   }

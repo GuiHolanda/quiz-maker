@@ -73,11 +73,7 @@ export default function AdminAuditLogPage() {
                   <p className="text-xs text-default-400">{entry.targetEmail}</p>
                 </td>
                 <td className="px-4 py-3">
-                  <Chip
-                    size="sm"
-                    variant="flat"
-                    color={ACTION_COLORS[entry.action] ?? 'default'}
-                  >
+                  <Chip size="sm" variant="flat" color={ACTION_COLORS[entry.action] ?? 'default'}>
                     {ACTION_LABELS[entry.action] ?? entry.action}
                   </Chip>
                 </td>

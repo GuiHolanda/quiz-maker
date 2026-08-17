@@ -58,7 +58,10 @@ export function FocusAreaCard({ domain }: FocusAreaCardProps) {
           <span className={`font-mono text-[9px] ${scoreTextColor(domain.avgScore)}`}>{domain.avgScore} / 100</span>
         </div>
         <div className="h-1.5 bg-default-200 rounded-full overflow-hidden">
-          <div className={`h-full rounded-full ${barColor(domain.avgScore)}`} style={{ width: `${domain.avgScore}%` }} />
+          <div
+            className={`h-full rounded-full ${barColor(domain.avgScore)}`}
+            style={{ width: `${domain.avgScore}%` }}
+          />
         </div>
       </div>
 

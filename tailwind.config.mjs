@@ -18,6 +18,16 @@ const config = {
         sora: ["var(--font-sora)", "sans-serif"],
       },
       colors: {
+        mkt: {
+          bg: 'var(--color-bg)',
+          surface: 'var(--color-surface)',
+          text: 'var(--color-text)',
+          accent: 'var(--color-accent)',
+          'accent-100': 'var(--color-accent-100)',
+          'accent-700': 'var(--color-accent-700)',
+          'accent-800': 'var(--color-accent-800)',
+          divider: 'var(--color-divider)',
+        },
         navy: {
           950: '#070e20',
           900: '#0f1b3d',
@@ -156,6 +166,26 @@ const config = {
             },
             content1: '#0c1832',
             content2: '#10203c',
+            focus: '#e07820',
+          },
+        },
+        "landing-light": {
+          extend: "light",
+          colors: {
+            primary: {
+              50:  '#fdf4e7',
+              100: '#fae3c0',
+              200: '#f7cc8c',
+              300: '#f3b258',
+              400: '#ef9a2e',
+              500: '#e07820',
+              600: '#c4641a',
+              700: '#a05014',
+              800: '#7c3d0f',
+              900: '#582b0a',
+              DEFAULT: '#e07820',
+              foreground: '#ffffff',
+            },
             focus: '#e07820',
           },
         },
