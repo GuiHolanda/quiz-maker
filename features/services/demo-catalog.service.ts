@@ -119,15 +119,14 @@ export class DemoCatalogService {
     for (const [name, count] of requested) {
       const domain = domainByName.get(name);
 
+      // Neither branch echoes `name`: it is unauthenticated caller input, and the
+      // client already knows the valid domain names from the catalog response.
       if (!domain) {
-        throw Object.assign(new Error(`Domínio desconhecido: ${name}`), { status: 400 });
+        throw Object.assign(new Error('Distribuição inválida para este exame'), { status: 400 });
       }
 
       if (!Number.isInteger(count) || count > domain.questions.length) {
-        throw Object.assign(
-          new Error(`O domínio "${name}" tem apenas ${domain.questions.length} questões disponíveis`),
-          { status: 400 }
-        );
+        throw Object.assign(new Error('Distribuição excede as questões disponíveis'), { status: 400 });
       }
 
       shuffleItems(domain.questions)
@@ -160,6 +159,15 @@ export class DemoCatalogService {
       },
       include: {
         questions: {
+          // Catalog-owned rows only. A pool is keyed by (type, provider, examBoard,
+          // section, topic) and NOT by owner, so every question a user generates for a
+          // matching provider joins it — both on save and through the promoteExam
+          // backfill, whose `ownerFilter` filters by provider/board, not by owner.
+          // Without this the public demo would serve subscribers' private questions,
+          // their gabarito and their AI explanations to anonymous visitors. Ordering
+          // is not access control: the slice below happens to favour older catalog
+          // rows, but that is incidental and breaks as pools grow or thin out.
+          where: { userId: null },
           orderBy: { id: 'asc' },
           include: { options: true, answer: { include: { explanations: true } } },
         },
