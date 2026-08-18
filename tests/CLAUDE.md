@@ -104,7 +104,7 @@ npx playwright show-report
 | `full-journey` (×2) | gerar → salvar → simulado → responder → resultado → tentar novamente |
 | `generation-errors` (×2) | quota 403; abort de rede → toast de erro |
 | `sse-reconnect` (×2) | cancelar job; restaura `running`/`awaiting_review` após reload |
-| `wizard-validation` (×2) | discard de draft; guard de título vazio |
+| `exam-editor-validation` (×2) | discard de draft (limpa localStorage); guard de Salvar sem nome |
 | `question-bank` | seed via API → verificar → buscar → deletar; empty state |
 | `empty-states` | empty state de simulados e certificações |
 

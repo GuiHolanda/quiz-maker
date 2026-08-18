@@ -81,6 +81,7 @@ export function ExamEditor({
         <Input
           {...inputProperties.input}
           classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
+          data-testid="exam-editor-name-input"
           isDisabled={isSaving}
           label={t('exam.name')}
           placeholder=" "

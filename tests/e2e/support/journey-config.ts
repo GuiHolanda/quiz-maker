@@ -18,7 +18,7 @@ export interface DomainConfig {
   readonly seedLabel: string;
   // Seeded topic/subject name shown on the result breakdown
   readonly seedTopic: string;
-  // Wizard configure page URL
+  // Exam configure page URL (/exams/new)
   readonly configureUrl: string;
   // Route glob matched by the generation-job stream for reconnect tests
   readonly streamRouteGlob: string;

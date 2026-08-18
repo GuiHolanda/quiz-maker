@@ -1,59 +1,171 @@
 'use client';
 
-import { Suspense } from 'react';
+import type { Exam, ExamType } from '@/shared/types';
+
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { BreadcrumbItem, Breadcrumbs } from '@heroui/breadcrumbs';
-import { useSession } from 'next-auth/react';
 
-import type { ExamType } from '@/shared/types';
 import { ExamsProvider } from '@/features/providers/exams.provider';
-import { ExamWizard } from '@/app/(workspace)/exams/components/wizard/ExamWizard';
-import { AiChatBanner } from '@/app/(workspace)/exams/components/AiChatBanner';
+import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
-import { AI_CHAT_ALLOWED_PLANS } from '@/config/constants';
+import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
+import { useExamSeed, emptyExamDraft } from './useExamSeed.hook';
+import { ExamSeedPicker } from './components/ExamSeedPicker';
+import { ExamEditorSkeleton } from './components/ExamEditorSkeleton';
+import { ExamEditorPage } from './components/ExamEditorPage';
+
+function readStoredDraft(storageKey: string): Exam | null {
+  try {
+    const raw = localStorage.getItem(storageKey);
+
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Exam;
+
+    // A draft with no name and no sections isn't worth resuming — treat it as absent so
+    // the seed picker shows instead of an editor with nothing distinguishing it from blank.
+    if (!parsed.name?.trim() && (!parsed.sections || parsed.sections.length === 0)) return null;
+
+    return parsed;
+  } catch {
+    return null;
+  }
+}
 
 export default function NewExamPage() {
-  const router = useRouter();
-  const { t } = useTranslation();
-  const { data: session } = useSession();
-  const searchParams = useSearchParams();
-
-  const rawType = searchParams.get('type');
-  const type: ExamType = rawType === 'public_exam' ? 'public_exam' : 'certification';
-
-  const plan = session?.user?.plan ?? '';
-  const hasAiChat = AI_CHAT_ALLOWED_PLANS.includes(plan);
-  const listHref = `/exams?type=${type}`;
-  const listLabel = type === 'certification' ? t('nav.certifications') : t('nav.publicExams');
-  const newLabel = type === 'certification' ? t('nav.newCertification') : t('nav.newConcurso');
-  const pageTitle = type === 'certification' ? t('exam.newCertificationTitle') : t('exam.newConcursoTitle');
   return (
     <ExamsProvider>
       <Suspense>
-        <PageHeader
-          breadcrumbs={
-            <Breadcrumbs>
-              <BreadcrumbItem href="/">{t('nav.dashboard')}</BreadcrumbItem>
-              <BreadcrumbItem href={listHref}>{listLabel}</BreadcrumbItem>
-              <BreadcrumbItem>{newLabel}</BreadcrumbItem>
-            </Breadcrumbs>
-          }
-          title={pageTitle}
-        >
-          <div className="flex flex-col gap-10">
-            <AiChatBanner hasAiChat={hasAiChat} />
-
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-1">
-                <h2 className="text-xl font-semibold text-foreground">{t('exam.manualSection.title')}</h2>
-                <p className="text-sm text-default-500">{t('exam.manualSection.subtitle')}</p>
-              </div>
-              <ExamWizard type={type} onBack={() => router.push(listHref)} onSaved={() => router.push(listHref)} />
-            </div>
-          </div>
-        </PageHeader>
+        <NewExamContent />
       </Suspense>
     </ExamsProvider>
   );
+}
+
+function NewExamContent() {
+  const router = useRouter();
+  const { t, language } = useTranslation();
+  const searchParams = useSearchParams();
+  const { addExam } = useExamsContext();
+
+  const rawType = searchParams.get('type');
+  const type: ExamType = rawType === 'public_exam' ? 'public_exam' : 'certification';
+  const config = EXAM_CONFIG[type];
+  const listHref = `/exams?type=${type}`;
+  const listLabel = type === 'certification' ? t('nav.certifications') : t('nav.publicExams');
+  const pageTitle = type === 'certification' ? t('exam.newCertificationTitle') : t('exam.newConcursoTitle');
+
+  const seed = useExamSeed(language);
+  const [hydrated, setHydrated] = useState(false);
+  const [resumedDraft, setResumedDraft] = useState<Exam | null>(null);
+
+  useEffect(() => {
+    setResumedDraft(readStoredDraft(config.draftStorageKey));
+    setHydrated(true);
+    // Empty deps is intentional: only ever runs once per exam type — switching type
+    // mid-flow isn't a supported transition (the page fully remounts via the URL param).
+  }, []);
+
+  const persistDraft = (draft: Exam) => {
+    try {
+      localStorage.setItem(config.draftStorageKey, JSON.stringify(draft));
+    } catch {
+      /* storage full or unavailable */
+    }
+  };
+
+  const clearStoredDraft = () => {
+    try {
+      localStorage.removeItem(config.draftStorageKey);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const handleSaved = (saved: Exam) => {
+    addExam(saved);
+    clearStoredDraft();
+    router.push(listHref);
+  };
+
+  const handleDiscard = () => {
+    clearStoredDraft();
+    setResumedDraft(null);
+    seed.reset();
+  };
+
+  const breadcrumbs = (
+    <Breadcrumbs>
+      <BreadcrumbItem href="/">{t('nav.dashboard')}</BreadcrumbItem>
+      <BreadcrumbItem href={listHref}>{listLabel}</BreadcrumbItem>
+      <BreadcrumbItem>{pageTitle}</BreadcrumbItem>
+    </Breadcrumbs>
+  );
+
+  // Tela 2 (editor / skeleton) carries its own name-based heading — showing PageHeader's
+  // static title above it would double up. Only Tela 1 (the seed picker) needs it.
+  const isEditorMode =
+    hydrated && (resumedDraft !== null || ['ready', 'error', 'loading-blueprint'].includes(seed.state.kind));
+
+  return (
+    <PageHeader breadcrumbs={breadcrumbs} title={isEditorMode ? undefined : pageTitle}>
+      {!hydrated ? null : resumedDraft ? (
+        <ExamEditorPage
+          type={type}
+          initialDraft={resumedDraft}
+          onDiscard={handleDiscard}
+          onDraftChange={persistDraft}
+          onSaved={handleSaved}
+        />
+      ) : (
+        renderSeedContent()
+      )}
+    </PageHeader>
+  );
+
+  function renderSeedContent() {
+    switch (seed.state.kind) {
+      case 'loading-blueprint':
+        return (
+          <ExamEditorSkeleton examName={seed.state.examName} provider={seed.state.provider} onCancel={seed.reset} />
+        );
+      case 'ready':
+        return (
+          <ExamEditorPage
+            type={type}
+            initialDraft={seed.state.draft}
+            context={seed.state.context}
+            sources={seed.state.sources}
+            onDiscard={handleDiscard}
+            onDraftChange={persistDraft}
+            onSaved={handleSaved}
+          />
+        );
+      case 'error':
+        return (
+          <ExamEditorPage
+            type={type}
+            initialDraft={{ ...emptyExamDraft(type), name: seed.state.seedName }}
+            warningKey={seed.state.messageKey}
+            onDiscard={handleDiscard}
+            onDraftChange={persistDraft}
+            onSaved={handleSaved}
+          />
+        );
+      default:
+        return (
+          <ExamSeedPicker
+            state={seed.state}
+            type={type}
+            onIdentify={seed.identifyByName}
+            onSelectMatch={(match) => {
+              if (seed.state.kind === 'disambiguating') void seed.confirmMatch(seed.state.examName, match);
+            }}
+            onStartBlank={() => seed.startBlank(type)}
+            onUploadEdital={seed.uploadEdital}
+          />
+        );
+    }
+  }
 }
