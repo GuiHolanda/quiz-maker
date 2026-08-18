@@ -44,7 +44,7 @@ export function AiChatBanner({ hasAiChat }: AiChatBannerProps) {
         </div>
       </div>
 
-      <UpgradeModal isOpen={isUpgradeOpen} onClose={() => setIsUpgradeOpen(false)} />
+      <UpgradeModal isOpen={isUpgradeOpen} product="pro_ai" onClose={() => setIsUpgradeOpen(false)} />
     </>
   );
 }

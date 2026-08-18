@@ -20,16 +20,10 @@ const FEATURES: readonly FeatureRow[] = [
     proAi: 'pricing.features.proAi.questions',
   },
   {
-    labelKey: 'pricing.features.customCertifications',
+    labelKey: 'pricing.features.customExams',
     free: 'pricing.features.free.certifications',
     pro: 'pricing.features.pro.certifications',
     proAi: 'pricing.features.proAi.certifications',
-  },
-  {
-    labelKey: 'pricing.features.publicExams',
-    free: 'pricing.features.free.publicExams',
-    pro: 'pricing.features.pro.publicExams',
-    proAi: 'pricing.features.proAi.publicExams',
   },
   { labelKey: 'pricing.features.aiExplanations', free: true, pro: true, proAi: true },
   { labelKey: 'pricing.features.topicDistribution', free: true, pro: true, proAi: true },
