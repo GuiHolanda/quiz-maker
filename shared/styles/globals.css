@@ -96,6 +96,12 @@
   --color-accent-700: oklch(35% 0.08 220);
   --color-accent-800: #273747;
   --color-accent-100: #EEF6FF;
+  /* Upper half of the accent ramp — the only tones legible on the dark
+     accent-900 surface used by the simulado section. */
+  --color-accent-200: #d6ebff;
+  --color-accent-300: #b5d9fd;
+  --color-accent-400: #94bce3;
+  --color-accent-900: #1d2d3d;
   --color-divider: color-mix(in srgb, #1d1f20 16%, transparent);
 
   /* Demo quiz feedback colors */
@@ -179,7 +185,7 @@
 
 /* Corners on a dark surface, where the default text-derived color disappears */
 .marketing-ds .corner-dark {
-  color: rgba(89, 128, 166, 0.5);
+  color: var(--color-accent-300);
 }
 
 /* ── Answer feedback surfaces ───────────────────────────── */

@@ -1,5 +1,8 @@
+'use client';
+
 import NextLink from 'next/link';
 
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { BlueprintCorners } from '@/app/(marketing)/components/shared/BlueprintCorners';
 
 interface QuestionOption {
@@ -8,6 +11,7 @@ interface QuestionOption {
   readonly correct?: boolean;
 }
 
+// Service names are the same in every language, so they stay literal.
 const OPTIONS: readonly QuestionOption[] = [
   { letter: 'A', text: 'Amazon S3 com Cross-Region Replication' },
   { letter: 'B', text: 'Amazon EFS', correct: true },
@@ -16,20 +20,24 @@ const OPTIONS: readonly QuestionOption[] = [
 ];
 
 export function HeroQuestionCard() {
+  const { t } = useTranslation();
+
   return (
     <div className="blueprint bg-mkt-bg overflow-visible">
       <BlueprintCorners />
 
       <div className="flex items-center justify-between px-5 py-3 border-b border-mkt-divider">
-        <span className="kick">Geração de questões</span>
-        <span className="mono text-[11px] text-mkt-text opacity-50">&lt;200ms por questão</span>
+        <span className="kick">{t('homepage.heroCard.kick')}</span>
+        {/* This slot used to claim "<200ms per question". The generation chain is
+            built to wait up to 280s, so the number was off by orders of
+            magnitude. Freshness is the argument here, not latency. */}
+        <span className="mono text-[11px] text-mkt-text opacity-50">{t('homepage.heroCard.meta')}</span>
       </div>
 
       <div className="p-5">
-        <span className="kick">Questão · AWS SAA-C03 · Armazenamento</span>
-        <p className="ds-heading text-mkt-text text-lg mt-2 mb-5 leading-snug">
-          Uma aplicação precisa de armazenamento compartilhado entre várias instâncias EC2 em Zonas de Disponibilidade
-          diferentes. Qual serviço atende ao requisito?
+        <span className="kick">{t('homepage.heroCard.tag')}</span>
+        <p className="ds-heading text-mkt-text text-lg mt-2 mb-5 leading-snug text-pretty">
+          {t('homepage.heroCard.stem')}
         </p>
 
         <div className="flex flex-col gap-2">
@@ -46,16 +54,14 @@ export function HeroQuestionCard() {
                 <span className="mono font-medium mr-2">{opt.letter}</span>
                 {opt.text}
               </span>
-              {opt.correct && <span className="kick ml-4 shrink-0">Correta</span>}
+              {opt.correct && <span className="kick ml-4 shrink-0">{t('homepage.heroCard.correct')}</span>}
             </div>
           ))}
         </div>
 
         <div className="border-t border-mkt-divider pt-4 mt-4">
-          <p className="text-xs text-mkt-text opacity-55 leading-relaxed">
-            EFS é um sistema de arquivos NFS gerenciado e elástico, acessível simultaneamente de múltiplas AZs. EBS
-            Multi-Attach suporta apenas uma AZ; S3 não é sistema de arquivos; Storage Gateway é para ambientes
-            on-premises.
+          <p className="text-xs text-mkt-text opacity-55 leading-relaxed text-pretty">
+            {t('homepage.heroCard.explanation')}
           </p>
         </div>
 
@@ -63,7 +69,7 @@ export function HeroQuestionCard() {
           className="block w-full text-center text-sm font-semibold bg-mkt-accent text-white py-2.5 mt-4 hover:opacity-90 transition-opacity"
           href="/register"
         >
-          Gerar minhas questões grátis
+          {t('homepage.heroCard.cta')}
         </NextLink>
       </div>
     </div>

@@ -30,7 +30,11 @@ All tokens live under `.marketing-ds` in `shared/styles/globals.css`. The layout
 | `--color-text` | `#1d1f20` | All body text |
 | `--color-accent` | `#5980a6` | Steel blue — CTAs, step 01 border, kick labels |
 | `--color-accent-700` | `oklch(35% 0.08 220)` | Darker accent for numbered labels |
-| `--color-accent-100` | `oklch(93% 0.03 220)` | Light accent tint — featured card bg, correct option bg |
+| `--color-accent-100` | `#EEF6FF` | Light accent tint — featured card bg, correct option bg |
+| `--color-accent-200` | `#d6ebff` | Body text on the dark accent-900 surface |
+| `--color-accent-300` | `#b5d9fd` | Kicker, progress bar and blueprint corners on dark |
+| `--color-accent-400` | `#94bce3` | Unselected weight bars in the syllabus grid |
+| `--color-accent-900` | `#1d2d3d` | The dark simulado band on the exam landing pages |
 | `--color-divider` | `color-mix(in srgb, #1d1f20 16%, transparent)` | Gap trick outer bg, border lines |
 
 Use via Tailwind: `bg-mkt-bg`, `text-mkt-text`, `border-mkt-divider`, etc. (definidos em `tailwind.config.mjs` como `theme.extend.colors.mkt.*`). Evite `[var(--color-*)]` — use sempre os tokens `mkt-*`.
@@ -120,6 +124,32 @@ All sections use `border-t border-[var(--color-divider)]` to separate from the p
 | `HomepagePricingSection.tsx` | Section | 2-card gap-trick (Free / Pro), session-aware CTA |
 | `FaqSection.tsx` | Section | HeroUI Accordion with light itemClasses |
 | `CtaSectionCta.tsx` | Interactive | Final CTA with blueprint-wrapped primary button |
+
+---
+
+## Exam Landing Pages (`components/exam-landing/`)
+
+One template renders every `/simulado/[exam-slug]` route from `config/exam-landing-pages.ts`. Section order is fixed: hero → facts → syllabus → simulado (dark) → routine → trust → FAQ → final CTA.
+
+| Component | Type | Notes |
+|---|---|---|
+| `ExamPracticeContext.tsx` | Context | Holds the selected topic, the sample question index and the picked option. Wraps the whole page in `page.tsx` |
+| `ExamLandingHero.tsx` | Section | Kicker, headline, two CTAs, mono disclaimer, 2×2 proof grid + the sample question panel |
+| `ExamSampleQuestionCard.tsx` | Interactive | Answerable sample question; reveals the explanation on pick, wrong pick marked in neutral ink |
+| `ExamFactsStrip.tsx` | Section | 4-cell gap-trick band derived from the config (board, questions, time, passing score) |
+| `ExamSyllabusSection.tsx` | Interactive | `#edital` — topic cells with weight bars; clicking one re-aims the hero question |
+| `ExamSimuladoSection.tsx` | Section | `#simulado` — the only dark band, `bg-mkt-accent-900`, blueprint panel with `dark` corners |
+| `ExamRoutineSection.tsx` | Section | `#rotina` — 3-column numbered routine |
+| `ExamTrustSection.tsx` | Section | `#confianca` — blueprint card: copy + disclaimer box left, 6 guarantees right |
+| `ExamFaqSection.tsx` | Section | `#faq` — shared `FaqAccordion`, capped at 840px |
+| `ExamFinalCtaSection.tsx` | Section | `#comecar` — centered CTA on `bg-mkt-surface` |
+| `examLandingMetrics.ts` | Helper | Duration/clock formatting, simulado row apportionment, heaviest-weight lookup |
+
+**Anchor contract:** `FocusedCtaNavbar` links to `#edital`, `#simulado`, `#confianca` and `#faq`. Renaming a section id means updating that navbar.
+
+**Odd topic counts:** the syllabus grid appends an inert `bg-mkt-bg` cell so the divider colour never shows through the last half-row, and so every cell keeps the same width — unequal cells would make the weight bars incomparable.
+
+**Every primary CTA points at the demo** (`demoHrefForSlug`), never `/register`: the promise on the page is questions without sign-up.
 
 ---
 

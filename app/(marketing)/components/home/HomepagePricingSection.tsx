@@ -19,12 +19,14 @@ export function HomepagePricingSection() {
         <h2 className="ds-heading text-mkt-text text-3xl mt-1 mb-12">{t('homepage.pricing.headline')}</h2>
 
         <div className="grid sm:grid-cols-2 gap-px bg-mkt-divider border border-mkt-divider">
-          <div className="bg-mkt-bg p-8">
-            <span className="kick mb-1">{t('homepage.pricing.freeTitle')}</span>
-            <h3 className="ds-heading text-mkt-text text-2xl mt-2 mb-3">{t('homepage.pricing.freeBody')}</h3>
-            <p className="text-sm text-mkt-text opacity-60 mb-6 leading-relaxed">
-              {t('homepage.pricing.freeDescription')}
-            </p>
+          <div className="flex flex-col justify-between bg-mkt-bg p-8">
+            <div>
+              <span className="kick mb-1">{t('homepage.pricing.freeTitle')}</span>
+              <h3 className="ds-heading text-mkt-text text-2xl mt-2 mb-3">{t('homepage.pricing.freeBody')}</h3>
+              <p className="text-sm text-mkt-text opacity-60 mb-6 leading-relaxed">
+                {t('homepage.pricing.freeDescription')}
+              </p>
+            </div>
             {freeHref ? (
               <NextLink
                 className="inline-flex w-full items-center justify-center text-sm font-medium border border-mkt-divider text-mkt-text py-3 hover:bg-mkt-surface transition-colors"
@@ -42,12 +44,14 @@ export function HomepagePricingSection() {
             )}
           </div>
 
-          <div className="bg-mkt-surface p-8">
-            <span className="kick mb-1">{t('homepage.pricing.proTitle')}</span>
-            <h3 className="ds-heading text-mkt-text text-2xl mt-2 mb-3">{t('homepage.pricing.proBody')}</h3>
-            <p className="text-sm text-mkt-text opacity-60 mb-6 leading-relaxed">
-              {t('homepage.pricing.proDescription')}
-            </p>
+          <div className="flex flex-col justify-between bg-mkt-surface p-8">
+            <div>
+              <span className="kick mb-1">{t('homepage.pricing.proTitle')}</span>
+              <h3 className="ds-heading text-mkt-text text-2xl mt-2 mb-3">{t('homepage.pricing.proBody')}</h3>
+              <p className="text-sm text-mkt-text opacity-60 mb-6 leading-relaxed">
+                {t('homepage.pricing.proDescription')}
+              </p>
+            </div>
             <NextLink
               className="inline-flex w-full items-center justify-center text-sm font-semibold bg-mkt-accent text-white py-3 hover:opacity-90 transition-opacity"
               href="/pricing"

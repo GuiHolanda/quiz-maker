@@ -657,6 +657,25 @@ export interface ExamLandingFaq {
   readonly answer: string;
 }
 
+export interface ExamLandingTopic {
+  readonly name: string;
+  // Share of the exam this topic accounts for, as an integer 0–100 — same unit
+  // as `ExamSection.minQuestions`. Weights across a config need not total 100;
+  // the syllabus bars are drawn relative to the heaviest topic.
+  readonly weight: number;
+}
+
+// Static sample shown in the hero panel so a visitor can answer one question
+// before deciding to open the demo. Authored per exam, never generated at
+// request time — the page is prerendered.
+export interface ExamLandingSampleQuestion {
+  readonly topic: string; // must match an ExamLandingTopic.name of the same config
+  readonly stem: string;
+  readonly options: readonly string[];
+  readonly answerIndex: number;
+  readonly explanation: string;
+}
+
 export interface ExamLandingConfig {
   readonly slug: string;
   readonly name: string; // short display name, e.g. "CEA"
@@ -671,7 +690,8 @@ export interface ExamLandingConfig {
   readonly totalQuestions: number;
   readonly examDurationMinutes: number;
   readonly passingScore: number; // percentage, e.g. 70
-  readonly topics: readonly string[];
+  readonly topics: readonly ExamLandingTopic[];
+  readonly sampleQuestions: readonly ExamLandingSampleQuestion[];
   readonly heroHeadline: string;
   readonly heroSubheadline: string;
   readonly seoTitle: string;

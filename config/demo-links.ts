@@ -15,3 +15,9 @@ export function demoExamNameForSlug(slug: string | null): string | null {
   if (!slug) return null;
   return EXAM_LANDING_PAGE_MAP.get(slug)?.demoExamName ?? null;
 }
+
+// A landing page whose exam has no catalog template sends the visitor to the
+// generic catalog, so its CTA must not promise questions of that exam.
+export function hasDemoTemplate(slug: string): boolean {
+  return Boolean(EXAM_LANDING_PAGE_MAP.get(slug)?.demoExamName);
+}
