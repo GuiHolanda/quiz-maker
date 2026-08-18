@@ -91,6 +91,7 @@
 .marketing-ds {
   --color-bg: #f2f2f3;
   --color-surface: #e9e9ea;
+  --color-surface-800: #2b2b2dd1;
   --color-text: #1d1f20;
   --color-accent: #5980a6;
   --color-accent-700: oklch(35% 0.08 220);
@@ -126,12 +127,10 @@
 }
 
 .marketing-ds .kick {
-  font-family: ui-monospace, Menlo, monospace;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-size: 12px;
+  text-transform: capitalize;
   color: var(--color-accent);
-  display: block;
+  font-weight: 700;
 }
 
 .marketing-ds .mono {
