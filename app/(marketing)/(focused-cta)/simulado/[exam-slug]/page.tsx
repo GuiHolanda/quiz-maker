@@ -2,11 +2,13 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { EXAM_LANDING_PAGES, EXAM_LANDING_PAGE_MAP } from '@/config/exam-landing-pages';
+import { ExamPracticeProvider } from '@/app/(marketing)/components/exam-landing/ExamPracticeContext';
 import { ExamLandingHero } from '@/app/(marketing)/components/exam-landing/ExamLandingHero';
-import { SocialProofSection } from '@/app/(marketing)/components/exam-landing/SocialProofSection';
-import { ExamFeaturesSection } from '@/app/(marketing)/components/exam-landing/ExamFeaturesSection';
-import { ExamHowItWorksSection } from '@/app/(marketing)/components/exam-landing/ExamHowItWorksSection';
-import { ExamDiagnosisSection } from '@/app/(marketing)/components/exam-landing/ExamDiagnosisSection';
+import { ExamFactsStrip } from '@/app/(marketing)/components/exam-landing/ExamFactsStrip';
+import { ExamSyllabusSection } from '@/app/(marketing)/components/exam-landing/ExamSyllabusSection';
+import { ExamSimuladoSection } from '@/app/(marketing)/components/exam-landing/ExamSimuladoSection';
+import { ExamRoutineSection } from '@/app/(marketing)/components/exam-landing/ExamRoutineSection';
+import { ExamTrustSection } from '@/app/(marketing)/components/exam-landing/ExamTrustSection';
 import { ExamFaqSection } from '@/app/(marketing)/components/exam-landing/ExamFaqSection';
 import { ExamFinalCtaSection } from '@/app/(marketing)/components/exam-landing/ExamFinalCtaSection';
 import { OG_IMAGES } from '@/config/og';
@@ -45,14 +47,17 @@ export default async function ExamLandingPage({ params }: PageProps) {
   if (!config) notFound();
 
   return (
-    <div>
+    // The hero sample question and the syllabus grid share one selection, so
+    // both sit inside the same provider.
+    <ExamPracticeProvider config={config}>
       <ExamLandingHero config={config} />
-      <SocialProofSection config={config} />
-      <ExamDiagnosisSection config={config} />
-      <ExamFeaturesSection config={config} />
-      <ExamHowItWorksSection config={config} />
+      <ExamFactsStrip config={config} />
+      <ExamSyllabusSection config={config} />
+      <ExamSimuladoSection config={config} />
+      <ExamRoutineSection config={config} />
+      <ExamTrustSection config={config} />
       <ExamFaqSection config={config} />
       <ExamFinalCtaSection config={config} />
-    </div>
+    </ExamPracticeProvider>
   );
 }

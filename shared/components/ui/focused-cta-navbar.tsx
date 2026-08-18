@@ -12,9 +12,12 @@ import { DEMO_PATH, demoHrefForSlug } from '@/config/demo-links';
 
 const navLinkClass = 'text-sm font-medium text-mkt-text opacity-60 hover:opacity-100 transition-opacity duration-150';
 
-// On-page anchors; the demo link is a route, handled separately below.
+// On-page anchors only — a focused-CTA page keeps every nav item pointing at the
+// same page, and the single route exit is the primary CTA on the right.
 const SECTION_LINKS = [
-  { labelKey: 'landing.nav.howItWorks', href: '#how-it-works' },
+  { labelKey: 'landing.nav.syllabus', href: '#edital' },
+  { labelKey: 'landing.nav.simulado', href: '#simulado' },
+  { labelKey: 'landing.nav.trust', href: '#confianca' },
   { labelKey: 'landing.nav.faq', href: '#faq' },
 ] as const;
 
@@ -46,12 +49,6 @@ export function FocusedCtaNavbar() {
                     {t(item.labelKey)}
                   </a>
                 ))}
-                <NextLink className={navLinkClass} href={demoHref}>
-                  {t('landing.nav.demo')}
-                </NextLink>
-                <NextLink className={navLinkClass} href="/pricing">
-                  {t('nav.pricing')}
-                </NextLink>
               </nav>
             </div>
 
@@ -61,9 +58,9 @@ export function FocusedCtaNavbar() {
               </NextLink>
               <NextLink
                 className="inline-flex items-center text-sm font-semibold bg-mkt-accent text-white px-4 py-2 leading-none hover:opacity-90 transition-opacity"
-                href="/register"
+                href={demoHref}
               >
-                {t('nav.startFreeTrial')}
+                {t('landing.nav.cta')}
               </NextLink>
               <button
                 type="button"
@@ -91,20 +88,6 @@ export function FocusedCtaNavbar() {
                   {t(item.labelKey)}
                 </a>
               ))}
-              <NextLink
-                className="text-sm text-mkt-text opacity-60 hover:opacity-100 transition-opacity py-3 border-b border-mkt-divider"
-                href={demoHref}
-                onClick={closeMenu}
-              >
-                {t('landing.nav.demo')}
-              </NextLink>
-              <NextLink
-                className="text-sm text-mkt-text opacity-60 hover:opacity-100 transition-opacity py-3 border-b border-mkt-divider"
-                href="/pricing"
-                onClick={closeMenu}
-              >
-                {t('nav.pricing')}
-              </NextLink>
               <NextLink
                 className="text-sm text-mkt-text opacity-60 hover:opacity-100 transition-opacity py-3 sm:hidden"
                 href="/login"
