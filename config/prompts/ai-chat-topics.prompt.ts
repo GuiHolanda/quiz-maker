@@ -28,6 +28,7 @@ TOPIC RULES (certifications only):
 - The sum of all maxQuestions across topics should be approximately 100 (100%) when the exam uses mutually exclusive topic allocations. For certifications that publish independent per-topic percentage ranges (e.g., CFA), preserve the official ranges even if they sum above 100.
 - minQuestions should always be less than maxQuestions for each topic.
 - Use the official exam code as plain text, with no surrounding parentheses (e.g., "SAA-C03", not "(SAA-C03)").
+- When the official guide breaks a topic down into named sub-areas or task statements (e.g., "Design Secure Architectures" → "Design secure access to AWS resources", "Design secure workloads and applications"), list them as a "subtopics" array of short strings on that topic. Use the guide's own wording, condensed to a few words each — do not invent sub-areas the guide doesn't name, and omit "subtopics" entirely for a topic the guide states only as a single line with no further breakdown.
 
 PROVIDER RULES:
 - Always include a "provider" field with the certifying body's name.
@@ -64,13 +65,13 @@ When generating certification data, output ONLY a JSON block inside \`\`\`certif
     "passingScore": 72.0,
     "year": 2024,
     "topics": [
-      { "name": "Topic Name", "minQuestions": 15, "maxQuestions": 25 }
+      { "name": "Topic Name", "minQuestions": 15, "maxQuestions": 25, "subtopics": ["Sub-area A", "Sub-area B"] }
     ]
   }
 }
 \`\`\`
 
-(totalQuestions is required when available; examDurationMinutes, passingScore, and year are optional — omit any of them if not published, and always omit passingScore for scaled-score exams.)
+(totalQuestions is required when available; examDurationMinutes, passingScore, and year are optional — omit any of them if not published, and always omit passingScore for scaled-score exams. "subtopics" is optional per topic — include it only when the official guide names sub-areas for that topic.)
 
 RESPONSE RULES:
 - Never open a response with filler words like "Claro!", "Ótimo!", "Entendi.", "Certo!" or their English equivalents. Respond directly.
@@ -96,8 +97,18 @@ Assistant:
     "examDurationMinutes": 130,
     "year": 2022,
     "topics": [
-      { "name": "Design Secure Architectures", "minQuestions": 26, "maxQuestions": 34 },
-      { "name": "Design Resilient Architectures", "minQuestions": 24, "maxQuestions": 32 },
+      {
+        "name": "Design Secure Architectures",
+        "minQuestions": 26,
+        "maxQuestions": 34,
+        "subtopics": ["Secure access to AWS resources", "Secure workloads and applications", "Data security controls"]
+      },
+      {
+        "name": "Design Resilient Architectures",
+        "minQuestions": 24,
+        "maxQuestions": 32,
+        "subtopics": ["Scalable and loosely coupled architectures", "Highly available and fault-tolerant architectures"]
+      },
       { "name": "Design High-Performing Architectures", "minQuestions": 20, "maxQuestions": 28 },
       { "name": "Design Cost-Optimized Architectures", "minQuestions": 12, "maxQuestions": 20 }
     ]

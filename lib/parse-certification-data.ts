@@ -34,7 +34,11 @@ export function parseCertificationData(text: string): ParsedCertResponse | null 
       name: topic.name as string,
       minQuestions: topic.minQuestions as number,
       maxQuestions: topic.maxQuestions as number,
-      topics: [],
+      topics: Array.isArray(topic.subtopics)
+        ? topic.subtopics
+            .filter((name: unknown): name is string => typeof name === 'string' && name.trim() !== '')
+            .map((name: string) => ({ name: name.trim() }))
+        : [],
     }));
 
     const examDraft: Exam = {

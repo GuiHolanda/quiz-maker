@@ -71,6 +71,30 @@ describe('parseCertificationData', () => {
     });
   });
 
+  it('maps subtopics into ExamSection.topics, filtering blanks and non-strings', () => {
+    const text =
+      '```certification-data\n' +
+      '{"certificationData": {"label": "X", "key": "X-1", "topics": ' +
+      '[{"name": "A", "minQuestions": 50, "maxQuestions": 100, "subtopics": ["Sub A", " Sub B ", "", 42]}]}}\n' +
+      '```';
+    const result = parseCertificationData(text);
+
+    expect(result?.examDraft.sections).toEqual([
+      { name: 'A', minQuestions: 50, maxQuestions: 100, topics: [{ name: 'Sub A' }, { name: 'Sub B' }] },
+    ]);
+  });
+
+  it('defaults to an empty topics array when subtopics is absent', () => {
+    const text =
+      '```certification-data\n' +
+      '{"certificationData": {"label": "X", "key": "X-1", "topics": ' +
+      '[{"name": "A", "minQuestions": 50, "maxQuestions": 100}]}}\n' +
+      '```';
+    const result = parseCertificationData(text);
+
+    expect(result?.examDraft.sections[0].topics).toEqual([]);
+  });
+
   it('defaults optional numeric fields to null/0 when the source omits them', () => {
     const text =
       '```certification-data\n' +
