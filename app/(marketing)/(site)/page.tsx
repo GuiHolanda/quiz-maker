@@ -38,10 +38,10 @@ export default function HeroPage() {
       <CertificationsSection />
       <ConcursosSection />
       <FeaturesSection />
+      <QualitySection />
       <HowItWorksSection />
       <SimuladosDarkSection />
       <ProgressSection />
-      <QualitySection />
       <HomepagePricingSection />
       <FaqSection />
       <CtaSectionShell />
