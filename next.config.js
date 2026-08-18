@@ -5,6 +5,30 @@ const nextConfig = {
   outputFileTracingIncludes: {
     '**': ['./public/messages/**'],
   },
+  // Baseline response headers. The marketing surface is fully public, so it is the
+  // part of the app an attacker reaches without any credential.
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          // Clickjacking: nothing in this app is meant to be framed. frame-ancestors is
+          // the modern control; X-Frame-Options covers browsers that ignore it.
+          { key: 'Content-Security-Policy', value: "frame-ancestors 'none'" },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          // Stops MIME sniffing turning an uploaded or proxied asset into script.
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          // Keeps full URLs (which carry ids and query params) off third-party sites.
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
+        ],
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'upload.wikimedia.org' },
