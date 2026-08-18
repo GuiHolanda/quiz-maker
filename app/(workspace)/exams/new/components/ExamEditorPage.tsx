@@ -1,4 +1,5 @@
 'use client';
+import type { ReactNode } from 'react';
 import type { Exam, ExamType } from '@/shared/types';
 
 import { useEffect, useRef, useState } from 'react';
@@ -10,7 +11,8 @@ import { faArrowUpRightFromSquare, faCircleInfo, faTriangleExclamation } from '@
 import { ExamEditor } from '@/shared/components/exam-editor/ExamEditor';
 import { InlineAlert } from '@/shared/components/ui/InlineAlert';
 import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
-import { useExamDraftCard, getExamDraftValidation } from '@/features/hooks/useExamDraftCard.hook';
+import { useExamDraftCard } from '@/features/hooks/useExamDraftCard.hook';
+import { getExamDraftValidation } from '@/lib/exam-draft-validation';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
@@ -119,7 +121,7 @@ export function ExamEditorPage({
       {context && (
         <InlineAlert
           color="primary"
-          description={context}
+          description={renderMarkdownBold(context)}
           icon={faCircleInfo}
           title={t('exam.aiSeedProvenanceTitle')}
           variant="subtle"
@@ -153,10 +155,13 @@ export function ExamEditorPage({
           onUpdateSection={updateSection}
           onUpdateTopic={updateTopic}
         />
-        <div className="flex justify-start mt-4">
+        <div className="flex items-center gap-3 mt-4">
           <Button className={`${buttonStyles.flat} text-xs`} isDisabled={isSaving} size="sm" onPress={addSection}>
             {t('exam.addSection')}
           </Button>
+          {draft.sections.length === 0 && (
+            <span className="text-xs text-warning">{t('exam.aiSeedNoSectionsHint')}</span>
+          )}
         </div>
       </div>
 
@@ -183,4 +188,15 @@ function extractUrl(source: string): string {
   const match = /\((https?:\/\/[^)]+)\)/.exec(source);
 
   return match ? match[1] : source;
+}
+
+// The model's "context" sentence uses **bold** for the certification name (see
+// AI_CHAT_TOPICS_PROMPT's examples) — InlineAlert's description renders plain text, so
+// without this the asterisks would show up literally instead of as emphasis.
+function renderMarkdownBold(text: string): ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+
+  return parts.map((part, i) =>
+    part.startsWith('**') && part.endsWith('**') ? <strong key={i}>{part.slice(2, -2)}</strong> : part
+  );
 }

@@ -176,6 +176,17 @@ export function useExamDraftCard(initialDraft: Exam): UseExamDraftCardReturn {
         return 'duplicate';
       }
 
+      // The only quota check on this endpoint is create_exam's maxExams cap — any 403 here
+      // means that limit, not a permissions issue. The server drops the structured
+      // { limit, used, plan } payload down to a plain English message (see lib/api-error.ts),
+      // so we can't show the exact number, but a clear localized message beats a raw pass-through.
+      if (httpStatus === 403) {
+        notify.error(t('exam.examLimitReached'), t('exam.examLimitReachedDescription'));
+        setStatus('error');
+
+        return 'error';
+      }
+
       notify.error(t('exam.saveError'), t('exam.saveErrorDescription'));
       setStatus('error');
 
@@ -197,44 +208,5 @@ export function useExamDraftCard(initialDraft: Exam): UseExamDraftCardReturn {
     updateTopic,
     updateQuestionFormat,
     handleSave,
-  };
-}
-
-export interface ExamDraftValidation {
-  readonly hasRequiredFields: boolean;
-  readonly isDistributionValid: boolean;
-  readonly canSave: boolean;
-  readonly distributionSum: number;
-}
-
-// Pure function so every container (chat-drawer modal, /exams/new, /exams/[id]/edit)
-// gates its own Save button on the exact same rule the editor's own warning banner
-// uses — no second copy of "what counts as saveable" to drift out of sync.
-export function getExamDraftValidation(draft: Exam): ExamDraftValidation {
-  const isCertification = draft.type === 'certification';
-  const referenceName = isCertification ? (draft.provider?.name ?? '') : (draft.examBoard?.name ?? '');
-
-  const hasRequiredFields = isCertification
-    ? draft.name.trim() !== '' &&
-      referenceName.trim() !== '' &&
-      (draft.key?.trim() ?? '') !== '' &&
-      (draft.totalQuestions ?? 0) > 0
-    : draft.name.trim() !== '' &&
-      referenceName.trim() !== '' &&
-      (draft.role?.trim() ?? '') !== '' &&
-      (draft.key?.trim() ?? '') !== '' &&
-      draft.year != null &&
-      (draft.totalQuestions ?? 0) > 0;
-
-  const isDistributionValid = draft.sections.every(
-    (section) => section.name.trim() !== '' && section.maxQuestions >= section.minQuestions
-  );
-  const distributionSum = draft.sections.reduce((sum, section) => sum + section.maxQuestions, 0);
-
-  return {
-    hasRequiredFields,
-    isDistributionValid,
-    canSave: hasRequiredFields && isDistributionValid,
-    distributionSum,
   };
 }

@@ -1,6 +1,7 @@
 'use client';
 import { Exam } from '@/shared/types';
-import { useExamDraftCard, getExamDraftValidation } from '@/features/hooks/useExamDraftCard.hook';
+import { useExamDraftCard } from '@/features/hooks/useExamDraftCard.hook';
+import { getExamDraftValidation } from '@/lib/exam-draft-validation';
 import { DraftModalShell } from '@/shared/components/ai-chat/DraftModalShell';
 import { ExamEditor } from '@/shared/components/exam-editor/ExamEditor';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';

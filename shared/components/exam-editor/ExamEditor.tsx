@@ -8,7 +8,7 @@ import { Select, SelectItem } from '@heroui/select';
 import { Autocomplete, AutocompleteItem } from '@heroui/autocomplete';
 
 import { ExamDistributionTable } from '@/shared/components/ai-chat/ExamDistributionTable';
-import { getExamDraftValidation } from '@/features/hooks/useExamDraftCard.hook';
+import { getExamDraftValidation } from '@/lib/exam-draft-validation';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { getProviders, getExamBoards } from '@/features/connectors';
 import { inputProperties, inputLabelClass } from '@/config/constants/inputStyles';
@@ -19,6 +19,13 @@ export const QUESTION_FORMAT_OPTIONS: ReadonlyArray<{ key: QuestionFormatKey; la
   { key: 'mc_4', labelKey: 'exam.questionFormatMc4' },
   { key: 'true_false', labelKey: 'exam.questionFormatTrueFalse' },
 ];
+
+// `font-semibold` alone would apply to placeholder text too, making an empty field read as
+// already filled in — placeholder: overrides keep it visibly lighter than real input.
+const COMPACT_INPUT_CLASSNAMES = {
+  inputWrapper: 'h-8 bg-background rounded-lg',
+  input: 'text-xs font-semibold placeholder:font-normal placeholder:text-default-300',
+};
 
 interface ExamEditorProps {
   readonly draft: Exam;
@@ -80,7 +87,7 @@ export function ExamEditor({
       <div className="flex gap-4">
         <Input
           {...inputProperties.input}
-          classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
+          classNames={COMPACT_INPUT_CLASSNAMES}
           data-testid="exam-editor-name-input"
           isDisabled={isSaving}
           label={t('exam.name')}
@@ -92,7 +99,7 @@ export function ExamEditor({
         />
         <Input
           {...inputProperties.input}
-          classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
+          classNames={COMPACT_INPUT_CLASSNAMES}
           isDisabled={isSaving}
           label={isCertification ? t('exam.keyLabel') : t('exam.editalKeyLabel')}
           placeholder={isCertification ? t('exam.certKeyPlaceholder') : t('exam.editalKeyPlaceholder')}
@@ -107,7 +114,7 @@ export function ExamEditor({
         {!isCertification && (
           <Input
             {...inputProperties.input}
-            classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
+            classNames={COMPACT_INPUT_CLASSNAMES}
             isDisabled={isSaving}
             label={t('exam.role')}
             placeholder=" "
@@ -119,7 +126,7 @@ export function ExamEditor({
         <Autocomplete
           allowsCustomValue
           {...inputProperties.autocomplete}
-          inputProps={{ classNames: { inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' } }}
+          inputProps={{ classNames: COMPACT_INPUT_CLASSNAMES }}
           inputValue={referenceName}
           isDisabled={isSaving}
           label={referenceLabel}
@@ -134,7 +141,7 @@ export function ExamEditor({
         </Autocomplete>
         <Input
           {...inputProperties.input}
-          classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
+          classNames={COMPACT_INPUT_CLASSNAMES}
           isDisabled={isSaving}
           label={t('exam.year')}
           placeholder=" "
@@ -151,11 +158,11 @@ export function ExamEditor({
           <Input
             isRequired
             {...inputProperties.input}
-            classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
+            classNames={COMPACT_INPUT_CLASSNAMES}
             isDisabled={isSaving}
             label={t('exam.totalQuestions')}
             min={1}
-            placeholder="e.g. 65"
+            placeholder={t('exam.totalQuestionsPlaceholder')}
             size="sm"
             type="number"
             value={draft.totalQuestions ? String(draft.totalQuestions) : ''}
@@ -165,12 +172,12 @@ export function ExamEditor({
         <div className="flex-1 min-w-0">
           <Input
             {...inputProperties.input}
-            classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
+            classNames={COMPACT_INPUT_CLASSNAMES}
             endContent={<span className="text-xs text-default-400 self-center">{t('exam.examDurationUnit')}</span>}
             isDisabled={isSaving}
             label={t('exam.examDuration')}
             min={1}
-            placeholder="e.g. 130"
+            placeholder={t('exam.examDurationPlaceholder')}
             size="sm"
             type="number"
             value={draft.examDurationMinutes != null ? String(draft.examDurationMinutes) : ''}
@@ -180,13 +187,13 @@ export function ExamEditor({
         <div className="flex-1 min-w-0">
           <Input
             {...inputProperties.input}
-            classNames={{ inputWrapper: 'h-8 bg-background rounded-lg', input: 'text-xs font-semibold' }}
+            classNames={COMPACT_INPUT_CLASSNAMES}
             endContent={<span className="text-xs text-default-400 self-center">%</span>}
             isDisabled={isSaving}
             label={t('exam.passingScore')}
             max={100}
             min={0}
-            placeholder="e.g. 72"
+            placeholder={t('exam.passingScorePlaceholder')}
             size="sm"
             type="number"
             value={draft.passingScore != null ? String(draft.passingScore) : ''}
