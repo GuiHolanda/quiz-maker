@@ -52,12 +52,12 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
           'No PGBL a tributação no resgate incide sobre o valor total, justamente porque as contribuições foram dedutíveis da base do IR até 12% da renda bruta anual. A primeira alternativa descreve o VGBL, o que a torna a distratora mais comum.',
       },
     ],
-    heroHeadline: 'Passe na CEA na primeira tentativa com questões no estilo ANBIMA',
+    heroHeadline: 'Questões novas de CEA todo dia, com o porquê de cada alternativa',
     heroSubheadline:
-      'Simule o exame real com questões calibradas no estilo ANBIMA. Identifique seus pontos fracos antes do dia da prova.',
-    seoTitle: 'Simulado CEA Grátis - Questões com IA | CertifiqueAI',
+      'Escolha um assunto do edital da ANBIMA e receba questões novas no formato da prova, com a explicação de por que cada alternativa está certa ou errada. Sem decorar o gabarito do mesmo simulado de sempre.',
+    seoTitle: 'Simulado CEA grátis com gabarito comentado | CertifiqueAI',
     seoDescription:
-      'Gere questões de prática CEA com IA calibrada para o exame ANBIMA. Simulado gratuito, análise de pontos fracos e estudo direcionado por tópico.',
+      'Responda questões de CEA por assunto do edital da ANBIMA, com explicação de cada alternativa. As 10 primeiras são grátis e sem cadastro.',
     faqs: [
       {
         question: 'Quantas questões tem o exame CEA?',
@@ -65,17 +65,27 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
       },
       {
         question: 'Qual a nota mínima para passar no CEA?',
-        answer: 'É necessário obter pelo menos 70% de aproveitamento - acertar 49 das 70 questões.',
+        answer: 'É necessário obter pelo menos 70% de aproveitamento, ou seja, acertar 49 das 70 questões.',
       },
       {
-        question: 'As questões geradas são parecidas com o exame real?',
+        question: 'As questões acompanham o nível da prova da ANBIMA?',
         answer:
-          'Sim. O modelo é calibrado para gerar questões no estilo e nível de dificuldade da banca ANBIMA, cobrindo todos os módulos do edital.',
+          'Sim. Cada item nasce de um tópico do programa detalhado da certificação e sai no formato e no nível de dificuldade que a prova cobra, cobrindo todos os módulos do edital.',
       },
       {
-        question: 'Posso usar o CertifiqueAI sem pagar?',
+        question: 'As questões repetem se eu treinar o mesmo assunto várias vezes?',
         answer:
-          'Sim. O plano gratuito inclui 250 questões geradas por mês - mais do que suficiente para começar a preparação.',
+          'Não. Cada rodada produz itens novos a partir do conteúdo programático, mesmo quando você repete o assunto e o nível. É o que permite estudar todo dia sem decorar gabarito.',
+      },
+      {
+        question: 'Como vocês verificam se o gabarito está certo?',
+        answer:
+          'Antes de entrar em circulação, cada item passa por uma etapa de revisão que confere se existe uma única alternativa correta e se enunciado, gabarito e explicação são coerentes entre si.',
+      },
+      {
+        question: 'Quanto custa depois das questões gratuitas?',
+        answer:
+          'O plano gratuito dá 250 questões por mês, sem custo e sem cartão. O plano Pro custa R$19,80 por mês e sobe para 1500 questões, com mais exames salvos.',
       },
     ],
   },
@@ -83,7 +93,7 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
     slug: 'cpa-20',
     demoExamName: 'CPA-20 — Certificação Profissional ANBIMA Série 20',
     name: 'CPA-20',
-    fullName: 'Certificação Profissional ANBIMA - Série 20',
+    fullName: 'Certificação Profissional ANBIMA, série 20',
     provider: 'ANBIMA',
     examType: 'certification',
     totalQuestions: 60,
@@ -111,7 +121,7 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
         ],
         answerIndex: 1,
         explanation:
-          'O dever de suitability exige que o profissional não recomende produto incompatível com o perfil e informe a inadequação. Termos de ciência registram operações por iniciativa do cliente, mas não substituem o dever de adequação — por isso a terceira alternativa parece plausível e não é.',
+          'O dever de suitability exige que o profissional não recomende produto incompatível com o perfil e informe a inadequação. Termos de ciência registram operações por iniciativa do cliente, mas não substituem o dever de adequação. É por isso que a terceira alternativa parece plausível e não é.',
       },
       {
         topic: 'Fundos de Investimento',
@@ -127,12 +137,12 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
           'No fundo aberto o cotista solicita resgate segundo os prazos do regulamento e o patrimônio é variável. As demais alternativas descrevem o fundo fechado, em que a saída se dá no encerramento ou pela negociação das cotas no mercado secundário.',
       },
     ],
-    heroHeadline: 'Aprove no CPA-20 com questões calibradas para a banca ANBIMA',
+    heroHeadline: 'Treine para o CPA-20 sem repetir questão nenhuma vez',
     heroSubheadline:
-      'Prepare-se para o exame ANBIMA com questões calibradas para o nível CPA-20. Descubra seus pontos fracos antes da prova.',
-    seoTitle: 'Simulado CPA-20 Grátis - Questões com IA | CertifiqueAI',
+      'Questões novas a cada rodada, organizadas pelos módulos do programa da ANBIMA e com a justificativa de cada alternativa. O banco não acaba, então não dá para decorar.',
+    seoTitle: 'Simulado CPA-20 grátis com gabarito comentado | CertifiqueAI',
     seoDescription:
-      'Gere questões de prática CPA-20 com IA calibrada para o exame ANBIMA Série 20. Simulado gratuito e análise por tópico.',
+      'Questões de CPA-20 por módulo do programa da ANBIMA, com explicação alternativa por alternativa. As 10 primeiras são grátis e sem cadastro.',
     faqs: [
       {
         question: 'Quantas questões tem o exame CPA-20?',
@@ -146,6 +156,21 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
       {
         question: 'As questões cobrem todo o conteúdo do edital?',
         answer: 'Sim. O conteúdo é distribuído proporcionalmente entre os módulos do edital ANBIMA vigente.',
+      },
+      {
+        question: 'As questões repetem se eu treinar o mesmo módulo várias vezes?',
+        answer:
+          'Não. Cada rodada gera itens novos dentro do módulo escolhido, então dá para voltar ao mesmo assunto quantas vezes precisar sem reencontrar o mesmo enunciado.',
+      },
+      {
+        question: 'Como vocês verificam se o gabarito está certo?',
+        answer:
+          'Cada item passa por uma revisão automática de consistência antes de circular: alternativa única correta e coerência entre enunciado, gabarito e explicação.',
+      },
+      {
+        question: 'Preciso de cartão de crédito para começar?',
+        answer:
+          'Não. As primeiras questões não pedem nem cadastro. A conta gratuita também não pede cartão e libera 250 questões por mês.',
       },
     ],
   },
@@ -178,7 +203,7 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
         options: ['Amazon EBS', 'Amazon EFS', 'EC2 Instance Store', 'Amazon S3 Glacier'],
         answerIndex: 1,
         explanation:
-          'O EFS é um sistema de arquivos compartilhado via NFS, acessível simultaneamente de múltiplas AZs. O EBS anexa a uma instância por vez, o Instance Store é efêmero e local, e o Glacier é arquivamento de objetos — nenhum deles entrega acesso de arquivos concorrente entre AZs.',
+          'O EFS é um sistema de arquivos compartilhado via NFS, acessível simultaneamente de múltiplas AZs. O EBS anexa a uma instância por vez, o Instance Store é efêmero e local, e o Glacier é arquivamento de objetos. Nenhum deles entrega acesso de arquivos concorrente entre AZs.',
       },
       {
         topic: 'Otimização de Custos',
@@ -194,12 +219,12 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
           'Cargas contínuas e previsíveis se beneficiam de compromisso de longo prazo, que é exatamente o que Savings Plans e Instâncias Reservadas oferecem. Spot atende cargas interrompíveis e Dedicated Hosts resolvem requisitos de licenciamento e isolamento, não de economia em carga estável.',
       },
     ],
-    heroHeadline: 'Conquiste sua certificação AWS SAA-C03 com cenários no estilo da prova real',
+    heroHeadline: 'Cenários novos de SAA-C03 a cada rodada, com o motivo de cada distratora',
     heroSubheadline:
-      'Treine para o exame SAA-C03 com questões de cenário calibradas no estilo AWS. Identifique lacunas antes da prova.',
-    seoTitle: 'Simulado AWS SAA-C03 Grátis - Questões com IA | CertifiqueAI',
+      'Cenários no formato da prova, por domínio do exame, com o motivo pelo qual cada distratora parece certa. Nada de repetir a mesma lista até memorizar a resposta.',
+    seoTitle: 'Simulado AWS SAA-C03 com gabarito comentado | CertifiqueAI',
     seoDescription:
-      'Gere questões de prática para o exame AWS Certified Solutions Architect Associate (SAA-C03) com IA. Cenários realistas, análise de pontos fracos.',
+      'Cenários de AWS SAA-C03 por domínio do exame, com o motivo de cada distratora. As 10 primeiras questões são grátis e sem cadastro.',
     faqs: [
       {
         question: 'Quantas questões tem o exame AWS SAA-C03?',
@@ -213,6 +238,21 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
         question: 'As questões são em português?',
         answer:
           'Sim. Todas as questões geradas pelo CertifiqueAI são em português, incluindo terminologia técnica AWS.',
+      },
+      {
+        question: 'As questões repetem se eu treinar o mesmo domínio várias vezes?',
+        answer:
+          'Não. Cada rodada monta cenários novos dentro do domínio escolhido, então você pode insistir em rede ou em segurança sem reencontrar o mesmo caso.',
+      },
+      {
+        question: 'Como vocês verificam se o gabarito está certo?',
+        answer:
+          'Antes de circular, cada item passa por uma revisão de consistência que confere alternativa única correta e coerência entre cenário, gabarito e explicação.',
+      },
+      {
+        question: 'Quanto custa depois das questões gratuitas?',
+        answer:
+          'O plano gratuito dá 250 questões por mês, sem cartão. O plano Pro custa R$19,80 por mês e sobe para 1500 questões, com mais exames salvos.',
       },
     ],
   },
@@ -245,7 +285,7 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
         ],
         answerIndex: 1,
         explanation:
-          'No EC2 a AWS cuida da segurança da nuvem — instalações, hardware e virtualização — e o cliente cuida da segurança na nuvem, o que inclui patches do SO convidado, configuração de security groups e dados. As demais alternativas descrevem itens que nunca saem do lado da AWS.',
+          'No EC2 a AWS cuida da segurança da nuvem, ou seja, instalações, hardware e virtualização, e o cliente cuida da segurança na nuvem, o que inclui patches do SO convidado, configuração de security groups e dados. As demais alternativas descrevem itens que nunca saem do lado da AWS.',
       },
       {
         topic: 'Faturamento e Preços',
@@ -258,24 +298,44 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
         ],
         answerIndex: 1,
         explanation:
-          'O AWS Budgets define limites de custo ou uso e dispara alertas quando eles são atingidos. O Trusted Advisor sugere otimizações, o CloudWatch Logs trata de dados operacionais e a Pricing Calculator estima custos antes da contratação — nenhum deles notifica estouro de gasto.',
+          'O AWS Budgets define limites de custo ou uso e dispara alertas quando eles são atingidos. O Trusted Advisor sugere otimizações, o CloudWatch Logs trata de dados operacionais e a Pricing Calculator estima custos antes da contratação. Nenhum deles notifica estouro de gasto.',
       },
     ],
-    heroHeadline: 'Passe no AWS CLF-C02 na primeira tentativa em 4 semanas',
+    heroHeadline: 'Questões de CLF-C02 por domínio, explicadas alternativa por alternativa',
     heroSubheadline:
-      'Prepare sua primeira certificação AWS com questões calibradas para o CLF-C02. Comece agora, sem custo.',
-    seoTitle: 'Simulado AWS Cloud Practitioner Grátis - Questões com IA | CertifiqueAI',
+      'Sua primeira certificação AWS sem gastar para começar: questões por domínio do CLF-C02, com a explicação de cada alternativa e o diagnóstico do que revisar.',
+    seoTitle: 'Simulado AWS Cloud Practitioner grátis | CertifiqueAI',
     seoDescription:
-      'Gere questões para o AWS Certified Cloud Practitioner (CLF-C02) com IA. Simulado gratuito, explicações detalhadas, análise por domínio.',
+      'Questões de AWS Cloud Practitioner (CLF-C02) por domínio, com explicação de cada alternativa. As 10 primeiras são grátis e sem cadastro.',
     faqs: [
       {
         question: 'O AWS Cloud Practitioner é fácil?',
         answer:
-          'É o exame de entrada da AWS. Com estudo direcionado e prática constante, a maioria dos candidatos passa em 4-6 semanas.',
+          'É o exame de entrada da AWS e não exige experiência prévia. O conteúdo cobre conceitos de nuvem, serviços principais, segurança e faturamento, inclusive para funções não técnicas.',
       },
       {
         question: 'Quantas questões tem o exame CLF-C02?',
         answer: 'O exame tem 65 questões com duração de 90 minutos.',
+      },
+      {
+        question: 'Preciso de experiência com nuvem para começar a treinar?',
+        answer:
+          'Não. Você escolhe o domínio e o nível, e a explicação de cada alternativa cobre o raciocínio por trás da resposta, não só o gabarito.',
+      },
+      {
+        question: 'As questões repetem se eu treinar o mesmo domínio várias vezes?',
+        answer:
+          'Não. Cada rodada gera itens novos dentro do domínio escolhido, então dá para insistir no assunto mais difícil sem reencontrar o mesmo enunciado.',
+      },
+      {
+        question: 'Como vocês verificam se o gabarito está certo?',
+        answer:
+          'Cada item passa por uma revisão de consistência antes de circular: alternativa única correta e coerência entre enunciado, gabarito e explicação.',
+      },
+      {
+        question: 'Preciso de cartão de crédito para começar?',
+        answer:
+          'Não. As primeiras questões não pedem nem cadastro. A conta gratuita também não pede cartão e libera 250 questões por mês.',
       },
     ],
   },
@@ -304,7 +364,7 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
         options: ['Acesso Condicional', 'Grupos dinâmicos', 'Azure Policy', 'Managed Identity'],
         answerIndex: 0,
         explanation:
-          'O Acesso Condicional avalia sinais como localização, dispositivo e risco da sessão para decidir se exige MFA ou bloqueia o acesso. O Azure Policy trata de conformidade de recursos e a Managed Identity, de credenciais de aplicações — ambos soam próximos, mas não avaliam o contexto do login.',
+          'O Acesso Condicional avalia sinais como localização, dispositivo e risco da sessão para decidir se exige MFA ou bloqueia o acesso. O Azure Policy trata de conformidade de recursos e a Managed Identity, de credenciais de aplicações. Ambos soam próximos, mas não avaliam o contexto do login.',
       },
       {
         topic: 'Preços e Suporte',
@@ -320,12 +380,12 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
           'Orçamentos no Cost Management definem limites de gasto e disparam alertas ao serem atingidos. O Advisor recomenda otimizações, o Monitor acompanha métricas operacionais e a Pricing Calculator estima custos antes da contratação.',
       },
     ],
-    heroHeadline: 'Certifique-se no AZ-900 com questões no estilo Microsoft',
+    heroHeadline: 'Questões de AZ-900 por área de habilidade, com a correção explicada',
     heroSubheadline:
-      'Treine para o Azure Fundamentals com questões calibradas no estilo Microsoft. Descubra seus pontos fracos em minutos.',
-    seoTitle: 'Simulado AZ-900 Grátis - Questões Azure com IA | CertifiqueAI',
+      'Treine por área de habilidade do exame, com questões novas a cada rodada e a correção explicada alternativa por alternativa.',
+    seoTitle: 'Simulado AZ-900 grátis com gabarito comentado | CertifiqueAI',
     seoDescription:
-      'Gere questões de prática para o Microsoft Azure Fundamentals (AZ-900) com IA. Simulado gratuito, análise por domínio, explicações em português.',
+      'Questões de AZ-900 por área de habilidade do exame, com explicação de cada alternativa. As 10 primeiras são grátis e sem cadastro.',
     faqs: [
       {
         question: 'Qual é a nota de corte do AZ-900?',
@@ -336,12 +396,32 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
         answer:
           'Sim. É a certificação de entrada da trilha Microsoft Azure e cobre os fundamentos necessários para avançar para exames como AZ-104 e AZ-204.',
       },
+      {
+        question: 'Quantas questões tem o exame AZ-900?',
+        answer:
+          'Entre 40 e 60 questões, com 45 minutos de duração. O exame inclui formatos além da múltipla escolha simples, como correspondência e ordenação.',
+      },
+      {
+        question: 'As questões repetem se eu treinar a mesma área várias vezes?',
+        answer:
+          'Não. Cada rodada gera itens novos dentro da área escolhida, então você pode voltar ao mesmo assunto quantas vezes precisar.',
+      },
+      {
+        question: 'Como vocês verificam se o gabarito está certo?',
+        answer:
+          'Cada item passa por uma revisão de consistência antes de circular: alternativa única correta e coerência entre enunciado, gabarito e explicação.',
+      },
+      {
+        question: 'Quanto custa depois das questões gratuitas?',
+        answer:
+          'O plano gratuito dá 250 questões por mês, sem cartão. O plano Pro custa R$19,80 por mês e sobe para 1500 questões.',
+      },
     ],
   },
   {
     slug: 'oab',
     name: 'OAB',
-    fullName: 'Exame da Ordem dos Advogados do Brasil - Primeira Fase',
+    fullName: 'Exame da Ordem dos Advogados do Brasil, primeira fase',
     provider: 'FGV',
     examType: 'certification',
     totalQuestions: 80,
@@ -370,7 +450,7 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
         ],
         answerIndex: 1,
         explanation:
-          'A publicidade da advocacia é permitida com finalidade informativa e moderação, vedadas a mercantilização e a captação de clientela — inclusive o anúncio de valores, gratuidade ou forma de pagamento. A presença em redes sociais não é proibida; o que se regula é o conteúdo e o tom do anúncio.',
+          'A publicidade da advocacia é permitida com finalidade informativa e moderação, vedadas a mercantilização e a captação de clientela, inclusive o anúncio de valores, gratuidade ou forma de pagamento. A presença em redes sociais não é proibida; o que se regula é o conteúdo e o tom do anúncio.',
       },
       {
         topic: 'Direito Processual Civil',
@@ -381,12 +461,12 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
           'O art. 335 do CPC fixa 15 dias para a contestação, contados conforme os incisos do próprio artigo, e o art. 219 determina a contagem em dias úteis para prazos processuais. Prazos de 5 e 10 dias existem no Código para outros atos, o que torna as distratoras plausíveis para quem decora números soltos.',
       },
     ],
-    heroHeadline: 'Passe na OAB com questões no estilo FGV para todos os temas',
+    heroHeadline: 'Questões de OAB no estilo FGV, com a explicação que o simulado não dá',
     heroSubheadline:
-      'Treine com questões no estilo FGV para a OAB. Identifique suas matérias mais fracas e estude de forma direcionada.',
-    seoTitle: 'Simulado OAB Primeira Fase Grátis - Questões com IA | CertifiqueAI',
+      'Escolha a matéria e receba questões no formato da FGV, com a explicação de cada alternativa. Descubra onde você perde ponto antes do dia da prova.',
+    seoTitle: 'Simulado OAB 1ª fase com gabarito comentado | CertifiqueAI',
     seoDescription:
-      'Gere questões de prática para a OAB Primeira Fase com IA calibrada no estilo FGV. Simulado gratuito, análise por matéria, explicações detalhadas.',
+      'Questões de OAB primeira fase por matéria, no estilo FGV, com explicação de cada alternativa. As 10 primeiras são grátis e sem cadastro.',
     faqs: [
       {
         question: 'Quantas questões tem a OAB Primeira Fase?',
@@ -397,9 +477,24 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
         answer: 'É necessário acertar pelo menos 50% das questões (40 de 80) para ser aprovado na primeira fase.',
       },
       {
-        question: 'As questões cobrem o conteúdo da FGV?',
+        question: 'As questões seguem o formato da FGV?',
         answer:
-          'Sim. As questões são geradas com base no edital vigente e calibradas para o estilo de prova da banca FGV.',
+          'Sim. Cada item nasce do conteúdo programático do edital vigente e sai no formato de quatro alternativas que a banca usa, com enunciado aplicado a caso concreto.',
+      },
+      {
+        question: 'Quais matérias concentram mais questões?',
+        answer:
+          'Ética e Estatuto da OAB é a de maior peso, seguida de Direito Constitucional, Civil e Processual Civil. A distribuição da plataforma acompanha esses pesos.',
+      },
+      {
+        question: 'As questões repetem se eu treinar a mesma matéria várias vezes?',
+        answer:
+          'Não. Cada rodada gera itens novos dentro da matéria escolhida, então dá para insistir na matéria mais fraca sem reencontrar o mesmo enunciado.',
+      },
+      {
+        question: 'Quanto custa depois das questões gratuitas?',
+        answer:
+          'O plano gratuito dá 250 questões por mês, sem cartão. O plano Pro custa R$19,80 por mês e sobe para 1500 questões, com mais exames salvos.',
       },
     ],
   },
