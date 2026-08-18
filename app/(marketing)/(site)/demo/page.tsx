@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { DemoFlowClient } from '@/app/(marketing)/components/demo/DemoFlowClient';
 import { DemoCatalogSkeleton } from '@/app/(marketing)/components/demo/DemoCatalogSkeleton';
+import { OG_IMAGES } from '@/config/og';
 
 export const metadata: Metadata = {
   title: 'Demonstração interativa · CertifiqueAI',
@@ -14,6 +15,7 @@ export const metadata: Metadata = {
       'Experimente como funciona: escolha uma certificação, distribua as questões por tópico, responda e veja seu diagnóstico.',
     url: 'https://www.certifiqueai.com/demo',
     type: 'website',
+    images: OG_IMAGES,
   },
 };
 

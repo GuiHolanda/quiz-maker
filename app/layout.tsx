@@ -36,9 +36,10 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: 'https://www.certifiqueai.com',
+    // No `en` entry: the language switch is a localStorage toggle, not a separate URL.
+    // Declaring en -> the pt-BR URL claims an English page that is not served there.
     languages: {
       'pt-BR': 'https://www.certifiqueai.com',
-      en: 'https://www.certifiqueai.com',
       'x-default': 'https://www.certifiqueai.com',
     },
   },

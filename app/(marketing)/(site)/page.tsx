@@ -13,6 +13,7 @@ import { QualitySection } from '@/app/(marketing)/components/home/QualitySection
 import { HomepagePricingSection } from '@/app/(marketing)/components/home/HomepagePricingSection';
 import { FaqSection } from '@/app/(marketing)/components/home/FaqSection';
 import { CtaSectionCta } from '@/app/(marketing)/components/home/CtaSectionCta';
+import { OG_IMAGES } from '@/config/og';
 
 export const metadata: Metadata = {
   title: 'Questões com IA para Certificações e Concursos Públicos | CertifiqueAI',
@@ -24,6 +25,7 @@ export const metadata: Metadata = {
       'Gere questões de prática sob demanda para AWS, Azure, OAB, CESPE e mais. IA calibrada para o formato real de cada exame.',
     url: 'https://www.certifiqueai.com',
     type: 'website',
+    images: OG_IMAGES,
   },
   alternates: { canonical: 'https://www.certifiqueai.com' },
 };

@@ -10,6 +10,7 @@ import { FeatureComparisonTable } from '@/app/(marketing)/components/pricing/Fea
 import { PricingFaq } from '@/app/(marketing)/components/pricing/PricingFaq';
 import { parseProperties } from '@/lib/properties-parser';
 import { jsonLd } from '@/lib/json-ld';
+import { OG_IMAGES } from '@/config/og';
 
 export const metadata: Metadata = {
   title: 'Planos e Preços | CertifiqueAI',
@@ -21,6 +22,7 @@ export const metadata: Metadata = {
       'Gratuito para começar. Planos Pro e Pro AI com mais questões, concursos públicos e assistente de estudos. Cancele quando quiser.',
     url: 'https://www.certifiqueai.com/pricing',
     type: 'website',
+    images: OG_IMAGES,
   },
   alternates: { canonical: 'https://www.certifiqueai.com/pricing' },
 };
