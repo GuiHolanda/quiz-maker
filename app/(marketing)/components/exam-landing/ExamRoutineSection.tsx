@@ -2,6 +2,7 @@
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import type { ExamLandingConfig } from '@/shared/types';
+import { PLAN_LIMITS } from '@/config/constants';
 
 const STEPS = ['daily', 'explained', 'reinforce'] as const;
 
@@ -25,7 +26,7 @@ export function ExamRoutineSection({ config }: ExamRoutineSectionProps) {
               <span className="mono text-xs text-mkt-accent-700">{String(index + 1).padStart(2, '0')}</span>
               <h3 className="ds-heading text-mkt-text text-xl mt-2">{t(`landing.routine.${step}.title`)}</h3>
               <p className="text-mkt-text opacity-70 text-sm leading-relaxed mt-2.5 text-pretty">
-                {t(`landing.routine.${step}.desc`)}
+                {t(`landing.routine.${step}.desc`, { free: PLAN_LIMITS.free.questionsPerPeriod })}
               </p>
             </div>
           ))}

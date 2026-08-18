@@ -5,10 +5,9 @@ import NextLink from 'next/link';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import type { ExamLandingConfig } from '@/shared/types';
 import { BlueprintFrame } from '@/app/(marketing)/components/shared/BlueprintFrame';
-import { demoHrefForSlug } from '@/config/demo-links';
-import { DEMO_QUIZ_SIZE } from '@/config/constants';
 
 import { useExamPractice } from './ExamPracticeContext';
+import { useDemoCta } from './useDemoCta.hook';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E'] as const;
 const BOOLEAN_LETTERS = ['V', 'F'] as const;
@@ -20,6 +19,7 @@ interface ExamSampleQuestionCardProps {
 export function ExamSampleQuestionCard({ config }: ExamSampleQuestionCardProps) {
   const { t } = useTranslation();
   const { question, pickedIndex, pickOption, nextQuestion } = useExamPractice();
+  const demoCta = useDemoCta(config);
 
   const isRevealed = pickedIndex !== null;
   const isCorrect = pickedIndex === question.answerIndex;
@@ -82,9 +82,9 @@ export function ExamSampleQuestionCard({ config }: ExamSampleQuestionCardProps) 
 
         <NextLink
           className="flex items-center justify-center w-full mt-4 px-4 py-3.5 text-[15px] font-semibold bg-mkt-accent text-white hover:opacity-90 transition-opacity"
-          href={demoHrefForSlug(config.slug)}
+          href={demoCta.href}
         >
-          {t('landing.hero.ctaPrimary', { count: DEMO_QUIZ_SIZE, name: config.name })}
+          {demoCta.label}
         </NextLink>
 
         <button

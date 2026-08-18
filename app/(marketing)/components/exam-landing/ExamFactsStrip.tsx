@@ -12,8 +12,13 @@ interface ExamFactsStripProps {
 export function ExamFactsStrip({ config }: ExamFactsStripProps) {
   const { t } = useTranslation();
 
+  // "Banca" is concurso vocabulary. ANBIMA, AWS and Microsoft issue
+  // certifications, and the wrong label tells the reader the page was not
+  // written for them.
+  const providerLabel = config.examType === 'public_exam' ? 'board' : 'issuer';
+
   const facts = [
-    { key: 'provider', value: config.provider },
+    { key: providerLabel, value: config.provider },
     { key: 'questions', value: String(config.totalQuestions) },
     { key: 'duration', value: formatExamDuration(config.examDurationMinutes) },
     { key: 'passing', value: t('landing.facts.passingValue', { score: config.passingScore }) },
