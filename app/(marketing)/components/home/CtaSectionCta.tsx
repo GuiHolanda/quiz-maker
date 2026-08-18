@@ -4,6 +4,7 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { BlueprintCorners } from '@/app/(marketing)/components/shared/BlueprintCorners';
 import { MktCtaLink } from '@/app/(marketing)/components/shared/MktCtaLink';
 import { usePrimaryCtaHref } from '@/app/(marketing)/components/shared/usePrimaryCtaHref';
+import { DEMO_PATH } from '@/config/demo-links';
 
 export function CtaSectionCta() {
   const { t } = useTranslation();
@@ -18,7 +19,9 @@ export function CtaSectionCta() {
           <BlueprintCorners />
           <MktCtaLink href={primaryHref}>{t('homepage.cta2.primaryCta')}</MktCtaLink>
         </div>
-        <MktCtaLink href="/pricing" variant="secondary">
+        {/* The secondary slot is the proof-before-signup path, not pricing: the
+            pricing section sits two blocks above this one and already links there. */}
+        <MktCtaLink href={DEMO_PATH} variant="secondary">
           {t('homepage.cta2.secondaryCta')}
         </MktCtaLink>
       </div>

@@ -11,11 +11,15 @@ import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSection 
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
+import { DEMO_PATH } from '@/config/demo-links';
 
 const NAV_LINKS = [
   { labelKey: 'nav.certificates', href: '/#certificacoes' },
   { labelKey: 'nav.concursos', href: '/#concursos' },
   { labelKey: 'nav.features', href: '/#features' },
+  // Proof before signup, so it sits ahead of pricing — same role the demo link
+  // already plays in the focused-CTA navbar on the exam landing pages.
+  { labelKey: 'nav.demo', href: DEMO_PATH },
   { labelKey: 'nav.pricing', href: '/pricing' },
 ] as const;
 
