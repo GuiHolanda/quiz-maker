@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react';
 
 import { Exam, ExamSection, ExamTopic } from '@/shared/types';
+import type { QuestionFormatKey } from '@/config/question-formats';
 import { saveExam } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
@@ -28,6 +29,7 @@ interface UseExamDraftCardReturn {
   readonly addTopic: (sectionIndex: number, name: string) => void;
   readonly removeTopic: (sectionIndex: number, topicIndex: number) => void;
   readonly updateTopic: (sectionIndex: number, topicIndex: number, newName: string) => void;
+  readonly updateQuestionFormat: (format: QuestionFormatKey) => void;
   readonly handleSave: () => Promise<ExamDraftSaveResult>;
 }
 
@@ -53,6 +55,10 @@ export function useExamDraftCard(initialDraft: Exam): UseExamDraftCardReturn {
 
       return { ...prev, examBoard: { ...(prev.examBoard ?? {}), name } };
     });
+  }, []);
+
+  const updateQuestionFormat = useCallback((format: QuestionFormatKey) => {
+    setDraft((prev) => ({ ...prev, questionFormat: format }));
   }, []);
 
   const updateNumericField = useCallback(
@@ -189,6 +195,46 @@ export function useExamDraftCard(initialDraft: Exam): UseExamDraftCardReturn {
     addTopic,
     removeTopic,
     updateTopic,
+    updateQuestionFormat,
     handleSave,
+  };
+}
+
+export interface ExamDraftValidation {
+  readonly hasRequiredFields: boolean;
+  readonly isDistributionValid: boolean;
+  readonly canSave: boolean;
+  readonly distributionSum: number;
+}
+
+// Pure function so every container (chat-drawer modal, /exams/new, /exams/[id]/edit)
+// gates its own Save button on the exact same rule the editor's own warning banner
+// uses — no second copy of "what counts as saveable" to drift out of sync.
+export function getExamDraftValidation(draft: Exam): ExamDraftValidation {
+  const isCertification = draft.type === 'certification';
+  const referenceName = isCertification ? (draft.provider?.name ?? '') : (draft.examBoard?.name ?? '');
+
+  const hasRequiredFields = isCertification
+    ? draft.name.trim() !== '' &&
+      referenceName.trim() !== '' &&
+      (draft.key?.trim() ?? '') !== '' &&
+      (draft.totalQuestions ?? 0) > 0
+    : draft.name.trim() !== '' &&
+      referenceName.trim() !== '' &&
+      (draft.role?.trim() ?? '') !== '' &&
+      (draft.key?.trim() ?? '') !== '' &&
+      draft.year != null &&
+      (draft.totalQuestions ?? 0) > 0;
+
+  const isDistributionValid = draft.sections.every(
+    (section) => section.name.trim() !== '' && section.maxQuestions >= section.minQuestions
+  );
+  const distributionSum = draft.sections.reduce((sum, section) => sum + section.maxQuestions, 0);
+
+  return {
+    hasRequiredFields,
+    isDistributionValid,
+    canSave: hasRequiredFields && isDistributionValid,
+    distributionSum,
   };
 }
