@@ -6,13 +6,21 @@ import { DemoStepHeader } from './DemoStepHeader';
 
 const PLACEHOLDER_CARDS = [0, 1, 2, 3];
 
-export function DemoCatalogSkeleton() {
+interface DemoCatalogSkeletonProps {
+  // The Suspense fallback is the server-rendered shell and owns the page's single <h1>.
+  // The client component renders this same skeleton again while it fetches the catalog —
+  // that one passes "presentational" so the document never carries two identical H1s.
+  readonly as?: 'h1' | 'presentational';
+}
+
+export function DemoCatalogSkeleton({ as = 'h1' }: DemoCatalogSkeletonProps) {
   const { t } = useTranslation();
 
   return (
     <div className="min-h-screen pb-24">
       <div className="max-w-7xl mx-auto px-6 pt-12 pb-8">
         <DemoStepHeader
+          as={as}
           kick={t('demo.step1.kick')}
           heading={t('demo.step1.heading')}
           subtext={t('demo.catalog.loading')}

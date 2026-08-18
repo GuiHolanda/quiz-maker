@@ -103,7 +103,7 @@ export function DemoFlowClient() {
   }
 
   if (!catalog) {
-    return <DemoCatalogSkeleton />;
+    return <DemoCatalogSkeleton as="presentational" />;
   }
 
   if (catalog.length === 0) {

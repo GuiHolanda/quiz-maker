@@ -9,6 +9,7 @@ import { ExamHowItWorksSection } from '@/app/(marketing)/components/exam-landing
 import { ExamDiagnosisSection } from '@/app/(marketing)/components/exam-landing/ExamDiagnosisSection';
 import { ExamFaqSection } from '@/app/(marketing)/components/exam-landing/ExamFaqSection';
 import { ExamFinalCtaSection } from '@/app/(marketing)/components/exam-landing/ExamFinalCtaSection';
+import { OG_IMAGES } from '@/config/og';
 
 interface PageProps {
   readonly params: Promise<{ 'exam-slug': string }>;
@@ -31,6 +32,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: config.seoDescription,
       url: `https://www.certifiqueai.com/simulado/${slug}`,
       type: 'website',
+      images: OG_IMAGES,
     },
     alternates: { canonical: `https://www.certifiqueai.com/simulado/${slug}` },
   };
