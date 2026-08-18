@@ -3,8 +3,10 @@
 import NextLink from 'next/link';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { DEMO_PATH } from '@/config/demo-links';
 
 const PLATFORM_LINKS = [
+  { labelKey: 'nav.demo', href: DEMO_PATH },
   { labelKey: 'nav.pricing', href: '/pricing' },
   { labelKey: 'register.createAccount', href: '/register' },
   { labelKey: 'common.signIn', href: '/login' },

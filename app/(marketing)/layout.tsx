@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 
 import { fontBarlow, fontBarlowCondensed } from '@/config/fonts';
+import { jsonLd } from '@/lib/json-ld';
 
 const organizationSchema = {
   '@context': 'https://schema.org',
@@ -71,8 +72,8 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         fontBarlowCondensed.variable
       )}
     >
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseListSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organizationSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(courseListSchema) }} />
       {children}
     </div>
   );

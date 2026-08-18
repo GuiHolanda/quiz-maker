@@ -338,4 +338,33 @@ describe('DemoCatalogService', () => {
       });
     });
   });
+  describe('owner scoping — the demo is public and must never read user rows', () => {
+    it('asks the database for catalog-owned questions only', () => {
+      // The guarantee has to live in the WHERE clause, not in what the seed happens to
+      // contain: a QuestionPool is keyed by (type, provider, examBoard, section, topic)
+      // and not by owner, so a subscriber's questions join the same pool as the catalog's.
+      prismaMock.exam.findMany.mockResolvedValue([makeTemplate()] as any);
+      prismaMock.questionPool.findMany.mockResolvedValue(fullyStockedPools(40) as any);
+
+      return service.listDemoExams().then(() => {
+        const call = prismaMock.questionPool.findMany.mock.calls.at(-1)![0] as any;
+
+        expect(call.include.questions.where).toEqual({ userId: null });
+      });
+    });
+
+    it('does not fall back to ordering to keep user rows out', async () => {
+      // Ordering is not access control. If the filter were dropped, this pool — where the
+      // user row sorts first — would put private content straight into the demo.
+      prismaMock.exam.findMany.mockResolvedValue([makeTemplate()] as any);
+      prismaMock.questionPool.findMany.mockResolvedValue(fullyStockedPools(40) as any);
+
+      await service.listDemoExams();
+
+      const call = prismaMock.questionPool.findMany.mock.calls.at(-1)![0] as any;
+
+      expect(call.include.questions.where?.userId).toBe(null);
+      expect(call.include.questions.orderBy).toEqual({ id: 'asc' });
+    });
+  });
 });

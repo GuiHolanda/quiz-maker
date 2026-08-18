@@ -9,6 +9,7 @@ import { BottomCtaCta } from '@/app/(marketing)/components/pricing/BottomCtaCta'
 import { FeatureComparisonTable } from '@/app/(marketing)/components/pricing/FeatureComparisonTable';
 import { PricingFaq } from '@/app/(marketing)/components/pricing/PricingFaq';
 import { parseProperties } from '@/lib/properties-parser';
+import { jsonLd } from '@/lib/json-ld';
 
 export const metadata: Metadata = {
   title: 'Planos e Preços | CertifiqueAI',
@@ -57,8 +58,8 @@ export default async function PricingPage() {
 
   return (
     <div className="text-mkt-text">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(faqSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbSchema) }} />
 
       <PricingPeriodProvider>
         <section className="py-20 px-6 text-center bg-mkt-bg border-b border-mkt-divider">
