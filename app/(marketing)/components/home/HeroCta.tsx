@@ -15,11 +15,18 @@ export function HeroCta() {
   return (
     <div className="flex flex-col sm:flex-row gap-3 mb-10">
       <MktCtaLink href={primaryHref}>{t('homepage.cta.startFreeTrial')}</MktCtaLink>
-      {/* Anonymous visitors get the interactive demo — the label promises sample
-          questions, and the demo is where real ones are actually shown. */}
-      <MktCtaLink href={session?.user ? '/questions' : DEMO_PATH} variant="secondary">
-        {t('homepage.cta.viewSampleQuestions')}
-      </MktCtaLink>
+      {/* Label follows the destination: anonymous visitors land in the interactive demo,
+          signed-in ones go to their own library. A single shared label used to describe
+          neither — "sample questions" set up a static list and the demo is a 3-step flow. */}
+      {session?.user ? (
+        <MktCtaLink href="/questions" variant="secondary">
+          {t('homepage.cta.myQuestions')}
+        </MktCtaLink>
+      ) : (
+        <MktCtaLink href={DEMO_PATH} variant="secondary">
+          {t('homepage.cta.seeDemo')}
+        </MktCtaLink>
+      )}
     </div>
   );
 }
