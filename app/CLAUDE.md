@@ -193,9 +193,9 @@ Três regiões: desktop (`w-64 sticky`), mobile top bar (hamburger), mobile draw
 |---|---|
 | `exam-config.ts` | `EXAM_CONFIG[type]` — todas as diferenças de domínio |
 | `components/list/ExamCard.tsx` | Card com logo/initials/icon, stats, `footerAction?` |
-| `components/list/ExamDetailPanel.tsx` | Painel com `ExamSectionsTable` |
+| `components/list/ExamDetailPanel.tsx` | Painel somente-leitura (seções + tópicos); "Editar" leva a `/exams/[id]/edit` |
 | `components/list/ExamsList.tsx` | Lista + skeleton + empty state + detail panel animado |
-| `components/wizard/` | Wizard 3 passos: BasicInfo, DefineSections, Review |
+| `new/` + `[id]/edit/` | Editor único (`ExamEditor`) para criar e editar — três sementes (IA / edital / em branco) na criação |
 | `components/catalog/CatalogSection.tsx` | Catálogo de templates — filtra por type, inscrição via `addExam` no contexto |
 
 Importar config via `@/app/(workspace)/exams/exam-config` (nunca relativo).

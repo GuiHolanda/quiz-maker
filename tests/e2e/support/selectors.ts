@@ -42,6 +42,7 @@ export const TID = {
   examEditorNameInput: 'exam-editor-name-input',
   examEditorDiscardBtn: 'exam-editor-discard-btn',
   examEditorSaveBtn: 'exam-editor-save-btn',
+  examDetailEditBtn: 'exam-detail-edit-btn',
 
   // Question bank
   questionBankCard: 'question-bank-card',

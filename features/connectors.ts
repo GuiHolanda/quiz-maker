@@ -86,6 +86,12 @@ export async function saveExam(exam: Exam): Promise<Exam> {
   return data.exam;
 }
 
+export async function updateExam(examId: string, exam: Exam): Promise<Exam> {
+  const { data } = await api.patch<{ exam: Exam }>(SAVE_EXAM_URL, { ...exam, examId });
+
+  return data.exam;
+}
+
 export async function updateExamMeta(
   examId: string,
   updates: {

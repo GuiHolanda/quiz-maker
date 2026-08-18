@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 
 import { Exam, ExamSection, ExamTopic } from '@/shared/types';
 import type { QuestionFormatKey } from '@/config/question-formats';
-import { saveExam } from '@/features/connectors';
+import { saveExam, updateExam } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
 
@@ -35,7 +35,7 @@ interface UseExamDraftCardReturn {
 
 const clampPercent = (value: number): number => Math.min(100, Math.max(0, Math.round(value)));
 
-export function useExamDraftCard(initialDraft: Exam): UseExamDraftCardReturn {
+export function useExamDraftCard(initialDraft: Exam, mode: 'create' | 'edit' = 'create'): UseExamDraftCardReturn {
   const [draft, setDraft] = useState<Exam>(initialDraft);
   const [status, setStatus] = useState<ExamDraftStatus>('editing');
   const { t } = useTranslation();
@@ -157,11 +157,11 @@ export function useExamDraftCard(initialDraft: Exam): UseExamDraftCardReturn {
     }
     setStatus('saving');
     try {
-      const saved = await saveExam(draft);
+      const saved = mode === 'edit' && draft.id ? await updateExam(draft.id, draft) : await saveExam(draft);
 
       setStatus('saved');
       notify.success(t('exam.saved'), t('exam.savedDescription', { name: draft.name }));
-      window.dispatchEvent(new CustomEvent('exam-created', { detail: saved }));
+      if (mode !== 'edit') window.dispatchEvent(new CustomEvent('exam-created', { detail: saved }));
 
       return 'success';
     } catch (err: unknown) {

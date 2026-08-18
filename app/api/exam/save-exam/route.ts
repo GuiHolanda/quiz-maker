@@ -151,6 +151,14 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ message: 'Section updated successfully', section: updated }, { status: 200 });
     }
 
+    if (body?.examId && Array.isArray((body as Record<string, unknown>).sections)) {
+      const { examId, ...examBody } = body as Record<string, unknown> & { examId: string };
+      const exam = examService.validate(examBody);
+      const updated = await examService.updateExam(examId, exam, session.user.id);
+
+      return NextResponse.json({ message: 'Exam updated successfully', exam: updated }, { status: 200 });
+    }
+
     if (body?.examId) {
       const {
         examId,

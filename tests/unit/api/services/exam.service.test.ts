@@ -180,6 +180,128 @@ describe('ExamService', () => {
     expect(prismaMock.exam.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'e1' } }));
   });
 
+  describe('updateExam()', () => {
+    const existingExam = {
+      id: 'e1',
+      userId: 'user1',
+      type: 'certification',
+      name: 'AWS CCP',
+      role: null,
+      year: null,
+      key: 'OLD-KEY',
+      totalQuestions: 65,
+      examDurationMinutes: 90,
+      passingScore: 70,
+      questionFormat: 'mc_5',
+      sections: [
+        {
+          id: 's1',
+          name: 'Cloud Concepts',
+          minQuestions: 20,
+          maxQuestions: 30,
+          examId: 'e1',
+          topics: [{ id: 't1', name: 'IAM', sectionId: 's1' }],
+        },
+        { id: 's2', name: 'Security', minQuestions: 30, maxQuestions: 30, examId: 'e1', topics: [] },
+      ],
+    };
+
+    it('throws 404 when the exam does not exist', async () => {
+      prismaMock.exam.findUnique.mockResolvedValue(null);
+
+      const service = new ExamService(prismaMock as any);
+      const exam: Exam = { type: 'certification', name: 'X', totalQuestions: 10, sections: [] };
+
+      await expect(service.updateExam('missing', exam, 'user1')).rejects.toMatchObject({ status: 404 });
+    });
+
+    it('throws 403 when the exam belongs to another user', async () => {
+      prismaMock.exam.findUnique.mockResolvedValue(existingExam as any);
+
+      const service = new ExamService(prismaMock as any);
+      const exam: Exam = { type: 'certification', name: 'AWS CCP', totalQuestions: 65, sections: [] };
+
+      await expect(service.updateExam('e1', exam, 'attacker')).rejects.toMatchObject({ status: 403 });
+    });
+
+    it('throws 409 when renaming collides with another exam of the same user', async () => {
+      prismaMock.exam.findUnique.mockResolvedValue(existingExam as any);
+      prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+      prismaMock.exam.findFirst.mockResolvedValue({ id: 'other-exam' } as any);
+
+      const service = new ExamService(prismaMock as any);
+      const exam: Exam = { type: 'certification', name: 'AWS SAA', totalQuestions: 65, sections: [] };
+
+      await expect(service.updateExam('e1', exam, 'user1')).rejects.toMatchObject({ status: 409 });
+    });
+
+    it('diffs sections and topics: renames matched rows, creates new ones, deletes removed ones', async () => {
+      prismaMock.exam.findUnique.mockResolvedValue(existingExam as any);
+      prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+      prismaMock.examQuestion.updateMany.mockResolvedValue({ count: 1 } as any);
+      prismaMock.examSection.update.mockResolvedValue({} as any);
+      prismaMock.examSection.create.mockResolvedValue({} as any);
+      prismaMock.examSection.deleteMany.mockResolvedValue({ count: 1 } as any);
+      prismaMock.examTopic.create.mockResolvedValue({} as any);
+      prismaMock.exam.update.mockResolvedValue({
+        ...existingExam,
+        provider: null,
+        examBoard: null,
+        sections: [],
+      } as any);
+
+      const exam: Exam = {
+        type: 'certification',
+        name: 'AWS CCP',
+        key: 'NEW-KEY',
+        totalQuestions: 70,
+        examDurationMinutes: 90,
+        passingScore: 70,
+        questionFormat: 'mc_5',
+        sections: [
+          // s1 renamed, its topic t1 renamed, plus a brand-new topic (no id)
+          {
+            id: 's1',
+            name: 'Cloud Concepts v2',
+            minQuestions: 20,
+            maxQuestions: 30,
+            topics: [{ id: 't1', name: 'IAM v2' }, { name: 'S3' }],
+          },
+          // s2 is gone — should be deleted
+          // brand-new section (no id)
+          { name: 'New Domain', minQuestions: 0, maxQuestions: 40, topics: [] },
+        ],
+      };
+
+      const service = new ExamService(prismaMock as any);
+      await service.updateExam('e1', exam, 'user1');
+
+      // section rename mirrors ExamQuestion.sectionName
+      expect(prismaMock.examQuestion.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { sectionName: 'Cloud Concepts v2' } }),
+      );
+      // topic rename mirrors ExamQuestion.topicName
+      expect(prismaMock.examQuestion.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { topicName: 'IAM v2' } }),
+      );
+      expect(prismaMock.examSection.update).toHaveBeenCalledWith({
+        where: { id: 's1' },
+        data: { name: 'Cloud Concepts v2', minQuestions: 20, maxQuestions: 30 },
+      });
+      expect(prismaMock.examTopic.create).toHaveBeenCalledWith({ data: { name: 'S3', sectionId: 's1' } });
+      expect(prismaMock.examSection.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ name: 'New Domain', examId: 'e1' }) }),
+      );
+      expect(prismaMock.examSection.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ['s2'] } } });
+      expect(prismaMock.exam.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'e1' },
+          data: expect.objectContaining({ key: 'NEW-KEY', totalQuestions: 70 }),
+        }),
+      );
+    });
+  });
+
   describe('validate() — questionFormat', () => {
     const body = (overrides: Record<string, unknown> = {}) => ({
       type: 'public_exam',

@@ -20,10 +20,11 @@ import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
 interface ExamEditorPageProps {
   readonly type: ExamType;
   readonly initialDraft: Exam;
+  readonly mode?: 'create' | 'edit';
   readonly context?: string;
   readonly sources?: string[];
   readonly warningKey?: string;
-  readonly onDraftChange: (draft: Exam) => void;
+  readonly onDraftChange?: (draft: Exam) => void;
   readonly onSaved: (saved: Exam) => void;
   readonly onDiscard: () => void;
 }
@@ -35,6 +36,7 @@ interface ExamEditorPageProps {
 export function ExamEditorPage({
   type,
   initialDraft,
+  mode = 'create',
   context,
   sources,
   warningKey,
@@ -60,18 +62,18 @@ export function ExamEditorPage({
     removeTopic,
     updateTopic,
     handleSave,
-  } = useExamDraftCard(initialDraft);
+  } = useExamDraftCard(initialDraft, mode);
 
   const isSaving = status === 'saving';
   const { canSave } = getExamDraftValidation(draft);
 
   // Mirrors the draft up to the page so it can be persisted to localStorage the same way
-  // the old wizard's draft survived a reload — see page.tsx.
+  // the old wizard's draft survived a reload — see page.tsx. Not used in edit mode.
   const onDraftChangeRef = useRef(onDraftChange);
 
   onDraftChangeRef.current = onDraftChange;
   useEffect(() => {
-    onDraftChangeRef.current(draft);
+    onDraftChangeRef.current?.(draft);
   }, [draft]);
 
   const handleSaveClick = async () => {
@@ -84,7 +86,9 @@ export function ExamEditorPage({
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-4">
         <div className="flex flex-col gap-0.5 min-w-0">
-          <h1 className="page-header-title truncate">{draft.name || t(config.tabNew)}</h1>
+          <h1 className="page-header-title truncate">
+            {draft.name || t(mode === 'edit' ? config.editLabel : config.tabNew)}
+          </h1>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Button
@@ -94,7 +98,7 @@ export function ExamEditorPage({
             size="sm"
             onPress={() => setIsDiscardOpen(true)}
           >
-            {t(config.discardDraftLabel)}
+            {mode === 'edit' ? t('common.cancel') : t(config.discardDraftLabel)}
           </Button>
           <Button
             className={buttonStyles.primarySm}
@@ -166,12 +170,16 @@ export function ExamEditorPage({
       </div>
 
       <ConfirmModal
-        body={<p className="text-sm text-default-500">{t(config.discardDraftBody)}</p>}
-        confirmLabel={t(config.discardDraftLabel)}
+        body={
+          <p className="text-sm text-default-500">
+            {t(mode === 'edit' ? 'exam.cancelEditBody' : config.discardDraftBody)}
+          </p>
+        }
+        confirmLabel={mode === 'edit' ? t('common.cancel') : t(config.discardDraftLabel)}
         confirmTestId="confirm-discard-btn"
         confirmVariant="danger"
         isOpen={isDiscardOpen}
-        title={t(config.discardDraftTitle)}
+        title={t(mode === 'edit' ? 'exam.cancelEditTitle' : config.discardDraftTitle)}
         onClose={() => setIsDiscardOpen(false)}
         onConfirm={() => {
           setIsDiscardOpen(false);
