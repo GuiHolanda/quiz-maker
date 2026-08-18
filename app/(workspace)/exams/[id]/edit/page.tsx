@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { BreadcrumbItem, Breadcrumbs } from '@heroui/breadcrumbs';
 
 import type { Exam } from '@/shared/types';
@@ -10,6 +12,9 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
+import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
+import { canEditExams } from '@/config/constants';
 import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
 import { ExamEditorPage } from '@/app/(workspace)/exams/new/components/ExamEditorPage';
 
@@ -27,6 +32,8 @@ function EditExamContent() {
   const params = useParams<{ id: string }>();
   const examId = params.id;
   const { exams, isLoading, updateExam } = useExamsContext();
+  const { data: session } = useSession();
+  const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
 
   const exam = exams.find((e) => e.id === examId) ?? null;
 
@@ -53,6 +60,22 @@ function EditExamContent() {
   const config = EXAM_CONFIG[exam.type];
   const listHref = `/exams?type=${exam.type}`;
   const listLabel = exam.type === 'certification' ? t('nav.certifications') : t('nav.publicExams');
+  const canEdit = !session?.user?.plan || canEditExams(session.user.plan);
+
+  if (!canEdit) {
+    return (
+      <PageHeader title={t(config.editLabel)}>
+        <IllustratedEmptyState
+          action={{ label: t('billing.upgradeModal.cta'), onPress: () => setIsUpgradeOpen(true) }}
+          description={t('exam.editUpgradeWallDescription')}
+          icon={config.icon}
+          secondaryAction={{ label: t('common.back'), href: listHref }}
+          title={t('exam.editUpgradeWallTitle')}
+        />
+        <UpgradeModal isOpen={isUpgradeOpen} product="pro" onClose={() => setIsUpgradeOpen(false)} />
+      </PageHeader>
+    );
+  }
 
   const breadcrumbs = (
     <Breadcrumbs>

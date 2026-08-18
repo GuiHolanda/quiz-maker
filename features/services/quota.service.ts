@@ -16,7 +16,7 @@ export class QuotaService {
     if (daysSince >= PERIOD_DAYS) {
       return prisma.user.update({
         where: { id: userId },
-        data: { questionsGeneratedThisPeriod: 0, periodStartDate: now },
+        data: { questionsGeneratedThisPeriod: 0, autoConfigThisPeriod: 0, periodStartDate: now },
       });
     }
 
@@ -135,6 +135,46 @@ export class QuotaService {
     }
 
     const log = await prisma.usageLog.create({ data: { userId, action: 'generate_questions', count, ...contextData } });
+    return { logId: log.id };
+  }
+
+  // Atomic check+record for AI auto-config (certification search or edital extraction),
+  // one unit per call — mirrors checkAndRecordQuestions but against autoConfigThisPeriod.
+  // customQuotaOverride doesn't apply here (it's questions-only, see CLAUDE.md).
+  async checkAndRecordAutoConfig(userId: string): Promise<{ logId: string }> {
+    const user = await this.getUserWithPeriodReset(userId);
+    const plan = this.resolvePlan(user.plan);
+    const limit = PLAN_LIMITS[plan].autoConfigPerPeriod;
+
+    if (limit === Infinity) {
+      const [, log] = await Promise.all([
+        prisma.user.update({ where: { id: userId }, data: { autoConfigThisPeriod: { increment: 1 } } }),
+        prisma.usageLog.create({ data: { userId, action: 'auto_config', count: 1 } }),
+      ]);
+      return { logId: log.id };
+    }
+
+    const updated = await prisma.user.updateMany({
+      where: { id: userId, autoConfigThisPeriod: { lte: limit - 1 } },
+      data: { autoConfigThisPeriod: { increment: 1 } },
+    });
+
+    if (updated.count === 0) {
+      const used = user.autoConfigThisPeriod;
+      const err = Object.assign(new Error(`Auto-config limit reached (${limit}/period)`), {
+        status: 403,
+        body: {
+          error: 'quota_exceeded',
+          message: `Auto-config limit reached (${limit}/period)`,
+          limit,
+          used,
+          plan,
+        },
+      });
+      throw err;
+    }
+
+    const log = await prisma.usageLog.create({ data: { userId, action: 'auto_config', count: 1 } });
     return { logId: log.id };
   }
 

@@ -7,6 +7,7 @@ function makeUser(overrides: Partial<{
   id: string;
   plan: string;
   questionsGeneratedThisPeriod: number;
+  autoConfigThisPeriod: number;
   periodStartDate: Date;
   customQuotaOverride: number | null;
 }> = {}) {
@@ -14,6 +15,7 @@ function makeUser(overrides: Partial<{
     id: 'user-1',
     plan: 'free',
     questionsGeneratedThisPeriod: 0,
+    autoConfigThisPeriod: 0,
     periodStartDate: new Date(Date.now() - 1 * DAY_MS), // 1 day ago — within period
     customQuotaOverride: null,
     ...overrides,
@@ -265,6 +267,72 @@ describe('QuotaService', () => {
       prismaMock.usageLog.create.mockResolvedValue({ id: 'log-3' } as any);
 
       await expect(service.checkAndRecordQuestions('user-1', 5)).resolves.toEqual({ logId: 'log-3' });
+    });
+  });
+
+  describe('checkAndRecordAutoConfig', () => {
+    it('throws 403 for free plan (autoConfigPerPeriod = 0)', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'free', autoConfigThisPeriod: 0 }),
+      );
+      prismaMock.user.updateMany.mockResolvedValue({ count: 0 });
+
+      const promise = service.checkAndRecordAutoConfig('user-1');
+
+      await expect(promise).rejects.toMatchObject({
+        status: 403,
+        body: { error: 'quota_exceeded', limit: 0 },
+      });
+    });
+
+    it('succeeds for pro plan under the period limit (atomic updateMany)', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'pro', autoConfigThisPeriod: 3 }),
+      );
+      prismaMock.user.updateMany.mockResolvedValue({ count: 1 });
+      prismaMock.usageLog.create.mockResolvedValue({ id: 'log-auto-1' } as any);
+
+      await expect(service.checkAndRecordAutoConfig('user-1')).resolves.toMatchObject({ logId: 'log-auto-1' });
+
+      expect(prismaMock.user.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ id: 'user-1', autoConfigThisPeriod: { lte: 14 } }),
+          data: { autoConfigThisPeriod: { increment: 1 } },
+        }),
+      );
+      expect(prismaMock.usageLog.create).toHaveBeenCalledWith({
+        data: { userId: 'user-1', action: 'auto_config', count: 1 },
+      });
+    });
+
+    it('throws 403 for pro plan when the period limit is already reached', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'pro', autoConfigThisPeriod: 15 }),
+      );
+      prismaMock.user.updateMany.mockResolvedValue({ count: 0 });
+
+      const promise = service.checkAndRecordAutoConfig('user-1');
+
+      await expect(promise).rejects.toMatchObject({
+        status: 403,
+        body: { error: 'quota_exceeded', limit: 15, used: 15 },
+      });
+    });
+
+    it('uses direct increment for unlimited plans (tester)', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'tester', autoConfigThisPeriod: 999 }),
+      );
+      prismaMock.user.update.mockResolvedValue({} as any);
+      prismaMock.usageLog.create.mockResolvedValue({ id: 'log-auto-2' } as any);
+
+      await expect(service.checkAndRecordAutoConfig('user-1')).resolves.toMatchObject({ logId: 'log-auto-2' });
+
+      expect(prismaMock.user.updateMany).not.toHaveBeenCalled();
+      expect(prismaMock.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { autoConfigThisPeriod: { increment: 1 } },
+      });
     });
   });
 

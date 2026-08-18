@@ -1,7 +1,15 @@
 'use client';
 import { Fragment, useState } from 'react';
 import NextLink from 'next/link';
-import { faCalendar, faChevronDown, faChevronRight, faPen, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons';
+import {
+  faCalendar,
+  faChevronDown,
+  faChevronRight,
+  faLock,
+  faPen,
+  faTrash,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button } from '@heroui/button';
 
@@ -13,8 +21,10 @@ import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
 interface ExamDetailPanelProps {
   readonly exam: Exam;
   readonly type: ExamType;
+  readonly canEdit: boolean;
   readonly onDelete: () => void;
   readonly onClose: () => void;
+  readonly onUpgradeRequired: () => void;
 }
 
 const TH = 'text-left font-mono text-xs text-default-400 px-3 py-2.5 border-b border-default-200';
@@ -23,7 +33,7 @@ const TD_LAST = 'px-3 py-2';
 
 // Read-only since Fase 3: editing structure/topics now happens in the shared ExamEditor
 // at /exams/[id]/edit, not row-by-row here — see plan §2.6.
-export function ExamDetailPanel({ exam, type, onDelete, onClose }: ExamDetailPanelProps) {
+export function ExamDetailPanel({ exam, type, canEdit, onDelete, onClose, onUpgradeRequired }: ExamDetailPanelProps) {
   const { t } = useTranslation();
   const config = EXAM_CONFIG[type];
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
@@ -46,16 +56,28 @@ export function ExamDetailPanel({ exam, type, onDelete, onClose }: ExamDetailPan
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <Button
-            as={NextLink}
-            className={buttonStyles.flat}
-            data-testid="exam-detail-edit-btn"
-            href={`/exams/${exam.id}/edit`}
-            size="sm"
-            startContent={<FontAwesomeIcon className="text-xs" icon={faPen} />}
-          >
-            {t(config.editLabel)}
-          </Button>
+          {canEdit ? (
+            <Button
+              as={NextLink}
+              className={buttonStyles.flat}
+              data-testid="exam-detail-edit-btn"
+              href={`/exams/${exam.id}/edit`}
+              size="sm"
+              startContent={<FontAwesomeIcon className="text-xs" icon={faPen} />}
+            >
+              {t(config.editLabel)}
+            </Button>
+          ) : (
+            <Button
+              className={buttonStyles.flat}
+              data-testid="exam-detail-upgrade-btn"
+              size="sm"
+              startContent={<FontAwesomeIcon className="text-xs" icon={faLock} />}
+              onPress={onUpgradeRequired}
+            >
+              {t('billing.upgradeModal.cta')}
+            </Button>
+          )}
           <Button
             className={buttonStyles.dangerFlat}
             size="sm"

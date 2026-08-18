@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { ExamCard } from './ExamCard';
@@ -10,6 +11,7 @@ import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
 import { SectionHeader } from '@/shared/components/ui/SectionHeader';
 import { faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
+import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
 import { EntityListShell } from '@/shared/components/ui/EntityListShell';
 import { usePaginatedItems } from '@/features/hooks/usePaginatedItems.hook';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
@@ -17,6 +19,7 @@ import { deleteExam } from '@/features/connectors';
 import type { Exam, ExamType } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
+import { canEditExams } from '@/config/constants';
 import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
 import { CatalogDiscoveryCard } from '../catalog/CatalogDiscoveryCard';
 
@@ -28,12 +31,15 @@ export function ExamsList({ type }: ExamsListProps) {
   const { t } = useTranslation();
   const config = EXAM_CONFIG[type];
   const { certifications, publicExams, isLoading, removeExam } = useExamsContext();
+  const { data: session } = useSession();
   const exams = type === 'certification' ? certifications : publicExams;
   const hasExams = !isLoading && exams.length > 0;
+  const canEdit = !session?.user?.plan || canEditExams(session.user.plan);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [deletingExam, setDeletingExam] = useState<Exam | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
 
   const detailRef = useRef<HTMLDivElement>(null);
   const { pageItems, page, totalPages, perPage, setPage, setPerPage } = usePaginatedItems(exams);
@@ -124,10 +130,12 @@ export function ExamsList({ type }: ExamsListProps) {
                 title={t('exam.detailsSectionLabel')}
               />
               <ExamDetailPanel
+                canEdit={canEdit}
                 exam={selectedExam}
                 type={type}
                 onClose={() => setSelectedId(null)}
                 onDelete={() => setDeletingExam(selectedExam)}
+                onUpgradeRequired={() => setIsUpgradeOpen(true)}
               />
             </motion.div>
           )}
@@ -145,6 +153,8 @@ export function ExamsList({ type }: ExamsListProps) {
         onClose={() => setDeletingExam(null)}
         onConfirm={handleDeleteConfirm}
       />
+
+      <UpgradeModal isOpen={isUpgradeOpen} product="pro" onClose={() => setIsUpgradeOpen(false)} />
     </>
   );
 }

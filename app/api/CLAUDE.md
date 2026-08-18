@@ -44,7 +44,7 @@ Unified domain for `ExamType: 'certification' | 'public_exam'`.
 | Route | Method | Description |
 |---|---|---|
 | `exam/exams` | GET | List user's exams (filtered by `?type=`) |
-| `exam/save-exam` | POST/PUT/PATCH/DELETE | Create exam; add section; update exam/section/topic; delete |
+| `exam/save-exam` | POST/PUT/PATCH/DELETE | Create exam; add section; update exam/section/topic; delete. Every write except exam-level `DELETE` requires `pro`+ (`free` is catalog-only, read-only). |
 | `exam/providers` | GET | List all providers |
 | `exam/exam-boards` | GET/POST | List / create exam boards |
 | `exam/save-questions` | POST | Persist generated questions to DB |
@@ -53,7 +53,8 @@ Unified domain for `ExamType: 'certification' | 'public_exam'`.
 | `exam/browse-questions/summary` | GET | Question counts grouped by exam/section |
 | `exam/catalog` | GET | List exam templates (`isTemplate=true`), filtered by userId |
 | `exam/fork-exam` | POST | Fork catalog template into user's exam; returns full `Exam` object |
-| `exam/extract-from-edital` | POST | Extract exam structure from uploaded edital via OpenAI |
+| `exam/extract-from-edital` | POST | Extract exam structure from uploaded edital via OpenAI. Requires `pro`+, consumes `auto_config` quota. |
+| `exam/auto-config` | POST | Streaming SSE — headless certification identify/blueprint for the `/exams/new` AI seed. Requires `pro`+, consumes `auto_config` quota. Same `AiChatService` as `ai/ai-chat`, separately gated/metered. |
 
 Services: `exam.service.ts`, `exam-question.service.ts`, `exam-catalog.service.ts`, `quiz-generator.service.ts`.
 
@@ -146,7 +147,7 @@ Rotas públicas (sem auth). Service: `features/services/demo-catalog.service.ts`
 | File | Responsibility |
 |---|---|
 | `openAI.service.ts` | `call(prompt, input)` via Responses API with `web_search_preview`. Returns `{ text, inputTokens, outputTokens }`. |
-| `quota.service.ts` | `checkAndRecordQuestions(userId, count)` → `{ logId }`. Also enforces `create_exam`. |
+| `quota.service.ts` | `checkAndRecordQuestions(userId, count)` → `{ logId }`. Also enforces `create_exam` and `checkAndRecordAutoConfig(userId)` (per-period `autoConfigThisPeriod`, `PLAN_LIMITS[plan].autoConfigPerPeriod`). |
 | `metrics.service.ts` | `recordStep(logId, step, tokens, durationMs)` (fire-and-forget) + `finalize(logId, ms)`. |
 | `exam.service.ts` | Unified CRUD for Exam/Section/Topic (both types). |
 | `exam-question.service.ts` | `saveAnswers`, `saveExplanations`. |

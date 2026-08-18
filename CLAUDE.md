@@ -231,17 +231,19 @@ DATABASE_URL="file:/caminho/absoluto/prisma/dev.db" npm run e2e
 type UserPlan = 'free' | 'pro' | 'pro_ai' | 'tester' | 'admin';
 ```
 
-| Plan | Questions/period | Exams | AI Chat | Admin |
-|---|---|---|---|---|
-| `free` | 250 | 2 | ✗ | ✗ |
-| `pro` | 1500 | 5 | ✗ | ✗ |
-| `pro_ai` | 2500 | 5 | ✓ | ✗ |
-| `tester` | ∞ | ∞ | ✓ | ✗ |
-| `admin` | ∞ | ∞ | ✓ | ✓ |
+| Plan | Questions/period | Exams | Create/edit exams | Auto-config/period | AI Chat | Admin |
+|---|---|---|---|---|---|---|
+| `free` | 250 | 2 | ✗ (catalog-only, read-only) | 0 | ✗ | ✗ |
+| `pro` | 1500 | 5 | ✓ | 15 | ✗ | ✗ |
+| `pro_ai` | 2500 | 5 | ✓ | 30 | ✓ | ✗ |
+| `tester` | ∞ | ∞ | ✓ | ∞ | ✓ | ✗ |
+| `admin` | ∞ | ∞ | ✓ | ∞ | ✓ | ✓ |
 
 **Single `maxExams` counter** shared across both exam types. `tester`/`admin` assigned manually. `pro_ai` differentiated by Stripe price ID.
 
-**`customQuotaOverride`:** `null` = plan default, `-1` = infinity sentinel, `N > 0` = custom. Logic in `quota.service.ts → resolveQuestionsLimit()`.
+**`customQuotaOverride`:** `null` = plan default, `-1` = infinity sentinel, `N > 0` = custom. Logic in `quota.service.ts → resolveQuestionsLimit()`. Applies to questions only — `autoConfigPerPeriod` always comes straight from `PLAN_LIMITS`.
+
+**Auto-config quota** (`QuotaAction: 'auto_config'`, `User.autoConfigThisPeriod`): metered by `QuotaService.checkAndRecordAutoConfig()`, one unit per call. Covers both `POST /api/exam/auto-config` (certification search/blueprint — the headless counterpart to `/api/ai/ai-chat` used by `/exams/new`'s AI seed, gated at `pro`+ rather than `pro_ai`-only) and `POST /api/exam/extract-from-edital`. `canEditExams(plan)` (`config/constants/index.ts`) is the single source of truth gating every exam create/edit/delete-section-or-topic route (`app/api/exam/save-exam/route.ts`) and the corresponding UI (`/exams/new`, `/exams/[id]/edit` show an upgrade wall; `ExamDetailPanel`'s "Editar" button becomes "Fazer upgrade" for `free`). Deleting a whole exam stays open to `free` so a forked catalog exam is never a trap.
 
 **`-1` is the "unlimited" sentinel** throughout the UI — `UsageBadge` hides when `questionsLimit === -1`.
 

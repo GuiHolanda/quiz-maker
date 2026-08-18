@@ -145,7 +145,7 @@ export interface ChatMessage {
 
 export type UserPlan = 'free' | 'pro' | 'pro_ai' | 'tester' | 'admin';
 
-export type QuotaAction = 'generate_questions' | 'create_exam' | 'extract_edital' | 'ai_chat';
+export type QuotaAction = 'generate_questions' | 'create_exam' | 'extract_edital' | 'ai_chat' | 'auto_config';
 
 export interface UsageStats {
   plan: UserPlan;

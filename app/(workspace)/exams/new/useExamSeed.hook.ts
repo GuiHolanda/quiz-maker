@@ -7,6 +7,7 @@ import { extractEdital } from '@/features/connectors';
 import { parseCertificationData } from '@/lib/parse-certification-data';
 import { parseIdentifyResponse, type CertificationMatch } from '@/lib/parse-identify-response';
 import { DEFAULT_QUESTION_FORMAT } from '@/config/question-formats';
+import { AUTO_CONFIG_URL } from '@/config/constants';
 
 export type ExamSeedState =
   | { readonly kind: 'idle' }
@@ -44,11 +45,12 @@ export function emptyExamDraft(type: ExamType): Exam {
   };
 }
 
-// Minimal SSE reader for a single headless turn against /api/ai/ai-chat — the same route
-// the chat drawer streams from. This flow has no live-typing bubble to update, so unlike
-// useAiChat.hook.ts it only needs the final accumulated text once the stream ends.
+// Minimal SSE reader for a single headless turn against /api/exam/auto-config — a separate,
+// pro+-gated and metered endpoint from the pro_ai-only conversational drawer (/api/ai/ai-chat),
+// even though both stream from the same AiChatService. This flow has no live-typing bubble to
+// update, so unlike useAiChat.hook.ts it only needs the final accumulated text once the stream ends.
 async function streamAiChatOnce(messages: ChatMessage[], language: Language, signal: AbortSignal): Promise<string> {
-  const response = await fetch('/api/ai/ai-chat', {
+  const response = await fetch(`/api${AUTO_CONFIG_URL}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ messages: messages.map((m) => ({ role: m.role, content: m.content })), language }),

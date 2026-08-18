@@ -4,12 +4,16 @@ import type { Exam, ExamType } from '@/shared/types';
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { BreadcrumbItem, Breadcrumbs } from '@heroui/breadcrumbs';
 
 import { ExamsProvider } from '@/features/providers/exams.provider';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
+import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
+import { canEditExams } from '@/config/constants';
 import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
 import { useExamSeed, emptyExamDraft } from './useExamSeed.hook';
 import { ExamSeedPicker } from './components/ExamSeedPicker';
@@ -48,6 +52,8 @@ function NewExamContent() {
   const { t, language } = useTranslation();
   const searchParams = useSearchParams();
   const { addExam } = useExamsContext();
+  const { data: session } = useSession();
+  const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
 
   const rawType = searchParams.get('type');
   const type: ExamType = rawType === 'public_exam' ? 'public_exam' : 'certification';
@@ -57,6 +63,7 @@ function NewExamContent() {
   const pageTitle = type === 'certification' ? t('exam.newCertificationTitle') : t('exam.newConcursoTitle');
 
   const seed = useExamSeed(language);
+  const canEdit = !session?.user?.plan || canEditExams(session.user.plan);
   const [hydrated, setHydrated] = useState(false);
   const [resumedDraft, setResumedDraft] = useState<Exam | null>(null);
 
@@ -107,6 +114,21 @@ function NewExamContent() {
   // static title above it would double up. Only Tela 1 (the seed picker) needs it.
   const isEditorMode =
     hydrated && (resumedDraft !== null || ['ready', 'error', 'loading-blueprint'].includes(seed.state.kind));
+
+  if (!canEdit) {
+    return (
+      <PageHeader title={pageTitle}>
+        <IllustratedEmptyState
+          action={{ label: t('billing.upgradeModal.cta'), onPress: () => setIsUpgradeOpen(true) }}
+          description={t('exam.createUpgradeWallDescription')}
+          icon={config.icon}
+          secondaryAction={{ label: t('catalog.browseAction'), href: `/exams/catalog?type=${type}` }}
+          title={t('exam.createUpgradeWallTitle')}
+        />
+        <UpgradeModal isOpen={isUpgradeOpen} product="pro" onClose={() => setIsUpgradeOpen(false)} />
+      </PageHeader>
+    );
+  }
 
   return (
     <PageHeader breadcrumbs={breadcrumbs} title={isEditorMode ? undefined : pageTitle}>
