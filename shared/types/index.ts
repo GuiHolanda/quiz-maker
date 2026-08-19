@@ -487,6 +487,34 @@ export interface GenerationJobStatus {
   topics: GenerationJobTopicStatus[];
 }
 
+export interface AutoConfigMatch {
+  readonly label: string;
+  readonly key: string | null;
+  readonly provider: string | null;
+  readonly examBoard: string | null;
+  readonly role: string | null;
+  readonly year: number | null;
+}
+
+export interface AutoConfigIdentifyResult {
+  readonly matches: AutoConfigMatch[];
+  readonly clarification: string | null;
+}
+
+export type AutoConfigStage = 'research' | 'review' | 'format';
+
+export interface AutoConfigJobStatus {
+  readonly id: string;
+  readonly type: ExamType;
+  readonly seedName: string;
+  readonly seedProvider: string | null;
+  readonly status: 'queued' | 'running' | 'done' | 'error' | 'cancelled';
+  readonly stage: AutoConfigStage | null;
+  readonly errorMessage: string | null;
+  readonly errorType: 'quota' | 'generation' | 'timeout' | null;
+  readonly resultJson: string | null;
+}
+
 export interface GenerationHistoryItem {
   id: string;
   source: 'usage_log' | 'generation_job';

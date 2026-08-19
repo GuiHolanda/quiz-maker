@@ -66,7 +66,7 @@ function NewExamContent() {
   const listLabel = type === 'certification' ? t('nav.certifications') : t('nav.publicExams');
   const pageTitle = type === 'certification' ? t('exam.newCertificationTitle') : t('exam.newConcursoTitle');
 
-  const seed = useExamSeed(language);
+  const seed = useExamSeed(type, language);
   const canEdit = !session?.user?.plan || canEditExams(session.user.plan);
   // -1 is the unlimited sentinel. Checked here so the cap blocks *entry* to every seed —
   // AI search, edital upload and blank alike — instead of only surfacing at save, after
@@ -184,7 +184,12 @@ function NewExamContent() {
     switch (seed.state.kind) {
       case 'loading-blueprint':
         return (
-          <ExamEditorSkeleton examName={seed.state.examName} provider={seed.state.provider} onCancel={seed.reset} />
+          <ExamEditorSkeleton
+            examName={seed.state.examName}
+            provider={seed.state.provider}
+            stage={seed.state.stage}
+            onCancel={seed.reset}
+          />
         );
       case 'ready':
         return (
@@ -215,10 +220,8 @@ function NewExamContent() {
             state={seed.state}
             type={type}
             onIdentify={seed.identifyByName}
-            onSelectMatch={(match) => {
-              if (seed.state.kind === 'disambiguating') void seed.confirmMatch(seed.state.examName, match);
-            }}
-            onStartBlank={() => seed.startBlank(type)}
+            onSelectMatch={(match) => void seed.confirmMatch(match)}
+            onStartBlank={seed.startBlank}
             onUploadEdital={seed.uploadEdital}
           />
         );

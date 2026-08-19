@@ -1,4 +1,6 @@
 'use client';
+import type { AutoConfigStage } from '@/shared/types';
+
 import { Button } from '@heroui/button';
 import { Spinner } from '@heroui/spinner';
 
@@ -9,14 +11,23 @@ import { buttonStyles } from '@/config/constants/buttonStyles';
 interface ExamEditorSkeletonProps {
   readonly examName: string;
   readonly provider: string;
+  readonly stage?: AutoConfigStage | null;
   readonly onCancel: () => void;
 }
 
-// Shown the instant a certification is confirmed (see useExamSeed's 'loading-blueprint'
-// state) so the page reads as "filling in", not as a second loading screen — the name and
-// provider are already known, only the topic breakdown is still in flight.
-export function ExamEditorSkeleton({ examName, provider, onCancel }: ExamEditorSkeletonProps) {
+const STAGE_KEYS: Record<AutoConfigStage, string> = {
+  research: 'exam.aiSeedStageResearch',
+  review: 'exam.aiSeedStageReview',
+  format: 'exam.aiSeedStageFormat',
+};
+
+// Shown the instant a certification/concurso is confirmed (see useExamSeed's
+// 'loading-blueprint' state) so the page reads as "filling in", not as a second loading
+// screen — the name and provider are already known, only the topic breakdown is still in
+// flight. `stage` reflects the auto-config job's current SSE progress event.
+export function ExamEditorSkeleton({ examName, provider, stage, onCancel }: ExamEditorSkeletonProps) {
   const { t } = useTranslation();
+  const statusKey = stage ? STAGE_KEYS[stage] : 'exam.aiSeedLoadingBlueprint';
 
   return (
     <div className="flex flex-col gap-6">
@@ -26,7 +37,7 @@ export function ExamEditorSkeleton({ examName, provider, onCancel }: ExamEditorS
         </Button>
         <div className="flex items-center gap-2 text-xs text-default-400">
           <Spinner size="sm" />
-          {t('exam.aiSeedLoadingBlueprint')}
+          {t(statusKey)}
         </div>
       </div>
 

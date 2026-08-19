@@ -1,6 +1,5 @@
 'use client';
-import type { ExamType } from '@/shared/types';
-import type { CertificationMatch } from '@/lib/parse-identify-response';
+import type { AutoConfigMatch, ExamType } from '@/shared/types';
 import type { ExamSeedState } from '@/app/(workspace)/exams/new/useExamSeed.hook';
 
 import { useRef, useState } from 'react';
@@ -19,15 +18,21 @@ import { buttonStyles } from '@/config/constants/buttonStyles';
 interface ExamSeedPickerProps {
   readonly type: ExamType;
   readonly state: ExamSeedState;
-  readonly onIdentify: (name: string) => void;
-  readonly onSelectMatch: (match: CertificationMatch) => void;
+  readonly onIdentify: (query: string) => void;
+  readonly onSelectMatch: (match: AutoConfigMatch) => void;
   readonly onUploadEdital: (file: File, role: string | undefined) => void;
   readonly onStartBlank: () => void;
 }
 
-// Tela 1 (plan §2.1): a single primary action per exam type — search-by-name for
-// certifications, edital upload for concursos — plus catalog and blank as secondary
-// links. Never a choice between "which tool to use" up front.
+function matchSubtitle(match: AutoConfigMatch): string {
+  const org = match.provider ?? match.examBoard ?? '';
+
+  return match.role ? `${org} — ${match.role}` : org;
+}
+
+// Tela 1 (plan §2.1): a single primary action per exam type — search-by-name for both
+// certifications and concursos, with edital upload as a secondary alternative for concursos
+// (more precise when the PDF exists) — plus catalog and blank as secondary links.
 export function ExamSeedPicker({
   type,
   state,
@@ -40,6 +45,7 @@ export function ExamSeedPicker({
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [showEditalUpload, setShowEditalUpload] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isBusy =
@@ -64,38 +70,50 @@ export function ExamSeedPicker({
           <p className="text-sm text-default-500">{t('exam.aiSeedSubtitle')}</p>
         </div>
 
-        {type === 'certification' ? (
-          <form
-            className="flex gap-3"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!isBusy) onIdentify(name);
-            }}
+        <form
+          className="flex gap-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!isBusy) onIdentify(name);
+          }}
+        >
+          <Input
+            {...inputProperties.input}
+            className="grow"
+            isDisabled={isBusy}
+            placeholder={t(
+              type === 'certification' ? 'exam.aiSeedCertPlaceholder' : 'exam.aiSeedPublicExamPlaceholder'
+            )}
+            value={name}
+            onValueChange={setName}
+          />
+          <Button
+            className={buttonStyles.primary}
+            isDisabled={isBusy || !name.trim()}
+            isIconOnly
+            startContent={
+              state.kind === 'identifying' ? (
+                <Spinner color="current" size="sm" />
+              ) : (
+                <FontAwesomeIcon icon={faArrowRight} />
+              )
+            }
+            type="submit"
+          />
+        </form>
+
+        {type === 'public_exam' && !showEditalUpload && (
+          <button
+            className="text-xs text-default-500 hover:text-primary self-start hover:underline underline-offset-2"
+            type="button"
+            onClick={() => setShowEditalUpload(true)}
           >
-            <Input
-              {...inputProperties.input}
-              className="grow"
-              isDisabled={isBusy}
-              placeholder={t('exam.aiSeedCertPlaceholder')}
-              value={name}
-              onValueChange={setName}
-            />
-            <Button
-              className={buttonStyles.primary}
-              isDisabled={isBusy || !name.trim()}
-              isIconOnly
-              startContent={
-                state.kind === 'identifying' ? (
-                  <Spinner color="current" size="sm" />
-                ) : (
-                  <FontAwesomeIcon icon={faArrowRight} />
-                )
-              }
-              type="submit"
-            />
-          </form>
-        ) : (
-          <div className="flex flex-col gap-4">
+            {t('exam.aiSeedOrUploadEdital')}
+          </button>
+        )}
+
+        {type === 'public_exam' && showEditalUpload && (
+          <div className="flex flex-col gap-4 border-t border-divider pt-4">
             <Input
               {...inputProperties.input}
               isDisabled={isBusy}
@@ -141,7 +159,7 @@ export function ExamSeedPicker({
                 onClick={() => onSelectMatch(match)}
               >
                 <span className="text-sm font-semibold text-foreground">{match.label}</span>
-                <span className="text-xs text-default-500 ml-2">{match.provider}</span>
+                <span className="text-xs text-default-500 ml-2">{matchSubtitle(match)}</span>
               </button>
             ))}
           </div>

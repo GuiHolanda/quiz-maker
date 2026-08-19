@@ -1,11 +1,15 @@
 'use client';
-import type { ChatMessage, Exam, ExamType, Language } from '@/shared/types';
+import type { AutoConfigMatch, AutoConfigStage, Exam, ExamType, Language } from '@/shared/types';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { extractEdital } from '@/features/connectors';
-import { parseCertificationData } from '@/lib/parse-certification-data';
-import { parseIdentifyResponse, type CertificationMatch } from '@/lib/parse-identify-response';
+import {
+  cancelAutoConfigJob,
+  createAutoConfigJob,
+  extractEdital,
+  getActiveAutoConfigJob,
+  identifyExam,
+} from '@/features/connectors';
 import { useLimitModal } from '@/features/hooks/useLimitModal.hook';
 import { DEFAULT_QUESTION_FORMAT } from '@/config/question-formats';
 import { AUTO_CONFIG_URL } from '@/config/constants';
@@ -13,22 +17,25 @@ import { AUTO_CONFIG_URL } from '@/config/constants';
 export type ExamSeedState =
   | { readonly kind: 'idle' }
   | { readonly kind: 'identifying' }
-  | { readonly kind: 'disambiguating'; readonly examName: string; readonly matches: CertificationMatch[] }
+  | { readonly kind: 'disambiguating'; readonly examName: string; readonly matches: AutoConfigMatch[] }
   | { readonly kind: 'clarifying'; readonly examName: string; readonly message: string }
-  // The certification is confirmed — the editor (Tela 2) mounts now, showing a skeleton
-  // where the distribution table will land, rather than holding the user on Tela 1 through
-  // a second network round-trip. `provider` seeds the editor's header immediately.
-  | { readonly kind: 'loading-blueprint'; readonly examName: string; readonly provider: string }
+  // The certification/concurso is confirmed — the editor (Tela 2) mounts now, showing a
+  // skeleton where the distribution table will land, rather than holding the user on Tela 1
+  // through the whole research→review→format pipeline. `stage` tracks SSE progress so the
+  // skeleton can show what's happening instead of a mute spinner.
+  | {
+      readonly kind: 'loading-blueprint';
+      readonly examName: string;
+      readonly provider: string;
+      readonly stage: AutoConfigStage | null;
+    }
   | { readonly kind: 'extracting-edital' }
   | { readonly kind: 'ready'; readonly draft: Exam; readonly context: string; readonly sources: string[] }
-  // The model failed or returned something unparseable — open the editor blank rather than
-  // dead-end the user; `seedName` pre-fills the name field so nothing they typed is lost.
-  // `messageKey` is one of ours (an i18n key), unlike `clarifying.message` above which is
-  // the model's own prose and is rendered verbatim, not translated.
+  // The pipeline failed or returned something unparseable — open the editor blank rather
+  // than dead-end the user; `seedName` pre-fills the name field so nothing typed is lost.
   | { readonly kind: 'error'; readonly messageKey: string; readonly seedName: string };
 
-// Exported so page.tsx can build the same blank shape for the error-fallback path
-// (§2.4 — a failed AI seed opens the editor blank rather than dead-ending the user).
+// Exported so page.tsx can build the same blank shape for the error-fallback path.
 export function emptyExamDraft(type: ExamType): Exam {
   return {
     type,
@@ -46,181 +53,159 @@ export function emptyExamDraft(type: ExamType): Exam {
   };
 }
 
-// Minimal SSE reader for a single headless turn against /api/exam/auto-config — a separate,
-// pro+-gated and metered endpoint from the pro_ai-only conversational drawer (/api/ai/ai-chat),
-// even though both stream from the same AiChatService. This flow has no live-typing bubble to
-// update, so unlike useAiChat.hook.ts it only needs the final accumulated text once the stream ends.
-async function streamAiChatOnce(messages: ChatMessage[], language: Language, signal: AbortSignal): Promise<string> {
-  const response = await fetch(`/api${AUTO_CONFIG_URL}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages: messages.map((m) => ({ role: m.role, content: m.content })), language }),
-    signal,
-  });
-
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-
-    // Keep status + payload on the error: a 403 here is a quota/plan wall the caller must
-    // show as the limit modal, and a bare Error would collapse it into a generic failure.
-    throw Object.assign(new Error(body.message || `HTTP ${response.status}`), {
-      status: response.status,
-      response: { status: response.status, data: body },
-    });
-  }
-  if (!response.body) throw new Error('No response body');
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let accumulated = '';
-  let streamDone = false;
-
-  while (true) {
-    const { done, value } = await reader.read();
-
-    if (done || streamDone) break;
-    const chunk = decoder.decode(value, { stream: true });
-
-    for (const line of chunk.split('\n')) {
-      if (!line.startsWith('data: ')) continue;
-      try {
-        const parsed = JSON.parse(line.slice(6));
-
-        if (parsed.done) {
-          streamDone = true;
-          break;
-        }
-        if (parsed.content) accumulated += parsed.content;
-      } catch {
-        /* malformed chunk, skip */
-      }
-    }
-  }
-
-  return accumulated.replace('[ENCERRAR_SESSAO]', '').trim();
+interface DoneEventData {
+  readonly exam: { readonly examDraft: Exam; readonly context: string; readonly sources: string[] } | null;
 }
 
 interface UseExamSeedReturn {
   readonly state: ExamSeedState;
-  readonly identifyByName: (examName: string) => Promise<void>;
-  readonly confirmMatch: (examName: string, match: CertificationMatch) => Promise<void>;
+  readonly identifyByName: (query: string) => Promise<void>;
+  readonly confirmMatch: (match: AutoConfigMatch) => Promise<void>;
   readonly uploadEdital: (file: File, role: string | undefined) => Promise<void>;
-  readonly startBlank: (type: ExamType) => void;
+  readonly startBlank: () => void;
   readonly reset: () => void;
 }
 
-export function useExamSeed(language: Language): UseExamSeedReturn {
+export function useExamSeed(type: ExamType, language: Language): UseExamSeedReturn {
   const [state, setState] = useState<ExamSeedState>({ kind: 'idle' });
-  const abortRef = useRef<AbortController | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const jobIdRef = useRef<string | null>(null);
   const { showLimitIfBlocked } = useLimitModal();
 
+  const closeStream = useCallback(() => {
+    eventSourceRef.current?.close();
+    eventSourceRef.current = null;
+  }, []);
+
   const reset = useCallback(() => {
-    abortRef.current?.abort();
+    closeStream();
+    if (jobIdRef.current) {
+      const jobId = jobIdRef.current;
+
+      jobIdRef.current = null;
+      void cancelAutoConfigJob(jobId).catch(() => {
+        /* best-effort — the job's own TTL will clean it up otherwise */
+      });
+    }
     setState({ kind: 'idle' });
-  }, []);
+  }, [closeStream]);
 
-  const startBlank = useCallback((type: ExamType) => {
+  const startBlank = useCallback(() => {
     setState({ kind: 'ready', draft: emptyExamDraft(type), context: '', sources: [] });
-  }, []);
+  }, [type]);
 
-  // Second leg of the certification seed: replay the identify turn plus a confirming user
-  // turn so AiChatService.selectPrompt sees an assistant message already in history and
-  // switches to AI_CHAT_TOPICS_PROMPT, which — for a confirmed certification — answers with
-  // the certification-data JSON block directly (no further disambiguation).
-  const fetchBlueprint = useCallback(
-    async (examName: string, provider: string, identifyResponseText: string, confirmationText: string) => {
-      abortRef.current?.abort();
-      const controller = new AbortController();
+  const watchJob = useCallback(
+    (jobId: string, examName: string) => {
+      closeStream();
+      jobIdRef.current = jobId;
 
-      abortRef.current = controller;
-      setState({ kind: 'loading-blueprint', examName, provider });
+      const es = new EventSource(`/api${AUTO_CONFIG_URL}/${jobId}/stream`);
+      eventSourceRef.current = es;
+
+      es.addEventListener('progress', (e) => {
+        const data = JSON.parse((e as MessageEvent).data) as { stage: AutoConfigStage | null };
+
+        setState((prev) => (prev.kind === 'loading-blueprint' ? { ...prev, stage: data.stage } : prev));
+      });
+
+      es.addEventListener('done', (e) => {
+        closeStream();
+        jobIdRef.current = null;
+        const data = JSON.parse((e as MessageEvent).data) as DoneEventData;
+
+        if (!data.exam) {
+          setState({ kind: 'error', messageKey: 'error.aiSeedNoBlueprint', seedName: examName });
+          return;
+        }
+        setState({ kind: 'ready', draft: data.exam.examDraft, context: data.exam.context, sources: data.exam.sources });
+      });
+
+      es.addEventListener('error', () => {
+        closeStream();
+        jobIdRef.current = null;
+        setState({ kind: 'error', messageKey: 'error.aiSeedNoBlueprint', seedName: examName });
+      });
+
+      es.addEventListener('cancelled', () => {
+        closeStream();
+        jobIdRef.current = null;
+        setState({ kind: 'idle' });
+      });
+
+      // Native EventSource 'error' (network/connection failure) — same fallback as an
+      // application-level failure, since the pipeline's own state is now unreachable.
+      es.onerror = () => {
+        closeStream();
+        jobIdRef.current = null;
+        setState({ kind: 'error', messageKey: 'error.aiSeedNoBlueprint', seedName: examName });
+      };
+    },
+    [closeStream]
+  );
+
+  const confirmMatch = useCallback(
+    async (match: AutoConfigMatch) => {
+      const provider = match.provider ?? match.examBoard ?? '';
+
+      setState({ kind: 'loading-blueprint', examName: match.label, provider, stage: null });
 
       try {
-        const conversation: ChatMessage[] = [
-          { role: 'user', content: examName },
-          { role: 'assistant', content: identifyResponseText },
-          { role: 'user', content: confirmationText },
-        ];
-        const text = await streamAiChatOnce(conversation, language, controller.signal);
-        const parsed = parseCertificationData(text);
+        const { jobId } = await createAutoConfigJob({
+          type,
+          name: match.label,
+          key: match.key,
+          provider: match.provider,
+          examBoard: match.examBoard,
+          role: match.role,
+          year: match.year,
+          language,
+        });
 
-        if (!parsed) {
-          setState({
-            kind: 'error',
-            messageKey: 'error.aiSeedNoBlueprint',
-            seedName: examName,
-          });
-          return;
-        }
-        setState({ kind: 'ready', draft: parsed.examDraft, context: parsed.context, sources: parsed.sources });
+        watchJob(jobId, match.label);
       } catch (err) {
-        if ((err as Error)?.name === 'AbortError') return;
-        // A quota/plan wall isn't a seed failure: opening a blank editor would only lead
-        // to a second block at save. Return to the picker and let the modal explain.
         if (showLimitIfBlocked(err)) {
           setState({ kind: 'idle' });
-
           return;
         }
-        setState({ kind: 'error', messageKey: 'error.aiSeedNoBlueprint', seedName: examName });
+        setState({ kind: 'error', messageKey: 'error.aiSeedNoBlueprint', seedName: match.label });
       }
     },
-    [language, showLimitIfBlocked]
+    [type, language, watchJob, showLimitIfBlocked]
   );
 
   const identifyByName = useCallback(
-    async (examName: string) => {
-      const trimmed = examName.trim();
+    async (query: string) => {
+      const trimmed = query.trim();
 
       if (!trimmed) return;
 
-      abortRef.current?.abort();
-      const controller = new AbortController();
-
-      abortRef.current = controller;
       setState({ kind: 'identifying' });
 
       try {
-        const text = await streamAiChatOnce([{ role: 'user', content: trimmed }], language, controller.signal);
-        const parsed = parseIdentifyResponse(text);
+        const result = await identifyExam(trimmed, type, language);
 
-        if (parsed.kind === 'multiple') {
-          setState({ kind: 'disambiguating', examName: trimmed, matches: parsed.matches });
+        if (result.matches.length === 0) {
+          setState({
+            kind: 'clarifying',
+            examName: trimmed,
+            message: result.clarification ?? '',
+          });
           return;
         }
-        if (parsed.kind === 'none') {
-          setState({ kind: 'clarifying', examName: trimmed, message: parsed.message });
+        if (result.matches.length === 1) {
+          await confirmMatch(result.matches[0]);
           return;
         }
-
-        const confirmation =
-          language === 'pt' ? `Sim, é "${parsed.match.label}".` : `Yes, that's "${parsed.match.label}".`;
-
-        await fetchBlueprint(trimmed, parsed.match.provider, text, confirmation);
+        setState({ kind: 'disambiguating', examName: trimmed, matches: result.matches });
       } catch (err) {
-        if ((err as Error)?.name === 'AbortError') return;
         if (showLimitIfBlocked(err)) {
           setState({ kind: 'idle' });
-
           return;
         }
         setState({ kind: 'error', messageKey: 'error.aiSeedNoIdentify', seedName: trimmed });
       }
     },
-    [language, fetchBlueprint, showLimitIfBlocked]
-  );
-
-  const confirmMatch = useCallback(
-    async (examName: string, match: CertificationMatch) => {
-      const identifyResponseText =
-        language === 'pt'
-          ? `**${match.label}** — ${match.provider}. É essa que você quer criar?`
-          : `**${match.label}** — ${match.provider}. Is this the one you want to create?`;
-      const confirmation = language === 'pt' ? `Sim, é "${match.label}".` : `Yes, that's "${match.label}".`;
-
-      await fetchBlueprint(examName, match.provider, identifyResponseText, confirmation);
-    },
-    [language, fetchBlueprint]
+    [type, language, confirmMatch, showLimitIfBlocked]
   );
 
   const uploadEdital = useCallback(
@@ -241,6 +226,31 @@ export function useExamSeed(language: Language): UseExamSeedReturn {
     },
     [showLimitIfBlocked]
   );
+
+  // Reconnect to an in-flight job on mount — a reload mid-pipeline shouldn't strand the
+  // user back on the picker with no memory of the exam they already confirmed.
+  useEffect(() => {
+    let cancelled = false;
+
+    void getActiveAutoConfigJob(type).then((job) => {
+      if (cancelled || !job || (job.status !== 'queued' && job.status !== 'running')) return;
+      setState({
+        kind: 'loading-blueprint',
+        examName: job.seedName,
+        provider: '',
+        stage: (job.stage as AutoConfigStage) ?? null,
+      });
+      watchJob(job.id, job.seedName);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+    // Runs once per mount for this exam type — the type is fixed by the URL for the
+    // lifetime of this page (see NewExamContent's remount-on-type-change comment).
+  }, [type]);
+
+  useEffect(() => () => closeStream(), [closeStream]);
 
   return { state, identifyByName, confirmMatch, uploadEdital, startBlank, reset };
 }

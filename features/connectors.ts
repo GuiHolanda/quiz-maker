@@ -11,6 +11,8 @@ import {
   PROVIDERS_URL,
   EXAM_BOARDS_URL,
   EXTRACT_EDITAL_URL,
+  AUTO_CONFIG_URL,
+  AUTO_CONFIG_IDENTIFY_URL,
   MOCK_EXAMS_URL,
   ADMIN_USERS_URL,
   ADMIN_OVERVIEW_URL,
@@ -56,6 +58,8 @@ import {
   QuestionBankParams,
   QuestionBankResponse,
   GenerationJobStatus,
+  AutoConfigIdentifyResult,
+  AutoConfigJobStatus,
   GenerationHistoryResponse,
   GenerationHistoryFilters,
   GenerationHistoryFilterOptions,
@@ -203,6 +207,42 @@ export async function extractEdital(file: File, role?: string): Promise<Exam> {
 
   return data.exam;
 }
+
+// — Auto-config (isolated identify + research/review/format pipeline) —
+
+export const identifyExam = (query: string, type: ExamType, language: 'pt' | 'en'): Promise<AutoConfigIdentifyResult> =>
+  api.post<AutoConfigIdentifyResult>(AUTO_CONFIG_IDENTIFY_URL, { query, type, language }).then((r) => r.data);
+
+export interface AutoConfigSeedPayload {
+  readonly type: ExamType;
+  readonly name: string;
+  readonly key?: string | null;
+  readonly provider?: string | null;
+  readonly examBoard?: string | null;
+  readonly role?: string | null;
+  readonly year?: number | null;
+  readonly language: 'pt' | 'en';
+}
+
+export const createAutoConfigJob = (seed: AutoConfigSeedPayload): Promise<{ jobId: string }> =>
+  api.post<{ jobId: string }>(AUTO_CONFIG_URL, seed).then((r) => r.data);
+
+export const getActiveAutoConfigJob = (
+  type: ExamType
+): Promise<{ id: string; type: ExamType; seedName: string; status: string; stage: string | null } | null> =>
+  api
+    .get<{ job: { id: string; type: ExamType; seedName: string; status: string; stage: string | null } | null }>(
+      AUTO_CONFIG_URL,
+      { params: { type } }
+    )
+    .then((r) => r.data.job)
+    .catch(() => null);
+
+export const getAutoConfigJob = (jobId: string): Promise<AutoConfigJobStatus> =>
+  api.get<AutoConfigJobStatus>(`${AUTO_CONFIG_URL}/${jobId}`).then((r) => r.data);
+
+export const cancelAutoConfigJob = (jobId: string): Promise<void> =>
+  api.delete(`${AUTO_CONFIG_URL}/${jobId}`).then(() => undefined);
 
 // — Browse questions —
 
