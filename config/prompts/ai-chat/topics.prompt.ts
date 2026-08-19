@@ -45,7 +45,7 @@ EXAM METADATA RULES:
 - Search official sources for totalQuestions, examDurationMinutes, passingScore, and year.
 - totalQuestions: integer count of questions on the actual exam (e.g., 65 for AWS SAA-C03). REQUIRED — always include when the official source publishes it.
 - examDurationMinutes: total allowed time in minutes (e.g., 130 for a 2h10m exam). Include when published — search specifically for it before omitting.
-- passingScore: minimum passing score as a percentage 0–100 (e.g., 72.0 for 72%) — ONLY when the official source publishes passing criteria as a percentage of correct answers. Many certifications (e.g., AWS, PMI) instead publish a scaled score (such as 700 on a 100–1000 scale) that is NOT a percentage and does not convert cleanly to one — when the source uses a scaled score, omit passingScore entirely rather than reporting the scaled number.
+- passingScore: minimum passing score as a percentage 0–100 (e.g., 72.0 for 72%) — report it directly when the official source publishes passing criteria as a percentage of correct answers. Many certifications (e.g., AWS, PMI) instead publish a scaled score (such as 720 on a 100–1000 scale) that is NOT a validated percentage of correct answers (the provider weights questions by difficulty and equates across exam forms, so the true percentage varies by candidate). Still, for practice-grading purposes, when the source publishes both the passing threshold and the scale's maximum, compute an approximate percentage as passingScaledScore ÷ scaleMax × 100 (rounded to the nearest integer) and report that. Omit passingScore entirely only when no numeric scale is published at all. Whenever you report a value computed this way, add one sentence to "context" naming the real scaled score and stating explicitly that the percentage is an approximation for practice purposes, not the certifying body's official pass criterion.
 - year: the year of the exam's current or most recently updated version (e.g., 2024 for AWS SAA-C03, updated that year). Search the official exam guide or release notes for it. Omit if no clear version year is published.
 - Omit any field the official source does not publish. Never guess or estimate.
 
@@ -71,7 +71,7 @@ When generating certification data, output ONLY a JSON block inside \`\`\`certif
 }
 \`\`\`
 
-(totalQuestions is required when available; examDurationMinutes, passingScore, and year are optional — omit any of them if not published, and always omit passingScore for scaled-score exams. "subtopics" is optional per topic — include it only when the official guide names sub-areas for that topic.)
+(totalQuestions is required when available; examDurationMinutes, passingScore, and year are optional — omit any of them if not published. For scaled-score exams, passingScore may hold the approximate computed percentage per the EXAM METADATA RULES above, with the caveat placed in "context" — omit passingScore only when no numeric scale exists at all. "subtopics" is optional per topic — include it only when the official guide names sub-areas for that topic.)
 
 RESPONSE RULES:
 - Never open a response with filler words like "Claro!", "Ótimo!", "Entendi.", "Certo!" or their English equivalents. Respond directly.
@@ -87,7 +87,7 @@ User: "Yes, proceed" (confirming AWS SAA-C03)
 Assistant:
 \`\`\`certification-data
 {
-  "context": "The **AWS Certified Solutions Architect – Associate (SAA-C03)** by AWS validates skills in designing distributed systems on the AWS cloud.",
+  "context": "The **AWS Certified Solutions Architect – Associate (SAA-C03)** by AWS validates skills in designing distributed systems on the AWS cloud. Official passing score: 720 out of 1000 — the 72% below is an approximation for practice purposes, not AWS's official pass criterion (AWS does not publish it as a percentage of correct answers).",
   "sources": ["[AWS SAA-C03 Exam Guide](https://aws.amazon.com/certification/certified-solutions-architect-associate/)"],
   "certificationData": {
     "label": "AWS Certified Solutions Architect – Associate",
@@ -95,6 +95,7 @@ Assistant:
     "provider": "AWS",
     "totalQuestions": 65,
     "examDurationMinutes": 130,
+    "passingScore": 72.0,
     "year": 2022,
     "topics": [
       {

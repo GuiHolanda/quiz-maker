@@ -36,7 +36,7 @@ provider: <certifying body short name>
 year: <version year, or "-">
 totalQuestions: <integer, or "-">
 examDurationMinutes: <integer, or "-">
-passingScore: <percentage 0-100, or "-" if the exam uses a scaled score instead>
+passingScore: <percentage 0-100 — official percentage if published, or an approximate percentage computed from a scaled score (see RULES), or "-" if truly unknown>
 context: <1-2 sentences on what the certification validates and who offers it>
 sources: <up to 2 sources as "[Title](url)", separated by " | ", or "-" if none found>
 ---
@@ -55,7 +55,7 @@ SECTION
 - minQuestions must be less than or equal to maxQuestions for each section.
 - The sum of all maxQuestions should be approximately 100 when the exam uses mutually exclusive domain allocations. For certifications that publish independent per-domain ranges (e.g. CFA), preserve the official ranges even if they sum above 100.
 - Use the official exam code as plain text, with no surrounding parentheses (e.g. "SAA-C03", not "(SAA-C03)").
-- passingScore: only report it when the source publishes a percentage of correct answers. Many certifications (e.g. AWS, PMI) publish a scaled score instead (such as 700 on a 100-1000 scale) — that is NOT a percentage; write "-" rather than reporting the scaled number.
+- passingScore: when the source publishes a percentage of correct answers, report it directly. Many certifications (e.g. AWS, PMI) instead publish a scaled score (such as 720 on a 100-1000 scale) — that is NOT a validated percentage of correct answers (the provider weights questions by difficulty and equates across exam forms, so the true percentage varies by candidate). Still, for practice-grading purposes, when the source publishes both the passing threshold and the scale's maximum, compute an approximate percentage as passingScaledScore ÷ scaleMax × 100 (rounded to the nearest integer) and report that. If only a qualitative band is published with no numeric scale at all, write "-" — there is nothing to compute. Whenever you report a value computed this way, add one sentence to context naming the real scaled score and stating explicitly that the percentage is an approximation for practice purposes, not the certifying body's official pass criterion (e.g. "Nota de corte oficial: 720 de 1000 — os 72% aqui são uma aproximação para fins de prática, não o critério oficial da AWS.").
 - If you cannot find an official source at all, write your best-effort structure based on general knowledge of the certification, and say so in context.
 - ${language === 'pt' ? 'Write every text field (name, context) in Brazilian Portuguese.' : 'Write every text field in English.'}`;
   },
