@@ -82,7 +82,7 @@ export async function identifyExam(
   const t0 = Date.now();
 
   try {
-    // No jsonMode here: web_search_preview + a forced json_object response format is a
+    // No jsonMode here: forcing json_object together with a forced tool_choice is a
     // combination no other call site in this codebase relies on (research steps always
     // stay plain-text; jsonMode-only calls never set webSearch). The prompt already asks
     // for JSON-only output, and extractJson() below tolerates surrounding prose or fences.

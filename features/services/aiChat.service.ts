@@ -85,7 +85,11 @@ export class AiChatService {
       model: process.env.AI_CHAT_MODEL || 'gpt-5.4-mini',
       instructions: `${languageInstruction}\n\n${prompt}`,
       input: messages,
-      tools: [{ type: 'web_search_preview' }],
+      // `web_search` (not the legacy `web_search_preview`) — see openAI.service.ts. Left
+      // unforced here on purpose: unlike the single-purpose research prompts, a chat turn
+      // can legitimately be a topic tweak, the concurso/edital flow, or a closing message,
+      // none of which should be made to search.
+      tools: [{ type: 'web_search' }],
       stream: true,
     });
 

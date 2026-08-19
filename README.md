@@ -215,7 +215,7 @@ npx playwright show-report
 All LLM prompts live in `config/prompts/` as TypeScript files — **no prompts are stored in the OpenAI dashboard**. Each file exports a `PromptDefinition<TInput>` object with a `build(input)` method.
 
 Calling the LLM always goes through `OpenAIService.call(prompt, input)`:
-- Uses the Responses API with `web_search_preview` enabled
+- Uses the Responses API with `web_search` forced via `tool_choice: 'required'` (by default)
 - Returns `{ text: string; inputTokens: number; outputTokens: number }`
 - Model controlled by `OPENAI_MODEL` env var (default `gpt-5.4`)
 
