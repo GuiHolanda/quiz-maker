@@ -12,7 +12,7 @@ import { Providers } from './providers';
 import { auth } from '@/auth';
 
 import { siteConfig } from '@/config/site';
-import { fontSans, fontSora } from '@/config/fonts';
+import { fontMono, fontSans, fontSora } from '@/config/fonts';
 import { parseProperties } from '@/lib/properties-parser';
 
 export const metadata: Metadata = {
@@ -73,7 +73,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         className={clsx(
           'min-h-screen text-foreground bg-background font-sans antialiased',
           fontSans.variable,
-          fontSora.variable
+          fontSora.variable,
+          fontMono.variable
         )}
       >
         <Providers

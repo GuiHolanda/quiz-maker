@@ -1,7 +1,5 @@
 'use client';
 
-import type { UserPlan } from '@/shared/types';
-
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSection } from '@heroui/dropdown';
 import NextLink from 'next/link';
 import { useState } from 'react';
@@ -14,17 +12,7 @@ import { ThemeSwitch } from '@/shared/components/ui/theme-switch';
 import { LanguageSwitch } from '@/shared/components/ui/language-switch';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
-
-const PLAN_BADGE_KEYS: Partial<Record<UserPlan, string>> = {
-  free: 'billing.badge.free',
-  pro: 'billing.badge.pro',
-  pro_ai: 'billing.badge.proAi',
-};
-
-function getPlanLabel(plan: UserPlan, t: (key: string) => string): string {
-  const key = PLAN_BADGE_KEYS[plan];
-  return key ? t(key) : plan;
-}
+import { getPlanLabel } from '@/shared/lib/planLabel';
 
 export function UserDropdown() {
   const { data: session, status } = useSession();

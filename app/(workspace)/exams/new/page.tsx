@@ -18,7 +18,8 @@ import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
 import { canEditExams } from '@/config/constants';
 import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
 import { useExamSeed, emptyExamDraft } from './useExamSeed.hook';
-import { ExamSeedPicker } from './components/ExamSeedPicker';
+import { ExamSeedPicker } from './components/seed/ExamSeedPicker';
+import { NewExamHeader } from './components/seed/NewExamHeader';
 import { ExamEditorSkeleton } from './components/ExamEditorSkeleton';
 import { ExamEditorPage } from './components/ExamEditorPage';
 
@@ -111,7 +112,7 @@ function NewExamContent() {
   };
 
   const breadcrumbs = (
-    <Breadcrumbs>
+    <Breadcrumbs classNames={{ list: 'font-mono text-xs' }}>
       <BreadcrumbItem href="/">{t('nav.dashboard')}</BreadcrumbItem>
       <BreadcrumbItem href={listHref}>{listLabel}</BreadcrumbItem>
       <BreadcrumbItem>{pageTitle}</BreadcrumbItem>
@@ -165,7 +166,7 @@ function NewExamContent() {
   }
 
   return (
-    <PageHeader breadcrumbs={breadcrumbs} title={isEditorMode ? undefined : pageTitle}>
+    <PageHeader breadcrumbs={breadcrumbs}>
       {!hydrated ? null : resumedDraft ? (
         <ExamEditorPage
           type={type}
@@ -174,8 +175,13 @@ function NewExamContent() {
           onDraftChange={persistDraft}
           onSaved={handleSaved}
         />
-      ) : (
+      ) : isEditorMode ? (
         renderSeedContent()
+      ) : (
+        <>
+          <NewExamHeader cancelHref={listHref} title={t(config.seedQuestionKey)} />
+          {renderSeedContent()}
+        </>
       )}
     </PageHeader>
   );
