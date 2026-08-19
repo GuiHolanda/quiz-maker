@@ -184,7 +184,7 @@ export function ExamEditor({
             onValueChange={(v) => onUpdateNumericField('examDurationMinutes', parseInt(v, 10) || undefined)}
           />
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 flex flex-col gap-1">
           <Input
             {...inputProperties.input}
             classNames={COMPACT_INPUT_CLASSNAMES}
@@ -199,6 +199,10 @@ export function ExamEditor({
             value={draft.passingScore != null ? String(draft.passingScore) : ''}
             onValueChange={(v) => onUpdateNumericField('passingScore', parseFloat(v) || undefined)}
           />
+          {/* Certifications with a scaled score (AWS, PMI, ...) don't publish a validated
+              percentage of correct answers — the auto-config pipeline fills this in as an
+              approximation when it can (see certification-config/research.prompt.ts). */}
+          {isCertification && <p className="text-xs text-default-500">{t('exam.passingScoreHint')}</p>}
         </div>
         <div className="flex-1 min-w-0 flex flex-col gap-1">
           <Select
