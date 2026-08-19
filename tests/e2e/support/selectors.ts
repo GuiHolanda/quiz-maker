@@ -36,11 +36,13 @@ export const TID = {
   notificationBadge: 'notification-badge',
   notificationItem: 'notification-item',
 
-  // Wizard (configure)
+  // Exam configure (list + /exams/new editor)
   configureListSection: 'configure-list-section',
-  wizardTitleInput: 'wizard-title-input',
-  wizardDiscardBtn: 'wizard-discard-btn',
-  wizardNextBtn: 'wizard-next-btn',
+  examSeedBlankBtn: 'exam-seed-blank-btn',
+  examEditorNameInput: 'exam-editor-name-input',
+  examEditorDiscardBtn: 'exam-editor-discard-btn',
+  examEditorSaveBtn: 'exam-editor-save-btn',
+  examDetailEditBtn: 'exam-detail-edit-btn',
 
   // Question bank
   questionBankCard: 'question-bank-card',

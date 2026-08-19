@@ -14,7 +14,7 @@ type InlineAlertVariant = 'subtle' | 'bordered';
 
 interface InlineAlertProps {
   readonly title: string;
-  readonly description?: string;
+  readonly description?: ReactNode;
   readonly icon?: IconDefinition;
   readonly startContent?: ReactNode;
   readonly endContent?: ReactNode;

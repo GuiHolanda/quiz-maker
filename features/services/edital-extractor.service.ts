@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 
 import { Exam } from '@/shared/types';
 import { MetricsService } from '@/features/services/metrics.service';
+import { normalizeCase, splitTopics, stripNumbering } from '@/lib/exam-blueprint';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
@@ -181,9 +182,9 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
 
     return {
       type: 'public_exam',
-      name: this.normalizeCase(d.name),
+      name: normalizeCase(d.name),
       key: typeof d.key === 'string' && d.key.trim() ? d.key.trim() : null,
-      role: typeof d.role === 'string' ? this.normalizeCase(d.role) : null,
+      role: typeof d.role === 'string' ? normalizeCase(d.role) : null,
       year: typeof d.year === 'number' ? d.year : null,
       totalQuestions: typeof d.totalQuestions === 'number' && d.totalQuestions > 0 ? d.totalQuestions : 0,
       examDurationMinutes:
@@ -195,38 +196,16 @@ Retorne APENAS um objeto JSON válido com a estrutura abaixo — sem markdown, s
         fullName: typeof board.fullName === 'string' ? board.fullName : null,
       },
       sections: (d.subjects as Record<string, unknown>[]).map((s) => ({
-        name: typeof s.name === 'string' ? this.normalizeCase(this.stripNumbering(s.name)) : String(s.name),
+        name: typeof s.name === 'string' ? normalizeCase(stripNumbering(s.name)) : String(s.name),
         minQuestions: typeof s.minQuestions === 'number' ? s.minQuestions : 0,
         maxQuestions: typeof s.maxQuestions === 'number' ? s.maxQuestions : 0,
         topics: Array.isArray(s.topics)
           ? (s.topics as Record<string, unknown>[]).flatMap((t) => {
               if (typeof t.name !== 'string') return [];
-              return this.splitTopics(t.name).map((name) => ({ name }));
+              return splitTopics(t.name).map((name) => ({ name }));
             })
           : [],
       })) as Exam['sections'],
     };
-  }
-
-  private normalizeCase(str: string): string {
-    const letters = str.replace(/[^a-zA-ZÀ-ÖØ-öø-ÿ]/g, '');
-    if (letters.length === 0) return str;
-    const isAllUpperCase = letters === letters.toUpperCase() && letters !== letters.toLowerCase();
-    if (!isAllUpperCase) return str;
-    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-  }
-
-  private stripNumbering(str: string): string {
-    // Remove leading numbering patterns: "1.", "1.1.", "1.1.2.", "a)", "I -", "I.", etc.
-    return str.replace(/^[\d]+(?:\.[\d]+)*\.?\s*|^[a-zA-Z]\)\s*|^[IVXivx]+[\s.-]+/, '').trim();
-  }
-
-  private splitTopics(name: string): string[] {
-    // If a topic name contains semicolons, split into separate topics
-    const parts = name
-      .split(';')
-      .map((p) => this.normalizeCase(this.stripNumbering(p.trim())))
-      .filter(Boolean);
-    return parts.length > 1 ? parts : [this.normalizeCase(this.stripNumbering(name))];
   }
 }

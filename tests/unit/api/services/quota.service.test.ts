@@ -7,6 +7,7 @@ function makeUser(overrides: Partial<{
   id: string;
   plan: string;
   questionsGeneratedThisPeriod: number;
+  autoConfigThisPeriod: number;
   periodStartDate: Date;
   customQuotaOverride: number | null;
 }> = {}) {
@@ -14,6 +15,7 @@ function makeUser(overrides: Partial<{
     id: 'user-1',
     plan: 'free',
     questionsGeneratedThisPeriod: 0,
+    autoConfigThisPeriod: 0,
     periodStartDate: new Date(Date.now() - 1 * DAY_MS), // 1 day ago — within period
     customQuotaOverride: null,
     ...overrides,
@@ -46,7 +48,7 @@ describe('QuotaService', () => {
 
     await expect(promise).rejects.toMatchObject({
       status: 403,
-      body: { error: 'quota_exceeded' },
+      body: { error: 'quota_exceeded', code: 'questions_limit' },
     });
   });
 
@@ -69,7 +71,7 @@ describe('QuotaService', () => {
 
     await expect(promise).rejects.toMatchObject({
       status: 403,
-      body: { error: 'quota_exceeded' },
+      body: { error: 'quota_exceeded', code: 'questions_limit' },
     });
   });
 
@@ -110,9 +112,11 @@ describe('QuotaService', () => {
 
     const promise = service.check('user-1', 'create_exam', 1);
 
+    // `code` is what the client keys the limit modal off — a wrong or missing one sends
+    // the user a generic error instead of the exam-cap explanation.
     await expect(promise).rejects.toMatchObject({
       status: 403,
-      body: { error: 'quota_exceeded' },
+      body: { error: 'quota_exceeded', code: 'exam_limit', limit: 2, used: 2, plan: 'free' },
     });
   });
 
@@ -186,7 +190,7 @@ describe('QuotaService', () => {
 
       await expect(promise).rejects.toMatchObject({
         status: 403,
-        body: { error: 'quota_exceeded' },
+        body: { error: 'quota_exceeded', code: 'questions_limit' },
       });
     });
 
@@ -268,6 +272,107 @@ describe('QuotaService', () => {
     });
   });
 
+  describe('checkAndRecordAutoConfig', () => {
+    it('throws 403 for free plan (autoConfigPerPeriod = 0)', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'free', autoConfigThisPeriod: 0 }),
+      );
+      prismaMock.user.updateMany.mockResolvedValue({ count: 0 });
+
+      const promise = service.checkAndRecordAutoConfig('user-1');
+
+      await expect(promise).rejects.toMatchObject({
+        status: 403,
+        body: { error: 'quota_exceeded', code: 'auto_config_limit', limit: 0 },
+      });
+    });
+
+    it('succeeds for pro plan under the period limit (atomic updateMany)', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'pro', autoConfigThisPeriod: 3 }),
+      );
+      prismaMock.user.updateMany.mockResolvedValue({ count: 1 });
+      prismaMock.usageLog.create.mockResolvedValue({ id: 'log-auto-1' } as any);
+
+      await expect(service.checkAndRecordAutoConfig('user-1')).resolves.toMatchObject({ logId: 'log-auto-1' });
+
+      expect(prismaMock.user.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ id: 'user-1', autoConfigThisPeriod: { lte: 14 } }),
+          data: { autoConfigThisPeriod: { increment: 1 } },
+        }),
+      );
+      expect(prismaMock.usageLog.create).toHaveBeenCalledWith({
+        data: { userId: 'user-1', action: 'auto_config', count: 1 },
+      });
+    });
+
+    it('throws 403 for pro plan when the period limit is already reached', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'pro', autoConfigThisPeriod: 15 }),
+      );
+      prismaMock.user.updateMany.mockResolvedValue({ count: 0 });
+
+      const promise = service.checkAndRecordAutoConfig('user-1');
+
+      await expect(promise).rejects.toMatchObject({
+        status: 403,
+        body: { error: 'quota_exceeded', code: 'auto_config_limit', limit: 15, used: 15 },
+      });
+    });
+
+    it('uses direct increment for unlimited plans (tester)', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'tester', autoConfigThisPeriod: 999 }),
+      );
+      prismaMock.user.update.mockResolvedValue({} as any);
+      prismaMock.usageLog.create.mockResolvedValue({ id: 'log-auto-2' } as any);
+
+      await expect(service.checkAndRecordAutoConfig('user-1')).resolves.toMatchObject({ logId: 'log-auto-2' });
+
+      expect(prismaMock.user.updateMany).not.toHaveBeenCalled();
+      expect(prismaMock.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { autoConfigThisPeriod: { increment: 1 } },
+      });
+    });
+  });
+
+  describe('checkAutoConfigAvailable', () => {
+    it('throws 403 for free plan (autoConfigPerPeriod = 0) without recording anything', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(makeUser({ plan: 'free', autoConfigThisPeriod: 0 }));
+
+      await expect(service.checkAutoConfigAvailable('user-1')).rejects.toMatchObject({
+        status: 403,
+        body: { error: 'quota_exceeded', code: 'auto_config_limit', limit: 0 },
+      });
+      expect(prismaMock.user.update).not.toHaveBeenCalled();
+      expect(prismaMock.user.updateMany).not.toHaveBeenCalled();
+      expect(prismaMock.usageLog.create).not.toHaveBeenCalled();
+    });
+
+    it('resolves for pro plan under the period limit', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(makeUser({ plan: 'pro', autoConfigThisPeriod: 3 }));
+
+      await expect(service.checkAutoConfigAvailable('user-1')).resolves.toBeUndefined();
+    });
+
+    it('throws 403 for pro plan when the period limit is already reached', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(makeUser({ plan: 'pro', autoConfigThisPeriod: 15 }));
+
+      await expect(service.checkAutoConfigAvailable('user-1')).rejects.toMatchObject({
+        status: 403,
+        body: { error: 'quota_exceeded', code: 'auto_config_limit', limit: 15, used: 15 },
+      });
+    });
+
+    it('resolves for unlimited plans (tester)', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(makeUser({ plan: 'tester', autoConfigThisPeriod: 999 }));
+
+      await expect(service.checkAutoConfigAvailable('user-1')).resolves.toBeUndefined();
+    });
+  });
+
   describe('rollbackQuota', () => {
     it('decrements the period counter and deletes the usage log', async () => {
       prismaMock.usageLog.findUnique.mockResolvedValue({
@@ -296,6 +401,26 @@ describe('QuotaService', () => {
 
       expect(prismaMock.user.update).not.toHaveBeenCalled();
       expect(prismaMock.usageLog.delete).not.toHaveBeenCalled();
+    });
+
+    it('decrements autoConfigThisPeriod for an auto_config log', async () => {
+      prismaMock.usageLog.findUnique.mockResolvedValue({
+        id: 'log-2',
+        userId: 'user-1',
+        count: 1,
+        action: 'auto_config',
+      } as any);
+      prismaMock.user.update.mockResolvedValue({} as any);
+      prismaMock.usageLog.delete.mockResolvedValue({} as any);
+
+      const service = new QuotaService();
+      await service.rollbackQuota('log-2');
+
+      expect(prismaMock.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { autoConfigThisPeriod: { decrement: 1 } },
+      });
+      expect(prismaMock.usageLog.delete).toHaveBeenCalledWith({ where: { id: 'log-2' } });
     });
   });
 });

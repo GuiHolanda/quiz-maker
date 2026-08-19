@@ -3,6 +3,7 @@ import { after } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
 import { claimGlobalSlotsAndDispatch } from '@/features/services/generation-job.service';
+import { QuotaService } from '@/features/services/quota.service';
 
 // Called by Vercel Cron — secured via CRON_SECRET header
 export const maxDuration = 60;
@@ -31,26 +32,54 @@ export async function GET(request: NextRequest) {
     select: { id: true },
   });
 
-  if (staleJobs.length === 0) {
-    return NextResponse.json({ cleaned: 0 });
+  if (staleJobs.length > 0) {
+    const staleIds = staleJobs.map((j) => j.id);
+
+    await prisma.generationJob.updateMany({
+      where: { id: { in: staleIds } },
+      data: { status: 'error' },
+    });
+
+    await prisma.generationJobTopic.updateMany({
+      where: { jobId: { in: staleIds }, status: { in: ['queued', 'running'] } },
+      data: { status: 'error', errorMessage: 'Job timed out' },
+    });
+
+    // Libera os slots que os jobs travados ocupavam e destrava a fila global.
+    after(() => claimGlobalSlotsAndDispatch());
   }
 
-  const staleIds = staleJobs.map((j) => j.id);
-
-  await prisma.generationJob.updateMany({
-    where: { id: { in: staleIds } },
-    data: { status: 'error' },
+  // Mesmo TTL para AutoConfigJob travados — sem slots a liberar, mas cada um debitou
+  // uma unidade de auto_config que precisa ser reembolsada antes de marcar como erro.
+  const staleAutoConfigJobs = await prisma.autoConfigJob.findMany({
+    where: { status: { in: ['running', 'queued'] }, updatedAt: { lt: cutoff } },
+    select: { id: true, usageLogId: true },
   });
 
-  await prisma.generationJobTopic.updateMany({
-    where: { jobId: { in: staleIds }, status: { in: ['queued', 'running'] } },
-    data: { status: 'error', errorMessage: 'Job timed out' },
-  });
+  if (staleAutoConfigJobs.length > 0) {
+    const quotaService = new QuotaService();
 
-  // Libera os slots que os jobs travados ocupavam e destrava a fila global.
-  after(() => claimGlobalSlotsAndDispatch());
+    for (const job of staleAutoConfigJobs) {
+      if (job.usageLogId) {
+        try {
+          await quotaService.rollbackQuota(job.usageLogId);
+        } catch (err) {
+          console.error('[cleanup-stale-jobs] rollbackQuota failed:', err);
+        }
+      }
+    }
 
-  console.log(`[cleanup-stale-jobs] Cleaned ${staleIds.length} stale jobs`);
+    await prisma.autoConfigJob.updateMany({
+      where: { id: { in: staleAutoConfigJobs.map((j) => j.id) } },
+      data: { status: 'error', errorMessage: 'Job timed out', stage: null },
+    });
+  }
 
-  return NextResponse.json({ cleaned: staleIds.length });
+  const cleaned = staleJobs.length + staleAutoConfigJobs.length;
+
+  console.log(
+    `[cleanup-stale-jobs] Cleaned ${staleJobs.length} generation jobs, ${staleAutoConfigJobs.length} auto-config jobs`
+  );
+
+  return NextResponse.json({ cleaned });
 }

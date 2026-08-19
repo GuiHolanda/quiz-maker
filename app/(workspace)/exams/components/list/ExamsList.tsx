@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { ExamCard } from './ExamCard';
@@ -9,19 +10,16 @@ import { ExamDetailPanel } from './ExamDetailPanel';
 import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
 import { SectionHeader } from '@/shared/components/ui/SectionHeader';
 import { faPenToSquare } from '@fortawesome/free-solid-svg-icons';
-import { EditExamModal } from '@/shared/components/EditExamModal/EditExamModal';
-import type {
-  EditExamModalCertResult,
-  EditExamModalPublicExamResult,
-} from '@/shared/components/EditExamModal/EditExamModal';
 import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
+import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
 import { EntityListShell } from '@/shared/components/ui/EntityListShell';
 import { usePaginatedItems } from '@/features/hooks/usePaginatedItems.hook';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { deleteExam } from '@/features/connectors';
-import type { Exam, ExamSection, ExamTopic, ExamType } from '@/shared/types';
+import type { Exam, ExamType } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
+import { canEditExams } from '@/config/constants';
 import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
 import { CatalogDiscoveryCard } from '../catalog/CatalogDiscoveryCard';
 
@@ -32,14 +30,16 @@ interface ExamsListProps {
 export function ExamsList({ type }: ExamsListProps) {
   const { t } = useTranslation();
   const config = EXAM_CONFIG[type];
-  const { certifications, publicExams, isLoading, updateExam, removeExam } = useExamsContext();
+  const { certifications, publicExams, isLoading, removeExam } = useExamsContext();
+  const { data: session } = useSession();
   const exams = type === 'certification' ? certifications : publicExams;
   const hasExams = !isLoading && exams.length > 0;
+  const canEdit = !session?.user?.plan || canEditExams(session.user.plan);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [editingExam, setEditingExam] = useState<Exam | null>(null);
   const [deletingExam, setDeletingExam] = useState<Exam | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
 
   const detailRef = useRef<HTMLDivElement>(null);
   const { pageItems, page, totalPages, perPage, setPage, setPerPage } = usePaginatedItems(exams);
@@ -54,104 +54,6 @@ export function ExamsList({ type }: ExamsListProps) {
   const handleCardClick = useCallback((exam: Exam) => {
     setSelectedId((prev) => (prev === exam.id ? null : (exam.id ?? null)));
   }, []);
-
-  const handleSectionUpdated = useCallback(
-    (exam: Exam, sectionId: string, newName: string, minQuestions: number, maxQuestions: number) => {
-      if (!exam.id) return;
-      const updatedSections = exam.sections.map((section) =>
-        section.id === sectionId ? { ...section, name: newName, minQuestions, maxQuestions } : section
-      );
-      updateExam(exam.id, { sections: updatedSections });
-    },
-    [updateExam]
-  );
-
-  const handleSectionRemoved = useCallback(
-    (exam: Exam, sectionId: string) => {
-      if (!exam.id) return;
-      updateExam(exam.id, { sections: exam.sections.filter((s) => s.id !== sectionId) });
-    },
-    [updateExam]
-  );
-
-  const handleSectionAdded = useCallback(
-    (exam: Exam, section: ExamSection) => {
-      if (!exam.id) return;
-      updateExam(exam.id, { sections: [...exam.sections, section] });
-    },
-    [updateExam]
-  );
-
-  const handleTopicAdded = useCallback(
-    (exam: Exam, sectionId: string, topic: ExamTopic) => {
-      if (!exam.id) return;
-      const updatedSections = exam.sections.map((section) =>
-        section.id === sectionId ? { ...section, topics: [...(section.topics ?? []), topic] } : section
-      );
-      updateExam(exam.id, { sections: updatedSections });
-    },
-    [updateExam]
-  );
-
-  const handleTopicRemoved = useCallback(
-    (exam: Exam, sectionId: string, topicId: string) => {
-      if (!exam.id) return;
-      const updatedSections = exam.sections.map((section) =>
-        section.id === sectionId
-          ? { ...section, topics: (section.topics ?? []).filter((topic) => topic.id !== topicId) }
-          : section
-      );
-      updateExam(exam.id, { sections: updatedSections });
-    },
-    [updateExam]
-  );
-
-  const handleTopicUpdated = useCallback(
-    (exam: Exam, sectionId: string, topicId: string, newName: string) => {
-      if (!exam.id) return;
-      const updatedSections = exam.sections.map((section) =>
-        section.id === sectionId
-          ? {
-              ...section,
-              topics: (section.topics ?? []).map((topic) =>
-                topic.id === topicId ? { ...topic, name: newName } : topic
-              ),
-            }
-          : section
-      );
-      updateExam(exam.id, { sections: updatedSections });
-    },
-    [updateExam]
-  );
-
-  const handleExamSaved = useCallback(
-    (id: string, updated: EditExamModalCertResult | EditExamModalPublicExamResult) => {
-      if (type === 'certification') {
-        const result = updated as EditExamModalCertResult;
-        updateExam(id, {
-          name: result.name,
-          key: result.key,
-          provider: result.provider,
-          totalQuestions: result.totalQuestions,
-          examDurationMinutes: result.examDurationMinutes,
-          passingScore: result.passingScore,
-        });
-      } else {
-        const result = updated as EditExamModalPublicExamResult;
-        updateExam(id, {
-          name: result.name,
-          key: result.key,
-          role: result.role,
-          year: result.year,
-          examBoard: result.examBoard,
-          totalQuestions: result.totalQuestions,
-          examDurationMinutes: result.examDurationMinutes,
-          passingScore: result.passingScore,
-        });
-      }
-    },
-    [type, updateExam]
-  );
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!deletingExam?.id) return;
@@ -228,33 +130,17 @@ export function ExamsList({ type }: ExamsListProps) {
                 title={t('exam.detailsSectionLabel')}
               />
               <ExamDetailPanel
+                canEdit={canEdit}
                 exam={selectedExam}
                 type={type}
                 onClose={() => setSelectedId(null)}
                 onDelete={() => setDeletingExam(selectedExam)}
-                onEdit={() => setEditingExam(selectedExam)}
-                onSectionAdded={(section) => handleSectionAdded(selectedExam, section)}
-                onSectionRemoved={(sectionId) => handleSectionRemoved(selectedExam, sectionId)}
-                onSectionUpdated={(sectionId, newName, min, max) =>
-                  handleSectionUpdated(selectedExam, sectionId, newName, min, max)
-                }
-                onTopicAdded={(sectionId, topic) => handleTopicAdded(selectedExam, sectionId, topic)}
-                onTopicRemoved={(sectionId, topicId) => handleTopicRemoved(selectedExam, sectionId, topicId)}
-                onTopicUpdated={(sectionId, topicId, newName) =>
-                  handleTopicUpdated(selectedExam, sectionId, topicId, newName)
-                }
+                onUpgradeRequired={() => setIsUpgradeOpen(true)}
               />
             </motion.div>
           )}
         </AnimatePresence>
       </EntityListShell>
-
-      <EditExamModal
-        exam={editingExam}
-        isOpen={editingExam !== null}
-        onClose={() => setEditingExam(null)}
-        onSaved={handleExamSaved}
-      />
 
       <ConfirmModal
         body={
@@ -267,6 +153,8 @@ export function ExamsList({ type }: ExamsListProps) {
         onClose={() => setDeletingExam(null)}
         onConfirm={handleDeleteConfirm}
       />
+
+      <UpgradeModal isOpen={isUpgradeOpen} product="pro" onClose={() => setIsUpgradeOpen(false)} />
     </>
   );
 }

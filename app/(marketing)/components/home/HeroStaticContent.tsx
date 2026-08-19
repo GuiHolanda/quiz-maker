@@ -9,7 +9,7 @@ export function HeroStaticContent() {
 
   return (
     <div>
-      <h1 className="ds-heading text-mkt-text text-4xl xl:text-5xl leading-tight mb-6 text-balance">
+      <h1 className="ds-heading text-mkt-text text-5xl xl:text-6xl leading-tight mb-6 text-balance">
         {t('homepage.hero.line1')}
         <br />
         {t('homepage.hero.line2')}

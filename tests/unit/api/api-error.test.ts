@@ -30,6 +30,25 @@ describe('toApiErrorResponse', () => {
       expect(result.message).toBe('Not found');
       expect(result.status).toBe(404);
     });
+
+    // Quota rejections carry a structured body; the client keys its limit modal off it,
+    // so dropping these fields would degrade every cap into a generic error toast.
+    it('forwards the quota code and counters from a service error body', () => {
+      const err = Object.assign(new Error('Exam limit reached (2)'), {
+        status: 403,
+        body: { error: 'quota_exceeded', code: 'exam_limit', limit: 2, used: 2, plan: 'free' },
+      });
+      const result = toApiErrorResponse(err);
+
+      expect(result).toMatchObject({ status: 403, code: 'exam_limit', limit: 2, used: 2, plan: 'free' });
+    });
+
+    it('omits quota fields entirely for errors without a structured body', () => {
+      const result = toApiErrorResponse(Object.assign(new Error('Forbidden'), { status: 403 }));
+
+      expect(result.code).toBeUndefined();
+      expect(result.limit).toBeUndefined();
+    });
   });
 
   // Prisma validation errors — schema mismatch, unknown field, wrong type

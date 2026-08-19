@@ -15,7 +15,6 @@ interface DraftModalShellProps {
   readonly onClose: () => void;
   readonly name: string;
   readonly subtitle?: ReactNode;
-  readonly headerFields: ReactNode;
   readonly children: ReactNode;
   readonly addLabel: string;
   readonly onAddPrimary: () => void;
@@ -31,7 +30,6 @@ export function DraftModalShell({
   onClose,
   name,
   subtitle,
-  headerFields,
   children,
   addLabel,
   onAddPrimary,
@@ -65,7 +63,6 @@ export function DraftModalShell({
               title={t('chat.errorGeneric')}
             />
           )}
-          {headerFields}
           {children}
         </ModalBody>
 

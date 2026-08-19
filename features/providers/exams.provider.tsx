@@ -8,6 +8,7 @@ import { examsReducer, ExamsState } from '../reducers/exams.reducer';
 import { getExams } from '../connectors';
 
 import { EXAMS_LOCAL_STORAGE_KEY, INITIAL_EXAMS_STATE } from '@/config/constants';
+import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 
 export interface ExamsStoreApi {
   exams: Exam[];
@@ -31,6 +32,7 @@ export const ExamsContext = React.createContext<ExamsStoreApi | null>(null);
 export function ExamsProvider({ children }: Readonly<{ children: React.ReactNode }>) {
   const [state, dispatch] = useReducer(examsReducer, INITIAL_EXAMS_STATE);
   const hydrated = useRef(false);
+  const { refreshUsage } = useUsageContext();
 
   useEffect(() => {
     let storedId: string | null = null;
@@ -88,13 +90,16 @@ export function ExamsProvider({ children }: Readonly<{ children: React.ReactNode
     const handler = (e: Event) => {
       const exam = (e as CustomEvent<Exam>).detail;
 
-      if (exam) dispatch({ type: 'addExam', payload: { exam } });
+      if (exam) {
+        dispatch({ type: 'addExam', payload: { exam } });
+        refreshUsage();
+      }
     };
 
     window.addEventListener('exam-created', handler);
 
     return () => window.removeEventListener('exam-created', handler);
-  }, []);
+  }, [refreshUsage]);
 
   const setExams = useCallback((exams: Exam[]) => dispatch({ type: 'setExams', payload: { exams } }), []);
   const selectExam = useCallback(
@@ -109,7 +114,13 @@ export function ExamsProvider({ children }: Readonly<{ children: React.ReactNode
     (topic: ExamTopic | null) => dispatch({ type: 'selectTopic', payload: { topic } }),
     []
   );
-  const addExam = useCallback((exam: Exam) => dispatch({ type: 'addExam', payload: { exam } }), []);
+  const addExam = useCallback(
+    (exam: Exam) => {
+      dispatch({ type: 'addExam', payload: { exam } });
+      refreshUsage();
+    },
+    [refreshUsage]
+  );
   const removeExam = useCallback((id: string) => dispatch({ type: 'removeExam', payload: { id } }), []);
   const updateExam = useCallback(
     (id: string, patch: Partial<Exam>) => dispatch({ type: 'updateExam', payload: { id, exam: patch } }),

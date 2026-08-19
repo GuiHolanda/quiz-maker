@@ -11,6 +11,8 @@ import {
   PROVIDERS_URL,
   EXAM_BOARDS_URL,
   EXTRACT_EDITAL_URL,
+  AUTO_CONFIG_URL,
+  AUTO_CONFIG_IDENTIFY_URL,
   MOCK_EXAMS_URL,
   ADMIN_USERS_URL,
   ADMIN_OVERVIEW_URL,
@@ -56,6 +58,8 @@ import {
   QuestionBankParams,
   QuestionBankResponse,
   GenerationJobStatus,
+  AutoConfigIdentifyResult,
+  AutoConfigJobStatus,
   GenerationHistoryResponse,
   GenerationHistoryFilters,
   GenerationHistoryFilterOptions,
@@ -82,6 +86,12 @@ export async function getExams(): Promise<Exam[]> {
 
 export async function saveExam(exam: Exam): Promise<Exam> {
   const { data } = await api.post<{ exam: Exam }>(SAVE_EXAM_URL, exam);
+
+  return data.exam;
+}
+
+export async function updateExam(examId: string, exam: Exam): Promise<Exam> {
+  const { data } = await api.patch<{ exam: Exam }>(SAVE_EXAM_URL, { ...exam, examId });
 
   return data.exam;
 }
@@ -197,6 +207,46 @@ export async function extractEdital(file: File, role?: string): Promise<Exam> {
 
   return data.exam;
 }
+
+// — Auto-config (isolated identify + research/review/format pipeline) —
+
+export const identifyExam = (query: string, type: ExamType, language: 'pt' | 'en'): Promise<AutoConfigIdentifyResult> =>
+  api.post<AutoConfigIdentifyResult>(AUTO_CONFIG_IDENTIFY_URL, { query, type, language }).then((r) => r.data);
+
+export interface AutoConfigSeedPayload {
+  readonly type: ExamType;
+  readonly name: string;
+  readonly key?: string | null;
+  readonly provider?: string | null;
+  readonly examBoard?: string | null;
+  readonly role?: string | null;
+  readonly year?: number | null;
+  readonly language: 'pt' | 'en';
+}
+
+export const createAutoConfigJob = (seed: AutoConfigSeedPayload): Promise<{ jobId: string }> =>
+  api.post<{ jobId: string }>(AUTO_CONFIG_URL, seed).then((r) => r.data);
+
+export interface ActiveAutoConfigJob {
+  readonly id: string;
+  readonly type: ExamType;
+  readonly seedName: string;
+  readonly seedProvider: string | null;
+  readonly status: string;
+  readonly stage: string | null;
+}
+
+export const getActiveAutoConfigJob = (type: ExamType): Promise<ActiveAutoConfigJob | null> =>
+  api
+    .get<{ job: ActiveAutoConfigJob | null }>(AUTO_CONFIG_URL, { params: { type } })
+    .then((r) => r.data.job)
+    .catch(() => null);
+
+export const getAutoConfigJob = (jobId: string): Promise<AutoConfigJobStatus> =>
+  api.get<AutoConfigJobStatus>(`${AUTO_CONFIG_URL}/${jobId}`).then((r) => r.data);
+
+export const cancelAutoConfigJob = (jobId: string): Promise<void> =>
+  api.delete(`${AUTO_CONFIG_URL}/${jobId}`).then(() => undefined);
 
 // — Browse questions —
 

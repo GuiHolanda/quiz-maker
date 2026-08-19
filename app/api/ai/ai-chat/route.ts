@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import type { UserPlan } from '@/shared/types';
 import { AiChatService } from '@/features/services/aiChat.service';
+import { AI_CHAT_ALLOWED_PLANS } from '@/config/constants';
 import { toApiErrorResponse } from '@/lib/api-error';
 
 const aiChatService = new AiChatService();
@@ -19,9 +19,8 @@ export async function POST(request: NextRequest) {
     where: { id: session.user.id },
     select: { plan: true },
   });
-  const aiAllowedPlans: UserPlan[] = ['pro_ai', 'tester', 'admin'];
 
-  if (!dbUser || !aiAllowedPlans.includes(dbUser.plan as UserPlan)) {
+  if (!dbUser || !AI_CHAT_ALLOWED_PLANS.includes(dbUser.plan)) {
     return NextResponse.json(
       { error: 'plan_required', message: 'AI chat requires pro_ai plan or higher' },
       { status: 403 }

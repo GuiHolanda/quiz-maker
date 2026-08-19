@@ -4,8 +4,8 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { ExamQuestionService } from '@/features/services/exam-question.service';
-import { certificationExplanationsPrompt } from '@/config/prompts/certification-explanations.prompt';
-import { publicExamExplanationsPrompt } from '@/config/prompts/public-exam-explanations.prompt';
+import { certificationExplanationsPrompt } from '@/config/prompts/certification-questions/explanations.prompt';
+import { publicExamExplanationsPrompt } from '@/config/prompts/public-exam-questions/explanations.prompt';
 import { toApiErrorResponse } from '@/lib/api-error';
 
 export const maxDuration = 300;

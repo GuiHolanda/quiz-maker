@@ -50,7 +50,7 @@ vi.mock('bcryptjs', () => ({ default: { hash: vi.fn().mockResolvedValue('hashed'
 
 | Arquivo de teste | O que cobre |
 |---|---|
-| `exam.service.test.ts` | CRUD Exam/Section/Topic; propagação `updatedAt`; snapshot em rename |
+| `exam.service.test.ts` | CRUD Exam/Section/Topic; propagação `updatedAt`; snapshot em rename; `updateExam` (diff completo seções/tópicos, 403/404/409) |
 | `exam-question.service.test.ts` | `saveAnswers` (upsert idempotente), `saveExplanations`, embaralhamento das alternativas ao persistir, gravação do formato e guarda de labels semânticos |
 | `shuffle-options.test.ts` | Permutação de alternativas — preserva labels e textos, quebra o viés posicional |
 | `question-formats.test.ts` | Registry de formatos — labels, teto de corretas, flag semântica, default por banca |
@@ -104,7 +104,7 @@ npx playwright show-report
 | `full-journey` (×2) | gerar → salvar → simulado → responder → resultado → tentar novamente |
 | `generation-errors` (×2) | quota 403; abort de rede → toast de erro |
 | `sse-reconnect` (×2) | cancelar job; restaura `running`/`awaiting_review` após reload |
-| `wizard-validation` (×2) | discard de draft; guard de título vazio |
+| `exam-editor-validation` (×2) | discard de draft (limpa localStorage); guard de Salvar sem nome |
 | `question-bank` | seed via API → verificar → buscar → deletar; empty state |
 | `empty-states` | empty state de simulados e certificações |
 

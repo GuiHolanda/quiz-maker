@@ -20,8 +20,7 @@ interface PricingFeature {
 
 const FREE_FEATURES: readonly PricingFeature[] = [
   { labelKey: 'pricing.features.questionsPerMonth', included: true, value: '250' },
-  { labelKey: 'pricing.features.customCertifications', included: true, value: '2' },
-  { labelKey: 'pricing.features.publicExams', included: false },
+  { labelKey: 'pricing.features.customExams', included: true, value: '2' },
   { labelKey: 'pricing.features.aiExplanations', included: true },
   { labelKey: 'pricing.features.topicDistribution', included: true },
   { labelKey: 'pricing.features.simulados', included: true },
@@ -32,8 +31,7 @@ const FREE_FEATURES: readonly PricingFeature[] = [
 
 const PRO_FEATURES: readonly PricingFeature[] = [
   { labelKey: 'pricing.features.questionsPerMonth', included: true, value: '1,500' },
-  { labelKey: 'pricing.features.customCertifications', included: true, value: '5' },
-  { labelKey: 'pricing.features.publicExams', included: true, value: '2' },
+  { labelKey: 'pricing.features.customExams', included: true, value: '5' },
   { labelKey: 'pricing.features.aiExplanations', included: true },
   { labelKey: 'pricing.features.topicDistribution', included: true },
   { labelKey: 'pricing.features.simulados', included: true },
@@ -44,8 +42,7 @@ const PRO_FEATURES: readonly PricingFeature[] = [
 
 const PRO_AI_FEATURES: readonly PricingFeature[] = [
   { labelKey: 'pricing.features.questionsPerMonth', included: true, value: '2,500' },
-  { labelKey: 'pricing.features.customCertifications', included: true, value: '5' },
-  { labelKey: 'pricing.features.publicExams', included: true, value: '5' },
+  { labelKey: 'pricing.features.customExams', included: true, value: '5' },
   { labelKey: 'pricing.features.aiExplanations', included: true },
   { labelKey: 'pricing.features.topicDistribution', included: true },
   { labelKey: 'pricing.features.simulados', included: true },

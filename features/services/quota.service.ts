@@ -1,9 +1,19 @@
-import type { UserPlan, QuotaAction, UsageStats } from '@/shared/types';
+import type { UserPlan, QuotaAction, UsageStats, QuotaLimitCode } from '@/shared/types';
 
 import { prisma } from '@/lib/prisma';
 import { PLAN_LIMITS } from '@/config/constants';
 
 const PERIOD_DAYS = 30;
+
+// Every quota rejection carries the same shape: `error` stays 'quota_exceeded' for
+// backward compatibility, `code` says *which* limit so the client can pick the right
+// copy and upgrade CTA instead of falling back to a generic failure toast.
+function quotaError(code: QuotaLimitCode, message: string, limit: number, used: number, plan: UserPlan) {
+  return Object.assign(new Error(message), {
+    status: 403,
+    body: { error: 'quota_exceeded', code, message, limit, used, plan },
+  });
+}
 
 export class QuotaService {
   private async getUserWithPeriodReset(userId: string) {
@@ -16,7 +26,7 @@ export class QuotaService {
     if (daysSince >= PERIOD_DAYS) {
       return prisma.user.update({
         where: { id: userId },
-        data: { questionsGeneratedThisPeriod: 0, periodStartDate: now },
+        data: { questionsGeneratedThisPeriod: 0, autoConfigThisPeriod: 0, periodStartDate: now },
       });
     }
 
@@ -45,17 +55,7 @@ export class QuotaService {
       const limit = this.resolveQuestionsLimit(user);
 
       if (used + count > limit) {
-        const err = Object.assign(new Error(`Question generation limit reached (${limit}/period)`), {
-          status: 403,
-          body: {
-            error: 'quota_exceeded',
-            message: `Question generation limit reached (${limit}/period)`,
-            limit,
-            used,
-            plan,
-          },
-        });
-        throw err;
+        throw quotaError('questions_limit', `Question generation limit reached (${limit}/period)`, limit, used, plan);
       }
     }
 
@@ -64,17 +64,7 @@ export class QuotaService {
       const limit = limits.maxExams;
 
       if (limit !== Infinity && examCount >= limit) {
-        const err = Object.assign(new Error(`Exam limit reached (${limit})`), {
-          status: 403,
-          body: {
-            error: 'quota_exceeded',
-            message: `Exam limit reached (${limit})`,
-            limit,
-            used: examCount,
-            plan,
-          },
-        });
-        throw err;
+        throw quotaError('exam_limit', `Exam limit reached (${limit})`, limit, examCount, plan);
       }
     }
   }
@@ -120,33 +110,89 @@ export class QuotaService {
     });
 
     if (updated.count === 0) {
-      const used = user.questionsGeneratedThisPeriod;
-      const err = Object.assign(new Error(`Question generation limit reached (${limit}/period)`), {
-        status: 403,
-        body: {
-          error: 'quota_exceeded',
-          message: `Question generation limit reached (${limit}/period)`,
-          limit,
-          used,
-          plan,
-        },
-      });
-      throw err;
+      throw quotaError(
+        'questions_limit',
+        `Question generation limit reached (${limit}/period)`,
+        limit,
+        user.questionsGeneratedThisPeriod,
+        plan
+      );
     }
 
     const log = await prisma.usageLog.create({ data: { userId, action: 'generate_questions', count, ...contextData } });
     return { logId: log.id };
   }
 
-  // Undo a prior checkAndRecordQuestions when generation ultimately failed: give the
-  // user their quota back and drop the usage log so it never counts toward cost analytics.
+  // Read-only peek at auto_config quota, used before the (cheap) identify call — a user
+  // with no units left shouldn't burn tokens on identification when the job right after
+  // it would just reject them. Does not record anything; checkAndRecordAutoConfig still
+  // does the atomic check+increment when the job itself is created.
+  async checkAutoConfigAvailable(userId: string): Promise<void> {
+    const user = await this.getUserWithPeriodReset(userId);
+    const plan = this.resolvePlan(user.plan);
+    const limit = PLAN_LIMITS[plan].autoConfigPerPeriod;
+
+    if (limit === Infinity) return;
+
+    if (user.autoConfigThisPeriod >= limit) {
+      throw quotaError(
+        'auto_config_limit',
+        `Auto-config limit reached (${limit}/period)`,
+        limit,
+        user.autoConfigThisPeriod,
+        plan
+      );
+    }
+  }
+
+  // Atomic check+record for AI auto-config (certification search or edital extraction),
+  // one unit per call — mirrors checkAndRecordQuestions but against autoConfigThisPeriod.
+  // customQuotaOverride doesn't apply here (it's questions-only, see CLAUDE.md).
+  async checkAndRecordAutoConfig(userId: string): Promise<{ logId: string }> {
+    const user = await this.getUserWithPeriodReset(userId);
+    const plan = this.resolvePlan(user.plan);
+    const limit = PLAN_LIMITS[plan].autoConfigPerPeriod;
+
+    if (limit === Infinity) {
+      const [, log] = await Promise.all([
+        prisma.user.update({ where: { id: userId }, data: { autoConfigThisPeriod: { increment: 1 } } }),
+        prisma.usageLog.create({ data: { userId, action: 'auto_config', count: 1 } }),
+      ]);
+      return { logId: log.id };
+    }
+
+    const updated = await prisma.user.updateMany({
+      where: { id: userId, autoConfigThisPeriod: { lte: limit - 1 } },
+      data: { autoConfigThisPeriod: { increment: 1 } },
+    });
+
+    if (updated.count === 0) {
+      throw quotaError(
+        'auto_config_limit',
+        `Auto-config limit reached (${limit}/period)`,
+        limit,
+        user.autoConfigThisPeriod,
+        plan
+      );
+    }
+
+    const log = await prisma.usageLog.create({ data: { userId, action: 'auto_config', count: 1 } });
+    return { logId: log.id };
+  }
+
+  // Undo a prior checkAndRecordQuestions/checkAndRecordAutoConfig when the pipeline
+  // ultimately failed: give the user their quota back and drop the usage log so it
+  // never counts toward cost analytics. Which period counter to refund follows the
+  // log's own action, so one method serves both quota families.
   async rollbackQuota(logId: string): Promise<void> {
     const log = await prisma.usageLog.findUnique({ where: { id: logId } });
     if (!log) return;
 
+    const field = log.action === 'auto_config' ? 'autoConfigThisPeriod' : 'questionsGeneratedThisPeriod';
+
     await prisma.user.update({
       where: { id: log.userId },
-      data: { questionsGeneratedThisPeriod: { decrement: log.count } },
+      data: { [field]: { decrement: log.count } },
     });
     await prisma.usageLog.delete({ where: { id: logId } });
   }

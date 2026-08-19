@@ -2,8 +2,9 @@
  * Model Eval Benchmark
  *
  * Calls the OpenAI Responses API with the same configuration as production
- * (web_search_preview, max_output_tokens: 16000) and measures latency, token
- * cost and question quality per domain via an independent LLM judge (gpt-5.6-sol).
+ * (web_search forced via tool_choice: 'required', max_output_tokens: 16000) and
+ * measures latency, token cost and question quality per domain via an
+ * independent LLM judge (gpt-5.6-sol).
  *
  * USAGE
  *
@@ -172,9 +173,10 @@ async function callOpenAI(
   const model = process.env.OPENAI_MODEL ?? 'gpt-5.4-mini';
   const start = Date.now();
 
-  const response = await (openAIClient.responses.create as Function)({
+  const response = await openAIClient.responses.create({
     model,
-    tools: [{ type: 'web_search_preview' }],
+    tools: [{ type: 'web_search' }],
+    tool_choice: 'required',
     input: prompt,
     max_output_tokens: 16000,
   });
@@ -182,9 +184,9 @@ async function callOpenAI(
   const latencyMs = Date.now() - start;
 
   return {
-    text: response?.output_text ?? '',
-    inputTokens: response?.usage?.input_tokens ?? 0,
-    outputTokens: response?.usage?.output_tokens ?? 0,
+    text: response.output_text ?? '',
+    inputTokens: response.usage?.input_tokens ?? 0,
+    outputTokens: response.usage?.output_tokens ?? 0,
     latencyMs,
   };
 }

@@ -154,17 +154,20 @@ For multi-step flows, use manual `try/catch`:
 
 ### Prompt management (LLM)
 
-All prompts in `config/prompts/` as TypeScript files — none stored in the OpenAI dashboard. Each exports a `PromptDefinition<TInput>` with a `build(input): string` method.
+All prompts in `config/prompts/` as TypeScript files, grouped into subfolders by domain — none stored in the OpenAI dashboard. Each exports a `PromptDefinition<TInput>` with a `build(input): string` method (the two `ai-chat/` prompts are the one exception: bare template-string constants, since `AiChatService` doesn't go through `OpenAIService`).
 
 **Calling:** always `openAIService.call(prompt, input)` — never `openAIClient` directly. **Model:** `OPENAI_MODEL` env var (default `gpt-4o`). **Exception:** `AiChatService` uses streaming with its own `responses.create()`.
 
-Dispatch by exam type via `EXAM_PROMPTS: Record<ExamType, { research, review, format, answers, explanations }>` in `config/prompts/index.ts`.
+Dispatch by exam type via `EXAM_PROMPTS: Record<ExamType, { research, review, format, answers, explanations }>` (question generation) and `AUTO_CONFIG_PROMPTS: Record<ExamType, { research, review, format }>` (auto-config blueprint), both in `config/prompts/index.ts`.
 
-| File | Domain |
+| Folder | Domain |
 |---|---|
-| `certification-questions/answers/explanations.prompt.ts` | Any certification |
-| `public-exam-questions/answers/explanations.prompt.ts` | Concursos brasileiros |
-| `ai-chat-identify/topics.prompt.ts` | AI chat (streaming) |
+| `certification-questions/` | Question generation for any certification — `research`/`review`/`format`/`answers`/`explanations.prompt.ts` |
+| `public-exam-questions/` | Question generation for concursos brasileiros — same five-file shape |
+| `certification-config/` | Auto-config blueprint pipeline for certifications — `research`/`review`/`format.prompt.ts` |
+| `public-exam-config/` | Auto-config blueprint pipeline for concursos — same three-file shape |
+| `ai-chat/` | Conversational chat drawer (streaming) — `identify`/`topics.prompt.ts` |
+| `exam-identify.prompt.ts` | Auto-config's shared identify lookup — one file, used by both exam types |
 
 ### Imports
 - All absolute imports use `@/` alias (maps to project root)
@@ -231,17 +234,19 @@ DATABASE_URL="file:/caminho/absoluto/prisma/dev.db" npm run e2e
 type UserPlan = 'free' | 'pro' | 'pro_ai' | 'tester' | 'admin';
 ```
 
-| Plan | Questions/period | Exams | AI Chat | Admin |
-|---|---|---|---|---|
-| `free` | 250 | 2 | ✗ | ✗ |
-| `pro` | 1500 | 5 | ✗ | ✗ |
-| `pro_ai` | 2500 | 5 | ✓ | ✗ |
-| `tester` | ∞ | ∞ | ✓ | ✗ |
-| `admin` | ∞ | ∞ | ✓ | ✓ |
+| Plan | Questions/period | Exams | Create/edit exams | Auto-config/period | AI Chat | Admin |
+|---|---|---|---|---|---|---|
+| `free` | 250 | 2 | ✗ (catalog-only, read-only) | 0 | ✗ | ✗ |
+| `pro` | 1500 | 5 | ✓ | 15 | ✗ | ✗ |
+| `pro_ai` | 2500 | 5 | ✓ | 30 | ✓ | ✗ |
+| `tester` | ∞ | ∞ | ✓ | ∞ | ✓ | ✗ |
+| `admin` | ∞ | ∞ | ✓ | ∞ | ✓ | ✓ |
 
 **Single `maxExams` counter** shared across both exam types. `tester`/`admin` assigned manually. `pro_ai` differentiated by Stripe price ID.
 
-**`customQuotaOverride`:** `null` = plan default, `-1` = infinity sentinel, `N > 0` = custom. Logic in `quota.service.ts → resolveQuestionsLimit()`.
+**`customQuotaOverride`:** `null` = plan default, `-1` = infinity sentinel, `N > 0` = custom. Logic in `quota.service.ts → resolveQuestionsLimit()`. Applies to questions only — `autoConfigPerPeriod` always comes straight from `PLAN_LIMITS`.
+
+**Auto-config quota** (`QuotaAction: 'auto_config'`, `User.autoConfigThisPeriod`): metered by `QuotaService.checkAndRecordAutoConfig()`, one unit per call. Covers both `POST /api/exam/auto-config` (certification search/blueprint — the headless counterpart to `/api/ai/ai-chat` used by `/exams/new`'s AI seed, gated at `pro`+ rather than `pro_ai`-only) and `POST /api/exam/extract-from-edital`. `canEditExams(plan)` (`config/constants/index.ts`) is the single source of truth gating every exam create/edit/delete-section-or-topic route (`app/api/exam/save-exam/route.ts`) and the corresponding UI (`/exams/new`, `/exams/[id]/edit` show an upgrade wall; `ExamDetailPanel`'s "Editar" button becomes "Fazer upgrade" for `free`). Deleting a whole exam stays open to `free` so a forked catalog exam is never a trap.
 
 **`-1` is the "unlimited" sentinel** throughout the UI — `UsageBadge` hides when `questionsLimit === -1`.
 

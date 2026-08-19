@@ -1,9 +1,9 @@
-import { certificationQuestionsResearchPrompt } from '@/config/prompts/certification-questions-research.prompt';
-import { certificationQuestionsFormatPrompt } from '@/config/prompts/certification-questions-format.prompt';
-import { certificationAnswersPrompt } from '@/config/prompts/certification-answers.prompt';
-import { publicExamQuestionsResearchPrompt } from '@/config/prompts/public-exam-questions-research.prompt';
-import { publicExamQuestionsFormatPrompt } from '@/config/prompts/public-exam-questions-format.prompt';
-import { publicExamAnswersPrompt } from '@/config/prompts/public-exam-answers.prompt';
+import { certificationQuestionsResearchPrompt } from '@/config/prompts/certification-questions/research.prompt';
+import { certificationQuestionsFormatPrompt } from '@/config/prompts/certification-questions/format.prompt';
+import { certificationAnswersPrompt } from '@/config/prompts/certification-questions/answers.prompt';
+import { publicExamQuestionsResearchPrompt } from '@/config/prompts/public-exam-questions/research.prompt';
+import { publicExamQuestionsFormatPrompt } from '@/config/prompts/public-exam-questions/format.prompt';
+import { publicExamAnswersPrompt } from '@/config/prompts/public-exam-questions/answers.prompt';
 
 const certResearch = (format?: 'mc_4' | 'mc_5' | 'true_false') =>
   certificationQuestionsResearchPrompt.build({

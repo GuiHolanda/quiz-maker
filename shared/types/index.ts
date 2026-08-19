@@ -145,7 +145,14 @@ export interface ChatMessage {
 
 export type UserPlan = 'free' | 'pro' | 'pro_ai' | 'tester' | 'admin';
 
-export type QuotaAction = 'generate_questions' | 'create_exam' | 'extract_edital' | 'ai_chat';
+export type QuotaAction = 'generate_questions' | 'create_exam' | 'extract_edital' | 'ai_chat' | 'auto_config';
+
+// Which limit a 403 refers to. `plan_required` is not a quota at all — the plan simply
+// doesn't include the feature — but it travels the same path to the client, so the UI
+// treats both as "blocked, here's the upgrade path".
+export type QuotaLimitCode = 'questions_limit' | 'exam_limit' | 'auto_config_limit';
+
+export type LimitCode = QuotaLimitCode | 'plan_required';
 
 export interface UsageStats {
   plan: UserPlan;
@@ -478,6 +485,34 @@ export interface GenerationJobStatus {
   refName: string;
   examBoardName: string | null;
   topics: GenerationJobTopicStatus[];
+}
+
+export interface AutoConfigMatch {
+  readonly label: string;
+  readonly key: string | null;
+  readonly provider: string | null;
+  readonly examBoard: string | null;
+  readonly role: string | null;
+  readonly year: number | null;
+}
+
+export interface AutoConfigIdentifyResult {
+  readonly matches: AutoConfigMatch[];
+  readonly clarification: string | null;
+}
+
+export type AutoConfigStage = 'research' | 'review' | 'format';
+
+export interface AutoConfigJobStatus {
+  readonly id: string;
+  readonly type: ExamType;
+  readonly seedName: string;
+  readonly seedProvider: string | null;
+  readonly status: 'queued' | 'running' | 'done' | 'error' | 'cancelled';
+  readonly stage: AutoConfigStage | null;
+  readonly errorMessage: string | null;
+  readonly errorType: 'quota' | 'generation' | 'timeout' | null;
+  readonly resultJson: string | null;
 }
 
 export interface GenerationHistoryItem {

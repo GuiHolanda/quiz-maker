@@ -544,6 +544,201 @@ export class ExamService {
     });
   }
 
+  // — Full update (Fase 3: same editor used pre- and post-save) —
+
+  public async updateExam(examId: string, exam: Exam, userId: string): Promise<Exam> {
+    const existing = await this.prismaService.exam.findUnique({
+      where: { id: examId },
+      include: { sections: { include: { topics: true } } },
+    });
+
+    if (!existing) {
+      throw Object.assign(new Error('Exam not found'), { status: 404 });
+    }
+
+    if (existing.userId !== userId) {
+      throw Object.assign(new Error('Forbidden'), { status: 403 });
+    }
+
+    const {
+      name,
+      role,
+      year,
+      key,
+      totalQuestions,
+      examDurationMinutes,
+      passingScore,
+      questionFormat,
+      provider,
+      examBoard,
+      sections,
+    } = exam;
+
+    const normalizedName = normalizeName(name);
+    const normalizedRole = role && role.trim() ? normalizeName(role) : null;
+    const normalizedYear = year ?? null;
+
+    return this.prismaService.$transaction(async (tx) => {
+      let providerId: string | null = null;
+      let examBoardId: string | null = null;
+
+      if (provider?.name) {
+        const p = await tx.provider.upsert({
+          where: { name: provider.name },
+          update: {},
+          create: { name: provider.name, fullName: provider.fullName ?? null },
+        });
+
+        providerId = p.id;
+      }
+
+      if (examBoard?.name) {
+        const b = await tx.examBoard.upsert({
+          where: { name: examBoard.name },
+          update: {},
+          create: { name: examBoard.name, fullName: examBoard.fullName ?? null },
+        });
+
+        examBoardId = b.id;
+      }
+
+      if (normalizedName !== existing.name || normalizedRole !== existing.role || normalizedYear !== existing.year) {
+        const duplicate = await tx.exam.findFirst({
+          where: {
+            userId,
+            type: existing.type,
+            name: normalizedName,
+            role: normalizedRole,
+            year: normalizedYear,
+            NOT: { id: examId },
+          },
+        });
+
+        if (duplicate) {
+          throw Object.assign(new Error(`Exam "${normalizedName}" already exists for this user`), { status: 409 });
+        }
+      }
+
+      // Mirror exam-level rename onto historic ExamQuestion snapshots, same as updateExamMeta.
+      if (normalizedName !== existing.name) {
+        await tx.examQuestion.updateMany({
+          where: { userId, OR: [{ examId: existing.id }, { examId: null, examName: existing.name }] },
+          data: { examName: normalizedName },
+        });
+      }
+
+      const existingSectionById = new Map(existing.sections.map((s) => [s.id, s]));
+      const keptSectionIds = new Set<string>();
+
+      for (const section of dedupeByName(sections)) {
+        const normalizedSectionName = normalizeName(section.name);
+        const matchedSection = section.id ? existingSectionById.get(section.id) : undefined;
+
+        if (matchedSection) {
+          keptSectionIds.add(matchedSection.id);
+
+          if (normalizedSectionName !== matchedSection.name) {
+            await tx.examQuestion.updateMany({
+              where: {
+                userId,
+                OR: [
+                  { sectionId: matchedSection.id },
+                  { sectionId: null, examName: existing.name, sectionName: matchedSection.name },
+                ],
+              },
+              data: { sectionName: normalizedSectionName },
+            });
+          }
+
+          await tx.examSection.update({
+            where: { id: matchedSection.id },
+            data: {
+              name: normalizedSectionName,
+              minQuestions: section.minQuestions,
+              maxQuestions: section.maxQuestions,
+            },
+          });
+
+          const existingTopicById = new Map(matchedSection.topics.map((t) => [t.id, t]));
+          const keptTopicIds = new Set<string>();
+
+          for (const topic of dedupeByName(section.topics ?? [])) {
+            const normalizedTopicName = normalizeName(topic.name);
+            const matchedTopic = topic.id ? existingTopicById.get(topic.id) : undefined;
+
+            if (matchedTopic) {
+              keptTopicIds.add(matchedTopic.id);
+
+              if (normalizedTopicName !== matchedTopic.name) {
+                await tx.examQuestion.updateMany({
+                  where: {
+                    userId,
+                    OR: [
+                      { topicId: matchedTopic.id },
+                      {
+                        topicId: null,
+                        examName: existing.name,
+                        sectionName: matchedSection.name,
+                        topicName: matchedTopic.name,
+                      },
+                    ],
+                  },
+                  data: { topicName: normalizedTopicName },
+                });
+                await tx.examTopic.update({ where: { id: matchedTopic.id }, data: { name: normalizedTopicName } });
+              }
+            } else {
+              await tx.examTopic.create({ data: { name: normalizedTopicName, sectionId: matchedSection.id } });
+            }
+          }
+
+          const topicsToDelete = matchedSection.topics.filter((t) => !keptTopicIds.has(t.id));
+
+          if (topicsToDelete.length > 0) {
+            await tx.examTopic.deleteMany({ where: { id: { in: topicsToDelete.map((t) => t.id) } } });
+          }
+        } else {
+          await tx.examSection.create({
+            data: {
+              name: normalizedSectionName,
+              minQuestions: section.minQuestions,
+              maxQuestions: section.maxQuestions,
+              examId,
+              topics: dedupeByName(section.topics ?? []).length
+                ? { create: dedupeByName(section.topics ?? []).map((t) => ({ name: normalizeName(t.name) })) }
+                : undefined,
+            },
+          });
+        }
+      }
+
+      const sectionsToDelete = existing.sections.filter((s) => !keptSectionIds.has(s.id));
+
+      if (sectionsToDelete.length > 0) {
+        await tx.examSection.deleteMany({ where: { id: { in: sectionsToDelete.map((s) => s.id) } } });
+      }
+
+      const updated = await tx.exam.update({
+        where: { id: examId },
+        data: {
+          name: normalizedName,
+          role: normalizedRole,
+          year: normalizedYear,
+          key: key && key.trim() ? key.trim() : null,
+          totalQuestions,
+          examDurationMinutes: examDurationMinutes ?? null,
+          passingScore: passingScore ?? null,
+          ...(questionFormat ? { questionFormat } : {}),
+          providerId,
+          examBoardId,
+        },
+        include: { provider: true, examBoard: true, sections: { include: { topics: true } } },
+      });
+
+      return this.toExam(updated);
+    });
+  }
+
   private toExam(row: any): Exam {
     return {
       id: row.id,

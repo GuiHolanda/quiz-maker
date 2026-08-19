@@ -12,6 +12,8 @@ export const BROWSE_QUESTIONS_URL = '/exam/browse-questions/questions';
 export const PROVIDERS_URL = '/exam/providers';
 export const EXAM_BOARDS_URL = '/exam/exam-boards';
 export const EXTRACT_EDITAL_URL = '/exam/extract-from-edital';
+export const AUTO_CONFIG_URL = '/exam/auto-config';
+export const AUTO_CONFIG_IDENTIFY_URL = '/exam/auto-config/identify';
 export const GENERATION_JOB_URL = '/generation-job';
 export const USAGE_HISTORY_URL = '/usage/history';
 export const USAGE_HISTORY_FILTERS_URL = '/usage/history/filters';
@@ -71,12 +73,20 @@ export const BILLING_CHECKOUT_URL = '/billing/checkout';
 export const BILLING_PORTAL_URL = '/billing/portal';
 
 export const PLAN_LIMITS = {
-  free: { questionsPerPeriod: 250, maxExams: 2 },
-  pro: { questionsPerPeriod: 1500, maxExams: 5 },
-  pro_ai: { questionsPerPeriod: 2500, maxExams: 5 },
-  tester: { questionsPerPeriod: Infinity, maxExams: Infinity },
-  admin: { questionsPerPeriod: Infinity, maxExams: Infinity },
+  free: { questionsPerPeriod: 250, maxExams: 2, autoConfigPerPeriod: 0, canEditExams: false },
+  pro: { questionsPerPeriod: 1500, maxExams: 5, autoConfigPerPeriod: 15, canEditExams: true },
+  pro_ai: { questionsPerPeriod: 2500, maxExams: 5, autoConfigPerPeriod: 30, canEditExams: true },
+  tester: { questionsPerPeriod: Infinity, maxExams: Infinity, autoConfigPerPeriod: Infinity, canEditExams: true },
+  admin: { questionsPerPeriod: Infinity, maxExams: Infinity, autoConfigPerPeriod: Infinity, canEditExams: true },
 } as const;
+
+// Single source of truth for "can this plan create/edit exams" — API routes and UI walls
+// both derive from PLAN_LIMITS instead of keeping a second list of plan names in sync.
+export function canEditExams(plan: string): boolean {
+  const limits = PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS];
+
+  return limits ? limits.canEditExams : false;
+}
 
 export const ADMIN_USERS_URL = '/admin/users';
 export const ADMIN_OVERVIEW_URL = '/admin/overview';

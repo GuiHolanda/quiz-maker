@@ -2,8 +2,10 @@
 import { useState, useCallback } from 'react';
 
 import { Exam, ExamSection, ExamTopic } from '@/shared/types';
-import { saveExam } from '@/features/connectors';
+import type { QuestionFormatKey } from '@/config/question-formats';
+import { saveExam, updateExam } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { useLimitModal } from '@/features/hooks/useLimitModal.hook';
 import { notify } from '@/shared/lib/notify';
 
 export type ExamDraftStatus = 'editing' | 'saving' | 'saved' | 'error';
@@ -28,15 +30,17 @@ interface UseExamDraftCardReturn {
   readonly addTopic: (sectionIndex: number, name: string) => void;
   readonly removeTopic: (sectionIndex: number, topicIndex: number) => void;
   readonly updateTopic: (sectionIndex: number, topicIndex: number, newName: string) => void;
+  readonly updateQuestionFormat: (format: QuestionFormatKey) => void;
   readonly handleSave: () => Promise<ExamDraftSaveResult>;
 }
 
 const clampPercent = (value: number): number => Math.min(100, Math.max(0, Math.round(value)));
 
-export function useExamDraftCard(initialDraft: Exam): UseExamDraftCardReturn {
+export function useExamDraftCard(initialDraft: Exam, mode: 'create' | 'edit' = 'create'): UseExamDraftCardReturn {
   const [draft, setDraft] = useState<Exam>(initialDraft);
   const [status, setStatus] = useState<ExamDraftStatus>('editing');
   const { t } = useTranslation();
+  const { showLimitIfBlocked } = useLimitModal();
 
   const updateField = useCallback(
     (field: keyof Pick<Exam, 'name' | 'role' | 'year' | 'key'>, value: string | number | null) => {
@@ -53,6 +57,10 @@ export function useExamDraftCard(initialDraft: Exam): UseExamDraftCardReturn {
 
       return { ...prev, examBoard: { ...(prev.examBoard ?? {}), name } };
     });
+  }, []);
+
+  const updateQuestionFormat = useCallback((format: QuestionFormatKey) => {
+    setDraft((prev) => ({ ...prev, questionFormat: format }));
   }, []);
 
   const updateNumericField = useCallback(
@@ -151,11 +159,11 @@ export function useExamDraftCard(initialDraft: Exam): UseExamDraftCardReturn {
     }
     setStatus('saving');
     try {
-      const saved = await saveExam(draft);
+      const saved = mode === 'edit' && draft.id ? await updateExam(draft.id, draft) : await saveExam(draft);
 
       setStatus('saved');
       notify.success(t('exam.saved'), t('exam.savedDescription', { name: draft.name }));
-      window.dispatchEvent(new CustomEvent('exam-created', { detail: saved }));
+      if (mode !== 'edit') window.dispatchEvent(new CustomEvent('exam-created', { detail: saved }));
 
       return 'success';
     } catch (err: unknown) {
@@ -170,12 +178,21 @@ export function useExamDraftCard(initialDraft: Exam): UseExamDraftCardReturn {
         return 'duplicate';
       }
 
+      // A 403 here is the exam cap or the plan gate — both are expected states with a
+      // concrete next step, so they get the limit modal (numbers + upgrade CTA) rather
+      // than a toast the user has to interpret.
+      if (showLimitIfBlocked(err)) {
+        setStatus('error');
+
+        return 'error';
+      }
+
       notify.error(t('exam.saveError'), t('exam.saveErrorDescription'));
       setStatus('error');
 
       return 'error';
     }
-  }, [draft, t]);
+  }, [draft, mode, t, showLimitIfBlocked]);
 
   return {
     draft,
@@ -189,6 +206,7 @@ export function useExamDraftCard(initialDraft: Exam): UseExamDraftCardReturn {
     addTopic,
     removeTopic,
     updateTopic,
+    updateQuestionFormat,
     handleSave,
   };
 }

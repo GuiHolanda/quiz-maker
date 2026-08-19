@@ -35,20 +35,27 @@ export class OpenAIService {
     const jsonMode = options?.jsonMode ?? false;
     const model = options?.model ?? process.env.OPENAI_MODEL ?? 'gpt-4o';
 
-    const response = await this.callWithBackoff<any>(() =>
-      (this.openAIClient.responses.create as Function)({
+    const response = await this.callWithBackoff(() =>
+      this.openAIClient.responses.create({
         model,
-        ...(webSearch ? { tools: [{ type: 'web_search_preview' }] } : {}),
-        ...(jsonMode ? { text: { format: { type: 'json_object' } } } : {}),
+        // `web_search` (not the legacy `web_search_preview`) with `tool_choice: 'required'`
+        // — the tool being *available* doesn't mean the model uses it; left to its own
+        // judgment it can answer from (possibly stale) training data instead, which is how
+        // fields like a certification's current passing score or version year come back
+        // blank even though they're on the official page. Forcing the call is only safe
+        // because every webSearch:true call site here is single-purpose research — never
+        // combined with a multi-branch prompt where a search would sometimes be wrong.
+        ...(webSearch ? { tools: [{ type: 'web_search' as const }], tool_choice: 'required' as const } : {}),
+        ...(jsonMode ? { text: { format: { type: 'json_object' as const } } } : {}),
         input: prompt.build(input),
         max_output_tokens: 16000,
       })
     );
 
     return {
-      text: response?.output_text ?? '',
-      inputTokens: response?.usage?.input_tokens ?? 0,
-      outputTokens: response?.usage?.output_tokens ?? 0,
+      text: response.output_text ?? '',
+      inputTokens: response.usage?.input_tokens ?? 0,
+      outputTokens: response.usage?.output_tokens ?? 0,
     };
   }
 

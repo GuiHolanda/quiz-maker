@@ -6,6 +6,7 @@ import { WorkspaceHeader } from '@/shared/components/ui/workspace-header/Workspa
 import { AiChatWrapper } from '@/shared/components/ai-chat/AiChatWrapper';
 import { AiChatUIProvider } from '@/features/providers/ai-chat-ui.provider';
 import { UsageProvider } from '@/features/providers/usage.provider';
+import { LimitModalProvider } from '@/features/providers/limit-modal.provider';
 import { NotificationsProvider } from '@/features/providers/notifications.provider';
 import { SIDEBAR_COLLAPSED_COOKIE_KEY } from '@/config/constants';
 
@@ -20,16 +21,18 @@ export default async function WorkspaceLayout({ children }: { children: React.Re
   return (
     <NotificationsProvider>
       <UsageProvider>
-        <AiChatUIProvider>
-          <div className="flex min-h-screen bg-background2">
-            <Sidebar defaultCollapsed={defaultCollapsed} />
-            <div className="flex flex-col flex-1 min-w-0">
-              <WorkspaceHeader />
-              <main className="flex-grow pt-14 md:pt-0">{children}</main>
+        <LimitModalProvider>
+          <AiChatUIProvider>
+            <div className="flex min-h-screen bg-background2">
+              <Sidebar defaultCollapsed={defaultCollapsed} />
+              <div className="flex flex-col flex-1 min-w-0">
+                <WorkspaceHeader />
+                <main className="flex-grow pt-14 md:pt-0">{children}</main>
+              </div>
+              <AiChatWrapper />
             </div>
-            <AiChatWrapper />
-          </div>
-        </AiChatUIProvider>
+          </AiChatUIProvider>
+        </LimitModalProvider>
       </UsageProvider>
     </NotificationsProvider>
   );

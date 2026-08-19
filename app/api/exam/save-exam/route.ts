@@ -4,9 +4,30 @@ import { ExamService } from '@/features/services/exam.service';
 import { QuotaService } from '@/features/services/quota.service';
 import { toApiErrorResponse } from '@/lib/api-error';
 import { auth } from '@/auth';
+import { prisma } from '@/lib/prisma';
+import { canEditExams } from '@/config/constants';
 
 const examService = new ExamService();
 const quotaService = new QuotaService();
+
+// free is catalog-only, read-only — every write here except deleting the whole exam
+// (kept open so a forked catalog exam never traps a free user, see plan §2.7).
+async function requireExamEditAccess(userId: string): Promise<NextResponse | null> {
+  const dbUser = await prisma.user.findUnique({ where: { id: userId }, select: { plan: true } });
+
+  if (!dbUser || !canEditExams(dbUser.plan)) {
+    return NextResponse.json(
+      {
+        error: 'plan_required',
+        code: 'plan_required',
+        message: 'Creating or editing exams requires the pro plan or higher',
+      },
+      { status: 403 }
+    );
+  }
+
+  return null;
+}
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -14,6 +35,9 @@ export async function POST(request: NextRequest) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const gateError = await requireExamEditAccess(session.user.id);
+  if (gateError) return gateError;
 
   try {
     await quotaService.check(session.user.id, 'create_exam', 1);
@@ -53,12 +77,18 @@ export async function DELETE(request: NextRequest) {
     }
 
     if (sectionId) {
+      const gateError = await requireExamEditAccess(session.user.id);
+      if (gateError) return gateError;
+
       await examService.deleteSection(sectionId, session.user.id);
 
       return NextResponse.json({ message: 'Section deleted successfully' }, { status: 200 });
     }
 
     if (topicId) {
+      const gateError = await requireExamEditAccess(session.user.id);
+      if (gateError) return gateError;
+
       await examService.deleteTopic(topicId, session.user.id);
 
       return NextResponse.json({ message: 'Topic deleted successfully' }, { status: 200 });
@@ -79,6 +109,9 @@ export async function PUT(request: NextRequest) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const gateError = await requireExamEditAccess(session.user.id);
+  if (gateError) return gateError;
 
   try {
     const body = await request.json().catch(() => null);
@@ -129,6 +162,9 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const gateError = await requireExamEditAccess(session.user.id);
+  if (gateError) return gateError;
+
   try {
     const body = await request.json().catch(() => null);
     const { kind } = (body ?? {}) as Record<string, unknown>;
@@ -149,6 +185,14 @@ export async function PATCH(request: NextRequest) {
       const updated = await examService.updateSection(payload, session.user.id);
 
       return NextResponse.json({ message: 'Section updated successfully', section: updated }, { status: 200 });
+    }
+
+    if (body?.examId && Array.isArray((body as Record<string, unknown>).sections)) {
+      const { examId, ...examBody } = body as Record<string, unknown> & { examId: string };
+      const exam = examService.validate(examBody);
+      const updated = await examService.updateExam(examId, exam, session.user.id);
+
+      return NextResponse.json({ message: 'Exam updated successfully', exam: updated }, { status: 200 });
     }
 
     if (body?.examId) {

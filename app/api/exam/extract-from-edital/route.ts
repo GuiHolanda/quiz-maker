@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { auth } from '@/auth';
+import { prisma } from '@/lib/prisma';
 import { EditalExtractorService } from '@/features/services/edital-extractor.service';
+import { QuotaService } from '@/features/services/quota.service';
+import { canEditExams } from '@/config/constants';
 import { toApiErrorResponse } from '@/lib/api-error';
 
 const editalExtractorService = new EditalExtractorService();
+const quotaService = new QuotaService();
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -13,7 +17,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { plan: true },
+  });
+
+  if (!dbUser || !canEditExams(dbUser.plan)) {
+    return NextResponse.json(
+      { error: 'plan_required', code: 'plan_required', message: 'Edital extraction requires the pro plan or higher' },
+      { status: 403 }
+    );
+  }
+
   try {
+    // Same ordering as /auto-config: never parse an edital the user can't turn into an exam.
+    await quotaService.check(session.user.id, 'create_exam', 1);
+    await quotaService.checkAndRecordAutoConfig(session.user.id);
+
     const formData = await request.formData().catch(() => null);
 
     if (!formData) {

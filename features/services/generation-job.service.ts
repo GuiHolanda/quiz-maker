@@ -2,6 +2,7 @@ import { after } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
 import { shuffleOptionTexts } from '@/lib/shuffle-options';
+import { extractJson, sanitizeLlmError, type LlmErrorType } from '@/lib/llm-response';
 import { resolveQuestionFormat } from '@/config/question-formats';
 import type { QuestionFormat } from '@/config/question-formats';
 import { OpenAIService } from '@/features/services/openAI.service';
@@ -16,36 +17,12 @@ import {
 } from '@/config/constants';
 import type { AIExamQuestion } from '@/shared/types';
 
-export function extractJson(raw: string): string {
-  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenced) return fenced[1].trim();
-  const start = raw.indexOf('{');
-  const end = raw.lastIndexOf('}');
-  if (start !== -1 && end > start) return raw.slice(start, end + 1);
-  return raw.trim();
-}
+export { extractJson };
 
-export type TopicErrorType = 'quota' | 'generation' | 'timeout';
+export type TopicErrorType = LlmErrorType;
 
 export function sanitizeError(err: unknown): { message: string; errorType: TopicErrorType } {
-  if (err instanceof Error) {
-    const msg = err.message.toLowerCase();
-    // 429 vem primeiro: um "insufficient_quota" da OpenAI tem status 429 e a palavra "quota"
-    // na mensagem, mas é limite da plataforma, não do usuário — não deve virar errorType 'quota'.
-    if ((err as { status?: number }).status === 429) {
-      return { message: 'Limite de requisições da IA atingido', errorType: 'timeout' };
-    }
-    if (msg.includes('limit reached') || msg.includes('quota')) {
-      return { message: 'Limite de quota atingido', errorType: 'quota' };
-    }
-    if (msg.includes('timeout') || msg.includes('econnaborted')) {
-      return { message: 'Tempo limite de geração excedido', errorType: 'timeout' };
-    }
-    if ('code' in err) {
-      return { message: 'Erro interno ao gerar questões', errorType: 'generation' };
-    }
-  }
-  return { message: 'Erro na geração de questões', errorType: 'generation' };
+  return sanitizeLlmError(err, { internal: 'Erro interno ao gerar questões', generic: 'Erro na geração de questões' });
 }
 
 // Promove tópicos "queued" para "running" respeitando os tetos global e por usuário.

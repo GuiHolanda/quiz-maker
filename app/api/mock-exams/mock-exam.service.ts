@@ -4,8 +4,8 @@ import { CreateMockExamPayload, MockExamSectionConfig, ExamType } from '@/shared
 import { normalizeName, looseKey } from '@/shared/utils';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { ExamQuestionService } from '@/features/services/exam-question.service';
-import { certificationAnswersPrompt } from '@/config/prompts/certification-answers.prompt';
-import { publicExamAnswersPrompt } from '@/config/prompts/public-exam-answers.prompt';
+import { certificationAnswersPrompt } from '@/config/prompts/certification-questions/answers.prompt';
+import { publicExamAnswersPrompt } from '@/config/prompts/public-exam-questions/answers.prompt';
 
 const ANSWERS_BATCH_SIZE = 10;
 
