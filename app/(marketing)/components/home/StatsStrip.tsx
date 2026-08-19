@@ -8,7 +8,7 @@ import { PLAN_LIMITS } from '@/config/constants';
 // no proof on hand yet. They now state capability, which is verifiable and which
 // the rest of the page demonstrates.
 const STATS = [
-  { key: 'free', value: String(PLAN_LIMITS.free.questionsPerPeriod) },
+  { key: 'free', value: String(PLAN_LIMITS.free.questionsPerPeriod + ' Questões') },
   { key: 'fresh' },
   { key: 'perOption' },
   { key: 'byEdital' },
@@ -19,10 +19,10 @@ export function StatsStrip() {
 
   return (
     <div className="bg-mkt-surface border-t border-mkt-divider">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-px">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-px px-4">
         {STATS.map((stat) => (
-          <div key={stat.key} className="bg-mkt-surface border-e border-mkt-divider py-6 px-6 text-center">
-            <p className="mono text-xl sm:text-2xl font-medium text-mkt-text leading-tight">
+          <div key={stat.key} className="bg-mkt-surface border-e border-mkt-divider py-6 px-6">
+            <p className="text-xl sm:text-3xl font-bold text-mkt-surface-800">
               {'value' in stat ? stat.value : t(`homepage.stats.${stat.key}.value`)}
             </p>
             <p className="kick mt-1">{t(`homepage.stats.${stat.key}.label`)}</p>

@@ -36,7 +36,7 @@ export const fontPlayfair = FontPlayfair({
 export const fontBarlow = FontBarlow({
   subsets: ['latin'],
   variable: '--font-barlow',
-  weight: ['400', '500', '600'],
+  weight: ['400', '500', '600', '700', '900'],
   display: 'swap',
 });
 

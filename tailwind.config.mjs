@@ -21,6 +21,7 @@ const config = {
         mkt: {
           bg: 'var(--color-bg)',
           surface: 'var(--color-surface)',
+          'surface-800': 'var(--color-surface-800)',
           text: 'var(--color-text)',
           accent: 'var(--color-accent)',
           'accent-100': 'var(--color-accent-100)',
