@@ -82,11 +82,11 @@ export async function identifyExam(
   const t0 = Date.now();
 
   try {
-    const result = await openAIService.call(
-      examIdentifyPrompt,
-      { query, type, language },
-      { webSearch: true, jsonMode: true }
-    );
+    // No jsonMode here: web_search_preview + a forced json_object response format is a
+    // combination no other call site in this codebase relies on (research steps always
+    // stay plain-text; jsonMode-only calls never set webSearch). The prompt already asks
+    // for JSON-only output, and extractJson() below tolerates surrounding prose or fences.
+    const result = await openAIService.call(examIdentifyPrompt, { query, type, language }, { webSearch: true });
     const durationMs = Date.now() - t0;
     void metricsService.recordStep(
       logId,
@@ -260,14 +260,17 @@ export async function runAutoConfigJob(jobId: string, language: 'pt' | 'en'): Pr
 
     // A cancel that landed while the last stage was in flight already rolled back the
     // quota and marked the job — don't clobber that with a late 'done'.
-    const current = await prisma.autoConfigJob.findUnique({ where: { id: jobId }, select: { status: true } });
-    if (current?.status === 'cancelled') return;
+    if (await wasCancelled(jobId)) return;
 
     await prisma.autoConfigJob.update({
       where: { id: jobId },
       data: { status: 'done', stage: null, resultJson: JSON.stringify(parsed) },
     });
   } catch (err) {
+    // Same race as above, the other direction: a cancel already rolled back the quota
+    // and marked the job — don't clobber 'cancelled' with a late 'error'.
+    if (await wasCancelled(jobId)) return;
+
     console.error(`[auto-config-job] Job "${jobId}" failed:`, err);
     const { message, errorType } = sanitizeAutoConfigError(err);
 
@@ -282,6 +285,12 @@ export async function runAutoConfigJob(jobId: string, language: 'pt' | 'en'): Pr
       data: { status: 'error', errorMessage: message, errorType },
     });
   }
+}
+
+async function wasCancelled(jobId: string): Promise<boolean> {
+  const current = await prisma.autoConfigJob.findUnique({ where: { id: jobId }, select: { status: true } });
+
+  return current?.status === 'cancelled';
 }
 
 // Best-effort cancel: the in-flight LLM call isn't aborted (same limitation as

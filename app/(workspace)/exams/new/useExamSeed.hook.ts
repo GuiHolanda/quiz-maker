@@ -70,6 +70,10 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
   const [state, setState] = useState<ExamSeedState>({ kind: 'idle' });
   const eventSourceRef = useRef<EventSource | null>(null);
   const jobIdRef = useRef<string | null>(null);
+  // Flips true on the first user-initiated action (search, blank start, edital upload,
+  // discard). Guards the mount-time reconnect below: if the user already acted before the
+  // "is there a job in flight" check resolves, that stale result must not override them.
+  const userActedRef = useRef(false);
   const { showLimitIfBlocked } = useLimitModal();
 
   const closeStream = useCallback(() => {
@@ -78,6 +82,7 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
   }, []);
 
   const reset = useCallback(() => {
+    userActedRef.current = true;
     closeStream();
     if (jobIdRef.current) {
       const jobId = jobIdRef.current;
@@ -91,6 +96,7 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
   }, [closeStream]);
 
   const startBlank = useCallback(() => {
+    userActedRef.current = true;
     setState({ kind: 'ready', draft: emptyExamDraft(type), context: '', sources: [] });
   }, [type]);
 
@@ -145,6 +151,7 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
 
   const confirmMatch = useCallback(
     async (match: AutoConfigMatch) => {
+      userActedRef.current = true;
       const provider = match.provider ?? match.examBoard ?? '';
 
       setState({ kind: 'loading-blueprint', examName: match.label, provider, stage: null });
@@ -179,6 +186,7 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
 
       if (!trimmed) return;
 
+      userActedRef.current = true;
       setState({ kind: 'identifying' });
 
       try {
@@ -210,6 +218,7 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
 
   const uploadEdital = useCallback(
     async (file: File, role: string | undefined) => {
+      userActedRef.current = true;
       setState({ kind: 'extracting-edital' });
       try {
         const exam = await extractEdital(file, role);
@@ -233,11 +242,11 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
     let cancelled = false;
 
     void getActiveAutoConfigJob(type).then((job) => {
-      if (cancelled || !job || (job.status !== 'queued' && job.status !== 'running')) return;
+      if (cancelled || userActedRef.current || !job || (job.status !== 'queued' && job.status !== 'running')) return;
       setState({
         kind: 'loading-blueprint',
         examName: job.seedName,
-        provider: '',
+        provider: job.seedProvider ?? '',
         stage: (job.stage as AutoConfigStage) ?? null,
       });
       watchJob(job.id, job.seedName);

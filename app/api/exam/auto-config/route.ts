@@ -89,6 +89,15 @@ export async function GET(request: NextRequest) {
   const job = await getActiveAutoConfigJob(session.user.id, type);
 
   return NextResponse.json({
-    job: job ? { id: job.id, type: job.type, seedName: job.seedName, status: job.status, stage: job.stage } : null,
+    job: job
+      ? {
+          id: job.id,
+          type: job.type,
+          seedName: job.seedName,
+          seedProvider: job.seedProvider,
+          status: job.status,
+          stage: job.stage,
+        }
+      : null,
   });
 }

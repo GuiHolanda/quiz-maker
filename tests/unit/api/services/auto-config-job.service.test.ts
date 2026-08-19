@@ -237,6 +237,20 @@ describe('runAutoConfigJob', () => {
     });
   });
 
+  it('does not overwrite a cancelled job with error when a stage throws after cancellation', async () => {
+    prismaMock.autoConfigJob.findUnique
+      .mockResolvedValueOnce(makeJob() as any) // initial load
+      .mockResolvedValueOnce({ status: 'cancelled' } as any); // wasCancelled check in the catch block
+    openAICallMock.mockRejectedValue(new Error('boom'));
+
+    await runAutoConfigJob('job-1', 'en');
+
+    expect(quotaInstance.rollbackQuota).not.toHaveBeenCalled();
+    expect(prismaMock.autoConfigJob.update).not.toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: 'error' }) })
+    );
+  });
+
   it('does not overwrite a cancelled job with done', async () => {
     prismaMock.autoConfigJob.findUnique
       .mockResolvedValueOnce(makeJob() as any)

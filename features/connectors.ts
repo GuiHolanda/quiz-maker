@@ -227,14 +227,18 @@ export interface AutoConfigSeedPayload {
 export const createAutoConfigJob = (seed: AutoConfigSeedPayload): Promise<{ jobId: string }> =>
   api.post<{ jobId: string }>(AUTO_CONFIG_URL, seed).then((r) => r.data);
 
-export const getActiveAutoConfigJob = (
-  type: ExamType
-): Promise<{ id: string; type: ExamType; seedName: string; status: string; stage: string | null } | null> =>
+export interface ActiveAutoConfigJob {
+  readonly id: string;
+  readonly type: ExamType;
+  readonly seedName: string;
+  readonly seedProvider: string | null;
+  readonly status: string;
+  readonly stage: string | null;
+}
+
+export const getActiveAutoConfigJob = (type: ExamType): Promise<ActiveAutoConfigJob | null> =>
   api
-    .get<{ job: { id: string; type: ExamType; seedName: string; status: string; stage: string | null } | null }>(
-      AUTO_CONFIG_URL,
-      { params: { type } }
-    )
+    .get<{ job: ActiveAutoConfigJob | null }>(AUTO_CONFIG_URL, { params: { type } })
     .then((r) => r.data.job)
     .catch(() => null);
 
