@@ -53,10 +53,13 @@ Unified domain for `ExamType: 'certification' | 'public_exam'`.
 | `exam/browse-questions/summary` | GET | Question counts grouped by exam/section |
 | `exam/catalog` | GET | List exam templates (`isTemplate=true`), filtered by userId |
 | `exam/fork-exam` | POST | Fork catalog template into user's exam; returns full `Exam` object |
-| `exam/extract-from-edital` | POST | Extract exam structure from uploaded edital via OpenAI. Requires `pro`+, consumes `auto_config` quota. |
-| `exam/auto-config` | POST | Streaming SSE — headless certification identify/blueprint for the `/exams/new` AI seed. Requires `pro`+, consumes `auto_config` quota. Same `AiChatService` as `ai/ai-chat`, separately gated/metered. |
+| `exam/extract-from-edital` | POST | Extract exam structure from an uploaded edital via OpenAI (public_exam alternative to auto-config-by-name). Requires `pro`+, consumes `auto_config` quota. |
+| `exam/auto-config` | POST/GET | POST creates an `AutoConfigJob` and returns `{ jobId }`; GET `?type=` fetches the user's active job for reconnect. Requires `pro`+, consumes 1 `auto_config` unit for the whole pipeline. |
+| `exam/auto-config/identify` | POST | Cheap identify turn — `{ query, type, language }` → structured JSON matches. Requires `pro`+, does not itself consume `auto_config` quota (peeked via `checkAutoConfigAvailable`, not recorded). |
+| `exam/auto-config/[jobId]` | GET/DELETE | Polling fallback for job status / cancel (best-effort — refunds the quota unit, doesn't abort an in-flight LLM call). |
+| `exam/auto-config/[jobId]/stream` | GET | SSE: `progress` (`{ stage }`) / `done` (`{ exam }`) / `error` / `cancelled`. `maxDuration = 300`. |
 
-Services: `exam.service.ts`, `exam-question.service.ts`, `exam-catalog.service.ts`, `quiz-generator.service.ts`.
+Services: `exam.service.ts`, `exam-question.service.ts`, `exam-catalog.service.ts`, `quiz-generator.service.ts`, `auto-config-job.service.ts`.
 
 ### `generation-job/`
 
@@ -147,15 +150,16 @@ Rotas públicas (sem auth). Service: `features/services/demo-catalog.service.ts`
 | File | Responsibility |
 |---|---|
 | `openAI.service.ts` | `call(prompt, input)` via Responses API with `web_search_preview`. Returns `{ text, inputTokens, outputTokens }`. |
-| `quota.service.ts` | `checkAndRecordQuestions(userId, count)` → `{ logId }`. Also enforces `create_exam` and `checkAndRecordAutoConfig(userId)` (per-period `autoConfigThisPeriod`, `PLAN_LIMITS[plan].autoConfigPerPeriod`). |
-| `metrics.service.ts` | `recordStep(logId, step, tokens, durationMs)` (fire-and-forget) + `finalize(logId, ms)`. |
+| `quota.service.ts` | `checkAndRecordQuestions(userId, count)` → `{ logId }`. Also enforces `create_exam` and `checkAndRecordAutoConfig(userId)` (per-period `autoConfigThisPeriod`, `PLAN_LIMITS[plan].autoConfigPerPeriod`). `checkAutoConfigAvailable(userId)` is a read-only peek (no increment) used before the identify call. `rollbackQuota(logId)` refunds `questionsGeneratedThisPeriod` or `autoConfigThisPeriod` depending on the log's `action`. |
+| `metrics.service.ts` | `createLog(userId, action, count = 1)` — `count: 0` tracks tokens without consuming a billable unit (used by the auto-config identify call). `recordStep(logId, step, tokens, durationMs)` (fire-and-forget) + `finalize(logId, ms)`. |
 | `exam.service.ts` | Unified CRUD for Exam/Section/Topic (both types). |
 | `exam-question.service.ts` | `saveAnswers`, `saveExplanations`. |
 | `exam-catalog.service.ts` | `getTemplates(userId)`, `forkExam`, `promoteExam`, admin catalog entries. |
 | `quiz-generator.service.ts` | Distribute questions across sections. |
 | `question-bank.service.ts` | Unified question search across exam types. |
 | `generation-job.service.ts` | Async batch generation — batches of 5 topics, per-topic status tracking. |
-| `aiChat.service.ts` | Validate messages, select prompt, stream response. |
+| `auto-config-job.service.ts` | Auto-config pipeline — `identifyExam` (cheap lookup) + `createAutoConfigJob`/`runAutoConfigJob`/`cancelAutoConfigJob` (research→review→format, one `AutoConfigJob` row, one `auto_config` unit). |
+| `aiChat.service.ts` | Validate messages, select prompt, stream response — powers the `pro_ai` chat drawer only; unrelated to the auto-config job pipeline above. |
 
 Co-located services (not in `features/services/`): auth services in `app/api/auth/`, mock exam in `app/api/mock-exams/`, admin in `app/api/admin/`.
 

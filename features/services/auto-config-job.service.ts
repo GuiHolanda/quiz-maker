@@ -43,7 +43,9 @@ function validateIdentifyResult(data: unknown): IdentifyResult {
   const matches: IdentifyMatch[] = rawMatches
     .filter(
       (m): m is Record<string, unknown> =>
-        !!m && typeof m === 'object' && typeof (m as Record<string, unknown>).label === 'string' &&
+        !!m &&
+        typeof m === 'object' &&
+        typeof (m as Record<string, unknown>).label === 'string' &&
         ((m as Record<string, unknown>).label as string).trim() !== ''
     )
     .slice(0, 5)
@@ -153,7 +155,14 @@ async function setStage(jobId: string, stage: AutoConfigStage): Promise<void> {
 
 function buildResearchInput(
   type: ExamType,
-  job: { seedName: string; seedProvider: string | null; seedKey: string | null; seedBoard: string | null; seedRole: string | null; seedYear: number | null },
+  job: {
+    seedName: string;
+    seedProvider: string | null;
+    seedKey: string | null;
+    seedBoard: string | null;
+    seedRole: string | null;
+    seedYear: number | null;
+  },
   language: 'pt' | 'en'
 ): Record<string, unknown> {
   if (type === 'certification') {
@@ -171,7 +180,12 @@ function buildReviewInput(
   if (type === 'certification') {
     return { certification_name: job.seedName, draft_blueprint: draftBlueprint, language };
   }
-  return { public_exam_name: job.seedName, role: job.seedRole, exam_board_name: job.seedBoard, draft_blueprint: draftBlueprint };
+  return {
+    public_exam_name: job.seedName,
+    role: job.seedRole,
+    exam_board_name: job.seedBoard,
+    draft_blueprint: draftBlueprint,
+  };
 }
 
 function buildFormatInput(

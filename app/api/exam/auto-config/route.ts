@@ -2,18 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { AiChatService } from '@/features/services/aiChat.service';
+import { createAutoConfigJob, getActiveAutoConfigJob } from '@/features/services/auto-config-job.service';
 import { QuotaService } from '@/features/services/quota.service';
 import { canEditExams } from '@/config/constants';
 import { toApiErrorResponse } from '@/lib/api-error';
+import type { ExamType } from '@/shared/types';
 
-const aiChatService = new AiChatService();
 const quotaService = new QuotaService();
 
-// Headless counterpart to /api/ai/ai-chat used by the structured auto-config seed (identify
-// + blueprint turns in useExamSeed.hook.ts) — same underlying service, but gated at `pro`+
-// (not `pro_ai`-only like the conversational drawer) and metered against the auto_config
-// quota instead of being unlimited. See plan §3/§4.
+export const maxDuration = 60;
+
+// Creates the auto-config job for the seed the user confirmed via /auto-config/identify.
+// Charges one auto_config unit for the whole research→review→format pipeline and returns
+// the jobId immediately — progress is followed over SSE at /auto-config/[jobId]/stream.
 export async function POST(request: NextRequest) {
   const session = await auth();
 
@@ -37,23 +38,57 @@ export async function POST(request: NextRequest) {
     // Exam cap first: a user who can't save another exam must not spend an LLM call —
     // nor an auto_config unit — on a blueprint that has nowhere to land.
     await quotaService.check(session.user.id, 'create_exam', 1);
-    await quotaService.checkAndRecordAutoConfig(session.user.id);
 
     const body = await request.json().catch(() => null);
-    const { messages, language } = aiChatService.validate(body);
-    const stream = await aiChatService.streamChat(session.user.id, messages, language);
+    if (!body || typeof body !== 'object') {
+      throw Object.assign(new Error('Invalid request body'), { status: 400 });
+    }
+    const { type, name, key, provider, examBoard, role, year, language } = body as Record<string, unknown>;
 
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
-      },
+    if (type !== 'certification' && type !== 'public_exam') {
+      throw Object.assign(new Error('type must be "certification" or "public_exam"'), { status: 400 });
+    }
+    if (typeof name !== 'string' || !name.trim()) {
+      throw Object.assign(new Error('name is required'), { status: 400 });
+    }
+
+    const { jobId } = await createAutoConfigJob(session.user.id, {
+      type: type as ExamType,
+      name: name.trim(),
+      key: typeof key === 'string' ? key : null,
+      provider: typeof provider === 'string' ? provider : null,
+      examBoard: typeof examBoard === 'string' ? examBoard : null,
+      role: typeof role === 'string' ? role : null,
+      year: typeof year === 'number' ? year : null,
+      language: language === 'pt' ? 'pt' : 'en',
     });
+
+    return NextResponse.json({ jobId }, { status: 201 });
   } catch (err: unknown) {
-    console.error('Failed to run auto-config:', err);
+    console.error('Failed to create auto-config job:', err);
     const { status, ...body } = toApiErrorResponse(err);
 
     return NextResponse.json(body, { status });
   }
+}
+
+// Reconnect support: /exams/new checks for an already-running job on mount so a reload
+// mid-pipeline doesn't strand the user on a blank picker.
+export async function GET(request: NextRequest) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const type = request.nextUrl.searchParams.get('type');
+  if (type !== 'certification' && type !== 'public_exam') {
+    return NextResponse.json({ error: 'type must be "certification" or "public_exam"' }, { status: 400 });
+  }
+
+  const job = await getActiveAutoConfigJob(session.user.id, type);
+
+  return NextResponse.json({
+    job: job ? { id: job.id, type: job.type, seedName: job.seedName, status: job.status, stage: job.stage } : null,
+  });
 }

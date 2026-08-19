@@ -84,10 +84,9 @@ export function validateExamBlueprint(data: unknown, type: ExamType): ParsedExam
       throw Object.assign(new Error('Blueprint topic missing required field: name'), { status: 502 });
     }
     if (typeof topic.minQuestions !== 'number' || typeof topic.maxQuestions !== 'number') {
-      throw Object.assign(
-        new Error(`Blueprint topic "${topic.name}" missing minQuestions/maxQuestions`),
-        { status: 502 }
-      );
+      throw Object.assign(new Error(`Blueprint topic "${topic.name}" missing minQuestions/maxQuestions`), {
+        status: 502,
+      });
     }
 
     return {
@@ -124,6 +123,8 @@ export function validateExamBlueprint(data: unknown, type: ExamType): ParsedExam
   return {
     examDraft,
     context: typeof payload.context === 'string' ? payload.context : '',
-    sources: Array.isArray(payload.sources) ? (payload.sources as unknown[]).filter((s): s is string => typeof s === 'string') : [],
+    sources: Array.isArray(payload.sources)
+      ? (payload.sources as unknown[]).filter((s): s is string => typeof s === 'string')
+      : [],
   };
 }
