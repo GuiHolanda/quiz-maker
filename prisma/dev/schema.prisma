@@ -345,8 +345,8 @@ model AutoConfigJob {
   seedBoard    String?
   seedRole     String?
   seedYear     Int?
-  status       String   @default("queued") // "queued" | "running" | "done" | "error"
-  stage        String? // "identify" | "research" | "review" | "format"
+  status       String   @default("queued") // "queued" | "running" | "done" | "error" | "cancelled"
+  stage        String? // "research" | "review" | "format"
   resultJson   String?
   errorMessage String?
   errorType    String? // "quota" | "generation" | "timeout" | null

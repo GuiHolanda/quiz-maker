@@ -338,6 +338,41 @@ describe('QuotaService', () => {
     });
   });
 
+  describe('checkAutoConfigAvailable', () => {
+    it('throws 403 for free plan (autoConfigPerPeriod = 0) without recording anything', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(makeUser({ plan: 'free', autoConfigThisPeriod: 0 }));
+
+      await expect(service.checkAutoConfigAvailable('user-1')).rejects.toMatchObject({
+        status: 403,
+        body: { error: 'quota_exceeded', code: 'auto_config_limit', limit: 0 },
+      });
+      expect(prismaMock.user.update).not.toHaveBeenCalled();
+      expect(prismaMock.user.updateMany).not.toHaveBeenCalled();
+      expect(prismaMock.usageLog.create).not.toHaveBeenCalled();
+    });
+
+    it('resolves for pro plan under the period limit', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(makeUser({ plan: 'pro', autoConfigThisPeriod: 3 }));
+
+      await expect(service.checkAutoConfigAvailable('user-1')).resolves.toBeUndefined();
+    });
+
+    it('throws 403 for pro plan when the period limit is already reached', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(makeUser({ plan: 'pro', autoConfigThisPeriod: 15 }));
+
+      await expect(service.checkAutoConfigAvailable('user-1')).rejects.toMatchObject({
+        status: 403,
+        body: { error: 'quota_exceeded', code: 'auto_config_limit', limit: 15, used: 15 },
+      });
+    });
+
+    it('resolves for unlimited plans (tester)', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(makeUser({ plan: 'tester', autoConfigThisPeriod: 999 }));
+
+      await expect(service.checkAutoConfigAvailable('user-1')).resolves.toBeUndefined();
+    });
+  });
+
   describe('rollbackQuota', () => {
     it('decrements the period counter and deletes the usage log', async () => {
       prismaMock.usageLog.findUnique.mockResolvedValue({
@@ -366,6 +401,26 @@ describe('QuotaService', () => {
 
       expect(prismaMock.user.update).not.toHaveBeenCalled();
       expect(prismaMock.usageLog.delete).not.toHaveBeenCalled();
+    });
+
+    it('decrements autoConfigThisPeriod for an auto_config log', async () => {
+      prismaMock.usageLog.findUnique.mockResolvedValue({
+        id: 'log-2',
+        userId: 'user-1',
+        count: 1,
+        action: 'auto_config',
+      } as any);
+      prismaMock.user.update.mockResolvedValue({} as any);
+      prismaMock.usageLog.delete.mockResolvedValue({} as any);
+
+      const service = new QuotaService();
+      await service.rollbackQuota('log-2');
+
+      expect(prismaMock.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { autoConfigThisPeriod: { decrement: 1 } },
+      });
+      expect(prismaMock.usageLog.delete).toHaveBeenCalledWith({ where: { id: 'log-2' } });
     });
   });
 });

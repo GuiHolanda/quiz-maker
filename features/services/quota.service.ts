@@ -123,6 +123,28 @@ export class QuotaService {
     return { logId: log.id };
   }
 
+  // Read-only peek at auto_config quota, used before the (cheap) identify call — a user
+  // with no units left shouldn't burn tokens on identification when the job right after
+  // it would just reject them. Does not record anything; checkAndRecordAutoConfig still
+  // does the atomic check+increment when the job itself is created.
+  async checkAutoConfigAvailable(userId: string): Promise<void> {
+    const user = await this.getUserWithPeriodReset(userId);
+    const plan = this.resolvePlan(user.plan);
+    const limit = PLAN_LIMITS[plan].autoConfigPerPeriod;
+
+    if (limit === Infinity) return;
+
+    if (user.autoConfigThisPeriod >= limit) {
+      throw quotaError(
+        'auto_config_limit',
+        `Auto-config limit reached (${limit}/period)`,
+        limit,
+        user.autoConfigThisPeriod,
+        plan
+      );
+    }
+  }
+
   // Atomic check+record for AI auto-config (certification search or edital extraction),
   // one unit per call — mirrors checkAndRecordQuestions but against autoConfigThisPeriod.
   // customQuotaOverride doesn't apply here (it's questions-only, see CLAUDE.md).
@@ -158,15 +180,19 @@ export class QuotaService {
     return { logId: log.id };
   }
 
-  // Undo a prior checkAndRecordQuestions when generation ultimately failed: give the
-  // user their quota back and drop the usage log so it never counts toward cost analytics.
+  // Undo a prior checkAndRecordQuestions/checkAndRecordAutoConfig when the pipeline
+  // ultimately failed: give the user their quota back and drop the usage log so it
+  // never counts toward cost analytics. Which period counter to refund follows the
+  // log's own action, so one method serves both quota families.
   async rollbackQuota(logId: string): Promise<void> {
     const log = await prisma.usageLog.findUnique({ where: { id: logId } });
     if (!log) return;
 
+    const field = log.action === 'auto_config' ? 'autoConfigThisPeriod' : 'questionsGeneratedThisPeriod';
+
     await prisma.user.update({
       where: { id: log.userId },
-      data: { questionsGeneratedThisPeriod: { decrement: log.count } },
+      data: { [field]: { decrement: log.count } },
     });
     await prisma.usageLog.delete({ where: { id: logId } });
   }
