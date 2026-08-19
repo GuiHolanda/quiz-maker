@@ -24,12 +24,14 @@ export async function POST(request: NextRequest) {
 
   if (!dbUser || !canEditExams(dbUser.plan)) {
     return NextResponse.json(
-      { error: 'plan_required', message: 'Edital extraction requires the pro plan or higher' },
+      { error: 'plan_required', code: 'plan_required', message: 'Edital extraction requires the pro plan or higher' },
       { status: 403 }
     );
   }
 
   try {
+    // Same ordering as /auto-config: never parse an edital the user can't turn into an exam.
+    await quotaService.check(session.user.id, 'create_exam', 1);
     await quotaService.checkAndRecordAutoConfig(session.user.id);
 
     const formData = await request.formData().catch(() => null);

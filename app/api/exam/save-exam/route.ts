@@ -17,7 +17,11 @@ async function requireExamEditAccess(userId: string): Promise<NextResponse | nul
 
   if (!dbUser || !canEditExams(dbUser.plan)) {
     return NextResponse.json(
-      { error: 'plan_required', message: 'Creating or editing exams requires the pro plan or higher' },
+      {
+        error: 'plan_required',
+        code: 'plan_required',
+        message: 'Creating or editing exams requires the pro plan or higher',
+      },
       { status: 403 }
     );
   }

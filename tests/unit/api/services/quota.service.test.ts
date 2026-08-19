@@ -48,7 +48,7 @@ describe('QuotaService', () => {
 
     await expect(promise).rejects.toMatchObject({
       status: 403,
-      body: { error: 'quota_exceeded' },
+      body: { error: 'quota_exceeded', code: 'questions_limit' },
     });
   });
 
@@ -71,7 +71,7 @@ describe('QuotaService', () => {
 
     await expect(promise).rejects.toMatchObject({
       status: 403,
-      body: { error: 'quota_exceeded' },
+      body: { error: 'quota_exceeded', code: 'questions_limit' },
     });
   });
 
@@ -112,9 +112,11 @@ describe('QuotaService', () => {
 
     const promise = service.check('user-1', 'create_exam', 1);
 
+    // `code` is what the client keys the limit modal off — a wrong or missing one sends
+    // the user a generic error instead of the exam-cap explanation.
     await expect(promise).rejects.toMatchObject({
       status: 403,
-      body: { error: 'quota_exceeded' },
+      body: { error: 'quota_exceeded', code: 'exam_limit', limit: 2, used: 2, plan: 'free' },
     });
   });
 
@@ -188,7 +190,7 @@ describe('QuotaService', () => {
 
       await expect(promise).rejects.toMatchObject({
         status: 403,
-        body: { error: 'quota_exceeded' },
+        body: { error: 'quota_exceeded', code: 'questions_limit' },
       });
     });
 
@@ -281,7 +283,7 @@ describe('QuotaService', () => {
 
       await expect(promise).rejects.toMatchObject({
         status: 403,
-        body: { error: 'quota_exceeded', limit: 0 },
+        body: { error: 'quota_exceeded', code: 'auto_config_limit', limit: 0 },
       });
     });
 
@@ -315,7 +317,7 @@ describe('QuotaService', () => {
 
       await expect(promise).rejects.toMatchObject({
         status: 403,
-        body: { error: 'quota_exceeded', limit: 15, used: 15 },
+        body: { error: 'quota_exceeded', code: 'auto_config_limit', limit: 15, used: 15 },
       });
     });
 

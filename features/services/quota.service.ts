@@ -1,9 +1,19 @@
-import type { UserPlan, QuotaAction, UsageStats } from '@/shared/types';
+import type { UserPlan, QuotaAction, UsageStats, QuotaLimitCode } from '@/shared/types';
 
 import { prisma } from '@/lib/prisma';
 import { PLAN_LIMITS } from '@/config/constants';
 
 const PERIOD_DAYS = 30;
+
+// Every quota rejection carries the same shape: `error` stays 'quota_exceeded' for
+// backward compatibility, `code` says *which* limit so the client can pick the right
+// copy and upgrade CTA instead of falling back to a generic failure toast.
+function quotaError(code: QuotaLimitCode, message: string, limit: number, used: number, plan: UserPlan) {
+  return Object.assign(new Error(message), {
+    status: 403,
+    body: { error: 'quota_exceeded', code, message, limit, used, plan },
+  });
+}
 
 export class QuotaService {
   private async getUserWithPeriodReset(userId: string) {
@@ -45,17 +55,7 @@ export class QuotaService {
       const limit = this.resolveQuestionsLimit(user);
 
       if (used + count > limit) {
-        const err = Object.assign(new Error(`Question generation limit reached (${limit}/period)`), {
-          status: 403,
-          body: {
-            error: 'quota_exceeded',
-            message: `Question generation limit reached (${limit}/period)`,
-            limit,
-            used,
-            plan,
-          },
-        });
-        throw err;
+        throw quotaError('questions_limit', `Question generation limit reached (${limit}/period)`, limit, used, plan);
       }
     }
 
@@ -64,17 +64,7 @@ export class QuotaService {
       const limit = limits.maxExams;
 
       if (limit !== Infinity && examCount >= limit) {
-        const err = Object.assign(new Error(`Exam limit reached (${limit})`), {
-          status: 403,
-          body: {
-            error: 'quota_exceeded',
-            message: `Exam limit reached (${limit})`,
-            limit,
-            used: examCount,
-            plan,
-          },
-        });
-        throw err;
+        throw quotaError('exam_limit', `Exam limit reached (${limit})`, limit, examCount, plan);
       }
     }
   }
@@ -120,18 +110,13 @@ export class QuotaService {
     });
 
     if (updated.count === 0) {
-      const used = user.questionsGeneratedThisPeriod;
-      const err = Object.assign(new Error(`Question generation limit reached (${limit}/period)`), {
-        status: 403,
-        body: {
-          error: 'quota_exceeded',
-          message: `Question generation limit reached (${limit}/period)`,
-          limit,
-          used,
-          plan,
-        },
-      });
-      throw err;
+      throw quotaError(
+        'questions_limit',
+        `Question generation limit reached (${limit}/period)`,
+        limit,
+        user.questionsGeneratedThisPeriod,
+        plan
+      );
     }
 
     const log = await prisma.usageLog.create({ data: { userId, action: 'generate_questions', count, ...contextData } });
@@ -160,18 +145,13 @@ export class QuotaService {
     });
 
     if (updated.count === 0) {
-      const used = user.autoConfigThisPeriod;
-      const err = Object.assign(new Error(`Auto-config limit reached (${limit}/period)`), {
-        status: 403,
-        body: {
-          error: 'quota_exceeded',
-          message: `Auto-config limit reached (${limit}/period)`,
-          limit,
-          used,
-          plan,
-        },
-      });
-      throw err;
+      throw quotaError(
+        'auto_config_limit',
+        `Auto-config limit reached (${limit}/period)`,
+        limit,
+        user.autoConfigThisPeriod,
+        plan
+      );
     }
 
     const log = await prisma.usageLog.create({ data: { userId, action: 'auto_config', count: 1 } });

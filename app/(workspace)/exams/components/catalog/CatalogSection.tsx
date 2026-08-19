@@ -8,6 +8,7 @@ import { ExamCard } from '../list/ExamCard';
 import { getCatalogExams, forkCatalogExam } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
+import { useLimitModal } from '@/features/hooks/useLimitModal.hook';
 import { EntityListShell } from '@/shared/components/ui/EntityListShell';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
@@ -24,6 +25,7 @@ interface CatalogSectionProps {
 export function CatalogSection({ type }: CatalogSectionProps) {
   const { t } = useTranslation();
   const { addExam } = useExamsContext();
+  const { showLimitIfBlocked } = useLimitModal();
   const [templates, setTemplates] = useState<CatalogExam[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [confirmingExam, setConfirmingExam] = useState<CatalogExam | null>(null);
@@ -47,8 +49,14 @@ export function CatalogSection({ type }: CatalogSectionProps) {
       setTemplates((prev) => prev.map((t) => (t.id === confirmingExam.id ? { ...t, isSubscribed: true } : t)));
       setConfirmingExam(null);
       notify.success(t('catalog.forkSuccessTitle'), t('catalog.forkSuccessDescription'));
-    } catch {
-      notify.error(t('catalog.forkErrorTitle'));
+    } catch (err: unknown) {
+      // Hitting the exam cap is an expected outcome here, not a failure — close the
+      // confirm dialog and let the limit modal explain it with an upgrade path.
+      if (showLimitIfBlocked(err)) {
+        setConfirmingExam(null);
+      } else {
+        notify.error(t('catalog.forkErrorTitle'));
+      }
     } finally {
       setIsForking(false);
     }

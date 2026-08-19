@@ -10,6 +10,8 @@ import { BreadcrumbItem, Breadcrumbs } from '@heroui/breadcrumbs';
 import { ExamsProvider } from '@/features/providers/exams.provider';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
+import { useLimitModal } from '@/features/hooks/useLimitModal.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
 import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
@@ -53,6 +55,8 @@ function NewExamContent() {
   const searchParams = useSearchParams();
   const { addExam } = useExamsContext();
   const { data: session } = useSession();
+  const { usage } = useUsageContext();
+  const { showLimit } = useLimitModal();
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
 
   const rawType = searchParams.get('type');
@@ -64,6 +68,10 @@ function NewExamContent() {
 
   const seed = useExamSeed(language);
   const canEdit = !session?.user?.plan || canEditExams(session.user.plan);
+  // -1 is the unlimited sentinel. Checked here so the cap blocks *entry* to every seed —
+  // AI search, edital upload and blank alike — instead of only surfacing at save, after
+  // the user has already spent an LLM call or filled the whole editor by hand.
+  const isAtExamCap = usage != null && usage.examsLimit !== -1 && usage.examsUsed >= usage.examsLimit;
   const [hydrated, setHydrated] = useState(false);
   const [resumedDraft, setResumedDraft] = useState<Exam | null>(null);
 
@@ -126,6 +134,32 @@ function NewExamContent() {
           title={t('exam.createUpgradeWallTitle')}
         />
         <UpgradeModal isOpen={isUpgradeOpen} product="pro" onClose={() => setIsUpgradeOpen(false)} />
+      </PageHeader>
+    );
+  }
+
+  if (isAtExamCap) {
+    return (
+      <PageHeader breadcrumbs={breadcrumbs} title={pageTitle}>
+        <IllustratedEmptyState
+          action={{
+            label: t('billing.upgradeModal.cta'),
+            onPress: () =>
+              showLimit({
+                code: 'exam_limit',
+                limit: usage.examsLimit,
+                used: usage.examsUsed,
+                plan: usage.plan,
+              }),
+          }}
+          description={t('limit.examWallDescription', {
+            used: String(usage.examsUsed),
+            limit: String(usage.examsLimit),
+          })}
+          icon={config.icon}
+          secondaryAction={{ label: t('common.back'), href: listHref }}
+          title={t('limit.examTitle')}
+        />
       </PageHeader>
     );
   }

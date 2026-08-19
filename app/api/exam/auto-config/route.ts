@@ -28,12 +28,15 @@ export async function POST(request: NextRequest) {
 
   if (!dbUser || !canEditExams(dbUser.plan)) {
     return NextResponse.json(
-      { error: 'plan_required', message: 'Auto-config requires the pro plan or higher' },
+      { error: 'plan_required', code: 'plan_required', message: 'Auto-config requires the pro plan or higher' },
       { status: 403 }
     );
   }
 
   try {
+    // Exam cap first: a user who can't save another exam must not spend an LLM call —
+    // nor an auto_config unit — on a blueprint that has nowhere to land.
+    await quotaService.check(session.user.id, 'create_exam', 1);
     await quotaService.checkAndRecordAutoConfig(session.user.id);
 
     const body = await request.json().catch(() => null);

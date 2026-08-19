@@ -5,6 +5,7 @@ import { Exam, ExamSection, ExamTopic } from '@/shared/types';
 import type { QuestionFormatKey } from '@/config/question-formats';
 import { saveExam, updateExam } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { useLimitModal } from '@/features/hooks/useLimitModal.hook';
 import { notify } from '@/shared/lib/notify';
 
 export type ExamDraftStatus = 'editing' | 'saving' | 'saved' | 'error';
@@ -39,6 +40,7 @@ export function useExamDraftCard(initialDraft: Exam, mode: 'create' | 'edit' = '
   const [draft, setDraft] = useState<Exam>(initialDraft);
   const [status, setStatus] = useState<ExamDraftStatus>('editing');
   const { t } = useTranslation();
+  const { showLimitIfBlocked } = useLimitModal();
 
   const updateField = useCallback(
     (field: keyof Pick<Exam, 'name' | 'role' | 'year' | 'key'>, value: string | number | null) => {
@@ -176,12 +178,10 @@ export function useExamDraftCard(initialDraft: Exam, mode: 'create' | 'edit' = '
         return 'duplicate';
       }
 
-      // The only quota check on this endpoint is create_exam's maxExams cap — any 403 here
-      // means that limit, not a permissions issue. The server drops the structured
-      // { limit, used, plan } payload down to a plain English message (see lib/api-error.ts),
-      // so we can't show the exact number, but a clear localized message beats a raw pass-through.
-      if (httpStatus === 403) {
-        notify.error(t('exam.examLimitReached'), t('exam.examLimitReachedDescription'));
+      // A 403 here is the exam cap or the plan gate — both are expected states with a
+      // concrete next step, so they get the limit modal (numbers + upgrade CTA) rather
+      // than a toast the user has to interpret.
+      if (showLimitIfBlocked(err)) {
         setStatus('error');
 
         return 'error';
@@ -192,7 +192,7 @@ export function useExamDraftCard(initialDraft: Exam, mode: 'create' | 'edit' = '
 
       return 'error';
     }
-  }, [draft, t]);
+  }, [draft, mode, t, showLimitIfBlocked]);
 
   return {
     draft,

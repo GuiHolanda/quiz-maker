@@ -6,6 +6,7 @@ import { useCallback, useRef, useState } from 'react';
 import { extractEdital } from '@/features/connectors';
 import { parseCertificationData } from '@/lib/parse-certification-data';
 import { parseIdentifyResponse, type CertificationMatch } from '@/lib/parse-identify-response';
+import { useLimitModal } from '@/features/hooks/useLimitModal.hook';
 import { DEFAULT_QUESTION_FORMAT } from '@/config/question-formats';
 import { AUTO_CONFIG_URL } from '@/config/constants';
 
@@ -58,8 +59,14 @@ async function streamAiChatOnce(messages: ChatMessage[], language: Language, sig
   });
 
   if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.message || `HTTP ${response.status}`);
+    const body = await response.json().catch(() => ({}));
+
+    // Keep status + payload on the error: a 403 here is a quota/plan wall the caller must
+    // show as the limit modal, and a bare Error would collapse it into a generic failure.
+    throw Object.assign(new Error(body.message || `HTTP ${response.status}`), {
+      status: response.status,
+      response: { status: response.status, data: body },
+    });
   }
   if (!response.body) throw new Error('No response body');
 
@@ -105,6 +112,7 @@ interface UseExamSeedReturn {
 export function useExamSeed(language: Language): UseExamSeedReturn {
   const [state, setState] = useState<ExamSeedState>({ kind: 'idle' });
   const abortRef = useRef<AbortController | null>(null);
+  const { showLimitIfBlocked } = useLimitModal();
 
   const reset = useCallback(() => {
     abortRef.current?.abort();
@@ -147,10 +155,17 @@ export function useExamSeed(language: Language): UseExamSeedReturn {
         setState({ kind: 'ready', draft: parsed.examDraft, context: parsed.context, sources: parsed.sources });
       } catch (err) {
         if ((err as Error)?.name === 'AbortError') return;
+        // A quota/plan wall isn't a seed failure: opening a blank editor would only lead
+        // to a second block at save. Return to the picker and let the modal explain.
+        if (showLimitIfBlocked(err)) {
+          setState({ kind: 'idle' });
+
+          return;
+        }
         setState({ kind: 'error', messageKey: 'error.aiSeedNoBlueprint', seedName: examName });
       }
     },
-    [language]
+    [language, showLimitIfBlocked]
   );
 
   const identifyByName = useCallback(
@@ -184,10 +199,15 @@ export function useExamSeed(language: Language): UseExamSeedReturn {
         await fetchBlueprint(trimmed, parsed.match.provider, text, confirmation);
       } catch (err) {
         if ((err as Error)?.name === 'AbortError') return;
+        if (showLimitIfBlocked(err)) {
+          setState({ kind: 'idle' });
+
+          return;
+        }
         setState({ kind: 'error', messageKey: 'error.aiSeedNoIdentify', seedName: trimmed });
       }
     },
-    [language, fetchBlueprint]
+    [language, fetchBlueprint, showLimitIfBlocked]
   );
 
   const confirmMatch = useCallback(
@@ -203,16 +223,24 @@ export function useExamSeed(language: Language): UseExamSeedReturn {
     [language, fetchBlueprint]
   );
 
-  const uploadEdital = useCallback(async (file: File, role: string | undefined) => {
-    setState({ kind: 'extracting-edital' });
-    try {
-      const exam = await extractEdital(file, role);
+  const uploadEdital = useCallback(
+    async (file: File, role: string | undefined) => {
+      setState({ kind: 'extracting-edital' });
+      try {
+        const exam = await extractEdital(file, role);
 
-      setState({ kind: 'ready', draft: exam, context: '', sources: [] });
-    } catch {
-      setState({ kind: 'error', messageKey: 'error.aiSeedEditalFailed', seedName: '' });
-    }
-  }, []);
+        setState({ kind: 'ready', draft: exam, context: '', sources: [] });
+      } catch (err: unknown) {
+        if (showLimitIfBlocked(err)) {
+          setState({ kind: 'idle' });
+
+          return;
+        }
+        setState({ kind: 'error', messageKey: 'error.aiSeedEditalFailed', seedName: '' });
+      }
+    },
+    [showLimitIfBlocked]
+  );
 
   return { state, identifyByName, confirmMatch, uploadEdital, startBlank, reset };
 }
