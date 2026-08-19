@@ -1,4 +1,4 @@
-import type { PromptDefinition } from './types';
+import type { PromptDefinition } from '../types';
 
 export interface PublicExamExplanationsInput {
   readonly public_exam_name: string;

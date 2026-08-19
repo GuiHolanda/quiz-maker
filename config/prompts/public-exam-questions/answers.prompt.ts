@@ -1,5 +1,5 @@
 import type { AIExamQuestion } from '@/shared/types';
-import type { PromptDefinition } from './types';
+import type { PromptDefinition } from '../types';
 import { labelList, resolveQuestionFormat } from '@/config/question-formats';
 import type { QuestionFormatKey } from '@/config/question-formats';
 

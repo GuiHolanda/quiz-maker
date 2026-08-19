@@ -1,4 +1,4 @@
-import type { PromptDefinition } from './types';
+import type { PromptDefinition } from '../types';
 import { correctCountRange, resolveQuestionFormat } from '@/config/question-formats';
 import type { QuestionFormatKey } from '@/config/question-formats';
 

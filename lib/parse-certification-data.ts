@@ -7,10 +7,10 @@ export interface ParsedCertResponse {
 }
 
 // Extracts and validates the ```certification-data``` JSON block the AI_CHAT_TOPICS_PROMPT
-// (config/prompts/ai-chat-topics.prompt.ts) emits once a certification is confirmed, and maps
-// it onto the Exam draft shape. Shared by the chat drawer (useAiChat.hook.ts) and the
-// headless certification-identify flow on /exams/new — both talk to the same /api/ai/ai-chat
-// endpoint and must parse its output the same way.
+// (config/prompts/ai-chat/topics.prompt.ts) emits once a certification is confirmed, and maps
+// it onto the Exam draft shape. Used by the chat drawer (useAiChat.hook.ts) — the headless
+// auto-config flow on /exams/new has its own pipeline (features/services/auto-config-job.service.ts)
+// and does not go through /api/ai/ai-chat or this parser.
 export function parseCertificationData(text: string): ParsedCertResponse | null {
   const match = /```certification-data\s*\n([\s\S]*?)```/.exec(text);
 

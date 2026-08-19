@@ -1,4 +1,4 @@
-import type { PromptDefinition } from './types';
+import type { PromptDefinition } from '../types';
 
 export interface CertificationConfigReviewInput {
   readonly certification_name: string;

@@ -154,17 +154,20 @@ For multi-step flows, use manual `try/catch`:
 
 ### Prompt management (LLM)
 
-All prompts in `config/prompts/` as TypeScript files — none stored in the OpenAI dashboard. Each exports a `PromptDefinition<TInput>` with a `build(input): string` method.
+All prompts in `config/prompts/` as TypeScript files, grouped into subfolders by domain — none stored in the OpenAI dashboard. Each exports a `PromptDefinition<TInput>` with a `build(input): string` method (the two `ai-chat/` prompts are the one exception: bare template-string constants, since `AiChatService` doesn't go through `OpenAIService`).
 
 **Calling:** always `openAIService.call(prompt, input)` — never `openAIClient` directly. **Model:** `OPENAI_MODEL` env var (default `gpt-4o`). **Exception:** `AiChatService` uses streaming with its own `responses.create()`.
 
-Dispatch by exam type via `EXAM_PROMPTS: Record<ExamType, { research, review, format, answers, explanations }>` in `config/prompts/index.ts`.
+Dispatch by exam type via `EXAM_PROMPTS: Record<ExamType, { research, review, format, answers, explanations }>` (question generation) and `AUTO_CONFIG_PROMPTS: Record<ExamType, { research, review, format }>` (auto-config blueprint), both in `config/prompts/index.ts`.
 
-| File | Domain |
+| Folder | Domain |
 |---|---|
-| `certification-questions/answers/explanations.prompt.ts` | Any certification |
-| `public-exam-questions/answers/explanations.prompt.ts` | Concursos brasileiros |
-| `ai-chat-identify/topics.prompt.ts` | AI chat (streaming) |
+| `certification-questions/` | Question generation for any certification — `research`/`review`/`format`/`answers`/`explanations.prompt.ts` |
+| `public-exam-questions/` | Question generation for concursos brasileiros — same five-file shape |
+| `certification-config/` | Auto-config blueprint pipeline for certifications — `research`/`review`/`format.prompt.ts` |
+| `public-exam-config/` | Auto-config blueprint pipeline for concursos — same three-file shape |
+| `ai-chat/` | Conversational chat drawer (streaming) — `identify`/`topics.prompt.ts` |
+| `exam-identify.prompt.ts` | Auto-config's shared identify lookup — one file, used by both exam types |
 
 ### Imports
 - All absolute imports use `@/` alias (maps to project root)
