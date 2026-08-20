@@ -58,7 +58,7 @@ export function NewExamHeader({
         </p>
       </div>
       {onCancel ? (
-        <Button className={buttonStyles.secondary} size="sm" variant="bordered" onPress={onCancel}>
+        <Button className={`${buttonStyles.secondary} shrink-0`} size="sm" variant="bordered" onPress={onCancel}>
           {t('exam.loadingCancel')}
         </Button>
       ) : cancelHref ? (

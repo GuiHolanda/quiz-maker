@@ -18,10 +18,32 @@ import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
 import { canEditExams } from '@/config/constants';
 import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
 import { useExamSeed, emptyExamDraft } from './useExamSeed.hook';
+import type { ExamSeedState } from './useExamSeed.hook';
+import type { IdentifyPhase } from './components/seed/SeedIdentifyCard';
 import { ExamSeedPicker } from './components/seed/ExamSeedPicker';
 import { NewExamHeader } from './components/seed/NewExamHeader';
 import { SeedLoadingScreen } from './components/seed/SeedLoadingScreen';
 import { ExamEditorPage } from './components/ExamEditorPage';
+
+function identifyQuery(state: ExamSeedState): string {
+  if (state.kind === 'identifying' || state.kind === 'identify-failed') return state.query;
+  if (state.kind === 'disambiguating' || state.kind === 'clarifying') return state.examName;
+
+  return '';
+}
+
+function identifyPhase(state: ExamSeedState): Exclude<IdentifyPhase, { kind: 'confirmed' }> {
+  switch (state.kind) {
+    case 'disambiguating':
+      return { kind: 'disambiguating', matches: state.matches };
+    case 'clarifying':
+      return { kind: 'clarifying', message: state.message };
+    case 'identify-failed':
+      return { kind: 'failed' };
+    default:
+      return { kind: 'searching' };
+  }
+}
 
 function readStoredDraft(storageKey: string): Exam | null {
   try {
@@ -121,9 +143,19 @@ function NewExamContent() {
 
   // Tela 2 (editor / skeleton) carries its own name-based heading — showing PageHeader's
   // static title above it would double up. Only Tela 1 (the seed picker) needs it.
-  const isEditorMode =
-    hydrated &&
-    (resumedDraft !== null || ['ready', 'error', 'loading-blueprint', 'extracting-edital'].includes(seed.state.kind));
+  // Every state below runs the loading screen, which carries its own header — showing the
+  // Tela 1 header above it would double up.
+  const SCREEN_OWNED_STATES = [
+    'ready',
+    'error',
+    'identifying',
+    'disambiguating',
+    'clarifying',
+    'identify-failed',
+    'loading-blueprint',
+    'extracting-edital',
+  ];
+  const isEditorMode = hydrated && (resumedDraft !== null || SCREEN_OWNED_STATES.includes(seed.state.kind));
 
   if (!canEdit) {
     return (
@@ -189,17 +221,27 @@ function NewExamContent() {
 
   function renderSeedContent() {
     switch (seed.state.kind) {
+      case 'identifying':
+      case 'disambiguating':
+      case 'clarifying':
+      case 'identify-failed':
+        return (
+          <SeedLoadingScreen
+            startedAt={seed.state.startedAt}
+            type={type}
+            variant={{ kind: 'identify', query: identifyQuery(seed.state), phase: identifyPhase(seed.state) }}
+            onCancel={seed.reset}
+            onRetry={seed.identifyByName}
+            onSelectMatch={(match) => void seed.confirmMatch(match)}
+            onStartBlank={seed.startBlank}
+          />
+        );
       case 'loading-blueprint':
         return (
           <SeedLoadingScreen
             startedAt={seed.state.startedAt}
             type={type}
-            variant={{
-              kind: 'auto-config',
-              examName: seed.state.examName,
-              provider: seed.state.provider,
-              stage: seed.state.stage,
-            }}
+            variant={{ kind: 'auto-config', seed: seed.state.seed, stage: seed.state.stage }}
             onCancel={seed.reset}
           />
         );
@@ -238,10 +280,8 @@ function NewExamContent() {
       default:
         return (
           <ExamSeedPicker
-            state={seed.state}
             type={type}
             onIdentify={seed.identifyByName}
-            onSelectMatch={(match) => void seed.confirmMatch(match)}
             onStartBlank={seed.startBlank}
             onUploadEdital={seed.uploadEdital}
           />

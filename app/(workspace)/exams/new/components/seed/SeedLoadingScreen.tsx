@@ -4,19 +4,24 @@ import { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRightFromBracket, faShieldHalved } from '@fortawesome/free-solid-svg-icons';
 
-import type { AutoConfigStage, ExamType } from '@/shared/types';
+import type { AutoConfigMatch, AutoConfigStage, ExamType } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { NewExamHeader } from './NewExamHeader';
 import { NextStepsCard } from './NextStepsCard';
-import { SeedProgressCard, STAGE_HEADLINE_KEYS } from './SeedProgressCard';
+import { SeedProgressCard, STEP_HEADLINE_KEYS, stepFromStage, type SeedStep } from './SeedProgressCard';
 import { SeedModulesSkeleton } from './SeedModulesSkeleton';
+import { SeedIdentifyCard, type ConfirmedSeed, type IdentifyPhase } from './SeedIdentifyCard';
 import { SeedExtractionLog, type LogLine } from './SeedExtractionLog';
 
 export type SeedLoadingVariant =
   | {
+      readonly kind: 'identify';
+      readonly query: string;
+      readonly phase: Exclude<IdentifyPhase, { kind: 'confirmed' }>;
+    }
+  | {
       readonly kind: 'auto-config';
-      readonly examName: string;
-      readonly provider: string;
+      readonly seed: ConfirmedSeed;
       readonly stage: AutoConfigStage | null;
     }
   | { readonly kind: 'edital'; readonly fileName: string };
@@ -26,10 +31,13 @@ interface SeedLoadingScreenProps {
   readonly startedAt: number;
   readonly variant: SeedLoadingVariant;
   readonly onCancel: () => void;
+  readonly onSelectMatch?: (match: AutoConfigMatch) => void;
+  readonly onRetry?: (query: string) => void;
+  readonly onStartBlank?: () => void;
 }
 
-interface StageLogEntry {
-  readonly stage: AutoConfigStage;
+interface StepLogEntry {
+  readonly step: SeedStep;
   readonly time: string;
 }
 
@@ -41,69 +49,87 @@ function formatElapsed(ms: number): string {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-// Fills the wait between confirming a seed and the editor mounting. Two variants share this
-// frame: the auto-config pipeline (3 real SSE-tracked stages) and edital extraction (one
-// opaque HTTP call — reduced to elapsed time + an indeterminate bar, no stage list).
-export function SeedLoadingScreen({ type, startedAt, variant, onCancel }: SeedLoadingScreenProps) {
+// Fills the whole wait between the user's search and the editor mounting. Three variants
+// share this frame: identification (~6s web-search lookup), the auto-config pipeline (3
+// SSE-tracked stages) and edital extraction (one opaque HTTP call, no substeps).
+export function SeedLoadingScreen({
+  type,
+  startedAt,
+  variant,
+  onCancel,
+  onSelectMatch,
+  onRetry,
+  onStartBlank,
+}: SeedLoadingScreenProps) {
   const { t } = useTranslation();
   const [now, setNow] = useState(() => Date.now());
 
+  // Parked on the user (disambiguation / clarification): nothing is in flight, so the clock
+  // freezes rather than billing their reading time to the pipeline.
+  const isAwaitingUser = variant.kind === 'identify' && variant.phase.kind !== 'searching';
+
   useEffect(() => {
+    if (isAwaitingUser) return;
     const interval = setInterval(() => setNow(Date.now()), 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isAwaitingUser]);
 
   const elapsedLabel = formatElapsed(now - startedAt);
-  const currentStage = variant.kind === 'auto-config' ? variant.stage : null;
+  const step: SeedStep = variant.kind === 'auto-config' ? stepFromStage(variant.stage) : 'identify';
 
-  // One entry per stage transition actually observed this session. On reconnect mid-job,
-  // earlier stages are simply absent rather than backfilled with a guessed timestamp.
-  const [stageLog, setStageLog] = useState<readonly StageLogEntry[]>([]);
+  // One entry per step transition actually observed this session. On reconnect mid-job,
+  // earlier steps are simply absent rather than backfilled with a guessed timestamp.
+  const [stepLog, setStepLog] = useState<readonly StepLogEntry[]>([]);
+  const loggedStep = variant.kind === 'auto-config' ? (variant.stage as SeedStep | null) : null;
 
   useEffect(() => {
-    if (!currentStage) return;
-    setStageLog((prev) =>
-      prev.some((entry) => entry.stage === currentStage)
+    if (!loggedStep) return;
+    setStepLog((prev) =>
+      prev.some((entry) => entry.step === loggedStep)
         ? prev
-        : [...prev, { stage: currentStage, time: formatElapsed(Date.now() - startedAt) }]
+        : [...prev, { step: loggedStep, time: formatElapsed(Date.now() - startedAt) }]
     );
-  }, [currentStage, startedAt]);
-
-  const startLine: LogLine =
-    variant.kind === 'auto-config'
-      ? { time: '00:00', text: t('exam.loadingLogStarted', { name: variant.examName }) }
-      : { time: '00:00', text: t('exam.loadingLogEditalStarted', { file: variant.fileName }) };
+  }, [loggedStep, startedAt]);
 
   const logLines: LogLine[] = [
-    startLine,
-    ...stageLog.map((entry) => ({ time: entry.time, text: t(STAGE_HEADLINE_KEYS[entry.stage]) })),
+    startLogLine(),
+    ...stepLog.map((e) => ({ time: e.time, text: t(STEP_HEADLINE_KEYS[e.step]) })),
   ];
-
-  const title =
-    variant.kind === 'auto-config' ? t('exam.loadingTitle', { name: variant.examName }) : t('exam.loadingEditalTitle');
-  const subtitle =
-    variant.kind === 'auto-config'
-      ? variant.provider
-        ? t('exam.loadingSubtitle', { provider: variant.provider })
-        : t('exam.loadingSubtitleGeneric')
-      : t('exam.loadingEditalSubtitle', { file: variant.fileName });
 
   return (
     <>
       <NewExamHeader
         activeStep={2}
-        isStepRunning
+        isStepRunning={!isAwaitingUser}
         stepLabel={t('exam.loadingStepIndicator')}
-        subtitle={subtitle}
-        title={title}
+        subtitle={subtitle()}
+        title={title()}
         onCancel={onCancel}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start mt-7">
         <div className="flex flex-col gap-4">
-          <SeedProgressCard elapsedLabel={elapsedLabel} stage={currentStage} variant={variant.kind} />
-          <SeedModulesSkeleton type={type} />
+          <SeedProgressCard
+            elapsedLabel={elapsedLabel}
+            isAwaitingUser={isAwaitingUser}
+            step={step}
+            variant={variant.kind === 'edital' ? 'edital' : 'auto-config'}
+          />
+          {variant.kind === 'edital' ? (
+            <SeedModulesSkeleton type={type} />
+          ) : variant.kind === 'identify' ? (
+            <SeedIdentifyCard
+              phase={variant.phase}
+              query={variant.query}
+              type={type}
+              onRetry={onRetry}
+              onSelectMatch={onSelectMatch}
+              onStartBlank={onStartBlank}
+            />
+          ) : (
+            <SeedIdentifyCard phase={{ kind: 'confirmed', match: variant.seed }} query="" type={type} />
+          )}
         </div>
 
         <div className="flex flex-col gap-4">
@@ -131,4 +157,58 @@ export function SeedLoadingScreen({ type, startedAt, variant, onCancel }: SeedLo
       </div>
     </>
   );
+
+  function title(): string {
+    switch (variant.kind) {
+      case 'identify':
+        switch (variant.phase.kind) {
+          case 'disambiguating':
+            return t('exam.aiSeedDisambiguateTitle');
+          case 'clarifying':
+            return t('exam.aiSeedClarifyingTitle');
+          case 'failed':
+            return t('exam.loadingFailedTitle');
+          default:
+            return t('exam.loadingIdentifyTitle', { query: variant.query });
+        }
+      case 'auto-config':
+        return t('exam.loadingTitle', { name: variant.seed.label });
+      case 'edital':
+        return t('exam.loadingEditalTitle');
+    }
+  }
+
+  function subtitle(): string {
+    switch (variant.kind) {
+      case 'identify':
+        switch (variant.phase.kind) {
+          case 'disambiguating':
+            return t('exam.loadingDisambiguateSubtitle');
+          case 'clarifying':
+            return t('exam.loadingClarifySubtitle');
+          case 'failed':
+            return t('exam.loadingFailedSubtitle');
+          default:
+            return t('exam.loadingIdentifySubtitle');
+        }
+      case 'auto-config': {
+        const organization = variant.seed.provider ?? variant.seed.examBoard;
+
+        return organization ? t('exam.loadingSubtitle', { provider: organization }) : t('exam.loadingSubtitleGeneric');
+      }
+      case 'edital':
+        return t('exam.loadingEditalSubtitle', { file: variant.fileName });
+    }
+  }
+
+  function startLogLine(): LogLine {
+    switch (variant.kind) {
+      case 'identify':
+        return { time: '00:00', text: t('exam.loadingLogIdentifyStarted', { query: variant.query }) };
+      case 'auto-config':
+        return { time: '00:00', text: t('exam.loadingLogIdentifyDone', { name: variant.seed.label }) };
+      case 'edital':
+        return { time: '00:00', text: t('exam.loadingLogEditalStarted', { file: variant.fileName }) };
+    }
+  }
 }

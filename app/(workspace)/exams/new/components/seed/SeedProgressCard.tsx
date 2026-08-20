@@ -7,45 +7,67 @@ import { Spinner } from '@heroui/spinner';
 import type { AutoConfigStage } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
-interface SeedProgressCardProps {
-  readonly variant: 'auto-config' | 'edital';
-  readonly stage: AutoConfigStage | null;
-  readonly elapsedLabel: string;
-}
+// Identification isn't part of the server-side job (AutoConfigStage stays research|review|
+// format) but it is real work the user waits on — ~6s of web-search lookup — so the UI
+// models it as the first of four steps.
+export type SeedStep = 'identify' | 'research' | 'review' | 'format';
 
-const STAGE_ORDER: readonly AutoConfigStage[] = ['research', 'review', 'format'];
+const STEP_ORDER: readonly SeedStep[] = ['identify', 'research', 'review', 'format'];
 
-// Shared with SeedLoadingScreen for the extraction log's stage-transition lines.
-export const STAGE_HEADLINE_KEYS: Record<AutoConfigStage, string> = {
+// Shared with SeedLoadingScreen for the extraction log's step-transition lines.
+export const STEP_HEADLINE_KEYS: Record<SeedStep, string> = {
+  identify: 'exam.loadingStageIdentify',
   research: 'exam.aiSeedStageResearch',
   review: 'exam.aiSeedStageReview',
   format: 'exam.aiSeedStageFormat',
 };
 
-const STAGE_ROW_KEYS: Record<AutoConfigStage, string> = {
+// Progressive ("Identifying the exam…") while work is in flight; the plain step name once
+// the flow is parked on the user, so the headline never claims motion that stopped.
+const STEP_ROW_KEYS: Record<SeedStep, string> = {
+  identify: 'exam.loadingTaskIdentify',
   research: 'exam.loadingTaskResearch',
   review: 'exam.loadingTaskReview',
   format: 'exam.loadingTaskFormat',
 };
 
-type StageRowStatus = 'done' | 'active' | 'queued';
+type StepRowStatus = 'done' | 'active' | 'awaiting' | 'queued';
 
-const STATUS_META_KEYS: Record<StageRowStatus, string> = {
+const STATUS_META_KEYS: Record<StepRowStatus, string> = {
   done: 'exam.loadingTaskDone',
   active: 'exam.loadingTaskActive',
+  awaiting: 'exam.loadingTaskAwaiting',
   queued: 'exam.loadingTaskQueued',
 };
 
-// Auto-config has 3 real stages tracked server-side (stage: research|review|format, polled
-// over SSE) — the fraction/bar/row list reflect exactly that, nothing simulated. Edital
-// extraction is a single opaque HTTP call with no substeps, so it only shows elapsed time
+const STATUS_META_COLORS: Record<StepRowStatus, string> = {
+  done: 'text-success',
+  active: 'text-primary',
+  awaiting: 'text-primary',
+  queued: 'text-default-400',
+};
+
+export function stepFromStage(stage: AutoConfigStage | null): SeedStep {
+  return stage ?? 'identify';
+}
+
+interface SeedProgressCardProps {
+  readonly variant: 'auto-config' | 'edital';
+  readonly step: SeedStep;
+  // True while the flow is parked on the user (disambiguation / clarification): nothing is
+  // in flight, so the sweep stops and the current row reads "waiting for you".
+  readonly isAwaitingUser?: boolean;
+  readonly elapsedLabel: string;
+}
+
+// Every number here maps to something real: the fraction is the current step of four, the
+// filled bar is the steps actually finished, and the sweep marks the one in flight. Edital
+// extraction is a single opaque HTTP call with no substeps, so it shows only elapsed time
 // and an indeterminate bar.
-export function SeedProgressCard({ variant, stage, elapsedLabel }: SeedProgressCardProps) {
+export function SeedProgressCard({ variant, step, isAwaitingUser = false, elapsedLabel }: SeedProgressCardProps) {
   const { t } = useTranslation();
-  const currentIndex = stage ? STAGE_ORDER.indexOf(stage) : -1;
-  const headline = stage ? t(STAGE_HEADLINE_KEYS[stage]) : t('exam.loadingQueued');
-  const stageNumber = stage ? currentIndex + 1 : 0;
-  const completedPct = stage ? (currentIndex / STAGE_ORDER.length) * 100 : 0;
+  const currentIndex = STEP_ORDER.indexOf(step);
+  const completedPct = (currentIndex / STEP_ORDER.length) * 100;
 
   return (
     <div className="bg-content1 border border-default-200 rounded-xl p-6">
@@ -54,11 +76,15 @@ export function SeedProgressCard({ variant, stage, elapsedLabel }: SeedProgressC
           <div className="font-mono text-[11px] uppercase tracking-widest text-default-400">
             {t('exam.loadingProgressTitle')}
           </div>
-          <div className="text-lg font-bold mt-2">{headline}</div>
+          <div className="text-lg font-bold mt-2">
+            {t(isAwaitingUser ? STEP_ROW_KEYS[step] : STEP_HEADLINE_KEYS[step])}
+          </div>
         </div>
         <div className="text-right shrink-0">
           {variant === 'auto-config' && (
-            <div className="font-mono text-2xl font-medium text-primary">{stageNumber}/3</div>
+            <div className="font-mono text-2xl font-medium text-primary">
+              {currentIndex + 1}/{STEP_ORDER.length}
+            </div>
           )}
           <div className="font-mono text-[11px] text-default-400 mt-0.5">{elapsedLabel}</div>
         </div>
@@ -68,8 +94,8 @@ export function SeedProgressCard({ variant, stage, elapsedLabel }: SeedProgressC
         {variant === 'auto-config' ? (
           <>
             <div className="h-full bg-primary transition-[width] duration-500" style={{ width: `${completedPct}%` }} />
-            <div className="w-1/3 h-full overflow-hidden">
-              <div className="w-1/3 h-full bg-primary/40 step-sweep" />
+            <div className="w-1/4 h-full overflow-hidden">
+              {isAwaitingUser ? null : <div className="w-1/3 h-full bg-primary/40 step-sweep" />}
             </div>
           </>
         ) : (
@@ -81,12 +107,13 @@ export function SeedProgressCard({ variant, stage, elapsedLabel }: SeedProgressC
 
       {variant === 'auto-config' && (
         <div className="mt-5 flex flex-col">
-          {STAGE_ORDER.map((s, i) => {
-            const status: StageRowStatus = i < currentIndex ? 'done' : i === currentIndex ? 'active' : 'queued';
+          {STEP_ORDER.map((rowStep, i) => {
+            const status: StepRowStatus =
+              i < currentIndex ? 'done' : i > currentIndex ? 'queued' : isAwaitingUser ? 'awaiting' : 'active';
 
             return (
               <div
-                key={s}
+                key={rowStep}
                 className={`grid grid-cols-[22px_1fr_auto] gap-3 items-center py-3 border-t border-default-200 ${status === 'queued' ? 'opacity-50' : ''}`}
               >
                 <div className="w-[22px] h-[22px] flex items-center justify-center">
@@ -96,16 +123,15 @@ export function SeedProgressCard({ variant, stage, elapsedLabel }: SeedProgressC
                     </div>
                   )}
                   {status === 'active' && <Spinner size="sm" />}
+                  {status === 'awaiting' && <div className="w-[7px] h-[7px] rounded-full bg-primary" />}
                   {status === 'queued' && <div className="w-[7px] h-[7px] rounded-full bg-default-200" />}
                 </div>
                 <div
                   className={`text-sm ${status === 'queued' ? 'text-default-500' : 'font-semibold text-foreground'}`}
                 >
-                  {t(STAGE_ROW_KEYS[s])}
+                  {t(STEP_ROW_KEYS[rowStep])}
                 </div>
-                <div
-                  className={`font-mono text-[11px] ${status === 'done' ? 'text-success' : status === 'active' ? 'text-primary' : 'text-default-400'}`}
-                >
+                <div className={`font-mono text-[11px] ${STATUS_META_COLORS[status]}`}>
                   {t(STATUS_META_KEYS[status])}
                 </div>
               </div>
