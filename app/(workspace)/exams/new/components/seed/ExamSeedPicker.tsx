@@ -22,10 +22,6 @@ interface ExamSeedPickerProps {
   readonly onStartBlank: () => void;
 }
 
-// Tela 1 (redesign per the imported Claude Design canvas): two-column layout — search card +
-// divider + path cards on the left, a "what's next" explainer and the user's own exams on the
-// right rail. Same underlying flow as before: search-by-name for both exam types, edital
-// upload as a concurso-only alternative (now its own path card instead of an inline toggle).
 export function ExamSeedPicker({ type, onIdentify, onUploadEdital, onStartBlank }: ExamSeedPickerProps) {
   const { t } = useTranslation();
   const [role, setRole] = useState('');
@@ -41,7 +37,7 @@ export function ExamSeedPicker({ type, onIdentify, onUploadEdital, onStartBlank 
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start mt-7">
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_560px] gap-6 items-start mt-7">
       <div>
         <div className="bg-content1 border border-default-200 rounded-xl p-6">
           <ExamSearchForm isBusy={false} isSearching={false} type={type} onSubmit={onIdentify} />
@@ -49,7 +45,7 @@ export function ExamSeedPicker({ type, onIdentify, onUploadEdital, onStartBlank 
 
         <div className="flex items-center gap-3.5 my-6">
           <div className="h-px flex-1 bg-divider" />
-          <span className="font-mono text-[11px] uppercase tracking-widest text-default-400">{t('common.or')}</span>
+          <span className="text-xs tracking-widest text-default-400">{t('common.or')}</span>
           <div className="h-px flex-1 bg-divider" />
         </div>
 

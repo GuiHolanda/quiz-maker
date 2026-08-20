@@ -174,3 +174,36 @@ function buildAllWrongResult() {
     sectionBreakdown: [{ sectionName: 'E2E Topic', correct: 0, total: 3 }],
   };
 }
+
+// POST /api/exam/auto-config/identify → serves a queued sequence of responses (repeats the
+// last one once exhausted), each optionally delayed so the 'identifying' loading state stays
+// observable long enough for a test to assert on it or cancel mid-flight.
+export async function mockIdentify(
+  page: Page,
+  responses: readonly { readonly status: number; readonly body: unknown; readonly delayMs?: number }[],
+): Promise<{ callCount: () => number }> {
+  let call = 0;
+
+  await page.route('**/api/exam/auto-config/identify', async (route) => {
+    const response = responses[Math.min(call, responses.length - 1)];
+
+    call += 1;
+    if (response.delayMs) await new Promise((r) => setTimeout(r, response.delayMs));
+    await route.fulfill({ status: response.status, contentType: 'application/json', body: JSON.stringify(response.body) });
+  });
+
+  return { callCount: () => call };
+}
+
+// POST /api/exam/auto-config → returns a jobId without ever running the real pipeline, so a
+// disambiguation pick can be exercised without spending a real LLM call. Pair with
+// injectNeverDoneEventSource so the resulting SSE connection never advances past this point.
+export async function mockCreateAutoConfigJob(page: Page, jobId = 'e2e-auto-config-job'): Promise<void> {
+  await page.route('**/api/exam/auto-config', (route) => {
+    if (route.request().method() === 'POST') {
+      route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ jobId }) });
+    } else {
+      route.continue();
+    }
+  });
+}

@@ -4,6 +4,7 @@ import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
 
 interface ExamSeedPathCardProps {
   readonly icon: IconDefinition;
@@ -21,18 +22,20 @@ const cardClassName =
 function CardContent({ icon, title, body, cta }: Omit<ExamSeedPathCardProps, 'href' | 'onPress' | 'testId'>) {
   return (
     <>
-      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-        <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={icon} />
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+          <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={icon} />
+        </div>
+        <div className="text-lg font-bold tracking-tight">{title}</div>
       </div>
-      <div className="text-lg font-bold tracking-tight mt-3.5">{title}</div>
-      <p className="mt-1.5 text-sm leading-relaxed text-default-500">{body}</p>
-      <div className="mt-3.5 font-mono text-[11px] uppercase tracking-widest text-primary">{cta} →</div>
+      <p className="mt-4 text-sm leading-relaxed text-default-500">{body}</p>
+      <div className="mt-4 text-sm font-bold text-primary">
+        {cta} <FontAwesomeIcon className="w-3.5 h-3.5 text-primary ms-1" icon={faArrowRight} />
+      </div>
     </>
   );
 }
 
-// Tela 1 path card: search-adjacent alternatives (catalog / blank / edital upload) rendered
-// as either a Link (navigates away, e.g. catalog) or a button (stays on page, e.g. blank/edital).
 export function ExamSeedPathCard({ icon, title, body, cta, href, onPress, testId }: ExamSeedPathCardProps) {
   if (href) {
     return (

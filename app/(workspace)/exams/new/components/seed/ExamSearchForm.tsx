@@ -24,9 +24,6 @@ interface ExamSearchFormProps {
   readonly onSubmit: (query: string) => void;
 }
 
-// Used twice: as the picker's primary search, and inside the loading screen's identification
-// card when a search comes back without a usable match. Same control in both places so
-// retrying never looks like a different feature.
 export function ExamSearchForm({
   type,
   isBusy,
@@ -42,12 +39,12 @@ export function ExamSearchForm({
   return (
     <div>
       {showLabel && (
-        <label className="font-mono text-[11px] uppercase tracking-widest text-default-400" htmlFor="exam-search-input">
+        <label className="text-xs font-semibold text-default-500" htmlFor="exam-search-input">
           {t('exam.newSearchLabel')}
         </label>
       )}
       <form
-        className={`flex gap-2.5 ${showLabel ? 'mt-2.5' : ''} ${compact ? 'flex-col sm:flex-row' : ''}`}
+        className={`flex gap-2.5 ${showLabel ? 'mt-2' : ''} ${compact ? 'flex-col sm:flex-row' : ''}`}
         onSubmit={(e) => {
           e.preventDefault();
           if (!isBusy) onSubmit(query);
@@ -56,6 +53,7 @@ export function ExamSearchForm({
         <Input
           {...inputProperties.input}
           className="grow"
+          data-testid="exam-search-input"
           id="exam-search-input"
           isDisabled={isBusy}
           placeholder={t(type === 'certification' ? 'exam.aiSeedCertPlaceholder' : 'exam.aiSeedPublicExamPlaceholder')}
@@ -64,6 +62,7 @@ export function ExamSearchForm({
         />
         <Button
           className={`${buttonStyles.primary} h-11 px-5 shrink-0`}
+          data-testid="exam-search-submit-btn"
           isDisabled={isBusy || !query.trim()}
           startContent={
             isSearching ? <Spinner color="current" size="sm" /> : <FontAwesomeIcon icon={faMagnifyingGlass} />

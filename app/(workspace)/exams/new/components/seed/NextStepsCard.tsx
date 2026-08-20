@@ -8,14 +8,12 @@ const STEPS = [
   { num: '03', titleKey: 'exam.nextStep3Title', bodyKey: 'exam.nextStep3Body', active: false },
 ] as const;
 
-// Static explainer for the rail — mirrors the 3-step flow the imported design describes
-// (review the seed, set the format, generate questions), not tied to any live state.
 export function NextStepsCard() {
   const { t } = useTranslation();
 
   return (
     <div className="bg-content1 border border-default-200 rounded-xl p-5">
-      <div className="font-mono text-[11px] uppercase tracking-widest text-default-400">{t('exam.nextStepsTitle')}</div>
+      <div className="text-xs font-semibold text-default-500">{t('exam.nextStepsTitle')}</div>
       <div className="mt-4 flex flex-col gap-4">
         {STEPS.map((step) => (
           <div key={step.num} className="grid grid-cols-[26px_1fr] gap-3">

@@ -134,7 +134,7 @@ function NewExamContent() {
   };
 
   const breadcrumbs = (
-    <Breadcrumbs classNames={{ list: 'font-mono text-xs' }}>
+    <Breadcrumbs>
       <BreadcrumbItem href="/">{t('nav.dashboard')}</BreadcrumbItem>
       <BreadcrumbItem href={listHref}>{listLabel}</BreadcrumbItem>
       <BreadcrumbItem>{pageTitle}</BreadcrumbItem>
