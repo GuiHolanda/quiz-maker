@@ -234,6 +234,9 @@ export interface ActiveAutoConfigJob {
   readonly seedProvider: string | null;
   readonly status: string;
   readonly stage: string | null;
+  // Lets the loading screen's elapsed timer survive a reload — reconnecting to a job that
+  // has been running for 90s must not restart the clock at 00:00.
+  readonly createdAt: string;
 }
 
 export const getActiveAutoConfigJob = (type: ExamType): Promise<ActiveAutoConfigJob | null> =>

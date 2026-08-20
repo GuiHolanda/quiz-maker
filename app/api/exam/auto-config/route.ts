@@ -97,6 +97,7 @@ export async function GET(request: NextRequest) {
           seedProvider: job.seedProvider,
           status: job.status,
           stage: job.stage,
+          createdAt: job.createdAt,
         }
       : null,
   });
