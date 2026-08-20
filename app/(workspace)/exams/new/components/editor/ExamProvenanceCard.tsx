@@ -46,7 +46,10 @@ export function ExamProvenanceCard({ context, sources }: ExamProvenanceCardProps
   const parsedSources = sources.map(parseSource);
 
   return (
-    <div className="bg-primary/[0.07] border border-primary/30 rounded-xl p-5">
+    <div
+      className="bg-primary/[0.07] border border-primary/30 rounded-xl p-5"
+      data-testid="exam-editor-provenance-card"
+    >
       <div className="flex items-center gap-2">
         <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={faCircleInfo} />
         <div className="text-xs font-semibold text-foreground">{t('exam.aiSeedProvenanceTitle')}</div>

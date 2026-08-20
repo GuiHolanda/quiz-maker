@@ -45,18 +45,28 @@ function identifyPhase(state: ExamSeedState): Exclude<IdentifyPhase, { kind: 'co
   }
 }
 
-function readStoredDraft(storageKey: string): Exam | null {
+interface StoredDraft {
+  readonly draft: Exam;
+  readonly context?: string;
+  readonly sources?: string[];
+}
+
+function readStoredDraft(storageKey: string): StoredDraft | null {
   try {
     const raw = localStorage.getItem(storageKey);
 
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as Exam;
+    const parsed = JSON.parse(raw) as StoredDraft | Exam;
+    // Older persisted entries are a bare Exam, from before context/sources were added.
+    const draft = 'draft' in parsed ? parsed.draft : parsed;
+    const context = 'draft' in parsed ? parsed.context : undefined;
+    const sources = 'draft' in parsed ? parsed.sources : undefined;
 
     // A draft with no name and no sections isn't worth resuming — treat it as absent so
     // the seed picker shows instead of an editor with nothing distinguishing it from blank.
-    if (!parsed.name?.trim() && (!parsed.sections || parsed.sections.length === 0)) return null;
+    if (!draft.name?.trim() && (!draft.sections || draft.sections.length === 0)) return null;
 
-    return parsed;
+    return { draft, context, sources };
   } catch {
     return null;
   }
@@ -96,7 +106,7 @@ function NewExamContent() {
   // the user has already spent an LLM call or filled the whole editor by hand.
   const isAtExamCap = usage != null && usage.examsLimit !== -1 && usage.examsUsed >= usage.examsLimit;
   const [hydrated, setHydrated] = useState(false);
-  const [resumedDraft, setResumedDraft] = useState<Exam | null>(null);
+  const [resumedDraft, setResumedDraft] = useState<StoredDraft | null>(null);
 
   useEffect(() => {
     setResumedDraft(readStoredDraft(config.draftStorageKey));
@@ -105,9 +115,11 @@ function NewExamContent() {
     // mid-flow isn't a supported transition (the page fully remounts via the URL param).
   }, []);
 
-  const persistDraft = (draft: Exam) => {
+  const persistDraft = (draft: Exam, context?: string, sources?: string[]) => {
     try {
-      localStorage.setItem(config.draftStorageKey, JSON.stringify(draft));
+      const payload: StoredDraft = { draft, context, sources };
+
+      localStorage.setItem(config.draftStorageKey, JSON.stringify(payload));
     } catch {
       /* storage full or unavailable */
     }
@@ -203,7 +215,9 @@ function NewExamContent() {
       {!hydrated ? null : resumedDraft ? (
         <ExamEditorPage
           type={type}
-          initialDraft={resumedDraft}
+          context={resumedDraft.context}
+          initialDraft={resumedDraft.draft}
+          sources={resumedDraft.sources}
           onDiscard={handleDiscard}
           onDraftChange={persistDraft}
           onSaved={handleSaved}

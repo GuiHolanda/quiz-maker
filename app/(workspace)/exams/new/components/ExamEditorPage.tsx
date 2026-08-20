@@ -25,7 +25,7 @@ interface ExamEditorPageProps {
   readonly context?: string;
   readonly sources?: string[];
   readonly warningKey?: string;
-  readonly onDraftChange?: (draft: Exam) => void;
+  readonly onDraftChange?: (draft: Exam, context?: string, sources?: string[]) => void;
   readonly onSaved: (saved: Exam) => void;
   readonly onDiscard: () => void;
 }
@@ -68,8 +68,8 @@ export function ExamEditorPage({
 
   onDraftChangeRef.current = onDraftChange;
   useEffect(() => {
-    onDraftChangeRef.current?.(draft);
-  }, [draft]);
+    onDraftChangeRef.current?.(draft, context, sources);
+  }, [draft, context, sources]);
 
   const handleSaveClick = async () => {
     const result = await handleSave();
