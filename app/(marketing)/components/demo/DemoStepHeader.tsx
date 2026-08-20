@@ -12,14 +12,7 @@ interface DemoStepHeaderProps {
   readonly as?: 'h1' | 'presentational';
 }
 
-export function DemoStepHeader({
-  kick,
-  heading,
-  headingSize = '4xl',
-  subtext,
-  note,
-  as = 'h1',
-}: DemoStepHeaderProps) {
+export function DemoStepHeader({ kick, heading, headingSize = '4xl', subtext, note, as = 'h1' }: DemoStepHeaderProps) {
   const headingClass = `ds-heading text-mkt-text text-${headingSize} mt-2`;
 
   return (

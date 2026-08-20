@@ -186,7 +186,10 @@ export function SeedIdentifyCard({ type, phase, query, onSelectMatch, onRetry, o
           <span className="w-5 h-5 mt-0.5 shrink-0 rounded-full bg-success/15 flex items-center justify-center">
             <FontAwesomeIcon className="w-3 h-3 text-success" icon={faCheck} />
           </span>
-          <span className="text-base font-bold text-foreground text-balance" data-testid="seed-identify-confirmed-label">
+          <span
+            className="text-base font-bold text-foreground text-balance"
+            data-testid="seed-identify-confirmed-label"
+          >
             {match.label}
           </span>
         </div>
