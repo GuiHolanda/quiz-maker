@@ -60,6 +60,18 @@ export const inputProperties = {
   },
 };
 
+// `placeholder:` overrides keep an empty field lighter — `font-semibold` alone would apply to it too.
+export const compactInputClassNames = {
+  inputWrapper: 'h-8 bg-background rounded-lg',
+  input: 'text-xs font-semibold placeholder:font-normal placeholder:text-default-300',
+};
+
+export const compactSelectClassNames = {
+  label: inputLabelClass,
+  trigger: 'h-8 bg-background rounded-lg',
+  value: 'text-xs font-semibold',
+};
+
 export const tableClassNames = {
   wrapper: 'bg-background shadow-none rounded-xl border border-default-200 p-0',
   th: 'bg-content1 text-default-400 font-mono text-[11px] uppercase tracking-widest border-b border-default-200 first:rounded-tl-xl last:rounded-tr-xl',
