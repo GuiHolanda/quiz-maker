@@ -244,10 +244,24 @@
 
 .marquee-track { animation: marquee 30s linear infinite; }
 
+@keyframes step-sweep {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(300%); }
+}
+
+@keyframes caret-blink {
+  0%, 49%  { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+.step-sweep  { animation: step-sweep 1.4s ease-in-out infinite; }
+.caret-blink { animation: caret-blink 1s step-end infinite; }
+
 @media (prefers-reduced-motion: reduce) {
   .marquee-track { animation-play-state: paused; }
   .scan-line { animation: none; opacity: 0; }
   .animate-pulse { animation: none !important; }
+  .step-sweep, .caret-blink { animation: none; }
 }
 
 .scan-line {

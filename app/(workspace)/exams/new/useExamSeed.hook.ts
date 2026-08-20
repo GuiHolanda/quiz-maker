@@ -28,8 +28,9 @@ export type ExamSeedState =
       readonly examName: string;
       readonly provider: string;
       readonly stage: AutoConfigStage | null;
+      readonly startedAt: number;
     }
-  | { readonly kind: 'extracting-edital' }
+  | { readonly kind: 'extracting-edital'; readonly fileName: string; readonly startedAt: number }
   | { readonly kind: 'ready'; readonly draft: Exam; readonly context: string; readonly sources: string[] }
   // The pipeline failed or returned something unparseable — open the editor blank rather
   // than dead-end the user; `seedName` pre-fills the name field so nothing typed is lost.
@@ -81,8 +82,13 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
     eventSourceRef.current = null;
   }, []);
 
+  // Invalidated by reset() so a stale extractEdital() response can't clobber a user-initiated
+  // cancel — extractEdital is a plain HTTP call with no server-side job to close out.
+  const runIdRef = useRef(0);
+
   const reset = useCallback(() => {
     userActedRef.current = true;
+    runIdRef.current += 1;
     closeStream();
     if (jobIdRef.current) {
       const jobId = jobIdRef.current;
@@ -154,7 +160,7 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
       userActedRef.current = true;
       const provider = match.provider ?? match.examBoard ?? '';
 
-      setState({ kind: 'loading-blueprint', examName: match.label, provider, stage: null });
+      setState({ kind: 'loading-blueprint', examName: match.label, provider, stage: null, startedAt: Date.now() });
 
       try {
         const { jobId } = await createAutoConfigJob({
@@ -219,12 +225,16 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
   const uploadEdital = useCallback(
     async (file: File, role: string | undefined) => {
       userActedRef.current = true;
-      setState({ kind: 'extracting-edital' });
+      const runId = ++runIdRef.current;
+
+      setState({ kind: 'extracting-edital', fileName: file.name, startedAt: Date.now() });
       try {
         const exam = await extractEdital(file, role);
 
+        if (runIdRef.current !== runId) return;
         setState({ kind: 'ready', draft: exam, context: '', sources: [] });
       } catch (err: unknown) {
+        if (runIdRef.current !== runId) return;
         if (showLimitIfBlocked(err)) {
           setState({ kind: 'idle' });
 
@@ -248,6 +258,7 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
         examName: job.seedName,
         provider: job.seedProvider ?? '',
         stage: (job.stage as AutoConfigStage) ?? null,
+        startedAt: new Date(job.createdAt).getTime(),
       });
       watchJob(job.id, job.seedName);
     });

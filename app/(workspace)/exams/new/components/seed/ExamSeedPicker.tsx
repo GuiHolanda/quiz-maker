@@ -7,13 +7,7 @@ import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
 import { Spinner } from '@heroui/spinner';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faMagnifyingGlass,
-  faFileArrowUp,
-  faLayerGroup,
-  faPenToSquare,
-  faFilePdf,
-} from '@fortawesome/free-solid-svg-icons';
+import { faMagnifyingGlass, faFileArrowUp, faLayerGroup, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 
 import { InlineAlert } from '@/shared/components/ui/InlineAlert';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -55,7 +49,6 @@ export function ExamSeedPicker({
   const config = EXAM_CONFIG[type];
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [showEditalUpload, setShowEditalUpload] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -67,7 +60,6 @@ export function ExamSeedPicker({
 
     e.target.value = '';
     if (!file) return;
-    setPendingFile(file);
     onUploadEdital(file, role.trim() || undefined);
   };
 
@@ -189,23 +181,15 @@ export function ExamSeedPicker({
               type="file"
               onChange={handleFileChange}
             />
-            {pendingFile && state.kind === 'extracting-edital' ? (
-              <div className="flex items-center gap-2 text-sm text-default-500">
-                <Spinner size="sm" />
-                <FontAwesomeIcon className="text-danger" icon={faFilePdf} />
-                {pendingFile.name}
-              </div>
-            ) : (
-              <Button
-                className={buttonStyles.secondary}
-                isDisabled={isBusy}
-                startContent={<FontAwesomeIcon icon={faFileArrowUp} />}
-                variant="bordered"
-                onPress={() => fileInputRef.current?.click()}
-              >
-                {t('exam.aiSeedUploadEdital')}
-              </Button>
-            )}
+            <Button
+              className={buttonStyles.secondary}
+              isDisabled={isBusy}
+              startContent={<FontAwesomeIcon icon={faFileArrowUp} />}
+              variant="bordered"
+              onPress={() => fileInputRef.current?.click()}
+            >
+              {t('exam.aiSeedUploadEdital')}
+            </Button>
           </div>
         )}
       </div>

@@ -20,7 +20,7 @@ import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
 import { useExamSeed, emptyExamDraft } from './useExamSeed.hook';
 import { ExamSeedPicker } from './components/seed/ExamSeedPicker';
 import { NewExamHeader } from './components/seed/NewExamHeader';
-import { ExamEditorSkeleton } from './components/ExamEditorSkeleton';
+import { SeedLoadingScreen } from './components/seed/SeedLoadingScreen';
 import { ExamEditorPage } from './components/ExamEditorPage';
 
 function readStoredDraft(storageKey: string): Exam | null {
@@ -122,7 +122,8 @@ function NewExamContent() {
   // Tela 2 (editor / skeleton) carries its own name-based heading — showing PageHeader's
   // static title above it would double up. Only Tela 1 (the seed picker) needs it.
   const isEditorMode =
-    hydrated && (resumedDraft !== null || ['ready', 'error', 'loading-blueprint'].includes(seed.state.kind));
+    hydrated &&
+    (resumedDraft !== null || ['ready', 'error', 'loading-blueprint', 'extracting-edital'].includes(seed.state.kind));
 
   if (!canEdit) {
     return (
@@ -190,10 +191,24 @@ function NewExamContent() {
     switch (seed.state.kind) {
       case 'loading-blueprint':
         return (
-          <ExamEditorSkeleton
-            examName={seed.state.examName}
-            provider={seed.state.provider}
-            stage={seed.state.stage}
+          <SeedLoadingScreen
+            startedAt={seed.state.startedAt}
+            type={type}
+            variant={{
+              kind: 'auto-config',
+              examName: seed.state.examName,
+              provider: seed.state.provider,
+              stage: seed.state.stage,
+            }}
+            onCancel={seed.reset}
+          />
+        );
+      case 'extracting-edital':
+        return (
+          <SeedLoadingScreen
+            startedAt={seed.state.startedAt}
+            type={type}
+            variant={{ kind: 'edital', fileName: seed.state.fileName }}
             onCancel={seed.reset}
           />
         );

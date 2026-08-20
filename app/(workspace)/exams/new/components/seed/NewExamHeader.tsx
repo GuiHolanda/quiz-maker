@@ -1,17 +1,32 @@
 'use client';
 
 import Link from 'next/link';
+import { Button } from '@heroui/button';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface NewExamHeaderProps {
   readonly title: string;
-  readonly cancelHref: string;
+  readonly subtitle?: string;
+  readonly stepLabel?: string;
+  readonly activeStep?: 1 | 2 | 3;
+  readonly isStepRunning?: boolean;
+  readonly cancelHref?: string;
+  readonly onCancel?: () => void;
 }
 
-// Tela 1 header: literal "Etapa 1 de 3" (Tela 2 = revisar/formatar, geração de questões = 3),
-// matching the imported design. Static — this page never advances past step 1.
-export function NewExamHeader({ title, cancelHref }: NewExamHeaderProps) {
+// Shared by Tela 1 (seed picker) and the loading screen that follows it — both are steps
+// in the same 3-bar progress indicator, just at a different `activeStep`.
+export function NewExamHeader({
+  title,
+  subtitle,
+  stepLabel,
+  activeStep = 1,
+  isStepRunning = false,
+  cancelHref,
+  onCancel,
+}: NewExamHeaderProps) {
   const { t } = useTranslation();
 
   return (
@@ -19,22 +34,38 @@ export function NewExamHeader({ title, cancelHref }: NewExamHeaderProps) {
       <div className="flex flex-col gap-3.5">
         <div className="flex items-center gap-3.5">
           <span className="font-mono text-[11px] uppercase tracking-widest text-primary">
-            {t('exam.newStepIndicator')}
+            {stepLabel ?? t('exam.newStepIndicator')}
           </span>
           <div className="flex gap-[5px] w-[180px]">
-            <div className="flex-1 h-[3px] rounded-full bg-primary" />
-            <div className="flex-1 h-[3px] rounded-full bg-content2" />
-            <div className="flex-1 h-[3px] rounded-full bg-content2" />
+            {([1, 2, 3] as const).map((step) => (
+              <div key={step} className="flex-1 h-[3px] rounded-full bg-content2 overflow-hidden">
+                {step < activeStep ? (
+                  <div className="w-full h-full bg-primary" />
+                ) : step === activeStep ? (
+                  isStepRunning ? (
+                    <div className="w-1/3 h-full bg-primary step-sweep" />
+                  ) : (
+                    <div className="w-full h-full bg-primary" />
+                  )
+                ) : null}
+              </div>
+            ))}
           </div>
         </div>
         <h1 className="page-header-title tracking-tight max-w-[640px] text-balance">{title}</h1>
         <p className="text-base leading-relaxed text-default-500 max-w-[600px] text-pretty">
-          {t('exam.aiSeedSubtitle')}
+          {subtitle ?? t('exam.aiSeedSubtitle')}
         </p>
       </div>
-      <Link className="text-sm text-default-500 hover:text-foreground shrink-0" href={cancelHref}>
-        {t('common.cancel')}
-      </Link>
+      {onCancel ? (
+        <Button className={buttonStyles.secondary} size="sm" variant="bordered" onPress={onCancel}>
+          {t('exam.loadingCancel')}
+        </Button>
+      ) : cancelHref ? (
+        <Link className="text-sm text-default-500 hover:text-foreground shrink-0" href={cancelHref}>
+          {t('common.cancel')}
+        </Link>
+      ) : null}
     </div>
   );
 }
