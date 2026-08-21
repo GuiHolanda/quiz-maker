@@ -12,7 +12,7 @@ import { notify } from '@/shared/lib/notify';
 import type { UserAdminRow, UserPlan, AdminUsersResponse } from '@/shared/types';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { buttonStyles } from '@/config/constants/buttonStyles';
-import { ACTIVE_MODEL_PRICING_USD, USD_TO_BRL_FALLBACK } from '@/config/constants';
+import { ACTIVE_MODEL_PRICING_USD, USD_TO_BRL_FALLBACK, PLAN_LIMITS } from '@/config/constants';
 
 const PLAN_OPTIONS: UserPlan[] = ['free', 'pro', 'pro_ai', 'tester', 'admin'];
 const STATUS_OPTIONS = ['active', 'canceled'];
@@ -205,8 +205,7 @@ export default function AdminUsersPage() {
         : edit.overrideMode === 'value' && edit.overrideValue
           ? parseInt(edit.overrideValue, 10)
           : null;
-    const planLimit =
-      { free: 250, pro: 1500, pro_ai: 2500, tester: Infinity, admin: Infinity }[edit.plan ?? user.plan] ?? 250;
+    const planLimit = PLAN_LIMITS[edit.plan ?? user.plan]?.questionsPerPeriod ?? 250;
     const limit = effectiveLimit !== null ? effectiveLimit : planLimit;
     const used = user.questionsGeneratedThisPeriod;
     const pct = limit === Infinity ? 0 : Math.min(100, Math.round((used / limit) * 100));

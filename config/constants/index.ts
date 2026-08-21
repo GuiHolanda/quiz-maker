@@ -72,10 +72,17 @@ export const BILLING_USAGE_URL = '/billing/usage';
 export const BILLING_CHECKOUT_URL = '/billing/checkout';
 export const BILLING_PORTAL_URL = '/billing/portal';
 
+// Pro/Pro AI quotas below are the "nova grade" from the pricing tier audit (weeks 4-6):
+// lower per-period question count, higher exam count, break-even lands around 33%/40% of
+// quota instead of 22%/26%. Subscribers who signed up under the old 1500/2500 quotas keep
+// them via customQuotaOverride — see migration backfill_founder_quota_lock — so this only
+// takes effect for new signups. The price shown on /pricing is unchanged until new Stripe
+// Price objects exist for the higher amounts (R$29,90/R$49,90 in the audit's proposal);
+// until then this is a quota-only adjustment at the current price.
 export const PLAN_LIMITS = {
   free: { questionsPerPeriod: 250, maxExams: 2, autoConfigPerPeriod: 0, canEditExams: false },
-  pro: { questionsPerPeriod: 1500, maxExams: 5, autoConfigPerPeriod: 15, canEditExams: true },
-  pro_ai: { questionsPerPeriod: 2500, maxExams: 5, autoConfigPerPeriod: 30, canEditExams: true },
+  pro: { questionsPerPeriod: 1000, maxExams: 6, autoConfigPerPeriod: 15, canEditExams: true },
+  pro_ai: { questionsPerPeriod: 2000, maxExams: 12, autoConfigPerPeriod: 30, canEditExams: true },
   tester: { questionsPerPeriod: Infinity, maxExams: Infinity, autoConfigPerPeriod: Infinity, canEditExams: true },
   admin: { questionsPerPeriod: Infinity, maxExams: Infinity, autoConfigPerPeriod: Infinity, canEditExams: true },
 } as const;
