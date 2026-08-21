@@ -13,7 +13,7 @@ import NextLink from 'next/link';
 import { AuthSplitLayout } from '@/app/(auth)/components/AuthSplitLayout';
 import { GoogleIcon } from '@/app/(auth)/components/GoogleIcon';
 import api from '@/lib/bff.api';
-import { REGISTER_URL } from '@/config/constants';
+import { REGISTER_URL, REFERRAL_CODE_COOKIE_KEY } from '@/config/constants';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PasswordInput } from '@/shared/components/ui/PasswordInput';
@@ -51,6 +51,14 @@ export function RegisterForm() {
   }
 
   async function handleGoogle() {
+    // Credentials signup reads `ref` straight from the URL at submit-time (handleSubmit
+    // above), but the Google round-trip leaves this page entirely — a cookie is the only
+    // way for the code to still be readable once auth.ts's `events.createUser` fires.
+    const ref = searchParams.get('ref');
+
+    if (ref) {
+      document.cookie = `${REFERRAL_CODE_COOKIE_KEY}=${encodeURIComponent(ref)}; path=/; max-age=600; SameSite=Lax`;
+    }
     await signIn('google', { callbackUrl: '/dashboard' });
   }
 

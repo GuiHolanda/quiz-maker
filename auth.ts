@@ -3,10 +3,13 @@ import { PrismaAdapter } from '@auth/prisma-adapter';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import bcrypt from 'bcryptjs';
+import { cookies } from 'next/headers';
 
 import authConfig from './auth.config';
 
 import { prisma } from '@/lib/prisma';
+import { REFERRAL_CODE_COOKIE_KEY } from '@/config/constants';
+import { generateUniqueReferralCode } from '@/lib/referral-code';
 
 class EmailNotVerifiedError extends CredentialsSignin {
   code = 'EMAIL_NOT_VERIFIED';
@@ -92,6 +95,41 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       return session;
+    },
+  },
+  events: {
+    // Only fires for adapter-created users, i.e. Google sign-ups — credentials signups
+    // are created directly by RegisterService, which sets referralCode/referredByUserId
+    // itself and never touches this adapter path. Wrapped so a referral hiccup can never
+    // block a Google sign-up whose User row already exists by this point; a code left
+    // null here is lazily backfilled later by ReferralService.getOrCreateReferralCode.
+    async createUser({ user }) {
+      if (!user.id) return;
+
+      try {
+        const referralCode = await generateUniqueReferralCode(async (candidate) => {
+          const existing = await prisma.user.findUnique({
+            where: { referralCode: candidate },
+            select: { id: true },
+          });
+
+          return !!existing;
+        });
+
+        // Set client-side right before redirecting to Google (RegisterForm.tsx), since
+        // that's the only way a `?ref=` code survives the round-trip back to this handler.
+        const ref = (await cookies()).get(REFERRAL_CODE_COOKIE_KEY)?.value;
+        const referrer = ref
+          ? await prisma.user.findUnique({ where: { referralCode: ref.toUpperCase() }, select: { id: true } })
+          : null;
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { referralCode, referredByUserId: referrer?.id ?? null },
+        });
+      } catch (err) {
+        console.error('Failed to backfill referral fields for new Google user:', err);
+      }
     },
   },
 });

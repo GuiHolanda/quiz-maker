@@ -41,6 +41,8 @@ export const EXAMS_LOCAL_STORAGE_KEY = 'EXAMS';
 export const LANGUAGE_LOCAL_STORAGE_KEY = 'app-language';
 export const SIDEBAR_COLLAPSED_LOCAL_STORAGE_KEY = 'certifiqueai_sidebar_collapsed';
 export const SIDEBAR_COLLAPSED_COOKIE_KEY = 'certifiqueai_sidebar_collapsed';
+// Short-lived: only needs to survive the redirect round-trip to Google and back.
+export const REFERRAL_CODE_COOKIE_KEY = 'certifiqueai_referral_code';
 export const AI_CHAT_LOCAL_STORAGE_KEY = (userId: string) => `AI_CHAT_MESSAGES_${userId}`;
 export const AI_CHAT_FOLLOWUP_TIMESTAMP_KEY = (userId: string) => `AI_CHAT_FOLLOWUP_TS_${userId}`;
 export const SIMULADO_ATTEMPT_PROGRESS_KEY = (attemptId: number) => `SIMULADO_ATTEMPT_PROGRESS_${attemptId}`;
