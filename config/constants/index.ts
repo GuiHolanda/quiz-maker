@@ -161,6 +161,10 @@ export const ADMIN_EXCHANGE_RATE_URL = '/admin/exchange-rate';
 export const ACTIVE_MODEL_PRICING_USD = {
   inputPerMillion: 0.75,
   outputPerMillion: 4.5,
+  // OpenAI Responses API web_search tool: $30 per 1,000 calls.
+  // Every `research` step sets webSearch:true → tool_choice:'required', so each
+  // research step burns exactly one search call regardless of token count.
+  webSearchPerCallUSD: 0.03,
 } as const;
 
 export const USD_TO_BRL_FALLBACK = 5.7;

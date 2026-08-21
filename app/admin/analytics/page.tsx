@@ -25,10 +25,11 @@ const brl2Formatter = new Intl.NumberFormat('pt-BR', {
   maximumFractionDigits: 2,
 });
 
-function computeCostBRL(inputTokens: number, outputTokens: number, usdToBrl: number): number {
+function computeCostBRL(inputTokens: number, outputTokens: number, usdToBrl: number, webSearchCalls: number = 0): number {
   const usd =
     (inputTokens * ACTIVE_MODEL_PRICING_USD.inputPerMillion) / 1_000_000 +
-    (outputTokens * ACTIVE_MODEL_PRICING_USD.outputPerMillion) / 1_000_000;
+    (outputTokens * ACTIVE_MODEL_PRICING_USD.outputPerMillion) / 1_000_000 +
+    webSearchCalls * ACTIVE_MODEL_PRICING_USD.webSearchPerCallUSD;
   return usd * usdToBrl;
 }
 
@@ -225,21 +226,42 @@ export default async function AdminAnalyticsPage() {
               overview.avgTokensPerQuestion.toLocaleString('pt-BR'),
               `(${overview.totalInputTokens.toLocaleString('pt-BR')} in + ${overview.totalOutputTokens.toLocaleString('pt-BR')} out) / ${overview.totalQuestionsGenerated.toLocaleString('pt-BR')} q`
             )}
-            {renderKpiCard(
-              'Custo Total (BRL)',
-              brlFormatter.format(computeCostBRL(overview.totalInputTokens, overview.totalOutputTokens, exchangeRate)),
-              `Cotação: ${rateLabel}/USD`
-            )}
-            {renderKpiCard(
-              'Custo Medio/questão',
-              overview.totalQuestionsGenerated > 0
-                ? brlFormatter.format(
-                    computeCostBRL(overview.totalInputTokens, overview.totalOutputTokens, exchangeRate) /
-                      overview.totalQuestionsGenerated
-                  )
-                : '—',
-              `${ACTIVE_MODEL_PRICING_USD.inputPerMillion.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/M in · ${ACTIVE_MODEL_PRICING_USD.outputPerMillion.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/M out`
-            )}
+            {(() => {
+              const totalResearchCalls = Object.values(overview.tokensByAction).reduce(
+                (sum, action) => sum + (action.steps.research?.count ?? 0),
+                0
+              );
+              return (
+                <>
+                  {renderKpiCard(
+                    'Custo Total (BRL)',
+                    brlFormatter.format(
+                      computeCostBRL(
+                        overview.totalInputTokens,
+                        overview.totalOutputTokens,
+                        exchangeRate,
+                        totalResearchCalls
+                      )
+                    ),
+                    `Cotação: ${rateLabel}/USD · ${totalResearchCalls} buscas web`
+                  )}
+                  {renderKpiCard(
+                    'Custo Medio/questão',
+                    overview.totalQuestionsGenerated > 0
+                      ? brlFormatter.format(
+                          computeCostBRL(
+                            overview.totalInputTokens,
+                            overview.totalOutputTokens,
+                            exchangeRate,
+                            totalResearchCalls
+                          ) / overview.totalQuestionsGenerated
+                        )
+                      : '—',
+                    `${ACTIVE_MODEL_PRICING_USD.inputPerMillion.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/M in · ${ACTIVE_MODEL_PRICING_USD.outputPerMillion.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/M out · ${ACTIVE_MODEL_PRICING_USD.webSearchPerCallUSD.toLocaleString('pt-BR', { minimumFractionDigits: 3 })}/busca`
+                  )}
+                </>
+              );
+            })()}
           </div>
         </>
       )}
@@ -379,6 +401,8 @@ export default async function AdminAnalyticsPage() {
             <br />
             ** P90 = consumo do usuário mais pesado dentro dos 10% que mais geram questões no plano. Em vermelho quando
             esse consumo já alcança o break-even — a margem do plano passa a depender dos outros 90% nunca chegarem lá.
+            <br />
+            Custo de tokens inclui input/output mas não busca web (calculada por etapa nas tabelas acima).
           </p>
         </>
       )}
@@ -405,7 +429,8 @@ export default async function AdminAnalyticsPage() {
 
   function renderActionCard(action: string, stats: AdminActionStats, usdToBrl: number) {
     const totalTokens = stats.inputTokens + stats.outputTokens;
-    const costBRL = computeCostBRL(stats.inputTokens, stats.outputTokens, usdToBrl);
+    const webSearchCalls = stats.steps.research?.count ?? 0;
+    const costBRL = computeCostBRL(stats.inputTokens, stats.outputTokens, usdToBrl, webSearchCalls);
     const stepEntries = Object.entries(stats.steps);
 
     return (
@@ -461,7 +486,8 @@ export default async function AdminAnalyticsPage() {
               <tbody>
                 {stepEntries.map(([step, stepStats]) => {
                   const stepTotal = stepStats.inputTokens + stepStats.outputTokens;
-                  const stepCost = computeCostBRL(stepStats.inputTokens, stepStats.outputTokens, usdToBrl);
+                  const stepWebSearchCalls = step === 'research' ? stepStats.count : 0;
+                  const stepCost = computeCostBRL(stepStats.inputTokens, stepStats.outputTokens, usdToBrl, stepWebSearchCalls);
                   const stepPct = totalTokens > 0 ? Math.round((stepTotal / totalTokens) * 100) : 0;
                   return (
                     <tr key={step} className="border-b border-divider last:border-0">
