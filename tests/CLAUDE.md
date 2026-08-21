@@ -97,7 +97,7 @@ npx playwright show-report
 3. Criar `tests/e2e/tests/<nome>.spec.ts`, importar de `../fixtures/auth.fixture`, usar `authedPage`. Para ambas as verticais: iterar `for (const domain of ALL_DOMAINS)`.
 4. Se seedar novo model, estender `support/db-cleanup.ts` (ordem FK importa).
 
-### Cobertura (20 testes, 6 specs)
+### Cobertura (28 testes, 7 specs)
 
 | Spec | Cobre |
 |---|---|
@@ -105,6 +105,7 @@ npx playwright show-report
 | `generation-errors` (×2) | quota 403; abort de rede → toast de erro |
 | `sse-reconnect` (×2) | cancelar job; restaura `running`/`awaiting_review` após reload |
 | `exam-editor-validation` (×2) | discard de draft (limpa localStorage); guard de Salvar sem nome |
+| `exam-identify` (×2) | identificação dentro da tela de loading: cancelar em voo não é ressuscitado por resposta tardia (guarda `runId`); sem match oferece retry inline; falha do identify não despeja no editor em branco; desambiguação confirma o match escolhido |
 | `question-bank` | seed via API → verificar → buscar → deletar; empty state |
 | `empty-states` | empty state de simulados e certificações |
 

@@ -1,4 +1,4 @@
-import { getExamDraftValidation } from '@/lib/exam-draft-validation';
+import { getExamDraftValidation, getDistributionSumTone } from '@/lib/exam-draft-validation';
 import type { Exam } from '@/shared/types';
 
 // Regression: an empty sections array made `sections.every(...)` vacuously true, so an
@@ -94,5 +94,70 @@ describe('getExamDraftValidation', () => {
     const draft: Exam = { ...baseCertification, totalQuestions: 0 };
 
     expect(getExamDraftValidation(draft).hasRequiredFields).toBe(false);
+  });
+
+  it('reports no missing fields when a certification draft is complete', () => {
+    expect(getExamDraftValidation(baseCertification).missingFields).toEqual([]);
+  });
+
+  it('lists missing fields in canvas order', () => {
+    const draft: Exam = { ...baseCertification, name: '', key: null };
+
+    expect(getExamDraftValidation(draft).missingFields).toEqual(['name', 'key']);
+  });
+
+  it('never reports role or year as missing for a certification', () => {
+    const draft: Exam = { ...baseCertification, role: null, year: null };
+
+    expect(getExamDraftValidation(draft).missingFields).not.toContain('role');
+    expect(getExamDraftValidation(draft).missingFields).not.toContain('year');
+  });
+
+  it('reports role and year as missing for a public exam that lacks them', () => {
+    const draft: Exam = { ...basePublicExam, role: null, year: null };
+
+    expect(getExamDraftValidation(draft).missingFields).toEqual(['role', 'year']);
+  });
+
+  it('reads the `reference` field from provider for certifications and examBoard for public exams', () => {
+    const missingProvider: Exam = { ...baseCertification, provider: null };
+    const missingExamBoard: Exam = { ...basePublicExam, examBoard: null };
+
+    expect(getExamDraftValidation(missingProvider).missingFields).toContain('reference');
+    expect(getExamDraftValidation(missingExamBoard).missingFields).toContain('reference');
+  });
+
+  it('keeps hasRequiredFields in sync with missingFields being empty', () => {
+    const complete = getExamDraftValidation(basePublicExam);
+    const incomplete = getExamDraftValidation({ ...basePublicExam, role: null });
+
+    expect(complete.missingFields).toEqual([]);
+    expect(complete.hasRequiredFields).toBe(true);
+    expect(incomplete.missingFields.length).toBeGreaterThan(0);
+    expect(incomplete.hasRequiredFields).toBe(false);
+  });
+
+  it('counts sections, topics, and sections with no topics — a missing topics array counts as zero', () => {
+    const draft: Exam = {
+      ...baseCertification,
+      sections: [
+        { name: 'Fundamentals', minQuestions: 0, maxQuestions: 50, topics: [{ name: 'A' }, { name: 'B' }] },
+        { name: 'Advanced', minQuestions: 0, maxQuestions: 50, topics: [] },
+        { name: 'Extra', minQuestions: 0, maxQuestions: 0 },
+      ],
+    };
+    const result = getExamDraftValidation(draft);
+
+    expect(result.sectionCount).toBe(3);
+    expect(result.topicCount).toBe(2);
+    expect(result.sectionsWithoutTopics).toBe(2);
+  });
+
+  it('classifies the distribution sum into over/low/ok bands', () => {
+    expect(getDistributionSumTone(0)).toBe('low');
+    expect(getDistributionSumTone(89)).toBe('low');
+    expect(getDistributionSumTone(90)).toBe('ok');
+    expect(getDistributionSumTone(100)).toBe('ok');
+    expect(getDistributionSumTone(101)).toBe('over');
   });
 });

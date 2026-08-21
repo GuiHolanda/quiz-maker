@@ -87,7 +87,7 @@ export function ExamCard({ exam, type, isSelected, onClick, footerAction, isDisa
 
         {/* Stats row */}
         {hasStats && (
-          <div className="flex items-center bg-content2 flex-wrap gap-3 lg:gap-4 text-xs lg:text-sm text-default-400 px-4 lg:px-6 py-3 lg:py-4 border-y border-content2 shrink-0">
+          <div className="flex items-center bg-navy-800 flex-wrap gap-3 lg:gap-4 text-xs lg:text-sm text-default-400 px-4 lg:px-6 py-3 lg:py-4 border-y border-content2 shrink-0">
             {exam.totalQuestions > 0 && (
               <span className="inline-flex items-center gap-1">
                 <FontAwesomeIcon icon={faHashtag} size="sm" />
@@ -144,7 +144,7 @@ export function ExamCard({ exam, type, isSelected, onClick, footerAction, isDisa
         </div>
       </CardBody>
 
-      <CardFooter className="p-4 lg:p-6 bg-content2 flex items-center justify-between border-t border-default-200 shrink-0">
+      <CardFooter className="p-4 lg:p-6 bg-navy-800 flex items-center justify-between border-t border-default-200 shrink-0">
         <div className="flex gap-2 items-center">
           <FontAwesomeIcon className="text-default-400" icon={faClockRotateLeft} />
           <p className="text-sm text-default-400">{dateValue ? <RelativeDate date={dateValue} /> : null}</p>

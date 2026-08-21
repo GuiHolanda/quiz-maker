@@ -42,7 +42,15 @@ export const TID = {
   examEditorNameInput: 'exam-editor-name-input',
   examEditorDiscardBtn: 'exam-editor-discard-btn',
   examEditorSaveBtn: 'exam-editor-save-btn',
+  examEditorProvenanceCard: 'exam-editor-provenance-card',
   examDetailEditBtn: 'exam-detail-edit-btn',
+
+  // Exam seed identification (inside the /exams/new loading screen)
+  examSearchInput: 'exam-search-input',
+  examSearchSubmitBtn: 'exam-search-submit-btn',
+  seedLoadingCancelBtn: 'seed-loading-cancel-btn',
+  seedIdentifyMatchOption: 'seed-identify-match-option',
+  seedIdentifyConfirmedLabel: 'seed-identify-confirmed-label',
 
   // Question bank
   questionBankCard: 'question-bank-card',

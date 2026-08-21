@@ -18,22 +18,113 @@ import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
 import { canEditExams } from '@/config/constants';
 import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
 import { useExamSeed, emptyExamDraft } from './useExamSeed.hook';
-import { ExamSeedPicker } from './components/ExamSeedPicker';
-import { ExamEditorSkeleton } from './components/ExamEditorSkeleton';
+import type { ExamSeedState } from './useExamSeed.hook';
+import type { IdentifyPhase } from './components/seed/SeedIdentifyCard';
+import { ExamSeedPicker } from './components/seed/ExamSeedPicker';
+import { NewExamHeader } from './components/seed/NewExamHeader';
+import { SeedLoadingScreen, type SeedLoadingVariant } from './components/seed/SeedLoadingScreen';
 import { ExamEditorPage } from './components/ExamEditorPage';
 
-function readStoredDraft(storageKey: string): Exam | null {
+const DEBUG_MATCHES = [
+  {
+    label: 'AWS Certified Solutions Architect',
+    key: 'SAA-C03',
+    provider: 'Amazon Web Services',
+    examBoard: null,
+    role: null,
+    year: null,
+  },
+  {
+    label: 'AWS Certified Developer',
+    key: 'DVA-C02',
+    provider: 'Amazon Web Services',
+    examBoard: null,
+    role: null,
+    year: null,
+  },
+];
+const DEBUG_SEED = DEBUG_MATCHES[0];
+
+// Dev-only escape hatch to preview SeedLoadingScreen frozen at any stage — this state
+// resolves in seconds/minutes normally, too fast to iterate on its styling live.
+// ?debugLoading=identify&phase=searching|disambiguating|clarifying|failed
+// ?debugLoading=auto-config&stage=research|review|format (omit stage for the initial state)
+// ?debugLoading=edital
+function buildDebugVariant(searchParams: URLSearchParams): SeedLoadingVariant | null {
+  const kind = searchParams.get('debugLoading');
+
+  if (kind === 'identify') {
+    const phase = searchParams.get('phase');
+
+    if (phase === 'disambiguating') {
+      return { kind: 'identify', query: 'AWS Certified', phase: { kind: 'disambiguating', matches: DEBUG_MATCHES } };
+    }
+    if (phase === 'clarifying') {
+      return {
+        kind: 'identify',
+        query: 'AWS Certified',
+        phase: { kind: 'clarifying', message: 'Você quer dizer AWS Solutions Architect ou AWS Developer?' },
+      };
+    }
+    if (phase === 'failed') return { kind: 'identify', query: 'AWS Certified', phase: { kind: 'failed' } };
+
+    return { kind: 'identify', query: 'AWS Certified', phase: { kind: 'searching' } };
+  }
+
+  if (kind === 'auto-config') {
+    const stageParam = searchParams.get('stage');
+    const stage = stageParam === 'research' || stageParam === 'review' || stageParam === 'format' ? stageParam : null;
+
+    return { kind: 'auto-config', seed: DEBUG_SEED, stage };
+  }
+
+  if (kind === 'edital') return { kind: 'edital', fileName: searchParams.get('file') ?? 'edital-2026.pdf' };
+
+  return null;
+}
+
+function identifyQuery(state: ExamSeedState): string {
+  if (state.kind === 'identifying' || state.kind === 'identify-failed') return state.query;
+  if (state.kind === 'disambiguating' || state.kind === 'clarifying') return state.examName;
+
+  return '';
+}
+
+function identifyPhase(state: ExamSeedState): Exclude<IdentifyPhase, { kind: 'confirmed' }> {
+  switch (state.kind) {
+    case 'disambiguating':
+      return { kind: 'disambiguating', matches: state.matches };
+    case 'clarifying':
+      return { kind: 'clarifying', message: state.message };
+    case 'identify-failed':
+      return { kind: 'failed' };
+    default:
+      return { kind: 'searching' };
+  }
+}
+
+interface StoredDraft {
+  readonly draft: Exam;
+  readonly context?: string;
+  readonly sources?: string[];
+}
+
+function readStoredDraft(storageKey: string): StoredDraft | null {
   try {
     const raw = localStorage.getItem(storageKey);
 
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as Exam;
+    const parsed = JSON.parse(raw) as StoredDraft | Exam;
+    // Older persisted entries are a bare Exam, from before context/sources were added.
+    const draft = 'draft' in parsed ? parsed.draft : parsed;
+    const context = 'draft' in parsed ? parsed.context : undefined;
+    const sources = 'draft' in parsed ? parsed.sources : undefined;
 
     // A draft with no name and no sections isn't worth resuming — treat it as absent so
     // the seed picker shows instead of an editor with nothing distinguishing it from blank.
-    if (!parsed.name?.trim() && (!parsed.sections || parsed.sections.length === 0)) return null;
+    if (!draft.name?.trim() && (!draft.sections || draft.sections.length === 0)) return null;
 
-    return parsed;
+    return { draft, context, sources };
   } catch {
     return null;
   }
@@ -73,7 +164,7 @@ function NewExamContent() {
   // the user has already spent an LLM call or filled the whole editor by hand.
   const isAtExamCap = usage != null && usage.examsLimit !== -1 && usage.examsUsed >= usage.examsLimit;
   const [hydrated, setHydrated] = useState(false);
-  const [resumedDraft, setResumedDraft] = useState<Exam | null>(null);
+  const [resumedDraft, setResumedDraft] = useState<StoredDraft | null>(null);
 
   useEffect(() => {
     setResumedDraft(readStoredDraft(config.draftStorageKey));
@@ -82,9 +173,11 @@ function NewExamContent() {
     // mid-flow isn't a supported transition (the page fully remounts via the URL param).
   }, []);
 
-  const persistDraft = (draft: Exam) => {
+  const persistDraft = (draft: Exam, context?: string, sources?: string[]) => {
     try {
-      localStorage.setItem(config.draftStorageKey, JSON.stringify(draft));
+      const payload: StoredDraft = { draft, context, sources };
+
+      localStorage.setItem(config.draftStorageKey, JSON.stringify(payload));
     } catch {
       /* storage full or unavailable */
     }
@@ -118,10 +211,39 @@ function NewExamContent() {
     </Breadcrumbs>
   );
 
+  const debugVariant = process.env.NODE_ENV !== 'production' ? buildDebugVariant(searchParams) : null;
+
+  if (debugVariant) {
+    return (
+      <PageHeader breadcrumbs={breadcrumbs}>
+        <SeedLoadingScreen
+          startedAt={Date.now()}
+          type={type}
+          variant={debugVariant}
+          onCancel={() => router.push(listHref)}
+          onRetry={() => {}}
+          onSelectMatch={() => {}}
+          onStartBlank={() => {}}
+        />
+      </PageHeader>
+    );
+  }
+
   // Tela 2 (editor / skeleton) carries its own name-based heading — showing PageHeader's
   // static title above it would double up. Only Tela 1 (the seed picker) needs it.
-  const isEditorMode =
-    hydrated && (resumedDraft !== null || ['ready', 'error', 'loading-blueprint'].includes(seed.state.kind));
+  // Every state below runs the loading screen, which carries its own header — showing the
+  // Tela 1 header above it would double up.
+  const SCREEN_OWNED_STATES = [
+    'ready',
+    'error',
+    'identifying',
+    'disambiguating',
+    'clarifying',
+    'identify-failed',
+    'loading-blueprint',
+    'extracting-edital',
+  ];
+  const isEditorMode = hydrated && (resumedDraft !== null || SCREEN_OWNED_STATES.includes(seed.state.kind));
 
   if (!canEdit) {
     return (
@@ -165,29 +287,60 @@ function NewExamContent() {
   }
 
   return (
-    <PageHeader breadcrumbs={breadcrumbs} title={isEditorMode ? undefined : pageTitle}>
+    <PageHeader breadcrumbs={breadcrumbs}>
       {!hydrated ? null : resumedDraft ? (
         <ExamEditorPage
           type={type}
-          initialDraft={resumedDraft}
+          context={resumedDraft.context}
+          initialDraft={resumedDraft.draft}
+          sources={resumedDraft.sources}
           onDiscard={handleDiscard}
           onDraftChange={persistDraft}
           onSaved={handleSaved}
         />
-      ) : (
+      ) : isEditorMode ? (
         renderSeedContent()
+      ) : (
+        <>
+          <NewExamHeader cancelHref={listHref} title={t(config.seedQuestionKey)} />
+          {renderSeedContent()}
+        </>
       )}
     </PageHeader>
   );
 
   function renderSeedContent() {
     switch (seed.state.kind) {
+      case 'identifying':
+      case 'disambiguating':
+      case 'clarifying':
+      case 'identify-failed':
+        return (
+          <SeedLoadingScreen
+            startedAt={seed.state.startedAt}
+            type={type}
+            variant={{ kind: 'identify', query: identifyQuery(seed.state), phase: identifyPhase(seed.state) }}
+            onCancel={seed.reset}
+            onRetry={seed.identifyByName}
+            onSelectMatch={(match) => void seed.confirmMatch(match)}
+            onStartBlank={seed.startBlank}
+          />
+        );
       case 'loading-blueprint':
         return (
-          <ExamEditorSkeleton
-            examName={seed.state.examName}
-            provider={seed.state.provider}
-            stage={seed.state.stage}
+          <SeedLoadingScreen
+            startedAt={seed.state.startedAt}
+            type={type}
+            variant={{ kind: 'auto-config', seed: seed.state.seed, stage: seed.state.stage }}
+            onCancel={seed.reset}
+          />
+        );
+      case 'extracting-edital':
+        return (
+          <SeedLoadingScreen
+            startedAt={seed.state.startedAt}
+            type={type}
+            variant={{ kind: 'edital', fileName: seed.state.fileName }}
             onCancel={seed.reset}
           />
         );
@@ -217,10 +370,8 @@ function NewExamContent() {
       default:
         return (
           <ExamSeedPicker
-            state={seed.state}
             type={type}
             onIdentify={seed.identifyByName}
-            onSelectMatch={(match) => void seed.confirmMatch(match)}
             onStartBlank={seed.startBlank}
             onUploadEdital={seed.uploadEdital}
           />

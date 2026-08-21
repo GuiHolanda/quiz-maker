@@ -1,5 +1,6 @@
 'use client';
 import type { AutoConfigMatch, AutoConfigStage, Exam, ExamType, Language } from '@/shared/types';
+import type { ConfirmedSeed } from './components/seed/SeedIdentifyCard';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -16,20 +17,31 @@ import { AUTO_CONFIG_URL } from '@/config/constants';
 
 export type ExamSeedState =
   | { readonly kind: 'idle' }
-  | { readonly kind: 'identifying' }
-  | { readonly kind: 'disambiguating'; readonly examName: string; readonly matches: AutoConfigMatch[] }
-  | { readonly kind: 'clarifying'; readonly examName: string; readonly message: string }
+  | { readonly kind: 'identifying'; readonly query: string; readonly startedAt: number }
+  | {
+      readonly kind: 'disambiguating';
+      readonly examName: string;
+      readonly matches: AutoConfigMatch[];
+      readonly startedAt: number;
+    }
+  | { readonly kind: 'clarifying'; readonly examName: string; readonly message: string; readonly startedAt: number }
+  // The identify call itself failed. Unlike a blueprint failure — where the exam is already
+  // known and a prefilled editor is useful — there is nothing to prefill here, so the flow
+  // stays on the loading screen and offers a retry instead of a blank form.
+  | { readonly kind: 'identify-failed'; readonly query: string; readonly startedAt: number }
   // The certification/concurso is confirmed — the editor (Tela 2) mounts now, showing a
   // skeleton where the distribution table will land, rather than holding the user on Tela 1
   // through the whole research→review→format pipeline. `stage` tracks SSE progress so the
   // skeleton can show what's happening instead of a mute spinner.
   | {
       readonly kind: 'loading-blueprint';
-      readonly examName: string;
-      readonly provider: string;
+      // Full match, not just the name: the loading screen surfaces the exam code, role and
+      // year it already resolved, which otherwise stay invisible until the editor.
+      readonly seed: ConfirmedSeed;
       readonly stage: AutoConfigStage | null;
+      readonly startedAt: number;
     }
-  | { readonly kind: 'extracting-edital' }
+  | { readonly kind: 'extracting-edital'; readonly fileName: string; readonly startedAt: number }
   | { readonly kind: 'ready'; readonly draft: Exam; readonly context: string; readonly sources: string[] }
   // The pipeline failed or returned something unparseable — open the editor blank rather
   // than dead-end the user; `seedName` pre-fills the name field so nothing typed is lost.
@@ -81,8 +93,13 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
     eventSourceRef.current = null;
   }, []);
 
+  // Invalidated by reset() so a stale extractEdital() response can't clobber a user-initiated
+  // cancel — extractEdital is a plain HTTP call with no server-side job to close out.
+  const runIdRef = useRef(0);
+
   const reset = useCallback(() => {
     userActedRef.current = true;
+    runIdRef.current += 1;
     closeStream();
     if (jobIdRef.current) {
       const jobId = jobIdRef.current;
@@ -152,9 +169,25 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
   const confirmMatch = useCallback(
     async (match: AutoConfigMatch) => {
       userActedRef.current = true;
-      const provider = match.provider ?? match.examBoard ?? '';
+      const runId = ++runIdRef.current;
+      const seed: ConfirmedSeed = {
+        label: match.label,
+        key: match.key,
+        provider: match.provider,
+        examBoard: match.examBoard,
+        role: match.role,
+        year: match.year,
+      };
 
-      setState({ kind: 'loading-blueprint', examName: match.label, provider, stage: null });
+      // Coming straight off identify (single match, no user input in between) the clock keeps
+      // running — it's one continuous wait. Picked from a disambiguation list, it restarts, so
+      // the user's own deliberation time isn't billed to the pipeline.
+      setState((prev) => ({
+        kind: 'loading-blueprint',
+        seed,
+        stage: null,
+        startedAt: prev.kind === 'identifying' ? prev.startedAt : Date.now(),
+      }));
 
       try {
         const { jobId } = await createAutoConfigJob({
@@ -168,8 +201,10 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
           language,
         });
 
+        if (runIdRef.current !== runId) return;
         watchJob(jobId, match.label);
       } catch (err) {
+        if (runIdRef.current !== runId) return;
         if (showLimitIfBlocked(err)) {
           setState({ kind: 'idle' });
           return;
@@ -187,16 +222,21 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
       if (!trimmed) return;
 
       userActedRef.current = true;
-      setState({ kind: 'identifying' });
+      const runId = ++runIdRef.current;
+      const startedAt = Date.now();
+
+      setState({ kind: 'identifying', query: trimmed, startedAt });
 
       try {
         const result = await identifyExam(trimmed, type, language);
 
+        if (runIdRef.current !== runId) return;
         if (result.matches.length === 0) {
           setState({
             kind: 'clarifying',
             examName: trimmed,
             message: result.clarification ?? '',
+            startedAt,
           });
           return;
         }
@@ -204,13 +244,14 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
           await confirmMatch(result.matches[0]);
           return;
         }
-        setState({ kind: 'disambiguating', examName: trimmed, matches: result.matches });
+        setState({ kind: 'disambiguating', examName: trimmed, matches: result.matches, startedAt });
       } catch (err) {
+        if (runIdRef.current !== runId) return;
         if (showLimitIfBlocked(err)) {
           setState({ kind: 'idle' });
           return;
         }
-        setState({ kind: 'error', messageKey: 'error.aiSeedNoIdentify', seedName: trimmed });
+        setState({ kind: 'identify-failed', query: trimmed, startedAt });
       }
     },
     [type, language, confirmMatch, showLimitIfBlocked]
@@ -219,12 +260,16 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
   const uploadEdital = useCallback(
     async (file: File, role: string | undefined) => {
       userActedRef.current = true;
-      setState({ kind: 'extracting-edital' });
+      const runId = ++runIdRef.current;
+
+      setState({ kind: 'extracting-edital', fileName: file.name, startedAt: Date.now() });
       try {
         const exam = await extractEdital(file, role);
 
+        if (runIdRef.current !== runId) return;
         setState({ kind: 'ready', draft: exam, context: '', sources: [] });
       } catch (err: unknown) {
+        if (runIdRef.current !== runId) return;
         if (showLimitIfBlocked(err)) {
           setState({ kind: 'idle' });
 
@@ -245,9 +290,16 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
       if (cancelled || userActedRef.current || !job || (job.status !== 'queued' && job.status !== 'running')) return;
       setState({
         kind: 'loading-blueprint',
-        examName: job.seedName,
-        provider: job.seedProvider ?? '',
+        seed: {
+          label: job.seedName,
+          key: null,
+          provider: job.seedProvider,
+          examBoard: null,
+          role: null,
+          year: null,
+        },
         stage: (job.stage as AutoConfigStage) ?? null,
+        startedAt: new Date(job.createdAt).getTime(),
       });
       watchJob(job.id, job.seedName);
     });

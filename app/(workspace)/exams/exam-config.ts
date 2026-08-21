@@ -27,6 +27,8 @@ export interface ExamTypeConfig {
   readonly addSectionLabel: string;
   readonly cardEmptyChipKey: string;
   readonly icon: IconDefinition;
+  readonly seedQuestionKey: string;
+  readonly seedSearchActionKey: string;
 }
 
 export const EXAM_CONFIG: Record<ExamType, ExamTypeConfig> = {
@@ -54,6 +56,8 @@ export const EXAM_CONFIG: Record<ExamType, ExamTypeConfig> = {
     addSectionLabel: 'certification.addTopic',
     cardEmptyChipKey: 'certification.noTopics',
     icon: faGraduationCap,
+    seedQuestionKey: 'exam.aiSeedCertQuestion',
+    seedSearchActionKey: 'exam.newSearchActionCert',
   },
   public_exam: {
     draftStorageKey: 'NEW_PUBLIC_EXAM_DRAFT',
@@ -79,5 +83,7 @@ export const EXAM_CONFIG: Record<ExamType, ExamTypeConfig> = {
     addSectionLabel: 'concurso.addSubject',
     cardEmptyChipKey: 'concurso.noSubjects',
     icon: faClipboardList,
+    seedQuestionKey: 'exam.aiSeedPublicExamQuestion',
+    seedSearchActionKey: 'exam.newSearchActionPublicExam',
   },
 };

@@ -20,8 +20,7 @@ async function seedQuestion(
   };
 
   const pool =
-    (await prisma.questionPool.findFirst({ where: poolKey })) ??
-    (await prisma.questionPool.create({ data: poolKey }));
+    (await prisma.questionPool.findFirst({ where: poolKey })) ?? (await prisma.questionPool.create({ data: poolKey }));
 
   const existing = await prisma.examQuestion.findFirst({
     where: { poolId: pool.id, text: question.text },

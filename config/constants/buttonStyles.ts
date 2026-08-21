@@ -1,7 +1,3 @@
-// Approved className strings for HeroUI Button components.
-// Each constant matches a documented pattern in the style-guide.
-// Icon-only buttons always require: isIconOnly + size="sm" + aria-label + variant="light" (neutral/danger) or no variant (primary).
-
 export const buttonStyles = {
   primary:
     'bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200',
@@ -9,7 +5,7 @@ export const buttonStyles = {
     'bg-primary text-primary-foreground text-xs font-semibold rounded-lg hover:opacity-90 h-8 px-4 transition-opacity duration-200',
   secondary:
     'border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold transition-colors duration-200',
-  flat: 'bg-content2 border border-default-200 text-default-500 hover:bg-primary/10 hover:text-primary hover:border-primary/30 rounded-lg transition-colors duration-200',
+  flat: 'bg-content2 border border-content2 font-semibold text-default-500 hover:bg-primary/10 hover:text-primary hover:border-primary/30 rounded-lg transition-colors duration-200',
   danger: 'bg-danger text-white font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200',
   dangerFlat:
     'bg-danger/10 text-danger border border-danger/20 font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200',
