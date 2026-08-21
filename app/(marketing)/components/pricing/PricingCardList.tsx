@@ -21,34 +21,34 @@ interface PricingFeature {
 const FREE_FEATURES: readonly PricingFeature[] = [
   { labelKey: 'pricing.features.questionsPerMonth', included: true, value: '250' },
   { labelKey: 'pricing.features.customExams', included: true, value: '2' },
+  { labelKey: 'pricing.features.canEditExams', included: false },
   { labelKey: 'pricing.features.aiExplanations', included: true },
   { labelKey: 'pricing.features.topicDistribution', included: true },
   { labelKey: 'pricing.features.simulados', included: true },
   { labelKey: 'pricing.features.browseQuestions', included: true },
   { labelKey: 'pricing.features.aiChat', included: false },
-  { labelKey: 'pricing.features.prioritySupport', included: false },
 ];
 
 const PRO_FEATURES: readonly PricingFeature[] = [
   { labelKey: 'pricing.features.questionsPerMonth', included: true, value: '1,500' },
   { labelKey: 'pricing.features.customExams', included: true, value: '5' },
+  { labelKey: 'pricing.features.canEditExams', included: true },
   { labelKey: 'pricing.features.aiExplanations', included: true },
   { labelKey: 'pricing.features.topicDistribution', included: true },
   { labelKey: 'pricing.features.simulados', included: true },
   { labelKey: 'pricing.features.browseQuestions', included: true },
   { labelKey: 'pricing.features.aiChat', included: false },
-  { labelKey: 'pricing.features.prioritySupport', included: false },
 ];
 
 const PRO_AI_FEATURES: readonly PricingFeature[] = [
   { labelKey: 'pricing.features.questionsPerMonth', included: true, value: '2,500' },
   { labelKey: 'pricing.features.customExams', included: true, value: '5' },
+  { labelKey: 'pricing.features.canEditExams', included: true },
   { labelKey: 'pricing.features.aiExplanations', included: true },
   { labelKey: 'pricing.features.topicDistribution', included: true },
   { labelKey: 'pricing.features.simulados', included: true },
   { labelKey: 'pricing.features.browseQuestions', included: true },
   { labelKey: 'pricing.features.aiChat', included: true },
-  { labelKey: 'pricing.features.prioritySupport', included: true },
 ];
 
 export function PricingCardList() {
@@ -114,7 +114,7 @@ export function PricingCardList() {
         nameKey="pricing.plan.pro"
         planKey="pro"
         priceKey={period === 'monthly' ? 'pricing.plan.pro.monthly' : 'pricing.plan.pro.yearly'}
-        sublineKey={period === 'yearly' ? 'pricing.plan.billedAnnually' : undefined}
+        sublineKey={period === 'yearly' ? 'pricing.plan.pro.yearlyTotal' : undefined}
         onCtaPress={() => handleCheckout('pro')}
       />
       <PricingCard
@@ -126,7 +126,7 @@ export function PricingCardList() {
         nameKey="pricing.plan.proAi"
         planKey="pro_ai"
         priceKey={period === 'monthly' ? 'pricing.plan.proAi.monthly' : 'pricing.plan.proAi.yearly'}
-        sublineKey={period === 'yearly' ? 'pricing.plan.billedAnnually' : undefined}
+        sublineKey={period === 'yearly' ? 'pricing.plan.proAi.yearlyTotal' : undefined}
         onCtaPress={() => handleCheckout('pro_ai')}
       />
     </div>

@@ -6,6 +6,7 @@ import { faFileLines, faClock, faCircleCheck, faRectangleList } from '@fortaweso
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import type { DemoCatalogExam, DemoCatalogDomain } from '@/shared/types';
 import { distributeByWeight } from '@/lib/largest-remainder';
+import { PLAN_LIMITS } from '@/config/constants';
 import { BlueprintCorners } from '@/app/(marketing)/components/shared/BlueprintCorners';
 import { DemoProgressBar } from './DemoProgressBar';
 import { DemoStepHeader } from './DemoStepHeader';
@@ -161,7 +162,9 @@ export function DemoStep2Alloc({ exam, onGenerate, onBack }: DemoStep2AllocProps
           >
             {t('demo.step2.distributeBtn')}
           </button>
-          <p className="text-mkt-text opacity-40 text-xs mt-4 leading-relaxed">{t('demo.step2.planNote')}</p>
+          <p className="text-mkt-text opacity-40 text-xs mt-4 leading-relaxed">
+            {t('demo.step2.planNote', { free: PLAN_LIMITS.free.questionsPerPeriod })}
+          </p>
         </div>
 
         {/* Right: allocation table */}

@@ -25,12 +25,12 @@ const FEATURES: readonly FeatureRow[] = [
     pro: 'pricing.features.pro.certifications',
     proAi: 'pricing.features.proAi.certifications',
   },
+  { labelKey: 'pricing.features.canEditExams', free: false, pro: true, proAi: true },
   { labelKey: 'pricing.features.aiExplanations', free: true, pro: true, proAi: true },
   { labelKey: 'pricing.features.topicDistribution', free: true, pro: true, proAi: true },
   { labelKey: 'pricing.features.simulados', free: true, pro: true, proAi: true },
   { labelKey: 'pricing.features.browseQuestions', free: true, pro: true, proAi: true },
   { labelKey: 'pricing.features.aiChat', free: false, pro: false, proAi: true },
-  { labelKey: 'pricing.features.prioritySupport', free: false, pro: false, proAi: true },
 ];
 
 interface FeatureCellProps {

@@ -5,6 +5,7 @@ import { Divider } from '@heroui/divider';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { BlueprintFrame } from '@/app/(marketing)/components/shared/BlueprintFrame';
+import { PLAN_LIMITS } from '@/config/constants';
 
 interface DemoResultActionsProps {
   readonly onRestart: () => void;
@@ -31,7 +32,7 @@ export function DemoResultActions({ onRestart }: DemoResultActionsProps) {
         <ul className="mt-4 space-y-4">
           {BULLET_KEYS.map((key) => (
             <li key={key} className="text-base font-semibold text-white/80">
-              {t(key)}
+              {t(key, { free: PLAN_LIMITS.free.questionsPerPeriod })}
             </li>
           ))}
         </ul>
@@ -42,7 +43,9 @@ export function DemoResultActions({ onRestart }: DemoResultActionsProps) {
         >
           {t('demo.step4.ctaBtn')}
         </NextLink>
-        <p className="mono text-xs mt-4 text-center text-mkt-surface/80">{t('demo.step4.ctaNote')}</p>
+        <p className="mono text-xs mt-4 text-center text-mkt-surface/80">
+          {t('demo.step4.ctaNote', { free: PLAN_LIMITS.free.questionsPerPeriod })}
+        </p>
       </BlueprintFrame>
 
       <BlueprintFrame className="p-6">
