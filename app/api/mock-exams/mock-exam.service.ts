@@ -4,6 +4,7 @@ import { CreateMockExamPayload, MockExamSectionConfig, ExamType } from '@/shared
 import { normalizeName, looseKey } from '@/shared/utils';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { ExamQuestionService } from '@/features/services/exam-question.service';
+import { MetricsService } from '@/features/services/metrics.service';
 import { certificationAnswersPrompt } from '@/config/prompts/certification-questions/answers.prompt';
 import { publicExamAnswersPrompt } from '@/config/prompts/public-exam-questions/answers.prompt';
 
@@ -12,6 +13,7 @@ const ANSWERS_BATCH_SIZE = 10;
 export class MockExamService {
   private openAIServiceInstance: OpenAIService | null = null;
   private questionServiceInstance: ExamQuestionService | null = null;
+  private metricsServiceInstance: MetricsService | null = null;
 
   private get openAIService(): OpenAIService {
     this.openAIServiceInstance ??= new OpenAIService();
@@ -23,6 +25,12 @@ export class MockExamService {
     this.questionServiceInstance ??= new ExamQuestionService();
 
     return this.questionServiceInstance;
+  }
+
+  private get metricsService(): MetricsService {
+    this.metricsServiceInstance ??= new MetricsService();
+
+    return this.metricsServiceInstance;
   }
 
   private examRef(exam: { id: string; name: string; type: string; provider?: any; examBoard?: any }) {
@@ -317,9 +325,15 @@ export class MockExamService {
     const isCert = mockExam.exam.type === 'certification';
     let totalGenerated = 0;
 
+    // count: 0 — backfilling a gabarito isn't a billable quota unit, but tokens still need
+    // to land in UsageLogStep so plan margin in /admin/analytics reflects them (see achado 14).
+    const logId = await this.metricsService.createLog(userId, 'generate_mock_answers', 0);
+    const startTime = Date.now();
+
     for (const [sectionName, sectionQuestions] of Array.from(bySection.entries())) {
       for (let i = 0; i < sectionQuestions.length; i += ANSWERS_BATCH_SIZE) {
         const slice = sectionQuestions.slice(i, i + ANSWERS_BATCH_SIZE);
+        const batchStart = Date.now();
 
         const llmResponse = isCert
           ? await this.openAIService.call(certificationAnswersPrompt, {
@@ -354,6 +368,13 @@ export class MockExamService {
               })),
             });
 
+        void this.metricsService.recordStep(
+          logId,
+          'answers',
+          { inputTokens: llmResponse.inputTokens, outputTokens: llmResponse.outputTokens },
+          Date.now() - batchStart
+        );
+
         const parsed = JSON.parse(llmResponse.text) as {
           answers?: { questionId: number; correctOptions: string[] }[];
         };
@@ -370,6 +391,8 @@ export class MockExamService {
         }
       }
     }
+
+    await this.metricsService.finalize(logId, Date.now() - startTime);
 
     return { generated: totalGenerated };
   }

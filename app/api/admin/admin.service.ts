@@ -3,6 +3,16 @@ import type { UserPlan, UserAdminRow, AdminOverviewStats, AdminAuditEntry, Admin
 import { prisma } from '@/lib/prisma';
 import { PLAN_LIMITS } from '@/config/constants';
 
+// Nearest-rank percentile over an ascending-sorted array — simple and deterministic,
+// no interpolation between ranks. Empty input returns 0 rather than NaN.
+export function percentile(sortedAscending: number[], p: number): number {
+  if (sortedAscending.length === 0) return 0;
+
+  const index = Math.min(Math.ceil((p / 100) * sortedAscending.length) - 1, sortedAscending.length - 1);
+
+  return sortedAscending[Math.max(index, 0)];
+}
+
 export class AdminService {
   async getOverview(): Promise<AdminOverviewStats> {
     const [allUsers, usageLogs, tokenAgg, allStepsByLog, allCountsByUser, actionGroups, stepGroups] = await Promise.all(
@@ -164,6 +174,38 @@ export class AdminService {
       }
     }
 
+    // How much of their period quota users actually consume, per plan — the number that
+    // decides whether a plan's questionsPerPeriod is priced for realistic usage or only
+    // stays profitable on breakage. See the pricing tier audit's closing callout.
+    const questionCountsByPlan: Record<UserPlan, number[]> = {
+      free: [],
+      pro: [],
+      pro_ai: [],
+      tester: [],
+      admin: [],
+    };
+
+    for (const u of allUsers) {
+      const p = u.plan as UserPlan;
+      if (p in questionCountsByPlan) questionCountsByPlan[p].push(u.questionsGeneratedThisPeriod);
+    }
+
+    const usagePercentilesByPlan = Object.fromEntries(
+      Object.entries(questionCountsByPlan).map(([plan, counts]) => {
+        const sorted = [...counts].sort((a, b) => a - b);
+
+        return [
+          plan,
+          {
+            count: sorted.length,
+            p50: percentile(sorted, 50),
+            p75: percentile(sorted, 75),
+            p90: percentile(sorted, 90),
+          },
+        ];
+      })
+    ) as Record<UserPlan, { count: number; p50: number; p75: number; p90: number }>;
+
     return {
       totalUsers: allUsers.length,
       byPlan,
@@ -175,6 +217,7 @@ export class AdminService {
       avgTokensPerQuestion,
       tokensByPlan,
       tokensByAction,
+      usagePercentilesByPlan,
     };
   }
 

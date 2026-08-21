@@ -59,6 +59,9 @@ const ACTION_LABELS: Record<string, string> = {
   extract_edital: 'Extração de Edital',
   ai_chat: 'AI Chat',
   create_exam: 'Criar Certificação',
+  auto_config: 'Auto-config',
+  generate_explanation: 'Explicações por Alternativa',
+  generate_mock_answers: 'Gabarito de Simulado',
 };
 
 const STEP_LABELS: Record<string, string> = {
@@ -67,6 +70,12 @@ const STEP_LABELS: Record<string, string> = {
   format: 'Format',
   extract: 'Extract',
   chat: 'Chat',
+  identify: 'Identify',
+  config_research: 'Config Research',
+  config_review: 'Config Review',
+  config_format: 'Config Format',
+  explanation: 'Explanation',
+  answers: 'Answers',
 };
 
 export default async function AdminAnalyticsPage() {
@@ -253,6 +262,7 @@ export default async function AdminAnalyticsPage() {
                 <tr className="border-b border-divider bg-content2">
                   <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Plano</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Usuários</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">P90 Consumo **</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Receita est./mês *</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Custo Tokens</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Margem</th>
@@ -275,6 +285,15 @@ export default async function AdminAnalyticsPage() {
                     avgCostPerQ !== null && avgCostPerQ > 0 && hasRevenue ? Math.floor(planPrice / avgCostPerQ) : null;
                   const marginColorClass =
                     margin === null ? '' : margin >= 0 ? 'text-success font-semibold' : 'text-danger font-semibold';
+                  const percentiles = overview.usagePercentilesByPlan[plan];
+                  const planLimit = PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS]?.questionsPerPeriod ?? 0;
+                  const p90PercentOfLimit =
+                    planLimit > 0 && planLimit !== Infinity ? (percentiles.p90 / planLimit) * 100 : null;
+                  // The number that decides whether this plan's questionsPerPeriod is priced for
+                  // realistic usage or only stays profitable on breakage: once the heaviest 10% of
+                  // users already consume at or past break-even, margin depends on the other 90%
+                  // never catching up — see the pricing tier audit's closing callout.
+                  const p90AtOrPastBreakEven = breakEven !== null && percentiles.p90 >= breakEven;
 
                   return (
                     <tr key={plan} className="border-b border-divider last:border-0">
@@ -284,6 +303,26 @@ export default async function AdminAnalyticsPage() {
                         </Chip>
                       </td>
                       <td className="px-4 py-3 font-semibold text-foreground">{userCount}</td>
+                      <td className="px-4 py-3 text-xs">
+                        {percentiles.count > 0 ? (
+                          <div className="flex flex-col gap-0.5">
+                            <span
+                              className={
+                                p90AtOrPastBreakEven ? 'text-danger font-semibold' : 'text-foreground font-semibold'
+                              }
+                            >
+                              {percentiles.p90.toLocaleString('pt-BR')} q
+                            </span>
+                            <span className="text-default-400">
+                              {p90PercentOfLimit !== null
+                                ? `${p90PercentOfLimit.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}% da cota`
+                                : 'sem teto'}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-default-400">—</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-xs text-foreground">
                         {hasRevenue ? brlFormatter.format(revenue) : <span className="text-default-400">—</span>}
                       </td>
@@ -335,6 +374,9 @@ export default async function AdminAnalyticsPage() {
           </div>
           <p className="text-xs text-default-400 mt-2">
             * Receita estimada considera 100% assinaturas mensais. Planos anuais têm desconto de ~25%.
+            <br />
+            ** P90 = consumo do usuário mais pesado dentro dos 10% que mais geram questões no plano. Em vermelho quando
+            esse consumo já alcança o break-even — a margem do plano passa a depender dos outros 90% nunca chegarem lá.
           </p>
         </>
       )}

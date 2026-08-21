@@ -9,12 +9,27 @@ vi.mock('@/features/services/openAI.service', () => ({
   },
 }));
 
+const metricsCreateLogMock = vi.fn().mockResolvedValue('log-1');
+const metricsRecordStepMock = vi.fn();
+const metricsFinalizeMock = vi.fn();
+
+vi.mock('@/features/services/metrics.service', () => ({
+  MetricsService: class {
+    createLog = metricsCreateLogMock;
+    recordStep = metricsRecordStepMock;
+    finalize = metricsFinalizeMock;
+  },
+}));
+
 describe('MockExamService', () => {
   let service: MockExamService;
 
   beforeEach(() => {
     service = new MockExamService();
     openAICallMock.mockReset();
+    metricsCreateLogMock.mockClear();
+    metricsRecordStepMock.mockClear();
+    metricsFinalizeMock.mockClear();
   });
 
   // Behaviour 1: validateSectionAvailability throws 422 when count < requested (tested via create())
@@ -283,6 +298,7 @@ describe('MockExamService', () => {
 
       expect(result).toEqual({ generated: 0 });
       expect(openAICallMock).not.toHaveBeenCalled();
+      expect(metricsCreateLogMock).not.toHaveBeenCalled();
     });
 
     it('calls OpenAI per section and persists answers for missing questions', async () => {
@@ -337,6 +353,18 @@ describe('MockExamService', () => {
       expect(firstInput.public_exam_name).toBe('Concurso ABC');
       expect(firstInput.exam_board_name).toBe('CESGRANRIO');
       expect(firstInput.role).toBe('Analista');
+
+      // Regression: this LLM call used to bypass MetricsService entirely, so its tokens
+      // never showed up in /admin/analytics — see achado 14 of the pricing tier audit.
+      expect(metricsCreateLogMock).toHaveBeenCalledWith('user-1', 'generate_mock_answers', 0);
+      expect(metricsRecordStepMock).toHaveBeenCalledTimes(2);
+      expect(metricsRecordStepMock).toHaveBeenCalledWith(
+        'log-1',
+        'answers',
+        expect.objectContaining({ inputTokens: expect.any(Number), outputTokens: expect.any(Number) }),
+        expect.any(Number)
+      );
+      expect(metricsFinalizeMock).toHaveBeenCalledWith('log-1', expect.any(Number));
     });
 
     it('skips only the questions that already have an answer', async () => {

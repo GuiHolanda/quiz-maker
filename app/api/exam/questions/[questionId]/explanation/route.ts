@@ -4,6 +4,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { ExamQuestionService } from '@/features/services/exam-question.service';
+import { MetricsService } from '@/features/services/metrics.service';
 import { certificationExplanationsPrompt } from '@/config/prompts/certification-questions/explanations.prompt';
 import { publicExamExplanationsPrompt } from '@/config/prompts/public-exam-questions/explanations.prompt';
 import { toApiErrorResponse } from '@/lib/api-error';
@@ -12,6 +13,7 @@ export const maxDuration = 300;
 
 const openAIService = new OpenAIService();
 const questionService = new ExamQuestionService();
+const metricsService = new MetricsService();
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ questionId: string }> }) {
   const session = await auth();
@@ -44,6 +46,11 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     const options = Object.fromEntries(question.options.map((o) => [o.label, o.text]));
     const isPublicExam = question.exam?.type === 'public_exam';
 
+    // count: 0 — explanations aren't a billable quota unit (see CLAUDE.md), but tokens
+    // still need to land in UsageLogStep so plan margin in /admin/analytics reflects them.
+    const logId = await metricsService.createLog(session.user.id, 'generate_explanation', 0);
+    const t0 = Date.now();
+
     const llmResponse = isPublicExam
       ? await openAIService.call(
           publicExamExplanationsPrompt,
@@ -66,6 +73,16 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
           },
           { webSearch: false, jsonMode: true }
         );
+
+    const durationMs = Date.now() - t0;
+
+    void metricsService.recordStep(
+      logId,
+      'explanation',
+      { inputTokens: llmResponse.inputTokens, outputTokens: llmResponse.outputTokens },
+      durationMs
+    );
+    await metricsService.finalize(logId, durationMs);
 
     let explanations: Record<string, string>;
     try {

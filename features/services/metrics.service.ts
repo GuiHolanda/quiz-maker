@@ -10,7 +10,9 @@ type MetricsStep =
   | 'identify'
   | 'config_research'
   | 'config_review'
-  | 'config_format';
+  | 'config_format'
+  | 'explanation'
+  | 'answers';
 
 export class MetricsService {
   // count defaults to 1 (one billable unit of `action`). The auto-config identify call

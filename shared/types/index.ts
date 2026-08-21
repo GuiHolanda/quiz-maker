@@ -145,7 +145,14 @@ export interface ChatMessage {
 
 export type UserPlan = 'free' | 'pro' | 'pro_ai' | 'tester' | 'admin';
 
-export type QuotaAction = 'generate_questions' | 'create_exam' | 'extract_edital' | 'ai_chat' | 'auto_config';
+export type QuotaAction =
+  | 'generate_questions'
+  | 'create_exam'
+  | 'extract_edital'
+  | 'ai_chat'
+  | 'auto_config'
+  | 'generate_explanation'
+  | 'generate_mock_answers';
 
 // Which limit a 403 refers to. `plan_required` is not a quota at all — the plan simply
 // doesn't include the feature — but it travels the same path to the client, so the UI
@@ -367,6 +374,7 @@ export interface AdminOverviewStats {
   avgTokensPerQuestion: number;
   tokensByPlan: Record<UserPlan, { inputTokens: number; outputTokens: number; questionsGenerated: number }>;
   tokensByAction: Record<string, AdminActionStats>;
+  usagePercentilesByPlan: Record<UserPlan, { count: number; p50: number; p75: number; p90: number }>;
 }
 
 export interface AdminAuditEntry {
