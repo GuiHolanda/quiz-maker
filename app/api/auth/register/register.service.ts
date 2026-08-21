@@ -2,9 +2,7 @@ import bcrypt from 'bcryptjs';
 
 import { prisma } from '@/lib/prisma';
 import { EmailService } from '@/features/services/email.service';
-import { generateReferralCode } from '@/lib/referral-code';
-
-const MAX_REFERRAL_CODE_ATTEMPTS = 5;
+import { generateUniqueReferralCode } from '@/lib/referral-code';
 
 export class RegisterService {
   async register(body: unknown): Promise<{ id: string; email: string; redirectToVerify: boolean }> {
@@ -55,7 +53,11 @@ export class RegisterService {
 
     const [referredByUserId, referralCode] = await Promise.all([
       this.resolveReferrer(ref),
-      this.generateUniqueReferralCode(),
+      generateUniqueReferralCode(async (candidate) => {
+        const existing = await prisma.user.findUnique({ where: { referralCode: candidate }, select: { id: true } });
+
+        return !!existing;
+      }),
     ]);
 
     const user = await prisma.user.create({
@@ -92,20 +94,5 @@ export class RegisterService {
     });
 
     return referrer?.id ?? null;
-  }
-
-  // 8 chars from a 33-char alphabet is ~1.7e12 combinations — a real collision at any
-  // realistic user count is effectively impossible, but the unique constraint makes it a
-  // genuine (if rare) failure mode for prisma.user.create, so this retries instead of
-  // letting that surface as an opaque 500 on an unlucky signup.
-  private async generateUniqueReferralCode(): Promise<string> {
-    for (let attempt = 0; attempt < MAX_REFERRAL_CODE_ATTEMPTS; attempt++) {
-      const candidate = generateReferralCode();
-      const existing = await prisma.user.findUnique({ where: { referralCode: candidate }, select: { id: true } });
-
-      if (!existing) return candidate;
-    }
-
-    throw Object.assign(new Error('Failed to generate a unique referral code'), { status: 500 });
   }
 }

@@ -175,6 +175,14 @@ export interface UsageStats {
   sprintExpiresAt: string | null; // set only when plan === 'sprint'
 }
 
+export interface ReferralStats {
+  referralCode: string;
+  referralLink: string;
+  referredCount: number;
+  activatedCount: number;
+  bonusQuestionsEarned: number;
+}
+
 export interface BrowseSectionSummary {
   name: string;
   questionCount: number;

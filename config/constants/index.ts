@@ -71,6 +71,7 @@ export const RESET_PASSWORD_URL = '/auth/reset-password';
 export const BILLING_USAGE_URL = '/billing/usage';
 export const BILLING_CHECKOUT_URL = '/billing/checkout';
 export const BILLING_PORTAL_URL = '/billing/portal';
+export const BILLING_REFERRAL_URL = '/billing/referral';
 
 // Pro/Pro AI quotas below are the "nova grade" from the pricing tier audit (weeks 4-6):
 // lower per-period question count, higher exam count, break-even lands around 33%/40% of

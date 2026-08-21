@@ -184,4 +184,124 @@ export class EmailService {
       throw Object.assign(new Error(error.message ?? 'Failed to send password reset email'), { status: 500 });
     }
   }
+
+  async sendReferralRewardToFriend(to: string, bonusQuestions: number, dashboardUrl: string): Promise<void> {
+    const bodyHtml = `
+<h1 style="margin:0 0 12px;font-family:${FONT};font-size:22px;font-weight:700;color:#0f172a;line-height:1.2;">Voce ganhou questoes de bonus</h1>
+<p style="margin:0 0 32px;font-family:${FONT};font-size:15px;color:#64748b;line-height:1.6;">Bem-vindo ao ${BRAND_NAME}! Por ter entrado a partir de um convite, sua conta ja recebeu um bonus de pratica.</p>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:32px;">
+  <tr>
+    <td align="center" bgcolor="#f8fafc" style="background-color:#f8fafc;padding-top:28px;padding-right:24px;padding-bottom:28px;padding-left:24px;border:2px solid #e2e8f0;">
+      <p style="margin:0;font-family:${FONT};font-size:42px;font-weight:800;color:${BRAND_COLOR};line-height:1;">+${bonusQuestions}</p>
+      <p style="margin:12px 0 0;font-family:${FONT};font-size:13px;color:#94a3b8;line-height:1.4;">questoes adicionadas a sua cota</p>
+    </td>
+  </tr>
+</table>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:32px;">
+  <tr>
+    <td align="center">
+      <!--[if mso]>
+      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
+        href="${dashboardUrl}"
+        style="height:50px;v-text-anchor:middle;width:260px;"
+        arcsize="10%" stroke="f" fillcolor="${BRAND_COLOR}">
+        <w:anchorlock/>
+        <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:700;">Comecar a praticar</center>
+      </v:roundrect>
+      <![endif]-->
+      <!--[if !mso]><!-->
+      <a href="${dashboardUrl}"
+        style="background-color:${BRAND_COLOR};border-radius:8px;color:#ffffff;display:inline-block;font-family:${FONT};font-size:15px;font-weight:700;line-height:50px;text-align:center;text-decoration:none;width:260px;-webkit-text-size-adjust:none;mso-hide:all;">Comecar a praticar</a>
+      <!--<![endif]-->
+    </td>
+  </tr>
+</table>
+
+<p style="margin:0;font-family:${FONT};font-size:13px;color:#94a3b8;line-height:1.6;">Bom estudo!</p>`;
+
+    const bodyText = [
+      `Voce ganhou questoes de bonus - ${BRAND_NAME}`,
+      '',
+      `Por ter entrado a partir de um convite, voce recebeu +${bonusQuestions} questoes de bonus.`,
+      '',
+      dashboardUrl,
+    ].join('\n');
+
+    const { html, text } = emailLayout(bodyHtml, bodyText);
+
+    const { error } = await this.resend.emails.send({
+      from: this.sender,
+      to,
+      subject: `Voce ganhou +${bonusQuestions} questoes de bonus - ${BRAND_NAME}`,
+      html,
+      text,
+    });
+
+    if (error) {
+      console.error('[EmailService] sendReferralRewardToFriend failed:', error);
+      throw Object.assign(new Error(error.message ?? 'Failed to send referral reward email'), { status: 500 });
+    }
+  }
+
+  async sendReferralRewardToReferrer(to: string, bonusQuestions: number, dashboardUrl: string): Promise<void> {
+    const bodyHtml = `
+<h1 style="margin:0 0 12px;font-family:${FONT};font-size:22px;font-weight:700;color:#0f172a;line-height:1.2;">Sua indicacao rendeu questoes de bonus</h1>
+<p style="margin:0 0 32px;font-family:${FONT};font-size:15px;color:#64748b;line-height:1.6;">A pessoa que voce indicou comecou a estudar no ${BRAND_NAME}. Como agradecimento, sua conta acabou de receber um bonus de pratica.</p>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:32px;">
+  <tr>
+    <td align="center" bgcolor="#f8fafc" style="background-color:#f8fafc;padding-top:28px;padding-right:24px;padding-bottom:28px;padding-left:24px;border:2px solid #e2e8f0;">
+      <p style="margin:0;font-family:${FONT};font-size:42px;font-weight:800;color:${BRAND_COLOR};line-height:1;">+${bonusQuestions}</p>
+      <p style="margin:12px 0 0;font-family:${FONT};font-size:13px;color:#94a3b8;line-height:1.4;">questoes adicionadas a sua cota</p>
+    </td>
+  </tr>
+</table>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:32px;">
+  <tr>
+    <td align="center">
+      <!--[if mso]>
+      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
+        href="${dashboardUrl}"
+        style="height:50px;v-text-anchor:middle;width:260px;"
+        arcsize="10%" stroke="f" fillcolor="${BRAND_COLOR}">
+        <w:anchorlock/>
+        <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:700;">Ver minha conta</center>
+      </v:roundrect>
+      <![endif]-->
+      <!--[if !mso]><!-->
+      <a href="${dashboardUrl}"
+        style="background-color:${BRAND_COLOR};border-radius:8px;color:#ffffff;display:inline-block;font-family:${FONT};font-size:15px;font-weight:700;line-height:50px;text-align:center;text-decoration:none;width:260px;-webkit-text-size-adjust:none;mso-hide:all;">Ver minha conta</a>
+      <!--<![endif]-->
+    </td>
+  </tr>
+</table>
+
+<p style="margin:0;font-family:${FONT};font-size:13px;color:#94a3b8;line-height:1.6;">Continue indicando pelo seu link na pagina de faturamento.</p>`;
+
+    const bodyText = [
+      `Sua indicacao rendeu questoes de bonus - ${BRAND_NAME}`,
+      '',
+      `A pessoa que voce indicou comecou a estudar no ${BRAND_NAME}. Voce recebeu +${bonusQuestions} questoes de bonus.`,
+      '',
+      dashboardUrl,
+    ].join('\n');
+
+    const { html, text } = emailLayout(bodyHtml, bodyText);
+
+    const { error } = await this.resend.emails.send({
+      from: this.sender,
+      to,
+      subject: `Sua indicacao rendeu +${bonusQuestions} questoes de bonus - ${BRAND_NAME}`,
+      html,
+      text,
+    });
+
+    if (error) {
+      console.error('[EmailService] sendReferralRewardToReferrer failed:', error);
+      throw Object.assign(new Error(error.message ?? 'Failed to send referral reward email'), { status: 500 });
+    }
+  }
 }
