@@ -32,7 +32,7 @@ export function DemoResultActions({ onRestart }: DemoResultActionsProps) {
         <ul className="mt-4 space-y-4">
           {BULLET_KEYS.map((key) => (
             <li key={key} className="text-base font-semibold text-white/80">
-              {t(key, { free: PLAN_LIMITS.free.questionsPerPeriod })}
+              {t(key, { free: PLAN_LIMITS.free.questionsPerPeriod, pro: PLAN_LIMITS.pro.questionsPerPeriod, proAi: PLAN_LIMITS.pro_ai.questionsPerPeriod })}
             </li>
           ))}
         </ul>
