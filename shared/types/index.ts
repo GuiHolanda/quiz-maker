@@ -355,6 +355,9 @@ export interface UserAdminRow {
   totalInputTokens: number;
   totalOutputTokens: number;
   totalQuestionsGeneratedAllTime: number;
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
 }
 
 export interface AdminStepStats {

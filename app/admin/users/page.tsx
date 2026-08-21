@@ -182,6 +182,7 @@ export default function AdminUsersPage() {
               <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Custo/questão</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Override</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Assinatura</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Origem</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Ações</th>
             </tr>
           </thead>
@@ -256,6 +257,7 @@ export default function AdminUsersPage() {
             <span className="text-xs text-default-400">—</span>
           )}
         </td>
+        <td className="px-4 py-3">{renderOriginCell(user)}</td>
         <td className="px-4 py-3">
           <Button
             size="sm"
@@ -267,6 +269,21 @@ export default function AdminUsersPage() {
           </Button>
         </td>
       </tr>
+    );
+  }
+
+  function renderOriginCell(user: UserAdminRow) {
+    if (!user.utmSource && !user.utmMedium && !user.utmCampaign) {
+      return <span className="text-xs text-default-400">—</span>;
+    }
+
+    const sourceLabel = [user.utmSource, user.utmMedium].filter(Boolean).join(' / ');
+
+    return (
+      <div className="flex flex-col gap-0.5">
+        {sourceLabel && <span className="text-xs font-semibold text-foreground">{sourceLabel}</span>}
+        {user.utmCampaign && <span className="text-xs text-default-400">{user.utmCampaign}</span>}
+      </div>
     );
   }
 

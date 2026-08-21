@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@heroui/input';
@@ -17,6 +17,7 @@ import { REGISTER_URL, REFERRAL_CODE_COOKIE_KEY } from '@/config/constants';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PasswordInput } from '@/shared/components/ui/PasswordInput';
+import { captureUtmFromUrl, readUtmCookie } from '@/lib/utm';
 
 export function RegisterForm() {
   const router = useRouter();
@@ -29,6 +30,12 @@ export function RegisterForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Covers the direct-to-register case (e.g. an email campaign linking straight here) —
+  // MarketingLayout's UtmCapture only runs on marketing pages, which this page isn't.
+  useEffect(() => {
+    captureUtmFromUrl(searchParams);
+  }, [searchParams]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!consentChecked) {
@@ -39,8 +46,9 @@ export function RegisterForm() {
     setError(null);
     try {
       const ref = searchParams.get('ref');
+      const utm = readUtmCookie();
 
-      await api.post(REGISTER_URL, { name, email, password, ...(ref && { ref }) });
+      await api.post(REGISTER_URL, { name, email, password, ...(ref && { ref }), ...(utm ?? {}) });
       router.push('/verify-email?email=' + encodeURIComponent(email));
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };

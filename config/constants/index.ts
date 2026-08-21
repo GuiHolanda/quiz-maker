@@ -43,6 +43,9 @@ export const SIDEBAR_COLLAPSED_LOCAL_STORAGE_KEY = 'certifiqueai_sidebar_collaps
 export const SIDEBAR_COLLAPSED_COOKIE_KEY = 'certifiqueai_sidebar_collapsed';
 // Short-lived: only needs to survive the redirect round-trip to Google and back.
 export const REFERRAL_CODE_COOKIE_KEY = 'certifiqueai_referral_code';
+// 30 days: needs to survive a browse-now-signup-later gap, not just a redirect round-trip.
+export const UTM_COOKIE_KEY = 'certifiqueai_utm';
+export const UTM_COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 export const AI_CHAT_LOCAL_STORAGE_KEY = (userId: string) => `AI_CHAT_MESSAGES_${userId}`;
 export const AI_CHAT_FOLLOWUP_TIMESTAMP_KEY = (userId: string) => `AI_CHAT_FOLLOWUP_TS_${userId}`;
 export const SIMULADO_ATTEMPT_PROGRESS_KEY = (attemptId: number) => `SIMULADO_ATTEMPT_PROGRESS_${attemptId}`;

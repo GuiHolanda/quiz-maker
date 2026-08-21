@@ -8,8 +8,9 @@ import { cookies } from 'next/headers';
 import authConfig from './auth.config';
 
 import { prisma } from '@/lib/prisma';
-import { REFERRAL_CODE_COOKIE_KEY } from '@/config/constants';
+import { REFERRAL_CODE_COOKIE_KEY, UTM_COOKIE_KEY } from '@/config/constants';
 import { generateUniqueReferralCode } from '@/lib/referral-code';
+import { parseUtmCookie } from '@/lib/utm';
 
 class EmailNotVerifiedError extends CredentialsSignin {
   code = 'EMAIL_NOT_VERIFIED';
@@ -123,9 +124,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           ? await prisma.user.findUnique({ where: { referralCode: ref.toUpperCase() }, select: { id: true } })
           : null;
 
+        // Unlike the ref cookie, this one is set well before the OAuth redirect (30-day
+        // window, written by UtmCapture.tsx on any marketing page or by RegisterForm.tsx
+        // on mount) — it survives the round-trip to Google and back on its own.
+        const utm = parseUtmCookie((await cookies()).get(UTM_COOKIE_KEY)?.value);
+
         await prisma.user.update({
           where: { id: user.id },
-          data: { referralCode, referredByUserId: referrer?.id ?? null },
+          data: {
+            referralCode,
+            referredByUserId: referrer?.id ?? null,
+            utmSource: utm?.utmSource ?? null,
+            utmMedium: utm?.utmMedium ?? null,
+            utmCampaign: utm?.utmCampaign ?? null,
+          },
         });
       } catch (err) {
         console.error('Failed to backfill referral fields for new Google user:', err);

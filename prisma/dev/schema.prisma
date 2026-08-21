@@ -38,6 +38,9 @@ model User {
   referredBy                   User?             @relation("UserReferrals", fields: [referredByUserId], references: [id], onDelete: SetNull)
   referrals                    User[]            @relation("UserReferrals")
   referralActivatedAt          DateTime?
+  utmSource                    String?
+  utmMedium                    String?
+  utmCampaign                  String?
   createdAt                    DateTime          @default(now())
 }
 

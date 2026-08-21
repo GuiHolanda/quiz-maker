@@ -10,7 +10,7 @@ export class RegisterService {
       throw Object.assign(new Error('Invalid request body'), { status: 400 });
     }
 
-    const { name, email, password, ref } = body as Record<string, unknown>;
+    const { name, email, password, ref, utmSource, utmMedium, utmCampaign } = body as Record<string, unknown>;
 
     if (!email || typeof email !== 'string' || !email.includes('@')) {
       throw Object.assign(new Error('Valid email is required'), { status: 400 });
@@ -67,6 +67,9 @@ export class RegisterService {
         password: hashed,
         referralCode,
         referredByUserId,
+        utmSource: typeof utmSource === 'string' ? utmSource : null,
+        utmMedium: typeof utmMedium === 'string' ? utmMedium : null,
+        utmCampaign: typeof utmCampaign === 'string' ? utmCampaign : null,
       },
     });
 

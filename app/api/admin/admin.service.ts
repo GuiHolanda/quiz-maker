@@ -259,6 +259,9 @@ export class AdminService {
           periodStartDate: true,
           subscriptionStatus: true,
           createdAt: true,
+          utmSource: true,
+          utmMedium: true,
+          utmCampaign: true,
         },
       }),
       prisma.user.count({ where }),
@@ -343,6 +346,9 @@ export class AdminService {
         periodStartDate: true,
         subscriptionStatus: true,
         createdAt: true,
+        utmSource: true,
+        utmMedium: true,
+        utmCampaign: true,
       },
     });
 
