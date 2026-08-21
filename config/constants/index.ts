@@ -129,8 +129,8 @@ export const USD_TO_BRL_FALLBACK = 5.7;
 // has a comparable monthly-equivalent figure. Real revenue timing is lumpy, not smooth.
 export const PLAN_PRICES_BRL_MONTHLY: Record<string, number> = {
   free: 0,
-  pro: 19.8,
-  pro_ai: 39.8,
+  pro: 29.9,
+  pro_ai: 49.9,
   sprint: 29.97,
 };
 
