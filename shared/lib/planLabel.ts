@@ -4,6 +4,7 @@ const PLAN_BADGE_KEYS: Partial<Record<UserPlan, string>> = {
   free: 'billing.badge.free',
   pro: 'billing.badge.pro',
   pro_ai: 'billing.badge.proAi',
+  sprint: 'billing.badge.sprint',
 };
 
 export function getPlanLabel(plan: UserPlan, t: (key: string) => string): string {

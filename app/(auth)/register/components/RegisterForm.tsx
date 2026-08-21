@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
 import { Checkbox } from '@heroui/checkbox';
@@ -13,13 +13,15 @@ import NextLink from 'next/link';
 import { AuthSplitLayout } from '@/app/(auth)/components/AuthSplitLayout';
 import { GoogleIcon } from '@/app/(auth)/components/GoogleIcon';
 import api from '@/lib/bff.api';
-import { REGISTER_URL } from '@/config/constants';
+import { REGISTER_URL, REFERRAL_CODE_COOKIE_KEY } from '@/config/constants';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PasswordInput } from '@/shared/components/ui/PasswordInput';
+import { captureUtmFromUrl, readUtmCookie } from '@/lib/utm';
 
 export function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t } = useTranslation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -27,6 +29,12 @@ export function RegisterForm() {
   const [consentChecked, setConsentChecked] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Covers the direct-to-register case (e.g. an email campaign linking straight here) —
+  // MarketingLayout's UtmCapture only runs on marketing pages, which this page isn't.
+  useEffect(() => {
+    captureUtmFromUrl(searchParams);
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -37,7 +45,10 @@ export function RegisterForm() {
     setLoading(true);
     setError(null);
     try {
-      await api.post(REGISTER_URL, { name, email, password });
+      const ref = searchParams.get('ref');
+      const utm = readUtmCookie();
+
+      await api.post(REGISTER_URL, { name, email, password, ...(ref && { ref }), ...(utm ?? {}) });
       router.push('/verify-email?email=' + encodeURIComponent(email));
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
@@ -48,6 +59,14 @@ export function RegisterForm() {
   }
 
   async function handleGoogle() {
+    // Credentials signup reads `ref` straight from the URL at submit-time (handleSubmit
+    // above), but the Google round-trip leaves this page entirely — a cookie is the only
+    // way for the code to still be readable once auth.ts's `events.createUser` fires.
+    const ref = searchParams.get('ref');
+
+    if (ref) {
+      document.cookie = `${REFERRAL_CODE_COOKIE_KEY}=${encodeURIComponent(ref)}; path=/; max-age=600; SameSite=Lax`;
+    }
     await signIn('google', { callbackUrl: '/dashboard' });
   }
 

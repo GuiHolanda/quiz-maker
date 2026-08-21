@@ -12,9 +12,9 @@ import { notify } from '@/shared/lib/notify';
 import type { UserAdminRow, UserPlan, AdminUsersResponse } from '@/shared/types';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { buttonStyles } from '@/config/constants/buttonStyles';
-import { ACTIVE_MODEL_PRICING_USD, USD_TO_BRL_FALLBACK } from '@/config/constants';
+import { ACTIVE_MODEL_PRICING_USD, USD_TO_BRL_FALLBACK, PLAN_LIMITS } from '@/config/constants';
 
-const PLAN_OPTIONS: UserPlan[] = ['free', 'pro', 'pro_ai', 'tester', 'admin'];
+const PLAN_OPTIONS: UserPlan[] = ['free', 'pro', 'pro_ai', 'sprint', 'tester', 'admin'];
 const STATUS_OPTIONS = ['active', 'canceled'];
 const PAGE_SIZE = 20;
 
@@ -182,6 +182,7 @@ export default function AdminUsersPage() {
               <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Custo/questão</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Override</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Assinatura</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Origem</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-default-400">Ações</th>
             </tr>
           </thead>
@@ -205,8 +206,7 @@ export default function AdminUsersPage() {
         : edit.overrideMode === 'value' && edit.overrideValue
           ? parseInt(edit.overrideValue, 10)
           : null;
-    const planLimit =
-      { free: 250, pro: 1500, pro_ai: 2500, tester: Infinity, admin: Infinity }[edit.plan ?? user.plan] ?? 250;
+    const planLimit = PLAN_LIMITS[edit.plan ?? user.plan]?.questionsPerPeriod ?? 100;
     const limit = effectiveLimit !== null ? effectiveLimit : planLimit;
     const used = user.questionsGeneratedThisPeriod;
     const pct = limit === Infinity ? 0 : Math.min(100, Math.round((used / limit) * 100));
@@ -257,6 +257,7 @@ export default function AdminUsersPage() {
             <span className="text-xs text-default-400">—</span>
           )}
         </td>
+        <td className="px-4 py-3">{renderOriginCell(user)}</td>
         <td className="px-4 py-3">
           <Button
             size="sm"
@@ -268,6 +269,21 @@ export default function AdminUsersPage() {
           </Button>
         </td>
       </tr>
+    );
+  }
+
+  function renderOriginCell(user: UserAdminRow) {
+    if (!user.utmSource && !user.utmMedium && !user.utmCampaign) {
+      return <span className="text-xs text-default-400">—</span>;
+    }
+
+    const sourceLabel = [user.utmSource, user.utmMedium].filter(Boolean).join(' / ');
+
+    return (
+      <div className="flex flex-col gap-0.5">
+        {sourceLabel && <span className="text-xs font-semibold text-foreground">{sourceLabel}</span>}
+        {user.utmCampaign && <span className="text-xs text-default-400">{user.utmCampaign}</span>}
+      </div>
     );
   }
 

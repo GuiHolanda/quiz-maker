@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 import { UsageCard } from '@/app/(workspace)/billing/components/UsageCard';
+import { ReferralCard } from '@/app/(workspace)/billing/components/ReferralCard';
 import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
 import { getBillingUsage, getPortalUrl } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -79,7 +80,11 @@ export function BillingOverview() {
   const resetLabel = resetDate.toLocaleDateString('pt-BR');
 
   const isPaid = usage.plan !== 'free';
-  const hasStripeSubscription = usage.hasStripePortalAccess;
+  const isSprint = usage.plan === 'sprint';
+  // Sprint purchasers get a stripeCustomerId (for receipts) but never a subscription — the
+  // portal's "manage/cancel subscription" flows don't apply to a completed one-time payment.
+  const hasStripeSubscription = usage.hasStripePortalAccess && !isSprint;
+  const sprintExpiryLabel = usage.sprintExpiresAt ? new Date(usage.sprintExpiresAt).toLocaleDateString('pt-BR') : null;
 
   const certLimitLabel = usage.examsLimit === -1 ? t('billing.unlimited') : String(usage.examsLimit);
   const qLimitLabel = usage.questionsLimit === -1 ? t('billing.unlimited') : String(usage.questionsLimit);
@@ -89,7 +94,9 @@ export function BillingOverview() {
       ? t('billing.planProAi')
       : usage.plan === 'pro'
         ? t('billing.planPro')
-        : t('billing.planFree');
+        : isSprint
+          ? t('billing.planSprint')
+          : t('billing.planFree');
 
   async function handlePortal(key: string) {
     setPortalLoadingKey(key);
@@ -107,6 +114,7 @@ export function BillingOverview() {
     <div className="flex flex-col gap-8">
       {renderPlanBanner()}
       {renderUsageSection()}
+      <ReferralCard />
       {hasStripeSubscription && renderPaymentSection()}
       {hasStripeSubscription && renderBillingHistorySection()}
       {hasStripeSubscription && renderCancelSection()}
@@ -128,9 +136,11 @@ export function BillingOverview() {
             )}
           </div>
           <p className="text-sm text-default-500">
-            {isPaid
-              ? t('billing.nextBilling', { date: resetLabel })
-              : t('billing.periodResetsOn', { date: resetLabel })}
+            {isSprint && sprintExpiryLabel
+              ? t('billing.sprintExpiresOn', { date: sprintExpiryLabel })
+              : isPaid
+                ? t('billing.nextBilling', { date: resetLabel })
+                : t('billing.periodResetsOn', { date: resetLabel })}
           </p>
         </div>
         {hasStripeSubscription ? (

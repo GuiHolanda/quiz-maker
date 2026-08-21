@@ -143,9 +143,16 @@ export interface ChatMessage {
   readonly attachmentName?: string;
 }
 
-export type UserPlan = 'free' | 'pro' | 'pro_ai' | 'tester' | 'admin';
+export type UserPlan = 'free' | 'pro' | 'pro_ai' | 'sprint' | 'tester' | 'admin';
 
-export type QuotaAction = 'generate_questions' | 'create_exam' | 'extract_edital' | 'ai_chat' | 'auto_config';
+export type QuotaAction =
+  | 'generate_questions'
+  | 'create_exam'
+  | 'extract_edital'
+  | 'ai_chat'
+  | 'auto_config'
+  | 'generate_explanation'
+  | 'generate_mock_answers';
 
 // Which limit a 403 refers to. `plan_required` is not a quota at all — the plan simply
 // doesn't include the feature — but it travels the same path to the client, so the UI
@@ -163,8 +170,19 @@ export interface UsageStats {
   examsLimit: number; // -1 = unlimited
   certificationsUsed: number; // display only
   publicExamsUsed: number; // display only
+  aiChatUsed: number; // messages sent this period
+  aiChatLimit: number; // -1 = unlimited (tester/admin), 0 = plan doesn't include AI Chat
   periodStartDate: string;
   hasStripePortalAccess: boolean; // true only if user has a stripeCustomerId (not all paid plans do)
+  sprintExpiresAt: string | null; // set only when plan === 'sprint'
+}
+
+export interface ReferralStats {
+  referralCode: string;
+  referralLink: string;
+  referredCount: number;
+  activatedCount: number;
+  bonusQuestionsEarned: number;
 }
 
 export interface BrowseSectionSummary {
@@ -339,6 +357,9 @@ export interface UserAdminRow {
   totalInputTokens: number;
   totalOutputTokens: number;
   totalQuestionsGeneratedAllTime: number;
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
 }
 
 export interface AdminStepStats {
@@ -367,6 +388,7 @@ export interface AdminOverviewStats {
   avgTokensPerQuestion: number;
   tokensByPlan: Record<UserPlan, { inputTokens: number; outputTokens: number; questionsGenerated: number }>;
   tokensByAction: Record<string, AdminActionStats>;
+  usagePercentilesByPlan: Record<UserPlan, { count: number; p50: number; p75: number; p90: number }>;
 }
 
 export interface AdminAuditEntry {

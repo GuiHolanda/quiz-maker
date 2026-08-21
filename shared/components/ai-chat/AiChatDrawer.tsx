@@ -9,6 +9,7 @@ import { faXmark, faPaperPlane, faRotateRight, faPaperclip, faFilePdf } from '@f
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useAiChat } from '@/features/hooks/useAiChat.hook';
+import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { AiChatMessage } from '@/shared/components/ai-chat/AiChatMessage';
@@ -22,6 +23,7 @@ interface AiChatDrawerProps {
 
 export function AiChatDrawer({ isOpen, onClose, userId }: AiChatDrawerProps) {
   const { t } = useTranslation();
+  const { usage, refreshUsage } = useUsageContext();
   const {
     messages,
     input,
@@ -38,10 +40,20 @@ export function AiChatDrawer({ isOpen, onClose, userId }: AiChatDrawerProps) {
   } = useAiChat(userId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const wasStreamingRef = useRef(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, currentStreamContent]);
+
+  // Refresh usage counters once per completed streaming response so the
+  // AI Chat message counter stays current without requiring a page reload.
+  useEffect(() => {
+    if (wasStreamingRef.current && !isStreaming) {
+      refreshUsage();
+    }
+    wasStreamingRef.current = isStreaming;
+  }, [isStreaming, refreshUsage]);
 
   const handleNewChat = useCallback(() => {
     reset();
@@ -152,6 +164,11 @@ export function AiChatDrawer({ isOpen, onClose, userId }: AiChatDrawerProps) {
         </DrawerBody>
 
         <DrawerFooter className="border-t border-divider px-4 py-3 flex-col gap-0">
+          {usage && usage.aiChatLimit !== -1 && (
+            <p className="text-[10px] text-default-400 w-full text-right mb-1">
+              {t('chat.messagesUsage', { used: usage.aiChatUsed, limit: usage.aiChatLimit })}
+            </p>
+          )}
           {pendingFile && (
             <div className="flex items-center gap-2 px-1 py-2 w-full mb-1">
               <FontAwesomeIcon className="text-danger text-sm shrink-0" icon={faFilePdf} />

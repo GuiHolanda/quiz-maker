@@ -135,7 +135,7 @@ Rotas públicas (sem auth). Service: `features/services/demo-catalog.service.ts`
 
 | Route | Method | Description |
 |---|---|---|
-| `ai/ai-chat` | POST | Streaming SSE chat. Requires `pro_ai`, `tester`, or `admin`. |
+| `ai/ai-chat` | POST | Streaming SSE chat. Requires `pro_ai`, `sprint`, `tester`, or `admin` (`AI_CHAT_ALLOWED_PLANS`). Metered and capped via `checkAndRecordAiChatMessage` — 300 msg/period on `pro_ai`/`sprint`. |
 | `dashboard/stats` | GET | Dashboard metrics |
 | `usage/history` | GET | Paginated usage log for current user |
 | `usage/history/filters` | GET | Filter options for usage history page |
@@ -150,7 +150,7 @@ Rotas públicas (sem auth). Service: `features/services/demo-catalog.service.ts`
 | File | Responsibility |
 |---|---|
 | `openAI.service.ts` | `call(prompt, input)` via Responses API with `web_search` forced via `tool_choice: 'required'` when `webSearch: true` (default) — the tool being available doesn't mean the model uses it; forcing avoids it silently answering from training data. Returns `{ text, inputTokens, outputTokens }`. |
-| `quota.service.ts` | `checkAndRecordQuestions(userId, count)` → `{ logId }`. Also enforces `create_exam` and `checkAndRecordAutoConfig(userId)` (per-period `autoConfigThisPeriod`, `PLAN_LIMITS[plan].autoConfigPerPeriod`). `checkAutoConfigAvailable(userId)` is a read-only peek (no increment) used before the identify call. `rollbackQuota(logId)` refunds `questionsGeneratedThisPeriod` or `autoConfigThisPeriod` depending on the log's `action`. |
+| `quota.service.ts` | `checkAndRecordQuestions(userId, count)` → `{ logId }`. Also enforces `create_exam`, `checkAndRecordAutoConfig(userId)` (per-period `autoConfigThisPeriod`, `PLAN_LIMITS[plan].autoConfigPerPeriod`), and `checkAndRecordAiChatMessage(userId)` (per-period `aiChatMessagesThisPeriod`, `PLAN_LIMITS[plan].aiChatMessagesPerPeriod`). `checkAutoConfigAvailable(userId)` is a read-only peek (no increment) used before the identify call. `rollbackQuota(logId)` refunds `questionsGeneratedThisPeriod`, `autoConfigThisPeriod`, or `aiChatMessagesThisPeriod` depending on the log's `action`. |
 | `metrics.service.ts` | `createLog(userId, action, count = 1)` — `count: 0` tracks tokens without consuming a billable unit (used by the auto-config identify call). `recordStep(logId, step, tokens, durationMs)` (fire-and-forget) + `finalize(logId, ms)`. |
 | `exam.service.ts` | Unified CRUD for Exam/Section/Topic (both types). |
 | `exam-question.service.ts` | `saveAnswers`, `saveExplanations`. |

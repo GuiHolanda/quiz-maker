@@ -70,9 +70,9 @@ export class AiChatService {
   }
 
   async streamChat(
-    userId: string,
     messages: { role: 'user' | 'assistant'; content: string }[],
-    language: string
+    language: string,
+    logId: string
   ): Promise<ReadableStream> {
     const languageInstruction =
       language === 'pt'
@@ -93,7 +93,6 @@ export class AiChatService {
       stream: true,
     });
 
-    const logId = await this.metricsService.createLog(userId, 'ai_chat');
     const startMs = Date.now();
     const encoder = new TextEncoder();
     const metricsService = this.metricsService;

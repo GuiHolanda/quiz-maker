@@ -1,7 +1,9 @@
 import clsx from 'clsx';
+import { Suspense } from 'react';
 
 import { fontBarlow, fontBarlowCondensed } from '@/config/fonts';
 import { jsonLd } from '@/lib/json-ld';
+import { UtmCapture } from '@/app/(marketing)/components/UtmCapture';
 
 const organizationSchema = {
   '@context': 'https://schema.org',
@@ -74,6 +76,9 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
     >
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organizationSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(courseListSchema) }} />
+      <Suspense fallback={null}>
+        <UtmCapture />
+      </Suspense>
       {children}
     </div>
   );

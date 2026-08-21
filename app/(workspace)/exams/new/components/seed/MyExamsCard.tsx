@@ -57,7 +57,7 @@ export function MyExamsCard({ type }: MyExamsCardProps) {
   if (exams.length === 0 && (usage == null || usage.examsLimit === -1)) return null;
 
   return (
-    <div className="bg-content1 border border-default-200 rounded-xl p-5">
+    <div className="bg-content1 border border-content2 rounded-xl p-5">
       <div className="text-xs font-semibold text-default-500">{t(config.listTitle)}</div>
       {exams.length > 0 && (
         <div className="mt-3.5 flex flex-col gap-2">

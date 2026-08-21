@@ -10,27 +10,38 @@ interface FeatureRow {
   readonly free: string | boolean;
   readonly pro: string | boolean;
   readonly proAi: string | boolean;
+  readonly sprint: string | boolean;
 }
 
+// Sprint is "tudo do Pro AI" for a fixed 90-day term — every row mirrors proAi's value.
 const FEATURES: readonly FeatureRow[] = [
+  {
+    labelKey: 'pricing.features.autoConfig',
+    free: 'pricing.features.free.autoConfig',
+    pro: 'pricing.features.pro.autoConfig',
+    proAi: 'pricing.features.proAi.autoConfig',
+    sprint: 'pricing.features.proAi.autoConfig',
+  },
   {
     labelKey: 'pricing.features.questionsPerMonth',
     free: 'pricing.features.free.questions',
     pro: 'pricing.features.pro.questions',
     proAi: 'pricing.features.proAi.questions',
+    sprint: 'pricing.features.proAi.questions',
   },
   {
     labelKey: 'pricing.features.customExams',
     free: 'pricing.features.free.certifications',
     pro: 'pricing.features.pro.certifications',
     proAi: 'pricing.features.proAi.certifications',
+    sprint: 'pricing.features.proAi.certifications',
   },
-  { labelKey: 'pricing.features.aiExplanations', free: true, pro: true, proAi: true },
-  { labelKey: 'pricing.features.topicDistribution', free: true, pro: true, proAi: true },
-  { labelKey: 'pricing.features.simulados', free: true, pro: true, proAi: true },
-  { labelKey: 'pricing.features.browseQuestions', free: true, pro: true, proAi: true },
-  { labelKey: 'pricing.features.aiChat', free: false, pro: false, proAi: true },
-  { labelKey: 'pricing.features.prioritySupport', free: false, pro: false, proAi: true },
+  { labelKey: 'pricing.features.canEditExams', free: false, pro: true, proAi: true, sprint: true },
+  { labelKey: 'pricing.features.aiExplanations', free: true, pro: true, proAi: true, sprint: true },
+  { labelKey: 'pricing.features.topicDistribution', free: true, pro: true, proAi: true, sprint: true },
+  { labelKey: 'pricing.features.simulados', free: true, pro: true, proAi: true, sprint: true },
+  { labelKey: 'pricing.features.browseQuestions', free: true, pro: true, proAi: true, sprint: true },
+  { labelKey: 'pricing.features.aiChat', free: false, pro: false, proAi: true, sprint: true },
 ];
 
 interface FeatureCellProps {
@@ -68,17 +79,20 @@ export function FeatureComparisonTable() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-mkt-divider">
-              <th className="py-4 text-left mono text-xs text-mkt-text opacity-60 uppercase tracking-widest w-2/5">
+              <th className="py-4 text-left mono text-xs text-mkt-text opacity-60 uppercase tracking-widest w-1/3">
                 {t('pricing.features.sectionLabel')}
               </th>
-              <th className="py-4 text-center mono text-xs text-mkt-text opacity-60 uppercase tracking-widest w-1/5">
+              <th className="py-4 text-center mono text-xs text-mkt-text opacity-60 uppercase tracking-widest w-1/6">
                 {t('pricing.plan.free')}
               </th>
-              <th className="py-4 text-center mono text-xs text-mkt-text opacity-60 uppercase tracking-widest w-1/5">
+              <th className="py-4 text-center mono text-xs text-mkt-text opacity-60 uppercase tracking-widest w-1/6">
                 {t('pricing.plan.pro')}
               </th>
-              <th className="py-4 text-center mono text-xs text-mkt-accent-700 uppercase tracking-widest w-1/5">
+              <th className="py-4 text-center mono text-xs text-mkt-accent-700 uppercase tracking-widest w-1/6">
                 {t('pricing.plan.proAi')}
+              </th>
+              <th className="py-4 text-center mono text-xs text-mkt-text opacity-60 uppercase tracking-widest w-1/6">
+                {t('pricing.plan.sprint')}
               </th>
             </tr>
           </thead>
@@ -96,6 +110,9 @@ export function FeatureComparisonTable() {
                   </td>
                   <td className="py-3.5">
                     <FeatureCell value={row.proAi} />
+                  </td>
+                  <td className="py-3.5">
+                    <FeatureCell value={row.sprint} />
                   </td>
                 </tr>
               );

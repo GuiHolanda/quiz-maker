@@ -41,6 +41,11 @@ export const EXAMS_LOCAL_STORAGE_KEY = 'EXAMS';
 export const LANGUAGE_LOCAL_STORAGE_KEY = 'app-language';
 export const SIDEBAR_COLLAPSED_LOCAL_STORAGE_KEY = 'certifiqueai_sidebar_collapsed';
 export const SIDEBAR_COLLAPSED_COOKIE_KEY = 'certifiqueai_sidebar_collapsed';
+// Short-lived: only needs to survive the redirect round-trip to Google and back.
+export const REFERRAL_CODE_COOKIE_KEY = 'certifiqueai_referral_code';
+// 30 days: needs to survive a browse-now-signup-later gap, not just a redirect round-trip.
+export const UTM_COOKIE_KEY = 'certifiqueai_utm';
+export const UTM_COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 export const AI_CHAT_LOCAL_STORAGE_KEY = (userId: string) => `AI_CHAT_MESSAGES_${userId}`;
 export const AI_CHAT_FOLLOWUP_TIMESTAMP_KEY = (userId: string) => `AI_CHAT_FOLLOWUP_TS_${userId}`;
 export const SIMULADO_ATTEMPT_PROGRESS_KEY = (attemptId: number) => `SIMULADO_ATTEMPT_PROGRESS_${attemptId}`;
@@ -71,13 +76,63 @@ export const RESET_PASSWORD_URL = '/auth/reset-password';
 export const BILLING_USAGE_URL = '/billing/usage';
 export const BILLING_CHECKOUT_URL = '/billing/checkout';
 export const BILLING_PORTAL_URL = '/billing/portal';
+export const BILLING_REFERRAL_URL = '/billing/referral';
 
+// Pro/Pro AI quotas below are the "nova grade" from the pricing tier audit (weeks 4-6):
+// lower per-period question count, higher exam count, break-even lands around 33%/40% of
+// quota instead of 22%/26%. Subscribers who signed up under the old 1500/2500 quotas keep
+// them via customQuotaOverride — see migration backfill_founder_quota_lock — so this only
+// takes effect for new signups. /pricing already shows the new R$29,90/R$49,90 copy; the
+// Stripe Price objects behind STRIPE_PRICE_ID_PRO_*/PRO_AI_* still need to be created for
+// those amounts before checkout actually charges them (see the Stripe setup guide).
+// sprint mirrors pro_ai exactly — "tudo do Pro AI" for 90 days, one-time payment, no
+// renewal. Access itself is time-boxed via User.sprintExpiresAt (see auth.ts), not by a
+// lower quota here. aiChatMessagesPerPeriod (achado 15): 0 for free/pro is never actually
+// reached — AI_CHAT_ALLOWED_PLANS blocks those plans from the route entirely — set for
+// type completeness only, same convention as free's autoConfigPerPeriod: 0 below.
 export const PLAN_LIMITS = {
-  free: { questionsPerPeriod: 250, maxExams: 2, autoConfigPerPeriod: 0, canEditExams: false },
-  pro: { questionsPerPeriod: 1500, maxExams: 5, autoConfigPerPeriod: 15, canEditExams: true },
-  pro_ai: { questionsPerPeriod: 2500, maxExams: 5, autoConfigPerPeriod: 30, canEditExams: true },
-  tester: { questionsPerPeriod: Infinity, maxExams: Infinity, autoConfigPerPeriod: Infinity, canEditExams: true },
-  admin: { questionsPerPeriod: Infinity, maxExams: Infinity, autoConfigPerPeriod: Infinity, canEditExams: true },
+  free: {
+    questionsPerPeriod: 100,
+    maxExams: 2,
+    autoConfigPerPeriod: 0,
+    aiChatMessagesPerPeriod: 0,
+    canEditExams: false,
+  },
+  pro: {
+    questionsPerPeriod: 1000,
+    maxExams: 6,
+    autoConfigPerPeriod: 15,
+    aiChatMessagesPerPeriod: 0,
+    canEditExams: true,
+  },
+  pro_ai: {
+    questionsPerPeriod: 2000,
+    maxExams: 12,
+    autoConfigPerPeriod: 30,
+    aiChatMessagesPerPeriod: 300,
+    canEditExams: true,
+  },
+  sprint: {
+    questionsPerPeriod: 2000,
+    maxExams: 12,
+    autoConfigPerPeriod: 30,
+    aiChatMessagesPerPeriod: 300,
+    canEditExams: true,
+  },
+  tester: {
+    questionsPerPeriod: Infinity,
+    maxExams: Infinity,
+    autoConfigPerPeriod: Infinity,
+    aiChatMessagesPerPeriod: Infinity,
+    canEditExams: true,
+  },
+  admin: {
+    questionsPerPeriod: Infinity,
+    maxExams: Infinity,
+    autoConfigPerPeriod: Infinity,
+    aiChatMessagesPerPeriod: Infinity,
+    canEditExams: true,
+  },
 } as const;
 
 // Single source of truth for "can this plan create/edit exams" — API routes and UI walls
@@ -88,6 +143,16 @@ export function canEditExams(plan: string): boolean {
   return limits ? limits.canEditExams : false;
 }
 
+// Calibration from the pricing tier audit's referral section (achado 6): a two-way reward
+// sized in a unit users recognize, gated behind activation (never the signup itself) so it
+// can't be farmed with throwaway emails. The cap bounds how many of a single referrer's
+// invitees can ever pay out — the invitee's own reward is unaffected by it.
+export const REFERRAL_REWARD = {
+  referredBonus: 100,
+  referrerBonus: 150,
+  maxRewardedReferralsPerAccount: 10,
+} as const;
+
 export const ADMIN_USERS_URL = '/admin/users';
 export const ADMIN_OVERVIEW_URL = '/admin/overview';
 export const ADMIN_AUDIT_LOG_URL = '/admin/audit-log';
@@ -96,14 +161,22 @@ export const ADMIN_EXCHANGE_RATE_URL = '/admin/exchange-rate';
 export const ACTIVE_MODEL_PRICING_USD = {
   inputPerMillion: 0.75,
   outputPerMillion: 4.5,
+  // OpenAI Responses API web_search tool: $30 per 1,000 calls.
+  // Every `research` step sets webSearch:true → tool_choice:'required', so each
+  // research step burns exactly one search call regardless of token count.
+  webSearchPerCallUSD: 0.03,
 } as const;
 
 export const USD_TO_BRL_FALLBACK = 5.7;
 
+// sprint is a one-time R$89,90 payment for 90 days, not a recurring monthly charge — the
+// value here is that spread over 3 months (89.90 / 3), purely so the admin margin table
+// has a comparable monthly-equivalent figure. Real revenue timing is lumpy, not smooth.
 export const PLAN_PRICES_BRL_MONTHLY: Record<string, number> = {
   free: 0,
-  pro: 19.8,
-  pro_ai: 39.8,
+  pro: 29.9,
+  pro_ai: 49.9,
+  sprint: 29.97,
 };
 
 export const MOCK_EXAMS_URL = '/mock-exams';
@@ -122,4 +195,4 @@ export const SEARCH_URL = '/search';
 
 export const DASHBOARD_STATS_URL = '/dashboard/stats';
 
-export const AI_CHAT_ALLOWED_PLANS: string[] = ['pro_ai', 'tester', 'admin'];
+export const AI_CHAT_ALLOWED_PLANS: string[] = ['pro_ai', 'sprint', 'tester', 'admin'];

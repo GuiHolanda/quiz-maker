@@ -6,6 +6,7 @@ import {
   BILLING_USAGE_URL,
   BILLING_CHECKOUT_URL,
   BILLING_PORTAL_URL,
+  BILLING_REFERRAL_URL,
   BROWSE_SUMMARY_URL,
   BROWSE_QUESTIONS_URL,
   PROVIDERS_URL,
@@ -41,6 +42,7 @@ import {
   ExamTopic,
   SectionUpdatePayload,
   UsageStats,
+  ReferralStats,
   BrowseSummary,
   Provider,
   ExamBoard,
@@ -271,7 +273,10 @@ export async function getBillingUsage(): Promise<UsageStats> {
   return data;
 }
 
-export async function getCheckoutUrl(period: 'monthly' | 'yearly', product: 'pro' | 'pro_ai' = 'pro'): Promise<string> {
+export async function getCheckoutUrl(
+  period: 'monthly' | 'yearly' | 'once',
+  product: 'pro' | 'pro_ai' | 'sprint' = 'pro'
+): Promise<string> {
   const { data } = await api.get<{ url: string }>(BILLING_CHECKOUT_URL, { params: { period, product } });
 
   return data.url;
@@ -281,6 +286,12 @@ export async function getPortalUrl(): Promise<string> {
   const { data } = await api.get<{ url: string }>(BILLING_PORTAL_URL);
 
   return data.url;
+}
+
+export async function getReferralStats(): Promise<ReferralStats> {
+  const { data } = await api.get<ReferralStats>(BILLING_REFERRAL_URL);
+
+  return data;
 }
 
 // — Mock exams (simulados, both types) —

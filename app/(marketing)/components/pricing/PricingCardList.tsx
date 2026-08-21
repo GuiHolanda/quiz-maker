@@ -10,7 +10,7 @@ import { getCheckoutUrl } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
 
-type LoadingKey = 'pro' | 'pro_ai' | null;
+type LoadingKey = 'pro' | 'pro_ai' | 'sprint' | null;
 
 interface PricingFeature {
   readonly labelKey: string;
@@ -19,37 +19,43 @@ interface PricingFeature {
 }
 
 const FREE_FEATURES: readonly PricingFeature[] = [
-  { labelKey: 'pricing.features.questionsPerMonth', included: true, value: '250' },
+  { labelKey: 'pricing.features.autoConfig', included: false },
+  { labelKey: 'pricing.features.questionsPerMonth', included: true, value: '100' },
   { labelKey: 'pricing.features.customExams', included: true, value: '2' },
+  { labelKey: 'pricing.features.canEditExams', included: false },
   { labelKey: 'pricing.features.aiExplanations', included: true },
   { labelKey: 'pricing.features.topicDistribution', included: true },
   { labelKey: 'pricing.features.simulados', included: true },
   { labelKey: 'pricing.features.browseQuestions', included: true },
   { labelKey: 'pricing.features.aiChat', included: false },
-  { labelKey: 'pricing.features.prioritySupport', included: false },
 ];
 
 const PRO_FEATURES: readonly PricingFeature[] = [
-  { labelKey: 'pricing.features.questionsPerMonth', included: true, value: '1,500' },
-  { labelKey: 'pricing.features.customExams', included: true, value: '5' },
+  { labelKey: 'pricing.features.autoConfig', included: true, value: '15' },
+  { labelKey: 'pricing.features.questionsPerMonth', included: true, value: '1,000' },
+  { labelKey: 'pricing.features.customExams', included: true, value: '6' },
+  { labelKey: 'pricing.features.canEditExams', included: true },
   { labelKey: 'pricing.features.aiExplanations', included: true },
   { labelKey: 'pricing.features.topicDistribution', included: true },
   { labelKey: 'pricing.features.simulados', included: true },
   { labelKey: 'pricing.features.browseQuestions', included: true },
   { labelKey: 'pricing.features.aiChat', included: false },
-  { labelKey: 'pricing.features.prioritySupport', included: false },
 ];
 
 const PRO_AI_FEATURES: readonly PricingFeature[] = [
-  { labelKey: 'pricing.features.questionsPerMonth', included: true, value: '2,500' },
-  { labelKey: 'pricing.features.customExams', included: true, value: '5' },
+  { labelKey: 'pricing.features.autoConfig', included: true, value: '30' },
+  { labelKey: 'pricing.features.questionsPerMonth', included: true, value: '2,000' },
+  { labelKey: 'pricing.features.customExams', included: true, value: '12' },
+  { labelKey: 'pricing.features.canEditExams', included: true },
   { labelKey: 'pricing.features.aiExplanations', included: true },
   { labelKey: 'pricing.features.topicDistribution', included: true },
   { labelKey: 'pricing.features.simulados', included: true },
   { labelKey: 'pricing.features.browseQuestions', included: true },
   { labelKey: 'pricing.features.aiChat', included: true },
-  { labelKey: 'pricing.features.prioritySupport', included: true },
 ];
+
+// Sprint is "tudo do Pro AI" for a fixed 90-day term — same feature set, no separate list.
+const SPRINT_FEATURES: readonly PricingFeature[] = PRO_AI_FEATURES;
 
 export function PricingCardList() {
   const { t } = useTranslation();
@@ -60,7 +66,7 @@ export function PricingCardList() {
 
   const userPlan = session?.user?.plan as string | undefined;
 
-  async function handleCheckout(product: 'pro' | 'pro_ai') {
+  async function handleCheckout(product: 'pro' | 'pro_ai' | 'sprint') {
     if (!session?.user) {
       notify.info(t('pricing.loginRequired.title'), t('pricing.loginRequired.description'));
       router.push('/login?callbackUrl=/pricing');
@@ -69,7 +75,7 @@ export function PricingCardList() {
 
     setLoading(product);
     try {
-      const url = await getCheckoutUrl(period, product);
+      const url = await getCheckoutUrl(product === 'sprint' ? 'once' : period, product);
       window.location.href = url;
     } catch {
       notify.error(t('toast.error'), t('toast.somethingWrong'));
@@ -92,12 +98,17 @@ export function PricingCardList() {
     return 'pricing.cta.upgradeProAi';
   }
 
+  function getSprintCtaKey() {
+    if (userPlan === 'sprint') return 'pricing.cta.currentPlan';
+    return 'pricing.cta.buySprint';
+  }
+
   return (
-    <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       <PricingCard
         ctaLabelKey={getFreeCtaKey()}
         features={FREE_FEATURES}
-        isCurrent={!!session?.user && userPlan !== 'pro' && userPlan !== 'pro_ai'}
+        isCurrent={!!session?.user && userPlan === 'free'}
         nameKey="pricing.plan.free"
         planKey="free"
         priceKey="pricing.plan.free.price"
@@ -114,7 +125,7 @@ export function PricingCardList() {
         nameKey="pricing.plan.pro"
         planKey="pro"
         priceKey={period === 'monthly' ? 'pricing.plan.pro.monthly' : 'pricing.plan.pro.yearly'}
-        sublineKey={period === 'yearly' ? 'pricing.plan.billedAnnually' : undefined}
+        sublineKey={period === 'yearly' ? 'pricing.plan.pro.yearlyTotal' : undefined}
         onCtaPress={() => handleCheckout('pro')}
       />
       <PricingCard
@@ -126,8 +137,20 @@ export function PricingCardList() {
         nameKey="pricing.plan.proAi"
         planKey="pro_ai"
         priceKey={period === 'monthly' ? 'pricing.plan.proAi.monthly' : 'pricing.plan.proAi.yearly'}
-        sublineKey={period === 'yearly' ? 'pricing.plan.billedAnnually' : undefined}
+        sublineKey={period === 'yearly' ? 'pricing.plan.proAi.yearlyTotal' : undefined}
         onCtaPress={() => handleCheckout('pro_ai')}
+      />
+      <PricingCard
+        ctaLabelKey={getSprintCtaKey()}
+        features={SPRINT_FEATURES}
+        isCurrent={userPlan === 'sprint'}
+        isLoading={loading === 'sprint'}
+        nameKey="pricing.plan.sprint"
+        planKey="sprint"
+        priceKey="pricing.plan.sprint.price"
+        priceSuffixKey="pricing.plan.per90Days"
+        sublineKey="pricing.plan.sprint.tagline"
+        onCtaPress={() => handleCheckout('sprint')}
       />
     </div>
   );

@@ -18,6 +18,7 @@ const planLabels: Record<UserPlan, string> = {
   free: 'Free',
   pro: 'Pro',
   pro_ai: 'Pro AI',
+  sprint: 'Sprint',
   tester: 'Tester',
   admin: 'Admin',
 };
@@ -26,6 +27,7 @@ const planColors: Record<UserPlan, 'default' | 'primary' | 'secondary' | 'succes
   free: 'default',
   pro: 'primary',
   pro_ai: 'secondary',
+  sprint: 'danger',
   tester: 'success',
   admin: 'warning',
 };

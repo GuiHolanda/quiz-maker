@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 
 import { prisma } from '@/lib/prisma';
 import { EmailService } from '@/features/services/email.service';
+import { generateUniqueReferralCode } from '@/lib/referral-code';
 
 export class RegisterService {
   async register(body: unknown): Promise<{ id: string; email: string; redirectToVerify: boolean }> {
@@ -9,7 +10,7 @@ export class RegisterService {
       throw Object.assign(new Error('Invalid request body'), { status: 400 });
     }
 
-    const { name, email, password } = body as Record<string, unknown>;
+    const { name, email, password, ref, utmSource, utmMedium, utmCampaign } = body as Record<string, unknown>;
 
     if (!email || typeof email !== 'string' || !email.includes('@')) {
       throw Object.assign(new Error('Valid email is required'), { status: 400 });
@@ -50,11 +51,25 @@ export class RegisterService {
       return { id: existing.id, email: existing.email, redirectToVerify: false as const };
     }
 
+    const [referredByUserId, referralCode] = await Promise.all([
+      this.resolveReferrer(ref),
+      generateUniqueReferralCode(async (candidate) => {
+        const existing = await prisma.user.findUnique({ where: { referralCode: candidate }, select: { id: true } });
+
+        return !!existing;
+      }),
+    ]);
+
     const user = await prisma.user.create({
       data: {
         name: typeof name === 'string' ? name.trim() : null,
         email: normalizedEmail,
         password: hashed,
+        referralCode,
+        referredByUserId,
+        utmSource: typeof utmSource === 'string' ? utmSource : null,
+        utmMedium: typeof utmMedium === 'string' ? utmMedium : null,
+        utmCampaign: typeof utmCampaign === 'string' ? utmCampaign : null,
       },
     });
 
@@ -70,5 +85,17 @@ export class RegisterService {
     console.log('[RegisterService] verification email sent successfully');
 
     return { id: user.id, email: user.email, redirectToVerify: true as const };
+  }
+
+  // A bad or stale `?ref=` code shouldn't block signup — no match just means no attribution.
+  private async resolveReferrer(ref: unknown): Promise<string | null> {
+    if (typeof ref !== 'string' || !ref.trim()) return null;
+
+    const referrer = await prisma.user.findUnique({
+      where: { referralCode: ref.trim().toUpperCase() },
+      select: { id: true },
+    });
+
+    return referrer?.id ?? null;
   }
 }

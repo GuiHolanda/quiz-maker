@@ -236,8 +236,13 @@ export function useAiChat(userId: string): UseAiChatReturn {
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
+        const streamError = new Error(err.message || `HTTP ${response.status}`);
 
-        throw new Error(err.message || `HTTP ${response.status}`);
+        // Preserved so the catch block below can branch on it directly instead of
+        // string-matching English server text (see quotaError/toApiErrorResponse).
+        if (typeof err.code === 'string') (streamError as Error & { code?: string }).code = err.code;
+
+        throw streamError;
       }
 
       if (!response.body) throw new Error('No response body');
@@ -300,7 +305,9 @@ export function useAiChat(userId: string): UseAiChatReturn {
       if (err instanceof TypeError && err.message.toLowerCase().includes('fetch')) {
         errorKey = 'chat.errorNetwork';
       } else if (err instanceof Error) {
-        if (err.message.includes('HTTP 401')) {
+        if ((err as Error & { code?: string }).code === 'ai_chat_limit') {
+          errorKey = 'chat.errorLimitReached';
+        } else if (err.message.includes('HTTP 401')) {
           errorKey = 'chat.errorSession';
         } else if (/HTTP 5\d\d/.test(err.message)) {
           errorKey = 'chat.errorServer';

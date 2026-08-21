@@ -183,14 +183,14 @@ export function ExamSeedPicker({
 
       <div className="flex flex-col sm:flex-row gap-3">
         <Link
-          className="flex-1 flex items-center gap-3 bg-content1 border border-default-200 hover:border-primary/30 rounded-xl p-4 transition-colors duration-200"
+          className="flex-1 flex items-center gap-3 bg-content1 border border-content2 hover:border-primary/30 rounded-xl p-4 transition-colors duration-200"
           href={`/exams/catalog?type=${type}`}
         >
           <FontAwesomeIcon className="text-primary" icon={faLayerGroup} />
           <span className="text-sm font-semibold text-foreground">{t('catalog.browseAction')}</span>
         </Link>
         <button
-          className="flex-1 flex items-center gap-3 bg-content1 border border-default-200 hover:border-primary/30 rounded-xl p-4 transition-colors duration-200 text-left"
+          className="flex-1 flex items-center gap-3 bg-content1 border border-content2 hover:border-primary/30 rounded-xl p-4 transition-colors duration-200 text-left"
           data-testid="exam-seed-blank-btn"
           onClick={onStartBlank}
         >

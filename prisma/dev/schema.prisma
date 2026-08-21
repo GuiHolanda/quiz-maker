@@ -26,11 +26,22 @@ model User {
   plan                         String            @default("free")
   questionsGeneratedThisPeriod Int               @default(0)
   autoConfigThisPeriod         Int               @default(0)
+  aiChatMessagesThisPeriod     Int               @default(0)
   periodStartDate              DateTime          @default(now())
   stripeCustomerId             String?
   stripeSubscriptionId         String?           @unique
   subscriptionStatus           String?
   customQuotaOverride          Int?
+  bonusQuestions               Int               @default(0)
+  sprintExpiresAt              DateTime?
+  referralCode                 String?           @unique
+  referredByUserId             String?
+  referredBy                   User?             @relation("UserReferrals", fields: [referredByUserId], references: [id], onDelete: SetNull)
+  referrals                    User[]            @relation("UserReferrals")
+  referralActivatedAt          DateTime?
+  utmSource                    String?
+  utmMedium                    String?
+  utmCampaign                  String?
   createdAt                    DateTime          @default(now())
 }
 
@@ -206,18 +217,19 @@ model ExamExplanation {
 }
 
 model UsageLog {
-  id              String         @id @default(cuid())
-  userId          String
-  action          String
-  count           Int            @default(1)
-  totalDurationMs Int?
-  refName         String?
-  refKey          String?
-  type            String?
-  topicName       String?
-  createdAt       DateTime       @default(now())
-  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  steps           UsageLogStep[]
+  id                     String         @id @default(cuid())
+  userId                 String
+  action                 String
+  count                  Int            @default(1)
+  totalDurationMs        Int?
+  refName                String?
+  refKey                 String?
+  type                   String?
+  topicName              String?
+  bonusQuestionsConsumed Int            @default(0)
+  createdAt              DateTime       @default(now())
+  user                   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  steps                  UsageLogStep[]
 
   @@index([userId])
 }
