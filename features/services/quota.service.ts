@@ -38,11 +38,26 @@ export class QuotaService {
     return valid.includes(rawPlan as UserPlan) ? (rawPlan as UserPlan) : 'free';
   }
 
-  private resolveQuestionsLimit(user: { plan: string; customQuotaOverride: number | null }): number {
+  // Plan default or admin override, before any referral bonus — the ceiling that
+  // `checkAndRecordQuestions` treats as "base" when deciding how much of a request
+  // overflows into bonusQuestions.
+  private resolveBaseQuestionsLimit(user: { plan: string; customQuotaOverride: number | null }): number {
     const override = user.customQuotaOverride;
     if (override === -1) return Infinity;
     if (override != null) return override;
     return PLAN_LIMITS[this.resolvePlan(user.plan)].questionsPerPeriod;
+  }
+
+  // Effective ceiling including bonusQuestions. Additive on top of resolveBaseQuestionsLimit
+  // — a referral bonus survives an admin override or a plan upgrade instead of being
+  // silently replaced by it (see achado 10 of the pricing tier audit).
+  private resolveQuestionsLimit(user: {
+    plan: string;
+    customQuotaOverride: number | null;
+    bonusQuestions: number;
+  }): number {
+    const base = this.resolveBaseQuestionsLimit(user);
+    return base === Infinity ? Infinity : base + user.bonusQuestions;
   }
 
   async check(userId: string, action: QuotaAction, count: number): Promise<void> {
@@ -119,7 +134,23 @@ export class QuotaService {
       );
     }
 
-    const log = await prisma.usageLog.create({ data: { userId, action: 'generate_questions', count, ...contextData } });
+    // The atomic gate above already guarantees priorUsed + count <= baseLimit + bonusQuestions,
+    // so bonusQuestions only needs to cover whatever pushes this request past baseLimit alone.
+    // Stored on the log (not just decremented here) so rollbackQuota can restore the exact
+    // amount instead of re-deriving it against a balance that may have moved since.
+    const baseLimit = this.resolveBaseQuestionsLimit(user);
+    const overflow =
+      baseLimit === Infinity
+        ? 0
+        : Math.min(Math.max(0, user.questionsGeneratedThisPeriod + count - baseLimit), user.bonusQuestions);
+
+    if (overflow > 0) {
+      await prisma.user.update({ where: { id: userId }, data: { bonusQuestions: { decrement: overflow } } });
+    }
+
+    const log = await prisma.usageLog.create({
+      data: { userId, action: 'generate_questions', count, bonusQuestionsConsumed: overflow, ...contextData },
+    });
     return { logId: log.id };
   }
 
@@ -192,7 +223,10 @@ export class QuotaService {
 
     await prisma.user.update({
       where: { id: log.userId },
-      data: { [field]: { decrement: log.count } },
+      data: {
+        [field]: { decrement: log.count },
+        ...(log.bonusQuestionsConsumed > 0 && { bonusQuestions: { increment: log.bonusQuestionsConsumed } }),
+      },
     });
     await prisma.usageLog.delete({ where: { id: logId } });
   }

@@ -10,6 +10,7 @@ function makeUser(overrides: Partial<{
   autoConfigThisPeriod: number;
   periodStartDate: Date;
   customQuotaOverride: number | null;
+  bonusQuestions: number;
 }> = {}) {
   return {
     id: 'user-1',
@@ -18,6 +19,7 @@ function makeUser(overrides: Partial<{
     autoConfigThisPeriod: 0,
     periodStartDate: new Date(Date.now() - 1 * DAY_MS), // 1 day ago — within period
     customQuotaOverride: null,
+    bonusQuestions: 0,
     ...overrides,
   } as any;
 }
@@ -421,6 +423,147 @@ describe('QuotaService', () => {
         data: { autoConfigThisPeriod: { decrement: 1 } },
       });
       expect(prismaMock.usageLog.delete).toHaveBeenCalledWith({ where: { id: 'log-2' } });
+    });
+  });
+
+  // Regression coverage for achado 10 of the pricing tier audit: bonusQuestions used to
+  // have no dedicated field, so any bonus grant had to go through customQuotaOverride —
+  // which *replaces* the plan limit instead of adding to it, silently wiping the bonus
+  // the moment an admin set an override or the user upgraded plans.
+  describe('bonusQuestions (additive quota)', () => {
+    it('getUsage adds bonusQuestions on top of the plan limit', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'free', questionsGeneratedThisPeriod: 200, bonusQuestions: 100 }),
+      );
+      prismaMock.exam.count.mockResolvedValue(0);
+      prismaMock.examQuestion.count.mockResolvedValue(0);
+
+      const usage = await service.getUsage('user-1');
+
+      // free plan default is 250 — with +100 bonus the effective ceiling is 350.
+      expect(usage.questionsLimit).toBe(350);
+    });
+
+    it('getUsage adds bonusQuestions on top of a customQuotaOverride, not instead of it', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'free', customQuotaOverride: 500, bonusQuestions: 100 }),
+      );
+      prismaMock.exam.count.mockResolvedValue(0);
+      prismaMock.examQuestion.count.mockResolvedValue(0);
+
+      const usage = await service.getUsage('user-1');
+
+      expect(usage.questionsLimit).toBe(600);
+    });
+
+    it('bonusQuestions has no effect once customQuotaOverride is the -1 infinity sentinel', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'free', customQuotaOverride: -1, bonusQuestions: 100 }),
+      );
+      prismaMock.exam.count.mockResolvedValue(0);
+      prismaMock.examQuestion.count.mockResolvedValue(0);
+
+      const usage = await service.getUsage('user-1');
+
+      expect(usage.questionsLimit).toBe(-1); // -1 is the UI's own unlimited sentinel
+    });
+
+    it('checkAndRecordQuestions lets a request overflow into bonusQuestions once the base limit is exhausted', async () => {
+      // free plan: base limit 250, used 245, bonus 100 → asking for 10 needs 5 from bonus.
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'free', questionsGeneratedThisPeriod: 245, bonusQuestions: 100 }),
+      );
+      prismaMock.user.updateMany.mockResolvedValue({ count: 1 });
+      prismaMock.user.update.mockResolvedValue({} as any);
+      prismaMock.usageLog.create.mockResolvedValue({ id: 'log-bonus-1' } as any);
+
+      await expect(service.checkAndRecordQuestions('user-1', 10)).resolves.toMatchObject({ logId: 'log-bonus-1' });
+
+      // The atomic gate itself must check against base + bonus (350), not base alone.
+      expect(prismaMock.user.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: expect.objectContaining({ questionsGeneratedThisPeriod: { lte: 340 } }) }),
+      );
+      expect(prismaMock.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { bonusQuestions: { decrement: 5 } },
+      });
+      expect(prismaMock.usageLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ bonusQuestionsConsumed: 5 }),
+      });
+    });
+
+    it('checkAndRecordQuestions leaves bonusQuestions untouched when the request fits inside the base limit', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'free', questionsGeneratedThisPeriod: 100, bonusQuestions: 100 }),
+      );
+      prismaMock.user.updateMany.mockResolvedValue({ count: 1 });
+      prismaMock.usageLog.create.mockResolvedValue({ id: 'log-bonus-2' } as any);
+
+      await service.checkAndRecordQuestions('user-1', 10);
+
+      expect(prismaMock.user.update).not.toHaveBeenCalled();
+      expect(prismaMock.usageLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ bonusQuestionsConsumed: 0 }),
+      });
+    });
+
+    it('checkAndRecordQuestions still throws 403 once base + bonus together are exhausted', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'free', questionsGeneratedThisPeriod: 250, bonusQuestions: 10 }),
+      );
+      prismaMock.user.updateMany.mockResolvedValue({ count: 0 });
+
+      const promise = service.checkAndRecordQuestions('user-1', 15);
+
+      await expect(promise).rejects.toMatchObject({
+        status: 403,
+        body: { error: 'quota_exceeded', code: 'questions_limit', limit: 260 },
+      });
+      expect(prismaMock.user.update).not.toHaveBeenCalled();
+    });
+
+    it('rollbackQuota restores bonusQuestions by the amount recorded on the log', async () => {
+      prismaMock.usageLog.findUnique.mockResolvedValue({
+        id: 'log-bonus-3',
+        userId: 'user-1',
+        count: 10,
+        bonusQuestionsConsumed: 5,
+      } as any);
+      prismaMock.user.update.mockResolvedValue({} as any);
+      prismaMock.usageLog.delete.mockResolvedValue({} as any);
+
+      await service.rollbackQuota('log-bonus-3');
+
+      expect(prismaMock.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: {
+          questionsGeneratedThisPeriod: { decrement: 10 },
+          bonusQuestions: { increment: 5 },
+        },
+      });
+    });
+
+    it('survives the 30-day period rollover — the reset only touches the period counters', async () => {
+      const oldDate = new Date(Date.now() - 31 * DAY_MS);
+
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'free', questionsGeneratedThisPeriod: 240, periodStartDate: oldDate, bonusQuestions: 100 }),
+      );
+      prismaMock.user.update.mockResolvedValue(
+        makeUser({ plan: 'free', questionsGeneratedThisPeriod: 0, periodStartDate: new Date(), bonusQuestions: 100 }),
+      );
+      prismaMock.exam.count.mockResolvedValue(0);
+      prismaMock.examQuestion.count.mockResolvedValue(0);
+
+      const usage = await service.getUsage('user-1');
+
+      expect(prismaMock.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.not.objectContaining({ bonusQuestions: expect.anything() }),
+        }),
+      );
+      expect(usage.questionsUsed).toBe(0);
+      expect(usage.questionsLimit).toBe(350); // 250 base + 100 bonus, still there after reset
     });
   });
 });
