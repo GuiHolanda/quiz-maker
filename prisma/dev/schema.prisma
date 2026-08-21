@@ -37,6 +37,7 @@ model User {
   referredByUserId             String?
   referredBy                   User?             @relation("UserReferrals", fields: [referredByUserId], references: [id], onDelete: SetNull)
   referrals                    User[]            @relation("UserReferrals")
+  referralActivatedAt          DateTime?
   createdAt                    DateTime          @default(now())
 }
 
