@@ -22,8 +22,66 @@ import type { ExamSeedState } from './useExamSeed.hook';
 import type { IdentifyPhase } from './components/seed/SeedIdentifyCard';
 import { ExamSeedPicker } from './components/seed/ExamSeedPicker';
 import { NewExamHeader } from './components/seed/NewExamHeader';
-import { SeedLoadingScreen } from './components/seed/SeedLoadingScreen';
+import { SeedLoadingScreen, type SeedLoadingVariant } from './components/seed/SeedLoadingScreen';
 import { ExamEditorPage } from './components/ExamEditorPage';
+
+const DEBUG_MATCHES = [
+  {
+    label: 'AWS Certified Solutions Architect',
+    key: 'SAA-C03',
+    provider: 'Amazon Web Services',
+    examBoard: null,
+    role: null,
+    year: null,
+  },
+  {
+    label: 'AWS Certified Developer',
+    key: 'DVA-C02',
+    provider: 'Amazon Web Services',
+    examBoard: null,
+    role: null,
+    year: null,
+  },
+];
+const DEBUG_SEED = DEBUG_MATCHES[0];
+
+// Dev-only escape hatch to preview SeedLoadingScreen frozen at any stage — this state
+// resolves in seconds/minutes normally, too fast to iterate on its styling live.
+// ?debugLoading=identify&phase=searching|disambiguating|clarifying|failed
+// ?debugLoading=auto-config&stage=research|review|format (omit stage for the initial state)
+// ?debugLoading=edital
+function buildDebugVariant(searchParams: URLSearchParams): SeedLoadingVariant | null {
+  const kind = searchParams.get('debugLoading');
+
+  if (kind === 'identify') {
+    const phase = searchParams.get('phase');
+
+    if (phase === 'disambiguating') {
+      return { kind: 'identify', query: 'AWS Certified', phase: { kind: 'disambiguating', matches: DEBUG_MATCHES } };
+    }
+    if (phase === 'clarifying') {
+      return {
+        kind: 'identify',
+        query: 'AWS Certified',
+        phase: { kind: 'clarifying', message: 'Você quer dizer AWS Solutions Architect ou AWS Developer?' },
+      };
+    }
+    if (phase === 'failed') return { kind: 'identify', query: 'AWS Certified', phase: { kind: 'failed' } };
+
+    return { kind: 'identify', query: 'AWS Certified', phase: { kind: 'searching' } };
+  }
+
+  if (kind === 'auto-config') {
+    const stageParam = searchParams.get('stage');
+    const stage = stageParam === 'research' || stageParam === 'review' || stageParam === 'format' ? stageParam : null;
+
+    return { kind: 'auto-config', seed: DEBUG_SEED, stage };
+  }
+
+  if (kind === 'edital') return { kind: 'edital', fileName: searchParams.get('file') ?? 'edital-2026.pdf' };
+
+  return null;
+}
 
 function identifyQuery(state: ExamSeedState): string {
   if (state.kind === 'identifying' || state.kind === 'identify-failed') return state.query;
@@ -152,6 +210,24 @@ function NewExamContent() {
       <BreadcrumbItem>{pageTitle}</BreadcrumbItem>
     </Breadcrumbs>
   );
+
+  const debugVariant = process.env.NODE_ENV !== 'production' ? buildDebugVariant(searchParams) : null;
+
+  if (debugVariant) {
+    return (
+      <PageHeader breadcrumbs={breadcrumbs}>
+        <SeedLoadingScreen
+          startedAt={Date.now()}
+          type={type}
+          variant={debugVariant}
+          onCancel={() => router.push(listHref)}
+          onRetry={() => {}}
+          onSelectMatch={() => {}}
+          onStartBlank={() => {}}
+        />
+      </PageHeader>
+    );
+  }
 
   // Tela 2 (editor / skeleton) carries its own name-based heading — showing PageHeader's
   // static title above it would double up. Only Tela 1 (the seed picker) needs it.
