@@ -8,6 +8,7 @@ import type { QuestionFormat } from '@/config/question-formats';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { QuotaService } from '@/features/services/quota.service';
 import { MetricsService } from '@/features/services/metrics.service';
+import { ReferralService } from '@/features/services/referral.service';
 import { validateAiQuestions } from '@/features/services/exam-question.service';
 import { EXAM_PROMPTS } from '@/config/prompts';
 import {
@@ -172,6 +173,7 @@ export async function processTopic(topicId: string): Promise<void> {
   const openAIService = new OpenAIService();
   const quotaService = new QuotaService();
   const metricsService = new MetricsService();
+  const referralService = new ReferralService();
 
   const topic = await prisma.generationJobTopic.findUnique({
     where: { id: topicId },
@@ -225,6 +227,14 @@ export async function processTopic(topicId: string): Promise<void> {
       topicName: topic.topicName,
     });
     logId = recorded.logId;
+
+    // First generated batch is one of the two referral activation triggers (the other is
+    // finishing a mock exam) — never let this side effect fail the generation itself.
+    try {
+      await referralService.activateIfEligible(userId);
+    } catch (err) {
+      console.error('Failed to process referral activation:', err);
+    }
 
     // Check whether the pool has questions this user hasn't seen yet for this context.
     // Serve from pool first; only call LLM for any remaining shortfall.

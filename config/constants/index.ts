@@ -99,6 +99,16 @@ export function canEditExams(plan: string): boolean {
   return limits ? limits.canEditExams : false;
 }
 
+// Calibration from the pricing tier audit's referral section (achado 6): a two-way reward
+// sized in a unit users recognize, gated behind activation (never the signup itself) so it
+// can't be farmed with throwaway emails. The cap bounds how many of a single referrer's
+// invitees can ever pay out — the invitee's own reward is unaffected by it.
+export const REFERRAL_REWARD = {
+  referredBonus: 100,
+  referrerBonus: 150,
+  maxRewardedReferralsPerAccount: 10,
+} as const;
+
 export const ADMIN_USERS_URL = '/admin/users';
 export const ADMIN_OVERVIEW_URL = '/admin/overview';
 export const ADMIN_AUDIT_LOG_URL = '/admin/audit-log';

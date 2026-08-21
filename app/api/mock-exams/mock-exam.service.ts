@@ -5,6 +5,7 @@ import { normalizeName, looseKey } from '@/shared/utils';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { ExamQuestionService } from '@/features/services/exam-question.service';
 import { MetricsService } from '@/features/services/metrics.service';
+import { ReferralService } from '@/features/services/referral.service';
 import { certificationAnswersPrompt } from '@/config/prompts/certification-questions/answers.prompt';
 import { publicExamAnswersPrompt } from '@/config/prompts/public-exam-questions/answers.prompt';
 
@@ -14,6 +15,7 @@ export class MockExamService {
   private openAIServiceInstance: OpenAIService | null = null;
   private questionServiceInstance: ExamQuestionService | null = null;
   private metricsServiceInstance: MetricsService | null = null;
+  private referralServiceInstance: ReferralService | null = null;
 
   private get openAIService(): OpenAIService {
     this.openAIServiceInstance ??= new OpenAIService();
@@ -31,6 +33,12 @@ export class MockExamService {
     this.metricsServiceInstance ??= new MetricsService();
 
     return this.metricsServiceInstance;
+  }
+
+  private get referralService(): ReferralService {
+    this.referralServiceInstance ??= new ReferralService();
+
+    return this.referralServiceInstance;
   }
 
   private examRef(exam: { id: string; name: string; type: string; provider?: any; examBoard?: any }) {
@@ -453,6 +461,14 @@ export class MockExamService {
         data: { finishedAt: new Date(), score },
       }),
     ]);
+
+    // Finishing a mock exam is one of the two referral activation triggers (the other is
+    // generating a first question batch) — never let this side effect fail the attempt.
+    try {
+      await this.referralService.activateIfEligible(userId);
+    } catch (err) {
+      console.error('Failed to process referral activation:', err);
+    }
   }
 
   async discardAttempt(mockExamId: number, attemptId: number, userId: string) {
