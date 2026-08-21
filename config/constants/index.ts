@@ -82,19 +82,57 @@ export const BILLING_REFERRAL_URL = '/billing/referral';
 // lower per-period question count, higher exam count, break-even lands around 33%/40% of
 // quota instead of 22%/26%. Subscribers who signed up under the old 1500/2500 quotas keep
 // them via customQuotaOverride — see migration backfill_founder_quota_lock — so this only
-// takes effect for new signups. The price shown on /pricing is unchanged until new Stripe
-// Price objects exist for the higher amounts (R$29,90/R$49,90 in the audit's proposal);
-// until then this is a quota-only adjustment at the current price.
+// takes effect for new signups. /pricing already shows the new R$29,90/R$49,90 copy; the
+// Stripe Price objects behind STRIPE_PRICE_ID_PRO_*/PRO_AI_* still need to be created for
+// those amounts before checkout actually charges them (see the Stripe setup guide).
 // sprint mirrors pro_ai exactly — "tudo do Pro AI" for 90 days, one-time payment, no
 // renewal. Access itself is time-boxed via User.sprintExpiresAt (see auth.ts), not by a
-// lower quota here.
+// lower quota here. aiChatMessagesPerPeriod (achado 15): 0 for free/pro is never actually
+// reached — AI_CHAT_ALLOWED_PLANS blocks those plans from the route entirely — set for
+// type completeness only, same convention as free's autoConfigPerPeriod: 0 below.
 export const PLAN_LIMITS = {
-  free: { questionsPerPeriod: 100, maxExams: 2, autoConfigPerPeriod: 0, canEditExams: false },
-  pro: { questionsPerPeriod: 1000, maxExams: 6, autoConfigPerPeriod: 15, canEditExams: true },
-  pro_ai: { questionsPerPeriod: 2000, maxExams: 12, autoConfigPerPeriod: 30, canEditExams: true },
-  sprint: { questionsPerPeriod: 2000, maxExams: 12, autoConfigPerPeriod: 30, canEditExams: true },
-  tester: { questionsPerPeriod: Infinity, maxExams: Infinity, autoConfigPerPeriod: Infinity, canEditExams: true },
-  admin: { questionsPerPeriod: Infinity, maxExams: Infinity, autoConfigPerPeriod: Infinity, canEditExams: true },
+  free: {
+    questionsPerPeriod: 100,
+    maxExams: 2,
+    autoConfigPerPeriod: 0,
+    aiChatMessagesPerPeriod: 0,
+    canEditExams: false,
+  },
+  pro: {
+    questionsPerPeriod: 1000,
+    maxExams: 6,
+    autoConfigPerPeriod: 15,
+    aiChatMessagesPerPeriod: 0,
+    canEditExams: true,
+  },
+  pro_ai: {
+    questionsPerPeriod: 2000,
+    maxExams: 12,
+    autoConfigPerPeriod: 30,
+    aiChatMessagesPerPeriod: 300,
+    canEditExams: true,
+  },
+  sprint: {
+    questionsPerPeriod: 2000,
+    maxExams: 12,
+    autoConfigPerPeriod: 30,
+    aiChatMessagesPerPeriod: 300,
+    canEditExams: true,
+  },
+  tester: {
+    questionsPerPeriod: Infinity,
+    maxExams: Infinity,
+    autoConfigPerPeriod: Infinity,
+    aiChatMessagesPerPeriod: Infinity,
+    canEditExams: true,
+  },
+  admin: {
+    questionsPerPeriod: Infinity,
+    maxExams: Infinity,
+    autoConfigPerPeriod: Infinity,
+    aiChatMessagesPerPeriod: Infinity,
+    canEditExams: true,
+  },
 } as const;
 
 // Single source of truth for "can this plan create/edit exams" — API routes and UI walls

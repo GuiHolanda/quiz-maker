@@ -8,6 +8,7 @@ function makeUser(overrides: Partial<{
   plan: string;
   questionsGeneratedThisPeriod: number;
   autoConfigThisPeriod: number;
+  aiChatMessagesThisPeriod: number;
   periodStartDate: Date;
   customQuotaOverride: number | null;
   bonusQuestions: number;
@@ -18,6 +19,7 @@ function makeUser(overrides: Partial<{
     plan: 'free',
     questionsGeneratedThisPeriod: 0,
     autoConfigThisPeriod: 0,
+    aiChatMessagesThisPeriod: 0,
     periodStartDate: new Date(Date.now() - 1 * DAY_MS), // 1 day ago — within period
     customQuotaOverride: null,
     bonusQuestions: 0,
@@ -101,6 +103,8 @@ describe('QuotaService', () => {
         where: { id: 'user-1' },
         data: expect.objectContaining({
           questionsGeneratedThisPeriod: 0,
+          autoConfigThisPeriod: 0,
+          aiChatMessagesThisPeriod: 0,
           periodStartDate: expect.any(Date),
         }),
       }),
@@ -364,6 +368,84 @@ describe('QuotaService', () => {
     });
   });
 
+  // achado 15 of the pricing tier audit: AI Chat was metered but never capped.
+  describe('checkAndRecordAiChatMessage', () => {
+    it('throws 403 for pro plan (aiChatMessagesPerPeriod = 0 — plan_required gates the route before this is reached)', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'pro', aiChatMessagesThisPeriod: 0 }),
+      );
+      prismaMock.user.updateMany.mockResolvedValue({ count: 0 });
+
+      const promise = service.checkAndRecordAiChatMessage('user-1');
+
+      await expect(promise).rejects.toMatchObject({
+        status: 403,
+        body: { error: 'quota_exceeded', code: 'ai_chat_limit', limit: 0 },
+      });
+    });
+
+    it('succeeds for pro_ai plan under the period limit (atomic updateMany)', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'pro_ai', aiChatMessagesThisPeriod: 299 }),
+      );
+      prismaMock.user.updateMany.mockResolvedValue({ count: 1 });
+      prismaMock.usageLog.create.mockResolvedValue({ id: 'log-chat-1' } as any);
+
+      await expect(service.checkAndRecordAiChatMessage('user-1')).resolves.toMatchObject({ logId: 'log-chat-1' });
+
+      expect(prismaMock.user.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ id: 'user-1', aiChatMessagesThisPeriod: { lte: 299 } }),
+          data: { aiChatMessagesThisPeriod: { increment: 1 } },
+        }),
+      );
+      expect(prismaMock.usageLog.create).toHaveBeenCalledWith({
+        data: { userId: 'user-1', action: 'ai_chat', count: 1 },
+      });
+    });
+
+    it('throws 403 for pro_ai plan once the 300/period cap is reached', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'pro_ai', aiChatMessagesThisPeriod: 300 }),
+      );
+      prismaMock.user.updateMany.mockResolvedValue({ count: 0 });
+
+      const promise = service.checkAndRecordAiChatMessage('user-1');
+
+      await expect(promise).rejects.toMatchObject({
+        status: 403,
+        body: { error: 'quota_exceeded', code: 'ai_chat_limit', limit: 300, used: 300, plan: 'pro_ai' },
+      });
+    });
+
+    it('sprint plan gets the same 300/period cap as pro_ai', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'sprint', aiChatMessagesThisPeriod: 300 }),
+      );
+      prismaMock.user.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(service.checkAndRecordAiChatMessage('user-1')).rejects.toMatchObject({
+        body: { code: 'ai_chat_limit', limit: 300 },
+      });
+    });
+
+    it('uses direct increment for unlimited plans (admin)', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+        makeUser({ plan: 'admin', aiChatMessagesThisPeriod: 9999 }),
+      );
+      prismaMock.user.update.mockResolvedValue({} as any);
+      prismaMock.usageLog.create.mockResolvedValue({ id: 'log-chat-2' } as any);
+
+      await expect(service.checkAndRecordAiChatMessage('user-1')).resolves.toMatchObject({ logId: 'log-chat-2' });
+
+      expect(prismaMock.user.updateMany).not.toHaveBeenCalled();
+      expect(prismaMock.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { aiChatMessagesThisPeriod: { increment: 1 } },
+      });
+    });
+  });
+
   describe('checkAutoConfigAvailable', () => {
     it('throws 403 for free plan (autoConfigPerPeriod = 0) without recording anything', async () => {
       prismaMock.user.findUniqueOrThrow.mockResolvedValue(makeUser({ plan: 'free', autoConfigThisPeriod: 0 }));
@@ -447,6 +529,26 @@ describe('QuotaService', () => {
         data: { autoConfigThisPeriod: { decrement: 1 } },
       });
       expect(prismaMock.usageLog.delete).toHaveBeenCalledWith({ where: { id: 'log-2' } });
+    });
+
+    it('decrements aiChatMessagesThisPeriod for an ai_chat log', async () => {
+      prismaMock.usageLog.findUnique.mockResolvedValue({
+        id: 'log-chat-3',
+        userId: 'user-1',
+        count: 1,
+        action: 'ai_chat',
+      } as any);
+      prismaMock.user.update.mockResolvedValue({} as any);
+      prismaMock.usageLog.delete.mockResolvedValue({} as any);
+
+      const service = new QuotaService();
+      await service.rollbackQuota('log-chat-3');
+
+      expect(prismaMock.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { aiChatMessagesThisPeriod: { decrement: 1 } },
+      });
+      expect(prismaMock.usageLog.delete).toHaveBeenCalledWith({ where: { id: 'log-chat-3' } });
     });
   });
 

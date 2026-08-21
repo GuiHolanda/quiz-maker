@@ -26,6 +26,7 @@ model User {
   plan                         String            @default("free")
   questionsGeneratedThisPeriod Int               @default(0)
   autoConfigThisPeriod         Int               @default(0)
+  aiChatMessagesThisPeriod     Int               @default(0)
   periodStartDate              DateTime          @default(now())
   stripeCustomerId             String?
   stripeSubscriptionId         String?           @unique
