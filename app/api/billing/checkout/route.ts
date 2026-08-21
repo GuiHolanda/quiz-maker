@@ -14,34 +14,48 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
+  const rawProduct = searchParams.get('product');
+  const product = rawProduct === 'pro_ai' ? 'pro_ai' : rawProduct === 'sprint' ? 'sprint' : 'pro';
   const billingPeriod = searchParams.get('period') === 'yearly' ? 'yearly' : 'monthly';
-  const product = searchParams.get('product') === 'pro_ai' ? 'pro_ai' : 'pro';
-
-  let priceId: string;
-
-  if (product === 'pro_ai') {
-    priceId =
-      billingPeriod === 'yearly'
-        ? process.env.STRIPE_PRICE_ID_PRO_AI_YEARLY!
-        : process.env.STRIPE_PRICE_ID_PRO_AI_MONTHLY!;
-  } else {
-    priceId =
-      billingPeriod === 'yearly' ? process.env.STRIPE_PRICE_ID_PRO_YEARLY! : process.env.STRIPE_PRICE_ID_PRO_MONTHLY!;
-  }
 
   const user = await prisma.user.findUniqueOrThrow({
     where: { id: session.user.id },
     select: { email: true, stripeCustomerId: true },
   });
 
-  const checkoutParams: Stripe.Checkout.SessionCreateParams = {
-    mode: 'subscription',
-    line_items: [{ price: priceId, quantity: 1 }],
-    metadata: { user_id: session.user.id },
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?upgraded=true`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing`,
-    allow_promotion_codes: true,
-  };
+  // Sprint is a 90-day, one-time payment — no billing period, no recurring subscription.
+  // The webhook (checkout.session.completed, mode: 'payment') sets plan + sprintExpiresAt
+  // directly instead of going through the subscription lifecycle.
+  const checkoutParams: Stripe.Checkout.SessionCreateParams =
+    product === 'sprint'
+      ? {
+          mode: 'payment',
+          line_items: [{ price: process.env.STRIPE_PRICE_ID_SPRINT!, quantity: 1 }],
+          metadata: { user_id: session.user.id, product: 'sprint' },
+          success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?upgraded=true`,
+          cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing`,
+          allow_promotion_codes: true,
+        }
+      : {
+          mode: 'subscription',
+          line_items: [
+            {
+              price:
+                product === 'pro_ai'
+                  ? billingPeriod === 'yearly'
+                    ? process.env.STRIPE_PRICE_ID_PRO_AI_YEARLY!
+                    : process.env.STRIPE_PRICE_ID_PRO_AI_MONTHLY!
+                  : billingPeriod === 'yearly'
+                    ? process.env.STRIPE_PRICE_ID_PRO_YEARLY!
+                    : process.env.STRIPE_PRICE_ID_PRO_MONTHLY!,
+              quantity: 1,
+            },
+          ],
+          metadata: { user_id: session.user.id },
+          success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?upgraded=true`,
+          cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing`,
+          allow_promotion_codes: true,
+        };
 
   if (user.stripeCustomerId) {
     checkoutParams.customer = user.stripeCustomerId;

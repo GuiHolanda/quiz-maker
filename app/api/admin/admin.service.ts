@@ -45,7 +45,7 @@ export class AdminService {
       ]
     );
 
-    const byPlan: Record<UserPlan, number> = { free: 0, pro: 0, pro_ai: 0, tester: 0, admin: 0 };
+    const byPlan: Record<UserPlan, number> = { free: 0, pro: 0, pro_ai: 0, sprint: 0, tester: 0, admin: 0 };
 
     for (const u of allUsers) {
       const p = u.plan as UserPlan;
@@ -99,6 +99,7 @@ export class AdminService {
       free: emptyPlanStats(),
       pro: emptyPlanStats(),
       pro_ai: emptyPlanStats(),
+      sprint: emptyPlanStats(),
       tester: emptyPlanStats(),
       admin: emptyPlanStats(),
     };
@@ -181,6 +182,7 @@ export class AdminService {
       free: [],
       pro: [],
       pro_ai: [],
+      sprint: [],
       tester: [],
       admin: [],
     };

@@ -28,7 +28,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       customQuotaOverride?: number | null;
     };
 
-    const validPlans: UserPlan[] = ['free', 'pro', 'pro_ai', 'tester', 'admin'];
+    const validPlans: UserPlan[] = ['free', 'pro', 'pro_ai', 'sprint', 'tester', 'admin'];
 
     if (plan !== undefined && !validPlans.includes(plan)) {
       return NextResponse.json({ error: 'Invalid plan value' }, { status: 400 });

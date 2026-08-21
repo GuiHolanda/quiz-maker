@@ -36,6 +36,23 @@ export async function POST(request: NextRequest) {
 
         if (!userId) break;
 
+        const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id;
+
+        // Sprint is the only one-time (mode: 'payment') product — no Stripe subscription
+        // exists for this session, so access is time-boxed via sprintExpiresAt instead of
+        // the subscription lifecycle events below. customer.subscription.deleted never
+        // fires for these users since stripeSubscriptionId stays null.
+        if (session.mode === 'payment') {
+          const sprintExpiresAt = new Date();
+          sprintExpiresAt.setDate(sprintExpiresAt.getDate() + 90);
+
+          await prisma.user.update({
+            where: { id: userId },
+            data: { plan: 'sprint', sprintExpiresAt, stripeCustomerId: customerId ?? null },
+          });
+          break;
+        }
+
         const subscriptionId =
           typeof session.subscription === 'string' ? session.subscription : session.subscription?.id;
 
@@ -43,7 +60,6 @@ export async function POST(request: NextRequest) {
 
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
         const priceId = subscription.items.data[0]?.price?.id;
-        const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id;
 
         await prisma.user.update({
           where: { id: userId },

@@ -79,10 +79,14 @@ export const BILLING_PORTAL_URL = '/billing/portal';
 // takes effect for new signups. The price shown on /pricing is unchanged until new Stripe
 // Price objects exist for the higher amounts (R$29,90/R$49,90 in the audit's proposal);
 // until then this is a quota-only adjustment at the current price.
+// sprint mirrors pro_ai exactly — "tudo do Pro AI" for 90 days, one-time payment, no
+// renewal. Access itself is time-boxed via User.sprintExpiresAt (see auth.ts), not by a
+// lower quota here.
 export const PLAN_LIMITS = {
   free: { questionsPerPeriod: 250, maxExams: 2, autoConfigPerPeriod: 0, canEditExams: false },
   pro: { questionsPerPeriod: 1000, maxExams: 6, autoConfigPerPeriod: 15, canEditExams: true },
   pro_ai: { questionsPerPeriod: 2000, maxExams: 12, autoConfigPerPeriod: 30, canEditExams: true },
+  sprint: { questionsPerPeriod: 2000, maxExams: 12, autoConfigPerPeriod: 30, canEditExams: true },
   tester: { questionsPerPeriod: Infinity, maxExams: Infinity, autoConfigPerPeriod: Infinity, canEditExams: true },
   admin: { questionsPerPeriod: Infinity, maxExams: Infinity, autoConfigPerPeriod: Infinity, canEditExams: true },
 } as const;
@@ -107,10 +111,14 @@ export const ACTIVE_MODEL_PRICING_USD = {
 
 export const USD_TO_BRL_FALLBACK = 5.7;
 
+// sprint is a one-time R$89,90 payment for 90 days, not a recurring monthly charge — the
+// value here is that spread over 3 months (89.90 / 3), purely so the admin margin table
+// has a comparable monthly-equivalent figure. Real revenue timing is lumpy, not smooth.
 export const PLAN_PRICES_BRL_MONTHLY: Record<string, number> = {
   free: 0,
   pro: 19.8,
   pro_ai: 39.8,
+  sprint: 29.97,
 };
 
 export const MOCK_EXAMS_URL = '/mock-exams';
@@ -129,4 +137,4 @@ export const SEARCH_URL = '/search';
 
 export const DASHBOARD_STATS_URL = '/dashboard/stats';
 
-export const AI_CHAT_ALLOWED_PLANS: string[] = ['pro_ai', 'tester', 'admin'];
+export const AI_CHAT_ALLOWED_PLANS: string[] = ['pro_ai', 'sprint', 'tester', 'admin'];

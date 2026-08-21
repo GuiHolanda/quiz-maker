@@ -143,7 +143,7 @@ export interface ChatMessage {
   readonly attachmentName?: string;
 }
 
-export type UserPlan = 'free' | 'pro' | 'pro_ai' | 'tester' | 'admin';
+export type UserPlan = 'free' | 'pro' | 'pro_ai' | 'sprint' | 'tester' | 'admin';
 
 export type QuotaAction =
   | 'generate_questions'
@@ -172,6 +172,7 @@ export interface UsageStats {
   publicExamsUsed: number; // display only
   periodStartDate: string;
   hasStripePortalAccess: boolean; // true only if user has a stripeCustomerId (not all paid plans do)
+  sprintExpiresAt: string | null; // set only when plan === 'sprint'
 }
 
 export interface BrowseSectionSummary {

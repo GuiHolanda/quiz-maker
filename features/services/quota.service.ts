@@ -34,7 +34,7 @@ export class QuotaService {
   }
 
   private resolvePlan(rawPlan: string): UserPlan {
-    const valid: UserPlan[] = ['free', 'pro', 'pro_ai', 'tester', 'admin'];
+    const valid: UserPlan[] = ['free', 'pro', 'pro_ai', 'sprint', 'tester', 'admin'];
     return valid.includes(rawPlan as UserPlan) ? (rawPlan as UserPlan) : 'free';
   }
 
@@ -266,6 +266,7 @@ export class QuotaService {
       publicExamsUsed: examConcursoCount,
       periodStartDate: user.periodStartDate.toISOString(),
       hasStripePortalAccess: !!user.stripeCustomerId,
+      sprintExpiresAt: user.sprintExpiresAt ? user.sprintExpiresAt.toISOString() : null,
     };
   }
 }

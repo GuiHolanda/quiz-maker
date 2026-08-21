@@ -11,6 +11,7 @@ function makeUser(overrides: Partial<{
   periodStartDate: Date;
   customQuotaOverride: number | null;
   bonusQuestions: number;
+  sprintExpiresAt: Date | null;
 }> = {}) {
   return {
     id: 'user-1',
@@ -20,6 +21,7 @@ function makeUser(overrides: Partial<{
     periodStartDate: new Date(Date.now() - 1 * DAY_MS), // 1 day ago — within period
     customQuotaOverride: null,
     bonusQuestions: 0,
+    sprintExpiresAt: null,
     ...overrides,
   } as any;
 }
@@ -159,6 +161,28 @@ describe('QuotaService', () => {
       certificationsUsed: 3,
       publicExamsUsed: 1,
       periodStartDate: periodStart.toISOString(),
+    });
+  });
+
+  // Behaviour 8b: getUsage resolves sprint plan's limits (mirrors pro_ai) and surfaces its expiry
+  it('getUsage resolves sprint plan limits and surfaces sprintExpiresAt', async () => {
+    const expiresAt = new Date(Date.now() + 45 * DAY_MS);
+
+    prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+      makeUser({ plan: 'sprint', questionsGeneratedThisPeriod: 500, sprintExpiresAt: expiresAt }),
+    );
+    prismaMock.exam.count.mockResolvedValueOnce(2).mockResolvedValueOnce(0);
+    prismaMock.examQuestion.count.mockResolvedValue(0);
+
+    const usage = await service.getUsage('user-1');
+
+    // sprint mirrors pro_ai: 2000 questions, 12 exams — see PLAN_LIMITS.
+    expect(usage).toMatchObject({
+      plan: 'sprint',
+      questionsUsed: 500,
+      questionsLimit: 2000,
+      examsLimit: 12,
+      sprintExpiresAt: expiresAt.toISOString(),
     });
   });
 

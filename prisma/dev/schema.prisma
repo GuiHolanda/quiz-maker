@@ -32,6 +32,7 @@ model User {
   subscriptionStatus           String?
   customQuotaOverride          Int?
   bonusQuestions               Int               @default(0)
+  sprintExpiresAt              DateTime?
   createdAt                    DateTime          @default(now())
 }
 
