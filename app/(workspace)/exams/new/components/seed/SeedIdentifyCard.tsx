@@ -46,19 +46,14 @@ interface SeedIdentifyCardProps {
 
 const SKELETON_WIDTHS_PCT = [68, 52, 60] as const;
 
-// Takes the slot the modules skeleton used to occupy. Unlike that skeleton — which never
-// filled, since the blueprint only exists once the job is done — every phase here shows
-// something the flow actually knows at that moment, and neither failure phase dead-ends.
 export function SeedIdentifyCard({ type, phase, query, onSelectMatch, onRetry, onStartBlank }: SeedIdentifyCardProps) {
   const { t } = useTranslation();
   const isRecoverable = phase.kind === 'clarifying' || phase.kind === 'failed';
 
   return (
-    <div className="bg-content1 border border-default-200 rounded-xl p-6">
+    <div className="bg-content1 border border-content2 rounded-xl p-6">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="font-mono text-[11px] uppercase tracking-widest text-default-400">
-          {t('exam.identifyCardTitle')}
-        </span>
+        <span className="text-xs font-bold text-default-500">{t('exam.identifyCardTitle')}</span>
         {phase.kind === 'disambiguating' && (
           <span className="font-mono text-[11px] text-default-400">
             {t('exam.identifyMatchCount', { count: String(phase.matches.length) })}

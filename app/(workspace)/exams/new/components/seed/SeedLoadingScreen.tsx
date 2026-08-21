@@ -49,9 +49,6 @@ function formatElapsed(ms: number): string {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-// Fills the whole wait between the user's search and the editor mounting. Three variants
-// share this frame: identification (~6s web-search lookup), the auto-config pipeline (3
-// SSE-tracked stages) and edital extraction (one opaque HTTP call, no substeps).
 export function SeedLoadingScreen({
   type,
   startedAt,
@@ -64,8 +61,6 @@ export function SeedLoadingScreen({
   const { t } = useTranslation();
   const [now, setNow] = useState(() => Date.now());
 
-  // Parked on the user (disambiguation / clarification): nothing is in flight, so the clock
-  // freezes rather than billing their reading time to the pipeline.
   const isAwaitingUser = variant.kind === 'identify' && variant.phase.kind !== 'searching';
 
   useEffect(() => {
@@ -78,8 +73,6 @@ export function SeedLoadingScreen({
   const elapsedLabel = formatElapsed(now - startedAt);
   const step: SeedStep = variant.kind === 'auto-config' ? stepFromStage(variant.stage) : 'identify';
 
-  // One entry per step transition actually observed this session. On reconnect mid-job,
-  // earlier steps are simply absent rather than backfilled with a guessed timestamp.
   const [stepLog, setStepLog] = useState<readonly StepLogEntry[]>([]);
   const loggedStep = variant.kind === 'auto-config' ? (variant.stage as SeedStep | null) : null;
 
@@ -108,7 +101,7 @@ export function SeedLoadingScreen({
         onCancel={onCancel}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start mt-7">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_560px] gap-6 items-start mt-7">
         <div className="flex flex-col gap-4">
           <SeedProgressCard
             elapsedLabel={elapsedLabel}
@@ -116,20 +109,31 @@ export function SeedLoadingScreen({
             step={step}
             variant={variant.kind === 'edital' ? 'edital' : 'auto-config'}
           />
-          {variant.kind === 'edital' ? (
-            <SeedModulesSkeleton type={type} />
-          ) : variant.kind === 'identify' ? (
-            <SeedIdentifyCard
-              phase={variant.phase}
-              query={variant.query}
-              type={type}
-              onRetry={onRetry}
-              onSelectMatch={onSelectMatch}
-              onStartBlank={onStartBlank}
-            />
-          ) : (
-            <SeedIdentifyCard phase={{ kind: 'confirmed', match: variant.seed }} query="" type={type} />
-          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-4">
+            {variant.kind === 'edital' ? (
+              <SeedModulesSkeleton type={type} />
+            ) : variant.kind === 'identify' ? (
+              <SeedIdentifyCard
+                phase={variant.phase}
+                query={variant.query}
+                type={type}
+                onRetry={onRetry}
+                onSelectMatch={onSelectMatch}
+                onStartBlank={onStartBlank}
+              />
+            ) : (
+              <SeedIdentifyCard phase={{ kind: 'confirmed', match: variant.seed }} query="" type={type} />
+            )}
+
+            <div className="bg-content1 border border-content2 rounded-xl p-5 h-fit">
+              <div className="flex items-center gap-2">
+                <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={faShieldHalved} />
+                <div className="text-sm font-semibold text-foreground">{t('exam.loadingSourceTitle')}</div>
+              </div>
+              <p className="mt-2 text-[13px] leading-relaxed text-default-500">{t('exam.loadingSourceBody')}</p>
+            </div>
+          </div>
         </div>
 
         <div className="flex flex-col gap-4">
@@ -137,7 +141,7 @@ export function SeedLoadingScreen({
           <SeedExtractionLog currentTimeLabel={elapsedLabel} lines={logLines} />
 
           {variant.kind === 'auto-config' && (
-            <div className="bg-content1 border border-default-200 rounded-xl p-5">
+            <div className="bg-content1 border border-content2 rounded-xl p-5">
               <div className="flex items-center gap-2">
                 <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={faArrowRightFromBracket} />
                 <div className="text-sm font-semibold text-foreground">{t('exam.loadingKeepGoingTitle')}</div>
@@ -145,14 +149,6 @@ export function SeedLoadingScreen({
               <p className="mt-2 text-[13px] leading-relaxed text-default-500">{t('exam.loadingKeepGoingBody')}</p>
             </div>
           )}
-
-          <div className="bg-content1 border border-default-200 rounded-xl p-5">
-            <div className="flex items-center gap-2">
-              <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={faShieldHalved} />
-              <div className="text-sm font-semibold text-foreground">{t('exam.loadingSourceTitle')}</div>
-            </div>
-            <p className="mt-2 text-[13px] leading-relaxed text-default-500">{t('exam.loadingSourceBody')}</p>
-          </div>
         </div>
       </div>
     </>

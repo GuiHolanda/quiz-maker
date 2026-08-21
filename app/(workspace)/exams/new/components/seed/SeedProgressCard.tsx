@@ -7,14 +7,10 @@ import { Spinner } from '@heroui/spinner';
 import type { AutoConfigStage } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
-// Identification isn't part of the server-side job (AutoConfigStage stays research|review|
-// format) but it is real work the user waits on — ~6s of web-search lookup — so the UI
-// models it as the first of four steps.
 export type SeedStep = 'identify' | 'research' | 'review' | 'format';
 
 const STEP_ORDER: readonly SeedStep[] = ['identify', 'research', 'review', 'format'];
 
-// Shared with SeedLoadingScreen for the extraction log's step-transition lines.
 export const STEP_HEADLINE_KEYS: Record<SeedStep, string> = {
   identify: 'exam.loadingStageIdentify',
   research: 'exam.aiSeedStageResearch',
@@ -22,8 +18,6 @@ export const STEP_HEADLINE_KEYS: Record<SeedStep, string> = {
   format: 'exam.aiSeedStageFormat',
 };
 
-// Progressive ("Identifying the exam…") while work is in flight; the plain step name once
-// the flow is parked on the user, so the headline never claims motion that stopped.
 const STEP_ROW_KEYS: Record<SeedStep, string> = {
   identify: 'exam.loadingTaskIdentify',
   research: 'exam.loadingTaskResearch',
@@ -54,28 +48,20 @@ export function stepFromStage(stage: AutoConfigStage | null): SeedStep {
 interface SeedProgressCardProps {
   readonly variant: 'auto-config' | 'edital';
   readonly step: SeedStep;
-  // True while the flow is parked on the user (disambiguation / clarification): nothing is
-  // in flight, so the sweep stops and the current row reads "waiting for you".
   readonly isAwaitingUser?: boolean;
   readonly elapsedLabel: string;
 }
 
-// Every number here maps to something real: the fraction is the current step of four, the
-// filled bar is the steps actually finished, and the sweep marks the one in flight. Edital
-// extraction is a single opaque HTTP call with no substeps, so it shows only elapsed time
-// and an indeterminate bar.
 export function SeedProgressCard({ variant, step, isAwaitingUser = false, elapsedLabel }: SeedProgressCardProps) {
   const { t } = useTranslation();
   const currentIndex = STEP_ORDER.indexOf(step);
   const completedPct = (currentIndex / STEP_ORDER.length) * 100;
 
   return (
-    <div className="bg-content1 border border-default-200 rounded-xl p-6">
+    <div className="bg-content1 border border-content2 rounded-xl p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="font-mono text-[11px] uppercase tracking-widest text-default-400">
-            {t('exam.loadingProgressTitle')}
-          </div>
+          <div className="text-xs font-bold text-default-500">{t('exam.loadingProgressTitle')}</div>
           <div className="text-lg font-bold mt-2">
             {t(isAwaitingUser ? STEP_ROW_KEYS[step] : STEP_HEADLINE_KEYS[step])}
           </div>

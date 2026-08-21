@@ -12,7 +12,6 @@ interface ExamAddTopicRowProps {
   readonly onAdd: (name: string) => void;
 }
 
-// Last row of an expanded ExamSectionRow — see ExamTopicRow for why it sits outside the grid.
 export function ExamAddTopicRow({ isSaving, onAdd }: ExamAddTopicRowProps) {
   const { t } = useTranslation();
   const [value, setValue] = useState('');
@@ -25,7 +24,7 @@ export function ExamAddTopicRow({ isSaving, onAdd }: ExamAddTopicRowProps) {
   };
 
   return (
-    <div className="bg-content1 border-b border-default-100 pl-[52px] pr-3 py-3">
+    <div className="bg-background pl-[52px] pr-3 py-4">
       <div className="flex justify-between items-center gap-3">
         <Input
           {...inputProperties.input}
@@ -41,7 +40,7 @@ export function ExamAddTopicRow({ isSaving, onAdd }: ExamAddTopicRowProps) {
           onValueChange={setValue}
         />
         <Button
-          className={`${buttonStyles.primarySm} h-7 px-3`}
+          className={`${buttonStyles.primarySm} h-7 px-4`}
           isDisabled={isSaving || !value.trim()}
           size="sm"
           onPress={submit}
@@ -49,7 +48,6 @@ export function ExamAddTopicRow({ isSaving, onAdd }: ExamAddTopicRowProps) {
           {t('common.save')}
         </Button>
       </div>
-      <p className="mt-2.5 text-xs text-default-500">{t('exam.topicsHint')}</p>
     </div>
   );
 }

@@ -14,7 +14,7 @@ import { ExamTopicRow } from '@/shared/components/exam-editor/ExamTopicRow';
 import { ExamAddTopicRow } from '@/shared/components/exam-editor/ExamAddTopicRow';
 
 // Shared with ExamDistributionTable's header row so columns line up.
-export const DISTRIBUTION_GRID_COLS = 'grid grid-cols-[28px_minmax(0,1fr)_92px_84px_84px_34px] items-center gap-2';
+export const DISTRIBUTION_GRID_COLS = 'grid grid-cols-[28px_minmax(0,1fr)_92px_84px_84px_34px] items-center gap-4';
 
 interface ExamSectionRowProps {
   readonly section: ExamSection;
@@ -43,7 +43,7 @@ export function ExamSectionRow({
 
   return (
     <>
-      <div className={`${DISTRIBUTION_GRID_COLS} px-3 py-2 bg-content2 border-b border-default-200`}>
+      <div className={`${DISTRIBUTION_GRID_COLS} px-3 py-4 bg-content2 border-b border-divider`}>
         <button
           aria-label={isExpanded ? t('common.collapse') : t('common.expand')}
           className="w-5 h-5 flex items-center justify-center rounded text-default-400 hover:text-primary hover:bg-default-100 transition-colors"
@@ -65,9 +65,7 @@ export function ExamSectionRow({
 
         {topicCount > 0 && (
           <span
-            className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
-              isExpanded ? 'bg-primary/10 text-primary' : 'bg-default-100 text-default-500'
-            }`}
+            className={`inline-flex items-center justify-center px-1 py-1 rounded-full text-[10px] font-semibold whitespace-nowrap bg-primary-500/50`}
           >
             {topicCount === 1
               ? t('exam.topicCountOne', { count: topicCount })

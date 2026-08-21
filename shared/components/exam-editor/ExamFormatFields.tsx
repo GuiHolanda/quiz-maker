@@ -27,7 +27,6 @@ interface ExamFormatFieldsProps {
   readonly onUpdateQuestionFormat: (format: QuestionFormatKey) => void;
 }
 
-// Fragment (one row), not a wrapping <div> — see ExamIdentityFields for why.
 export function ExamFormatFields({
   draft,
   isSaving,
@@ -59,7 +58,7 @@ export function ExamFormatFields({
             value={draft.totalQuestions ? String(draft.totalQuestions) : ''}
             onValueChange={(v) => onUpdateNumericField('totalQuestions', parseInt(v, 10) || undefined)}
           />
-          {!isCompact && <p className="mt-1.5 text-xs text-default-500">{t('exam.totalQuestionsHint')}</p>}
+          {!isCompact && <p className="text-[10px] font-semibold text-default-400">{t('exam.totalQuestionsHint')}</p>}
         </div>
         <div className={isCompact ? 'flex-1 min-w-0' : 'w-[195px]'}>
           <Input
@@ -91,8 +90,9 @@ export function ExamFormatFields({
             value={draft.passingScore != null ? String(draft.passingScore) : ''}
             onValueChange={(v) => onUpdateNumericField('passingScore', parseFloat(v) || undefined)}
           />
-          {/* Certifications with a scaled score (AWS, PMI...) don't publish a validated pass %. */}
-          {isCertification && <p className="text-xs text-default-500">{t('exam.passingScoreHint')}</p>}
+          {isCertification && (
+            <p className="text-[10px] font-semibold text-default-400">{t('exam.passingScoreHint')}</p>
+          )}
         </div>
         <div className={isCompact ? 'flex-1 min-w-0 flex flex-col gap-1' : 'flex-1 min-w-[280px] flex flex-col gap-1'}>
           <Select
@@ -117,7 +117,7 @@ export function ExamFormatFields({
             ))}
           </Select>
           {/* Sibling <p>, not `description` — see the Select+description gotcha in app/CLAUDE.md. */}
-          <p className="text-xs text-default-500">{t('exam.questionFormatHint')}</p>
+          <p className="text-[10px] font-semibold text-default-400">{t('exam.questionFormatHint')}</p>
         </div>
       </div>
     </>

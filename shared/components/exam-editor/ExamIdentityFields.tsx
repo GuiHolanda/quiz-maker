@@ -22,7 +22,6 @@ interface ExamIdentityFieldsProps {
   readonly onUpdateReferenceName: (name: string) => void;
 }
 
-// Fragment of two sibling rows, not a wrapping <div> — the caller's flex gap owns the spacing.
 export function ExamIdentityFields({
   draft,
   isSaving,
@@ -51,7 +50,7 @@ export function ExamIdentityFields({
   }, [isCertification]);
 
   return (
-    <>
+    <div className="flex flex-col gap-2">
       <div className="flex gap-4">
         <Input
           {...inputProperties.input}
@@ -78,7 +77,7 @@ export function ExamIdentityFields({
         />
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex gap-8">
         {!isCertification && (
           <Input
             {...inputProperties.input}
@@ -101,7 +100,7 @@ export function ExamIdentityFields({
           label={referenceLabel}
           placeholder={isCertification ? t('certification.providerPlaceholder') : t('concurso.bancaPlaceholder')}
           size="sm"
-          className={isCompact ? 'w-2/5' : 'flex-1'}
+          className={isCompact ? 'w-2/5' : 'flex-1 max-w-lg'}
           onInputChange={onUpdateReferenceName}
         >
           {referenceEntities.map((entity) => (
@@ -121,6 +120,6 @@ export function ExamIdentityFields({
           className={isCompact ? 'w-1/5' : 'w-[140px]'}
         />
       </div>
-    </>
+    </div>
   );
 }

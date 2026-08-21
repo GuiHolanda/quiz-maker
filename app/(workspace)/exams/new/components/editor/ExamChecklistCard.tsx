@@ -43,8 +43,6 @@ function fieldLabelKey(field: ExamDraftFieldId, type: ExamType): string {
   }
 }
 
-// One row per gate that blocks or warns before Save, built straight from
-// getExamDraftValidation so it can never drift from what disables the button.
 export function ExamChecklistCard({ draft, validation }: ExamChecklistCardProps) {
   const { t } = useTranslation();
   const {
@@ -101,11 +99,11 @@ export function ExamChecklistCard({ draft, validation }: ExamChecklistCardProps)
   }
 
   return (
-    <div className="bg-content1 border border-default-200 rounded-xl p-5">
-      <div className="font-mono text-[11px] uppercase tracking-widest text-default-400">{t('exam.checklistTitle')}</div>
+    <div className="bg-content1 border border-content2 rounded-xl p-5">
+      <div className="text-xs font-bold text-default-500 mb-4">{t('exam.checklistTitle')}</div>
       <div className="flex flex-col">
         {rows.map((row) => (
-          <div key={row.key} className="grid grid-cols-[22px_1fr] gap-3 items-start py-3 border-t border-default-200">
+          <div key={row.key} className="grid grid-cols-[22px_1fr] gap-3 items-start py-2">
             <div className="w-[22px] h-[22px] flex items-center justify-center">
               <div
                 className={`w-5 h-5 rounded-full flex items-center justify-center ${

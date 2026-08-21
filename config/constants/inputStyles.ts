@@ -11,8 +11,8 @@ const borderedInputClassNames = {
   input: 'placeholder:text-sm placeholder:text-default-300 text-sm text-foreground',
   inputWrapper: [
     'rounded-lg',
-    'border-default-200',
-    'bg-background',
+    'border-content1',
+    'bg-content2',
     'group-data-[focus=true]:border-primary',
     'group-data-[focus=true]:data-[hover=true]:border-primary',
     'group-data-[focus=true]:shadow-[0_0_0_3px_rgb(224_120_32_/_0.12)]',
@@ -26,8 +26,8 @@ const borderedSelectClassNames = {
   value: 'text-sm',
   trigger: [
     'rounded-lg',
-    'border-default-200',
-    'bg-background',
+    'border-content1',
+    'bg-content2',
     'data-[focus=true]:border-primary',
     'data-[open=true]:border-primary',
     'data-[focus=true]:shadow-[0_0_0_3px_rgb(224_120_32_/_0.12)]',
@@ -62,7 +62,7 @@ export const inputProperties = {
 
 // `placeholder:` overrides keep an empty field lighter — `font-semibold` alone would apply to it too.
 export const compactInputClassNames = {
-  inputWrapper: 'h-8 bg-background rounded-lg',
+  inputWrapper: 'h-8 bg-content1 rounded-lg border-content1',
   input: 'text-xs font-semibold placeholder:font-normal placeholder:text-default-300',
 };
 

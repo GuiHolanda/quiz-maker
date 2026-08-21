@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faXmark, faPen, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faXmark, faPen, faCheck, faArrowsTurnRight } from '@fortawesome/free-solid-svg-icons';
 
 import { ExamTopic } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -17,7 +17,6 @@ interface ExamTopicRowProps {
   readonly onRemove: () => void;
 }
 
-// Sits outside the distribution table's grid — pl-[52px] aligns it under the name column.
 export function ExamTopicRow({ topic, isSaving, onRename, onRemove }: ExamTopicRowProps) {
   const { t } = useTranslation();
   const [editValue, setEditValue] = useState<string | null>(null);
@@ -32,12 +31,10 @@ export function ExamTopicRow({ topic, isSaving, onRename, onRemove }: ExamTopicR
 
   if (isEditing) {
     return (
-      <div className="bg-content1 border-b border-default-100 pl-[52px] pr-3 py-1.5">
-        <div className="flex items-center gap-1.5">
+      <div className="bg-content1 border-b border-divider pl-[52px] pr-3 py-4">
+        <div className="flex items-center gap-4">
           <Input
-            {...inputProperties.input}
-            // eslint-disable-next-line jsx-a11y/no-autofocus
-            autoFocus
+            {...(inputProperties.input, { classNames: { input: 'text-xs font-semibold' } })}
             className="flex-1"
             size="sm"
             value={editValue ?? ''}
@@ -71,9 +68,12 @@ export function ExamTopicRow({ topic, isSaving, onRename, onRemove }: ExamTopicR
   }
 
   return (
-    <div className="bg-content1 border-b border-default-100 pl-[52px] pr-3 py-1 group">
+    <div className="bg-content1 border-b border-divider/30 pl-[52px] pr-3 py-2 group hover:bg-content2/30">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs text-default-700 leading-relaxed break-words min-w-0">{topic.name}</span>
+        <span className="text-xs text-default-700 font-semibold break-words">
+          <FontAwesomeIcon className="w-2.5 h-2.5 mr-2" icon={faArrowsTurnRight} />
+          {topic.name}
+        </span>
         <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
           {!isSaving && (
             <button

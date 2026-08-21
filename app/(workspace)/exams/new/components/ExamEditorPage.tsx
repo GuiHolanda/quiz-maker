@@ -104,7 +104,7 @@ export function ExamEditorPage({
         title={draft.name || t(isEdit ? config.editLabel : config.tabNew)}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start mt-7">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_560px] gap-6 items-start mt-7">
         <div className="flex flex-col gap-4">
           {warningKey && !warningDismissed && (
             <InlineAlert
@@ -116,10 +116,8 @@ export function ExamEditorPage({
             />
           )}
 
-          <div className="bg-content1 border border-default-200 rounded-xl p-6">
-            <div className="font-mono text-[11px] uppercase tracking-widest text-default-400 mb-4">
-              {t('exam.identifyCardTitle')}
-            </div>
+          <div className="bg-content1 border border-content2 rounded-xl p-6 pt-4">
+            <div className="text-xs font-bold text-default-500 mb-1">{t('exam.identifyCardTitle')}</div>
             <ExamIdentityFields
               density="comfortable"
               draft={draft}
@@ -129,10 +127,8 @@ export function ExamEditorPage({
             />
           </div>
 
-          <div className="bg-content1 border border-default-200 rounded-xl p-6">
-            <div className="font-mono text-[11px] uppercase tracking-widest text-default-400 mb-4">
-              {t('exam.formatCardTitle')}
-            </div>
+          <div className="bg-content1 border border-content2 rounded-xl p-6 pt-4">
+            <div className="text-xs font-bold text-default-500 mb-1">{t('exam.formatCardTitle')}</div>
             <ExamFormatFields
               density="comfortable"
               draft={draft}

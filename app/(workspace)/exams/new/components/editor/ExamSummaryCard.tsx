@@ -38,13 +38,13 @@ export function ExamSummaryCard({
   ];
 
   return (
-    <div className="bg-content1 border border-default-200 rounded-xl p-5">
-      <div className="font-mono text-[11px] uppercase tracking-widest text-default-400">{t('exam.summaryTitle')}</div>
+    <div className="bg-content1 border border-content2 rounded-xl p-5">
+      <div className="text-xs font-bold text-default-500">{t('exam.summaryTitle')}</div>
       <dl className="mt-3 flex flex-col">
         {rows.map((row) => (
-          <div key={row.label} className="flex items-baseline justify-between gap-4 py-2 border-t border-default-200">
+          <div key={row.label} className="flex items-baseline justify-between gap-4 py-2 border-t border-default-100">
             <dt className="text-sm text-default-500">{row.label}</dt>
-            <dd className={`font-mono text-[13px] text-right ${row.valueClass ?? 'text-foreground'}`}>{row.value}</dd>
+            <dd className={`font-mono text-sm text-right ${row.valueClass ?? 'text-foreground'}`}>{row.value}</dd>
           </div>
         ))}
       </dl>

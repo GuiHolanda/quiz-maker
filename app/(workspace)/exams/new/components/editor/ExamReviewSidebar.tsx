@@ -11,8 +11,6 @@ import { ExamTipsCard } from '@/app/(workspace)/exams/new/components/editor/Exam
 interface ExamReviewSidebarProps {
   readonly draft: Exam;
   readonly validation: ExamDraftValidation;
-  // Only set in create mode when the AI seed actually returned provenance — edit mode and
-  // the edital/blank seeds never pass these, so the provenance card is skipped.
   readonly context?: string;
   readonly sources?: readonly string[];
 }
