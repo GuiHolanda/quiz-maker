@@ -14,6 +14,12 @@ interface FeatureRow {
 
 const FEATURES: readonly FeatureRow[] = [
   {
+    labelKey: 'pricing.features.autoConfig',
+    free: 'pricing.features.free.autoConfig',
+    pro: 'pricing.features.pro.autoConfig',
+    proAi: 'pricing.features.proAi.autoConfig',
+  },
+  {
     labelKey: 'pricing.features.questionsPerMonth',
     free: 'pricing.features.free.questions',
     pro: 'pricing.features.pro.questions',

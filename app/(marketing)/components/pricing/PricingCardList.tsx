@@ -19,6 +19,7 @@ interface PricingFeature {
 }
 
 const FREE_FEATURES: readonly PricingFeature[] = [
+  { labelKey: 'pricing.features.autoConfig', included: false },
   { labelKey: 'pricing.features.questionsPerMonth', included: true, value: '250' },
   { labelKey: 'pricing.features.customExams', included: true, value: '2' },
   { labelKey: 'pricing.features.canEditExams', included: false },
@@ -30,6 +31,7 @@ const FREE_FEATURES: readonly PricingFeature[] = [
 ];
 
 const PRO_FEATURES: readonly PricingFeature[] = [
+  { labelKey: 'pricing.features.autoConfig', included: true, value: '15' },
   { labelKey: 'pricing.features.questionsPerMonth', included: true, value: '1,500' },
   { labelKey: 'pricing.features.customExams', included: true, value: '5' },
   { labelKey: 'pricing.features.canEditExams', included: true },
@@ -41,6 +43,7 @@ const PRO_FEATURES: readonly PricingFeature[] = [
 ];
 
 const PRO_AI_FEATURES: readonly PricingFeature[] = [
+  { labelKey: 'pricing.features.autoConfig', included: true, value: '30' },
   { labelKey: 'pricing.features.questionsPerMonth', included: true, value: '2,500' },
   { labelKey: 'pricing.features.customExams', included: true, value: '5' },
   { labelKey: 'pricing.features.canEditExams', included: true },
