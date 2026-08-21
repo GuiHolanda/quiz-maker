@@ -12,9 +12,6 @@ const quotaService = new QuotaService();
 
 export const maxDuration = 60;
 
-// Creates the auto-config job for the seed the user confirmed via /auto-config/identify.
-// Charges one auto_config unit for the whole research→review→format pipeline and returns
-// the jobId immediately — progress is followed over SSE at /auto-config/[jobId]/stream.
 export async function POST(request: NextRequest) {
   const session = await auth();
 
@@ -91,14 +88,14 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     job: job
       ? {
-          id: job.id,
-          type: job.type,
-          seedName: job.seedName,
-          seedProvider: job.seedProvider,
-          status: job.status,
-          stage: job.stage,
-          createdAt: job.createdAt,
-        }
+        id: job.id,
+        type: job.type,
+        seedName: job.seedName,
+        seedProvider: job.seedProvider,
+        status: job.status,
+        stage: job.stage,
+        createdAt: job.createdAt,
+      }
       : null,
   });
 }
