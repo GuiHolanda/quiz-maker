@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
 import { Checkbox } from '@heroui/checkbox';
@@ -20,6 +20,7 @@ import { PasswordInput } from '@/shared/components/ui/PasswordInput';
 
 export function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t } = useTranslation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -37,7 +38,9 @@ export function RegisterForm() {
     setLoading(true);
     setError(null);
     try {
-      await api.post(REGISTER_URL, { name, email, password });
+      const ref = searchParams.get('ref');
+
+      await api.post(REGISTER_URL, { name, email, password, ...(ref && { ref }) });
       router.push('/verify-email?email=' + encodeURIComponent(email));
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };

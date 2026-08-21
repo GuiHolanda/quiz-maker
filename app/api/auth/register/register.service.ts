@@ -2,6 +2,9 @@ import bcrypt from 'bcryptjs';
 
 import { prisma } from '@/lib/prisma';
 import { EmailService } from '@/features/services/email.service';
+import { generateReferralCode } from '@/lib/referral-code';
+
+const MAX_REFERRAL_CODE_ATTEMPTS = 5;
 
 export class RegisterService {
   async register(body: unknown): Promise<{ id: string; email: string; redirectToVerify: boolean }> {
@@ -9,7 +12,7 @@ export class RegisterService {
       throw Object.assign(new Error('Invalid request body'), { status: 400 });
     }
 
-    const { name, email, password } = body as Record<string, unknown>;
+    const { name, email, password, ref } = body as Record<string, unknown>;
 
     if (!email || typeof email !== 'string' || !email.includes('@')) {
       throw Object.assign(new Error('Valid email is required'), { status: 400 });
@@ -50,11 +53,18 @@ export class RegisterService {
       return { id: existing.id, email: existing.email, redirectToVerify: false as const };
     }
 
+    const [referredByUserId, referralCode] = await Promise.all([
+      this.resolveReferrer(ref),
+      this.generateUniqueReferralCode(),
+    ]);
+
     const user = await prisma.user.create({
       data: {
         name: typeof name === 'string' ? name.trim() : null,
         email: normalizedEmail,
         password: hashed,
+        referralCode,
+        referredByUserId,
       },
     });
 
@@ -70,5 +80,32 @@ export class RegisterService {
     console.log('[RegisterService] verification email sent successfully');
 
     return { id: user.id, email: user.email, redirectToVerify: true as const };
+  }
+
+  // A bad or stale `?ref=` code shouldn't block signup — no match just means no attribution.
+  private async resolveReferrer(ref: unknown): Promise<string | null> {
+    if (typeof ref !== 'string' || !ref.trim()) return null;
+
+    const referrer = await prisma.user.findUnique({
+      where: { referralCode: ref.trim().toUpperCase() },
+      select: { id: true },
+    });
+
+    return referrer?.id ?? null;
+  }
+
+  // 8 chars from a 33-char alphabet is ~1.7e12 combinations — a real collision at any
+  // realistic user count is effectively impossible, but the unique constraint makes it a
+  // genuine (if rare) failure mode for prisma.user.create, so this retries instead of
+  // letting that surface as an opaque 500 on an unlucky signup.
+  private async generateUniqueReferralCode(): Promise<string> {
+    for (let attempt = 0; attempt < MAX_REFERRAL_CODE_ATTEMPTS; attempt++) {
+      const candidate = generateReferralCode();
+      const existing = await prisma.user.findUnique({ where: { referralCode: candidate }, select: { id: true } });
+
+      if (!existing) return candidate;
+    }
+
+    throw Object.assign(new Error('Failed to generate a unique referral code'), { status: 500 });
   }
 }

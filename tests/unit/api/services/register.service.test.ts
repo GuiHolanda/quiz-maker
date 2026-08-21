@@ -88,4 +88,55 @@ describe('RegisterService', () => {
 
     expect(result).toEqual({ id: 'u1', email: 'test@example.com', redirectToVerify: true });
   });
+
+  // Regression coverage for referral attribution — the schema-based approach chosen over a
+  // third-party analytics tool (see the pricing tier audit's "captura de UTM" question).
+  describe('referral attribution', () => {
+    // Behaviour 6: every new user gets their own shareable referralCode
+    it('assigns a generated referralCode to every new user', async () => {
+      prismaMock.user.findUnique.mockResolvedValue(null); // no existing email, no code collision
+      prismaMock.user.create.mockResolvedValue({ id: 'u1', email: 'test@example.com' } as any);
+
+      await service.register({ email: 'test@example.com', password: 'plainpassword' });
+
+      expect(prismaMock.user.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ referralCode: expect.stringMatching(/^[A-Z2-9]{8}$/) }),
+        }),
+      );
+    });
+
+    // Behaviour 7: a valid ?ref= code attributes the new user to its owner
+    it('sets referredByUserId when ref matches an existing referralCode', async () => {
+      prismaMock.user.findUnique.mockImplementation(((args: any) => {
+        if (args.where.email) return Promise.resolve(null); // no existing account with this email
+        if (args.where.referralCode === 'FRIEND42') return Promise.resolve({ id: 'referrer-1' } as any);
+        return Promise.resolve(null); // referralCode collision check for the new user's own code
+      }) as any);
+      prismaMock.user.create.mockResolvedValue({ id: 'u2', email: 'test@example.com' } as any);
+
+      await service.register({ email: 'test@example.com', password: 'plainpassword', ref: 'friend42' });
+
+      expect(prismaMock.user.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ referredByUserId: 'referrer-1' }) }),
+      );
+    });
+
+    // Behaviour 8: an unknown ref code doesn't block signup — just no attribution
+    it('leaves referredByUserId null when ref does not match any referralCode', async () => {
+      prismaMock.user.findUnique.mockResolvedValue(null);
+      prismaMock.user.create.mockResolvedValue({ id: 'u3', email: 'test@example.com' } as any);
+
+      const result = await service.register({
+        email: 'test@example.com',
+        password: 'plainpassword',
+        ref: 'DOES-NOT-EXIST',
+      });
+
+      expect(result).toMatchObject({ id: 'u3' });
+      expect(prismaMock.user.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ referredByUserId: null }) }),
+      );
+    });
+  });
 });

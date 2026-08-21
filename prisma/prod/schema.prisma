@@ -33,6 +33,10 @@ model User {
   customQuotaOverride          Int?
   bonusQuestions               Int               @default(0)
   sprintExpiresAt              DateTime?
+  referralCode                 String?           @unique
+  referredByUserId             String?
+  referredBy                   User?             @relation("UserReferrals", fields: [referredByUserId], references: [id], onDelete: SetNull)
+  referrals                    User[]            @relation("UserReferrals")
   createdAt                    DateTime          @default(now())
 }
 
