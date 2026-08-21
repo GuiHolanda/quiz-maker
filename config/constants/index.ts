@@ -83,7 +83,7 @@ export const BILLING_PORTAL_URL = '/billing/portal';
 // renewal. Access itself is time-boxed via User.sprintExpiresAt (see auth.ts), not by a
 // lower quota here.
 export const PLAN_LIMITS = {
-  free: { questionsPerPeriod: 250, maxExams: 2, autoConfigPerPeriod: 0, canEditExams: false },
+  free: { questionsPerPeriod: 100, maxExams: 2, autoConfigPerPeriod: 0, canEditExams: false },
   pro: { questionsPerPeriod: 1000, maxExams: 6, autoConfigPerPeriod: 15, canEditExams: true },
   pro_ai: { questionsPerPeriod: 2000, maxExams: 12, autoConfigPerPeriod: 30, canEditExams: true },
   sprint: { questionsPerPeriod: 2000, maxExams: 12, autoConfigPerPeriod: 30, canEditExams: true },

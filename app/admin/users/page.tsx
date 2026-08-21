@@ -205,7 +205,7 @@ export default function AdminUsersPage() {
         : edit.overrideMode === 'value' && edit.overrideValue
           ? parseInt(edit.overrideValue, 10)
           : null;
-    const planLimit = PLAN_LIMITS[edit.plan ?? user.plan]?.questionsPerPeriod ?? 250;
+    const planLimit = PLAN_LIMITS[edit.plan ?? user.plan]?.questionsPerPeriod ?? 100;
     const limit = effectiveLimit !== null ? effectiveLimit : planLimit;
     const used = user.questionsGeneratedThisPeriod;
     const pct = limit === Infinity ? 0 : Math.min(100, Math.round((used / limit) * 100));

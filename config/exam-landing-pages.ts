@@ -85,7 +85,7 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
       {
         question: 'Quanto custa depois das questões gratuitas?',
         answer:
-          'O plano gratuito dá 250 questões por mês, sem custo e sem cartão. O plano Pro custa R$19,80 por mês e sobe para 1000 questões, com mais exames salvos.',
+          'O plano gratuito dá 100 questões por mês, sem custo e sem cartão. O plano Pro custa R$19,80 por mês e sobe para 1000 questões, com mais exames salvos.',
       },
     ],
   },
@@ -170,7 +170,7 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
       {
         question: 'Preciso de cartão de crédito para começar?',
         answer:
-          'Não. As primeiras questões não pedem nem cadastro. A conta gratuita também não pede cartão e libera 250 questões por mês.',
+          'Não. As primeiras questões não pedem nem cadastro. A conta gratuita também não pede cartão e libera 100 questões por mês.',
       },
     ],
   },
@@ -252,7 +252,7 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
       {
         question: 'Quanto custa depois das questões gratuitas?',
         answer:
-          'O plano gratuito dá 250 questões por mês, sem cartão. O plano Pro custa R$19,80 por mês e sobe para 1000 questões, com mais exames salvos.',
+          'O plano gratuito dá 100 questões por mês, sem cartão. O plano Pro custa R$19,80 por mês e sobe para 1000 questões, com mais exames salvos.',
       },
     ],
   },
@@ -335,7 +335,7 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
       {
         question: 'Preciso de cartão de crédito para começar?',
         answer:
-          'Não. As primeiras questões não pedem nem cadastro. A conta gratuita também não pede cartão e libera 250 questões por mês.',
+          'Não. As primeiras questões não pedem nem cadastro. A conta gratuita também não pede cartão e libera 100 questões por mês.',
       },
     ],
   },
@@ -414,7 +414,7 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
       {
         question: 'Quanto custa depois das questões gratuitas?',
         answer:
-          'O plano gratuito dá 250 questões por mês, sem cartão. O plano Pro custa R$19,80 por mês e sobe para 1000 questões.',
+          'O plano gratuito dá 100 questões por mês, sem cartão. O plano Pro custa R$19,80 por mês e sobe para 1000 questões.',
       },
     ],
   },
@@ -494,7 +494,7 @@ export const EXAM_LANDING_PAGES: ExamLandingConfig[] = [
       {
         question: 'Quanto custa depois das questões gratuitas?',
         answer:
-          'O plano gratuito dá 250 questões por mês, sem cartão. O plano Pro custa R$19,80 por mês e sobe para 1000 questões, com mais exames salvos.',
+          'O plano gratuito dá 100 questões por mês, sem cartão. O plano Pro custa R$19,80 por mês e sobe para 1000 questões, com mais exames salvos.',
       },
     ],
   },

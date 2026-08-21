@@ -236,7 +236,7 @@ type UserPlan = 'free' | 'pro' | 'pro_ai' | 'sprint' | 'tester' | 'admin';
 
 | Plan | Questions/period | Exams | Create/edit exams | Auto-config/period | AI Chat | Admin |
 |---|---|---|---|---|---|---|
-| `free` | 250 | 2 | ✗ (catalog-only, read-only) | 0 | ✗ | ✗ |
+| `free` | 100 | 2 | ✗ (catalog-only, read-only) | 0 | ✗ | ✗ |
 | `pro` | 1000 | 6 | ✓ | 15 | ✗ | ✗ |
 | `pro_ai` | 2000 | 12 | ✓ | 30 | ✓ | ✗ |
 | `sprint` | 2000 | 12 | ✓ | 30 | ✓ | ✗ |

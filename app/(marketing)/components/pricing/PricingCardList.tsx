@@ -20,7 +20,7 @@ interface PricingFeature {
 
 const FREE_FEATURES: readonly PricingFeature[] = [
   { labelKey: 'pricing.features.autoConfig', included: false },
-  { labelKey: 'pricing.features.questionsPerMonth', included: true, value: '250' },
+  { labelKey: 'pricing.features.questionsPerMonth', included: true, value: '100' },
   { labelKey: 'pricing.features.customExams', included: true, value: '2' },
   { labelKey: 'pricing.features.canEditExams', included: false },
   { labelKey: 'pricing.features.aiExplanations', included: true },

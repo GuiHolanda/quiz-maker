@@ -36,16 +36,16 @@ describe('QuotaService', () => {
   // Behaviour 1: check generate_questions passes when under limit
   it('check generate_questions passes when questionsGeneratedThisPeriod < limit', async () => {
     prismaMock.user.findUniqueOrThrow.mockResolvedValue(
-      makeUser({ plan: 'free', questionsGeneratedThisPeriod: 100 }),
+      makeUser({ plan: 'free', questionsGeneratedThisPeriod: 40 }),
     );
 
     await expect(service.check('user-1', 'generate_questions', 10)).resolves.toBeUndefined();
   });
 
   // Behaviour 2: check generate_questions throws 403 when limit exceeded
-  it('check generate_questions throws 403 when limit is exceeded (free plan, used=250, count=1)', async () => {
+  it('check generate_questions throws 403 when limit is exceeded (free plan, used=100, count=1)', async () => {
     prismaMock.user.findUniqueOrThrow.mockResolvedValue(
-      makeUser({ plan: 'free', questionsGeneratedThisPeriod: 250 }),
+      makeUser({ plan: 'free', questionsGeneratedThisPeriod: 100 }),
     );
 
     const promise = service.check('user-1', 'generate_questions', 1);
@@ -190,7 +190,7 @@ describe('QuotaService', () => {
     // Behaviour 9: checkAndRecordQuestions performs atomic updateMany for finite limit
     it('checkAndRecordQuestions succeeds when used + count <= limit (atomic updateMany)', async () => {
       prismaMock.user.findUniqueOrThrow.mockResolvedValue(
-        makeUser({ plan: 'free', questionsGeneratedThisPeriod: 100 }),
+        makeUser({ plan: 'free', questionsGeneratedThisPeriod: 40 }),
       );
       prismaMock.user.updateMany.mockResolvedValue({ count: 1 });
       prismaMock.usageLog.create.mockResolvedValue({ id: 'log-1' } as any);
@@ -199,7 +199,7 @@ describe('QuotaService', () => {
 
       expect(prismaMock.user.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ id: 'user-1', questionsGeneratedThisPeriod: { lte: 240 } }),
+          where: expect.objectContaining({ id: 'user-1', questionsGeneratedThisPeriod: { lte: 90 } }),
           data: { questionsGeneratedThisPeriod: { increment: 10 } },
         }),
       );
@@ -464,8 +464,8 @@ describe('QuotaService', () => {
 
       const usage = await service.getUsage('user-1');
 
-      // free plan default is 250 — with +100 bonus the effective ceiling is 350.
-      expect(usage.questionsLimit).toBe(350);
+      // free plan default is 100 — with +100 bonus the effective ceiling is 200.
+      expect(usage.questionsLimit).toBe(200);
     });
 
     it('getUsage adds bonusQuestions on top of a customQuotaOverride, not instead of it', async () => {
@@ -493,9 +493,9 @@ describe('QuotaService', () => {
     });
 
     it('checkAndRecordQuestions lets a request overflow into bonusQuestions once the base limit is exhausted', async () => {
-      // free plan: base limit 250, used 245, bonus 100 → asking for 10 needs 5 from bonus.
+      // free plan: base limit 100, used 95, bonus 100 → asking for 10 needs 5 from bonus.
       prismaMock.user.findUniqueOrThrow.mockResolvedValue(
-        makeUser({ plan: 'free', questionsGeneratedThisPeriod: 245, bonusQuestions: 100 }),
+        makeUser({ plan: 'free', questionsGeneratedThisPeriod: 95, bonusQuestions: 100 }),
       );
       prismaMock.user.updateMany.mockResolvedValue({ count: 1 });
       prismaMock.user.update.mockResolvedValue({} as any);
@@ -503,9 +503,9 @@ describe('QuotaService', () => {
 
       await expect(service.checkAndRecordQuestions('user-1', 10)).resolves.toMatchObject({ logId: 'log-bonus-1' });
 
-      // The atomic gate itself must check against base + bonus (350), not base alone.
+      // The atomic gate itself must check against base + bonus (200), not base alone.
       expect(prismaMock.user.updateMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ questionsGeneratedThisPeriod: { lte: 340 } }) }),
+        expect.objectContaining({ where: expect.objectContaining({ questionsGeneratedThisPeriod: { lte: 190 } }) }),
       );
       expect(prismaMock.user.update).toHaveBeenCalledWith({
         where: { id: 'user-1' },
@@ -518,7 +518,7 @@ describe('QuotaService', () => {
 
     it('checkAndRecordQuestions leaves bonusQuestions untouched when the request fits inside the base limit', async () => {
       prismaMock.user.findUniqueOrThrow.mockResolvedValue(
-        makeUser({ plan: 'free', questionsGeneratedThisPeriod: 100, bonusQuestions: 100 }),
+        makeUser({ plan: 'free', questionsGeneratedThisPeriod: 50, bonusQuestions: 100 }),
       );
       prismaMock.user.updateMany.mockResolvedValue({ count: 1 });
       prismaMock.usageLog.create.mockResolvedValue({ id: 'log-bonus-2' } as any);
@@ -533,7 +533,7 @@ describe('QuotaService', () => {
 
     it('checkAndRecordQuestions still throws 403 once base + bonus together are exhausted', async () => {
       prismaMock.user.findUniqueOrThrow.mockResolvedValue(
-        makeUser({ plan: 'free', questionsGeneratedThisPeriod: 250, bonusQuestions: 10 }),
+        makeUser({ plan: 'free', questionsGeneratedThisPeriod: 100, bonusQuestions: 10 }),
       );
       prismaMock.user.updateMany.mockResolvedValue({ count: 0 });
 
@@ -541,7 +541,7 @@ describe('QuotaService', () => {
 
       await expect(promise).rejects.toMatchObject({
         status: 403,
-        body: { error: 'quota_exceeded', code: 'questions_limit', limit: 260 },
+        body: { error: 'quota_exceeded', code: 'questions_limit', limit: 110 },
       });
       expect(prismaMock.user.update).not.toHaveBeenCalled();
     });
@@ -587,7 +587,7 @@ describe('QuotaService', () => {
         }),
       );
       expect(usage.questionsUsed).toBe(0);
-      expect(usage.questionsLimit).toBe(350); // 250 base + 100 bonus, still there after reset
+      expect(usage.questionsLimit).toBe(200); // 100 base + 100 bonus, still there after reset
     });
   });
 });
