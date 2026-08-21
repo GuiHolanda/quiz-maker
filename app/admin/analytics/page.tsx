@@ -42,6 +42,7 @@ const planLabels: Record<UserPlan, string> = {
   free: 'Free',
   pro: 'Pro',
   pro_ai: 'Pro AI',
+  sprint: 'Sprint',
   tester: 'Tester',
   admin: 'Admin',
 };
@@ -50,6 +51,7 @@ const planColors: Record<UserPlan, 'default' | 'primary' | 'secondary' | 'succes
   free: 'default',
   pro: 'primary',
   pro_ai: 'secondary',
+  sprint: 'danger',
   tester: 'success',
   admin: 'warning',
 };
@@ -271,7 +273,7 @@ export default async function AdminAnalyticsPage() {
                 </tr>
               </thead>
               <tbody>
-                {(['free', 'pro', 'pro_ai'] as UserPlan[]).map((plan) => {
+                {(['free', 'pro', 'pro_ai', 'sprint'] as UserPlan[]).map((plan) => {
                   const userCount = overview.byPlan[plan] ?? 0;
                   const planPrice = PLAN_PRICES_BRL_MONTHLY[plan] ?? 0;
                   const revenue = userCount * planPrice;

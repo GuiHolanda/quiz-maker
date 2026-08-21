@@ -231,18 +231,21 @@ DATABASE_URL="file:/caminho/absoluto/prisma/dev.db" npm run e2e
 ## Plans and Quotas
 
 ```ts
-type UserPlan = 'free' | 'pro' | 'pro_ai' | 'tester' | 'admin';
+type UserPlan = 'free' | 'pro' | 'pro_ai' | 'sprint' | 'tester' | 'admin';
 ```
 
 | Plan | Questions/period | Exams | Create/edit exams | Auto-config/period | AI Chat | Admin |
 |---|---|---|---|---|---|---|
 | `free` | 250 | 2 | ✗ (catalog-only, read-only) | 0 | ✗ | ✗ |
-| `pro` | 1500 | 5 | ✓ | 15 | ✗ | ✗ |
-| `pro_ai` | 2500 | 5 | ✓ | 30 | ✓ | ✗ |
+| `pro` | 1000 | 6 | ✓ | 15 | ✗ | ✗ |
+| `pro_ai` | 2000 | 12 | ✓ | 30 | ✓ | ✗ |
+| `sprint` | 2000 | 12 | ✓ | 30 | ✓ | ✗ |
 | `tester` | ∞ | ∞ | ✓ | ∞ | ✓ | ✗ |
 | `admin` | ∞ | ∞ | ✓ | ∞ | ✓ | ✓ |
 
-**Single `maxExams` counter** shared across both exam types. `tester`/`admin` assigned manually. `pro_ai` differentiated by Stripe price ID.
+**Single `maxExams` counter** shared across both exam types. `tester`/`admin` assigned manually. `pro_ai` differentiated by Stripe price ID. Subscribers who signed up under the old 1500/2500 `pro`/`pro_ai` quotas keep them via `customQuotaOverride` (migration `backfill_founder_quota_lock`) — the lower numbers above only apply to signups after that migration ran.
+
+**`sprint`:** 90-day, one-time payment (R$89,90, no renewal) — "tudo do Pro AI" (`PLAN_LIMITS.sprint` mirrors `pro_ai` exactly). Checkout uses `mode: 'payment'` instead of `'subscription'` (`app/api/billing/checkout/route.ts`) and the webhook branches on `session.mode === 'payment'` to set `plan: 'sprint'` + `User.sprintExpiresAt` directly, skipping the subscription lookup entirely — Sprint users never get a `stripeSubscriptionId`. Expiry is enforced in exactly one place: `auth.ts`'s `session()` callback downgrades `plan` to `'free'` (and clears `sprintExpiresAt`) the first time it reads a user past their expiry date — every other plan is indefinite, so nothing else in the quota model needs to know about expiry. Because that callback runs at the top of every authenticated request, `QuotaService` and every `canEditExams`/`AI_CHAT_ALLOWED_PLANS` check downstream always see the already-corrected plan.
 
 **`customQuotaOverride`:** `null` = plan default, `-1` = infinity sentinel, `N > 0` = custom. Logic in `quota.service.ts → resolveBaseQuestionsLimit()`. Applies to questions only — `autoConfigPerPeriod` always comes straight from `PLAN_LIMITS`.
 
@@ -274,7 +277,7 @@ Gate in two places: API (403) + UI (not rendered). `session.user.plan` client-si
 
 | Feature | Plans |
 |---|---|
-| AI Chat FAB + Drawer | `pro_ai`, `tester`, `admin` |
+| AI Chat FAB + Drawer | `pro_ai`, `sprint`, `tester`, `admin` |
 | Admin link in sidebar | `admin` |
 | Usage badge (header) | plans with finite limit |
 | Upgrade CTA | `free` |

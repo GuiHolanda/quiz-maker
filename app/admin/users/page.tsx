@@ -14,7 +14,7 @@ import { inputProperties } from '@/config/constants/inputStyles';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { ACTIVE_MODEL_PRICING_USD, USD_TO_BRL_FALLBACK, PLAN_LIMITS } from '@/config/constants';
 
-const PLAN_OPTIONS: UserPlan[] = ['free', 'pro', 'pro_ai', 'tester', 'admin'];
+const PLAN_OPTIONS: UserPlan[] = ['free', 'pro', 'pro_ai', 'sprint', 'tester', 'admin'];
 const STATUS_OPTIONS = ['active', 'canceled'];
 const PAGE_SIZE = 20;
 

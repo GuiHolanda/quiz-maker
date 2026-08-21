@@ -10,7 +10,7 @@ import { getCheckoutUrl } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
 
-type LoadingKey = 'pro' | 'pro_ai' | null;
+type LoadingKey = 'pro' | 'pro_ai' | 'sprint' | null;
 
 interface PricingFeature {
   readonly labelKey: string;
@@ -54,6 +54,9 @@ const PRO_AI_FEATURES: readonly PricingFeature[] = [
   { labelKey: 'pricing.features.aiChat', included: true },
 ];
 
+// Sprint is "tudo do Pro AI" for a fixed 90-day term — same feature set, no separate list.
+const SPRINT_FEATURES: readonly PricingFeature[] = PRO_AI_FEATURES;
+
 export function PricingCardList() {
   const { t } = useTranslation();
   const { data: session } = useSession();
@@ -63,7 +66,7 @@ export function PricingCardList() {
 
   const userPlan = session?.user?.plan as string | undefined;
 
-  async function handleCheckout(product: 'pro' | 'pro_ai') {
+  async function handleCheckout(product: 'pro' | 'pro_ai' | 'sprint') {
     if (!session?.user) {
       notify.info(t('pricing.loginRequired.title'), t('pricing.loginRequired.description'));
       router.push('/login?callbackUrl=/pricing');
@@ -72,7 +75,7 @@ export function PricingCardList() {
 
     setLoading(product);
     try {
-      const url = await getCheckoutUrl(period, product);
+      const url = await getCheckoutUrl(product === 'sprint' ? 'once' : period, product);
       window.location.href = url;
     } catch {
       notify.error(t('toast.error'), t('toast.somethingWrong'));
@@ -95,12 +98,17 @@ export function PricingCardList() {
     return 'pricing.cta.upgradeProAi';
   }
 
+  function getSprintCtaKey() {
+    if (userPlan === 'sprint') return 'pricing.cta.currentPlan';
+    return 'pricing.cta.buySprint';
+  }
+
   return (
-    <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       <PricingCard
         ctaLabelKey={getFreeCtaKey()}
         features={FREE_FEATURES}
-        isCurrent={!!session?.user && userPlan !== 'pro' && userPlan !== 'pro_ai'}
+        isCurrent={!!session?.user && userPlan === 'free'}
         nameKey="pricing.plan.free"
         planKey="free"
         priceKey="pricing.plan.free.price"
@@ -131,6 +139,18 @@ export function PricingCardList() {
         priceKey={period === 'monthly' ? 'pricing.plan.proAi.monthly' : 'pricing.plan.proAi.yearly'}
         sublineKey={period === 'yearly' ? 'pricing.plan.proAi.yearlyTotal' : undefined}
         onCtaPress={() => handleCheckout('pro_ai')}
+      />
+      <PricingCard
+        ctaLabelKey={getSprintCtaKey()}
+        features={SPRINT_FEATURES}
+        isCurrent={userPlan === 'sprint'}
+        isLoading={loading === 'sprint'}
+        nameKey="pricing.plan.sprint"
+        planKey="sprint"
+        priceKey="pricing.plan.sprint.price"
+        priceSuffixKey="pricing.plan.per90Days"
+        sublineKey="pricing.plan.sprint.tagline"
+        onCtaPress={() => handleCheckout('sprint')}
       />
     </div>
   );

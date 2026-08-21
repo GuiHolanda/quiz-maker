@@ -13,9 +13,10 @@ interface PricingFeature {
 }
 
 interface PricingCardProps {
-  readonly planKey: 'free' | 'pro' | 'pro_ai';
+  readonly planKey: 'free' | 'pro' | 'pro_ai' | 'sprint';
   readonly nameKey: string;
   readonly priceKey: string;
+  readonly priceSuffixKey?: string;
   readonly sublineKey?: string;
   readonly features: readonly PricingFeature[];
   readonly ctaLabelKey: string;
@@ -29,6 +30,7 @@ export function PricingCard({
   planKey,
   nameKey,
   priceKey,
+  priceSuffixKey = 'pricing.plan.perMonth',
   sublineKey,
   features,
   ctaLabelKey,
@@ -60,7 +62,7 @@ export function PricingCard({
         </p>
         <div className="flex items-end gap-2">
           <span className="ds-heading text-mkt-text text-3xl">{t(priceKey)}</span>
-          <span className="text-xs text-mkt-text opacity-60 mb-1.5">{t('pricing.plan.perMonth')}</span>
+          <span className="text-xs text-mkt-text opacity-60 mb-1.5">{t(priceSuffixKey)}</span>
         </div>
         <p className="text-xs text-mkt-text opacity-60 min-h-[1rem]">{sublineKey ? t(sublineKey) : ''}</p>
       </div>
