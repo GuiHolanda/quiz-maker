@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 import { UsageCard } from '@/app/(workspace)/billing/components/UsageCard';
+import { ReferralCard } from '@/app/(workspace)/billing/components/ReferralCard';
 import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
 import { getBillingUsage, getPortalUrl } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -113,6 +114,7 @@ export function BillingOverview() {
     <div className="flex flex-col gap-8">
       {renderPlanBanner()}
       {renderUsageSection()}
+      <ReferralCard />
       {hasStripeSubscription && renderPaymentSection()}
       {hasStripeSubscription && renderBillingHistorySection()}
       {hasStripeSubscription && renderCancelSection()}
