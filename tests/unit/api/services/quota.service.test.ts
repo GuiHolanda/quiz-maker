@@ -164,6 +164,8 @@ describe('QuotaService', () => {
       examsLimit: -1,
       certificationsUsed: 3,
       publicExamsUsed: 1,
+      aiChatUsed: 0,
+      aiChatLimit: -1,
       periodStartDate: periodStart.toISOString(),
     });
   });
@@ -180,12 +182,14 @@ describe('QuotaService', () => {
 
     const usage = await service.getUsage('user-1');
 
-    // sprint mirrors pro_ai: 2000 questions, 12 exams — see PLAN_LIMITS.
+    // sprint mirrors pro_ai: 2000 questions, 12 exams, 300 AI Chat messages — see PLAN_LIMITS.
     expect(usage).toMatchObject({
       plan: 'sprint',
       questionsUsed: 500,
       questionsLimit: 2000,
       examsLimit: 12,
+      aiChatUsed: 0,
+      aiChatLimit: 300,
       sprintExpiresAt: expiresAt.toISOString(),
     });
   });
