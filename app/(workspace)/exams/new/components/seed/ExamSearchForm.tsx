@@ -44,7 +44,7 @@ export function ExamSearchForm({
         </label>
       )}
       <form
-        className={`flex gap-2.5 ${showLabel ? 'mt-2' : ''} ${compact ? 'flex-col sm:flex-row' : ''}`}
+        className={`flex gap-2.5 ${showLabel ? 'mt-2' : ''} ${compact ? 'flex-col' : ''}`}
         onSubmit={(e) => {
           e.preventDefault();
           if (!isBusy) onSubmit(query);
