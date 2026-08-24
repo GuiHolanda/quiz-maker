@@ -51,6 +51,9 @@ export const TID = {
   seedLoadingCancelBtn: 'seed-loading-cancel-btn',
   seedIdentifyMatchOption: 'seed-identify-match-option',
   seedIdentifyConfirmedLabel: 'seed-identify-confirmed-label',
+  seedIdentifyRoleOption: 'seed-identify-role-option',
+  seedIdentifyRoleInput: 'seed-identify-role-input',
+  seedIdentifyRoleConfirmBtn: 'seed-identify-role-confirm-btn',
 
   // Question bank
   questionBankCard: 'question-bank-card',

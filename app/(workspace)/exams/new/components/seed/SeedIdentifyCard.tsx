@@ -3,6 +3,7 @@
 import type { AutoConfigMatch, ExamType } from '@/shared/types';
 
 import NextLink from 'next/link';
+import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faCheck,
@@ -11,8 +12,12 @@ import {
   faLayerGroup,
   faPenToSquare,
 } from '@fortawesome/free-solid-svg-icons';
+import { Input } from '@heroui/input';
+import { Button } from '@heroui/button';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { buttonStyles } from '@/config/constants/buttonStyles';
+import { inputProperties } from '@/config/constants/inputStyles';
 import { ExamSearchForm } from './ExamSearchForm';
 
 export type IdentifyPhase =
@@ -22,6 +27,7 @@ export type IdentifyPhase =
   // gave one; `kind: 'failed'` is the same shape for a request that errored outright.
   | { readonly kind: 'clarifying'; readonly message: string }
   | { readonly kind: 'failed' }
+  | { readonly kind: 'selecting-role'; readonly match: AutoConfigMatch }
   | { readonly kind: 'confirmed'; readonly match: ConfirmedSeed };
 
 // Subset of AutoConfigMatch the loading screen carries forward once a match is confirmed —
@@ -42,12 +48,23 @@ interface SeedIdentifyCardProps {
   readonly onSelectMatch?: (match: AutoConfigMatch) => void;
   readonly onRetry?: (query: string) => void;
   readonly onStartBlank?: () => void;
+  readonly onSelectRole?: (role: string) => void;
 }
 
 const SKELETON_WIDTHS_PCT = [68, 52, 60] as const;
 
-export function SeedIdentifyCard({ type, phase, query, onSelectMatch, onRetry, onStartBlank }: SeedIdentifyCardProps) {
+export function SeedIdentifyCard({
+  type,
+  phase,
+  query,
+  onSelectMatch,
+  onRetry,
+  onStartBlank,
+  onSelectRole,
+}: SeedIdentifyCardProps) {
   const { t } = useTranslation();
+  const initialRole = phase.kind === 'selecting-role' ? (phase.match.role ?? '') : '';
+  const [roleInputValue, setRoleInputValue] = useState(initialRole);
   const isRecoverable = phase.kind === 'clarifying' || phase.kind === 'failed';
 
   return (
@@ -159,9 +176,40 @@ export function SeedIdentifyCard({ type, phase, query, onSelectMatch, onRetry, o
           </div>
         );
 
+      case 'selecting-role':
+        return renderSelectingRole(phase.match);
+
       case 'confirmed':
         return renderConfirmed(phase.match);
     }
+  }
+
+  function renderFacts(match: ConfirmedSeed) {
+    const organization = match.provider ?? match.examBoard;
+    const facts: { readonly labelKey: string; readonly value: string }[] = [];
+
+    if (organization) {
+      facts.push({ labelKey: match.provider ? 'certification.providerLabel' : 'exam.examBoard', value: organization });
+    }
+    if (match.key) {
+      facts.push({ labelKey: type === 'public_exam' ? 'exam.editalKeyLabel' : 'exam.keyLabel', value: match.key });
+    }
+    if (match.year) facts.push({ labelKey: 'exam.year', value: String(match.year) });
+
+    if (facts.length === 0) return null;
+    return (
+      <dl className="mt-4 flex flex-col">
+        {facts.map((fact) => (
+          <div
+            key={fact.labelKey}
+            className="flex items-baseline justify-between gap-4 py-2 border-t border-default-200"
+          >
+            <dt className="text-sm text-default-500">{t(fact.labelKey)}</dt>
+            <dd className="font-mono text-[11px] text-default-400 text-right">{fact.value}</dd>
+          </div>
+        ))}
+      </dl>
+    );
   }
 
   function renderConfirmed(match: ConfirmedSeed) {
@@ -171,7 +219,9 @@ export function SeedIdentifyCard({ type, phase, query, onSelectMatch, onRetry, o
     if (organization) {
       facts.push({ labelKey: match.provider ? 'certification.providerLabel' : 'exam.examBoard', value: organization });
     }
-    if (match.key) facts.push({ labelKey: 'exam.keyLabel', value: match.key });
+    if (match.key) {
+      facts.push({ labelKey: type === 'public_exam' ? 'exam.editalKeyLabel' : 'exam.keyLabel', value: match.key });
+    }
     if (match.role) facts.push({ labelKey: 'concurso.cargo', value: match.role });
     if (match.year) facts.push({ labelKey: 'exam.year', value: String(match.year) });
 
@@ -201,6 +251,69 @@ export function SeedIdentifyCard({ type, phase, query, onSelectMatch, onRetry, o
             ))}
           </dl>
         )}
+      </div>
+    );
+  }
+
+  function renderSelectingRole(match: AutoConfigMatch) {
+    return (
+      <div>
+        <div className="flex items-start gap-3 mb-4">
+          <span className="min-w-0">
+            <span className="block text-base font-bold text-foreground text-balance">{match.label}</span>
+          </span>
+        </div>
+        {renderFacts(match)}
+        <div className="mt-4 flex flex-col gap-2">
+          {match.roles.length > 0 ? (
+            match.roles.map((role) => (
+              <button
+                key={role}
+                className="group flex items-center gap-3 text-left bg-content2 border border-default-200 rounded-lg px-4 py-3 hover:bg-primary/10 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors duration-200"
+                data-testid="seed-identify-role-option"
+                type="button"
+                onClick={() => onSelectRole?.(role)}
+              >
+                <span className="min-w-0 grow">
+                  <span className="block text-sm font-semibold text-foreground truncate">{role}</span>
+                </span>
+                <FontAwesomeIcon
+                  className="w-3 h-3 shrink-0 text-default-400 group-hover:text-primary transition-colors duration-200"
+                  icon={faChevronRight}
+                />
+              </button>
+            ))
+          ) : (
+            <p className="text-sm text-default-500">{t('exam.identifyRoleEmptyHint')}</p>
+          )}
+        </div>
+        <div className="mt-4 flex flex-col gap-2">
+          {match.roles.length > 0 && (
+            <p className="text-sm font-medium text-default-500">{t('exam.identifyRoleOtherLabel')}</p>
+          )}
+          <div className="flex gap-2">
+            <Input
+              {...inputProperties.input}
+              className="grow"
+              data-testid="seed-identify-role-input"
+              label=""
+              placeholder={t('exam.identifyRoleOtherPlaceholder')}
+              value={roleInputValue}
+              onValueChange={setRoleInputValue}
+            />
+            <Button
+              className={buttonStyles.primarySm}
+              data-testid="seed-identify-role-confirm-btn"
+              isDisabled={!roleInputValue.trim()}
+              type="button"
+              onPress={() => {
+                if (roleInputValue.trim()) onSelectRole?.(roleInputValue.trim());
+              }}
+            >
+              {t('exam.identifyRoleConfirmAction')}
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
