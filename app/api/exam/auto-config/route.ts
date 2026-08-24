@@ -88,14 +88,18 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     job: job
       ? {
-        id: job.id,
-        type: job.type,
-        seedName: job.seedName,
-        seedProvider: job.seedProvider,
-        status: job.status,
-        stage: job.stage,
-        createdAt: job.createdAt,
-      }
+          id: job.id,
+          type: job.type,
+          seedName: job.seedName,
+          seedProvider: job.seedProvider,
+          seedKey: job.seedKey,
+          seedBoard: job.seedBoard,
+          seedRole: job.seedRole,
+          seedYear: job.seedYear,
+          status: job.status,
+          stage: job.stage,
+          createdAt: job.createdAt,
+        }
       : null,
   });
 }

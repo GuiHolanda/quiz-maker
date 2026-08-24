@@ -234,6 +234,10 @@ export interface ActiveAutoConfigJob {
   readonly type: ExamType;
   readonly seedName: string;
   readonly seedProvider: string | null;
+  readonly seedKey: string | null;
+  readonly seedBoard: string | null;
+  readonly seedRole: string | null;
+  readonly seedYear: number | null;
   readonly status: string;
   readonly stage: string | null;
   // Lets the loading screen's elapsed timer survive a reload — reconnecting to a job that

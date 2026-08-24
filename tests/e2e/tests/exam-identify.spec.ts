@@ -5,8 +5,8 @@ import { injectNeverDoneEventSource } from '../support/fake-eventsource';
 import { mockCreateAutoConfigJob, mockIdentify } from '../support/mocks';
 
 const MATCHES = [
-  { label: 'AWS Certified Solutions Architect – Associate', key: 'SAA-C03', provider: 'AWS', examBoard: null, role: null, year: null },
-  { label: 'AWS Certified Cloud Practitioner', key: 'CLF-C02', provider: 'AWS', examBoard: null, role: null, year: null },
+  { label: 'AWS Certified Solutions Architect – Associate', key: 'SAA-C03', provider: 'AWS', examBoard: null, role: null, roles: [], year: null },
+  { label: 'AWS Certified Cloud Practitioner', key: 'CLF-C02', provider: 'AWS', examBoard: null, role: null, roles: [], year: null },
 ];
 
 for (const domain of ALL_DOMAINS) {
@@ -91,8 +91,15 @@ for (const domain of ALL_DOMAINS) {
       await expect(options).toHaveCount(MATCHES.length, { timeout: 10000 });
       await options.filter({ hasText: MATCHES[1].label }).click();
 
-      // Picking a match confirms it immediately (before the — here neutered — pipeline
-      // stream ever resolves): the list is replaced by the confirmed identification.
+      // public_exam requires a role selection step; MATCHES has roles: [], so the manual
+      // input appears — fill it and confirm to proceed to the confirmed state.
+      if (domain.type === 'public_exam') {
+        await page.locator(tid(TID.seedIdentifyRoleInput)).fill('Analista Judiciário');
+        await page.locator(tid(TID.seedIdentifyRoleConfirmBtn)).click();
+      }
+
+      // Picking a match confirms it immediately (cert) or after role selection (public_exam):
+      // the list is replaced by the confirmed identification.
       await expect(options).toHaveCount(0);
       const [, chosen] = MATCHES;
       await expect(page.locator(tid(TID.seedIdentifyConfirmedLabel))).toHaveText(chosen.label);
@@ -100,3 +107,33 @@ for (const domain of ALL_DOMAINS) {
     });
   });
 }
+
+test('public_exam: shows role selection step and can pick a role from the list', async ({ authedPage: page }) => {
+  const matchWithRoles = {
+    label: 'TRF 2ª Região 2025',
+    key: 'PGJ-001/2025',
+    provider: null,
+    examBoard: 'CEBRASPE',
+    role: null,
+    roles: ['Analista Judiciário', 'Técnico Judiciário'],
+    year: 2025,
+  };
+
+  await injectNeverDoneEventSource(page);
+  await mockCreateAutoConfigJob(page);
+  await mockIdentify(page, [{ status: 200, body: { matches: [matchWithRoles], clarification: null } }]);
+
+  await page.goto('/exams/new?type=public_exam');
+  await page.locator(tid(TID.examSeedBlankBtn)).waitFor({ state: 'visible' });
+  await page.locator(tid(TID.examSearchInput)).fill('TRF');
+  await page.locator(tid(TID.examSearchSubmitBtn)).click();
+
+  // Single match for public_exam skips disambiguation and goes straight to role selection.
+  const roleOptions = page.locator(tid(TID.seedIdentifyRoleOption));
+  await expect(roleOptions).toHaveCount(2, { timeout: 10000 });
+
+  // Clicking a role option confirms and proceeds to the loading-blueprint phase.
+  await roleOptions.first().click();
+
+  await expect(page.locator(tid(TID.seedIdentifyConfirmedLabel))).toHaveText(matchWithRoles.label, { timeout: 10000 });
+});

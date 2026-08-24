@@ -25,6 +25,7 @@ export interface IdentifyMatch {
   readonly provider: string | null;
   readonly examBoard: string | null;
   readonly role: string | null;
+  readonly roles: readonly string[];
   readonly year: number | null;
 }
 
@@ -55,6 +56,25 @@ function validateIdentifyResult(data: unknown): IdentifyResult {
       provider: typeof m.provider === 'string' && m.provider.trim() ? m.provider.trim() : null,
       examBoard: typeof m.examBoard === 'string' && m.examBoard.trim() ? m.examBoard.trim() : null,
       role: typeof m.role === 'string' && m.role.trim() ? m.role.trim() : null,
+      roles: (() => {
+        const raw = Array.isArray(m.roles) ? (m.roles as unknown[]) : [];
+        const seen = new Set<string>();
+        const normalized = raw
+          .filter((r): r is string => typeof r === 'string' && r.trim() !== '')
+          .map((r) => r.trim())
+          .filter((r) => {
+            const lower = r.toLowerCase();
+            if (seen.has(lower)) return false;
+            seen.add(lower);
+            return true;
+          })
+          .slice(0, 12);
+        const role = typeof m.role === 'string' && m.role.trim() ? m.role.trim() : null;
+        if (role && !normalized.some((r) => r.toLowerCase() === role.toLowerCase())) {
+          return [role, ...normalized];
+        }
+        return normalized;
+      })(),
       year: typeof m.year === 'number' ? m.year : null,
     }));
 
@@ -255,6 +275,10 @@ export async function runAutoConfigJob(jobId: string, language: 'pt' | 'en'): Pr
     );
 
     const parsed: ParsedExamBlueprint = validateExamBlueprint(JSON.parse(extractJson(format.text)), type);
+
+    if (type === 'public_exam' && job.seedRole) {
+      Object.assign(parsed.examDraft, { role: job.seedRole });
+    }
 
     await metricsService.finalize(usageLogId, Date.now() - startTime);
 

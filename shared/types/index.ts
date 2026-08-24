@@ -515,6 +515,7 @@ export interface AutoConfigMatch {
   readonly provider: string | null;
   readonly examBoard: string | null;
   readonly role: string | null;
+  readonly roles: string[];
   readonly year: number | null;
 }
 

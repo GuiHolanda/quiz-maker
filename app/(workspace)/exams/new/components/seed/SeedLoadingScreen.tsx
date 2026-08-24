@@ -34,6 +34,7 @@ interface SeedLoadingScreenProps {
   readonly onSelectMatch?: (match: AutoConfigMatch) => void;
   readonly onRetry?: (query: string) => void;
   readonly onStartBlank?: () => void;
+  readonly onSelectRole?: (role: string) => void;
 }
 
 interface StepLogEntry {
@@ -57,6 +58,7 @@ export function SeedLoadingScreen({
   onSelectMatch,
   onRetry,
   onStartBlank,
+  onSelectRole,
 }: SeedLoadingScreenProps) {
   const { t } = useTranslation();
   const [now, setNow] = useState(() => Date.now());
@@ -120,6 +122,7 @@ export function SeedLoadingScreen({
                 type={type}
                 onRetry={onRetry}
                 onSelectMatch={onSelectMatch}
+                onSelectRole={onSelectRole}
                 onStartBlank={onStartBlank}
               />
             ) : (
@@ -164,6 +167,8 @@ export function SeedLoadingScreen({
             return t('exam.aiSeedClarifyingTitle');
           case 'failed':
             return t('exam.loadingFailedTitle');
+          case 'selecting-role':
+            return t('exam.identifyRoleTitle');
           default:
             return t('exam.loadingIdentifyTitle', { query: variant.query });
         }
@@ -184,6 +189,8 @@ export function SeedLoadingScreen({
             return t('exam.loadingClarifySubtitle');
           case 'failed':
             return t('exam.loadingFailedSubtitle');
+          case 'selecting-role':
+            return t('exam.identifyRoleSubtitle');
           default:
             return t('exam.loadingIdentifySubtitle');
         }
