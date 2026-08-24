@@ -23,9 +23,6 @@ export async function GET(request: NextRequest) {
     select: { email: true, stripeCustomerId: true },
   });
 
-  // Sprint is a 90-day, one-time payment — no billing period, no recurring subscription.
-  // The webhook (checkout.session.completed, mode: 'payment') sets plan + sprintExpiresAt
-  // directly instead of going through the subscription lifecycle.
   const checkoutParams: Stripe.Checkout.SessionCreateParams =
     product === 'sprint'
       ? {

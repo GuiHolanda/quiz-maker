@@ -79,7 +79,7 @@ export function ActiveJobStatus({
         />
       )}
 
-      <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4">
+      <div className="bg-content1 rounded-xl p-6 flex flex-col gap-4">
         {renderCardHeader()}
         {isRunning && (
           <>
@@ -223,7 +223,7 @@ export function ActiveJobStatus({
     if (topics.length === 0) return null;
 
     return (
-      <div className="flex flex-col divide-y divide-divider border-y border-default-200">
+      <div className="flex flex-col divide-y divide-divider/50 border-y border-default-200/50">
         {topics.map((topic) => {
           const isDone = topic.status === 'done';
           const isTopicRunning = topic.status === 'running';
@@ -263,7 +263,7 @@ export function ActiveJobStatus({
                     icon={iconNode}
                   />
                 ) : (
-                  <span className="w-2 h-2 rounded-full border border-default-300 inline-block" />
+                  <span className="w-2 h-2 rounded-full border border-default-200 inline-block" />
                 )}
               </div>
               <span className={`flex-1 text-sm truncate ${isTopicError ? 'text-danger' : 'text-foreground'}`}>

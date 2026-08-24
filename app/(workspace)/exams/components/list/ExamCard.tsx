@@ -33,18 +33,15 @@ export function ExamCard({ exam, type, isSelected, onClick, footerAction, isDisa
   return (
     <Card
       aria-expanded={isSelected}
-      className="border border-content2"
       aria-label={exam.name}
       isDisabled={isDisabled}
       classNames={{
         base: [
-          'bg-content1 rounded-xl transition-all duration-150 w-full h-[420px] lg:h-[520px] p-0',
+          'bg-content1 rounded-xl transition-all duration-150 w-full h-[420px] lg:h-[480px] p-0',
           isDisabled
             ? 'cursor-default border-default-200'
             : 'cursor-pointer hover:bg-content2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
-          isSelected
-            ? 'border-primary bg-content2 ring-1 ring-primary/20'
-            : 'border-default-200 hover:border-default-300',
+          isSelected ? 'border-primary bg-content2 ring-1 ring-primary/20' : '',
         ].join(' '),
       }}
       disableAnimation
@@ -59,8 +56,7 @@ export function ExamCard({ exam, type, isSelected, onClick, footerAction, isDisa
     >
       <CardBody className="p-0 flex flex-col overflow-hidden">
         {/* Header row */}
-        <div className="flex items-center gap-3 p-4 lg:p-6 h-20 lg:h-28 shrink-0">
-          {renderAvatar()}
+        <div className="flex items-center gap-3 p-4 lg:p-6 h-20 lg:h-20 shrink-0">
           <div className="flex-1 min-w-0">
             <span className="block text-base lg:text-lg font-semibold text-foreground leading-snug line-clamp-2 text-left">
               {exam.name}
@@ -87,7 +83,7 @@ export function ExamCard({ exam, type, isSelected, onClick, footerAction, isDisa
 
         {/* Stats row */}
         {hasStats && (
-          <div className="flex items-center bg-navy-800 flex-wrap gap-3 lg:gap-4 text-xs lg:text-sm text-default-400 px-4 lg:px-6 py-3 lg:py-4 border-y border-content2 shrink-0">
+          <div className="flex items-center bg-navy-800/50 flex-wrap gap-3 lg:gap-4 text-xs lg:text-sm text-default-500 px-4 lg:px-6 py-3 lg:py-4 border-y border-content2 shrink-0">
             {exam.totalQuestions > 0 && (
               <span className="inline-flex items-center gap-1">
                 <FontAwesomeIcon icon={faHashtag} size="sm" />
@@ -144,10 +140,10 @@ export function ExamCard({ exam, type, isSelected, onClick, footerAction, isDisa
         </div>
       </CardBody>
 
-      <CardFooter className="p-4 lg:p-6 bg-navy-800 flex items-center justify-between border-t border-default-200 shrink-0">
+      <CardFooter className="p-4 lg:p-6 bg-navy-800/50 flex items-center justify-between shrink-0">
         <div className="flex gap-2 items-center">
-          <FontAwesomeIcon className="text-default-400" icon={faClockRotateLeft} />
-          <p className="text-sm text-default-400">{dateValue ? <RelativeDate date={dateValue} /> : null}</p>
+          <FontAwesomeIcon className="text-default-500" icon={faClockRotateLeft} />
+          <p className="text-sm text-default-500">{dateValue ? <RelativeDate date={dateValue} /> : null}</p>
         </div>
         {footerAction ?? null}
       </CardFooter>
