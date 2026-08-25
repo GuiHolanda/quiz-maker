@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
           mode: 'payment',
           line_items: [{ price: process.env.STRIPE_PRICE_ID_SPRINT!, quantity: 1 }],
           metadata: { user_id: session.user.id, product: 'sprint' },
-          success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?upgraded=true`,
-          cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing`,
+          success_url: `${process.env.AUTH_URL}/billing?upgraded=true`,
+          cancel_url: `${process.env.AUTH_URL}/pricing`,
           allow_promotion_codes: true,
         }
       : {
@@ -49,8 +49,8 @@ export async function GET(request: NextRequest) {
             },
           ],
           metadata: { user_id: session.user.id },
-          success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?upgraded=true`,
-          cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing`,
+          success_url: `${process.env.AUTH_URL}/billing?upgraded=true`,
+          cancel_url: `${process.env.AUTH_URL}/pricing`,
           allow_promotion_codes: true,
         };
 
