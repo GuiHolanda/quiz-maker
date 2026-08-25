@@ -291,7 +291,7 @@ export function SeedIdentifyCard({
           {match.roles.length > 0 && (
             <p className="text-sm font-medium text-default-500">{t('exam.identifyRoleOtherLabel')}</p>
           )}
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             <Input
               {...inputProperties.input}
               className="grow"

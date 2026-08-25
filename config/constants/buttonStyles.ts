@@ -4,7 +4,7 @@ export const buttonStyles = {
   primarySm:
     'bg-primary text-primary-foreground text-xs font-semibold rounded-lg hover:opacity-90 h-8 px-4 transition-opacity duration-200',
   secondary:
-    'border-default-300 text-default-600 hover:text-foreground hover:border-default-400 font-semibold transition-colors duration-200',
+    'border-default-200 text-default-600 hover:text-foreground rounded-lg px-8 hover:border-default-400 font-semibold transition-colors duration-200',
   flat: 'bg-content2 border border-content2 font-semibold text-default-500 hover:bg-primary/10 hover:text-primary hover:border-primary/30 rounded-lg transition-colors duration-200',
   danger: 'bg-danger text-white font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200',
   dangerFlat:

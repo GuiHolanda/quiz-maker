@@ -77,7 +77,7 @@ export function ExamSeedPicker({ type, onIdentify, onUploadEdital, onStartBlank 
         </div>
 
         {type === 'public_exam' && showEditalUpload && (
-          <div className="mt-5 bg-content1 border border-default-200 rounded-xl p-5 flex flex-col gap-4">
+          <div className="flex mt-5 bg-content1 rounded-xl p-5 gap-4 items-end-safe">
             <Input
               {...inputProperties.input}
               label={t('concurso.cargo')}
@@ -93,9 +93,9 @@ export function ExamSeedPicker({ type, onIdentify, onUploadEdital, onStartBlank 
               onChange={handleFileChange}
             />
             <Button
-              className={buttonStyles.secondary}
+              className={`${buttonStyles.secondary} px-4 shrink-0`}
+              size="sm"
               startContent={<FontAwesomeIcon icon={faFileArrowUp} />}
-              variant="bordered"
               onPress={() => fileInputRef.current?.click()}
             >
               {t('exam.aiSeedUploadEdital')}
