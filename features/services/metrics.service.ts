@@ -9,6 +9,7 @@ type MetricsStep =
   | 'chat'
   | 'identify'
   | 'locate'
+  | 'verify_edital'
   | 'config_research'
   | 'config_review'
   | 'config_format'

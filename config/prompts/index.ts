@@ -19,10 +19,14 @@ export { publicExamAnswersPrompt } from './public-exam-questions/answers.prompt'
 export type { PublicExamAnswersInput } from './public-exam-questions/answers.prompt';
 export { publicExamExplanationsPrompt } from './public-exam-questions/explanations.prompt';
 export type { PublicExamExplanationsInput } from './public-exam-questions/explanations.prompt';
-export { examIdentifyPrompt } from './exam-identify.prompt';
-export type { ExamIdentifyInput } from './exam-identify.prompt';
-export { editalLocatePrompt } from './edital-locate.prompt';
-export type { EditalLocateInput } from './edital-locate.prompt';
+export { certificationIdentifyPrompt } from './certification-config/identify.prompt';
+export type { CertificationIdentifyInput } from './certification-config/identify.prompt';
+export { publicExamIdentifyPrompt } from './public-exam-config/identify.prompt';
+export type { PublicExamIdentifyInput } from './public-exam-config/identify.prompt';
+export { editalLocatePrompt } from './public-exam-config/locate.prompt';
+export type { EditalLocateInput } from './public-exam-config/locate.prompt';
+export { editalVerifyPrompt } from './public-exam-config/verify.prompt';
+export type { EditalVerifyInput } from './public-exam-config/verify.prompt';
 export { certificationConfigResearchPrompt } from './certification-config/research.prompt';
 export type { CertificationConfigResearchInput } from './certification-config/research.prompt';
 export { certificationConfigReviewPrompt } from './certification-config/review.prompt';
@@ -53,9 +57,11 @@ import { publicExamExplanationsPrompt } from './public-exam-questions/explanatio
 import { certificationConfigResearchPrompt } from './certification-config/research.prompt';
 import { certificationConfigReviewPrompt } from './certification-config/review.prompt';
 import { certificationConfigFormatPrompt } from './certification-config/format.prompt';
+import { certificationIdentifyPrompt } from './certification-config/identify.prompt';
 import { publicExamConfigResearchPrompt } from './public-exam-config/research.prompt';
 import { publicExamConfigReviewPrompt } from './public-exam-config/review.prompt';
 import { publicExamConfigFormatPrompt } from './public-exam-config/format.prompt';
+import { publicExamIdentifyPrompt } from './public-exam-config/identify.prompt';
 
 interface ExamPromptSet {
   research: PromptDefinition<any>;
@@ -92,8 +98,6 @@ interface AutoConfigPromptSet {
 }
 
 // Dispatch table for the auto-config blueprint pipeline (research → review → format).
-// The identify prompt is shared across both types (see exam-identify.prompt.ts) and lives
-// outside this table since it isn't part of the per-type chain.
 export const AUTO_CONFIG_PROMPTS: Record<ExamType, AutoConfigPromptSet> = {
   certification: {
     research: certificationConfigResearchPrompt,
@@ -105,4 +109,10 @@ export const AUTO_CONFIG_PROMPTS: Record<ExamType, AutoConfigPromptSet> = {
     review: publicExamConfigReviewPrompt,
     format: publicExamConfigFormatPrompt,
   },
+};
+
+// Dispatch table for the identify step — each type has its own scope-specific prompt.
+export const IDENTIFY_PROMPTS: Record<ExamType, PromptDefinition<any>> = {
+  certification: certificationIdentifyPrompt,
+  public_exam: publicExamIdentifyPrompt,
 };

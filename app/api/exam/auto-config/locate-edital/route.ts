@@ -46,16 +46,12 @@ export async function POST(request: NextRequest) {
     if (typeof examName !== 'string' || !examName.trim()) {
       throw Object.assign(new Error('examName is required'), { status: 400 });
     }
-    if (typeof role !== 'string' || !role.trim()) {
-      throw Object.assign(new Error('role is required'), { status: 400 });
-    }
-
     const result = await locateEdital(session.user.id, {
       examName: examName.trim(),
       examBoard: typeof examBoard === 'string' && examBoard.trim() ? examBoard.trim() : null,
       editalKey: typeof editalKey === 'string' && editalKey.trim() ? editalKey.trim() : null,
       year: typeof year === 'number' ? year : null,
-      role: role.trim(),
+      role: typeof role === 'string' ? role.trim() : '',
       language: language === 'pt' ? 'pt' : 'en',
     });
 

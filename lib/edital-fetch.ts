@@ -8,6 +8,16 @@ const MAX_REDIRECTS = 3;
 const FETCH_TIMEOUT_MS = 30_000;
 const PDF_MAGIC = '%PDF-';
 
+// Browser-like headers so government and banca portals don't return 403/challenge pages.
+// The Accept header lists PDF first, then octet-stream, then wildcard, so intermediary
+// proxies that inspect it still pass the request to the real download handler.
+const BROWSER_FETCH_HEADERS = {
+  'User-Agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+  Accept: 'application/pdf,application/octet-stream;q=0.9,*/*;q=0.8',
+  'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+};
+
 function isPrivateIPv4(ip: string): boolean {
   const parts = ip.split('.').map(Number);
   if (parts.length !== 4 || parts.some((p) => Number.isNaN(p) || p < 0 || p > 255)) return true; // malformed → unsafe
@@ -87,7 +97,11 @@ export async function fetchEditalPdf(url: string): Promise<File> {
     try {
       // redirect: 'manual' — the whole point is to re-validate the host of every hop before
       // following it, which fetch's own automatic redirect handling would skip.
-      response = await fetch(parsed.toString(), { redirect: 'manual', signal: controller.signal });
+      response = await fetch(parsed.toString(), {
+        redirect: 'manual',
+        signal: controller.signal,
+        headers: BROWSER_FETCH_HEADERS,
+      });
     } finally {
       clearTimeout(timeoutId);
     }
@@ -106,13 +120,9 @@ export async function fetchEditalPdf(url: string): Promise<File> {
       throw Object.assign(new Error(`Edital fetch failed with status ${response.status}`), { status: 502 });
     }
 
-    const contentType = response.headers.get('content-type') ?? '';
-    const isAcceptableType =
-      contentType.includes('application/pdf') || contentType.includes('application/octet-stream');
-
-    if (!isAcceptableType) {
-      throw Object.assign(new Error(`Unexpected content-type for edital PDF: ${contentType}`), { status: 502 });
-    }
+    // Skip the content-type check — many government and banca portals serve PDFs as
+    // text/html or application/octet-stream. The %PDF- magic-byte check below is the
+    // authoritative gatekeeper; a content-type mismatch alone is not a rejection reason.
 
     const declaredLength = Number(response.headers.get('content-length') ?? '0');
     if (declaredLength > MAX_PDF_BYTES) {

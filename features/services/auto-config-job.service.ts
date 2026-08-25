@@ -6,10 +6,11 @@ import { validateExamBlueprint, type ParsedExamBlueprint } from '@/lib/exam-blue
 import { OpenAIService } from '@/features/services/openAI.service';
 import { QuotaService } from '@/features/services/quota.service';
 import { MetricsService } from '@/features/services/metrics.service';
-import { AUTO_CONFIG_PROMPTS, editalLocatePrompt, examIdentifyPrompt } from '@/config/prompts';
+import { AUTO_CONFIG_PROMPTS, editalLocatePrompt, IDENTIFY_PROMPTS } from '@/config/prompts';
 import { fetchEditalPdf } from '@/lib/edital-fetch';
+import { classifyEditalUrl } from '@/lib/edital-classifier';
 import { EditalExtractorService } from '@/features/services/edital-extractor.service';
-import type { EditalCandidate, ExamType, LocateEditalResult } from '@/shared/types';
+import type { EditalCandidate, EditalVerification, ExamType, LocateEditalResult } from '@/shared/types';
 
 export type AutoConfigStage = 'research' | 'review' | 'format' | 'extract';
 export type AutoConfigErrorType = LlmErrorType;
@@ -108,7 +109,7 @@ export async function identifyExam(
     // combination no other call site in this codebase relies on (research steps always
     // stay plain-text; jsonMode-only calls never set webSearch). The prompt already asks
     // for JSON-only output, and extractJson() below tolerates surrounding prose or fences.
-    const result = await openAIService.call(examIdentifyPrompt, { query, type, language }, { webSearch: true });
+    const result = await openAIService.call(IDENTIFY_PROMPTS[type], { query, language }, { webSearch: true });
     const durationMs = Date.now() - t0;
     void metricsService.recordStep(
       logId,
@@ -141,18 +142,41 @@ function validateLocateResult(data: unknown): LocateEditalResult {
         /^https?:\/\//.test((e as Record<string, unknown>).url as string)
     )
     .slice(0, 5)
-    .map((e) => ({
-      url: (e.url as string).trim(),
-      editalNumber: typeof e.editalNumber === 'string' && e.editalNumber.trim() ? e.editalNumber.trim() : null,
-      year: typeof e.year === 'number' ? e.year : null,
-      orgao: typeof e.orgao === 'string' && e.orgao.trim() ? e.orgao.trim() : null,
-      isOfficialDomain: e.isOfficialDomain === true,
-      coversRole: e.coversRole === true,
-    }));
+    .map((e) => {
+      const url = (e.url as string).trim();
+      return {
+        url,
+        editalNumber: typeof e.editalNumber === 'string' && e.editalNumber.trim() ? e.editalNumber.trim() : null,
+        year: typeof e.year === 'number' ? e.year : null,
+        orgao: typeof e.orgao === 'string' && e.orgao.trim() ? e.orgao.trim() : null,
+        isOfficialDomain: e.isOfficialDomain === true,
+        coversRole: e.coversRole === true,
+        documentKind: classifyEditalUrl(url),
+        // Nobody has opened the PDF yet at this point — validateLocateResult only ever sees
+        // the model's raw JSON for a single locate call. locateEdital's verification loop
+        // (below) fills this in per candidate once it downloads and reads the file.
+        verification: 'unchecked' as const,
+      };
+    });
+
+  // The LLM's ordering trusts its own judgment, which is exactly what surfaces a quadro de
+  // vagas at the top. Deterministically demote anything the URL flags as an annex to the
+  // bottom (stable — the model's relevance order is kept within each group) so the
+  // verification loop below spends its limited per-round probe budget on the candidates most
+  // likely to be the real edital first. Annexes are demoted, never dropped: an oddly-named
+  // genuine edital should still be reachable.
+  const kindRank: Record<EditalCandidate['documentKind'], number> = { main: 0, unknown: 1, annex: 2 };
+  const sortedEditais = editais
+    .map((candidate, index) => ({ candidate, index }))
+    .sort((a, b) => kindRank[a.candidate.documentKind] - kindRank[b.candidate.documentKind] || a.index - b.index)
+    .map((entry) => entry.candidate);
 
   return {
-    editais,
+    editais: sortedEditais,
     targetYearFound: payload.targetYearFound === true,
+    // Nothing has been verified yet — set by locateEdital once the round's candidates have
+    // been through the verification loop.
+    confirmedFound: false,
   };
 }
 
@@ -165,44 +189,225 @@ export interface LocateEditalSeed {
   readonly language: 'pt' | 'en';
 }
 
+// How much of the request's wall-clock budget the verification loop below may spend
+// downloading and reading candidate PDFs, on top of the locate search calls themselves. Stays
+// well under the route's maxDuration = 300 and the axios/OpenAI 280_000ms timeouts (see
+// CLAUDE.md § HTTP timeouts — raise those three together before ever raising this one).
+const VERIFY_BUDGET_MS = 150_000;
+// At most this many locate search rounds — round 2+ tells the model which URLs it already
+// tried and got rejected, via excludeUrls, so it looks further down the search results.
+const MAX_LOCATE_ROUNDS = 2;
+// At most this many downloaded-and-read verifications per round. Candidates the URL already
+// flags as an annex (documentKind === 'annex') are rejected for free and never count against
+// this budget.
+const MAX_VERIFY_PER_ROUND = 3;
+
+const VERIFICATION_RANK: Record<EditalVerification, number> = {
+  confirmed: 0,
+  unchecked: 1,
+  unreadable: 2,
+  annex: 3,
+};
+
+// Within the confirmed bucket, a candidate whose (verify-corrected) year matches the target
+// must lead — it's the actual answer, not just *an* answer. The caller (SeedIdentifyCard) only
+// ever labels index 0 "official", so a wrong-year confirmed candidate inserted earlier must not
+// be allowed to sit ahead of it.
+function targetYearRank(candidate: EditalCandidate, targetYear: number | null): number {
+  if (candidate.verification !== 'confirmed' || targetYear == null) return 0;
+  return candidate.year === targetYear ? 0 : 1;
+}
+
+// Stable sort so a confirmed edital always leads (target-year match first within that group),
+// followed by whatever the verification budget never reached, then documents that failed to
+// download/read, and finally confirmed annexes last. Order within each group is otherwise the
+// search-relevance order candidates were first seen in (Map insertion order across rounds).
+function orderByVerification(candidates: readonly EditalCandidate[], targetYear: number | null): EditalCandidate[] {
+  return candidates
+    .map((candidate, index) => ({ candidate, index }))
+    .sort((a, b) => {
+      const verificationDiff =
+        VERIFICATION_RANK[a.candidate.verification] - VERIFICATION_RANK[b.candidate.verification];
+      if (verificationDiff !== 0) return verificationDiff;
+      const targetDiff = targetYearRank(a.candidate, targetYear) - targetYearRank(b.candidate, targetYear);
+      if (targetDiff !== 0) return targetDiff;
+      return a.index - b.index;
+    })
+    .map((entry) => entry.candidate);
+}
+
+// Downloads the candidate's PDF and asks the LLM whether it's the edital itself (vs. a quadro
+// de vagas, gabarito, or other annex), plus the edital's own year/number as stated inside the
+// document — the locate step's guess for these comes from search-result metadata and is
+// frequently wrong (e.g. tagging a years-old edital, still indexed by search engines, with the
+// year of the concurso being searched). The caller trusts this reading over the locate guess.
+// Throws — never returns a verdict — on a download or SDK failure, so the caller's
+// Promise.allSettled can tell "confirmed not to be the edital" apart from "couldn't check" and
+// bucket the candidate as 'unreadable' instead of 'annex'.
+async function verifyCandidate(
+  candidate: EditalCandidate,
+  seed: LocateEditalSeed,
+  logId: string,
+  editalExtractorService: EditalExtractorService
+): Promise<{ isMainEdital: boolean; year: number | null; editalNumber: string | null }> {
+  const file = await fetchEditalPdf(candidate.url);
+  const verdict = await editalExtractorService.verifyIsMainEdital(
+    file,
+    { examName: seed.examName, role: seed.role },
+    { logId }
+  );
+
+  return { isMainEdital: verdict.isMainEdital, year: verdict.year, editalNumber: verdict.editalNumber };
+}
+
 // Same rationale as identifyExam: a cheap pre-job call whose result (pick a prior-year
 // edital, or proceed without one) is a user decision, so it never touches the persisted
 // AutoConfigJob/quota-charging pipeline — createAutoConfigJob is still the single place
 // that spends the auto_config unit.
+//
+// Locating a URL is not enough — the LLM's web_search call regularly surfaces a quadro de
+// vagas or other annex whose filename still says "edital", because that's what ranks best in
+// search results. So every candidate the URL doesn't already flag as an annex gets downloaded
+// and read before it's ever shown to the user: verifyCandidate() asks the LLM directly whether
+// the PDF carries the conteudo programatico, and what year/edital number the document itself
+// states — the locate step's own guess for those (from search-result metadata) is frequently
+// wrong, e.g. tagging a years-old edital still indexed by search engines with the year of the
+// concurso being searched. A confirmed candidate whose (corrected) year doesn't match the
+// target doesn't stop the search either — the next round's locate call is told which URLs were
+// already tried (excludeUrls, covering both rejected annexes and wrong-year confirmations) so
+// it searches past them instead of settling for the same stale document again.
 export async function locateEdital(userId: string, seed: LocateEditalSeed): Promise<LocateEditalResult> {
   const openAIService = new OpenAIService();
   const metricsService = new MetricsService();
+  const editalExtractorService = new EditalExtractorService();
 
   const logId = await metricsService.createLog(userId, 'auto_config', 0);
   const t0 = Date.now();
+  const deadline = t0 + VERIFY_BUDGET_MS;
+
+  // Keyed by URL, insertion-ordered — preserves search-relevance order across rounds while
+  // letting a candidate returned again in round 2 just overwrite its round-1 entry.
+  const seen = new Map<string, EditalCandidate>();
+  const rejectedUrls: string[] = [];
+  let anyRoundReportedTargetYearFound = false;
 
   try {
-    const result = await openAIService.call(
-      editalLocatePrompt,
-      {
-        examName: seed.examName,
-        examBoard: seed.examBoard,
-        editalKey: seed.editalKey,
-        year: seed.year,
-        role: seed.role,
-        language: seed.language,
-      },
-      { webSearch: true }
-    );
-    const durationMs = Date.now() - t0;
-    void metricsService.recordStep(
-      logId,
-      'locate',
-      { inputTokens: result.inputTokens, outputTokens: result.outputTokens },
-      durationMs
-    );
-    await metricsService.finalize(logId, durationMs);
+    for (let round = 1; round <= MAX_LOCATE_ROUNDS; round++) {
+      const roundT0 = Date.now();
+      let parsed: LocateEditalResult;
 
-    return validateLocateResult(JSON.parse(extractJson(result.text)));
+      try {
+        const result = await openAIService.call(
+          editalLocatePrompt,
+          {
+            examName: seed.examName,
+            examBoard: seed.examBoard,
+            editalKey: seed.editalKey,
+            year: seed.year,
+            role: seed.role,
+            language: seed.language,
+            excludeUrls: rejectedUrls,
+          },
+          { webSearch: true }
+        );
+        void metricsService.recordStep(
+          logId,
+          'locate',
+          { inputTokens: result.inputTokens, outputTokens: result.outputTokens },
+          Date.now() - roundT0
+        );
+        parsed = validateLocateResult(JSON.parse(extractJson(result.text)));
+      } catch (err) {
+        // The first round failing is exactly today's failure mode — propagate it so the
+        // caller's catch (identical behavior to before this change) surfaces it the same way.
+        // A later round failing just means "stop looking" — round 1's candidates (even if
+        // none confirmed) are still worth returning instead of discarding them over it.
+        if (round === 1) throw err;
+        break;
+      }
+
+      if (parsed.targetYearFound) anyRoundReportedTargetYearFound = true;
+      for (const candidate of parsed.editais) {
+        if (!seen.has(candidate.url)) seen.set(candidate.url, candidate);
+      }
+
+      // Free pre-filter: a candidate the URL already flags as an annex is rejected without
+      // spending a verification call on it.
+      const toVerify: EditalCandidate[] = [];
+      for (const candidate of Array.from(seen.values())) {
+        if (candidate.verification !== 'unchecked') continue; // already resolved earlier
+        if (candidate.documentKind === 'annex') {
+          seen.set(candidate.url, { ...candidate, verification: 'annex' });
+          rejectedUrls.push(candidate.url);
+          continue;
+        }
+        toVerify.push(candidate);
+      }
+
+      const probeable = toVerify.slice(0, MAX_VERIFY_PER_ROUND);
+      const verdicts = await Promise.allSettled(
+        probeable.map((candidate) => verifyCandidate(candidate, seed, logId, editalExtractorService))
+      );
+
+      probeable.forEach((candidate, index) => {
+        const outcome = verdicts[index];
+
+        if (outcome.status !== 'fulfilled') {
+          seen.set(candidate.url, { ...candidate, verification: 'unreadable' });
+          rejectedUrls.push(candidate.url);
+          return;
+        }
+
+        const { isMainEdital, year, editalNumber } = outcome.value;
+        const verification: EditalVerification = isMainEdital ? 'confirmed' : 'annex';
+
+        seen.set(candidate.url, {
+          ...candidate,
+          verification,
+          // Trust the verify step's own reading of the PDF over the locate step's
+          // search-snippet guess — but only when it found one; a genuine edital that doesn't
+          // restate its number on every page still deserves to keep the locate-guessed value.
+          year: isMainEdital && year != null ? year : candidate.year,
+          editalNumber: isMainEdital && editalNumber ? editalNumber : candidate.editalNumber,
+        });
+        if (verification !== 'confirmed') rejectedUrls.push(candidate.url);
+      });
+
+      // A confirmed edital for the wrong year (e.g. one still indexed from a past concurso) is
+      // exactly the failure this loop exists to search past — it stays in `seen` as a
+      // prior-year fallback, but must not stop the search the way a target-year confirmation
+      // does. When nothing better turns up by the final round, it's still returned below.
+      const confirmedCandidates = Array.from(seen.values()).filter(
+        (candidate) => candidate.verification === 'confirmed'
+      );
+      const hasTargetYearConfirmed = confirmedCandidates.some(
+        (candidate) => seed.year == null || candidate.year === seed.year
+      );
+      if (!hasTargetYearConfirmed) {
+        for (const candidate of confirmedCandidates) {
+          if (!rejectedUrls.includes(candidate.url)) rejectedUrls.push(candidate.url);
+        }
+      }
+
+      if (hasTargetYearConfirmed || Date.now() > deadline) break;
+    }
   } catch (err) {
     await metricsService.finalize(logId, Date.now() - t0);
     throw err;
   }
+
+  await metricsService.finalize(logId, Date.now() - t0);
+
+  const orderedEditais = orderByVerification(Array.from(seen.values()), seed.year).slice(0, 5);
+  const confirmedCandidates = orderedEditais.filter((candidate) => candidate.verification === 'confirmed');
+  const confirmedFound = confirmedCandidates.length > 0;
+  const targetYearFound =
+    confirmedFound &&
+    (seed.year != null
+      ? confirmedCandidates.some((candidate) => candidate.year === seed.year)
+      : anyRoundReportedTargetYearFound);
+
+  return { editais: orderedEditais, targetYearFound, confirmedFound };
 }
 
 export interface AutoConfigSeed {
@@ -345,6 +550,22 @@ async function tryEditalExtractBranch(
     const exam = await editalExtractorService.extract(job.userId, file, job.seedRole ?? undefined, {
       logId: usageLogId,
     });
+
+    // Guard against a PDF that isn't a real edital — a quadro de vagas, gabarito, or other
+    // annex extracts cleanly but carries no conteúdo programático, so it would build an empty
+    // exam. locateEdital's LLM+websearch step can't reliably tell those apart from the edital
+    // itself, so we verify content here: no topics across all sections means the download was
+    // an annex, not the edital. Return null and let the caller fall back to the research
+    // pipeline instead of persisting a blueprint with nothing to generate questions from.
+    const totalTopics = exam.sections.reduce((sum, section) => sum + (section.topics?.length ?? 0), 0);
+    if (totalTopics === 0) {
+      console.error(
+        `[auto-config-job] Job "${jobId}" edital had no conteúdo programático (likely an annex like a quadro de vagas), falling back to research: ${edital.url}`
+      );
+      void metricsService.recordStep(usageLogId, 'extract', { inputTokens: 0, outputTokens: 0 }, Date.now() - t0);
+      return null;
+    }
+
     const editalLabel = job.seedKey ? `Edital nº ${job.seedKey}` : 'Edital oficial';
 
     return {

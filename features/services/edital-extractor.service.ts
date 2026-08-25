@@ -3,7 +3,8 @@ import OpenAI from 'openai';
 import { Exam } from '@/shared/types';
 import { MetricsService } from '@/features/services/metrics.service';
 import { normalizeCase, splitTopics, stripNumbering } from '@/lib/exam-blueprint';
-import { editalExtractPrompt } from '@/config/prompts';
+import { editalExtractPrompt, editalVerifyPrompt } from '@/config/prompts';
+import type { EditalVerifyInput } from '@/config/prompts';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
@@ -95,6 +96,76 @@ export class EditalExtractorService {
         await this.metricsService.finalize(logId, Date.now() - startMs);
       }
       throw err;
+    } finally {
+      await this.openai.files.delete(uploadedFile.id).catch(() => {
+        // Cleanup failure is non-fatal
+      });
+    }
+  }
+
+  // Runs inside locateEdital's verification loop (auto-config-job.service.ts) — one call per
+  // downloaded candidate, asking a narrow yes/no question instead of full extraction. Never
+  // throws on a content problem (malformed JSON, empty response): those come back as
+  // isMainEdital: false so the caller demotes the candidate instead of failing the whole
+  // locate round. Network/SDK errors from responses.create still propagate — the caller
+  // treats those as 'unreadable', same bucket as a fetchEditalPdf failure.
+  async verifyIsMainEdital(
+    file: File,
+    input: EditalVerifyInput,
+    opts: { logId: string }
+  ): Promise<{ isMainEdital: boolean; documentType: string; year: number | null; editalNumber: string | null }> {
+    const startMs = Date.now();
+    const uploadedFile = await this.openai.files.create({
+      file,
+      purpose: 'user_data',
+    });
+
+    try {
+      const response = await this.openai.responses.create({
+        model: process.env.OPENAI_MODEL_VERIFY || process.env.OPENAI_MODEL || 'gpt-5.4-mini',
+        input: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'input_file',
+                file_id: uploadedFile.id,
+              },
+              {
+                type: 'input_text',
+                text: editalVerifyPrompt.build(input),
+              },
+            ],
+          },
+        ],
+      });
+
+      const durationMs = Date.now() - startMs;
+      const inputTokens = response.usage?.input_tokens ?? 0;
+      const outputTokens = response.usage?.output_tokens ?? 0;
+
+      void this.metricsService.recordStep(opts.logId, 'verify_edital', { inputTokens, outputTokens }, durationMs);
+
+      const raw = response.output_text?.trim() ?? '';
+      const text = raw
+        .replace(/^```(?:json)?\s*/i, '')
+        .replace(/\s*```$/, '')
+        .trim();
+
+      try {
+        const parsed = JSON.parse(text) as Record<string, unknown>;
+        return {
+          isMainEdital: parsed.isMainEdital === true,
+          documentType: typeof parsed.documentType === 'string' ? parsed.documentType : 'outro',
+          year: typeof parsed.year === 'number' ? parsed.year : null,
+          editalNumber:
+            typeof parsed.editalNumber === 'string' && parsed.editalNumber.trim() ? parsed.editalNumber.trim() : null,
+        };
+      } catch {
+        // Unparseable content is not a network/SDK failure — treat as "not confirmed" rather
+        // than propagating, so the caller demotes the candidate instead of aborting the round.
+        return { isMainEdital: false, documentType: 'outro', year: null, editalNumber: null };
+      }
     } finally {
       await this.openai.files.delete(uploadedFile.id).catch(() => {
         // Cleanup failure is non-fatal
