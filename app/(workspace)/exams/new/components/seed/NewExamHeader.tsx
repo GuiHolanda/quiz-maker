@@ -56,7 +56,7 @@ export function NewExamHeader({
             </div>
           </div>
         )}
-        <h1 className="page-header-title tracking-tight max-w-[640px] text-balance">{title}</h1>
+        <h1 className="page-header-title tracking-tight max-w-3xl text-balance">{title}</h1>
         <p className="text-base leading-relaxed text-default-500 max-w-4xl text-pretty">
           {subtitle ?? t('exam.aiSeedSubtitle')}
         </p>

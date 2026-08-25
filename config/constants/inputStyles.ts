@@ -40,7 +40,6 @@ const borderedSelectClassNames = {
 export const inputProperties = {
   input: {
     labelPlacement: 'outside' as InputLabelPlacement,
-    variant: 'bordered' as InputVariant,
     classNames: borderedInputClassNames,
   },
   numberInput: {
