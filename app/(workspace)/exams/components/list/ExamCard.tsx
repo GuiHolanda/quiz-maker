@@ -60,7 +60,6 @@ export function ExamCard({ exam, type, isSelected, onClick, footerAction, isDisa
       <CardBody className="p-0 flex flex-col overflow-hidden">
         {/* Header row */}
         <div className="flex items-center gap-3 p-4 lg:p-6 h-20 lg:h-28 shrink-0">
-          {renderAvatar()}
           <div className="flex-1 min-w-0">
             <span className="block text-base lg:text-lg font-semibold text-foreground leading-snug line-clamp-2 text-left">
               {exam.name}

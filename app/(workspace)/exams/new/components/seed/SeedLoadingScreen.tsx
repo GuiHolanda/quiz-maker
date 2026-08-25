@@ -35,8 +35,9 @@ interface SeedLoadingScreenProps {
   readonly onRetry?: (query: string) => void;
   readonly onStartBlank?: () => void;
   readonly onSelectRole?: (role: string) => void;
-  readonly onSelectPriorEdital?: (candidate: EditalCandidate) => void;
-  readonly onContinueWithoutEdital?: () => void;
+  readonly onApproveEdital?: (candidate: EditalCandidate) => void;
+  readonly onRelocateEdital?: (editalKey: string) => void;
+  readonly onSkipEdital?: () => void;
 }
 
 // Busy sub-phases of the 'identify' variant — the elapsed clock keeps running and the card
@@ -66,8 +67,9 @@ export function SeedLoadingScreen({
   onRetry,
   onStartBlank,
   onSelectRole,
-  onSelectPriorEdital,
-  onContinueWithoutEdital,
+  onApproveEdital,
+  onRelocateEdital,
+  onSkipEdital,
 }: SeedLoadingScreenProps) {
   const { t } = useTranslation();
   const [now, setNow] = useState(() => Date.now());
@@ -85,7 +87,10 @@ export function SeedLoadingScreen({
   const step: SeedStep =
     variant.kind === 'auto-config'
       ? stepFromStage(variant.stage, type)
-      : variant.kind === 'identify' && (variant.phase.kind === 'locating' || variant.phase.kind === 'edital-not-found')
+      : variant.kind === 'identify' &&
+          (variant.phase.kind === 'locating' ||
+            variant.phase.kind === 'approving-edital' ||
+            variant.phase.kind === 'selecting-role')
         ? 'locate'
         : 'identify';
 
@@ -135,11 +140,12 @@ export function SeedLoadingScreen({
                 phase={variant.phase}
                 query={variant.query}
                 type={type}
-                onContinueWithoutEdital={onContinueWithoutEdital}
+                onApproveEdital={onApproveEdital}
+                onRelocateEdital={onRelocateEdital}
                 onRetry={onRetry}
                 onSelectMatch={onSelectMatch}
-                onSelectPriorEdital={onSelectPriorEdital}
                 onSelectRole={onSelectRole}
+                onSkipEdital={onSkipEdital}
                 onStartBlank={onStartBlank}
               />
             ) : (
@@ -188,8 +194,8 @@ export function SeedLoadingScreen({
             return t('exam.identifyRoleTitle');
           case 'locating':
             return t('exam.loadingLocatingTitle');
-          case 'edital-not-found':
-            return t('exam.editalNotFoundTitle');
+          case 'approving-edital':
+            return t('exam.editalApproveTitle');
           default:
             return t('exam.loadingIdentifyTitle', { query: variant.query });
         }
@@ -214,8 +220,8 @@ export function SeedLoadingScreen({
             return t('exam.identifyRoleSubtitle');
           case 'locating':
             return t('exam.loadingLocatingSubtitle');
-          case 'edital-not-found':
-            return t('exam.editalNotFoundSubtitle');
+          case 'approving-edital':
+            return t('exam.editalApproveSubtitle');
           default:
             return t('exam.loadingIdentifySubtitle');
         }

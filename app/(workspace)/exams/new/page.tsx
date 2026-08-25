@@ -63,6 +63,8 @@ const DEBUG_PRIOR_EDITAIS = [
     orgao: 'TRF 1ª Região',
     isOfficialDomain: true,
     coversRole: true,
+    documentKind: 'main' as const,
+    verification: 'confirmed' as const,
   },
   {
     url: 'https://www.trf1.jus.br/editais/edital-014-2018.pdf',
@@ -71,12 +73,14 @@ const DEBUG_PRIOR_EDITAIS = [
     orgao: 'TRF 1ª Região',
     isOfficialDomain: true,
     coversRole: false,
+    documentKind: 'main' as const,
+    verification: 'confirmed' as const,
   },
 ];
 
 // Dev-only escape hatch to preview SeedLoadingScreen frozen at any stage — this state
 // resolves in seconds/minutes normally, too fast to iterate on its styling live.
-// ?debugLoading=identify&phase=searching|disambiguating|clarifying|failed|locating|edital-not-found
+// ?debugLoading=identify&phase=searching|disambiguating|clarifying|failed|locating|approving-edital|selecting-role
 // ?debugLoading=auto-config&stage=research|review|format|extract (omit stage for the initial state)
 // ?debugLoading=edital
 function buildDebugVariant(searchParams: URLSearchParams): SeedLoadingVariant | null {
@@ -109,11 +113,17 @@ function buildDebugVariant(searchParams: URLSearchParams): SeedLoadingVariant | 
       return { kind: 'identify', query: 'TRF 1ª Região', phase: { kind: 'locating' } };
     }
 
-    if (phase === 'edital-not-found') {
+    if (phase === 'approving-edital') {
       return {
         kind: 'identify',
         query: 'TRF 1ª Região',
-        phase: { kind: 'edital-not-found', priorEditais: DEBUG_PRIOR_EDITAIS },
+        phase: {
+          kind: 'approving-edital',
+          match: DEBUG_PUBLIC_MATCH,
+          editais: DEBUG_PRIOR_EDITAIS,
+          targetYearFound: false,
+          confirmedFound: true,
+        },
       };
     }
 
@@ -142,7 +152,7 @@ function identifyQuery(state: ExamSeedState): string {
     state.kind === 'clarifying' ||
     state.kind === 'selecting-role' ||
     state.kind === 'locating-edital' ||
-    state.kind === 'edital-not-found'
+    state.kind === 'approving-edital'
   )
     return state.examName;
 
@@ -161,8 +171,14 @@ function identifyPhase(state: ExamSeedState): Exclude<IdentifyPhase, { kind: 'co
       return { kind: 'selecting-role', match: state.match };
     case 'locating-edital':
       return { kind: 'locating' };
-    case 'edital-not-found':
-      return { kind: 'edital-not-found', priorEditais: state.priorEditais };
+    case 'approving-edital':
+      return {
+        kind: 'approving-edital',
+        match: state.match,
+        editais: state.editais,
+        targetYearFound: state.targetYearFound,
+        confirmedFound: state.confirmedFound,
+      };
     default:
       return { kind: 'searching' };
   }
@@ -309,7 +325,7 @@ function NewExamContent() {
     'identify-failed',
     'selecting-role',
     'locating-edital',
-    'edital-not-found',
+    'approving-edital',
     'loading-blueprint',
     'extracting-edital',
   ];
@@ -388,18 +404,19 @@ function NewExamContent() {
       case 'identify-failed':
       case 'selecting-role':
       case 'locating-edital':
-      case 'edital-not-found':
+      case 'approving-edital':
         return (
           <SeedLoadingScreen
             startedAt={seed.state.startedAt}
             type={type}
             variant={{ kind: 'identify', query: identifyQuery(seed.state), phase: identifyPhase(seed.state) }}
+            onApproveEdital={(candidate) => seed.approveEdital(candidate)}
             onCancel={seed.reset}
-            onContinueWithoutEdital={seed.continueWithoutEdital}
+            onRelocateEdital={(key) => void seed.relocateEdital(key)}
             onRetry={seed.identifyByName}
             onSelectMatch={(match) => void seed.selectMatch(match)}
-            onSelectPriorEdital={(candidate) => void seed.selectPriorEdital(candidate)}
             onSelectRole={(role) => void seed.confirmRole(role)}
+            onSkipEdital={seed.skipEdital}
             onStartBlank={seed.startBlank}
           />
         );

@@ -22,6 +22,7 @@ import {
 } from '@/features/connectors';
 import { useLimitModal } from '@/features/hooks/useLimitModal.hook';
 import { DEFAULT_QUESTION_FORMAT } from '@/config/question-formats';
+import { classifyEditalUrl } from '@/lib/edital-classifier';
 import { AUTO_CONFIG_URL } from '@/config/constants';
 
 export type ExamSeedState =
@@ -37,26 +38,34 @@ export type ExamSeedState =
       readonly kind: 'selecting-role';
       readonly examName: string;
       readonly match: AutoConfigMatch;
+      // The edital candidate the user approved on the previous step (null = proceed without).
+      readonly edital: { readonly url: string; readonly isPriorYear: boolean } | null;
       readonly startedAt: number;
     }
   | { readonly kind: 'clarifying'; readonly examName: string; readonly message: string; readonly startedAt: number }
-  // public_exam only, between confirmRole and confirmMatch — looking for the official edital
-  // PDF by the number/board/year identify already resolved. Never blocks the flow on its own:
-  // an error here falls straight through to confirmMatch without a PDF (estimated fallback).
+  // public_exam only: after the concurso is identified, locate the official edital PDF before
+  // showing the cargo selection step. The user then approves a candidate (or skips) and only
+  // after that picks their cargo. Never blocks — a failed locate transitions to approving-edital
+  // with an empty list so the user can still type a number or continue without.
   | {
       readonly kind: 'locating-edital';
       readonly examName: string;
       readonly match: AutoConfigMatch;
       readonly startedAt: number;
     }
-  // locateEdital found no edital for the target year but did find one or more prior-year
-  // editais that could serve as a content model — the user decides whether to use one of
-  // those or proceed with an estimate instead.
+  // Located edital(s) are presented for the user's approval. Carries all candidates returned by
+  // locateEdital; targetYearFound tells the UI which one to highlight as the official match.
+  // confirmedFound is false when locateEdital's verification loop never confirmed any
+  // candidate — the UI still lists what it found, but leads with the "not confirmed" framing
+  // instead of presenting one of them as the edital. The user can approve a candidate, type an
+  // edital number to re-search, or skip entirely.
   | {
-      readonly kind: 'edital-not-found';
+      readonly kind: 'approving-edital';
       readonly examName: string;
       readonly match: AutoConfigMatch;
-      readonly priorEditais: readonly EditalCandidate[];
+      readonly editais: readonly EditalCandidate[];
+      readonly targetYearFound: boolean;
+      readonly confirmedFound: boolean;
       readonly startedAt: number;
     }
   // The identify call itself failed. Unlike a blueprint failure — where the exam is already
@@ -121,8 +130,9 @@ interface UseExamSeedReturn {
   readonly identifyByName: (query: string) => Promise<void>;
   readonly selectMatch: (match: AutoConfigMatch) => Promise<void>;
   readonly confirmRole: (role: string) => Promise<void>;
-  readonly selectPriorEdital: (candidate: EditalCandidate) => Promise<void>;
-  readonly continueWithoutEdital: () => Promise<void>;
+  readonly approveEdital: (candidate: EditalCandidate) => void;
+  readonly relocateEdital: (editalKey: string) => Promise<void>;
+  readonly skipEdital: () => void;
   readonly uploadEdital: (file: File, role: string | undefined) => Promise<void>;
   readonly startBlank: () => void;
   readonly reset: () => void;
@@ -247,9 +257,9 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
       };
 
       // Coming straight off identify (single match, no user input in between) the clock keeps
-      // running — it's one continuous wait. Picked from a disambiguation list, or after the
-      // locate-edital/edital-not-found detour, it restarts, so the user's own deliberation
-      // time isn't billed to the pipeline.
+      // running — it's one continuous wait. Any other path (disambiguation, edital approval,
+      // cargo selection) restarts the clock so the user's deliberation time isn't billed to the
+      // pipeline.
       setState((prev) => ({
         kind: 'loading-blueprint',
         seed,
@@ -284,9 +294,10 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
     [type, language, watchJob, showLimitIfBlocked]
   );
 
-  // public_exam only: after the cargo is confirmed, look for the official edital PDF before
-  // handing off to the job. Never blocks — any failure here still reaches confirmMatch, just
-  // without a PDF, so the pipeline falls back to its research/review/format text path.
+  // public_exam only: right after the concurso match is selected, look for the official edital
+  // PDF. Always routes to approving-edital so the user can review/approve the result — never
+  // silently auto-confirms. An error here still reaches approving-edital with an empty list so
+  // the user can type a number manually or continue without a PDF.
   const locateEditalStep = useCallback(
     async (match: AutoConfigMatch) => {
       const runId = ++runIdRef.current;
@@ -295,7 +306,7 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
         kind: 'locating-edital',
         examName: match.label,
         match,
-        startedAt: prev.kind === 'identifying' || prev.kind === 'selecting-role' ? prev.startedAt : Date.now(),
+        startedAt: prev.kind === 'identifying' ? prev.startedAt : Date.now(),
       }));
 
       try {
@@ -310,37 +321,34 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
 
         if (runIdRef.current !== runId) return;
 
-        const targetYearMatch = result.targetYearFound
-          ? (result.editais.find((e) => e.year === match.year) ?? result.editais[0])
-          : null;
-
-        if (targetYearMatch) {
-          await confirmMatch(match, { url: targetYearMatch.url, isPriorYear: false });
-          return;
-        }
-        if (result.editais.length > 0) {
-          setState({
-            kind: 'edital-not-found',
-            examName: match.label,
-            match,
-            priorEditais: result.editais,
-            startedAt: Date.now(),
-          });
-          return;
-        }
-        // Nothing found at all, target year or otherwise — proceed straight to the estimated
-        // fallback rather than showing an empty "choose a prior edital" screen.
-        await confirmMatch(match, null);
+        setState({
+          kind: 'approving-edital',
+          examName: match.label,
+          match,
+          editais: result.editais,
+          targetYearFound: result.targetYearFound,
+          confirmedFound: result.confirmedFound,
+          startedAt: Date.now(),
+        });
       } catch (err) {
         if (runIdRef.current !== runId) return;
         if (showLimitIfBlocked(err)) {
           setState({ kind: 'idle' });
           return;
         }
-        await confirmMatch(match, null);
+        // Locate failed — still show the approval screen so the user can type a number or skip.
+        setState({
+          kind: 'approving-edital',
+          examName: match.label,
+          match,
+          editais: [],
+          targetYearFound: false,
+          confirmedFound: false,
+          startedAt: Date.now(),
+        });
       }
     },
-    [language, confirmMatch, showLimitIfBlocked]
+    [language, showLimitIfBlocked]
   );
 
   const selectMatch = useCallback(
@@ -349,14 +357,9 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
         await confirmMatch(match);
         return;
       }
-      setState((prev) => ({
-        kind: 'selecting-role',
-        examName: match.label,
-        match,
-        startedAt: prev.kind === 'identifying' ? prev.startedAt : Date.now(),
-      }));
+      await locateEditalStep(match);
     },
-    [type, confirmMatch]
+    [type, confirmMatch, locateEditalStep]
   );
 
   const confirmRole = useCallback(
@@ -364,27 +367,69 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
       const current = stateRef.current;
 
       if (current.kind !== 'selecting-role') return;
-      await locateEditalStep({ ...current.match, role: role.trim() });
-    },
-    [locateEditalStep]
-  );
-
-  const selectPriorEdital = useCallback(
-    async (candidate: EditalCandidate) => {
-      const current = stateRef.current;
-
-      if (current.kind !== 'edital-not-found') return;
-      await confirmMatch(current.match, { url: candidate.url, isPriorYear: true });
+      await confirmMatch({ ...current.match, role: role.trim() }, current.edital);
     },
     [confirmMatch]
   );
 
-  const continueWithoutEdital = useCallback(async () => {
+  const approveEdital = useCallback((candidate: EditalCandidate) => {
     const current = stateRef.current;
 
-    if (current.kind !== 'edital-not-found') return;
-    await confirmMatch(current.match, null);
-  }, [confirmMatch]);
+    if (current.kind !== 'approving-edital') return;
+    const { match, targetYearFound } = current;
+    const isPriorYear = candidate.year != null && match.year != null ? candidate.year !== match.year : !targetYearFound;
+
+    setState({
+      kind: 'selecting-role',
+      examName: match.label,
+      match,
+      edital: { url: candidate.url, isPriorYear },
+      startedAt: Date.now(),
+    });
+  }, []);
+
+  const relocateEdital = useCallback(
+    async (editalKey: string) => {
+      const current = stateRef.current;
+
+      if (current.kind !== 'approving-edital') return;
+
+      const trimmed = editalKey.trim();
+
+      // If the user pasted a direct PDF URL, approve it immediately without a new search.
+      if (/^https?:\/\//.test(trimmed)) {
+        approveEdital({
+          url: trimmed,
+          editalNumber: current.match.key,
+          year: current.match.year,
+          orgao: null,
+          isOfficialDomain: false,
+          coversRole: !!current.match.role,
+          documentKind: classifyEditalUrl(trimmed),
+          // Never downloaded/read — nothing here has verified it's the real edital, unlike a
+          // candidate that came out of locateEdital's verification loop.
+          verification: 'unchecked',
+        });
+        return;
+      }
+
+      await locateEditalStep({ ...current.match, key: trimmed || current.match.key });
+    },
+    [locateEditalStep, approveEdital]
+  );
+
+  const skipEdital = useCallback(() => {
+    const current = stateRef.current;
+
+    if (current.kind !== 'approving-edital') return;
+    setState({
+      kind: 'selecting-role',
+      examName: current.match.label,
+      match: current.match,
+      edital: null,
+      startedAt: Date.now(),
+    });
+  }, []);
 
   const identifyByName = useCallback(
     async (query: string) => {
@@ -489,8 +534,9 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
     identifyByName,
     selectMatch,
     confirmRole,
-    selectPriorEdital,
-    continueWithoutEdital,
+    approveEdital,
+    relocateEdital,
+    skipEdital,
     uploadEdital,
     startBlank,
     reset,
