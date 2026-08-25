@@ -1,19 +1,23 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { prismaMock } from '../__mocks__/prisma';
 
-const { openAICallMock, quotaConstructorMock, quotaInstance } = vi.hoisted(() => {
-  const instance = {
-    checkAndRecordAutoConfig: vi.fn().mockResolvedValue({ logId: 'log-1' }),
-    rollbackQuota: vi.fn().mockResolvedValue(undefined),
-  };
-  return {
-    openAICallMock: vi.fn(),
-    quotaConstructorMock: vi.fn().mockImplementation(function () {
-      return instance;
-    }),
-    quotaInstance: instance,
-  };
-});
+const { openAICallMock, quotaConstructorMock, quotaInstance, fetchEditalPdfMock, editalExtractMock } = vi.hoisted(
+  () => {
+    const instance = {
+      checkAndRecordAutoConfig: vi.fn().mockResolvedValue({ logId: 'log-1' }),
+      rollbackQuota: vi.fn().mockResolvedValue(undefined),
+    };
+    return {
+      openAICallMock: vi.fn(),
+      quotaConstructorMock: vi.fn().mockImplementation(function () {
+        return instance;
+      }),
+      quotaInstance: instance,
+      fetchEditalPdfMock: vi.fn(),
+      editalExtractMock: vi.fn(),
+    };
+  }
+);
 
 vi.mock('@/features/services/openAI.service', () => ({
   OpenAIService: class {
@@ -29,9 +33,20 @@ vi.mock('next/server', () => ({
   after: vi.fn(),
 }));
 
+vi.mock('@/lib/edital-fetch', () => ({
+  fetchEditalPdf: fetchEditalPdfMock,
+}));
+
+vi.mock('@/features/services/edital-extractor.service', () => ({
+  EditalExtractorService: class {
+    extract = editalExtractMock;
+  },
+}));
+
 import { after } from 'next/server';
 import {
   identifyExam,
+  locateEdital,
   createAutoConfigJob,
   runAutoConfigJob,
   cancelAutoConfigJob,
@@ -76,6 +91,8 @@ beforeEach(() => {
   prismaMock.usageLog.create.mockResolvedValue({ id: 'identify-log-1' } as any);
   prismaMock.usageLogStep.create.mockResolvedValue({} as any);
   prismaMock.usageLog.update.mockResolvedValue({} as any);
+  fetchEditalPdfMock.mockReset();
+  editalExtractMock.mockReset();
 });
 
 describe('identifyExam', () => {
@@ -92,13 +109,29 @@ describe('identifyExam', () => {
     const result = await identifyExam('user-1', 'AWS solutions architect', 'certification', 'en');
 
     expect(result.matches).toEqual([
-      { label: 'AWS Certified Solutions Architect – Associate', key: 'SAA-C03', provider: 'AWS', examBoard: null, role: null, roles: [], year: null },
+      {
+        label: 'AWS Certified Solutions Architect – Associate',
+        key: 'SAA-C03',
+        provider: 'AWS',
+        examBoard: null,
+        role: null,
+        roles: [],
+        year: null,
+      },
     ]);
     expect(result.clarification).toBeNull();
 
-    expect(prismaMock.usageLog.create).toHaveBeenCalledWith({ data: { userId: 'user-1', action: 'auto_config', count: 0 } });
+    expect(prismaMock.usageLog.create).toHaveBeenCalledWith({
+      data: { userId: 'user-1', action: 'auto_config', count: 0 },
+    });
     expect(prismaMock.usageLogStep.create).toHaveBeenCalledWith({
-      data: { usageLogId: 'identify-log-1', step: 'identify', inputTokens: 50, outputTokens: 30, durationMs: expect.any(Number) },
+      data: {
+        usageLogId: 'identify-log-1',
+        step: 'identify',
+        inputTokens: 50,
+        outputTokens: 30,
+        durationMs: expect.any(Number),
+      },
     });
     expect(prismaMock.usageLog.update).toHaveBeenCalledWith({
       where: { id: 'identify-log-1' },
@@ -110,7 +143,13 @@ describe('identifyExam', () => {
     openAICallMock.mockResolvedValue({
       text: JSON.stringify({
         matches: [
-          { label: 'A' }, { label: 'B' }, { label: 'C' }, { label: 'D' }, { label: 'E' }, { label: 'F' }, { provider: 'no label' },
+          { label: 'A' },
+          { label: 'B' },
+          { label: 'C' },
+          { label: 'D' },
+          { label: 'E' },
+          { label: 'F' },
+          { provider: 'no label' },
         ],
       }),
       inputTokens: 1,
@@ -152,8 +191,17 @@ describe('identifyExam', () => {
       'Analista Judiciário',
       '  analista judiciário  ',
       'Técnico Judiciário',
-      'Role 3', 'Role 4', 'Role 5', 'Role 6', 'Role 7', 'Role 8',
-      'Role 9', 'Role 10', 'Role 11', 'Role 12', 'Role 13',
+      'Role 3',
+      'Role 4',
+      'Role 5',
+      'Role 6',
+      'Role 7',
+      'Role 8',
+      'Role 9',
+      'Role 10',
+      'Role 11',
+      'Role 12',
+      'Role 13',
     ];
     openAICallMock.mockResolvedValue({
       text: JSON.stringify({
@@ -174,7 +222,9 @@ describe('identifyExam', () => {
   it('prepends role to roles when role is not already in the array', async () => {
     openAICallMock.mockResolvedValue({
       text: JSON.stringify({
-        matches: [{ label: 'TRF 2025', examBoard: 'CEBRASPE', roles: ['Técnico Judiciário'], role: 'Analista Judiciário' }],
+        matches: [
+          { label: 'TRF 2025', examBoard: 'CEBRASPE', roles: ['Técnico Judiciário'], role: 'Analista Judiciário' },
+        ],
         clarification: null,
       }),
       inputTokens: 10,
@@ -190,7 +240,14 @@ describe('identifyExam', () => {
   it('does not duplicate role when role is already in roles', async () => {
     openAICallMock.mockResolvedValue({
       text: JSON.stringify({
-        matches: [{ label: 'TRF 2025', examBoard: 'CEBRASPE', roles: ['Analista Judiciário', 'Técnico Judiciário'], role: 'Analista Judiciário' }],
+        matches: [
+          {
+            label: 'TRF 2025',
+            examBoard: 'CEBRASPE',
+            roles: ['Analista Judiciário', 'Técnico Judiciário'],
+            role: 'Analista Judiciário',
+          },
+        ],
         clarification: null,
       }),
       inputTokens: 10,
@@ -201,6 +258,111 @@ describe('identifyExam', () => {
 
     expect(result.matches[0].roles).toEqual(['Analista Judiciário', 'Técnico Judiciário']);
     expect(result.matches[0].role).toBe('Analista Judiciário');
+  });
+});
+
+describe('locateEdital', () => {
+  const seed = {
+    examName: 'Concurso TRF 1ª Região 2025',
+    examBoard: 'CEBRASPE',
+    editalKey: 'PGJ-001/2025',
+    year: 2025,
+    role: 'Analista Judiciário',
+    language: 'pt' as const,
+  };
+
+  it('parses a target-year match and records a locate step under a count:0 log', async () => {
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({
+        editais: [
+          {
+            url: 'https://www.trf1.jus.br/editais/edital-001-2025.pdf',
+            editalNumber: 'PGJ-001/2025',
+            year: 2025,
+            orgao: 'TRF 1ª Região',
+            isOfficialDomain: true,
+            coversRole: true,
+          },
+        ],
+        targetYearFound: true,
+      }),
+      inputTokens: 40,
+      outputTokens: 20,
+    });
+
+    const result = await locateEdital('user-1', seed);
+
+    expect(result.targetYearFound).toBe(true);
+    expect(result.editais).toEqual([
+      {
+        url: 'https://www.trf1.jus.br/editais/edital-001-2025.pdf',
+        editalNumber: 'PGJ-001/2025',
+        year: 2025,
+        orgao: 'TRF 1ª Região',
+        isOfficialDomain: true,
+        coversRole: true,
+      },
+    ]);
+    expect(prismaMock.usageLog.create).toHaveBeenCalledWith({
+      data: { userId: 'user-1', action: 'auto_config', count: 0 },
+    });
+    expect(prismaMock.usageLogStep.create).toHaveBeenCalledWith({
+      data: {
+        usageLogId: 'identify-log-1',
+        step: 'locate',
+        inputTokens: 40,
+        outputTokens: 20,
+        durationMs: expect.any(Number),
+      },
+    });
+  });
+
+  it('drops candidates with a missing or non-http url and caps at 5', async () => {
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({
+        editais: [
+          { url: 'https://a.gov.br/1.pdf' },
+          { url: 'https://a.gov.br/2.pdf' },
+          { url: 'https://a.gov.br/3.pdf' },
+          { url: 'https://a.gov.br/4.pdf' },
+          { url: 'https://a.gov.br/5.pdf' },
+          { url: 'https://a.gov.br/6.pdf' },
+          { editalNumber: 'no url' },
+          { url: 'ftp://not-http.gov.br/x.pdf' },
+        ],
+        targetYearFound: false,
+      }),
+      inputTokens: 1,
+      outputTokens: 1,
+    });
+
+    const result = await locateEdital('user-1', seed);
+
+    expect(result.editais).toHaveLength(5);
+    expect(result.targetYearFound).toBe(false);
+  });
+
+  it('returns an empty result when nothing is found', async () => {
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({ editais: [], targetYearFound: false }),
+      inputTokens: 5,
+      outputTokens: 5,
+    });
+
+    const result = await locateEdital('user-1', seed);
+
+    expect(result).toEqual({ editais: [], targetYearFound: false });
+  });
+
+  it('finalizes the log and rethrows when the LLM call fails', async () => {
+    openAICallMock.mockRejectedValue(new Error('network error'));
+
+    await expect(locateEdital('user-1', seed)).rejects.toThrow('network error');
+
+    expect(prismaMock.usageLog.update).toHaveBeenCalledWith({
+      where: { id: 'identify-log-1' },
+      data: { totalDurationMs: expect.any(Number) },
+    });
   });
 });
 
@@ -254,7 +416,11 @@ describe('runAutoConfigJob', () => {
     prismaMock.autoConfigJob.update.mockResolvedValue({} as any);
     openAICallMock
       .mockResolvedValueOnce({ text: 'EXAM\nname: X\n---\nSECTION\nname: A', inputTokens: 100, outputTokens: 50 })
-      .mockResolvedValueOnce({ text: 'EXAM\nname: X\n---\nSECTION\nname: A (reviewed)', inputTokens: 60, outputTokens: 40 })
+      .mockResolvedValueOnce({
+        text: 'EXAM\nname: X\n---\nSECTION\nname: A (reviewed)',
+        inputTokens: 60,
+        outputTokens: 40,
+      })
       .mockResolvedValueOnce({ text: BLUEPRINT_JSON, inputTokens: 30, outputTokens: 200 });
 
     await runAutoConfigJob('job-1', 'en');
@@ -330,6 +496,126 @@ describe('runAutoConfigJob', () => {
     await runAutoConfigJob('job-1', 'en');
 
     expect(openAICallMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('runAutoConfigJob — public_exam edital PDF branch', () => {
+  const publicExamJob = () =>
+    makeJob({
+      type: 'public_exam',
+      seedName: 'Concurso TRF 1ª Região 2025',
+      seedKey: 'PGJ-001/2025',
+      seedProvider: null,
+      seedBoard: 'CEBRASPE',
+      seedRole: 'Analista Judiciário',
+      seedYear: 2025,
+    });
+
+  const EXTRACTED_EXAM = {
+    type: 'public_exam',
+    name: 'Concurso TRF 1ª Região 2025',
+    key: 'PGJ-001/2025',
+    role: 'Analista Judiciário',
+    year: 2025,
+    totalQuestions: 100,
+    examDurationMinutes: 240,
+    passingScore: 50,
+    examBoard: { name: 'CEBRASPE', fullName: null },
+    sections: [
+      { name: 'Língua Portuguesa', minQuestions: 20, maxQuestions: 20, topics: [{ name: 'Interpretação de texto' }] },
+    ],
+  };
+
+  it('reads the PDF and skips research/review/format when the target-year edital is found', async () => {
+    prismaMock.autoConfigJob.findUnique
+      .mockResolvedValueOnce(publicExamJob() as any)
+      .mockResolvedValueOnce({ status: 'running' } as any);
+    prismaMock.autoConfigJob.update.mockResolvedValue({} as any);
+    fetchEditalPdfMock.mockResolvedValue({} as any);
+    editalExtractMock.mockResolvedValue(EXTRACTED_EXAM);
+
+    await runAutoConfigJob('job-1', 'pt', {
+      url: 'https://www.trf1.jus.br/editais/edital-001-2025.pdf',
+      isPriorYear: false,
+    });
+
+    expect(fetchEditalPdfMock).toHaveBeenCalledWith('https://www.trf1.jus.br/editais/edital-001-2025.pdf');
+    expect(editalExtractMock).toHaveBeenCalledWith('user-1', {}, 'Analista Judiciário', { logId: 'log-1' });
+    expect(openAICallMock).not.toHaveBeenCalled();
+
+    expect(prismaMock.autoConfigJob.update).toHaveBeenCalledWith({
+      where: { id: 'job-1' },
+      data: { stage: 'extract', status: 'running' },
+    });
+
+    const doneCall = prismaMock.autoConfigJob.update.mock.calls.find((c) => (c[0] as any).data.status === 'done');
+    expect(doneCall).toBeDefined();
+    const resultJson = JSON.parse((doneCall![0] as any).data.resultJson);
+    expect(resultJson.confidence).toBe('official');
+    expect(resultJson.examDraft.name).toBe('Concurso TRF 1ª Região 2025');
+  });
+
+  it('marks confidence as prior-year when the located edital is not the target year', async () => {
+    prismaMock.autoConfigJob.findUnique
+      .mockResolvedValueOnce(publicExamJob() as any)
+      .mockResolvedValueOnce({ status: 'running' } as any);
+    prismaMock.autoConfigJob.update.mockResolvedValue({} as any);
+    fetchEditalPdfMock.mockResolvedValue({} as any);
+    editalExtractMock.mockResolvedValue(EXTRACTED_EXAM);
+
+    await runAutoConfigJob('job-1', 'pt', {
+      url: 'https://www.trf1.jus.br/editais/edital-002-2021.pdf',
+      isPriorYear: true,
+    });
+
+    const doneCall = prismaMock.autoConfigJob.update.mock.calls.find((c) => (c[0] as any).data.status === 'done');
+    const resultJson = JSON.parse((doneCall![0] as any).data.resultJson);
+    expect(resultJson.confidence).toBe('prior-year');
+  });
+
+  it('falls back to research/review/format when the PDF download fails, marking the result estimated', async () => {
+    prismaMock.autoConfigJob.findUnique
+      .mockResolvedValueOnce(publicExamJob() as any)
+      .mockResolvedValueOnce({ status: 'running' } as any);
+    prismaMock.autoConfigJob.update.mockResolvedValue({} as any);
+    fetchEditalPdfMock.mockRejectedValue(new Error('refused: private address'));
+    openAICallMock
+      .mockResolvedValueOnce({ text: 'EXAM\nname: X\n---\nSECTION\nname: A', inputTokens: 10, outputTokens: 10 })
+      .mockResolvedValueOnce({ text: 'EXAM\nname: X\n---\nSECTION\nname: A', inputTokens: 10, outputTokens: 10 })
+      .mockResolvedValueOnce({ text: BLUEPRINT_JSON, inputTokens: 10, outputTokens: 10 });
+
+    await runAutoConfigJob('job-1', 'pt', {
+      url: 'https://www.trf1.jus.br/editais/edital-001-2025.pdf',
+      isPriorYear: false,
+    });
+
+    expect(editalExtractMock).not.toHaveBeenCalled();
+    expect(openAICallMock).toHaveBeenCalledTimes(3);
+
+    const extractStep = prismaMock.usageLogStep.create.mock.calls.find((c) => (c[0] as any).data.step === 'extract');
+    expect(extractStep).toBeDefined();
+    expect((extractStep![0] as any).data.inputTokens).toBe(0);
+
+    const doneCall = prismaMock.autoConfigJob.update.mock.calls.find((c) => (c[0] as any).data.status === 'done');
+    const resultJson = JSON.parse((doneCall![0] as any).data.resultJson);
+    expect(resultJson.confidence).toBe('estimated');
+  });
+
+  it('runs the research/review/format text pipeline as before when no edital was located', async () => {
+    prismaMock.autoConfigJob.findUnique
+      .mockResolvedValueOnce(publicExamJob() as any)
+      .mockResolvedValueOnce({ status: 'running' } as any);
+    prismaMock.autoConfigJob.update.mockResolvedValue({} as any);
+    openAICallMock
+      .mockResolvedValueOnce({ text: 'EXAM\nname: X\n---\nSECTION\nname: A', inputTokens: 10, outputTokens: 10 })
+      .mockResolvedValueOnce({ text: 'EXAM\nname: X\n---\nSECTION\nname: A', inputTokens: 10, outputTokens: 10 })
+      .mockResolvedValueOnce({ text: BLUEPRINT_JSON, inputTokens: 10, outputTokens: 10 });
+
+    await runAutoConfigJob('job-1', 'pt', null);
+
+    expect(fetchEditalPdfMock).not.toHaveBeenCalled();
+    expect(editalExtractMock).not.toHaveBeenCalled();
+    expect(openAICallMock).toHaveBeenCalledTimes(3);
   });
 });
 

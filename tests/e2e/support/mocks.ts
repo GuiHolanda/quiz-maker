@@ -4,7 +4,7 @@ import type { Page } from '@playwright/test';
 // DELETE /api/generation-job/:id → records the cancel call for assertions.
 export async function setupGenerationJobMocks(
   page: Page,
-  opts: { jobId?: string } = {},
+  opts: { jobId?: string } = {}
 ): Promise<{ deleteCalled: () => boolean }> {
   const jobId = opts.jobId ?? 'e2e-job-1';
   let deleted = false;
@@ -50,7 +50,7 @@ export async function mockGenerationTimeout(page: Page, routeGlob: string): Prom
 // Note: the GET endpoint takes no query params — it filters by authenticated user server-side.
 export async function mockActiveJobOnLoad(
   page: Page,
-  job: { jobId: string; status: 'running' | 'awaiting_review'; topicName: string },
+  job: { jobId: string; status: 'running' | 'awaiting_review'; topicName: string }
 ): Promise<void> {
   await page.route('**/api/generation-job', (route) => {
     if (route.request().method() === 'GET') {
@@ -180,7 +180,7 @@ function buildAllWrongResult() {
 // observable long enough for a test to assert on it or cancel mid-flight.
 export async function mockIdentify(
   page: Page,
-  responses: readonly { readonly status: number; readonly body: unknown; readonly delayMs?: number }[],
+  responses: readonly { readonly status: number; readonly body: unknown; readonly delayMs?: number }[]
 ): Promise<{ callCount: () => number }> {
   let call = 0;
 
@@ -189,7 +189,11 @@ export async function mockIdentify(
 
     call += 1;
     if (response.delayMs) await new Promise((r) => setTimeout(r, response.delayMs));
-    await route.fulfill({ status: response.status, contentType: 'application/json', body: JSON.stringify(response.body) });
+    await route.fulfill({
+      status: response.status,
+      contentType: 'application/json',
+      body: JSON.stringify(response.body),
+    });
   });
 
   return { callCount: () => call };
@@ -206,4 +210,29 @@ export async function mockCreateAutoConfigJob(page: Page, jobId = 'e2e-auto-conf
       route.continue();
     }
   });
+}
+
+// POST /api/exam/auto-config/locate-edital — same queued-sequence shape as mockIdentify.
+// public_exam's confirmRole always calls this before creating the job, so every test that
+// exercises role confirmation needs a route registered here, even when the case under test
+// doesn't care about its result (an empty { editais: [], targetYearFound: false } is fine).
+export async function mockLocateEdital(
+  page: Page,
+  responses: readonly { readonly status: number; readonly body: unknown; readonly delayMs?: number }[]
+): Promise<{ callCount: () => number }> {
+  let call = 0;
+
+  await page.route('**/api/exam/auto-config/locate-edital', async (route) => {
+    const response = responses[Math.min(call, responses.length - 1)];
+
+    call += 1;
+    if (response.delayMs) await new Promise((r) => setTimeout(r, response.delayMs));
+    await route.fulfill({
+      status: response.status,
+      contentType: 'application/json',
+      body: JSON.stringify(response.body),
+    });
+  });
+
+  return { callCount: () => call };
 }

@@ -2,11 +2,27 @@ import { test, expect } from '../fixtures/auth.fixture';
 import { ALL_DOMAINS } from '../support/journey-config';
 import { tid, TID } from '../support/selectors';
 import { injectNeverDoneEventSource } from '../support/fake-eventsource';
-import { mockCreateAutoConfigJob, mockIdentify } from '../support/mocks';
+import { mockCreateAutoConfigJob, mockIdentify, mockLocateEdital } from '../support/mocks';
 
 const MATCHES = [
-  { label: 'AWS Certified Solutions Architect – Associate', key: 'SAA-C03', provider: 'AWS', examBoard: null, role: null, roles: [], year: null },
-  { label: 'AWS Certified Cloud Practitioner', key: 'CLF-C02', provider: 'AWS', examBoard: null, role: null, roles: [], year: null },
+  {
+    label: 'AWS Certified Solutions Architect – Associate',
+    key: 'SAA-C03',
+    provider: 'AWS',
+    examBoard: null,
+    role: null,
+    roles: [],
+    year: null,
+  },
+  {
+    label: 'AWS Certified Cloud Practitioner',
+    key: 'CLF-C02',
+    provider: 'AWS',
+    examBoard: null,
+    role: null,
+    roles: [],
+    year: null,
+  },
 ];
 
 for (const domain of ALL_DOMAINS) {
@@ -81,6 +97,9 @@ for (const domain of ALL_DOMAINS) {
       await injectNeverDoneEventSource(page);
       await mockCreateAutoConfigJob(page);
       await mockIdentify(page, [{ status: 200, body: { matches: MATCHES, clarification: null } }]);
+      // Only exercised for public_exam (see the role-selection branch below), but harmless
+      // to register for certification too — confirmRole/locate never fires on that path.
+      await mockLocateEdital(page, [{ status: 200, body: { editais: [], targetYearFound: false } }]);
 
       await page.goto(domain.configureUrl);
       await page.locator(tid(TID.examSeedBlankBtn)).waitFor({ state: 'visible' });
@@ -122,6 +141,7 @@ test('public_exam: shows role selection step and can pick a role from the list',
   await injectNeverDoneEventSource(page);
   await mockCreateAutoConfigJob(page);
   await mockIdentify(page, [{ status: 200, body: { matches: [matchWithRoles], clarification: null } }]);
+  await mockLocateEdital(page, [{ status: 200, body: { editais: [], targetYearFound: false } }]);
 
   await page.goto('/exams/new?type=public_exam');
   await page.locator(tid(TID.examSeedBlankBtn)).waitFor({ state: 'visible' });
@@ -136,4 +156,127 @@ test('public_exam: shows role selection step and can pick a role from the list',
   await roleOptions.first().click();
 
   await expect(page.locator(tid(TID.seedIdentifyConfirmedLabel))).toHaveText(matchWithRoles.label, { timeout: 10000 });
+});
+
+test('public_exam: locating the target-year edital skips straight to confirmed', async ({ authedPage: page }) => {
+  const match = {
+    label: 'TRF 1ª Região 2025',
+    key: 'PGJ-001/2025',
+    provider: null,
+    examBoard: 'CEBRASPE',
+    role: null,
+    roles: ['Analista Judiciário'],
+    year: 2025,
+  };
+
+  await injectNeverDoneEventSource(page);
+  await mockCreateAutoConfigJob(page);
+  await mockIdentify(page, [{ status: 200, body: { matches: [match], clarification: null } }]);
+  await mockLocateEdital(page, [
+    {
+      status: 200,
+      body: {
+        editais: [
+          {
+            url: 'https://www.trf1.jus.br/editais/edital-001-2025.pdf',
+            editalNumber: 'PGJ-001/2025',
+            year: 2025,
+            orgao: 'TRF 1ª Região',
+            isOfficialDomain: true,
+            coversRole: true,
+          },
+        ],
+        targetYearFound: true,
+      },
+    },
+  ]);
+
+  await page.goto('/exams/new?type=public_exam');
+  await page.locator(tid(TID.examSeedBlankBtn)).waitFor({ state: 'visible' });
+  await page.locator(tid(TID.examSearchInput)).fill('TRF');
+  await page.locator(tid(TID.examSearchSubmitBtn)).click();
+
+  await page.locator(tid(TID.seedIdentifyRoleOption)).first().click();
+
+  // No edital-not-found detour — the target-year edital was found, so the job is created
+  // right away with it and the confirmed card shows without an intermediate decision.
+  await expect(page.locator(tid(TID.seedIdentifyConfirmedLabel))).toHaveText(match.label, { timeout: 10000 });
+  await expect(page.locator(tid(TID.seedIdentifyPriorEditalOption))).toHaveCount(0);
+});
+
+test('public_exam: no target-year edital offers a prior-year model, and picking one confirms', async ({
+  authedPage: page,
+}) => {
+  const match = {
+    label: 'TRF 1ª Região 2026',
+    key: null,
+    provider: null,
+    examBoard: 'CEBRASPE',
+    role: null,
+    roles: ['Analista Judiciário'],
+    year: 2026,
+  };
+
+  await injectNeverDoneEventSource(page);
+  await mockCreateAutoConfigJob(page);
+  await mockIdentify(page, [{ status: 200, body: { matches: [match], clarification: null } }]);
+  await mockLocateEdital(page, [
+    {
+      status: 200,
+      body: {
+        editais: [
+          {
+            url: 'https://www.trf1.jus.br/editais/edital-002-2021.pdf',
+            editalNumber: 'PGJ-002/2021',
+            year: 2021,
+            orgao: 'TRF 1ª Região',
+            isOfficialDomain: true,
+            coversRole: true,
+          },
+        ],
+        targetYearFound: false,
+      },
+    },
+  ]);
+
+  await page.goto('/exams/new?type=public_exam');
+  await page.locator(tid(TID.examSeedBlankBtn)).waitFor({ state: 'visible' });
+  await page.locator(tid(TID.examSearchInput)).fill('TRF');
+  await page.locator(tid(TID.examSearchSubmitBtn)).click();
+
+  await page.locator(tid(TID.seedIdentifyRoleOption)).first().click();
+
+  const priorOptions = page.locator(tid(TID.seedIdentifyPriorEditalOption));
+  await expect(priorOptions).toHaveCount(1, { timeout: 10000 });
+  await priorOptions.first().click();
+
+  await expect(page.locator(tid(TID.seedIdentifyConfirmedLabel))).toHaveText(match.label, { timeout: 10000 });
+});
+
+test('public_exam: continuing without a located edital still confirms the seed', async ({ authedPage: page }) => {
+  const match = {
+    label: 'TRF 1ª Região 2026',
+    key: null,
+    provider: null,
+    examBoard: 'CEBRASPE',
+    role: null,
+    roles: ['Analista Judiciário'],
+    year: 2026,
+  };
+
+  await injectNeverDoneEventSource(page);
+  await mockCreateAutoConfigJob(page);
+  await mockIdentify(page, [{ status: 200, body: { matches: [match], clarification: null } }]);
+  await mockLocateEdital(page, [{ status: 200, body: { editais: [], targetYearFound: false } }]);
+
+  await page.goto('/exams/new?type=public_exam');
+  await page.locator(tid(TID.examSeedBlankBtn)).waitFor({ state: 'visible' });
+  await page.locator(tid(TID.examSearchInput)).fill('TRF');
+  await page.locator(tid(TID.examSearchSubmitBtn)).click();
+
+  await page.locator(tid(TID.seedIdentifyRoleOption)).first().click();
+
+  // Nothing found at all (no target-year, no prior-year) — locateEditalStep skips the
+  // decision screen entirely and proceeds straight to the estimated-fallback job.
+  await expect(page.locator(tid(TID.seedIdentifyConfirmedLabel))).toHaveText(match.label, { timeout: 10000 });
 });

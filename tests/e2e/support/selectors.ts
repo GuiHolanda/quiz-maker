@@ -54,6 +54,8 @@ export const TID = {
   seedIdentifyRoleOption: 'seed-identify-role-option',
   seedIdentifyRoleInput: 'seed-identify-role-input',
   seedIdentifyRoleConfirmBtn: 'seed-identify-role-confirm-btn',
+  seedIdentifyPriorEditalOption: 'seed-identify-prior-edital-option',
+  seedIdentifySkipEditalBtn: 'seed-identify-skip-edital-btn',
 
   // Question bank
   questionBankCard: 'question-bank-card',
