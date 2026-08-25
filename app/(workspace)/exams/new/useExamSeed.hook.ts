@@ -1,5 +1,13 @@
 'use client';
-import type { AutoConfigMatch, AutoConfigStage, Exam, ExamType, Language } from '@/shared/types';
+import type {
+  AutoConfigMatch,
+  AutoConfigStage,
+  BlueprintConfidence,
+  EditalCandidate,
+  Exam,
+  ExamType,
+  Language,
+} from '@/shared/types';
 import type { ConfirmedSeed } from './components/seed/SeedIdentifyCard';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -10,6 +18,7 @@ import {
   extractEdital,
   getActiveAutoConfigJob,
   identifyExam,
+  locateEdital,
 } from '@/features/connectors';
 import { useLimitModal } from '@/features/hooks/useLimitModal.hook';
 import { DEFAULT_QUESTION_FORMAT } from '@/config/question-formats';
@@ -31,6 +40,25 @@ export type ExamSeedState =
       readonly startedAt: number;
     }
   | { readonly kind: 'clarifying'; readonly examName: string; readonly message: string; readonly startedAt: number }
+  // public_exam only, between confirmRole and confirmMatch — looking for the official edital
+  // PDF by the number/board/year identify already resolved. Never blocks the flow on its own:
+  // an error here falls straight through to confirmMatch without a PDF (estimated fallback).
+  | {
+      readonly kind: 'locating-edital';
+      readonly examName: string;
+      readonly match: AutoConfigMatch;
+      readonly startedAt: number;
+    }
+  // locateEdital found no edital for the target year but did find one or more prior-year
+  // editais that could serve as a content model — the user decides whether to use one of
+  // those or proceed with an estimate instead.
+  | {
+      readonly kind: 'edital-not-found';
+      readonly examName: string;
+      readonly match: AutoConfigMatch;
+      readonly priorEditais: readonly EditalCandidate[];
+      readonly startedAt: number;
+    }
   // The identify call itself failed. Unlike a blueprint failure — where the exam is already
   // known and a prefilled editor is useful — there is nothing to prefill here, so the flow
   // stays on the loading screen and offers a retry instead of a blank form.
@@ -48,7 +76,15 @@ export type ExamSeedState =
       readonly startedAt: number;
     }
   | { readonly kind: 'extracting-edital'; readonly fileName: string; readonly startedAt: number }
-  | { readonly kind: 'ready'; readonly draft: Exam; readonly context: string; readonly sources: string[] }
+  | {
+      readonly kind: 'ready';
+      readonly draft: Exam;
+      readonly context: string;
+      readonly sources: string[];
+      // public_exam via auto-config only — how confident the data is (real edital PDF vs.
+      // estimated from web research). Absent for blank starts and the manual-upload path.
+      readonly confidence?: BlueprintConfidence;
+    }
   // The pipeline failed or returned something unparseable — open the editor blank rather
   // than dead-end the user; `seedName` pre-fills the name field so nothing typed is lost.
   | { readonly kind: 'error'; readonly messageKey: string; readonly seedName: string };
@@ -72,7 +108,12 @@ export function emptyExamDraft(type: ExamType): Exam {
 }
 
 interface DoneEventData {
-  readonly exam: { readonly examDraft: Exam; readonly context: string; readonly sources: string[] } | null;
+  readonly exam: {
+    readonly examDraft: Exam;
+    readonly context: string;
+    readonly sources: string[];
+    readonly confidence?: BlueprintConfidence;
+  } | null;
 }
 
 interface UseExamSeedReturn {
@@ -80,6 +121,8 @@ interface UseExamSeedReturn {
   readonly identifyByName: (query: string) => Promise<void>;
   readonly selectMatch: (match: AutoConfigMatch) => Promise<void>;
   readonly confirmRole: (role: string) => Promise<void>;
+  readonly selectPriorEdital: (candidate: EditalCandidate) => Promise<void>;
+  readonly continueWithoutEdital: () => Promise<void>;
   readonly uploadEdital: (file: File, role: string | undefined) => Promise<void>;
   readonly startBlank: () => void;
   readonly reset: () => void;
@@ -87,6 +130,17 @@ interface UseExamSeedReturn {
 
 export function useExamSeed(type: ExamType, language: Language): UseExamSeedReturn {
   const [state, setState] = useState<ExamSeedState>({ kind: 'idle' });
+  // Mirrors `state` for synchronous reads inside event-handler callbacks below (confirmRole,
+  // selectPriorEdital, continueWithoutEdital) — those need "whatever the state is right now"
+  // without waiting for a render. Reading it via a setState(prev => ...) updater used to work
+  // by relying on React's eager-bailout optimization (which runs the updater synchronously
+  // when the fiber has no other pending work), but that optimization is skipped whenever
+  // anything else has scheduled a render — e.g. right after the async locate-edital step's own
+  // setState — silently making the read return stale/null data. A ref updated every render
+  // has no such precondition.
+  const stateRef = useRef(state);
+
+  stateRef.current = state;
   const eventSourceRef = useRef<EventSource | null>(null);
   const jobIdRef = useRef<string | null>(null);
   // Flips true on the first user-initiated action (search, blank start, edital upload,
@@ -147,7 +201,13 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
           setState({ kind: 'error', messageKey: 'error.aiSeedNoBlueprint', seedName: examName });
           return;
         }
-        setState({ kind: 'ready', draft: data.exam.examDraft, context: data.exam.context, sources: data.exam.sources });
+        setState({
+          kind: 'ready',
+          draft: data.exam.examDraft,
+          context: data.exam.context,
+          sources: data.exam.sources,
+          confidence: data.exam.confidence,
+        });
       });
 
       es.addEventListener('error', () => {
@@ -174,7 +234,7 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
   );
 
   const confirmMatch = useCallback(
-    async (match: AutoConfigMatch) => {
+    async (match: AutoConfigMatch, edital?: { readonly url: string; readonly isPriorYear: boolean } | null) => {
       userActedRef.current = true;
       const runId = ++runIdRef.current;
       const seed: ConfirmedSeed = {
@@ -187,8 +247,9 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
       };
 
       // Coming straight off identify (single match, no user input in between) the clock keeps
-      // running — it's one continuous wait. Picked from a disambiguation list, it restarts, so
-      // the user's own deliberation time isn't billed to the pipeline.
+      // running — it's one continuous wait. Picked from a disambiguation list, or after the
+      // locate-edital/edital-not-found detour, it restarts, so the user's own deliberation
+      // time isn't billed to the pipeline.
       setState((prev) => ({
         kind: 'loading-blueprint',
         seed,
@@ -206,6 +267,7 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
           role: match.role,
           year: match.year,
           language,
+          edital,
         });
 
         if (runIdRef.current !== runId) return;
@@ -220,6 +282,65 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
       }
     },
     [type, language, watchJob, showLimitIfBlocked]
+  );
+
+  // public_exam only: after the cargo is confirmed, look for the official edital PDF before
+  // handing off to the job. Never blocks — any failure here still reaches confirmMatch, just
+  // without a PDF, so the pipeline falls back to its research/review/format text path.
+  const locateEditalStep = useCallback(
+    async (match: AutoConfigMatch) => {
+      const runId = ++runIdRef.current;
+
+      setState((prev) => ({
+        kind: 'locating-edital',
+        examName: match.label,
+        match,
+        startedAt: prev.kind === 'identifying' || prev.kind === 'selecting-role' ? prev.startedAt : Date.now(),
+      }));
+
+      try {
+        const result = await locateEdital({
+          examName: match.label,
+          examBoard: match.examBoard,
+          editalKey: match.key,
+          year: match.year,
+          role: match.role ?? '',
+          language,
+        });
+
+        if (runIdRef.current !== runId) return;
+
+        const targetYearMatch = result.targetYearFound
+          ? (result.editais.find((e) => e.year === match.year) ?? result.editais[0])
+          : null;
+
+        if (targetYearMatch) {
+          await confirmMatch(match, { url: targetYearMatch.url, isPriorYear: false });
+          return;
+        }
+        if (result.editais.length > 0) {
+          setState({
+            kind: 'edital-not-found',
+            examName: match.label,
+            match,
+            priorEditais: result.editais,
+            startedAt: Date.now(),
+          });
+          return;
+        }
+        // Nothing found at all, target year or otherwise — proceed straight to the estimated
+        // fallback rather than showing an empty "choose a prior edital" screen.
+        await confirmMatch(match, null);
+      } catch (err) {
+        if (runIdRef.current !== runId) return;
+        if (showLimitIfBlocked(err)) {
+          setState({ kind: 'idle' });
+          return;
+        }
+        await confirmMatch(match, null);
+      }
+    },
+    [language, confirmMatch, showLimitIfBlocked]
   );
 
   const selectMatch = useCallback(
@@ -240,18 +361,30 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
 
   const confirmRole = useCallback(
     async (role: string) => {
-      let pendingMatch: AutoConfigMatch | null = null;
-      setState((prev) => {
-        if (prev.kind !== 'selecting-role') return prev;
-        pendingMatch = prev.match;
-        return prev;
-      });
-      const capturedMatch = pendingMatch;
-      if (!capturedMatch) return;
-      await confirmMatch({ ...(capturedMatch as AutoConfigMatch), role: role.trim() });
+      const current = stateRef.current;
+
+      if (current.kind !== 'selecting-role') return;
+      await locateEditalStep({ ...current.match, role: role.trim() });
+    },
+    [locateEditalStep]
+  );
+
+  const selectPriorEdital = useCallback(
+    async (candidate: EditalCandidate) => {
+      const current = stateRef.current;
+
+      if (current.kind !== 'edital-not-found') return;
+      await confirmMatch(current.match, { url: candidate.url, isPriorYear: true });
     },
     [confirmMatch]
   );
+
+  const continueWithoutEdital = useCallback(async () => {
+    const current = stateRef.current;
+
+    if (current.kind !== 'edital-not-found') return;
+    await confirmMatch(current.match, null);
+  }, [confirmMatch]);
 
   const identifyByName = useCallback(
     async (query: string) => {
@@ -351,5 +484,15 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
 
   useEffect(() => () => closeStream(), [closeStream]);
 
-  return { state, identifyByName, selectMatch, confirmRole, uploadEdital, startBlank, reset };
+  return {
+    state,
+    identifyByName,
+    selectMatch,
+    confirmRole,
+    selectPriorEdital,
+    continueWithoutEdital,
+    uploadEdital,
+    startBlank,
+    reset,
+  };
 }

@@ -1,5 +1,5 @@
 'use client';
-import type { Exam } from '@/shared/types';
+import type { BlueprintConfidence, Exam } from '@/shared/types';
 import type { ExamDraftValidation } from '@/lib/exam-draft-validation';
 
 import { getDistributionSumTone } from '@/lib/exam-draft-validation';
@@ -13,12 +13,13 @@ interface ExamReviewSidebarProps {
   readonly validation: ExamDraftValidation;
   readonly context?: string;
   readonly sources?: readonly string[];
+  readonly confidence?: BlueprintConfidence;
 }
 
-export function ExamReviewSidebar({ draft, validation, context, sources }: ExamReviewSidebarProps) {
+export function ExamReviewSidebar({ draft, validation, context, sources, confidence }: ExamReviewSidebarProps) {
   return (
     <div className="flex flex-col gap-4">
-      {context && <ExamProvenanceCard context={context} sources={sources ?? []} />}
+      {context && <ExamProvenanceCard confidence={confidence} context={context} sources={sources ?? []} />}
       <ExamChecklistCard draft={draft} validation={validation} />
       <ExamSummaryCard
         distributionSum={validation.distributionSum}

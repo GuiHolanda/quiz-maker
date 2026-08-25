@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRightFromBracket, faShieldHalved } from '@fortawesome/free-solid-svg-icons';
 
-import type { AutoConfigMatch, AutoConfigStage, ExamType } from '@/shared/types';
+import type { AutoConfigMatch, AutoConfigStage, EditalCandidate, ExamType } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { NewExamHeader } from './NewExamHeader';
 import { NextStepsCard } from './NextStepsCard';
@@ -35,7 +35,14 @@ interface SeedLoadingScreenProps {
   readonly onRetry?: (query: string) => void;
   readonly onStartBlank?: () => void;
   readonly onSelectRole?: (role: string) => void;
+  readonly onSelectPriorEdital?: (candidate: EditalCandidate) => void;
+  readonly onContinueWithoutEdital?: () => void;
 }
+
+// Busy sub-phases of the 'identify' variant — the elapsed clock keeps running and the card
+// shows a skeleton, same as the top-level 'searching' phase. Every other identify phase is
+// interactive (waiting on the user), which stops the clock and swaps the card for a decision.
+const BUSY_IDENTIFY_PHASES = new Set(['searching', 'locating']);
 
 interface StepLogEntry {
   readonly step: SeedStep;
@@ -59,11 +66,13 @@ export function SeedLoadingScreen({
   onRetry,
   onStartBlank,
   onSelectRole,
+  onSelectPriorEdital,
+  onContinueWithoutEdital,
 }: SeedLoadingScreenProps) {
   const { t } = useTranslation();
   const [now, setNow] = useState(() => Date.now());
 
-  const isAwaitingUser = variant.kind === 'identify' && variant.phase.kind !== 'searching';
+  const isAwaitingUser = variant.kind === 'identify' && !BUSY_IDENTIFY_PHASES.has(variant.phase.kind);
 
   useEffect(() => {
     if (isAwaitingUser) return;
@@ -73,7 +82,12 @@ export function SeedLoadingScreen({
   }, [isAwaitingUser]);
 
   const elapsedLabel = formatElapsed(now - startedAt);
-  const step: SeedStep = variant.kind === 'auto-config' ? stepFromStage(variant.stage) : 'identify';
+  const step: SeedStep =
+    variant.kind === 'auto-config'
+      ? stepFromStage(variant.stage, type)
+      : variant.kind === 'identify' && (variant.phase.kind === 'locating' || variant.phase.kind === 'edital-not-found')
+        ? 'locate'
+        : 'identify';
 
   const [stepLog, setStepLog] = useState<readonly StepLogEntry[]>([]);
   const loggedStep = variant.kind === 'auto-config' ? (variant.stage as SeedStep | null) : null;
@@ -109,6 +123,7 @@ export function SeedLoadingScreen({
             elapsedLabel={elapsedLabel}
             isAwaitingUser={isAwaitingUser}
             step={step}
+            type={type}
             variant={variant.kind === 'edital' ? 'edital' : 'auto-config'}
           />
 
@@ -120,8 +135,10 @@ export function SeedLoadingScreen({
                 phase={variant.phase}
                 query={variant.query}
                 type={type}
+                onContinueWithoutEdital={onContinueWithoutEdital}
                 onRetry={onRetry}
                 onSelectMatch={onSelectMatch}
+                onSelectPriorEdital={onSelectPriorEdital}
                 onSelectRole={onSelectRole}
                 onStartBlank={onStartBlank}
               />
@@ -169,6 +186,10 @@ export function SeedLoadingScreen({
             return t('exam.loadingFailedTitle');
           case 'selecting-role':
             return t('exam.identifyRoleTitle');
+          case 'locating':
+            return t('exam.loadingLocatingTitle');
+          case 'edital-not-found':
+            return t('exam.editalNotFoundTitle');
           default:
             return t('exam.loadingIdentifyTitle', { query: variant.query });
         }
@@ -191,6 +212,10 @@ export function SeedLoadingScreen({
             return t('exam.loadingFailedSubtitle');
           case 'selecting-role':
             return t('exam.identifyRoleSubtitle');
+          case 'locating':
+            return t('exam.loadingLocatingSubtitle');
+          case 'edital-not-found':
+            return t('exam.editalNotFoundSubtitle');
           default:
             return t('exam.loadingIdentifySubtitle');
         }

@@ -4,25 +4,39 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck } from '@fortawesome/free-solid-svg-icons';
 import { Spinner } from '@heroui/spinner';
 
-import type { AutoConfigStage } from '@/shared/types';
+import type { AutoConfigStage, ExamType } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
-export type SeedStep = 'identify' | 'research' | 'review' | 'format';
+// certification keeps its original 3-stage pipeline (research/review/format). public_exam now
+// has two possible pipelines behind the scenes (PDF extraction vs. text research fallback —
+// see runAutoConfigJob), so its 4 steps are described at a level that stays true for either:
+// "locate" (find the PDF), "read" (extract or, on fallback, research), "finalize" (review +
+// format). This keeps the stepper at a stable 4 rows without exposing which branch ran.
+export type SeedStep = 'identify' | 'locate' | 'research' | 'review' | 'format' | 'read' | 'finalize';
 
-const STEP_ORDER: readonly SeedStep[] = ['identify', 'research', 'review', 'format'];
+const STEP_ORDER_BY_TYPE: Record<ExamType, readonly SeedStep[]> = {
+  certification: ['identify', 'research', 'review', 'format'],
+  public_exam: ['identify', 'locate', 'read', 'finalize'],
+};
 
 export const STEP_HEADLINE_KEYS: Record<SeedStep, string> = {
   identify: 'exam.loadingStageIdentify',
+  locate: 'exam.loadingStageLocate',
   research: 'exam.aiSeedStageResearch',
   review: 'exam.aiSeedStageReview',
   format: 'exam.aiSeedStageFormat',
+  read: 'exam.loadingStageRead',
+  finalize: 'exam.loadingStageFinalize',
 };
 
 const STEP_ROW_KEYS: Record<SeedStep, string> = {
   identify: 'exam.loadingTaskIdentify',
+  locate: 'exam.loadingTaskLocate',
   research: 'exam.loadingTaskResearch',
   review: 'exam.loadingTaskReview',
   format: 'exam.loadingTaskFormat',
+  read: 'exam.loadingTaskRead',
+  finalize: 'exam.loadingTaskFinalize',
 };
 
 type StepRowStatus = 'done' | 'active' | 'awaiting' | 'queued';
@@ -41,21 +55,34 @@ const STATUS_META_COLORS: Record<StepRowStatus, string> = {
   queued: 'text-default-400',
 };
 
-export function stepFromStage(stage: AutoConfigStage | null): SeedStep {
-  return stage ?? 'identify';
+// certification's AutoConfigStage values line up 1:1 with SeedStep names, so stage flows
+// through unchanged. public_exam's two stage-producing branches collapse into the same two
+// steps: 'extract' (PDF branch) and 'research' (text fallback) both read as "read"; 'review'
+// and 'format' — only ever emitted by the text fallback, since the PDF branch skips them
+// entirely — both read as "finalize". Before the job's first progress event (stage: null),
+// "locate" already finished as its own pre-job phase (see useExamSeed's 'locating-edital'
+// state), so the first pipeline step to show as active is "read", not "locate" again.
+export function stepFromStage(stage: AutoConfigStage | null, type: ExamType): SeedStep {
+  // 'extract' never reaches this branch in practice (certification never runs the PDF
+  // branch) — the cast just tells TS what runAutoConfigJob already guarantees at runtime.
+  if (type === 'certification') return (stage ?? 'identify') as SeedStep;
+  if (stage === 'review' || stage === 'format') return 'finalize';
+  return 'read';
 }
 
 interface SeedProgressCardProps {
+  readonly type: ExamType;
   readonly variant: 'auto-config' | 'edital';
   readonly step: SeedStep;
   readonly isAwaitingUser?: boolean;
   readonly elapsedLabel: string;
 }
 
-export function SeedProgressCard({ variant, step, isAwaitingUser = false, elapsedLabel }: SeedProgressCardProps) {
+export function SeedProgressCard({ type, variant, step, isAwaitingUser = false, elapsedLabel }: SeedProgressCardProps) {
   const { t } = useTranslation();
-  const currentIndex = STEP_ORDER.indexOf(step);
-  const completedPct = (currentIndex / STEP_ORDER.length) * 100;
+  const stepOrder = STEP_ORDER_BY_TYPE[type];
+  const currentIndex = stepOrder.indexOf(step);
+  const completedPct = (currentIndex / stepOrder.length) * 100;
 
   return (
     <div className="bg-content1 border border-content2 rounded-xl p-6">
@@ -69,7 +96,7 @@ export function SeedProgressCard({ variant, step, isAwaitingUser = false, elapse
         <div className="text-right shrink-0">
           {variant === 'auto-config' && (
             <div className="font-mono text-2xl font-medium text-primary">
-              {currentIndex + 1}/{STEP_ORDER.length}
+              {currentIndex + 1}/{stepOrder.length}
             </div>
           )}
           <div className="font-mono text-[11px] text-default-400 mt-0.5">{elapsedLabel}</div>
@@ -93,7 +120,7 @@ export function SeedProgressCard({ variant, step, isAwaitingUser = false, elapse
 
       {variant === 'auto-config' && (
         <div className="mt-5 flex flex-col">
-          {STEP_ORDER.map((rowStep, i) => {
+          {stepOrder.map((rowStep, i) => {
             const status: StepRowStatus =
               i < currentIndex ? 'done' : i > currentIndex ? 'queued' : isAwaitingUser ? 'awaiting' : 'active';
 

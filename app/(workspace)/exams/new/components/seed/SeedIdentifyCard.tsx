@@ -1,6 +1,6 @@
 'use client';
 
-import type { AutoConfigMatch, ExamType } from '@/shared/types';
+import type { AutoConfigMatch, EditalCandidate, ExamType } from '@/shared/types';
 
 import NextLink from 'next/link';
 import { useState } from 'react';
@@ -9,6 +9,8 @@ import {
   faCheck,
   faChevronRight,
   faCircleExclamation,
+  faFileCircleQuestion,
+  faForwardStep,
   faLayerGroup,
   faPenToSquare,
 } from '@fortawesome/free-solid-svg-icons';
@@ -28,6 +30,10 @@ export type IdentifyPhase =
   | { readonly kind: 'clarifying'; readonly message: string }
   | { readonly kind: 'failed' }
   | { readonly kind: 'selecting-role'; readonly match: AutoConfigMatch }
+  // Looking for the official edital PDF now that the cargo is known.
+  | { readonly kind: 'locating' }
+  // No edital for the target year, but one or more prior-year editais could serve as a model.
+  | { readonly kind: 'edital-not-found'; readonly priorEditais: readonly EditalCandidate[] }
   | { readonly kind: 'confirmed'; readonly match: ConfirmedSeed };
 
 // Subset of AutoConfigMatch the loading screen carries forward once a match is confirmed —
@@ -49,6 +55,8 @@ interface SeedIdentifyCardProps {
   readonly onRetry?: (query: string) => void;
   readonly onStartBlank?: () => void;
   readonly onSelectRole?: (role: string) => void;
+  readonly onSelectPriorEdital?: (candidate: EditalCandidate) => void;
+  readonly onContinueWithoutEdital?: () => void;
 }
 
 const SKELETON_WIDTHS_PCT = [68, 52, 60] as const;
@@ -61,6 +69,8 @@ export function SeedIdentifyCard({
   onRetry,
   onStartBlank,
   onSelectRole,
+  onSelectPriorEdital,
+  onContinueWithoutEdital,
 }: SeedIdentifyCardProps) {
   const { t } = useTranslation();
   const initialRole = phase.kind === 'selecting-role' ? (phase.match.role ?? '') : '';
@@ -179,9 +189,81 @@ export function SeedIdentifyCard({
       case 'selecting-role':
         return renderSelectingRole(phase.match);
 
+      case 'locating':
+        return (
+          <div className="flex flex-col gap-2">
+            <p className="text-sm text-default-500">{t('exam.identifyLocatingEdital')}</p>
+            {SKELETON_WIDTHS_PCT.map((width, i) => (
+              <div key={i} className="bg-content2 rounded-lg px-4 py-3.5 animate-pulse">
+                <div className="h-2.5 rounded-full bg-default-200" style={{ width: `${width}%` }} />
+              </div>
+            ))}
+          </div>
+        );
+
+      case 'edital-not-found':
+        return renderEditalNotFound(phase.priorEditais);
+
       case 'confirmed':
         return renderConfirmed(phase.match);
     }
+  }
+
+  function renderEditalNotFound(priorEditais: readonly EditalCandidate[]) {
+    return (
+      <div>
+        <div className="flex items-start gap-3">
+          <FontAwesomeIcon className="w-4 h-4 mt-0.5 shrink-0 text-primary" icon={faFileCircleQuestion} />
+          <div>
+            <p className="text-sm text-foreground text-pretty">{t('exam.editalNotFoundMessage')}</p>
+            {priorEditais.length > 0 && (
+              <p className="mt-1.5 text-[13px] leading-relaxed text-default-400 text-pretty">
+                {t('exam.editalNotFoundHint')}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {priorEditais.length > 0 && (
+          <div className="mt-4 flex flex-col gap-2">
+            {priorEditais.map((candidate) => (
+              <button
+                key={candidate.url}
+                className="group flex items-center gap-3 text-left bg-content2 border border-default-200 rounded-lg px-4 py-3 hover:bg-primary/10 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors duration-200"
+                data-testid="seed-identify-prior-edital-option"
+                type="button"
+                onClick={() => onSelectPriorEdital?.(candidate)}
+              >
+                <span className="min-w-0 grow">
+                  <span className="block text-sm font-semibold text-foreground truncate">
+                    {t('exam.editalNotFoundUsePriorYear', { year: String(candidate.year ?? '—') })}
+                  </span>
+                  <span className="block mt-1 font-mono text-[11px] text-default-400 truncate">
+                    {[candidate.editalNumber, candidate.orgao].filter(Boolean).join(' · ')}
+                  </span>
+                </span>
+                <FontAwesomeIcon
+                  className="w-3 h-3 shrink-0 text-default-400 group-hover:text-primary transition-colors duration-200"
+                  icon={faChevronRight}
+                />
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-4 pt-4 border-t border-divider">
+          <button
+            className="inline-flex items-center gap-2 text-sm text-default-500 hover:text-foreground transition-colors duration-200"
+            data-testid="seed-identify-skip-edital-btn"
+            type="button"
+            onClick={onContinueWithoutEdital}
+          >
+            <FontAwesomeIcon className="w-3 h-3" icon={faForwardStep} />
+            {t('exam.editalNotFoundContinueWithoutIt')}
+          </button>
+        </div>
+      </div>
+    );
   }
 
   function renderFacts(match: ConfirmedSeed) {

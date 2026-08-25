@@ -1,14 +1,27 @@
 'use client';
 import type { ReactNode } from 'react';
+import type { BlueprintConfidence } from '@/shared/types';
 
+import NextLink from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCircleInfo, faFileText, faArrowUpRightFromSquare } from '@fortawesome/free-solid-svg-icons';
+import {
+  faArrowUpRightFromSquare,
+  faCircleInfo,
+  faFileArrowUp,
+  faFileText,
+  faTriangleExclamation,
+} from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface ExamProvenanceCardProps {
   readonly context: string;
   readonly sources: readonly string[];
+  // Absent (or 'official') keeps the original primary-toned card — covers certifications,
+  // which never set this, and the public_exam PDF-extraction branch. 'prior-year' keeps the
+  // same tone with different copy. 'estimated' switches to a warning tone with an upload CTA,
+  // since that tier means the research/review/format pipeline never actually saw the edital.
+  readonly confidence?: BlueprintConfidence;
 }
 
 interface ParsedSource {
@@ -41,20 +54,33 @@ function renderMarkdownBold(text: string): ReactNode {
   );
 }
 
-export function ExamProvenanceCard({ context, sources }: ExamProvenanceCardProps) {
+export function ExamProvenanceCard({ context, sources, confidence }: ExamProvenanceCardProps) {
   const { t } = useTranslation();
   const parsedSources = sources.map(parseSource);
+  const isEstimated = confidence === 'estimated';
+  const titleKey =
+    confidence === 'estimated'
+      ? 'exam.aiSeedEstimatedTitle'
+      : confidence === 'prior-year'
+        ? 'exam.aiSeedProvenancePriorYearTitle'
+        : 'exam.aiSeedProvenanceTitle';
+  const toneClasses = isEstimated
+    ? { bg: 'bg-warning/[0.07]', icon: 'text-warning', border: 'border-warning/20' }
+    : { bg: 'bg-primary/[0.07]', icon: 'text-primary', border: 'border-primary/20' };
 
   return (
-    <div className="bg-primary/[0.07] rounded-xl p-5" data-testid="exam-editor-provenance-card">
+    <div className={`${toneClasses.bg} rounded-xl p-5`} data-testid="exam-editor-provenance-card">
       <div className="flex items-center gap-2">
-        <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={faCircleInfo} />
-        <div className="text-xs font-semibold text-foreground">{t('exam.aiSeedProvenanceTitle')}</div>
+        <FontAwesomeIcon
+          className={`w-3.5 h-3.5 ${toneClasses.icon}`}
+          icon={isEstimated ? faTriangleExclamation : faCircleInfo}
+        />
+        <div className="text-xs font-semibold text-foreground">{t(titleKey)}</div>
       </div>
       <p className="mt-2.5 text-xs leading-relaxed text-default-500 text-pretty">{renderMarkdownBold(context)}</p>
 
       {parsedSources.length > 0 && (
-        <div className="mt-3.5 pt-3.5 border-t border-primary/20 flex flex-col gap-1">
+        <div className={`mt-3.5 pt-3.5 border-t ${toneClasses.border} flex flex-col gap-1`}>
           {parsedSources.map((source, i) =>
             source.url ? (
               <a
@@ -83,6 +109,18 @@ export function ExamProvenanceCard({ context, sources }: ExamProvenanceCardProps
               </div>
             )
           )}
+        </div>
+      )}
+
+      {isEstimated && (
+        <div className={`mt-3.5 pt-3.5 border-t ${toneClasses.border}`}>
+          <NextLink
+            className="inline-flex items-center gap-2 text-xs font-semibold text-warning hover:underline"
+            href="/exams/new?type=public_exam"
+          >
+            <FontAwesomeIcon className="w-3 h-3" icon={faFileArrowUp} />
+            {t('exam.aiSeedEstimatedUploadCta')}
+          </NextLink>
         </div>
       )}
     </div>
