@@ -91,12 +91,27 @@ describe('fetchEditalPdf', () => {
     await expect(fetchEditalPdf('https://nowhere.example.com/edital.pdf')).rejects.toMatchObject({ status: 502 });
   });
 
-  it('rejects an unexpected content-type', async () => {
+  it('sends browser-like User-Agent and Accept headers', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      fakeResponse({ status: 200, headers: { 'content-type': 'application/pdf' }, body: PDF_BYTES }) as any
+    );
+
+    await fetchEditalPdf('https://www.trf1.jus.br/editais/edital.pdf');
+    const [, initArg] = fetchSpy.mock.calls[0];
+    const headers = (initArg as RequestInit).headers as Record<string, string>;
+
+    expect(headers['User-Agent']).toMatch(/Mozilla/);
+    expect(headers['Accept']).toContain('application/pdf');
+  });
+
+  it('accepts a PDF served with text/html content-type when the body has the %PDF- magic bytes', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       fakeResponse({ status: 200, headers: { 'content-type': 'text/html' }, body: PDF_BYTES }) as any
     );
 
-    await expect(fetchEditalPdf('https://www.trf1.jus.br/editais/edital.pdf')).rejects.toMatchObject({ status: 502 });
+    const file = await fetchEditalPdf('https://www.trf1.jus.br/editais/edital.pdf');
+
+    expect(file.type).toBe('application/pdf');
   });
 
   it('rejects a body whose declared content-length exceeds 20MB', async () => {

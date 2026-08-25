@@ -54,8 +54,15 @@ export const TID = {
   seedIdentifyRoleOption: 'seed-identify-role-option',
   seedIdentifyRoleInput: 'seed-identify-role-input',
   seedIdentifyRoleConfirmBtn: 'seed-identify-role-confirm-btn',
+  seedIdentifyApproveEditalOption: 'seed-identify-approve-edital-option',
   seedIdentifyPriorEditalOption: 'seed-identify-prior-edital-option',
   seedIdentifySkipEditalBtn: 'seed-identify-skip-edital-btn',
+  // The approving-edital card when locateEdital's verification loop never confirmed a
+  // candidate — still lists what it found, but framed as unconfirmed.
+  seedIdentifyEditalUnconfirmed: 'seed-identify-edital-unconfirmed',
+  seedIdentifyEditalVerifiedBadge: 'seed-identify-edital-verified-badge',
+  seedIdentifyEditalAnnexWarning: 'seed-identify-edital-annex-warning',
+  seedIdentifyEditalUnreadableBadge: 'seed-identify-edital-unreadable-badge',
 
   // Question bank
   questionBankCard: 'question-bank-card',

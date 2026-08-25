@@ -1,23 +1,29 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { prismaMock } from '../__mocks__/prisma';
 
-const { openAICallMock, quotaConstructorMock, quotaInstance, fetchEditalPdfMock, editalExtractMock } = vi.hoisted(
-  () => {
-    const instance = {
-      checkAndRecordAutoConfig: vi.fn().mockResolvedValue({ logId: 'log-1' }),
-      rollbackQuota: vi.fn().mockResolvedValue(undefined),
-    };
-    return {
-      openAICallMock: vi.fn(),
-      quotaConstructorMock: vi.fn().mockImplementation(function () {
-        return instance;
-      }),
-      quotaInstance: instance,
-      fetchEditalPdfMock: vi.fn(),
-      editalExtractMock: vi.fn(),
-    };
-  }
-);
+const {
+  openAICallMock,
+  quotaConstructorMock,
+  quotaInstance,
+  fetchEditalPdfMock,
+  editalExtractMock,
+  editalVerifyMock,
+} = vi.hoisted(() => {
+  const instance = {
+    checkAndRecordAutoConfig: vi.fn().mockResolvedValue({ logId: 'log-1' }),
+    rollbackQuota: vi.fn().mockResolvedValue(undefined),
+  };
+  return {
+    openAICallMock: vi.fn(),
+    quotaConstructorMock: vi.fn().mockImplementation(function () {
+      return instance;
+    }),
+    quotaInstance: instance,
+    fetchEditalPdfMock: vi.fn(),
+    editalExtractMock: vi.fn(),
+    editalVerifyMock: vi.fn(),
+  };
+});
 
 vi.mock('@/features/services/openAI.service', () => ({
   OpenAIService: class {
@@ -40,6 +46,7 @@ vi.mock('@/lib/edital-fetch', () => ({
 vi.mock('@/features/services/edital-extractor.service', () => ({
   EditalExtractorService: class {
     extract = editalExtractMock;
+    verifyIsMainEdital = editalVerifyMock;
   },
 }));
 
@@ -93,6 +100,7 @@ beforeEach(() => {
   prismaMock.usageLog.update.mockResolvedValue({} as any);
   fetchEditalPdfMock.mockReset();
   editalExtractMock.mockReset();
+  editalVerifyMock.mockReset();
 });
 
 describe('identifyExam', () => {
@@ -271,8 +279,8 @@ describe('locateEdital', () => {
     language: 'pt' as const,
   };
 
-  it('parses a target-year match and records a locate step under a count:0 log', async () => {
-    openAICallMock.mockResolvedValue({
+  it('confirms a candidate in round 1 and returns early — one locate call, one verify call', async () => {
+    openAICallMock.mockResolvedValueOnce({
       text: JSON.stringify({
         editais: [
           {
@@ -289,20 +297,35 @@ describe('locateEdital', () => {
       inputTokens: 40,
       outputTokens: 20,
     });
+    fetchEditalPdfMock.mockResolvedValue({} as any);
+    editalVerifyMock.mockResolvedValue({ isMainEdital: true, documentType: 'edital', year: 2025, editalNumber: 'PGJ-001/2025' });
 
     const result = await locateEdital('user-1', seed);
 
-    expect(result.targetYearFound).toBe(true);
-    expect(result.editais).toEqual([
-      {
-        url: 'https://www.trf1.jus.br/editais/edital-001-2025.pdf',
-        editalNumber: 'PGJ-001/2025',
-        year: 2025,
-        orgao: 'TRF 1ª Região',
-        isOfficialDomain: true,
-        coversRole: true,
-      },
-    ]);
+    expect(result).toEqual({
+      editais: [
+        {
+          url: 'https://www.trf1.jus.br/editais/edital-001-2025.pdf',
+          editalNumber: 'PGJ-001/2025',
+          year: 2025,
+          orgao: 'TRF 1ª Região',
+          isOfficialDomain: true,
+          coversRole: true,
+          documentKind: 'main',
+          verification: 'confirmed',
+        },
+      ],
+      targetYearFound: true,
+      confirmedFound: true,
+    });
+    // Confirmed on round 1 — no need for a second locate search.
+    expect(openAICallMock).toHaveBeenCalledTimes(1);
+    expect(fetchEditalPdfMock).toHaveBeenCalledWith('https://www.trf1.jus.br/editais/edital-001-2025.pdf');
+    expect(editalVerifyMock).toHaveBeenCalledWith(
+      {},
+      { examName: seed.examName, role: seed.role },
+      { logId: 'identify-log-1' }
+    );
     expect(prismaMock.usageLog.create).toHaveBeenCalledWith({
       data: { userId: 'user-1', action: 'auto_config', count: 0 },
     });
@@ -335,11 +358,198 @@ describe('locateEdital', () => {
       inputTokens: 1,
       outputTokens: 1,
     });
+    fetchEditalPdfMock.mockResolvedValue({} as any);
+    editalVerifyMock.mockResolvedValue({ isMainEdital: false, documentType: 'outro', year: null, editalNumber: null });
 
     const result = await locateEdital('user-1', seed);
 
     expect(result.editais).toHaveLength(5);
     expect(result.targetYearFound).toBe(false);
+    expect(result.confirmedFound).toBe(false);
+  });
+
+  it('demotes annex candidates below real editais and tags each with a documentKind', async () => {
+    openAICallMock.mockResolvedValueOnce({
+      text: JSON.stringify({
+        editais: [
+          { url: 'https://x.gov.br/quadro-vagas-2025.pdf', year: 2025 },
+          { url: 'https://x.gov.br/edital-de-abertura-2025.pdf', year: 2025 },
+        ],
+        targetYearFound: true,
+      }),
+      inputTokens: 1,
+      outputTokens: 1,
+    });
+    fetchEditalPdfMock.mockResolvedValue({} as any);
+    editalVerifyMock.mockResolvedValue({ isMainEdital: true, documentType: 'edital', year: 2025, editalNumber: null });
+
+    const result = await locateEdital('user-1', seed);
+
+    // The LLM ranked the quadro de vagas first; the URL classifier free-filters it as an annex
+    // (never downloaded), while the real edital gets downloaded, confirmed, and promoted above it.
+    expect(result.editais.map((e) => e.url)).toEqual([
+      'https://x.gov.br/edital-de-abertura-2025.pdf',
+      'https://x.gov.br/quadro-vagas-2025.pdf',
+    ]);
+    expect(result.editais.map((e) => e.documentKind)).toEqual(['main', 'annex']);
+    expect(result.editais.map((e) => e.verification)).toEqual(['confirmed', 'annex']);
+    expect(fetchEditalPdfMock).not.toHaveBeenCalledWith('https://x.gov.br/quadro-vagas-2025.pdf');
+  });
+
+  it('free-filters a URL-flagged annex without downloading it, and excludes it from the next search round', async () => {
+    openAICallMock
+      .mockResolvedValueOnce({
+        text: JSON.stringify({
+          editais: [{ url: 'https://x.gov.br/quadro-vagas-2025.pdf', year: 2025 }],
+          targetYearFound: false,
+        }),
+        inputTokens: 1,
+        outputTokens: 1,
+      })
+      .mockResolvedValueOnce({
+        text: JSON.stringify({ editais: [], targetYearFound: false }),
+        inputTokens: 1,
+        outputTokens: 1,
+      });
+
+    const result = await locateEdital('user-1', seed);
+
+    expect(fetchEditalPdfMock).not.toHaveBeenCalled();
+    expect(editalVerifyMock).not.toHaveBeenCalled();
+    expect(openAICallMock).toHaveBeenCalledTimes(2);
+    const secondRoundInput = openAICallMock.mock.calls[1][1] as { excludeUrls: string[] };
+    expect(secondRoundInput.excludeUrls).toEqual(['https://x.gov.br/quadro-vagas-2025.pdf']);
+    expect(result.confirmedFound).toBe(false);
+  });
+
+  it('marks a candidate unreadable when the PDF download fails, without failing the round', async () => {
+    openAICallMock
+      .mockResolvedValueOnce({
+        text: JSON.stringify({
+          editais: [{ url: 'https://x.gov.br/edital-de-abertura-2025.pdf', year: 2025 }],
+          targetYearFound: true,
+        }),
+        inputTokens: 1,
+        outputTokens: 1,
+      })
+      .mockResolvedValueOnce({
+        text: JSON.stringify({ editais: [], targetYearFound: false }),
+        inputTokens: 1,
+        outputTokens: 1,
+      });
+    fetchEditalPdfMock.mockRejectedValue(new Error('refused: private address'));
+
+    const result = await locateEdital('user-1', seed);
+
+    expect(editalVerifyMock).not.toHaveBeenCalled();
+    expect(result.confirmedFound).toBe(false);
+    expect(result.editais).toEqual([
+      expect.objectContaining({
+        url: 'https://x.gov.br/edital-de-abertura-2025.pdf',
+        verification: 'unreadable',
+      }),
+    ]);
+  });
+
+  it('probes at most 3 candidates per round and keeps the rest unchecked ahead of confirmed annexes', async () => {
+    openAICallMock
+      .mockResolvedValueOnce({
+        text: JSON.stringify({
+          editais: [
+            { url: 'https://x.gov.br/doc-a.pdf' },
+            { url: 'https://x.gov.br/doc-b.pdf' },
+            { url: 'https://x.gov.br/doc-c.pdf' },
+            { url: 'https://x.gov.br/doc-d.pdf' },
+          ],
+          targetYearFound: false,
+        }),
+        inputTokens: 1,
+        outputTokens: 1,
+      })
+      // Round 2's search itself fails — the loop stops instead of failing the whole call,
+      // leaving doc-d exactly as round 1 left it: never probed.
+      .mockRejectedValueOnce(new Error('search timed out'));
+    fetchEditalPdfMock.mockResolvedValue({} as any);
+    editalVerifyMock.mockResolvedValue({ isMainEdital: false, documentType: 'quadro_vagas', year: null, editalNumber: null });
+
+    const result = await locateEdital('user-1', seed);
+
+    expect(editalVerifyMock).toHaveBeenCalledTimes(3);
+    expect(result.confirmedFound).toBe(false);
+    expect(result.editais.map((e) => ({ url: e.url, verification: e.verification }))).toEqual([
+      { url: 'https://x.gov.br/doc-d.pdf', verification: 'unchecked' },
+      { url: 'https://x.gov.br/doc-a.pdf', verification: 'annex' },
+      { url: 'https://x.gov.br/doc-b.pdf', verification: 'annex' },
+      { url: 'https://x.gov.br/doc-c.pdf', verification: 'annex' },
+    ]);
+  });
+
+  it("corrects a confirmed candidate's year/editalNumber from the verify step's reading of the PDF (not the locate step's guess), and keeps searching in round 2 when it is not the target year", async () => {
+    openAICallMock
+      .mockResolvedValueOnce({
+        text: JSON.stringify({
+          editais: [
+            // The locate step's own metadata guess is wrong — it believes this is the target year.
+            {
+              url: 'https://x.gov.br/edital-antigo.pdf',
+              editalNumber: 'PGJ-001/2025',
+              year: 2025,
+              orgao: 'TRF 1ª Região',
+            },
+          ],
+          targetYearFound: true,
+        }),
+        inputTokens: 1,
+        outputTokens: 1,
+      })
+      .mockResolvedValueOnce({
+        text: JSON.stringify({
+          editais: [{ url: 'https://x.gov.br/edital-2025.pdf', year: 2025 }],
+          targetYearFound: true,
+        }),
+        inputTokens: 1,
+        outputTokens: 1,
+      });
+    fetchEditalPdfMock.mockResolvedValue({} as any);
+    editalVerifyMock
+      // Round 1: a genuine edital, but the document itself is from 2008 — the verify step's
+      // reading of the actual PDF overrides the locate step's (wrong) year/number guess.
+      .mockResolvedValueOnce({ isMainEdital: true, documentType: 'edital', year: 2008, editalNumber: 'PGJ-014/2008' })
+      // Round 2: the genuine target-year edital.
+      .mockResolvedValueOnce({ isMainEdital: true, documentType: 'edital', year: 2025, editalNumber: 'PGJ-001/2025' });
+
+    const result = await locateEdital('user-1', seed);
+
+    // A confirmed-but-wrong-year candidate does not stop the search — round 2 still runs.
+    expect(openAICallMock).toHaveBeenCalledTimes(2);
+    const secondRoundInput = openAICallMock.mock.calls[1][1] as { excludeUrls: string[] };
+    expect(secondRoundInput.excludeUrls).toEqual(['https://x.gov.br/edital-antigo.pdf']);
+
+    expect(result.confirmedFound).toBe(true);
+    expect(result.targetYearFound).toBe(true);
+    // The genuine target-year edital leads, even though it was found in round 2; the stale one
+    // is still listed — with its year/number corrected — as a usable prior-year fallback.
+    expect(result.editais).toEqual([
+      expect.objectContaining({ url: 'https://x.gov.br/edital-2025.pdf', year: 2025, verification: 'confirmed' }),
+      expect.objectContaining({
+        url: 'https://x.gov.br/edital-antigo.pdf',
+        year: 2008,
+        editalNumber: 'PGJ-014/2008',
+        verification: 'confirmed',
+      }),
+    ]);
+  });
+
+  it('accepts an empty role string (locate runs before cargo is chosen)', async () => {
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({ editais: [], targetYearFound: false }),
+      inputTokens: 5,
+      outputTokens: 5,
+    });
+
+    const result = await locateEdital('user-1', { ...seed, role: '' });
+
+    expect(result).toEqual({ editais: [], targetYearFound: false, confirmedFound: false });
   });
 
   it('returns an empty result when nothing is found', async () => {
@@ -351,10 +561,10 @@ describe('locateEdital', () => {
 
     const result = await locateEdital('user-1', seed);
 
-    expect(result).toEqual({ editais: [], targetYearFound: false });
+    expect(result).toEqual({ editais: [], targetYearFound: false, confirmedFound: false });
   });
 
-  it('finalizes the log and rethrows when the LLM call fails', async () => {
+  it('finalizes the log and rethrows when the first round LLM call fails', async () => {
     openAICallMock.mockRejectedValue(new Error('network error'));
 
     await expect(locateEdital('user-1', seed)).rejects.toThrow('network error');
@@ -365,7 +575,6 @@ describe('locateEdital', () => {
     });
   });
 });
-
 describe('createAutoConfigJob', () => {
   it('rejects when the user already has a job in progress', async () => {
     prismaMock.autoConfigJob.findFirst.mockResolvedValue(makeJob({ status: 'running' }) as any);
@@ -595,6 +804,39 @@ describe('runAutoConfigJob — public_exam edital PDF branch', () => {
     const extractStep = prismaMock.usageLogStep.create.mock.calls.find((c) => (c[0] as any).data.step === 'extract');
     expect(extractStep).toBeDefined();
     expect((extractStep![0] as any).data.inputTokens).toBe(0);
+
+    const doneCall = prismaMock.autoConfigJob.update.mock.calls.find((c) => (c[0] as any).data.status === 'done');
+    const resultJson = JSON.parse((doneCall![0] as any).data.resultJson);
+    expect(resultJson.confidence).toBe('estimated');
+  });
+
+  it('falls back to research/review/format when the located PDF has no conteúdo programático (an annex like a quadro de vagas)', async () => {
+    prismaMock.autoConfigJob.findUnique
+      .mockResolvedValueOnce(publicExamJob() as any)
+      .mockResolvedValueOnce({ status: 'running' } as any);
+    prismaMock.autoConfigJob.update.mockResolvedValue({} as any);
+    fetchEditalPdfMock.mockResolvedValue({} as any);
+    // A quadro de vagas extracts cleanly but every section is topic-less.
+    editalExtractMock.mockResolvedValue({
+      ...EXTRACTED_EXAM,
+      sections: [{ name: 'Quadro de Vagas', minQuestions: 0, maxQuestions: 0, topics: [] }],
+    });
+    openAICallMock
+      .mockResolvedValueOnce({ text: 'EXAM\nname: X\n---\nSECTION\nname: A', inputTokens: 10, outputTokens: 10 })
+      .mockResolvedValueOnce({ text: 'EXAM\nname: X\n---\nSECTION\nname: A', inputTokens: 10, outputTokens: 10 })
+      .mockResolvedValueOnce({ text: BLUEPRINT_JSON, inputTokens: 10, outputTokens: 10 });
+
+    await runAutoConfigJob('job-1', 'pt', {
+      url: 'https://www.trf1.jus.br/editais/quadro-vagas-001-2025.pdf',
+      isPriorYear: false,
+    });
+
+    // Extraction was attempted, but its empty result was rejected → text pipeline ran instead.
+    expect(editalExtractMock).toHaveBeenCalledTimes(1);
+    expect(openAICallMock).toHaveBeenCalledTimes(3);
+
+    const extractStep = prismaMock.usageLogStep.create.mock.calls.find((c) => (c[0] as any).data.step === 'extract');
+    expect(extractStep).toBeDefined();
 
     const doneCall = prismaMock.autoConfigJob.update.mock.calls.find((c) => (c[0] as any).data.status === 'done');
     const resultJson = JSON.parse((doneCall![0] as any).data.resultJson);
