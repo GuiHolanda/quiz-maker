@@ -6,10 +6,12 @@ import { validateExamBlueprint, type ParsedExamBlueprint } from '@/lib/exam-blue
 import { OpenAIService } from '@/features/services/openAI.service';
 import { QuotaService } from '@/features/services/quota.service';
 import { MetricsService } from '@/features/services/metrics.service';
-import { AUTO_CONFIG_PROMPTS, examIdentifyPrompt } from '@/config/prompts';
-import type { ExamType } from '@/shared/types';
+import { AUTO_CONFIG_PROMPTS, editalLocatePrompt, examIdentifyPrompt } from '@/config/prompts';
+import { fetchEditalPdf } from '@/lib/edital-fetch';
+import { EditalExtractorService } from '@/features/services/edital-extractor.service';
+import type { EditalCandidate, ExamType, LocateEditalResult } from '@/shared/types';
 
-export type AutoConfigStage = 'research' | 'review' | 'format';
+export type AutoConfigStage = 'research' | 'review' | 'format' | 'extract';
 export type AutoConfigErrorType = LlmErrorType;
 
 function sanitizeAutoConfigError(err: unknown): { message: string; errorType: AutoConfigErrorType } {
@@ -123,6 +125,86 @@ export async function identifyExam(
   }
 }
 
+function validateLocateResult(data: unknown): LocateEditalResult {
+  if (!data || typeof data !== 'object') {
+    throw Object.assign(new Error('Locate-edital response is not an object'), { status: 502 });
+  }
+  const payload = data as Record<string, unknown>;
+  const rawEditais = Array.isArray(payload.editais) ? payload.editais : [];
+
+  const editais: EditalCandidate[] = rawEditais
+    .filter(
+      (e): e is Record<string, unknown> =>
+        !!e &&
+        typeof e === 'object' &&
+        typeof (e as Record<string, unknown>).url === 'string' &&
+        /^https?:\/\//.test((e as Record<string, unknown>).url as string)
+    )
+    .slice(0, 5)
+    .map((e) => ({
+      url: (e.url as string).trim(),
+      editalNumber: typeof e.editalNumber === 'string' && e.editalNumber.trim() ? e.editalNumber.trim() : null,
+      year: typeof e.year === 'number' ? e.year : null,
+      orgao: typeof e.orgao === 'string' && e.orgao.trim() ? e.orgao.trim() : null,
+      isOfficialDomain: e.isOfficialDomain === true,
+      coversRole: e.coversRole === true,
+    }));
+
+  return {
+    editais,
+    targetYearFound: payload.targetYearFound === true,
+  };
+}
+
+export interface LocateEditalSeed {
+  readonly examName: string;
+  readonly examBoard: string | null;
+  readonly editalKey: string | null;
+  readonly year: number | null;
+  readonly role: string;
+  readonly language: 'pt' | 'en';
+}
+
+// Same rationale as identifyExam: a cheap pre-job call whose result (pick a prior-year
+// edital, or proceed without one) is a user decision, so it never touches the persisted
+// AutoConfigJob/quota-charging pipeline — createAutoConfigJob is still the single place
+// that spends the auto_config unit.
+export async function locateEdital(userId: string, seed: LocateEditalSeed): Promise<LocateEditalResult> {
+  const openAIService = new OpenAIService();
+  const metricsService = new MetricsService();
+
+  const logId = await metricsService.createLog(userId, 'auto_config', 0);
+  const t0 = Date.now();
+
+  try {
+    const result = await openAIService.call(
+      editalLocatePrompt,
+      {
+        examName: seed.examName,
+        examBoard: seed.examBoard,
+        editalKey: seed.editalKey,
+        year: seed.year,
+        role: seed.role,
+        language: seed.language,
+      },
+      { webSearch: true }
+    );
+    const durationMs = Date.now() - t0;
+    void metricsService.recordStep(
+      logId,
+      'locate',
+      { inputTokens: result.inputTokens, outputTokens: result.outputTokens },
+      durationMs
+    );
+    await metricsService.finalize(logId, durationMs);
+
+    return validateLocateResult(JSON.parse(extractJson(result.text)));
+  } catch (err) {
+    await metricsService.finalize(logId, Date.now() - t0);
+    throw err;
+  }
+}
+
 export interface AutoConfigSeed {
   readonly type: ExamType;
   readonly name: string;
@@ -132,6 +214,11 @@ export interface AutoConfigSeed {
   readonly role?: string | null;
   readonly year?: number | null;
   readonly language: 'pt' | 'en';
+  // Set only for public_exam when locateEdital found a PDF and the user (implicitly, for the
+  // target year, or explicitly, for a prior year) confirmed using it. Absent entirely when
+  // locate failed, found nothing, or the user chose to proceed without it — runAutoConfigJob
+  // falls back to the research/review/format text pipeline in that case.
+  readonly edital?: { readonly url: string; readonly isPriorYear: boolean } | null;
 }
 
 // Creates the persisted job and charges the single auto_config unit for the whole
@@ -164,7 +251,7 @@ export async function createAutoConfigJob(userId: string, seed: AutoConfigSeed):
     },
   });
 
-  after(() => runAutoConfigJob(job.id, seed.language));
+  after(() => runAutoConfigJob(job.id, seed.language, seed.edital ?? null));
 
   return { jobId: job.id };
 }
@@ -188,7 +275,19 @@ function buildResearchInput(
   if (type === 'certification') {
     return { certification_name: job.seedName, provider: job.seedProvider, key: job.seedKey, language };
   }
-  return { public_exam_name: job.seedName, role: job.seedRole, exam_board_name: job.seedBoard, year: job.seedYear };
+  // seedKey holds the edital number the identify step already resolved — passing it through
+  // lets the research prompt search for that specific document instead of the exam by name
+  // alone. language was previously dropped here even though the certification branch always
+  // threads it — the public_exam research/review prompts are hardcoded PT-BR regardless, but
+  // carrying it keeps the two branches symmetric for when that's addressed.
+  return {
+    public_exam_name: job.seedName,
+    role: job.seedRole,
+    exam_board_name: job.seedBoard,
+    year: job.seedYear,
+    key: job.seedKey,
+    language,
+  };
 }
 
 function buildReviewInput(
@@ -219,9 +318,114 @@ function buildFormatInput(
   return { public_exam_name: job.seedName, reviewed_blueprint: reviewedBlueprint };
 }
 
-// Runs the research → review → format chain for one job, recording a UsageLogStep per
-// stage under the job's single usageLogId and persisting the resulting Exam blueprint.
-export async function runAutoConfigJob(jobId: string, language: 'pt' | 'en'): Promise<void> {
+// One located PDF the caller has already resolved (target year or a user-picked prior year).
+export interface JobEditalRef {
+  readonly url: string;
+  readonly isPriorYear: boolean;
+}
+
+// Attempts the PDF-grounded path for public_exam: download the edital and run it through the
+// same extractor the manual-upload flow already uses. Returns null on any failure (bad URL,
+// download refused, extraction error) so the caller falls back to the research/review/format
+// text pipeline instead of failing the whole job over a single download.
+async function tryEditalExtractBranch(
+  jobId: string,
+  job: { userId: string; seedRole: string | null; seedKey: string | null },
+  edital: JobEditalRef,
+  usageLogId: string,
+  metricsService: MetricsService
+): Promise<ParsedExamBlueprint | null> {
+  const editalExtractorService = new EditalExtractorService();
+
+  await setStage(jobId, 'extract');
+  const t0 = Date.now();
+
+  try {
+    const file = await fetchEditalPdf(edital.url);
+    const exam = await editalExtractorService.extract(job.userId, file, job.seedRole ?? undefined, {
+      logId: usageLogId,
+    });
+    const editalLabel = job.seedKey ? `Edital nº ${job.seedKey}` : 'Edital oficial';
+
+    return {
+      examDraft: exam,
+      context: edital.isPriorYear
+        ? `Conteúdo extraído do edital de ${exam.year ?? 'um concurso anterior'}, usado como modelo — confira se o conteúdo programático do edital vigente é o mesmo antes de gerar questões.`
+        : 'Conteúdo extraído diretamente do PDF do edital oficial.',
+      sources: [`[${editalLabel}](${edital.url})`],
+      confidence: edital.isPriorYear ? 'prior-year' : 'official',
+    };
+  } catch (err) {
+    console.error(`[auto-config-job] Job "${jobId}" edital extraction failed, falling back to research:`, err);
+    void metricsService.recordStep(usageLogId, 'extract', { inputTokens: 0, outputTokens: 0 }, Date.now() - t0);
+    return null;
+  }
+}
+
+// Runs the research → review → format chain, recording a UsageLogStep per stage under the
+// job's single usageLogId and returning the resulting Exam blueprint.
+async function runResearchReviewFormat(
+  jobId: string,
+  type: ExamType,
+  job: Parameters<typeof buildResearchInput>[1] & Parameters<typeof buildReviewInput>[1],
+  language: 'pt' | 'en',
+  usageLogId: string,
+  openAIService: OpenAIService,
+  metricsService: MetricsService
+): Promise<ParsedExamBlueprint> {
+  const prompts = AUTO_CONFIG_PROMPTS[type];
+  const reviewModel = process.env.OPENAI_MODEL_REVIEW ?? process.env.OPENAI_MODEL ?? 'gpt-4o';
+
+  await setStage(jobId, 'research');
+  let t0 = Date.now();
+  const research = await openAIService.call(prompts.research, buildResearchInput(type, job, language), {
+    webSearch: true,
+  });
+  void metricsService.recordStep(
+    usageLogId,
+    'config_research',
+    { inputTokens: research.inputTokens, outputTokens: research.outputTokens },
+    Date.now() - t0
+  );
+
+  await setStage(jobId, 'review');
+  t0 = Date.now();
+  const review = await openAIService.call(prompts.review, buildReviewInput(type, job, research.text, language), {
+    webSearch: false,
+    model: reviewModel,
+  });
+  void metricsService.recordStep(
+    usageLogId,
+    'config_review',
+    { inputTokens: review.inputTokens, outputTokens: review.outputTokens },
+    Date.now() - t0
+  );
+
+  await setStage(jobId, 'format');
+  t0 = Date.now();
+  const format = await openAIService.call(prompts.format, buildFormatInput(type, job, review.text), {
+    webSearch: false,
+    jsonMode: true,
+  });
+  void metricsService.recordStep(
+    usageLogId,
+    'config_format',
+    { inputTokens: format.inputTokens, outputTokens: format.outputTokens },
+    Date.now() - t0
+  );
+
+  const parsed = validateExamBlueprint(JSON.parse(extractJson(format.text)), type);
+
+  // This branch never had the actual edital in front of it (that's the PDF branch's job) —
+  // it's web research at best, a from-memory guess at worst. Mark it so the UI can say so.
+  return type === 'public_exam' ? { ...parsed, confidence: 'estimated' } : parsed;
+}
+
+export async function runAutoConfigJob(
+  jobId: string,
+  language: 'pt' | 'en',
+  edital?: JobEditalRef | null
+): Promise<void> {
   const openAIService = new OpenAIService();
   const quotaService = new QuotaService();
   const metricsService = new MetricsService();
@@ -230,51 +434,15 @@ export async function runAutoConfigJob(jobId: string, language: 'pt' | 'en'): Pr
   if (!job || !job.usageLogId) return;
 
   const type = job.type as ExamType;
-  const prompts = AUTO_CONFIG_PROMPTS[type];
-  const reviewModel = process.env.OPENAI_MODEL_REVIEW ?? process.env.OPENAI_MODEL ?? 'gpt-4o';
   const usageLogId = job.usageLogId;
   const startTime = Date.now();
 
   try {
-    await setStage(jobId, 'research');
-    let t0 = Date.now();
-    const research = await openAIService.call(prompts.research, buildResearchInput(type, job, language), {
-      webSearch: true,
-    });
-    void metricsService.recordStep(
-      usageLogId,
-      'config_research',
-      { inputTokens: research.inputTokens, outputTokens: research.outputTokens },
-      Date.now() - t0
-    );
-
-    await setStage(jobId, 'review');
-    t0 = Date.now();
-    const review = await openAIService.call(prompts.review, buildReviewInput(type, job, research.text, language), {
-      webSearch: false,
-      model: reviewModel,
-    });
-    void metricsService.recordStep(
-      usageLogId,
-      'config_review',
-      { inputTokens: review.inputTokens, outputTokens: review.outputTokens },
-      Date.now() - t0
-    );
-
-    await setStage(jobId, 'format');
-    t0 = Date.now();
-    const format = await openAIService.call(prompts.format, buildFormatInput(type, job, review.text), {
-      webSearch: false,
-      jsonMode: true,
-    });
-    void metricsService.recordStep(
-      usageLogId,
-      'config_format',
-      { inputTokens: format.inputTokens, outputTokens: format.outputTokens },
-      Date.now() - t0
-    );
-
-    const parsed: ParsedExamBlueprint = validateExamBlueprint(JSON.parse(extractJson(format.text)), type);
+    const parsed =
+      type === 'public_exam' && edital?.url
+        ? ((await tryEditalExtractBranch(jobId, job, edital, usageLogId, metricsService)) ??
+          (await runResearchReviewFormat(jobId, type, job, language, usageLogId, openAIService, metricsService)))
+        : await runResearchReviewFormat(jobId, type, job, language, usageLogId, openAIService, metricsService);
 
     if (type === 'public_exam' && job.seedRole) {
       Object.assign(parsed.examDraft, { role: job.seedRole });

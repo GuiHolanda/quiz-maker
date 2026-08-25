@@ -8,6 +8,7 @@ type MetricsStep =
   | 'extract'
   | 'chat'
   | 'identify'
+  | 'locate'
   | 'config_research'
   | 'config_review'
   | 'config_format'

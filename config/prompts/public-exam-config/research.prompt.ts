@@ -5,15 +5,21 @@ export interface PublicExamConfigResearchInput {
   readonly role?: string | null;
   readonly exam_board_name?: string | null;
   readonly year?: number | null;
+  // The edital number the identify step already resolved, when known — this call only runs
+  // as a fallback after locating/downloading the PDF itself failed (see runAutoConfigJob),
+  // so this is a second chance to find the document by its official number before falling
+  // back to a from-memory estimate.
+  readonly key?: string | null;
 }
 
 export const publicExamConfigResearchPrompt = {
   build: (input: PublicExamConfigResearchInput): string => {
-    const { public_exam_name, role, exam_board_name, year } = input;
+    const { public_exam_name, role, exam_board_name, year, key } = input;
     const hints = [
       role ? `Cargo pretendido: ${role}.` : '',
       exam_board_name ? `Banca organizadora: ${exam_board_name}.` : '',
       year ? `Ano do edital: ${year}.` : '',
+      key ? `Número do edital: ${key}.` : '',
     ]
       .filter(Boolean)
       .join(' ');
@@ -22,7 +28,7 @@ export const publicExamConfigResearchPrompt = {
 
 ## TAREFA
 
-Pesquise na web o conteúdo programático oficial (edital) do concurso "${public_exam_name}". ${hints}
+Pesquise na web o conteúdo programático oficial (edital) do concurso "${public_exam_name}". ${hints}${key ? ` Priorize localizar o PDF do edital nº ${key} diretamente no site do órgão ou da banca — o anexo de conteúdo programático costuma estar nesse documento, não em páginas de resumo de terceiros.` : ''}
 
 Procure especificamente:
 - A lista de disciplinas (matérias) individuais cobradas na prova objetiva para o cargo, com sua distribuição de questões ou percentual, quando publicada.

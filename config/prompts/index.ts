@@ -21,6 +21,8 @@ export { publicExamExplanationsPrompt } from './public-exam-questions/explanatio
 export type { PublicExamExplanationsInput } from './public-exam-questions/explanations.prompt';
 export { examIdentifyPrompt } from './exam-identify.prompt';
 export type { ExamIdentifyInput } from './exam-identify.prompt';
+export { editalLocatePrompt } from './edital-locate.prompt';
+export type { EditalLocateInput } from './edital-locate.prompt';
 export { certificationConfigResearchPrompt } from './certification-config/research.prompt';
 export type { CertificationConfigResearchInput } from './certification-config/research.prompt';
 export { certificationConfigReviewPrompt } from './certification-config/review.prompt';
@@ -33,6 +35,8 @@ export { publicExamConfigReviewPrompt } from './public-exam-config/review.prompt
 export type { PublicExamConfigReviewInput } from './public-exam-config/review.prompt';
 export { publicExamConfigFormatPrompt } from './public-exam-config/format.prompt';
 export type { PublicExamConfigFormatInput } from './public-exam-config/format.prompt';
+export { editalExtractPrompt } from './public-exam-config/edital-extract.prompt';
+export type { EditalExtractInput } from './public-exam-config/edital-extract.prompt';
 
 import type { ExamType } from '@/shared/types';
 import type { PromptDefinition } from './types';

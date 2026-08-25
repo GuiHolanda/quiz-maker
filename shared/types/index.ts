@@ -524,7 +524,28 @@ export interface AutoConfigIdentifyResult {
   readonly clarification: string | null;
 }
 
-export type AutoConfigStage = 'research' | 'review' | 'format';
+// One PDF candidate the locate-edital step found on the web — either the target year's
+// official edital or a prior-year one offered as a fallback model.
+export interface EditalCandidate {
+  readonly url: string;
+  readonly editalNumber: string | null;
+  readonly year: number | null;
+  readonly orgao: string | null;
+  readonly isOfficialDomain: boolean;
+  readonly coversRole: boolean;
+}
+
+export interface LocateEditalResult {
+  readonly editais: EditalCandidate[];
+  readonly targetYearFound: boolean;
+}
+
+// How the blueprint's data was sourced: 'official' — read straight from the target year's
+// edital PDF; 'prior-year' — read from an earlier edital the user picked as a stand-in;
+// 'estimated' — the research/review/format text pipeline never had the actual document.
+export type BlueprintConfidence = 'official' | 'prior-year' | 'estimated';
+
+export type AutoConfigStage = 'research' | 'review' | 'format' | 'extract';
 
 export interface AutoConfigJobStatus {
   readonly id: string;
