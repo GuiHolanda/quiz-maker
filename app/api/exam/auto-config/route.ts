@@ -10,7 +10,13 @@ import type { ExamType } from '@/shared/types';
 
 const quotaService = new QuotaService();
 
-export const maxDuration = 60;
+// The POST handler only kicks off the job and returns { jobId } fast — but the whole
+// research→review→format pipeline runs inside after(() => runAutoConfigJob(...)) scheduled
+// from THIS request, and Vercel bounds after() work by the route's own maxDuration. 60s was
+// enough for the handler itself, not for the background pipeline it schedules — it was
+// getting killed mid-run in production, silently stranding jobs in "running". Match
+// generation-job/route.ts, which uses the identical after() pattern at 300s.
+export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -40,7 +46,7 @@ export async function POST(request: NextRequest) {
     if (!body || typeof body !== 'object') {
       throw Object.assign(new Error('Invalid request body'), { status: 400 });
     }
-    const { type, name, key, provider, examBoard, role, year, language } = body as Record<string, unknown>;
+    const { type, name, key, provider, examBoard, role, year, language, edital } = body as Record<string, unknown>;
 
     if (type !== 'certification' && type !== 'public_exam') {
       throw Object.assign(new Error('type must be "certification" or "public_exam"'), { status: 400 });
@@ -48,6 +54,17 @@ export async function POST(request: NextRequest) {
     if (typeof name !== 'string' || !name.trim()) {
       throw Object.assign(new Error('name is required'), { status: 400 });
     }
+
+    // Only meaningful for public_exam, and only ever set from a prior locate-edital call —
+    // never trust it blindly, but a malformed/absent value just means "no PDF", the same as
+    // a user who skipped locate entirely.
+    const editalRef =
+      edital && typeof edital === 'object' && typeof (edital as Record<string, unknown>).url === 'string'
+        ? {
+            url: (edital as Record<string, unknown>).url as string,
+            isPriorYear: (edital as Record<string, unknown>).isPriorYear === true,
+          }
+        : null;
 
     const { jobId } = await createAutoConfigJob(session.user.id, {
       type: type as ExamType,
@@ -58,6 +75,7 @@ export async function POST(request: NextRequest) {
       role: typeof role === 'string' ? role : null,
       year: typeof year === 'number' ? year : null,
       language: language === 'pt' ? 'pt' : 'en',
+      edital: editalRef,
     });
 
     return NextResponse.json({ jobId }, { status: 201 });
