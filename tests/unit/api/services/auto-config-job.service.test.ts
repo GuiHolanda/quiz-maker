@@ -92,7 +92,7 @@ describe('identifyExam', () => {
     const result = await identifyExam('user-1', 'AWS solutions architect', 'certification', 'en');
 
     expect(result.matches).toEqual([
-      { label: 'AWS Certified Solutions Architect – Associate', key: 'SAA-C03', provider: 'AWS', examBoard: null, role: null, year: null },
+      { label: 'AWS Certified Solutions Architect – Associate', key: 'SAA-C03', provider: 'AWS', examBoard: null, role: null, roles: [], year: null },
     ]);
     expect(result.clarification).toBeNull();
 
@@ -145,6 +145,62 @@ describe('identifyExam', () => {
       where: { id: 'identify-log-1' },
       data: { totalDurationMs: expect.any(Number) },
     });
+  });
+
+  it('normalizes roles: trims, dedupes case-insensitively, caps at 12', async () => {
+    const rawRoles = [
+      'Analista Judiciário',
+      '  analista judiciário  ',
+      'Técnico Judiciário',
+      'Role 3', 'Role 4', 'Role 5', 'Role 6', 'Role 7', 'Role 8',
+      'Role 9', 'Role 10', 'Role 11', 'Role 12', 'Role 13',
+    ];
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({
+        matches: [{ label: 'TRF 2025', examBoard: 'CEBRASPE', roles: rawRoles, role: null }],
+        clarification: null,
+      }),
+      inputTokens: 10,
+      outputTokens: 10,
+    });
+
+    const result = await identifyExam('user-1', 'TRF', 'public_exam', 'pt');
+
+    expect(result.matches[0].roles).toHaveLength(12);
+    expect(result.matches[0].roles[0]).toBe('Analista Judiciário');
+    expect(result.matches[0].roles[1]).toBe('Técnico Judiciário');
+  });
+
+  it('prepends role to roles when role is not already in the array', async () => {
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({
+        matches: [{ label: 'TRF 2025', examBoard: 'CEBRASPE', roles: ['Técnico Judiciário'], role: 'Analista Judiciário' }],
+        clarification: null,
+      }),
+      inputTokens: 10,
+      outputTokens: 10,
+    });
+
+    const result = await identifyExam('user-1', 'TRF', 'public_exam', 'pt');
+
+    expect(result.matches[0].roles).toEqual(['Analista Judiciário', 'Técnico Judiciário']);
+    expect(result.matches[0].role).toBe('Analista Judiciário');
+  });
+
+  it('does not duplicate role when role is already in roles', async () => {
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({
+        matches: [{ label: 'TRF 2025', examBoard: 'CEBRASPE', roles: ['Analista Judiciário', 'Técnico Judiciário'], role: 'Analista Judiciário' }],
+        clarification: null,
+      }),
+      inputTokens: 10,
+      outputTokens: 10,
+    });
+
+    const result = await identifyExam('user-1', 'TRF', 'public_exam', 'pt');
+
+    expect(result.matches[0].roles).toEqual(['Analista Judiciário', 'Técnico Judiciário']);
+    expect(result.matches[0].role).toBe('Analista Judiciário');
   });
 });
 

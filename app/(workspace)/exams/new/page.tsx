@@ -32,6 +32,7 @@ const DEBUG_MATCHES = [
     provider: 'Amazon Web Services',
     examBoard: null,
     role: null,
+    roles: [],
     year: null,
   },
   {
@@ -40,10 +41,20 @@ const DEBUG_MATCHES = [
     provider: 'Amazon Web Services',
     examBoard: null,
     role: null,
+    roles: [],
     year: null,
   },
 ];
 const DEBUG_SEED = DEBUG_MATCHES[0];
+const DEBUG_PUBLIC_MATCH = {
+  label: 'Concurso TRF 1ª Região 2025',
+  key: 'PGJ-001/2025',
+  provider: null,
+  examBoard: 'CEBRASPE',
+  role: null,
+  roles: ['Analista Judiciário – Área Judiciária', 'Técnico Judiciário – Área Administrativa', 'Oficial de Justiça'],
+  year: 2025,
+};
 
 // Dev-only escape hatch to preview SeedLoadingScreen frozen at any stage — this state
 // resolves in seconds/minutes normally, too fast to iterate on its styling live.
@@ -68,6 +79,14 @@ function buildDebugVariant(searchParams: URLSearchParams): SeedLoadingVariant | 
     }
     if (phase === 'failed') return { kind: 'identify', query: 'AWS Certified', phase: { kind: 'failed' } };
 
+    if (phase === 'selecting-role') {
+      return {
+        kind: 'identify',
+        query: 'TRF 1ª Região',
+        phase: { kind: 'selecting-role', match: DEBUG_PUBLIC_MATCH },
+      };
+    }
+
     return { kind: 'identify', query: 'AWS Certified', phase: { kind: 'searching' } };
   }
 
@@ -85,7 +104,8 @@ function buildDebugVariant(searchParams: URLSearchParams): SeedLoadingVariant | 
 
 function identifyQuery(state: ExamSeedState): string {
   if (state.kind === 'identifying' || state.kind === 'identify-failed') return state.query;
-  if (state.kind === 'disambiguating' || state.kind === 'clarifying') return state.examName;
+  if (state.kind === 'disambiguating' || state.kind === 'clarifying' || state.kind === 'selecting-role')
+    return state.examName;
 
   return '';
 }
@@ -98,6 +118,8 @@ function identifyPhase(state: ExamSeedState): Exclude<IdentifyPhase, { kind: 'co
       return { kind: 'clarifying', message: state.message };
     case 'identify-failed':
       return { kind: 'failed' };
+    case 'selecting-role':
+      return { kind: 'selecting-role', match: state.match };
     default:
       return { kind: 'searching' };
   }
@@ -240,6 +262,7 @@ function NewExamContent() {
     'disambiguating',
     'clarifying',
     'identify-failed',
+    'selecting-role',
     'loading-blueprint',
     'extracting-edital',
   ];
@@ -315,6 +338,7 @@ function NewExamContent() {
       case 'disambiguating':
       case 'clarifying':
       case 'identify-failed':
+      case 'selecting-role':
         return (
           <SeedLoadingScreen
             startedAt={seed.state.startedAt}
@@ -322,7 +346,8 @@ function NewExamContent() {
             variant={{ kind: 'identify', query: identifyQuery(seed.state), phase: identifyPhase(seed.state) }}
             onCancel={seed.reset}
             onRetry={seed.identifyByName}
-            onSelectMatch={(match) => void seed.confirmMatch(match)}
+            onSelectMatch={(match) => void seed.selectMatch(match)}
+            onSelectRole={(role) => void seed.confirmRole(role)}
             onStartBlank={seed.startBlank}
           />
         );

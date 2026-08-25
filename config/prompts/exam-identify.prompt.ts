@@ -18,8 +18,8 @@ export const examIdentifyPrompt = {
 
     const languageInstruction =
       language === 'pt'
-        ? 'Responda em português do Brasil (pt-BR): os campos "label", "provider", "examBoard", "role" e "clarification" devem estar em pt-BR.'
-        : 'Respond in English: the "label", "provider", "examBoard", "role", and "clarification" fields must be in English.';
+        ? 'Responda em português do Brasil (pt-BR): os campos "label", "provider", "examBoard", "roles" e "clarification" devem estar em pt-BR.'
+        : 'Respond in English: the "label", "provider", "examBoard", "roles", and "clarification" fields must be in English.';
 
     const domainInstructions =
       type === 'certification'
@@ -27,11 +27,12 @@ export const examIdentifyPrompt = {
 - "label" is the full official certification name.
 - "provider" is the certifying body's short, recognizable name (e.g. "AWS", not "Amazon Web Services, Inc.").
 - "key" is the official exam code when one exists (e.g. "SAA-C03") — omit it otherwise.
-- Leave "examBoard" and "role" out of every match.`
+- Leave "examBoard", "role", and "roles" out of every match.`
         : `Search the web for a real Brazilian concurso público (órgão + cargo + banca organizadora) matching the query "${query}".
 - "label" is a human name for the concurso: órgão + ano, without the cargo (e.g. "Concurso Público TRF 1ª Região 2025").
 - "examBoard" is the banca organizadora's short name (e.g. "CEBRASPE", "FGV", "FCC", "VUNESP").
-- "role" is the cargo, when the query names one or a clearly matching one is published.
+- "roles" is the array of cargos published in this edital, most relevant first, maximum 12. Use the exact names as published (e.g. "Analista Judiciário – Área Judiciária"). Empty array when the cargos cannot be determined.
+- "role" is set only when the query explicitly names a cargo; it must be one of the items in "roles".
 - "key" is the edital number when publicly known — omit it otherwise.
 - Leave "provider" out of every match.`;
 
@@ -50,7 +51,7 @@ RULES:
 6. ${languageInstruction}
 
 OUTPUT FORMAT — respond ONLY with valid JSON, no text before or after:
-{"matches":[{"label":"...","key":"...","provider":"...","examBoard":"...","role":"...","year":2024}],"clarification":null}
+{"matches":[{"label":"...","key":"...","provider":"...","examBoard":"...","roles":["...","..."],"role":"...","year":2024}],"clarification":null}
 
 Omit any match field other than "label" when it does not apply. When "matches" is empty, "clarification" must be a non-empty string; when "matches" is non-empty, set "clarification" to null.`;
   },

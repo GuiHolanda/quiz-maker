@@ -24,6 +24,12 @@ export type ExamSeedState =
       readonly matches: AutoConfigMatch[];
       readonly startedAt: number;
     }
+  | {
+      readonly kind: 'selecting-role';
+      readonly examName: string;
+      readonly match: AutoConfigMatch;
+      readonly startedAt: number;
+    }
   | { readonly kind: 'clarifying'; readonly examName: string; readonly message: string; readonly startedAt: number }
   // The identify call itself failed. Unlike a blueprint failure — where the exam is already
   // known and a prefilled editor is useful — there is nothing to prefill here, so the flow
@@ -72,7 +78,8 @@ interface DoneEventData {
 interface UseExamSeedReturn {
   readonly state: ExamSeedState;
   readonly identifyByName: (query: string) => Promise<void>;
-  readonly confirmMatch: (match: AutoConfigMatch) => Promise<void>;
+  readonly selectMatch: (match: AutoConfigMatch) => Promise<void>;
+  readonly confirmRole: (role: string) => Promise<void>;
   readonly uploadEdital: (file: File, role: string | undefined) => Promise<void>;
   readonly startBlank: () => void;
   readonly reset: () => void;
@@ -215,6 +222,37 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
     [type, language, watchJob, showLimitIfBlocked]
   );
 
+  const selectMatch = useCallback(
+    async (match: AutoConfigMatch) => {
+      if (type === 'certification') {
+        await confirmMatch(match);
+        return;
+      }
+      setState((prev) => ({
+        kind: 'selecting-role',
+        examName: match.label,
+        match,
+        startedAt: prev.kind === 'identifying' ? prev.startedAt : Date.now(),
+      }));
+    },
+    [type, confirmMatch]
+  );
+
+  const confirmRole = useCallback(
+    async (role: string) => {
+      let pendingMatch: AutoConfigMatch | null = null;
+      setState((prev) => {
+        if (prev.kind !== 'selecting-role') return prev;
+        pendingMatch = prev.match;
+        return prev;
+      });
+      const capturedMatch = pendingMatch;
+      if (!capturedMatch) return;
+      await confirmMatch({ ...(capturedMatch as AutoConfigMatch), role: role.trim() });
+    },
+    [confirmMatch]
+  );
+
   const identifyByName = useCallback(
     async (query: string) => {
       const trimmed = query.trim();
@@ -241,7 +279,7 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
           return;
         }
         if (result.matches.length === 1) {
-          await confirmMatch(result.matches[0]);
+          await selectMatch(result.matches[0]);
           return;
         }
         setState({ kind: 'disambiguating', examName: trimmed, matches: result.matches, startedAt });
@@ -254,7 +292,7 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
         setState({ kind: 'identify-failed', query: trimmed, startedAt });
       }
     },
-    [type, language, confirmMatch, showLimitIfBlocked]
+    [type, language, selectMatch, showLimitIfBlocked]
   );
 
   const uploadEdital = useCallback(
@@ -292,11 +330,11 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
         kind: 'loading-blueprint',
         seed: {
           label: job.seedName,
-          key: null,
+          key: job.seedKey,
           provider: job.seedProvider,
-          examBoard: null,
-          role: null,
-          year: null,
+          examBoard: job.seedBoard,
+          role: job.seedRole,
+          year: job.seedYear,
         },
         stage: (job.stage as AutoConfigStage) ?? null,
         startedAt: new Date(job.createdAt).getTime(),
@@ -313,5 +351,5 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
 
   useEffect(() => () => closeStream(), [closeStream]);
 
-  return { state, identifyByName, confirmMatch, uploadEdital, startBlank, reset };
+  return { state, identifyByName, selectMatch, confirmRole, uploadEdital, startBlank, reset };
 }
