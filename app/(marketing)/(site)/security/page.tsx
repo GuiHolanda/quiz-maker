@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
 import { LegalPageShell } from '@/app/(marketing)/components/legal/LegalPageShell';
+import { alternatesFor } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: 'Segurança | CertifiqueAI',
+  title: 'Segurança',
   description:
     'Como a CertifiqueAI protege seus dados com criptografia, hashing de senhas e boas práticas de segurança.',
-  alternates: { canonical: 'https://www.certifiqueai.com/security' },
+  alternates: alternatesFor('/security'),
 };
 
 export default function SecurityPage() {

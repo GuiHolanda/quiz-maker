@@ -11,20 +11,21 @@ import { PricingFaq } from '@/app/(marketing)/components/pricing/PricingFaq';
 import { parseProperties } from '@/lib/properties-parser';
 import { jsonLd } from '@/lib/json-ld';
 import { OG_IMAGES } from '@/config/og';
+import { alternatesFor } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: 'Planos e Preços | CertifiqueAI',
+  title: 'Planos e Preços',
   description:
     'Gratuito para começar. Planos Pro e Pro AI com mais questões, concursos públicos e assistente de estudos. Cancele quando quiser.',
   openGraph: {
-    title: 'Planos e Preços | CertifiqueAI',
+    title: 'Planos e Preços',
     description:
       'Gratuito para começar. Planos Pro e Pro AI com mais questões, concursos públicos e assistente de estudos. Cancele quando quiser.',
     url: 'https://www.certifiqueai.com/pricing',
     type: 'website',
     images: OG_IMAGES,
   },
-  alternates: { canonical: 'https://www.certifiqueai.com/pricing' },
+  alternates: alternatesFor('/pricing'),
 };
 
 async function loadPtMessages(): Promise<Record<string, string>> {
@@ -58,10 +59,33 @@ export default async function PricingPage() {
     ],
   };
 
+  // Monthly price is the canonical figure for the schema — the annual/monthly toggle
+  // is a client-side UI affordance, not a separate product.
+  const productSchemas = [
+    { name: 'CertifiqueAI Pro', price: '29.90' },
+    { name: 'CertifiqueAI Pro AI', price: '49.90' },
+    { name: 'CertifiqueAI Sprint', price: '89.90' },
+  ].map((plan) => ({
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: plan.name,
+    brand: { '@type': 'Brand', name: 'CertifiqueAI' },
+    offers: {
+      '@type': 'Offer',
+      price: plan.price,
+      priceCurrency: 'BRL',
+      url: 'https://www.certifiqueai.com/pricing',
+      availability: 'https://schema.org/InStock',
+    },
+  }));
+
   return (
     <div className="text-mkt-text">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(faqSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbSchema) }} />
+      {productSchemas.map((schema) => (
+        <script key={schema.name} type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(schema) }} />
+      ))}
 
       <PricingPeriodProvider>
         <section className="py-20 px-6 text-center bg-mkt-bg border-b border-mkt-divider">

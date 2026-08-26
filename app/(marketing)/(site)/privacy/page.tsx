@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import { LegalPageShell } from '@/app/(marketing)/components/legal/LegalPageShell';
+import { alternatesFor } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: 'Política de Privacidade | CertifiqueAI',
+  title: 'Política de Privacidade',
   description: 'Saiba como a CertifiqueAI coleta, usa e protege seus dados pessoais conforme a LGPD.',
-  alternates: { canonical: 'https://www.certifiqueai.com/privacy' },
+  alternates: alternatesFor('/privacy'),
 };
 
 export default function PrivacyPage() {

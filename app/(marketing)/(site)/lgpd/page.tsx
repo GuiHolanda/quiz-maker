@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import { LegalPageShell } from '@/app/(marketing)/components/legal/LegalPageShell';
+import { alternatesFor } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: 'Conformidade LGPD | CertifiqueAI',
+  title: 'Conformidade LGPD',
   description: 'Conheça seus direitos como titular de dados pessoais e saiba como exercê-los na CertifiqueAI.',
-  alternates: { canonical: 'https://www.certifiqueai.com/lgpd' },
+  alternates: alternatesFor('/lgpd'),
 };
 
 export default function LgpdPage() {

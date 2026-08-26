@@ -4,6 +4,7 @@ import NextLink from 'next/link';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { DEMO_PATH } from '@/config/demo-links';
+import { EXAM_LANDING_PAGE_MAP } from '@/config/exam-landing-pages';
 
 const PLATFORM_LINKS = [
   { labelKey: 'nav.demo', href: DEMO_PATH },
@@ -19,13 +20,21 @@ const LEGAL_LINKS = [
   { labelKey: 'footer.security', href: '/security' },
 ] as const;
 
+const FEATURED_SIMULADO_SLUGS = ['aws-solutions-architect', 'azure-fundamentals', 'cea', 'cpa-20', 'oab'] as const;
+
+const SIMULADO_LINKS = FEATURED_SIMULADO_SLUGS.map((slug) => {
+  const exam = EXAM_LANDING_PAGE_MAP.get(slug);
+  if (!exam) throw new Error(`Footer references unknown exam landing slug: ${slug}`);
+  return { key: slug, label: exam.name, href: `/simulado/${slug}` };
+});
+
 export function MarketingFooter() {
   const { t } = useTranslation();
 
   return (
     <footer className="bg-mkt-bg border-t border-mkt-divider py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
           <div className="col-span-2">
             <span className="ds-heading text-mkt-text text-sm block mb-4">{t('footer.brand')}</span>
             <p className="text-sm text-mkt-text opacity-50 leading-relaxed max-w-xs">{t('footer.description')}</p>
@@ -44,6 +53,30 @@ export function MarketingFooter() {
                   </NextLink>
                 </li>
               ))}
+            </ul>
+          </div>
+
+          <div>
+            <p className="kick mb-4">{t('nav.freeSimulados')}</p>
+            <ul className="space-y-3">
+              {SIMULADO_LINKS.map((item) => (
+                <li key={item.key}>
+                  <NextLink
+                    className="text-sm text-mkt-text opacity-50 hover:opacity-100 transition-opacity duration-200"
+                    href={item.href}
+                  >
+                    {item.label}
+                  </NextLink>
+                </li>
+              ))}
+              <li>
+                <NextLink
+                  className="text-sm text-mkt-accent font-semibold hover:opacity-75 transition-opacity duration-200"
+                  href="/simulado"
+                >
+                  {t('footer.viewAllSimulados')}
+                </NextLink>
+              </li>
             </ul>
           </div>
 

@@ -21,6 +21,7 @@ export const PAGE_LAST_MODIFIED = {
   pricing: '2026-08-17',
   examLandings: '2026-08-17',
   legal: '2026-08-17',
+  simuladoHub: '2026-08-26',
 } as const;
 
 export function lastModified(key: keyof typeof PAGE_LAST_MODIFIED): Date {

@@ -4,6 +4,22 @@ import { Suspense } from 'react';
 import { fontBarlow, fontBarlowCondensed } from '@/config/fonts';
 import { jsonLd } from '@/lib/json-ld';
 import { UtmCapture } from '@/app/(marketing)/components/UtmCapture';
+import { LanguageProvider } from '@/features/providers/language.provider';
+import { loadMessagesForPrefixes } from '@/lib/load-messages';
+
+const MARKETING_MESSAGE_PREFIXES = [
+  'demo',
+  'homepage',
+  'landing',
+  'pricing',
+  'nav',
+  'footer',
+  'toast',
+  'common',
+  'billing',
+  'aria',
+  'simuladoHub',
+];
 
 const organizationSchema = {
   '@context': 'https://schema.org',
@@ -11,7 +27,6 @@ const organizationSchema = {
   name: 'CertifiqueAI',
   url: 'https://www.certifiqueai.com',
   logo: 'https://www.certifiqueai.com/icon.svg',
-  sameAs: [],
   hasOfferCatalog: {
     '@type': 'OfferCatalog',
     name: 'Categorias de Exames',
@@ -25,61 +40,24 @@ const organizationSchema = {
   },
 };
 
-const courseListSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'ItemList',
-  itemListElement: [
-    {
-      '@type': 'ListItem',
-      position: 1,
-      item: {
-        '@type': 'Course',
-        name: 'AWS Solutions Architect (SAA-C03)',
-        description: 'Questões de prática para o exame AWS Certified Solutions Architect Associate',
-        provider: { '@type': 'Organization', name: 'CertifiqueAI', url: 'https://www.certifiqueai.com' },
-        url: 'https://www.certifiqueai.com/register',
-      },
-    },
-    {
-      '@type': 'ListItem',
-      position: 2,
-      item: {
-        '@type': 'Course',
-        name: 'Microsoft Azure Fundamentals (AZ-900)',
-        description: 'Questões de prática para o exame AZ-900',
-        provider: { '@type': 'Organization', name: 'CertifiqueAI', url: 'https://www.certifiqueai.com' },
-        url: 'https://www.certifiqueai.com/register',
-      },
-    },
-    {
-      '@type': 'ListItem',
-      position: 3,
-      item: {
-        '@type': 'Course',
-        name: 'Concursos Públicos — CESPE/CEBRASPE, FCC, FGV',
-        description: 'Questões de prática para concursos públicos brasileiros com as principais bancas',
-        provider: { '@type': 'Organization', name: 'CertifiqueAI', url: 'https://www.certifiqueai.com' },
-        url: 'https://www.certifiqueai.com/register',
-      },
-    },
-  ],
-};
+export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
+  const messages = await loadMessagesForPrefixes(MARKETING_MESSAGE_PREFIXES);
 
-export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      className={clsx(
-        'marketing-ds relative flex flex-col min-h-screen',
-        fontBarlow.variable,
-        fontBarlowCondensed.variable
-      )}
-    >
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organizationSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(courseListSchema) }} />
-      <Suspense fallback={null}>
-        <UtmCapture />
-      </Suspense>
-      {children}
-    </div>
+    <LanguageProvider initialMessages={messages}>
+      <div
+        className={clsx(
+          'marketing-ds relative flex flex-col min-h-screen',
+          fontBarlow.variable,
+          fontBarlowCondensed.variable
+        )}
+      >
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organizationSchema) }} />
+        <Suspense fallback={null}>
+          <UtmCapture />
+        </Suspense>
+        {children}
+      </div>
+    </LanguageProvider>
   );
 }

@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import { LegalPageShell } from '@/app/(marketing)/components/legal/LegalPageShell';
+import { alternatesFor } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: 'Termos de Serviço | CertifiqueAI',
+  title: 'Termos de Serviço',
   description: 'Leia os Termos de Serviço da CertifiqueAI antes de usar a plataforma.',
-  alternates: { canonical: 'https://www.certifiqueai.com/terms' },
+  alternates: alternatesFor('/terms'),
 };
 
 export default function TermsPage() {

@@ -5,20 +5,22 @@ config.autoAddCss = false;
 
 import { Metadata, Viewport } from 'next';
 import clsx from 'clsx';
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 import { Providers } from './providers';
-import { auth } from '@/auth';
 
 import { siteConfig } from '@/config/site';
 import { fontMono, fontSans, fontSora } from '@/config/fonts';
-import { parseProperties } from '@/lib/properties-parser';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.certifiqueai.com'),
   title: siteConfig.title,
   description: siteConfig.description,
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION,
+    other: process.env.BING_SITE_VERIFICATION ? { 'msvalidate.01': process.env.BING_SITE_VERIFICATION } : undefined,
+  },
   openGraph: {
     type: 'website',
     siteName: 'Certifique AI',
@@ -36,8 +38,6 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: 'https://www.certifiqueai.com',
-    // No `en` entry: the language switch is a localStorage toggle, not a separate URL.
-    // Declaring en -> the pt-BR URL claims an English page that is not served there.
     languages: {
       'pt-BR': 'https://www.certifiqueai.com',
       'x-default': 'https://www.certifiqueai.com',
@@ -51,21 +51,7 @@ export const viewport: Viewport = {
     { media: '(prefers-color-scheme: dark)', color: 'black' },
   ],
 };
-
-// Carrega as mensagens PT (idioma padrão) no servidor para o SSR renderizar texto real,
-// evitando mismatch de hidratação. O cliente troca para EN apenas se o localStorage pedir.
-async function loadDefaultMessages(): Promise<Record<string, string>> {
-  try {
-    const raw = await readFile(join(process.cwd(), 'public', 'messages', 'pt.properties'), 'utf-8');
-    return parseProperties(raw);
-  } catch {
-    return {};
-  }
-}
-
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [initialMessages, session] = await Promise.all([loadDefaultMessages(), auth()]);
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html suppressHydrationWarning lang="pt-BR">
       <head />
@@ -77,13 +63,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           fontMono.variable
         )}
       >
-        <Providers
-          initialMessages={initialMessages}
-          session={session}
-          themeProps={{ attribute: 'class', defaultTheme: 'dark' }}
-        >
-          {children}
-        </Providers>
+        <Providers themeProps={{ attribute: 'class', defaultTheme: 'dark' }}>{children}</Providers>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

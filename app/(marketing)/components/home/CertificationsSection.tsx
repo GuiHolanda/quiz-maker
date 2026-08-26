@@ -1,5 +1,7 @@
 'use client';
 
+import NextLink from 'next/link';
+
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { BlueprintCorners } from '@/app/(marketing)/components/shared/BlueprintCorners';
 
@@ -21,12 +23,43 @@ const DOMAINS = [
   { titleKey: 'engineering', ready: false, exams: ['CREA', 'CONFEA', 'CAU', 'NR-10 / NR-35'] },
 ] as const;
 
+// Only the chips with a real /simulado/[slug] landing behind them are links — a
+// chip promising CFA coverage that lands on a Terraform page is worse than a chip
+// that doesn't link anywhere.
+const LANDING_SLUG_BY_LABEL: Record<string, string> = {
+  'AWS SAA-C03': 'aws-solutions-architect',
+  'AWS DVA-C02': 'aws-developer-associate',
+  'Azure AZ-900': 'azure-fundamentals',
+  'CompTIA Security+': 'comptia-security-plus',
+  // No CKA entry: it's a 100% lab/performance exam, incompatible with this product's
+  // multiple-choice question format, so no /simulado/kubernetes-cka landing was built —
+  // linking the chip anyway would 404.
+  CCNA: 'cisco-ccna',
+  'CPA-10': 'cpa-10',
+  'CPA-20': 'cpa-20',
+  CEA: 'cea',
+  CFP: 'cfp',
+  CFA: 'cfa-level-1',
+  FRM: 'frm-part-1',
+  'OAB 1ª Fase': 'oab',
+};
+
 function ExamChip({ label }: { readonly label: string }) {
-  return (
-    <span className="mono text-xs text-mkt-text opacity-60 px-2 py-0.5 border border-mkt-divider bg-mkt-surface">
-      {label}
-    </span>
-  );
+  const slug = LANDING_SLUG_BY_LABEL[label];
+  const className = 'mono text-xs text-mkt-text opacity-60 px-2 py-0.5 border border-mkt-divider bg-mkt-surface';
+
+  if (slug) {
+    return (
+      <NextLink
+        className={`${className} hover:opacity-100 hover:border-mkt-accent transition-colors`}
+        href={`/simulado/${slug}`}
+      >
+        {label}
+      </NextLink>
+    );
+  }
+
+  return <span className={className}>{label}</span>;
 }
 
 export function CertificationsSection() {
