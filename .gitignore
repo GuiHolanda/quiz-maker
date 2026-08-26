@@ -58,6 +58,10 @@ prisma/dev.db
 # Eval benchmark results (contain real API costs and generated content)
 scripts/eval/results/*.json
 
+# Raw LLM output from one-off content generation scripts — already reviewed and
+# merged into the real config; not meant to be a tracked artifact.
+scripts/seo/generated-landings.json
+
 # E2E
 tests/e2e/auth/storageState.json
 .env.test
