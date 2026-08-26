@@ -54,7 +54,9 @@ Evaluate this question.`;
       { role: 'user', content: userMessage },
     ],
     response_format: { type: 'json_object' },
-    temperature: 0,
+    // gpt-5.6-sol (a reasoning-only model) rejects any temperature other than its default (1)
+    // — confirmed live via edital-benchmark.ts: "400 Unsupported value: 'temperature' does not
+    // support 0 with this model." This call site had never actually run against that model.
   });
 
   const raw = response.choices[0]?.message?.content ?? '{}';
