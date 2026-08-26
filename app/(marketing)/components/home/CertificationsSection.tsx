@@ -31,7 +31,9 @@ const LANDING_SLUG_BY_LABEL: Record<string, string> = {
   'AWS DVA-C02': 'aws-developer-associate',
   'Azure AZ-900': 'azure-fundamentals',
   'CompTIA Security+': 'comptia-security-plus',
-  CKA: 'kubernetes-cka',
+  // No CKA entry: it's a 100% lab/performance exam, incompatible with this product's
+  // multiple-choice question format, so no /simulado/kubernetes-cka landing was built —
+  // linking the chip anyway would 404.
   CCNA: 'cisco-ccna',
   'CPA-10': 'cpa-10',
   'CPA-20': 'cpa-20',

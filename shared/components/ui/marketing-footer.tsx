@@ -4,7 +4,7 @@ import NextLink from 'next/link';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { DEMO_PATH } from '@/config/demo-links';
-import { EXAM_LANDING_PAGES } from '@/config/exam-landing-pages';
+import { EXAM_LANDING_PAGE_MAP } from '@/config/exam-landing-pages';
 
 const PLATFORM_LINKS = [
   { labelKey: 'nav.demo', href: DEMO_PATH },
@@ -20,11 +20,13 @@ const LEGAL_LINKS = [
   { labelKey: 'footer.security', href: '/security' },
 ] as const;
 
-const SIMULADO_LINKS = EXAM_LANDING_PAGES.map((exam) => ({
-  key: exam.slug,
-  label: exam.name,
-  href: `/simulado/${exam.slug}`,
-}));
+const FEATURED_SIMULADO_SLUGS = ['aws-solutions-architect', 'azure-fundamentals', 'cea', 'cpa-20', 'oab'] as const;
+
+const SIMULADO_LINKS = FEATURED_SIMULADO_SLUGS.map((slug) => {
+  const exam = EXAM_LANDING_PAGE_MAP.get(slug);
+  if (!exam) throw new Error(`Footer references unknown exam landing slug: ${slug}`);
+  return { key: slug, label: exam.name, href: `/simulado/${slug}` };
+});
 
 export function MarketingFooter() {
   const { t } = useTranslation();
@@ -67,6 +69,14 @@ export function MarketingFooter() {
                   </NextLink>
                 </li>
               ))}
+              <li>
+                <NextLink
+                  className="text-sm text-mkt-accent font-semibold hover:opacity-75 transition-opacity duration-200"
+                  href="/simulado"
+                >
+                  {t('footer.viewAllSimulados')}
+                </NextLink>
+              </li>
             </ul>
           </div>
 
