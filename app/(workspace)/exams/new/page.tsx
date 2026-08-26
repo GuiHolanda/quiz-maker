@@ -64,6 +64,7 @@ const DEBUG_PRIOR_EDITAIS = [
     isOfficialDomain: true,
     coversRole: true,
     documentKind: 'main' as const,
+    domainClass: 'official-org' as const,
     verification: 'confirmed' as const,
   },
   {
@@ -74,6 +75,7 @@ const DEBUG_PRIOR_EDITAIS = [
     isOfficialDomain: true,
     coversRole: false,
     documentKind: 'main' as const,
+    domainClass: 'official-org' as const,
     verification: 'confirmed' as const,
   },
 ];

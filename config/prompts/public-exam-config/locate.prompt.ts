@@ -1,3 +1,5 @@
+import { compactEditalReference } from '@/lib/edital-reference';
+
 import type { PromptDefinition } from '../types';
 
 export interface EditalLocateInput {
@@ -7,8 +9,9 @@ export interface EditalLocateInput {
   readonly year: number | null;
   readonly role: string;
   readonly language: 'pt' | 'en';
-  // URLs the verification loop already downloaded and rejected (annex or unreadable) in a
-  // prior round — see locateEdital() in auto-config-job.service.ts. Empty on the first round.
+  // URLs the verification loop already downloaded and rejected (confirmed-not-main-edital or
+  // unreadable) in a prior round — see locateEdital() in auto-config-job.service.ts. Empty on
+  // the first round.
   readonly excludeUrls: readonly string[];
 }
 
@@ -25,10 +28,12 @@ export const editalLocatePrompt = {
         ? 'Responda em português do Brasil (pt-BR): o campo "orgao" deve estar em pt-BR.'
         : 'Respond in English: the "orgao" field must be in English.';
 
+    const compactRef = compactEditalReference(editalKey, year);
+
     const hints = [
       examBoard ? `Banca organizadora: ${examBoard}.` : '',
       editalKey
-        ? `Número do edital: ${editalKey} — use este número como sinal de busca mais forte e priorize o documento exato que o corresponde.`
+        ? `Número do edital: ${compactRef ?? editalKey} — é assim que ele aparece nas buscas. Título oficial completo, para conferir que o documento é o certo: "${editalKey}".`
         : '',
       year ? `Ano alvo: ${year}.` : '',
       role ? `Cargo pretendido: ${role}.` : '',
@@ -36,24 +41,29 @@ export const editalLocatePrompt = {
       .filter(Boolean)
       .join(' ');
 
-    const excludeInstruction =
-      excludeUrls.length > 0
-        ? `\n\nAs URLs abaixo já foram baixadas e verificadas: são anexos auxiliares (quadro de vagas, gabarito, resultado, convocação, cronograma etc.) ou não puderam ser lidas. NÃO as devolva novamente — procure o EDITAL DE ABERTURA COMPLETO, o documento que efetivamente contém o conteúdo programático das provas, incluindo o anexo de conteúdo programático quando publicado como arquivo separado.\nURLs já descartadas:\n${excludeUrls.map((u) => `- ${u}`).join('\n')}`
-        : '';
+    const primaryQuery = compactRef
+      ? `${examName} edital ${compactRef} pdf`
+      : `${examName} edital${examBoard ? ` ${examBoard}` : ''} pdf`;
 
     return `Você é um assistente especializado em localizar editais oficiais de concursos públicos brasileiros.
 
-TAREFA: Encontre o link direto para o arquivo PDF do edital oficial do concurso "${examName}". ${hints}${excludeInstruction}
+TAREFA: Encontre o link direto para o arquivo PDF do edital oficial do concurso "${examName}". ${hints}
 
-REGRAS DE BUSCA:
-1. Priorize domínios oficiais: o site do próprio órgão (gov.br ou domínio institucional) ou da banca organizadora (ex: cebraspe.org.br, fgv.br, vunesp.com.br, fcc.com.br). Somente se nenhum PDF oficial for encontrado, um link de fonte confiável (ex: Diário Oficial, repositório oficial) é aceitável — marque esses com "isOfficialDomain": false.
-2. O link deve levar diretamente ao arquivo PDF do edital principal (corpo do edital ou seu anexo de conteúdo programático/matérias). NÃO use PDFs que sejam somente: quadro de vagas, quadro de cargos, resultado final, gabarito, convocação para prova, recurso ou qualquer outro anexo que não contenha o conteúdo programático das provas — esses documentos não têm valor para geração de questões. Se o nome do arquivo na URL contiver palavras como "vagas", "quadro", "gabarito", "resultado", "convocacao", "ret" isoladas, trate o documento como auxiliar e busque o edital principal completo. URLs com query-string ou handlers do próprio domínio oficial são aceitos — não é obrigatório que o caminho termine em ".pdf", desde que a resposta seja o próprio arquivo PDF do edital.
-3. Primeiro, procure o edital do ano alvo informado acima. Se encontrar, marque "targetYearFound": true e inclua-o em "editais" com "year" igual ao ano alvo.
-4. Se NÃO encontrar o edital do ano alvo, procure editais de anos anteriores do mesmo concurso (mesmo órgão, mesmo cargo ou cargo equivalente) que possam servir de modelo de conteúdo programático. Marque "targetYearFound": false e inclua até 5 desses editais anteriores em "editais", do mais recente para o mais antigo.
-5. ${role ? `"coversRole" é true somente quando você tem razão para crer que o edital cobre o cargo "${role}" especificamente (não apenas o concurso em geral).` : '"coversRole" deve ser false para todos os itens (nenhum cargo foi especificado).'}
-6. "isOfficialDomain" é true quando a URL pertence ao domínio do órgão ou da banca; false para qualquer outra fonte.
-7. Nunca invente uma URL. Só inclua um edital cuja existência você verificou na busca.
-8. Se não encontrar NENHUM edital (nem do ano alvo, nem de anos anteriores), devolva "editais": [] e "targetYearFound": false.
+ESTRATÉGIA DE BUSCA — siga nesta ordem, e não pare no primeiro passo que falhar:
+1. Busque pelo número do edital combinado com o nome do concurso: ${primaryQuery}. Nunca use o título oficial completo do edital como frase de busca entre aspas — ele é longo demais e não casa com nada.
+2. O PDF do edital muitas vezes NÃO aparece direto nos resultados de busca, mas as páginas de notícias e os sites de concursos que noticiam o certame trazem o link para baixá-lo. ABRA essas páginas e leia o HTML delas procurando âncoras (<a href>) que apontem para o arquivo do edital, e extraia dali a URL do PDF. Isso é obrigatório sempre que a busca direta não devolver um PDF.
+3. Abra também a página do próprio órgão e a da banca sobre o certame e procure nelas o link do edital. Em muitos portais o link não termina em ".pdf" — é um handler de download (ex.: "fileDownload.jsp?fileId=...", "/media/.../arquivo"). Esses links são válidos e devem ser devolvidos como estão.
+4. Se ainda assim não achar o edital do ano alvo, procure editais de anos anteriores do mesmo concurso.${excludeUrls.length > 0 ? `\n\nAs URLs abaixo já foram baixadas e verificadas: NÃO contêm o conteúdo programático das provas (são anexos auxiliares como quadro de vagas, gabarito, resultado, convocação, cronograma) ou não puderam ser lidas. NÃO as devolva novamente — procure outro documento.\nURLs já descartadas:\n${excludeUrls.map((u) => `- ${u}`).join('\n')}` : ''}
+
+REGRAS:
+1. A "url" devolvida DEVE ser o arquivo do edital em si. NUNCA devolva uma página HTML — nem uma notícia, nem uma landing page, nem um portal de inscrição, nem um ".htm"/".html". Essas páginas servem para você encontrar o link do arquivo, não para serem a resposta. Se você não encontrou o arquivo, devolva "editais": [] em vez de inventar.
+2. Prefira o domínio oficial: o site do próprio órgão ou o da banca organizadora (ex: cebraspe.org.br, cesgranrio.org.br, fgv.br, vunesp.com.br, fcc.org.br). Mas um PDF hospedado por terceiros (site de concursos, cursinho, portal de notícias, Diário Oficial) é ACEITÁVEL e deve ser devolvido quando for o mesmo documento — marque-o com "isOfficialDomain": false. Encontrar o documento certo importa mais do que encontrá-lo no domínio oficial.
+3. O documento procurado é o edital principal — aquele que contém, ele mesmo ou em anexo publicado como arquivo separado, o conteúdo programático das provas (disciplinas e tópicos cobrados). NÃO devolva PDFs que sejam somente: quadro de vagas, quadro de cargos, resultado final, gabarito, convocação para prova, cronograma ou formulário de isenção. Uma retificação ou republicação do edital (frequentemente com sufixo "_ret1", "_ret2") que republica o edital por inteiro É o edital vigente e deve ser preferida sobre a versão original — não descarte um documento só porque o nome do arquivo sugere retificação.
+4. Se encontrar o edital do ano alvo, marque "targetYearFound": true e inclua-o em "editais" com "year" igual ao ano alvo.
+5. Se NÃO encontrar o edital do ano alvo, marque "targetYearFound": false e inclua até 5 editais de anos anteriores do mesmo concurso (mesmo órgão, mesmo cargo ou equivalente) que sirvam de modelo de conteúdo programático, do mais recente para o mais antigo.
+6. ${role ? `"coversRole" é true somente quando você tem razão para crer que o edital cobre o cargo "${role}" especificamente (não apenas o concurso em geral).` : '"coversRole" deve ser false para todos os itens (nenhum cargo foi especificado).'}
+7. "isOfficialDomain" é true quando a URL pertence ao domínio do órgão ou da banca; false para qualquer outra fonte.
+8. Nunca invente uma URL. Só devolva uma URL que você viu na busca ou dentro do HTML de uma página que abriu.
 9. ${languageInstruction}
 
 OUTPUT FORMAT — responda APENAS com JSON válido, sem texto antes ou depois:

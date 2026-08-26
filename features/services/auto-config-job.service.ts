@@ -9,8 +9,16 @@ import { MetricsService } from '@/features/services/metrics.service';
 import { AUTO_CONFIG_PROMPTS, editalLocatePrompt, IDENTIFY_PROMPTS } from '@/config/prompts';
 import { fetchEditalPdf } from '@/lib/edital-fetch';
 import { classifyEditalUrl } from '@/lib/edital-classifier';
+import { classifyEditalDomain, resolveAllowedDomains } from '@/lib/edital-domains';
 import { EditalExtractorService } from '@/features/services/edital-extractor.service';
-import type { EditalCandidate, EditalVerification, ExamType, LocateEditalResult } from '@/shared/types';
+import type {
+  EditalCandidate,
+  EditalDocumentKind,
+  EditalDomainClass,
+  EditalVerification,
+  ExamType,
+  LocateEditalResult,
+} from '@/shared/types';
 
 export type AutoConfigStage = 'research' | 'review' | 'format' | 'extract';
 export type AutoConfigErrorType = LlmErrorType;
@@ -109,7 +117,8 @@ export async function identifyExam(
     // combination no other call site in this codebase relies on (research steps always
     // stay plain-text; jsonMode-only calls never set webSearch). The prompt already asks
     // for JSON-only output, and extractJson() below tolerates surrounding prose or fences.
-    const result = await openAIService.call(IDENTIFY_PROMPTS[type], { query, language }, { webSearch: true });
+    const model = process.env.OPENAI_MODEL_IDENTIFY || process.env.OPENAI_MODEL;
+    const result = await openAIService.call(IDENTIFY_PROMPTS[type], { query, language }, { webSearch: true, model });
     const durationMs = Date.now() - t0;
     void metricsService.recordStep(
       logId,
@@ -125,6 +134,17 @@ export async function identifyExam(
     throw err;
   }
 }
+
+// How much a candidate's documentKind/domainClass count for/against it — shared by the
+// per-call demotion in validateLocateResult, the verify-budget ordering in locateEdital
+// (byVerifyPriority), and the final result ordering (orderByVerification).
+const DOCUMENT_KIND_RANK: Record<EditalDocumentKind, number> = { main: 0, unknown: 1, annex: 2 };
+const DOMAIN_RANK: Record<EditalDomainClass, number> = {
+  'official-org': 0,
+  'official-banca': 0,
+  other: 1,
+  aggregator: 2,
+};
 
 function validateLocateResult(data: unknown): LocateEditalResult {
   if (!data || typeof data !== 'object') {
@@ -152,6 +172,7 @@ function validateLocateResult(data: unknown): LocateEditalResult {
         isOfficialDomain: e.isOfficialDomain === true,
         coversRole: e.coversRole === true,
         documentKind: classifyEditalUrl(url),
+        domainClass: classifyEditalDomain(url),
         // Nobody has opened the PDF yet at this point — validateLocateResult only ever sees
         // the model's raw JSON for a single locate call. locateEdital's verification loop
         // (below) fills this in per candidate once it downloads and reads the file.
@@ -165,10 +186,12 @@ function validateLocateResult(data: unknown): LocateEditalResult {
   // verification loop below spends its limited per-round probe budget on the candidates most
   // likely to be the real edital first. Annexes are demoted, never dropped: an oddly-named
   // genuine edital should still be reachable.
-  const kindRank: Record<EditalCandidate['documentKind'], number> = { main: 0, unknown: 1, annex: 2 };
   const sortedEditais = editais
     .map((candidate, index) => ({ candidate, index }))
-    .sort((a, b) => kindRank[a.candidate.documentKind] - kindRank[b.candidate.documentKind] || a.index - b.index)
+    .sort(
+      (a, b) =>
+        DOCUMENT_KIND_RANK[a.candidate.documentKind] - DOCUMENT_KIND_RANK[b.candidate.documentKind] || a.index - b.index
+    )
     .map((entry) => entry.candidate);
 
   return {
@@ -197,9 +220,9 @@ const VERIFY_BUDGET_MS = 150_000;
 // At most this many locate search rounds — round 2+ tells the model which URLs it already
 // tried and got rejected, via excludeUrls, so it looks further down the search results.
 const MAX_LOCATE_ROUNDS = 2;
-// At most this many downloaded-and-read verifications per round. Candidates the URL already
-// flags as an annex (documentKind === 'annex') are rejected for free and never count against
-// this budget.
+// At most this many downloaded-and-read verifications per round. Every unchecked candidate
+// counts against it — nothing is rejected on its URL alone — so byVerifyPriority decides which
+// of them the budget is spent on.
 const MAX_VERIFY_PER_ROUND = 3;
 
 const VERIFICATION_RANK: Record<EditalVerification, number> = {
@@ -220,8 +243,10 @@ function targetYearRank(candidate: EditalCandidate, targetYear: number | null): 
 
 // Stable sort so a confirmed edital always leads (target-year match first within that group),
 // followed by whatever the verification budget never reached, then documents that failed to
-// download/read, and finally confirmed annexes last. Order within each group is otherwise the
-// search-relevance order candidates were first seen in (Map insertion order across rounds).
+// download/read, and finally confirmed annexes last. Within a verification+targetYear group, a
+// candidate served from the órgão's or banca's own domain leads over the same file mirrored by
+// a third-party aggregator. Order within each group is otherwise the search-relevance order
+// candidates were first seen in (Map insertion order across rounds).
 function orderByVerification(candidates: readonly EditalCandidate[], targetYear: number | null): EditalCandidate[] {
   return candidates
     .map((candidate, index) => ({ candidate, index }))
@@ -231,9 +256,94 @@ function orderByVerification(candidates: readonly EditalCandidate[], targetYear:
       if (verificationDiff !== 0) return verificationDiff;
       const targetDiff = targetYearRank(a.candidate, targetYear) - targetYearRank(b.candidate, targetYear);
       if (targetDiff !== 0) return targetDiff;
+      const domainDiff = DOMAIN_RANK[a.candidate.domainClass] - DOMAIN_RANK[b.candidate.domainClass];
+      if (domainDiff !== 0) return domainDiff;
       return a.index - b.index;
     })
     .map((entry) => entry.candidate);
+}
+
+// A candidate the locate step already dated to a year other than the one being searched is the
+// least worth spending a download on; one it couldn't date at all still might be the answer.
+function verifyYearRank(candidate: EditalCandidate, targetYear: number | null): number {
+  if (targetYear == null || candidate.year === targetYear) return 0;
+  return candidate.year == null ? 1 : 2;
+}
+
+// Orders a round's unchecked candidates so the ones most likely to be the real edital spend the
+// round's limited verify budget first: the target year above all — a 2026 edital mirrored on an
+// aggregator is the answer, a 2023 one on the banca's own domain is not — then the official
+// domains, then filenames that read as the main document. Nothing is dropped here: even a URL
+// the classifier flagged as an annex still gets its turn once better-looking candidates are
+// probed, which is what lets a genuine edital with an annex-sounding filename (a consolidated
+// retificação, "_ret2") get opened and confirmed instead of discarded on a filename guess alone.
+function byVerifyPriority(candidates: readonly EditalCandidate[], targetYear: number | null): EditalCandidate[] {
+  return candidates
+    .map((candidate, index) => ({ candidate, index }))
+    .sort((a, b) => {
+      const yearDiff = verifyYearRank(a.candidate, targetYear) - verifyYearRank(b.candidate, targetYear);
+      if (yearDiff !== 0) return yearDiff;
+      const domainDiff = DOMAIN_RANK[a.candidate.domainClass] - DOMAIN_RANK[b.candidate.domainClass];
+      if (domainDiff !== 0) return domainDiff;
+      const kindDiff = DOCUMENT_KIND_RANK[a.candidate.documentKind] - DOCUMENT_KIND_RANK[b.candidate.documentKind];
+      if (kindDiff !== 0) return kindDiff;
+      return a.index - b.index;
+    })
+    .map((entry) => entry.candidate);
+}
+
+// Portal URLs come back percent-encoded differently depending on whether the model reported
+// them in its own JSON or they were read out of web_search's source list — one signed link,
+// two spellings. Decoding normalizes both onto a single key, so `seen` holds one entry per
+// document instead of showing the user the same edital twice and spending two of the round's
+// three download slots on it.
+function seenKey(url: string): string {
+  try {
+    return decodeURIComponent(url);
+  } catch {
+    return url;
+  }
+}
+
+// A .pdf path, or one of the download handlers Brazilian portals serve editais through — lumis
+// (fileDownload.jsp?fileId=), SEI, and friends emit no .pdf anywhere in the URL. fetchEditalPdf
+// decides what a URL really is by its magic bytes, so admitting these costs at most one wasted
+// download while excluding them loses the whole órgão.
+const DOCUMENT_SOURCE_URL = /\.pdf(?:[?#]|$)|filedownload|\/download(?:[/?]|$)|[?&](?:fileid|arquivo|idarquivo)=/i;
+
+// Turns a document URL the search consulted (via web_search's `sources`, requested with
+// includeSources) but didn't surface in its own `editais` JSON into an additional unchecked
+// candidate. Recovers files the model opened while researching but chose not to report — pure
+// recall gain, no extra LLM call. Skips anything already known and anything that reads as an
+// ordinary page (an institutional landing page the model visited on the way, for instance).
+function harvestDocumentSources(
+  sourceUrls: readonly string[],
+  seen: ReadonlyMap<string, EditalCandidate>
+): EditalCandidate[] {
+  const harvested: EditalCandidate[] = [];
+
+  for (const url of sourceUrls) {
+    if (!DOCUMENT_SOURCE_URL.test(url)) continue;
+
+    const key = seenKey(url);
+    if (seen.has(key) || harvested.some((candidate) => seenKey(candidate.url) === key)) continue;
+
+    const domainClass = classifyEditalDomain(url);
+
+    harvested.push({
+      url,
+      editalNumber: null,
+      year: null,
+      orgao: null,
+      isOfficialDomain: domainClass === 'official-org' || domainClass === 'official-banca',
+      coversRole: false,
+      documentKind: classifyEditalUrl(url),
+      domainClass,
+      verification: 'unchecked',
+    });
+  }
+
+  return harvested;
 }
 
 // Downloads the candidate's PDF and asks the LLM whether it's the edital itself (vs. a quadro
@@ -284,39 +394,71 @@ export async function locateEdital(userId: string, seed: LocateEditalSeed): Prom
   const logId = await metricsService.createLog(userId, 'auto_config', 0);
   const t0 = Date.now();
   const deadline = t0 + VERIFY_BUDGET_MS;
+  const model = process.env.OPENAI_MODEL_LOCATE || process.env.OPENAI_MODEL;
+  // Scopes round 1's first attempt to the banca's own domain when it's known — see
+  // resolveAllowedDomains. Empty when the banca is unrecognized, in which case round 1 just
+  // runs unrestricted once, same as before this change.
+  const restrictedDomains = resolveAllowedDomains(seed.examBoard);
 
-  // Keyed by URL, insertion-ordered — preserves search-relevance order across rounds while
-  // letting a candidate returned again in round 2 just overwrite its round-1 entry.
+  // Keyed by seenKey(url), insertion-ordered — preserves search-relevance order across rounds
+  // while letting a candidate returned again in round 2 just overwrite its round-1 entry.
   const seen = new Map<string, EditalCandidate>();
   const rejectedUrls: string[] = [];
   let anyRoundReportedTargetYearFound = false;
 
+  // Runs one locate search call and merges both its `editais` and any document URLs harvested
+  // from `sources` into `seen`. Returns whether the call reported a candidate for the target
+  // year, so round 1 can decide whether its domain-scoped attempt needs an unrestricted
+  // follow-up. Anything less than a target-year hit is not a success: a domain-scoped search
+  // that surfaces only prior-year editais (the banca's site still hosts every past certame) has
+  // failed at the actual task, and stopping there is what left the newest edital unfound.
+  const runSearch = async (allowedDomains: readonly string[]): Promise<boolean> => {
+    const callT0 = Date.now();
+    const result = await openAIService.call(
+      editalLocatePrompt,
+      {
+        examName: seed.examName,
+        examBoard: seed.examBoard,
+        editalKey: seed.editalKey,
+        year: seed.year,
+        role: seed.role,
+        language: seed.language,
+        excludeUrls: rejectedUrls,
+      },
+      { webSearch: true, model, allowedDomains, searchContextSize: 'high', includeSources: true }
+    );
+    void metricsService.recordStep(
+      logId,
+      'locate',
+      { inputTokens: result.inputTokens, outputTokens: result.outputTokens },
+      Date.now() - callT0
+    );
+    const parsed = validateLocateResult(JSON.parse(extractJson(result.text)));
+
+    if (parsed.targetYearFound) anyRoundReportedTargetYearFound = true;
+    for (const candidate of parsed.editais) {
+      if (!seen.has(seenKey(candidate.url))) seen.set(seenKey(candidate.url), candidate);
+    }
+    for (const candidate of harvestDocumentSources(result.sources ?? [], seen)) {
+      seen.set(seenKey(candidate.url), candidate);
+    }
+
+    return parsed.editais.some((candidate) => seed.year == null || candidate.year === seed.year);
+  };
+
   try {
     for (let round = 1; round <= MAX_LOCATE_ROUNDS; round++) {
-      const roundT0 = Date.now();
-      let parsed: LocateEditalResult;
-
       try {
-        const result = await openAIService.call(
-          editalLocatePrompt,
-          {
-            examName: seed.examName,
-            examBoard: seed.examBoard,
-            editalKey: seed.editalKey,
-            year: seed.year,
-            role: seed.role,
-            language: seed.language,
-            excludeUrls: rejectedUrls,
-          },
-          { webSearch: true }
-        );
-        void metricsService.recordStep(
-          logId,
-          'locate',
-          { inputTokens: result.inputTokens, outputTokens: result.outputTokens },
-          Date.now() - roundT0
-        );
-        parsed = validateLocateResult(JSON.parse(extractJson(result.text)));
+        const foundTargetYear = await runSearch(round === 1 ? restrictedDomains : []);
+
+        // Round 1's domain-scoped attempt is a real, if narrow, chance of missing the target
+        // because it's mirrored somewhere else the filter excludes — one immediate unrestricted
+        // retry when it doesn't produce the target year, still counted as round 1 for
+        // excludeUrls/budget purposes (a genuine failure of BOTH attempts still propagates
+        // below like before).
+        if (round === 1 && restrictedDomains.length > 0 && !foundTargetYear) {
+          await runSearch([]);
+        }
       } catch (err) {
         // The first round failing is exactly today's failure mode — propagate it so the
         // caller's catch (identical behavior to before this change) surfaces it the same way.
@@ -326,23 +468,15 @@ export async function locateEdital(userId: string, seed: LocateEditalSeed): Prom
         break;
       }
 
-      if (parsed.targetYearFound) anyRoundReportedTargetYearFound = true;
-      for (const candidate of parsed.editais) {
-        if (!seen.has(candidate.url)) seen.set(candidate.url, candidate);
-      }
-
-      // Free pre-filter: a candidate the URL already flags as an annex is rejected without
-      // spending a verification call on it.
-      const toVerify: EditalCandidate[] = [];
-      for (const candidate of Array.from(seen.values())) {
-        if (candidate.verification !== 'unchecked') continue; // already resolved earlier
-        if (candidate.documentKind === 'annex') {
-          seen.set(candidate.url, { ...candidate, verification: 'annex' });
-          rejectedUrls.push(candidate.url);
-          continue;
-        }
-        toVerify.push(candidate);
-      }
+      // Every unchecked candidate gets a turn — a URL the classifier flags as an annex is
+      // never free-rejected without being opened; it's only deprioritized within the round's
+      // limited verify budget (byVerifyPriority), so a genuine edital with an annex-sounding
+      // filename (a consolidated retificação, "_ret2") still gets confirmed when the budget
+      // reaches it instead of being discarded on a filename guess alone.
+      const toVerify = byVerifyPriority(
+        Array.from(seen.values()).filter((candidate) => candidate.verification === 'unchecked'),
+        seed.year
+      );
 
       const probeable = toVerify.slice(0, MAX_VERIFY_PER_ROUND);
       const verdicts = await Promise.allSettled(
@@ -353,7 +487,7 @@ export async function locateEdital(userId: string, seed: LocateEditalSeed): Prom
         const outcome = verdicts[index];
 
         if (outcome.status !== 'fulfilled') {
-          seen.set(candidate.url, { ...candidate, verification: 'unreadable' });
+          seen.set(seenKey(candidate.url), { ...candidate, verification: 'unreadable' });
           rejectedUrls.push(candidate.url);
           return;
         }
@@ -361,7 +495,7 @@ export async function locateEdital(userId: string, seed: LocateEditalSeed): Prom
         const { isMainEdital, year, editalNumber } = outcome.value;
         const verification: EditalVerification = isMainEdital ? 'confirmed' : 'annex';
 
-        seen.set(candidate.url, {
+        seen.set(seenKey(candidate.url), {
           ...candidate,
           verification,
           // Trust the verify step's own reading of the PDF over the locate step's

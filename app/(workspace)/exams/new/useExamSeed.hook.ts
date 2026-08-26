@@ -23,6 +23,7 @@ import {
 import { useLimitModal } from '@/features/hooks/useLimitModal.hook';
 import { DEFAULT_QUESTION_FORMAT } from '@/config/question-formats';
 import { classifyEditalUrl } from '@/lib/edital-classifier';
+import { classifyEditalDomain } from '@/lib/edital-domains';
 import { AUTO_CONFIG_URL } from '@/config/constants';
 
 export type ExamSeedState =
@@ -406,6 +407,7 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
           isOfficialDomain: false,
           coversRole: !!current.match.role,
           documentKind: classifyEditalUrl(trimmed),
+          domainClass: classifyEditalDomain(trimmed),
           // Never downloaded/read — nothing here has verified it's the real edital, unlike a
           // candidate that came out of locateEdital's verification loop.
           verification: 'unchecked',

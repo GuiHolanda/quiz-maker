@@ -524,11 +524,9 @@ export interface AutoConfigIdentifyResult {
   readonly clarification: string | null;
 }
 
-// How a located edital PDF was classified from its URL/filename — see lib/edital-classifier.ts.
 export type EditalDocumentKind = 'main' | 'annex' | 'unknown';
 
-// One PDF candidate the locate-edital step found on the web — either the target year's
-// official edital or a prior-year one offered as a fallback model.
+export type EditalDomainClass = 'official-org' | 'official-banca' | 'aggregator' | 'other';
 export interface EditalCandidate {
   readonly url: string;
   readonly editalNumber: string | null;
@@ -536,36 +534,19 @@ export interface EditalCandidate {
   readonly orgao: string | null;
   readonly isOfficialDomain: boolean;
   readonly coversRole: boolean;
-  // Deterministic guess (from the URL/filename) of whether this is the main edital or an
-  // auxiliary annex — see lib/edital-classifier.ts. Drives candidate ordering and the annex
-  // warning badge on the approval card.
   readonly documentKind: EditalDocumentKind;
-  // Verdict from actually opening the PDF at locate time — the authoritative signal, since
-  // documentKind above only ever saw the URL. 'unchecked' means nobody opened it: a URL the
-  // user pasted by hand, or a candidate that fell outside the verification budget.
+  readonly domainClass: EditalDomainClass;
   readonly verification: EditalVerification;
 }
 
-// Result of reading a located PDF and asking whether it is the edital itself: 'confirmed' —
-// it carries the conteudo programatico (its year/edital number, corrected from the verify
-// step's own reading of the document, may or may not match the target — see
-// LocateEditalResult.targetYearFound); 'annex' — it is a quadro de vagas, gabarito or other
-// auxiliary document; 'unreadable' — the download or the read failed; 'unchecked' — never
-// opened (see EditalCandidate.verification).
 export type EditalVerification = 'confirmed' | 'annex' | 'unreadable' | 'unchecked';
 
 export interface LocateEditalResult {
   readonly editais: EditalCandidate[];
   readonly targetYearFound: boolean;
-  // True when at least one candidate was opened and confirmed to carry the conteudo
-  // programatico. False sends the approval screen into its "we could not confirm" branch,
-  // which still lists what was found rather than throwing the search away.
   readonly confirmedFound: boolean;
 }
 
-// How the blueprint's data was sourced: 'official' — read straight from the target year's
-// edital PDF; 'prior-year' — read from an earlier edital the user picked as a stand-in;
-// 'estimated' — the research/review/format text pipeline never had the actual document.
 export type BlueprintConfidence = 'official' | 'prior-year' | 'estimated';
 
 export type AutoConfigStage = 'research' | 'review' | 'format' | 'extract';
@@ -761,17 +742,10 @@ export interface ExamLandingFaq {
 
 export interface ExamLandingTopic {
   readonly name: string;
-  // Share of the exam this topic accounts for, as an integer 0–100 — same unit
-  // as `ExamSection.minQuestions`. Weights across a config need not total 100;
-  // the syllabus bars are drawn relative to the heaviest topic.
   readonly weight: number;
 }
-
-// Static sample shown in the hero panel so a visitor can answer one question
-// before deciding to open the demo. Authored per exam, never generated at
-// request time — the page is prerendered.
 export interface ExamLandingSampleQuestion {
-  readonly topic: string; // must match an ExamLandingTopic.name of the same config
+  readonly topic: string;
   readonly stem: string;
   readonly options: readonly string[];
   readonly answerIndex: number;
@@ -783,10 +757,6 @@ export interface ExamLandingConfig {
   readonly name: string; // short display name, e.g. "CEA"
   readonly fullName: string; // full certification name
   readonly provider: string; // e.g. "ANBIMA", "Amazon Web Services"
-  // Exact `Exam.name` of the catalog template backing this landing page, used to
-  // deep-link into the demo. Absent when no template covers the exam yet — the
-  // CTA then falls back to the full demo catalog. Matched by name rather than id
-  // because ids are cuids and differ between dev and prod.
   readonly demoExamName?: string;
   readonly examType: ExamType;
   readonly totalQuestions: number;

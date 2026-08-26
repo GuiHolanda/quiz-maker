@@ -267,6 +267,50 @@ describe('identifyExam', () => {
     expect(result.matches[0].roles).toEqual(['Analista Judiciário', 'Técnico Judiciário']);
     expect(result.matches[0].role).toBe('Analista Judiciário');
   });
+
+  it('passes OPENAI_MODEL_IDENTIFY as the model option when set', async () => {
+    const saved = process.env.OPENAI_MODEL_IDENTIFY;
+    process.env.OPENAI_MODEL_IDENTIFY = 'gpt-identify-model';
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({ matches: [], clarification: 'x' }),
+      inputTokens: 1,
+      outputTokens: 1,
+    });
+
+    try {
+      await identifyExam('user-1', 'query', 'certification', 'en');
+    } finally {
+      if (saved === undefined) delete process.env.OPENAI_MODEL_IDENTIFY;
+      else process.env.OPENAI_MODEL_IDENTIFY = saved;
+    }
+
+    const options = openAICallMock.mock.calls[0][2] as { model?: string };
+    expect(options.model).toBe('gpt-identify-model');
+  });
+
+  it('falls back to OPENAI_MODEL when OPENAI_MODEL_IDENTIFY is unset', async () => {
+    const savedIdentify = process.env.OPENAI_MODEL_IDENTIFY;
+    const savedDefault = process.env.OPENAI_MODEL;
+    delete process.env.OPENAI_MODEL_IDENTIFY;
+    process.env.OPENAI_MODEL = 'gpt-default-model';
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({ matches: [], clarification: 'x' }),
+      inputTokens: 1,
+      outputTokens: 1,
+    });
+
+    try {
+      await identifyExam('user-1', 'query', 'certification', 'en');
+    } finally {
+      if (savedIdentify === undefined) delete process.env.OPENAI_MODEL_IDENTIFY;
+      else process.env.OPENAI_MODEL_IDENTIFY = savedIdentify;
+      if (savedDefault === undefined) delete process.env.OPENAI_MODEL;
+      else process.env.OPENAI_MODEL = savedDefault;
+    }
+
+    const options = openAICallMock.mock.calls[0][2] as { model?: string };
+    expect(options.model).toBe('gpt-default-model');
+  });
 });
 
 describe('locateEdital', () => {
@@ -312,14 +356,22 @@ describe('locateEdital', () => {
           isOfficialDomain: true,
           coversRole: true,
           documentKind: 'main',
+          domainClass: 'official-org',
           verification: 'confirmed',
         },
       ],
       targetYearFound: true,
       confirmedFound: true,
     });
-    // Confirmed on round 1 — no need for a second locate search.
+    // Confirmed on round 1 — the scoped-to-CEBRASPE attempt already found it, so no
+    // unrestricted fallback and no second locate search were needed.
     expect(openAICallMock).toHaveBeenCalledTimes(1);
+    // Round 1 is scoped to the banca's own domain (resolved from examBoard) and asks for a
+    // high-context search plus the full list of consulted sources.
+    const [, , options] = openAICallMock.mock.calls[0] as [unknown, unknown, Record<string, unknown>];
+    expect(options.allowedDomains).toEqual(['cebraspe.org.br']);
+    expect(options.searchContextSize).toBe('high');
+    expect(options.includeSources).toBe(true);
     expect(fetchEditalPdfMock).toHaveBeenCalledWith('https://www.trf1.jus.br/editais/edital-001-2025.pdf');
     expect(editalVerifyMock).toHaveBeenCalledWith(
       {},
@@ -338,6 +390,59 @@ describe('locateEdital', () => {
         durationMs: expect.any(Number),
       },
     });
+  });
+
+  it('does not scope the search to a domain filter when the banca is unrecognized', async () => {
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({ editais: [], targetYearFound: false }),
+      inputTokens: 1,
+      outputTokens: 1,
+    });
+
+    await locateEdital('user-1', { ...seed, examBoard: 'Banca Desconhecida XYZ' });
+
+    // No banca domain resolved — round 1 never attempts a domain-scoped search (and so never
+    // triggers the empty-result fallback either). Every call actually made — round 1's single
+    // attempt, plus round 2 since nothing was ever found — goes out unrestricted.
+    for (const call of openAICallMock.mock.calls) {
+      const options = call[2] as Record<string, unknown>;
+      expect(options.allowedDomains).toEqual([]);
+    }
+    expect(openAICallMock.mock.calls.length).toBeGreaterThan(0);
+  });
+
+  it('falls back to an unrestricted search within round 1 when the domain-scoped attempt finds nothing', async () => {
+    openAICallMock
+      // Scoped to cebraspe.org.br — finds nothing there.
+      .mockResolvedValueOnce({
+        text: JSON.stringify({ editais: [], targetYearFound: false }),
+        inputTokens: 1,
+        outputTokens: 1,
+      })
+      // Unrestricted retry, same round — the edital was mirrored elsewhere.
+      .mockResolvedValueOnce({
+        text: JSON.stringify({
+          editais: [{ url: 'https://www.trf1.jus.br/editais/edital-001-2025.pdf', year: 2025 }],
+          targetYearFound: true,
+        }),
+        inputTokens: 1,
+        outputTokens: 1,
+      });
+    fetchEditalPdfMock.mockResolvedValue({} as any);
+    editalVerifyMock.mockResolvedValue({ isMainEdital: true, documentType: 'edital', year: 2025, editalNumber: null });
+
+    const result = await locateEdital('user-1', seed);
+
+    expect(openAICallMock).toHaveBeenCalledTimes(2);
+    const [, , firstOptions] = openAICallMock.mock.calls[0] as [unknown, unknown, Record<string, unknown>];
+    const [, , secondOptions] = openAICallMock.mock.calls[1] as [unknown, unknown, Record<string, unknown>];
+    expect(firstOptions.allowedDomains).toEqual(['cebraspe.org.br']);
+    expect(secondOptions.allowedDomains).toEqual([]);
+    // The fallback call is still round 1 — excludeUrls carries nothing yet, unlike round 2.
+    const secondRoundInput = openAICallMock.mock.calls[1][1] as { excludeUrls: string[] };
+    expect(secondRoundInput.excludeUrls).toEqual([]);
+    expect(result.confirmedFound).toBe(true);
+    expect(result.editais[0].url).toBe('https://www.trf1.jus.br/editais/edital-001-2025.pdf');
   });
 
   it('drops candidates with a missing or non-http url and caps at 5', async () => {
@@ -368,7 +473,7 @@ describe('locateEdital', () => {
     expect(result.confirmedFound).toBe(false);
   });
 
-  it('demotes annex candidates below real editais and tags each with a documentKind', async () => {
+  it('downloads and verifies a URL-flagged annex candidate too when the round has verify budget for it, ranking a confirmed real edital above it', async () => {
     openAICallMock.mockResolvedValueOnce({
       text: JSON.stringify({
         editais: [
@@ -380,23 +485,64 @@ describe('locateEdital', () => {
       inputTokens: 1,
       outputTokens: 1,
     });
-    fetchEditalPdfMock.mockResolvedValue({} as any);
-    editalVerifyMock.mockResolvedValue({ isMainEdital: true, documentType: 'edital', year: 2025, editalNumber: null });
+    fetchEditalPdfMock.mockImplementation(async (url: string) => ({ sourceUrl: url }) as any);
+    editalVerifyMock.mockImplementation(async (file: { sourceUrl: string }) =>
+      file.sourceUrl.includes('quadro-vagas')
+        ? { isMainEdital: false, documentType: 'quadro_vagas', year: null, editalNumber: null }
+        : { isMainEdital: true, documentType: 'edital', year: 2025, editalNumber: null }
+    );
 
     const result = await locateEdital('user-1', seed);
 
-    // The LLM ranked the quadro de vagas first; the URL classifier free-filters it as an annex
-    // (never downloaded), while the real edital gets downloaded, confirmed, and promoted above it.
+    // Both candidates fit within the round's verify budget (2 ≤ MAX_VERIFY_PER_ROUND), so the
+    // URL-flagged annex is opened and verified rather than free-rejected — its 'annex' outcome
+    // here comes from the (fake) verify call actually saying so, not from the URL guess alone.
+    expect(fetchEditalPdfMock).toHaveBeenCalledWith('https://x.gov.br/quadro-vagas-2025.pdf');
+    expect(fetchEditalPdfMock).toHaveBeenCalledWith('https://x.gov.br/edital-de-abertura-2025.pdf');
     expect(result.editais.map((e) => e.url)).toEqual([
       'https://x.gov.br/edital-de-abertura-2025.pdf',
       'https://x.gov.br/quadro-vagas-2025.pdf',
     ]);
     expect(result.editais.map((e) => e.documentKind)).toEqual(['main', 'annex']);
     expect(result.editais.map((e) => e.verification)).toEqual(['confirmed', 'annex']);
-    expect(fetchEditalPdfMock).not.toHaveBeenCalledWith('https://x.gov.br/quadro-vagas-2025.pdf');
   });
 
-  it('free-filters a URL-flagged annex without downloading it, and excludes it from the next search round', async () => {
+  it('confirms a URL-flagged annex candidate as the real edital when the verify step says so — the consolidated retificação case', async () => {
+    // Regression for the Transpetro bug this refactor fixes: a consolidated retificação
+    // ("_ret2") republishing the edital in full is exactly the kind of URL the classifier
+    // flags as an annex on filename alone. It must still end up confirmed once opened.
+    openAICallMock.mockResolvedValueOnce({
+      text: JSON.stringify({
+        editais: [
+          {
+            url: 'https://transpetro.com.br/x/Edital%20042026%20PSP%20TERRA%20-Transpetro_ret2.pdf',
+            year: 2025,
+          },
+        ],
+        targetYearFound: true,
+      }),
+      inputTokens: 1,
+      outputTokens: 1,
+    });
+    fetchEditalPdfMock.mockResolvedValue({} as any);
+    editalVerifyMock.mockResolvedValue({ isMainEdital: true, documentType: 'edital', year: 2025, editalNumber: '004/2026' });
+
+    const result = await locateEdital('user-1', seed);
+
+    expect(fetchEditalPdfMock).toHaveBeenCalledWith(
+      'https://transpetro.com.br/x/Edital%20042026%20PSP%20TERRA%20-Transpetro_ret2.pdf'
+    );
+    expect(result.confirmedFound).toBe(true);
+    expect(result.editais[0]).toEqual(
+      expect.objectContaining({
+        url: 'https://transpetro.com.br/x/Edital%20042026%20PSP%20TERRA%20-Transpetro_ret2.pdf',
+        verification: 'confirmed',
+        editalNumber: '004/2026',
+      })
+    );
+  });
+
+  it('opens and verifies a URL-flagged annex candidate, excluding it from the next round only after verify confirms it is not the edital', async () => {
     openAICallMock
       .mockResolvedValueOnce({
         text: JSON.stringify({
@@ -411,15 +557,74 @@ describe('locateEdital', () => {
         inputTokens: 1,
         outputTokens: 1,
       });
+    fetchEditalPdfMock.mockResolvedValue({} as any);
+    editalVerifyMock.mockResolvedValue({ isMainEdital: false, documentType: 'quadro_vagas', year: null, editalNumber: null });
 
     const result = await locateEdital('user-1', seed);
 
-    expect(fetchEditalPdfMock).not.toHaveBeenCalled();
-    expect(editalVerifyMock).not.toHaveBeenCalled();
-    expect(openAICallMock).toHaveBeenCalledTimes(2);
+    // It WAS downloaded and read this time — that's what makes the exclusion trustworthy.
+    expect(fetchEditalPdfMock).toHaveBeenCalledWith('https://x.gov.br/quadro-vagas-2025.pdf');
+    expect(editalVerifyMock).toHaveBeenCalledTimes(1);
     const secondRoundInput = openAICallMock.mock.calls[1][1] as { excludeUrls: string[] };
     expect(secondRoundInput.excludeUrls).toEqual(['https://x.gov.br/quadro-vagas-2025.pdf']);
     expect(result.confirmedFound).toBe(false);
+  });
+
+  it('harvests a .pdf URL from the search sources even when the model did not return it in editais', async () => {
+    openAICallMock.mockResolvedValueOnce({
+      text: JSON.stringify({
+        editais: [{ url: 'https://x.gov.br/edital-de-abertura-2025.pdf', year: 2025 }],
+        targetYearFound: true,
+      }),
+      inputTokens: 1,
+      outputTokens: 1,
+      sources: [
+        'https://x.gov.br/edital-de-abertura-2025.pdf',
+        'https://mirror.example.com/edital-transpetro-2026.pdf',
+        'https://x.gov.br/pagina-institucional.htm',
+      ],
+    });
+    fetchEditalPdfMock.mockImplementation(async (url: string) => ({ sourceUrl: url }) as any);
+    // Both mirrors carry the same edital — a harvested source-only candidate is not left
+    // unchecked when there's budget to verify it too, it just ranks behind the official domain.
+    editalVerifyMock.mockResolvedValue({ isMainEdital: true, documentType: 'edital', year: 2025, editalNumber: null });
+
+    const result = await locateEdital('user-1', seed);
+
+    expect(fetchEditalPdfMock).toHaveBeenCalledWith('https://mirror.example.com/edital-transpetro-2026.pdf');
+    const harvested = result.editais.find((e) => e.url === 'https://mirror.example.com/edital-transpetro-2026.pdf');
+    expect(harvested).toBeDefined();
+    expect(harvested?.verification).toBe('confirmed');
+    expect(harvested?.domainClass).toBe('other');
+    // The official x.gov.br domain still leads over the aggregator/other mirror of the
+    // same confirmed, same-year edital.
+    expect(result.editais[0].url).toBe('https://x.gov.br/edital-de-abertura-2025.pdf');
+    // The non-.pdf source (an institutional page, not a document) is not turned into a candidate.
+    expect(result.editais.some((e) => e.url === 'https://x.gov.br/pagina-institucional.htm')).toBe(false);
+  });
+
+  it('ranks a confirmed candidate on an official domain above a confirmed aggregator mirror of the same year', async () => {
+    openAICallMock.mockResolvedValueOnce({
+      text: JSON.stringify({
+        editais: [
+          { url: 'https://qconcursos.com/edital-2025.pdf', year: 2025 },
+          { url: 'https://x.gov.br/edital-2025.pdf', year: 2025 },
+        ],
+        targetYearFound: true,
+      }),
+      inputTokens: 1,
+      outputTokens: 1,
+    });
+    fetchEditalPdfMock.mockResolvedValue({} as any);
+    editalVerifyMock.mockResolvedValue({ isMainEdital: true, documentType: 'edital', year: 2025, editalNumber: null });
+
+    const result = await locateEdital('user-1', seed);
+
+    expect(result.editais.map((e) => e.url)).toEqual([
+      'https://x.gov.br/edital-2025.pdf',
+      'https://qconcursos.com/edital-2025.pdf',
+    ]);
+    expect(result.editais.map((e) => e.domainClass)).toEqual(['official-org', 'aggregator']);
   });
 
   it('marks a candidate unreadable when the PDF download fails, without failing the round', async () => {
@@ -463,6 +668,13 @@ describe('locateEdital', () => {
           ],
           targetYearFound: false,
         }),
+        inputTokens: 1,
+        outputTokens: 1,
+      })
+      // None of round 1's candidates is dated to the target year, so it widens to an
+      // unrestricted attempt before any download happens.
+      .mockResolvedValueOnce({
+        text: JSON.stringify({ editais: [], targetYearFound: false }),
         inputTokens: 1,
         outputTokens: 1,
       })
@@ -574,6 +786,184 @@ describe('locateEdital', () => {
       data: { totalDurationMs: expect.any(Number) },
     });
   });
+
+  it('passes OPENAI_MODEL_LOCATE as the model option when set', async () => {
+    const saved = process.env.OPENAI_MODEL_LOCATE;
+    process.env.OPENAI_MODEL_LOCATE = 'gpt-locate-model';
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({ editais: [], targetYearFound: false }),
+      inputTokens: 1,
+      outputTokens: 1,
+    });
+
+    try {
+      await locateEdital('user-1', seed);
+    } finally {
+      if (saved === undefined) delete process.env.OPENAI_MODEL_LOCATE;
+      else process.env.OPENAI_MODEL_LOCATE = saved;
+    }
+
+    const options = openAICallMock.mock.calls[0][2] as { model?: string };
+    expect(options.model).toBe('gpt-locate-model');
+  });
+
+  it('falls back to OPENAI_MODEL when OPENAI_MODEL_LOCATE is unset', async () => {
+    const savedLocate = process.env.OPENAI_MODEL_LOCATE;
+    const savedDefault = process.env.OPENAI_MODEL;
+    delete process.env.OPENAI_MODEL_LOCATE;
+    process.env.OPENAI_MODEL = 'gpt-default-model';
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({ editais: [], targetYearFound: false }),
+      inputTokens: 1,
+      outputTokens: 1,
+    });
+
+    try {
+      await locateEdital('user-1', seed);
+    } finally {
+      if (savedLocate === undefined) delete process.env.OPENAI_MODEL_LOCATE;
+      else process.env.OPENAI_MODEL_LOCATE = savedLocate;
+      if (savedDefault === undefined) delete process.env.OPENAI_MODEL;
+      else process.env.OPENAI_MODEL = savedDefault;
+    }
+
+    const options = openAICallMock.mock.calls[0][2] as { model?: string };
+    expect(options.model).toBe('gpt-default-model');
+  });
+
+  it('probes the target-year candidate first even when prior-year ones sit on the banca domain', async () => {
+    const aggregatorTargetYear = 'https://qconcursos.com/edital-abertura-2025.pdf';
+    openAICallMock
+      .mockResolvedValueOnce({
+        text: JSON.stringify({
+          editais: [
+            { url: 'https://cebraspe.org.br/edital-abertura-2023-a.pdf', year: 2023, isOfficialDomain: true },
+            { url: 'https://cebraspe.org.br/edital-abertura-2023-b.pdf', year: 2023, isOfficialDomain: true },
+            { url: 'https://cebraspe.org.br/edital-abertura-2023-c.pdf', year: 2023, isOfficialDomain: true },
+            { url: aggregatorTargetYear, year: 2025, isOfficialDomain: false },
+          ],
+          targetYearFound: true,
+        }),
+        inputTokens: 1,
+        outputTokens: 1,
+      })
+      .mockResolvedValue({
+        text: JSON.stringify({ editais: [], targetYearFound: false }),
+        inputTokens: 1,
+        outputTokens: 1,
+      });
+    fetchEditalPdfMock.mockImplementation(async (url: string) => ({ url }) as any);
+    editalVerifyMock.mockImplementation(async (file: { url: string }) => ({
+      isMainEdital: true,
+      documentType: 'edital',
+      year: file.url.includes('2025') ? 2025 : 2023,
+      editalNumber: null,
+    }));
+
+    const result = await locateEdital('user-1', seed);
+
+    // Only MAX_VERIFY_PER_ROUND (3) candidates are opened per round, so the one candidate the
+    // model tagged with the target year has to win the budget over three prior-year files —
+    // the banca domain those sit on must not outrank being the year actually being searched.
+    expect(fetchEditalPdfMock.mock.calls[0][0]).toBe(aggregatorTargetYear);
+    expect(result.editais[0].url).toBe(aggregatorTargetYear);
+    expect(result.targetYearFound).toBe(true);
+  });
+
+  it('still widens round 1 to an unrestricted search when the domain-scoped attempt finds only prior years', async () => {
+    openAICallMock
+      // Scoped to cebraspe.org.br — turns up a real edital, but from 2023, not the target year.
+      .mockResolvedValueOnce({
+        text: JSON.stringify({
+          editais: [{ url: 'https://cebraspe.org.br/edital-abertura-2023.pdf', year: 2023, isOfficialDomain: true }],
+          targetYearFound: false,
+        }),
+        inputTokens: 1,
+        outputTokens: 1,
+      })
+      .mockResolvedValue({
+        text: JSON.stringify({
+          editais: [{ url: 'https://www.trf1.jus.br/edital-abertura-2025.pdf', year: 2025, isOfficialDomain: true }],
+          targetYearFound: true,
+        }),
+        inputTokens: 1,
+        outputTokens: 1,
+      });
+    fetchEditalPdfMock.mockResolvedValue({} as any);
+    editalVerifyMock.mockImplementation(async (_file: unknown) => ({
+      isMainEdital: true,
+      documentType: 'edital',
+      year: 2025,
+      editalNumber: '001/2025',
+    }));
+
+    await locateEdital('user-1', seed);
+
+    // A prior-year hit is not the answer, so the domain-scoped attempt has not succeeded and
+    // must still be widened. The retry is identifiable as round 1's — it runs before anything
+    // has been downloaded, so it carries no excludeUrls yet, unlike a round 2 call.
+    const [, secondInput, secondOptions] = openAICallMock.mock.calls[1] as [
+      unknown,
+      { excludeUrls: readonly string[] },
+      Record<string, unknown>,
+    ];
+    expect(secondOptions.allowedDomains).toEqual([]);
+    expect(secondInput.excludeUrls).toEqual([]);
+  });
+
+  it('treats the same document reported and harvested under different percent-encodings as one candidate', async () => {
+    const reported = 'https://x.gov.br/media/edital.pdf?se=2035-08-12T20%3A08%3A15Z&sig=a%2Fb%3D';
+    const harvested = 'https://x.gov.br/media/edital.pdf?se=2035-08-12T20:08:15Z&sig=a/b%3D';
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({ editais: [{ url: reported, year: 2025 }], targetYearFound: true }),
+      inputTokens: 1,
+      outputTokens: 1,
+      sources: [harvested],
+    });
+    fetchEditalPdfMock.mockResolvedValue({} as any);
+    editalVerifyMock.mockResolvedValue({
+      isMainEdital: true,
+      documentType: 'edital',
+      year: 2025,
+      editalNumber: '001/2025',
+    });
+
+    const result = await locateEdital('user-1', seed);
+
+    // Signed portal URLs come back percent-encoded differently depending on where they were
+    // read from, so keying `seen` on the raw string shows the user the same edital twice and
+    // spends two of the round's three download slots on one document.
+    expect(result.editais).toHaveLength(1);
+    expect(result.editais[0].url).toBe(reported);
+    expect(fetchEditalPdfMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('harvests a download-handler URL from the search sources even though it is not a .pdf path', async () => {
+    const handlerUrl = 'https://x.gov.br/lumis/portal/file/fileDownload.jsp?fileId=4028908C9E22CAA6';
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({ editais: [], targetYearFound: false }),
+      inputTokens: 1,
+      outputTokens: 1,
+      sources: [handlerUrl, 'https://x.gov.br/noticias/concurso-aberto.htm'],
+    });
+    fetchEditalPdfMock.mockResolvedValue({} as any);
+    editalVerifyMock.mockResolvedValue({
+      isMainEdital: true,
+      documentType: 'edital',
+      year: 2025,
+      editalNumber: '001/2025',
+    });
+
+    const result = await locateEdital('user-1', seed);
+
+    // Brazilian portals routinely serve editais through a download handler whose URL carries
+    // no .pdf at all (lumis, SEI). fetchEditalPdf decides by magic bytes, so the URL shape is
+    // not a reason to discard the candidate — the plain .htm page next to it still is.
+    expect(fetchEditalPdfMock).toHaveBeenCalledWith(handlerUrl);
+    expect(fetchEditalPdfMock).not.toHaveBeenCalledWith('https://x.gov.br/noticias/concurso-aberto.htm');
+    expect(result.editais[0]).toMatchObject({ url: handlerUrl, verification: 'confirmed' });
+  });
+
 });
 describe('createAutoConfigJob', () => {
   it('rejects when the user already has a job in progress', async () => {
