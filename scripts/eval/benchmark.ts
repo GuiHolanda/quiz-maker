@@ -19,18 +19,9 @@
  */
 
 import OpenAI from 'openai';
-import * as fs from 'fs';
-import * as path from 'path';
 import { SCENARIOS, type Scenario } from './scenarios';
 import { judgeQuestion, type JudgeScore } from './judge';
-
-// ── Pricing (mirrors config/constants/index.ts ACTIVE_MODEL_PRICING_USD) ──────
-// Updated manually when the active model changes.
-const PRICING_USD = {
-  inputPerMillion: Number(process.env.EVAL_PRICE_INPUT ?? 0.75),
-  outputPerMillion: Number(process.env.EVAL_PRICE_OUTPUT ?? 4.50),
-};
-const USD_TO_BRL = 5.70;
+import { PRICING_USD, computeCost, saveResults, loadReport, printTable } from './report';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface ScenarioResult {
@@ -191,14 +182,6 @@ async function callOpenAI(
   };
 }
 
-// ── Cost calculation ───────────────────────────────────────────────────────────
-function computeCost(inputTokens: number, outputTokens: number) {
-  const costUSD =
-    (inputTokens / 1_000_000) * PRICING_USD.inputPerMillion +
-    (outputTokens / 1_000_000) * PRICING_USD.outputPerMillion;
-  return { costUSD, costBRL: costUSD * USD_TO_BRL };
-}
-
 // ── Parse generated questions ──────────────────────────────────────────────────
 function parseFirstQuestion(text: string): { text: string; options: Record<string, string>; correctCount: number } | null {
   try {
@@ -290,24 +273,10 @@ async function runScenario(
   }
 }
 
-// ── Save results ───────────────────────────────────────────────────────────────
-function saveResults(report: BenchmarkReport): string {
-  const resultsDir = path.join(__dirname, 'results');
-  fs.mkdirSync(resultsDir, { recursive: true });
-
-  const ts = new Date().toISOString().replace(/:/g, '-').replace('T', '_').slice(0, 16);
-  const modelSlug = report.model.replace(/[^a-zA-Z0-9.-]/g, '_');
-  const filename = `${ts}_${modelSlug}.json`;
-  const filepath = path.join(resultsDir, filename);
-
-  fs.writeFileSync(filepath, JSON.stringify(report, null, 2));
-  return filepath;
-}
-
 // ── Compare two result files ───────────────────────────────────────────────────
 function compareReports(pathA: string, pathB: string): void {
-  const a = JSON.parse(fs.readFileSync(pathA, 'utf-8')) as BenchmarkReport;
-  const b = JSON.parse(fs.readFileSync(pathB, 'utf-8')) as BenchmarkReport;
+  const a = loadReport<BenchmarkReport>(pathA);
+  const b = loadReport<BenchmarkReport>(pathB);
 
   console.log(`\n${'═'.repeat(70)}`);
   console.log(`Comparison: ${a.model}  vs  ${b.model}`);
@@ -347,27 +316,16 @@ function compareReports(pathA: string, pathB: string): void {
     ],
   ];
 
-  const colW = [28, 20, 20, 14];
-  const fmt = (row: string[]) => row.map((v, i) => v.padEnd(colW[i])).join('  ');
-  console.log(fmt(headers));
-  console.log('-'.repeat(86));
-  rows.forEach(row => console.log(fmt(row)));
+  printTable(headers, rows, [28, 20, 20, 14]);
 
   console.log(`\nPer-scenario quality:`);
-  console.log(fmt(['Scenario', `${a.model.slice(0, 18)} score`, `${b.model.slice(0, 18)} score`, 'Δ']));
-  console.log('-'.repeat(86));
-
-  for (const sa of a.scenarios) {
-    const sb = b.scenarios.find(s => s.id === sa.id);
-    if (!sb) continue;
+  const scenarioRows = a.scenarios.flatMap((sa) => {
+    const sb = b.scenarios.find((s) => s.id === sa.id);
+    if (!sb) return [];
     const delta = sb.judgeScore.overall - sa.judgeScore.overall;
-    console.log(fmt([
-      sa.label.slice(0, 28),
-      sa.judgeScore.overall.toFixed(2),
-      sb.judgeScore.overall.toFixed(2),
-      `${delta >= 0 ? '+' : ''}${delta.toFixed(2)}`,
-    ]));
-  }
+    return [[sa.label.slice(0, 28), sa.judgeScore.overall.toFixed(2), sb.judgeScore.overall.toFixed(2), `${delta >= 0 ? '+' : ''}${delta.toFixed(2)}`]];
+  });
+  printTable(['Scenario', `${a.model.slice(0, 18)} score`, `${b.model.slice(0, 18)} score`, 'Δ'], scenarioRows, [28, 20, 20, 14]);
   console.log('');
 }
 
