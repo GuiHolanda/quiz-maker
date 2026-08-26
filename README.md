@@ -75,8 +75,16 @@ Create a `.env` file in the project root:
 ```env
 # Required
 OPENAI_API_KEY=sk-...
-OPENAI_MODEL=gpt-5.4              # model used for all non-streaming generation
+OPENAI_MODEL=gpt-5.4              # default model for all non-streaming generation
 AI_CHAT_MODEL=gpt-5.4-mini        # model used for the AI chat feature
+
+# Optional per-stage overrides — each falls back to OPENAI_MODEL when unset. Useful for
+# spending more on the stages that most need reasoning (e.g. locate) without raising the
+# cost of stages that already work well on a cheaper model (e.g. verify, extract).
+# OPENAI_MODEL_IDENTIFY=gpt-5.4-mini   # auto-config's exam-name lookup
+# OPENAI_MODEL_LOCATE=gpt-5.4          # auto-config's edital PDF search
+# OPENAI_MODEL_VERIFY=gpt-5.4-mini     # confirms a located PDF is the edital itself
+# OPENAI_MODEL_REVIEW=gpt-5.4          # question-generation review pass
 
 DATABASE_URL="file:./prisma/dev.db"
 

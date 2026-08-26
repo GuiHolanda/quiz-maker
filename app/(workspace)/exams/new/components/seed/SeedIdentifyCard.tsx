@@ -1,15 +1,21 @@
 'use client';
 
-import type { AutoConfigMatch, ExamType } from '@/shared/types';
+import type { AutoConfigMatch, EditalCandidate, ExamType } from '@/shared/types';
 
 import NextLink from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
+  faArrowUpRightFromSquare,
   faCheck,
   faChevronRight,
+  faCircleCheck,
   faCircleExclamation,
+  faCircleQuestion,
+  faFileCircleQuestion,
+  faForwardStep,
   faLayerGroup,
+  faMagnifyingGlass,
   faPenToSquare,
 } from '@fortawesome/free-solid-svg-icons';
 import { Input } from '@heroui/input';
@@ -23,15 +29,25 @@ import { ExamSearchForm } from './ExamSearchForm';
 export type IdentifyPhase =
   | { readonly kind: 'searching' }
   | { readonly kind: 'disambiguating'; readonly matches: readonly AutoConfigMatch[] }
-  // Search returned nothing usable. `message` is the model's own request for detail when it
-  // gave one; `kind: 'failed'` is the same shape for a request that errored outright.
   | { readonly kind: 'clarifying'; readonly message: string }
   | { readonly kind: 'failed' }
   | { readonly kind: 'selecting-role'; readonly match: AutoConfigMatch }
+  | { readonly kind: 'locating' }
+  // Edital candidates returned by locateEdital — user approves one, re-searches with a
+  // number, or skips. Replaces the old edital-not-found phase.
+  | {
+      readonly kind: 'approving-edital';
+      readonly match: AutoConfigMatch;
+      readonly editais: readonly EditalCandidate[];
+      readonly targetYearFound: boolean;
+      // False when locateEdital's verification loop opened its candidates but never confirmed
+      // one carries the conteúdo programático — the card still lists what it found, framed as
+      // unconfirmed, rather than presenting any of them as the edital.
+      readonly confirmedFound: boolean;
+    }
   | { readonly kind: 'confirmed'; readonly match: ConfirmedSeed };
 
-// Subset of AutoConfigMatch the loading screen carries forward once a match is confirmed —
-// these fields are already resolved at that point but today get dropped until the editor.
+// Subset of AutoConfigMatch the loading screen carries forward once a match is confirmed.
 export interface ConfirmedSeed {
   readonly label: string;
   readonly key: string | null;
@@ -49,6 +65,9 @@ interface SeedIdentifyCardProps {
   readonly onRetry?: (query: string) => void;
   readonly onStartBlank?: () => void;
   readonly onSelectRole?: (role: string) => void;
+  readonly onApproveEdital?: (candidate: EditalCandidate) => void;
+  readonly onRelocateEdital?: (editalKey: string) => void;
+  readonly onSkipEdital?: () => void;
 }
 
 const SKELETON_WIDTHS_PCT = [68, 52, 60] as const;
@@ -61,11 +80,33 @@ export function SeedIdentifyCard({
   onRetry,
   onStartBlank,
   onSelectRole,
+  onApproveEdital,
+  onRelocateEdital,
+  onSkipEdital,
 }: SeedIdentifyCardProps) {
   const { t } = useTranslation();
   const initialRole = phase.kind === 'selecting-role' ? (phase.match.role ?? '') : '';
   const [roleInputValue, setRoleInputValue] = useState(initialRole);
+  const [editalKeyInputValue, setEditalKeyInputValue] = useState(
+    phase.kind === 'approving-edital' ? (phase.match.key ?? '') : ''
+  );
   const isRecoverable = phase.kind === 'clarifying' || phase.kind === 'failed';
+
+  const matchRole = phase.kind === 'selecting-role' ? (phase.match.role ?? '') : null;
+
+  // Re-sync role input when the match changes (e.g. after a disambiguate + re-identify cycle).
+  useEffect(() => {
+    if (matchRole === null) return;
+    setRoleInputValue(matchRole);
+  }, [matchRole]);
+
+  // Re-seed edital key input when transitioning into approving-edital.
+  const approvingEditalKey = phase.kind === 'approving-edital' ? (phase.match.key ?? '') : null;
+
+  useEffect(() => {
+    if (approvingEditalKey === null) return;
+    setEditalKeyInputValue(approvingEditalKey);
+  }, [approvingEditalKey]);
 
   return (
     <div className="bg-content1 border border-content2 rounded-xl p-6">
@@ -179,9 +220,186 @@ export function SeedIdentifyCard({
       case 'selecting-role':
         return renderSelectingRole(phase.match);
 
+      case 'locating':
+        return (
+          <div className="flex flex-col gap-2">
+            <p className="text-sm text-default-500">{t('exam.identifyLocatingEdital')}</p>
+            {SKELETON_WIDTHS_PCT.map((width, i) => (
+              <div key={i} className="bg-content2 rounded-lg px-4 py-3.5 animate-pulse">
+                <div className="h-2.5 rounded-full bg-default-200" style={{ width: `${width}%` }} />
+              </div>
+            ))}
+          </div>
+        );
+
+      case 'approving-edital':
+        return renderApprovingEdital(phase.editais, phase.targetYearFound, phase.confirmedFound);
+
       case 'confirmed':
         return renderConfirmed(phase.match);
     }
+  }
+
+  function renderVerificationNote(verification: EditalCandidate['verification']) {
+    switch (verification) {
+      case 'confirmed':
+        return (
+          <span
+            className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-medium text-success"
+            data-testid="seed-identify-edital-verified-badge"
+          >
+            <FontAwesomeIcon className="w-3 h-3 shrink-0" icon={faCircleCheck} />
+            {t('exam.editalApproveVerifiedBadge')}
+          </span>
+        );
+      case 'annex':
+        return (
+          <span
+            className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-medium text-warning"
+            data-testid="seed-identify-edital-annex-warning"
+          >
+            <FontAwesomeIcon className="w-3 h-3 shrink-0" icon={faCircleExclamation} />
+            {t('exam.editalApproveAnnexWarning')}
+          </span>
+        );
+      case 'unreadable':
+        return (
+          <span
+            className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-medium text-warning"
+            data-testid="seed-identify-edital-unreadable-badge"
+          >
+            <FontAwesomeIcon className="w-3 h-3 shrink-0" icon={faCircleExclamation} />
+            {t('exam.editalApproveUnreadable')}
+          </span>
+        );
+      case 'unchecked':
+        return (
+          <span className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-medium text-default-400">
+            <FontAwesomeIcon className="w-3 h-3 shrink-0" icon={faCircleQuestion} />
+            {t('exam.editalApproveUnverified')}
+          </span>
+        );
+    }
+  }
+
+  function renderApprovingEdital(
+    editais: readonly EditalCandidate[],
+    targetYearFound: boolean,
+    confirmedFound: boolean
+  ) {
+    const hasEditais = editais.length > 0;
+
+    return (
+      <div data-testid={!confirmedFound ? 'seed-identify-edital-unconfirmed' : undefined}>
+        <div className="flex items-start gap-3">
+          <FontAwesomeIcon className="w-4 h-4 mt-0.5 shrink-0 text-primary" icon={faFileCircleQuestion} />
+          <div>
+            <p className="text-sm text-foreground text-pretty">
+              {!hasEditais
+                ? t('exam.editalApproveNoneFound')
+                : confirmedFound
+                  ? t('exam.editalApproveTitle')
+                  : t('exam.editalApproveUnconfirmedTitle')}
+            </p>
+            {hasEditais && (
+              <p className="mt-1.5 text-[13px] leading-relaxed text-default-400 text-pretty">
+                {confirmedFound ? t('exam.editalApproveSubtitle') : t('exam.editalApproveUnconfirmedSubtitle')}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {hasEditais && (
+          <div className="mt-4 flex flex-col gap-2">
+            {!confirmedFound && (
+              <p className="text-xs font-semibold text-default-400">{t('exam.editalApproveUnconfirmedListLabel')}</p>
+            )}
+            {editais.map((candidate, index) => {
+              const isOfficial = targetYearFound && index === 0 && candidate.verification === 'confirmed';
+
+              return (
+                <div
+                  key={candidate.url}
+                  className="flex items-stretch bg-content2 border border-default-200 rounded-lg overflow-hidden hover:border-primary/40 transition-colors duration-200"
+                >
+                  <button
+                    className="group flex items-center gap-3 text-left grow px-4 py-3 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-inset focus-visible:ring-2 focus-visible:ring-primary transition-colors duration-200"
+                    data-testid="seed-identify-approve-edital-option"
+                    type="button"
+                    onClick={() => onApproveEdital?.(candidate)}
+                  >
+                    <span className="min-w-0 grow">
+                      <span className="block text-sm font-semibold text-foreground truncate">
+                        {isOfficial
+                          ? t('exam.editalApproveOfficialBadge')
+                          : t('exam.editalNotFoundUsePriorYear', { year: String(candidate.year ?? '—') })}
+                      </span>
+                      <span className="block mt-1 font-mono text-[11px] text-default-400 truncate">
+                        {[candidate.editalNumber, candidate.orgao].filter(Boolean).join(' · ')}
+                      </span>
+                      {!isOfficial && renderVerificationNote(candidate.verification)}
+                    </span>
+                    <FontAwesomeIcon
+                      className="w-3 h-3 shrink-0 text-default-400 group-hover:text-primary transition-colors duration-200"
+                      icon={faChevronRight}
+                    />
+                  </button>
+                  <a
+                    aria-label={t('exam.editalPreviewBtn')}
+                    className="shrink-0 flex items-center px-3 border-l border-default-200 text-default-400 hover:text-primary hover:bg-primary/10 transition-colors duration-200"
+                    href={candidate.url}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    title={t('exam.editalPreviewBtn')}
+                  >
+                    <FontAwesomeIcon className="w-3 h-3" icon={faArrowUpRightFromSquare} />
+                  </a>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="mt-4 flex flex-col gap-1.5">
+          <p className="text-sm font-medium text-default-500">{t('exam.editalKeyLabel')}</p>
+          <div className="flex gap-2 items-center">
+            <Input
+              {...inputProperties.input}
+              className="grow"
+              data-testid="seed-identify-edital-key-input"
+              label=""
+              placeholder={t('exam.editalKeyOrUrlPlaceholder')}
+              value={editalKeyInputValue}
+              onValueChange={setEditalKeyInputValue}
+            />
+            <Button
+              className={buttonStyles.primarySm}
+              data-testid="seed-identify-edital-search-btn"
+              isDisabled={!editalKeyInputValue.trim()}
+              type="button"
+              onPress={() => {
+                if (editalKeyInputValue.trim()) onRelocateEdital?.(editalKeyInputValue.trim());
+              }}
+            >
+              <FontAwesomeIcon className="w-3 h-3" icon={faMagnifyingGlass} />
+              {t('exam.editalApproveSearchBtn')}
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-divider">
+          <button
+            className="inline-flex items-center gap-2 text-sm text-default-500 hover:text-foreground transition-colors duration-200"
+            data-testid="seed-identify-skip-edital-btn"
+            type="button"
+            onClick={onSkipEdital}
+          >
+            <FontAwesomeIcon className="w-3 h-3" icon={faForwardStep} />
+            {t('exam.editalNotFoundContinueWithoutIt')}
+          </button>
+        </div>
+      </div>
+    );
   }
 
   function renderFacts(match: ConfirmedSeed) {

@@ -14,6 +14,7 @@ export const EXAM_BOARDS_URL = '/exam/exam-boards';
 export const EXTRACT_EDITAL_URL = '/exam/extract-from-edital';
 export const AUTO_CONFIG_URL = '/exam/auto-config';
 export const AUTO_CONFIG_IDENTIFY_URL = '/exam/auto-config/identify';
+export const AUTO_CONFIG_LOCATE_EDITAL_URL = '/exam/auto-config/locate-edital';
 export const GENERATION_JOB_URL = '/generation-job';
 export const USAGE_HISTORY_URL = '/usage/history';
 export const USAGE_HISTORY_FILTERS_URL = '/usage/history/filters';

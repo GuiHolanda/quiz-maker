@@ -19,6 +19,7 @@ const STAGE_KEYS: Record<AutoConfigStage, string> = {
   research: 'exam.aiSeedStageResearch',
   review: 'exam.aiSeedStageReview',
   format: 'exam.aiSeedStageFormat',
+  extract: 'exam.aiSeedStageExtract',
 };
 
 // Shown the instant a certification/concurso is confirmed (see useExamSeed's

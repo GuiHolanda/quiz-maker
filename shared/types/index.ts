@@ -524,7 +524,32 @@ export interface AutoConfigIdentifyResult {
   readonly clarification: string | null;
 }
 
-export type AutoConfigStage = 'research' | 'review' | 'format';
+export type EditalDocumentKind = 'main' | 'annex' | 'unknown';
+
+export type EditalDomainClass = 'official-org' | 'official-banca' | 'aggregator' | 'other';
+export interface EditalCandidate {
+  readonly url: string;
+  readonly editalNumber: string | null;
+  readonly year: number | null;
+  readonly orgao: string | null;
+  readonly isOfficialDomain: boolean;
+  readonly coversRole: boolean;
+  readonly documentKind: EditalDocumentKind;
+  readonly domainClass: EditalDomainClass;
+  readonly verification: EditalVerification;
+}
+
+export type EditalVerification = 'confirmed' | 'annex' | 'unreadable' | 'unchecked';
+
+export interface LocateEditalResult {
+  readonly editais: EditalCandidate[];
+  readonly targetYearFound: boolean;
+  readonly confirmedFound: boolean;
+}
+
+export type BlueprintConfidence = 'official' | 'prior-year' | 'estimated';
+
+export type AutoConfigStage = 'research' | 'review' | 'format' | 'extract';
 
 export interface AutoConfigJobStatus {
   readonly id: string;
@@ -717,17 +742,10 @@ export interface ExamLandingFaq {
 
 export interface ExamLandingTopic {
   readonly name: string;
-  // Share of the exam this topic accounts for, as an integer 0–100 — same unit
-  // as `ExamSection.minQuestions`. Weights across a config need not total 100;
-  // the syllabus bars are drawn relative to the heaviest topic.
   readonly weight: number;
 }
-
-// Static sample shown in the hero panel so a visitor can answer one question
-// before deciding to open the demo. Authored per exam, never generated at
-// request time — the page is prerendered.
 export interface ExamLandingSampleQuestion {
-  readonly topic: string; // must match an ExamLandingTopic.name of the same config
+  readonly topic: string;
   readonly stem: string;
   readonly options: readonly string[];
   readonly answerIndex: number;
@@ -739,10 +757,6 @@ export interface ExamLandingConfig {
   readonly name: string; // short display name, e.g. "CEA"
   readonly fullName: string; // full certification name
   readonly provider: string; // e.g. "ANBIMA", "Amazon Web Services"
-  // Exact `Exam.name` of the catalog template backing this landing page, used to
-  // deep-link into the demo. Absent when no template covers the exam yet — the
-  // CTA then falls back to the full demo catalog. Matched by name rather than id
-  // because ids are cuids and differ between dev and prod.
   readonly demoExamName?: string;
   readonly examType: ExamType;
   readonly totalQuestions: number;

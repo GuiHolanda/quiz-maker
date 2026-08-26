@@ -10,6 +10,10 @@ import { toApiErrorResponse } from '@/lib/api-error';
 const editalExtractorService = new EditalExtractorService();
 const quotaService = new QuotaService();
 
+// A PDF-upload extraction, unlike every other LLM route here, had no maxDuration and ran on
+// the platform default — matching the other single-shot LLM calls (identify, explanation).
+export const maxDuration = 300;
+
 export async function POST(request: NextRequest) {
   const session = await auth();
 

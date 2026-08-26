@@ -1,5 +1,5 @@
 'use client';
-import type { Exam, ExamType } from '@/shared/types';
+import type { BlueprintConfidence, Exam, ExamType } from '@/shared/types';
 
 import { useEffect, useRef, useState } from 'react';
 import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
@@ -24,8 +24,14 @@ interface ExamEditorPageProps {
   readonly mode?: 'create' | 'edit';
   readonly context?: string;
   readonly sources?: string[];
+  readonly confidence?: BlueprintConfidence;
   readonly warningKey?: string;
-  readonly onDraftChange?: (draft: Exam, context?: string, sources?: string[]) => void;
+  readonly onDraftChange?: (
+    draft: Exam,
+    context?: string,
+    sources?: string[],
+    confidence?: BlueprintConfidence
+  ) => void;
   readonly onSaved: (saved: Exam) => void;
   readonly onDiscard: () => void;
 }
@@ -35,6 +41,7 @@ export function ExamEditorPage({
   mode = 'create',
   context,
   sources,
+  confidence,
   warningKey,
   onDraftChange,
   onSaved,
@@ -68,8 +75,8 @@ export function ExamEditorPage({
 
   onDraftChangeRef.current = onDraftChange;
   useEffect(() => {
-    onDraftChangeRef.current?.(draft, context, sources);
-  }, [draft, context, sources]);
+    onDraftChangeRef.current?.(draft, context, sources, confidence);
+  }, [draft, context, sources, confidence]);
 
   const handleSaveClick = async () => {
     const result = await handleSave();
@@ -163,7 +170,13 @@ export function ExamEditorPage({
           />
         </div>
 
-        <ExamReviewSidebar context={context} draft={draft} sources={sources} validation={validation} />
+        <ExamReviewSidebar
+          confidence={confidence}
+          context={context}
+          draft={draft}
+          sources={sources}
+          validation={validation}
+        />
       </div>
 
       <ConfirmModal

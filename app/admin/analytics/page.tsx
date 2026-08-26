@@ -25,7 +25,12 @@ const brl2Formatter = new Intl.NumberFormat('pt-BR', {
   maximumFractionDigits: 2,
 });
 
-function computeCostBRL(inputTokens: number, outputTokens: number, usdToBrl: number, webSearchCalls: number = 0): number {
+function computeCostBRL(
+  inputTokens: number,
+  outputTokens: number,
+  usdToBrl: number,
+  webSearchCalls: number = 0
+): number {
   const usd =
     (inputTokens * ACTIVE_MODEL_PRICING_USD.inputPerMillion) / 1_000_000 +
     (outputTokens * ACTIVE_MODEL_PRICING_USD.outputPerMillion) / 1_000_000 +
@@ -487,7 +492,12 @@ export default async function AdminAnalyticsPage() {
                 {stepEntries.map(([step, stepStats]) => {
                   const stepTotal = stepStats.inputTokens + stepStats.outputTokens;
                   const stepWebSearchCalls = step === 'research' ? stepStats.count : 0;
-                  const stepCost = computeCostBRL(stepStats.inputTokens, stepStats.outputTokens, usdToBrl, stepWebSearchCalls);
+                  const stepCost = computeCostBRL(
+                    stepStats.inputTokens,
+                    stepStats.outputTokens,
+                    usdToBrl,
+                    stepWebSearchCalls
+                  );
                   const stepPct = totalTokens > 0 ? Math.round((stepTotal / totalTokens) * 100) : 0;
                   return (
                     <tr key={step} className="border-b border-divider last:border-0">

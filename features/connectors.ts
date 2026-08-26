@@ -14,6 +14,7 @@ import {
   EXTRACT_EDITAL_URL,
   AUTO_CONFIG_URL,
   AUTO_CONFIG_IDENTIFY_URL,
+  AUTO_CONFIG_LOCATE_EDITAL_URL,
   MOCK_EXAMS_URL,
   ADMIN_USERS_URL,
   ADMIN_OVERVIEW_URL,
@@ -62,6 +63,7 @@ import {
   GenerationJobStatus,
   AutoConfigIdentifyResult,
   AutoConfigJobStatus,
+  LocateEditalResult,
   GenerationHistoryResponse,
   GenerationHistoryFilters,
   GenerationHistoryFilterOptions,
@@ -215,6 +217,18 @@ export async function extractEdital(file: File, role?: string): Promise<Exam> {
 export const identifyExam = (query: string, type: ExamType, language: 'pt' | 'en'): Promise<AutoConfigIdentifyResult> =>
   api.post<AutoConfigIdentifyResult>(AUTO_CONFIG_IDENTIFY_URL, { query, type, language }).then((r) => r.data);
 
+export interface LocateEditalSeedPayload {
+  readonly examName: string;
+  readonly examBoard: string | null;
+  readonly editalKey: string | null;
+  readonly year: number | null;
+  readonly role: string;
+  readonly language: 'pt' | 'en';
+}
+
+export const locateEdital = (seed: LocateEditalSeedPayload): Promise<LocateEditalResult> =>
+  api.post<LocateEditalResult>(AUTO_CONFIG_LOCATE_EDITAL_URL, seed).then((r) => r.data);
+
 export interface AutoConfigSeedPayload {
   readonly type: ExamType;
   readonly name: string;
@@ -224,6 +238,7 @@ export interface AutoConfigSeedPayload {
   readonly role?: string | null;
   readonly year?: number | null;
   readonly language: 'pt' | 'en';
+  readonly edital?: { readonly url: string; readonly isPriorYear: boolean } | null;
 }
 
 export const createAutoConfigJob = (seed: AutoConfigSeedPayload): Promise<{ jobId: string }> =>

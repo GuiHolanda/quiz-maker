@@ -9,8 +9,7 @@ import { toApiErrorResponse } from '@/lib/api-error';
 import type { ExamType } from '@/shared/types';
 
 const quotaService = new QuotaService();
-
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -32,15 +31,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Exam cap first: a user who can't save another exam must not spend an LLM call —
-    // nor an auto_config unit — on a blueprint that has nowhere to land.
     await quotaService.check(session.user.id, 'create_exam', 1);
 
     const body = await request.json().catch(() => null);
     if (!body || typeof body !== 'object') {
       throw Object.assign(new Error('Invalid request body'), { status: 400 });
     }
-    const { type, name, key, provider, examBoard, role, year, language } = body as Record<string, unknown>;
+    const { type, name, key, provider, examBoard, role, year, language, edital } = body as Record<string, unknown>;
 
     if (type !== 'certification' && type !== 'public_exam') {
       throw Object.assign(new Error('type must be "certification" or "public_exam"'), { status: 400 });
@@ -48,6 +45,13 @@ export async function POST(request: NextRequest) {
     if (typeof name !== 'string' || !name.trim()) {
       throw Object.assign(new Error('name is required'), { status: 400 });
     }
+    const editalRef =
+      edital && typeof edital === 'object' && typeof (edital as Record<string, unknown>).url === 'string'
+        ? {
+            url: (edital as Record<string, unknown>).url as string,
+            isPriorYear: (edital as Record<string, unknown>).isPriorYear === true,
+          }
+        : null;
 
     const { jobId } = await createAutoConfigJob(session.user.id, {
       type: type as ExamType,
@@ -58,6 +62,7 @@ export async function POST(request: NextRequest) {
       role: typeof role === 'string' ? role : null,
       year: typeof year === 'number' ? year : null,
       language: language === 'pt' ? 'pt' : 'en',
+      edital: editalRef,
     });
 
     return NextResponse.json({ jobId }, { status: 201 });
@@ -69,8 +74,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Reconnect support: /exams/new checks for an already-running job on mount so a reload
-// mid-pipeline doesn't strand the user on a blank picker.
 export async function GET(request: NextRequest) {
   const session = await auth();
 

@@ -1,4 +1,4 @@
-import type { Exam, ExamSection, ExamType } from '@/shared/types';
+import type { BlueprintConfidence, Exam, ExamSection, ExamType } from '@/shared/types';
 
 // Moved out of EditalExtractorService so the auto-config pipeline's format stage can apply
 // the same name cleanup to topics/subtopics harvested from a PDF edital or from web research.
@@ -54,6 +54,10 @@ export interface ParsedExamBlueprint {
   readonly examDraft: Exam;
   readonly context: string;
   readonly sources: string[];
+  // public_exam only — how the data was sourced (read straight from the edital PDF vs.
+  // estimated from web research without it). Set by the caller, not derived here: this
+  // function only knows the JSON shape, not which pipeline branch produced it.
+  readonly confidence?: BlueprintConfidence;
 }
 
 // Validates and maps the JSON the auto-config "format" stage emits — the same contract for

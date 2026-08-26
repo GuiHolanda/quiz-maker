@@ -1,6 +1,6 @@
 'use client';
 
-import type { Exam, ExamType } from '@/shared/types';
+import type { BlueprintConfidence, Exam, ExamType } from '@/shared/types';
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -55,11 +55,35 @@ const DEBUG_PUBLIC_MATCH = {
   roles: ['Analista Judiciário – Área Judiciária', 'Técnico Judiciário – Área Administrativa', 'Oficial de Justiça'],
   year: 2025,
 };
+const DEBUG_PRIOR_EDITAIS = [
+  {
+    url: 'https://www.trf1.jus.br/editais/edital-002-2021.pdf',
+    editalNumber: 'PGJ-002/2021',
+    year: 2021,
+    orgao: 'TRF 1ª Região',
+    isOfficialDomain: true,
+    coversRole: true,
+    documentKind: 'main' as const,
+    domainClass: 'official-org' as const,
+    verification: 'confirmed' as const,
+  },
+  {
+    url: 'https://www.trf1.jus.br/editais/edital-014-2018.pdf',
+    editalNumber: 'PGJ-014/2018',
+    year: 2018,
+    orgao: 'TRF 1ª Região',
+    isOfficialDomain: true,
+    coversRole: false,
+    documentKind: 'main' as const,
+    domainClass: 'official-org' as const,
+    verification: 'confirmed' as const,
+  },
+];
 
 // Dev-only escape hatch to preview SeedLoadingScreen frozen at any stage — this state
 // resolves in seconds/minutes normally, too fast to iterate on its styling live.
-// ?debugLoading=identify&phase=searching|disambiguating|clarifying|failed
-// ?debugLoading=auto-config&stage=research|review|format (omit stage for the initial state)
+// ?debugLoading=identify&phase=searching|disambiguating|clarifying|failed|locating|approving-edital|selecting-role
+// ?debugLoading=auto-config&stage=research|review|format|extract (omit stage for the initial state)
 // ?debugLoading=edital
 function buildDebugVariant(searchParams: URLSearchParams): SeedLoadingVariant | null {
   const kind = searchParams.get('debugLoading');
@@ -87,12 +111,33 @@ function buildDebugVariant(searchParams: URLSearchParams): SeedLoadingVariant | 
       };
     }
 
+    if (phase === 'locating') {
+      return { kind: 'identify', query: 'TRF 1ª Região', phase: { kind: 'locating' } };
+    }
+
+    if (phase === 'approving-edital') {
+      return {
+        kind: 'identify',
+        query: 'TRF 1ª Região',
+        phase: {
+          kind: 'approving-edital',
+          match: DEBUG_PUBLIC_MATCH,
+          editais: DEBUG_PRIOR_EDITAIS,
+          targetYearFound: false,
+          confirmedFound: true,
+        },
+      };
+    }
+
     return { kind: 'identify', query: 'AWS Certified', phase: { kind: 'searching' } };
   }
 
   if (kind === 'auto-config') {
     const stageParam = searchParams.get('stage');
-    const stage = stageParam === 'research' || stageParam === 'review' || stageParam === 'format' ? stageParam : null;
+    const stage =
+      stageParam === 'research' || stageParam === 'review' || stageParam === 'format' || stageParam === 'extract'
+        ? stageParam
+        : null;
 
     return { kind: 'auto-config', seed: DEBUG_SEED, stage };
   }
@@ -104,7 +149,13 @@ function buildDebugVariant(searchParams: URLSearchParams): SeedLoadingVariant | 
 
 function identifyQuery(state: ExamSeedState): string {
   if (state.kind === 'identifying' || state.kind === 'identify-failed') return state.query;
-  if (state.kind === 'disambiguating' || state.kind === 'clarifying' || state.kind === 'selecting-role')
+  if (
+    state.kind === 'disambiguating' ||
+    state.kind === 'clarifying' ||
+    state.kind === 'selecting-role' ||
+    state.kind === 'locating-edital' ||
+    state.kind === 'approving-edital'
+  )
     return state.examName;
 
   return '';
@@ -120,6 +171,16 @@ function identifyPhase(state: ExamSeedState): Exclude<IdentifyPhase, { kind: 'co
       return { kind: 'failed' };
     case 'selecting-role':
       return { kind: 'selecting-role', match: state.match };
+    case 'locating-edital':
+      return { kind: 'locating' };
+    case 'approving-edital':
+      return {
+        kind: 'approving-edital',
+        match: state.match,
+        editais: state.editais,
+        targetYearFound: state.targetYearFound,
+        confirmedFound: state.confirmedFound,
+      };
     default:
       return { kind: 'searching' };
   }
@@ -129,6 +190,7 @@ interface StoredDraft {
   readonly draft: Exam;
   readonly context?: string;
   readonly sources?: string[];
+  readonly confidence?: BlueprintConfidence;
 }
 
 function readStoredDraft(storageKey: string): StoredDraft | null {
@@ -141,12 +203,13 @@ function readStoredDraft(storageKey: string): StoredDraft | null {
     const draft = 'draft' in parsed ? parsed.draft : parsed;
     const context = 'draft' in parsed ? parsed.context : undefined;
     const sources = 'draft' in parsed ? parsed.sources : undefined;
+    const confidence = 'draft' in parsed ? parsed.confidence : undefined;
 
     // A draft with no name and no sections isn't worth resuming — treat it as absent so
     // the seed picker shows instead of an editor with nothing distinguishing it from blank.
     if (!draft.name?.trim() && (!draft.sections || draft.sections.length === 0)) return null;
 
-    return { draft, context, sources };
+    return { draft, context, sources, confidence };
   } catch {
     return null;
   }
@@ -195,9 +258,9 @@ function NewExamContent() {
     // mid-flow isn't a supported transition (the page fully remounts via the URL param).
   }, []);
 
-  const persistDraft = (draft: Exam, context?: string, sources?: string[]) => {
+  const persistDraft = (draft: Exam, context?: string, sources?: string[], confidence?: BlueprintConfidence) => {
     try {
-      const payload: StoredDraft = { draft, context, sources };
+      const payload: StoredDraft = { draft, context, sources, confidence };
 
       localStorage.setItem(config.draftStorageKey, JSON.stringify(payload));
     } catch {
@@ -263,6 +326,8 @@ function NewExamContent() {
     'clarifying',
     'identify-failed',
     'selecting-role',
+    'locating-edital',
+    'approving-edital',
     'loading-blueprint',
     'extracting-edital',
   ];
@@ -314,6 +379,7 @@ function NewExamContent() {
       {!hydrated ? null : resumedDraft ? (
         <ExamEditorPage
           type={type}
+          confidence={resumedDraft.confidence}
           context={resumedDraft.context}
           initialDraft={resumedDraft.draft}
           sources={resumedDraft.sources}
@@ -339,15 +405,20 @@ function NewExamContent() {
       case 'clarifying':
       case 'identify-failed':
       case 'selecting-role':
+      case 'locating-edital':
+      case 'approving-edital':
         return (
           <SeedLoadingScreen
             startedAt={seed.state.startedAt}
             type={type}
             variant={{ kind: 'identify', query: identifyQuery(seed.state), phase: identifyPhase(seed.state) }}
+            onApproveEdital={(candidate) => seed.approveEdital(candidate)}
             onCancel={seed.reset}
+            onRelocateEdital={(key) => void seed.relocateEdital(key)}
             onRetry={seed.identifyByName}
             onSelectMatch={(match) => void seed.selectMatch(match)}
             onSelectRole={(role) => void seed.confirmRole(role)}
+            onSkipEdital={seed.skipEdital}
             onStartBlank={seed.startBlank}
           />
         );
@@ -373,6 +444,7 @@ function NewExamContent() {
         return (
           <ExamEditorPage
             type={type}
+            confidence={seed.state.confidence}
             initialDraft={seed.state.draft}
             context={seed.state.context}
             sources={seed.state.sources}
