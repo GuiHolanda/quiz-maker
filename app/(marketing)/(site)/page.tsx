@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 import { HeroQuestionCard } from '@/app/(marketing)/components/home/HeroQuestionCard';
 import { HeroStaticContent } from '@/app/(marketing)/components/home/HeroStaticContent';
@@ -14,9 +16,12 @@ import { HomepagePricingSection } from '@/app/(marketing)/components/home/Homepa
 import { FaqSection } from '@/app/(marketing)/components/home/FaqSection';
 import { CtaSectionCta } from '@/app/(marketing)/components/home/CtaSectionCta';
 import { OG_IMAGES } from '@/config/og';
+import { alternatesFor } from '@/lib/seo';
+import { parseProperties } from '@/lib/properties-parser';
+import { jsonLd } from '@/lib/json-ld';
 
 export const metadata: Metadata = {
-  title: 'Questões com IA para Certificações e Concursos Públicos | CertifiqueAI',
+  title: 'Questões com IA para Certificações e Concursos Públicos',
   description:
     'Gere questões de prática sob demanda para AWS, Azure, OAB, CESPE e mais. IA calibrada para o formato real de cada exame.',
   openGraph: {
@@ -27,12 +32,88 @@ export const metadata: Metadata = {
     type: 'website',
     images: OG_IMAGES,
   },
-  alternates: { canonical: 'https://www.certifiqueai.com' },
+  alternates: alternatesFor('/'),
 };
 
-export default function HeroPage() {
+async function loadPtMessages(): Promise<Record<string, string>> {
+  try {
+    const raw = await readFile(join(process.cwd(), 'public', 'messages', 'pt.properties'), 'utf-8');
+    return parseProperties(raw);
+  } catch {
+    return {};
+  }
+}
+
+export default async function HeroPage() {
+  const messages = await loadPtMessages();
+
+  // No potentialAction/SearchAction: the site has no working search endpoint yet,
+  // and declaring one Google might actually render as a sitelinks search box is
+  // worse than omitting it.
+  const websiteSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'CertifiqueAI',
+    url: 'https://www.certifiqueai.com',
+  };
+
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [1, 2, 3, 4, 5, 6, 7].map((n) => ({
+      '@type': 'Question',
+      name: messages[`homepage.faq.q${n}`],
+      acceptedAnswer: { '@type': 'Answer', text: messages[`homepage.faq.a${n}`] },
+    })),
+  };
+
+  // Points at real /simulado/[slug] landings rather than /register — a Course whose
+  // url is a signup wall, not the content itself, is exactly what this used to be.
+  const courseListSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        item: {
+          '@type': 'Course',
+          name: 'AWS Solutions Architect (SAA-C03)',
+          description: 'Questões de prática para o exame AWS Certified Solutions Architect Associate',
+          provider: { '@type': 'Organization', name: 'CertifiqueAI', url: 'https://www.certifiqueai.com' },
+          url: 'https://www.certifiqueai.com/simulado/aws-solutions-architect',
+        },
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        item: {
+          '@type': 'Course',
+          name: 'Microsoft Azure Fundamentals (AZ-900)',
+          description: 'Questões de prática para o exame AZ-900',
+          provider: { '@type': 'Organization', name: 'CertifiqueAI', url: 'https://www.certifiqueai.com' },
+          url: 'https://www.certifiqueai.com/simulado/azure-fundamentals',
+        },
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        item: {
+          '@type': 'Course',
+          name: 'OAB 1ª Fase',
+          description: 'Questões de prática para a primeira fase do Exame de Ordem, com gabarito comentado',
+          provider: { '@type': 'Organization', name: 'CertifiqueAI', url: 'https://www.certifiqueai.com' },
+          url: 'https://www.certifiqueai.com/simulado/oab',
+        },
+      },
+    ],
+  };
+
   return (
     <div>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(websiteSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(faqSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(courseListSchema) }} />
       <HeroSection />
       <StatsStrip />
       <CertificationsSection />

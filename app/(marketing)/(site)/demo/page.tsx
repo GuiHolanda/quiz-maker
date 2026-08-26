@@ -3,14 +3,15 @@ import { Suspense } from 'react';
 import { DemoFlowClient } from '@/app/(marketing)/components/demo/DemoFlowClient';
 import { DemoCatalogSkeleton } from '@/app/(marketing)/components/demo/DemoCatalogSkeleton';
 import { OG_IMAGES } from '@/config/og';
+import { alternatesFor } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: 'Demonstração interativa · CertifiqueAI',
+  title: 'Demonstração interativa',
   description:
     'Experimente como funciona: escolha uma certificação, distribua as questões por tópico, responda e veja seu diagnóstico.',
-  alternates: { canonical: 'https://www.certifiqueai.com/demo' },
+  alternates: alternatesFor('/demo'),
   openGraph: {
-    title: 'Demonstração interativa · CertifiqueAI',
+    title: 'Demonstração interativa',
     description:
       'Experimente como funciona: escolha uma certificação, distribua as questões por tópico, responda e veja seu diagnóstico.',
     url: 'https://www.certifiqueai.com/demo',

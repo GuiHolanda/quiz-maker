@@ -12,6 +12,9 @@ import { ExamTrustSection } from '@/app/(marketing)/components/exam-landing/Exam
 import { ExamFaqSection } from '@/app/(marketing)/components/exam-landing/ExamFaqSection';
 import { ExamFinalCtaSection } from '@/app/(marketing)/components/exam-landing/ExamFinalCtaSection';
 import { OG_IMAGES } from '@/config/og';
+import { alternatesFor } from '@/lib/seo';
+import { jsonLd } from '@/lib/json-ld';
+import type { ExamLandingConfig } from '@/shared/types';
 
 interface PageProps {
   readonly params: Promise<{ 'exam-slug': string }>;
@@ -36,8 +39,48 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: 'website',
       images: OG_IMAGES,
     },
-    alternates: { canonical: `https://www.certifiqueai.com/simulado/${slug}` },
+    alternates: alternatesFor(`/simulado/${slug}`),
   };
+}
+
+function buildExamLandingSchemas(config: ExamLandingConfig) {
+  const url = `https://www.certifiqueai.com/simulado/${config.slug}`;
+
+  const courseSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Course',
+    name: `Simulado ${config.name}`,
+    description: config.seoDescription,
+    provider: { '@type': 'Organization', name: 'CertifiqueAI', url: 'https://www.certifiqueai.com' },
+    url,
+    hasCourseInstance: {
+      '@type': 'CourseInstance',
+      courseMode: 'online',
+      courseWorkload: `PT${config.examDurationMinutes}M`,
+    },
+  };
+
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: config.faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+    })),
+  };
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Início', item: 'https://www.certifiqueai.com' },
+      { '@type': 'ListItem', position: 2, name: 'Simulados', item: 'https://www.certifiqueai.com/simulado' },
+      { '@type': 'ListItem', position: 3, name: config.name, item: url },
+    ],
+  };
+
+  return [courseSchema, faqSchema, breadcrumbSchema];
 }
 
 export default async function ExamLandingPage({ params }: PageProps) {
@@ -47,9 +90,10 @@ export default async function ExamLandingPage({ params }: PageProps) {
   if (!config) notFound();
 
   return (
-    // The hero sample question and the syllabus grid share one selection, so
-    // both sit inside the same provider.
     <ExamPracticeProvider config={config}>
+      {buildExamLandingSchemas(config).map((schema) => (
+        <script key={schema['@type']} type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(schema) }} />
+      ))}
       <ExamLandingHero config={config} />
       <ExamFactsStrip config={config} />
       <ExamSyllabusSection config={config} />

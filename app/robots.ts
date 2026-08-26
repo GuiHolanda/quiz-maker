@@ -9,8 +9,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: [
           '/dashboard',
           '/simulados',
-          '/certifications',
-          '/public-exams',
+          '/exams',
           '/questions',
           '/question-bank',
           '/billing',
