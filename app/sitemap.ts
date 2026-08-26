@@ -11,11 +11,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.9,
   }));
 
-  // /login and /register are deliberately absent: they are thin, carry no search intent,
-  // and an indexed login page only clutters the brand's own results. robots.txt still
-  // allows them so they are not treated as hidden, they are just not advertised.
   return [
     { url: BASE_URL, lastModified: lastModified('home'), priority: 1.0 },
+    { url: `${BASE_URL}/simulado`, lastModified: lastModified('simuladoHub'), priority: 0.9 },
     ...landingPages,
     { url: `${BASE_URL}/demo`, lastModified: lastModified('demo'), priority: 0.9 },
     { url: `${BASE_URL}/pricing`, lastModified: lastModified('pricing'), priority: 0.8 },

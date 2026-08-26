@@ -20,6 +20,7 @@ const NAV_LINKS = [
   // Proof before signup, so it sits ahead of pricing — same role the demo link
   // already plays in the focused-CTA navbar on the exam landing pages.
   { labelKey: 'nav.demo', href: DEMO_PATH },
+  { labelKey: 'nav.freeSimulados', href: '/simulado' },
   { labelKey: 'nav.pricing', href: '/pricing' },
 ] as const;
 
