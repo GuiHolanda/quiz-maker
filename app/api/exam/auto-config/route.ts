@@ -9,13 +9,6 @@ import { toApiErrorResponse } from '@/lib/api-error';
 import type { ExamType } from '@/shared/types';
 
 const quotaService = new QuotaService();
-
-// The POST handler only kicks off the job and returns { jobId } fast — but the whole
-// research→review→format pipeline runs inside after(() => runAutoConfigJob(...)) scheduled
-// from THIS request, and Vercel bounds after() work by the route's own maxDuration. 60s was
-// enough for the handler itself, not for the background pipeline it schedules — it was
-// getting killed mid-run in production, silently stranding jobs in "running". Match
-// generation-job/route.ts, which uses the identical after() pattern at 300s.
 export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
@@ -38,8 +31,6 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Exam cap first: a user who can't save another exam must not spend an LLM call —
-    // nor an auto_config unit — on a blueprint that has nowhere to land.
     await quotaService.check(session.user.id, 'create_exam', 1);
 
     const body = await request.json().catch(() => null);
@@ -54,10 +45,6 @@ export async function POST(request: NextRequest) {
     if (typeof name !== 'string' || !name.trim()) {
       throw Object.assign(new Error('name is required'), { status: 400 });
     }
-
-    // Only meaningful for public_exam, and only ever set from a prior locate-edital call —
-    // never trust it blindly, but a malformed/absent value just means "no PDF", the same as
-    // a user who skipped locate entirely.
     const editalRef =
       edital && typeof edital === 'object' && typeof (edital as Record<string, unknown>).url === 'string'
         ? {
@@ -87,8 +74,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Reconnect support: /exams/new checks for an already-running job on mount so a reload
-// mid-pipeline doesn't strand the user on a blank picker.
 export async function GET(request: NextRequest) {
   const session = await auth();
 
