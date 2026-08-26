@@ -148,6 +148,8 @@ npm run dev
 | `npm run e2e` | Run E2E tests (Playwright) |
 | `npm run e2e:ui` | Open Playwright UI — interactive test runner |
 | `npm run e2e:debug` | Run E2E tests with Playwright Inspector |
+| `npm run eval:model` | Benchmark question-generation quality/cost against `OPENAI_MODEL` |
+| `npm run eval:edital` | Benchmark edital identify/locate/extract against real editais (see below) |
 
 ---
 
@@ -216,6 +218,47 @@ npx playwright show-report
 - `globalTeardown` deletes all data created by the E2E user after the suite completes.
 
 **CI:** The workflow at `.github/workflows/e2e.yml` runs on every push to `main`. Required GitHub Actions secrets: `E2E_USER_EMAIL`, `E2E_USER_PASSWORD`, `NEXTAUTH_SECRET`.
+
+### Model Benchmarks (`scripts/eval/`)
+
+Two manual, non-CI benchmarks that call the real OpenAI API — for pre-release checks and for
+comparing model/prompt changes, not for every push. Both cost real money and are non-deterministic
+by design (`web_search`), which is exactly why they're separate from the CI-run E2E suite above:
+E2E mocks the LLM to test wiring deterministically; these test whether the LLM's *answer* is any
+good, which a mock structurally cannot do.
+
+| | `npm run eval:model` | `npm run eval:edital` |
+|---|---|---|
+| Measures | question-generation quality (5 domains) | edital identify → locate → extract |
+| Judge | LLM (`gpt-5.6-sol`), quality rubric | field assertions + LLM topic-coverage judge |
+| Real API calls | question generation | `identifyExam`, `locateEdital`, `EditalExtractorService.extract` — the actual production functions |
+
+```bash
+# Question-generation quality/cost, current OPENAI_MODEL
+OPENAI_API_KEY=sk-... OPENAI_MODEL=gpt-5.4-mini npm run eval:model
+
+# Edital identify/locate/extract — needs DATABASE_URL (writes UsageLog like a real request)
+DATABASE_URL="file:$PWD/prisma/dev.db" npm run eval:edital
+
+# One fixture, or one stage only ("search" = identify+locate, "extract" = extraction only —
+# cheap and deterministic-input since it runs against the local PDF fixture, not a fresh search)
+DATABASE_URL="file:$PWD/prisma/dev.db" npm run eval:edital -- --fixture transpetro
+DATABASE_URL="file:$PWD/prisma/dev.db" npm run eval:edital -- --stage extract
+
+# N repetitions — the search stage is non-deterministic, so a single run's pass/fail is noisy
+DATABASE_URL="file:$PWD/prisma/dev.db" npm run eval:edital -- --runs 3
+
+# Compare two saved reports (either script)
+npm run eval:edital -- --compare scripts/eval/results/A.json scripts/eval/results/B.json
+```
+
+`eval:edital`'s fixtures (`scripts/eval/edital-fixtures/`) are two real editais with a
+hand-verified gabarito (`expected.ts`) — one Cesgranrio, one IDECAN, chosen for structural
+differences (per-cargo vs. per-nível sections, different question-count breakdowns) so a
+regression in one banca's format doesn't hide behind a passing run on the other. The two stages
+are scored separately (search vs. extraction) so a drop points at the actual failing stage
+instead of one vague number — this is what caught the Transpetro 2026.4 regression that 45
+green unit tests missed, because those tests mock the LLM's answer instead of asking it one.
 
 ---
 
