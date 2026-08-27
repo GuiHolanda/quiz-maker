@@ -45,7 +45,8 @@ export function ComparisonPanel({ view }: ComparisonPanelProps) {
 
   let footer = t('simulado.result.compareFirst');
 
-  if (delta != null && delta > 0) footer = t('simulado.result.compareImproved', { delta: signedPP(delta) });
+  if (!view.comparable) footer = view.timedOut ? t('simulado.result.timedOutNote') : t('simulado.result.noTimeLimit');
+  else if (delta != null && delta > 0) footer = t('simulado.result.compareImproved', { delta: signedPP(delta) });
   else if (delta != null && delta < 0) footer = t('simulado.result.compareDropped', { delta: Math.abs(delta) });
   else if (delta === 0) footer = t('simulado.result.compareFlat');
 
