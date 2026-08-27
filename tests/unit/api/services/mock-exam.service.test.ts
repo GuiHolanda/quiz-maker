@@ -116,6 +116,8 @@ describe('MockExamService', () => {
           name: 'Concurso ABC',
           type: 'public_exam',
           examBoard: { id: 'board-1', name: 'CESGRANRIO' },
+          passingScore: 70,
+          examDurationMinutes: 120,
         },
         questions: [
           {
@@ -168,16 +170,76 @@ describe('MockExamService', () => {
     } as any;
 
     prismaMock.mockExamAttempt.findFirst.mockResolvedValue(mockAttemptResult);
+    prismaMock.mockExamAttempt.findMany.mockResolvedValue([
+      { id: 10, score: 2, startedAt: new Date('2024-01-01'), finishedAt: new Date('2024-01-01T01:00:00'), answers: mockAttemptResult.answers },
+    ] as any);
 
     const result = await service.getAttemptResult(1, 10, 'user-1');
 
     expect(result.sectionBreakdown).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ sectionName: 'Matemática', correct: 1, total: 2 }),
-        expect.objectContaining({ sectionName: 'Português', correct: 1, total: 1 }),
+        expect.objectContaining({ sectionName: 'Matemática', correct: 1, total: 2, weightPercent: 67 }),
+        expect.objectContaining({ sectionName: 'Português', correct: 1, total: 1, weightPercent: 33 }),
       ]),
     );
     expect(result.sectionBreakdown).toHaveLength(2);
+    expect(result.examMeta).toEqual({ passingScorePercent: 70, durationMinutes: 120 });
+    expect(result.attemptNumber).toBe(1);
+    expect(result.totalAttempts).toBe(1);
+    expect(result.overallPreviousAvgPercent).toBeNull();
+    expect(result.sectionBreakdown.every((s) => s.previousAvgPercent === null)).toBe(true);
+  });
+
+  it('getAttemptResult() derives attempt position and per-section deltas from earlier finished attempts', async () => {
+    const questions = [
+      { id: 1, order: 0, examQuestion: { id: 101, text: 'Q1', correctCount: 0, sectionName: 'Matemática', topicName: null, difficulty: 'medium', options: [], examName: 'X', answer: { questionId: 101, correctOptions: ['A'], explanations: [] } } },
+      { id: 2, order: 1, examQuestion: { id: 102, text: 'Q2', correctCount: 0, sectionName: 'Matemática', topicName: null, difficulty: 'medium', options: [], examName: 'X', answer: { questionId: 102, correctOptions: ['A'], explanations: [] } } },
+      { id: 3, order: 2, examQuestion: { id: 103, text: 'Q3', correctCount: 0, sectionName: 'Português', topicName: null, difficulty: 'easy', options: [], examName: 'X', answer: { questionId: 103, correctOptions: ['C'], explanations: [] } } },
+      { id: 4, order: 3, examQuestion: { id: 104, text: 'Q4', correctCount: 0, sectionName: 'Português', topicName: null, difficulty: 'easy', options: [], examName: 'X', answer: { questionId: 104, correctOptions: ['C'], explanations: [] } } },
+    ];
+
+    prismaMock.mockExamAttempt.findFirst.mockResolvedValue({
+      id: 20,
+      mockExamId: 1,
+      startedAt: new Date('2024-02-01'),
+      finishedAt: new Date('2024-02-01T01:00:00'),
+      score: 3,
+      answers: [
+        { mockExamQuestionId: 1, selectedOptions: JSON.stringify(['A']) },
+        { mockExamQuestionId: 2, selectedOptions: JSON.stringify(['A']) },
+        { mockExamQuestionId: 3, selectedOptions: JSON.stringify(['C']) },
+        { mockExamQuestionId: 4, selectedOptions: JSON.stringify(['B']) },
+      ],
+      mockExam: { id: 1, name: 'M', exam: { id: 'e', name: 'X', type: 'certification' }, questions },
+    } as any);
+
+    prismaMock.mockExamAttempt.findMany.mockResolvedValue([
+      {
+        id: 10,
+        score: 1,
+        startedAt: new Date('2024-01-01'),
+        finishedAt: new Date('2024-01-01T01:00:00'),
+        answers: [
+          { mockExamQuestionId: 1, selectedOptions: JSON.stringify(['A']) },
+          { mockExamQuestionId: 2, selectedOptions: JSON.stringify(['B']) },
+          { mockExamQuestionId: 3, selectedOptions: JSON.stringify(['B']) },
+          { mockExamQuestionId: 4, selectedOptions: JSON.stringify(['B']) },
+        ],
+      },
+      { id: 20, score: 3, startedAt: new Date('2024-02-01'), finishedAt: new Date('2024-02-01T01:00:00'), answers: [] },
+    ] as any);
+
+    const result = await service.getAttemptResult(1, 20, 'user-1');
+
+    expect(result.attemptNumber).toBe(2);
+    expect(result.totalAttempts).toBe(2);
+    expect(result.overallPreviousAvgPercent).toBe(25);
+
+    const mat = result.sectionBreakdown.find((s) => s.sectionName === 'Matemática');
+    const por = result.sectionBreakdown.find((s) => s.sectionName === 'Português');
+
+    expect(mat).toMatchObject({ correct: 2, total: 2, previousAvgPercent: 50 });
+    expect(por).toMatchObject({ correct: 1, total: 2, previousAvgPercent: 0 });
   });
 
   // Behaviour 4: resolveSections matches section names case-insensitively (tested via create())
