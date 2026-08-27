@@ -2,33 +2,11 @@ import Stripe from 'stripe';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
-import { PLAN_LIMITS } from '@/config/constants';
-import type { UserPlan } from '@/shared/types';
+import { resolvePlanFromPriceId, isCapacityUpgrade } from '@/app/api/webhooks/stripe/stripe-webhook.utils';
 
 export const dynamic = 'force-dynamic';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-06-24.dahlia' });
-
-function resolvePlanFromPriceId(priceId: string | undefined): UserPlan {
-  const proAiPrices = [process.env.STRIPE_PRICE_ID_PRO_AI_MONTHLY, process.env.STRIPE_PRICE_ID_PRO_AI_YEARLY].filter(
-    Boolean
-  );
-
-  return proAiPrices.includes(priceId) ? 'pro_ai' : 'pro';
-}
-
-// achado 11 (pricing tier audit): a plan change only deserves a fresh 30-day window when it
-// actually raises the questions/period ceiling — otherwise a routine subscription.updated
-// (payment retry, cancel_at_period_end toggle) or a downgrade would reset the counter for
-// free. Compares PLAN_LIMITS, not customQuotaOverride, since this is about the tier just
-// purchased, not any admin/referral adjustment layered on top. An unrecognized old plan
-// counts as zero capacity so any real paid tier still reads as an upgrade.
-function isCapacityUpgrade(oldPlan: string, newPlan: UserPlan): boolean {
-  const oldLimit = PLAN_LIMITS[oldPlan as UserPlan]?.questionsPerPeriod ?? 0;
-  const newLimit = PLAN_LIMITS[newPlan].questionsPerPeriod;
-
-  return newLimit > oldLimit;
-}
 
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
