@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { Skeleton } from '@heroui/skeleton';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faXmark, faMinus, faChevronDown, faLightbulb } from '@fortawesome/free-solid-svg-icons';
 
@@ -20,6 +21,13 @@ const STATUS_META: Record<QuestionStatus, { icon: typeof faCheck; badge: string;
   wrong: { icon: faXmark, badge: 'bg-danger/10 text-danger', label: 'simulado.result.statusWrong' },
   blank: { icon: faMinus, badge: 'bg-default-200 text-default-400', label: 'simulado.result.statusBlank' },
 };
+
+const COMMENT_SKELETON_ROWS: readonly (readonly string[])[] = [
+  ['w-[94%]', 'w-[62%]'],
+  ['w-[88%]'],
+  ['w-full', 'w-[71%]'],
+  ['w-[80%]'],
+];
 
 export function ReviewQuestionRow({ question, isOpen, onToggle, onLoadExplanation }: ReviewQuestionRowProps) {
   const { t } = useTranslation();
@@ -42,10 +50,6 @@ export function ReviewQuestionRow({ question, isOpen, onToggle, onLoadExplanatio
       setIsLoading(false);
     }
   }
-
-  useEffect(() => {
-    if (isOpen && explanations === null && !isLoading && !hasError) loadExplanation();
-  }, [isOpen]);
 
   const reference = question.topicName
     ? t('simulado.result.referenceWithTopic', { section: question.sectionName, topic: question.topicName })
@@ -121,12 +125,40 @@ export function ReviewQuestionRow({ question, isOpen, onToggle, onLoadExplanatio
           </div>
 
           <div className="mt-4 rounded-xl bg-content1 p-4">
-            <div className="flex items-center gap-2 text-primary">
-              <FontAwesomeIcon icon={faLightbulb} />
-              <span className="text-xs font-semibold">{t('simulado.result.commentedKey')}</span>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-primary">
+                <FontAwesomeIcon icon={faLightbulb} />
+                <span className="text-xs font-semibold">{t('simulado.result.commentedKey')}</span>
+              </div>
+              {explanations === null && !isLoading && !hasError && (
+                <button
+                  className="rounded-lg border border-divider px-3 py-1.5 text-xs font-medium text-default-500 transition-colors duration-200 hover:bg-content2 hover:text-foreground"
+                  type="button"
+                  onClick={loadExplanation}
+                >
+                  {t('simulado.result.showComment')}
+                </button>
+              )}
             </div>
 
-            {isLoading && <p className="mt-3 text-sm text-default-500">{t('simulado.result.loadingComment')}</p>}
+            {isLoading && (
+              <div
+                aria-label={t('simulado.result.loadingComment')}
+                className="mt-3.5 flex flex-col gap-3"
+                role="status"
+              >
+                {COMMENT_SKELETON_ROWS.map((lines, rowIndex) => (
+                  <div key={rowIndex} className="flex gap-3">
+                    <Skeleton className="h-3.5 w-3.5 shrink-0 rounded" />
+                    <div className="flex flex-1 flex-col gap-1.5">
+                      {lines.map((width, lineIndex) => (
+                        <Skeleton key={lineIndex} className={`h-3 rounded ${width}`} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {hasError && (
               <div className="mt-3 flex flex-wrap items-center gap-3">
