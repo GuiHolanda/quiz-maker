@@ -1,12 +1,9 @@
 'use client';
 
-import { Key, useState } from 'react';
-import { Tab, Tabs } from '@heroui/tabs';
-import { useSearchParams } from 'next/navigation';
 import { BreadcrumbItem, Breadcrumbs } from '@heroui/breadcrumbs';
 
-import { NewSimuladoTab } from './components/NewSimuladoTab';
-import { SimuladosListTab } from './components/SimuladosListTab';
+import { CreateSimuladoSection } from './components/CreateSimuladoSection';
+import { SimuladosCreatedSection } from './components/list/SimuladosCreatedSection';
 
 import { ExamsProvider } from '@/features/providers/exams.provider';
 import { MockExamsProvider } from '@/features/providers/mockExams.provider';
@@ -15,39 +12,21 @@ import { PageHeader } from '@/shared/components/ui/PageHeader';
 
 function SimuladosPageContent() {
   const { t } = useTranslation();
-  const searchParams = useSearchParams();
-  const [selectedTab, setSelectedTab] = useState<Key>(searchParams.get('tab') === 'new' ? 'new' : 'list');
 
   return (
     <PageHeader
       breadcrumbs={
         <Breadcrumbs>
-          <BreadcrumbItem href="/">{t('nav.dashboard')}</BreadcrumbItem>
           <BreadcrumbItem>{t('nav.simulados')}</BreadcrumbItem>
+          <BreadcrumbItem>{t('simulado.create.breadcrumbNew')}</BreadcrumbItem>
         </Breadcrumbs>
       }
-      subtitle={t('simulado.pageSubtitle')}
-      title={t('simulado.pageTitle')}
+      subtitle={t('simulado.create.subtitle')}
+      title={t('simulado.create.title')}
     >
-      <div className="flex w-full flex-col">
-        <Tabs
-          aria-label="Simulados tabs"
-          classNames={{
-            tabList: 'bg-content2 border border-default-200 rounded-xl p-1 gap-1',
-            tab: 'text-default-400 data-[selected=true]:text-foreground data-[selected=true]:font-semibold',
-            cursor: 'bg-primary rounded-xl',
-            panel: 'pt-4',
-          }}
-          selectedKey={selectedTab as string}
-          onSelectionChange={setSelectedTab}
-        >
-          <Tab data-testid="simulado-tab-mine" key="list" title={t('simulado.tabList')}>
-            <SimuladosListTab onCreateNew={() => setSelectedTab('new')} />
-          </Tab>
-          <Tab data-testid="simulado-tab-new" key="new" title={t('simulado.tabNew')}>
-            <NewSimuladoTab onCreated={() => setSelectedTab('list')} />
-          </Tab>
-        </Tabs>
+      <div className="flex flex-col gap-12">
+        <CreateSimuladoSection />
+        <SimuladosCreatedSection />
       </div>
     </PageHeader>
   );
