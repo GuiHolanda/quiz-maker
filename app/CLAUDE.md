@@ -137,7 +137,7 @@ Compacto, sem ícone. Para feedback contextual dentro de widgets, seções de fo
 
 API: `title` (obrigatório), `description?`, `action?: { label, href?, onPress?, icon? }`.
 
-Exemplos de uso: seções do dashboard (`ScoreTrendSection`, `DomainBreakdownSection`), `NewMockExamForm`, `question-bank` para erro de carga e "nenhum resultado para estes filtros".
+Exemplos de uso: seções do dashboard (`ScoreTrendSection`, `DomainBreakdownSection`), `CreateSimuladoSection`, `question-bank` para erro de carga e "nenhum resultado para estes filtros".
 
 ### `IllustratedEmptyState` (`shared/components/ui/IllustratedEmptyState.tsx`)
 
@@ -212,7 +212,7 @@ Importar config via `@/app/(workspace)/exams/exam-config` (nunca relativo).
 | `SimuladosListTab.tsx` | Lista unificada, status chips, delete, histórico de tentativas |
 | `NewSimuladoTab.tsx` | Type picker (cert/concurso) |
 | `NewCertSimuladoForm.tsx` | Form cert simulado com distribuição por tópico |
-| `NewMockExamForm.tsx` | Form mock exam com distribuição por matéria |
+| `CreateSimuladoSection.tsx` + `create/` | Form de criação (nome, escopo, exame+questões, tempo, tópicos) + `SummarySidebar`; lógica pura em `create/simuladoFormState.ts` |
 
 Status chip map: `pending → default`, `in_progress → warning`, `answered → success`.
 

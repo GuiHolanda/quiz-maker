@@ -22,6 +22,20 @@ export const TID = {
   simuladoAnswerBtn: 'simulado-answer-btn',
   simuladoDeleteBtn: 'simulado-delete-btn',
 
+  // Simulado — create form (/simulados)
+  simuladoNameInput: 'simulado-name-input',
+  simuladoScopeCertification: 'simulado-scope-certification',
+  simuladoScopePublicExam: 'simulado-scope-public-exam',
+  simuladoExamSelect: 'simulado-exam-select',
+  simuladoTimeOficial: 'simulado-time-oficial',
+  simuladoTimeLivre: 'simulado-time-livre',
+  simuladoTimePersonalizado: 'simulado-time-personalizado',
+  simuladoCustomMinutesInput: 'simulado-custom-minutes-input',
+  simuladoTopicToggle: 'simulado-topic-toggle',
+  simuladoTopicsSelectAll: 'simulado-topics-select-all',
+  simuladoTopicsClear: 'simulado-topics-clear',
+  simuladoCreateStatus: 'simulado-create-status',
+
   // Answer / result
   answerOption: 'answer-option',
   answerSubmitBtn: 'answer-submit-btn',
