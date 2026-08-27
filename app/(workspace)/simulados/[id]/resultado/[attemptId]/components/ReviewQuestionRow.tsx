@@ -34,6 +34,7 @@ export function ReviewQuestionRow({ question, isOpen, onToggle, onLoadExplanatio
   const [explanations, setExplanations] = useState<Record<string, string> | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [isShown, setIsShown] = useState(false);
 
   const meta = STATUS_META[question.status];
 
@@ -44,11 +45,17 @@ export function ReviewQuestionRow({ question, isOpen, onToggle, onLoadExplanatio
       const data = await onLoadExplanation(question.examQuestionId);
 
       setExplanations(data);
+      setIsShown(true);
     } catch {
       setHasError(true);
     } finally {
       setIsLoading(false);
     }
+  }
+
+  function handleCommentButton() {
+    if (explanations) setIsShown((shown) => !shown);
+    else loadExplanation();
   }
 
   const reference = question.topicName
@@ -130,13 +137,14 @@ export function ReviewQuestionRow({ question, isOpen, onToggle, onLoadExplanatio
                 <FontAwesomeIcon icon={faLightbulb} />
                 <span className="text-xs font-semibold">{t('simulado.result.commentedKey')}</span>
               </div>
-              {explanations === null && !isLoading && !hasError && (
+              {!isLoading && !hasError && (
                 <button
+                  aria-expanded={explanations ? isShown : undefined}
                   className="rounded-lg border border-divider px-3 py-1.5 text-xs font-medium text-default-500 transition-colors duration-200 hover:bg-content2 hover:text-foreground"
                   type="button"
-                  onClick={loadExplanation}
+                  onClick={handleCommentButton}
                 >
-                  {t('simulado.result.showComment')}
+                  {explanations && isShown ? t('simulado.result.hideComment') : t('simulado.result.showComment')}
                 </button>
               )}
             </div>
@@ -173,7 +181,7 @@ export function ReviewQuestionRow({ question, isOpen, onToggle, onLoadExplanatio
               </div>
             )}
 
-            {explanations && (
+            {explanations && isShown && (
               <div className="mt-3 flex flex-col gap-2">
                 {Object.entries(explanations).map(([label, text]) => (
                   <p key={label} className="text-sm leading-relaxed text-default-600">
