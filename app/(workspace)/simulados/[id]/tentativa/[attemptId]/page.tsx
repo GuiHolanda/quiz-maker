@@ -7,6 +7,7 @@ import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
 import { SimuladoQuestionList } from '@/shared/components/SimuladoQuestionList';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useAttemptProgress } from '@/features/hooks/useAttemptProgress.hook';
+import { useAttemptDeadline } from '@/features/hooks/useAttemptDeadline.hook';
 import { useNavigationGuard } from '@/features/hooks/useNavigationGuard.hook';
 import { getMockExam, finishMockExamAttempt, discardMockExamAttempt } from '@/features/connectors';
 import { MockExam, MockExamAttemptAnswer } from '@/shared/types';
@@ -40,6 +41,20 @@ export default function SimuladoTentativaPage() {
   useEffect(() => {
     getMockExam(Number(params.id)).then(setMockExam);
   }, [params.id]);
+
+  const currentAttempt = mockExam?.attempts.find((attempt) => attempt.id === Number(params.attemptId)) ?? null;
+
+  const {
+    enabled: timerOn,
+    remainingMs,
+    label: remainingLabel,
+  } = useAttemptDeadline({
+    startedAt: currentAttempt?.startedAt ?? null,
+    durationMinutes: mockExam?.durationMinutes ?? null,
+    onExpire: () => {
+      if (!isFinishing) handleFinish();
+    },
+  });
 
   if (!mockExam) {
     return (
@@ -107,6 +122,7 @@ export default function SimuladoTentativaPage() {
   }
 
   async function handleFinish() {
+    if (isFinishing) return;
     setIsFinishing(true);
     try {
       const attemptAnswers: MockExamAttemptAnswer[] = mockExam!.questions.map((mq) => {
@@ -134,6 +150,15 @@ export default function SimuladoTentativaPage() {
     total: questions.length,
   });
 
+  const timerToneClass =
+    remainingMs < 60_000 ? 'text-danger' : remainingMs < 5 * 60_000 ? 'text-warning' : 'text-default-500';
+
+  const timer = timerOn ? (
+    <span className={`font-mono text-sm font-semibold tabular-nums ${timerToneClass}`} aria-live="polite">
+      {t('simulado.timer.remaining', { time: remainingLabel })}
+    </span>
+  ) : undefined;
+
   return (
     <>
       <BusyDialog isOpen={isFinishing} />
@@ -159,6 +184,7 @@ export default function SimuladoTentativaPage() {
         onConfirm={handleConfirmExit}
       />
       <PageHeader
+        action={timer}
         breadcrumbs={
           <Breadcrumbs>
             <BreadcrumbItem href="/">{t('nav.dashboard')}</BreadcrumbItem>
