@@ -282,6 +282,8 @@ export interface MockExamSectionConfig {
   questionCount: number;
 }
 
+export type MockExamQuestionSource = 'library' | 'unseen' | 'wrong';
+
 export interface MockExamQuestion {
   id: number;
   order: number;
@@ -331,6 +333,7 @@ export interface CreateMockExamPayload {
   name?: string;
   totalQuestions: number;
   sections: MockExamSectionConfig[];
+  questionSource?: MockExamQuestionSource;
 }
 
 export interface FinishAttemptPayload {

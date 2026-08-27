@@ -478,4 +478,82 @@ describe('MockExamService', () => {
       expect(payloadSent.map((q) => q.id)).toEqual([101]);
     });
   });
+
+  describe('questionSource pool filtering', () => {
+    const exam = { id: 'exam-1', name: 'AWS' };
+    const section = { id: 'sec-1', name: 'Security' };
+
+    function seedCommon() {
+      prismaMock.examSection.findMany.mockResolvedValue([section] as any);
+      prismaMock.exam.findFirst.mockResolvedValue(exam as any);
+      prismaMock.exam.findFirstOrThrow.mockResolvedValue(exam as any);
+    }
+
+    it('unseen: excludes examQuestion ids already answered in a finished attempt for this exam', async () => {
+      seedCommon();
+      prismaMock.mockExamAttemptAnswer.findMany.mockResolvedValue([
+        { isCorrect: true, mockExamQuestion: { examQuestionId: 10 } },
+        { isCorrect: false, mockExamQuestion: { examQuestionId: 11 } },
+      ] as any);
+      prismaMock.examQuestion.count.mockResolvedValue(5);
+      prismaMock.examQuestion.findMany.mockResolvedValue([{ id: 12 }, { id: 13 }, { id: 14 }] as any);
+      prismaMock.mockExam.create.mockResolvedValue({ id: 1, name: 'x', exam, _count: { questions: 3 }, createdAt: new Date() } as any);
+
+      await service.create(
+        { examId: 'exam-1', totalQuestions: 3, sections: [{ sectionName: 'Security', questionCount: 3 }], questionSource: 'unseen' },
+        'user-1',
+      );
+
+      const drawCall = prismaMock.examQuestion.findMany.mock.calls.find((c) => c[0]?.where?.id);
+      expect(drawCall?.[0]?.where?.id).toEqual({ notIn: [10, 11] });
+    });
+
+    it('wrong: restricts to examQuestion ids answered incorrectly in a finished attempt for this exam', async () => {
+      seedCommon();
+      prismaMock.mockExamAttemptAnswer.findMany.mockResolvedValue([
+        { isCorrect: true, mockExamQuestion: { examQuestionId: 10 } },
+        { isCorrect: false, mockExamQuestion: { examQuestionId: 11 } },
+      ] as any);
+      prismaMock.examQuestion.count.mockResolvedValue(1);
+      prismaMock.examQuestion.findMany.mockResolvedValue([{ id: 11 }] as any);
+      prismaMock.mockExam.create.mockResolvedValue({ id: 1, name: 'x', exam, _count: { questions: 1 }, createdAt: new Date() } as any);
+
+      await service.create(
+        { examId: 'exam-1', totalQuestions: 1, sections: [{ sectionName: 'Security', questionCount: 1 }], questionSource: 'wrong' },
+        'user-1',
+      );
+
+      const drawCall = prismaMock.examQuestion.findMany.mock.calls.find((c) => c[0]?.where?.id);
+      expect(drawCall?.[0]?.where?.id).toEqual({ in: [11] });
+    });
+
+    it('wrong: throws 422 when there are not enough incorrect questions', async () => {
+      seedCommon();
+      prismaMock.mockExamAttemptAnswer.findMany.mockResolvedValue([] as any);
+      prismaMock.examQuestion.count.mockResolvedValue(0);
+
+      await expect(
+        service.create(
+          { examId: 'exam-1', totalQuestions: 5, sections: [{ sectionName: 'Security', questionCount: 5 }], questionSource: 'wrong' },
+          'user-1',
+        ),
+      ).rejects.toMatchObject({ status: 422, message: /insuficientes/i });
+    });
+
+    it('library (default): does not add an id filter', async () => {
+      seedCommon();
+      prismaMock.examQuestion.count.mockResolvedValue(10);
+      prismaMock.examQuestion.findMany.mockResolvedValue([{ id: 1 }, { id: 2 }, { id: 3 }] as any);
+      prismaMock.mockExam.create.mockResolvedValue({ id: 1, name: 'x', exam, _count: { questions: 3 }, createdAt: new Date() } as any);
+
+      await service.create(
+        { examId: 'exam-1', totalQuestions: 3, sections: [{ sectionName: 'Security', questionCount: 3 }] },
+        'user-1',
+      );
+
+      const drawCall = prismaMock.examQuestion.findMany.mock.calls.find((c) => c[0]?.where);
+      expect(drawCall?.[0]?.where?.id).toBeUndefined();
+      expect(prismaMock.mockExamAttemptAnswer.findMany).not.toHaveBeenCalled();
+    });
+  });
 });

@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { shuffleItems } from '@/lib/shuffle-options';
-import { CreateMockExamPayload, MockExamSectionConfig, ExamType } from '@/shared/types';
+import { CreateMockExamPayload, MockExamSectionConfig, MockExamQuestionSource, ExamType } from '@/shared/types';
 import { normalizeName, looseKey } from '@/shared/utils';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { ExamQuestionService } from '@/features/services/exam-question.service';
@@ -118,10 +118,11 @@ export class MockExamService {
 
   async create(payload: CreateMockExamPayload, userId: string) {
     const { examId, name, totalQuestions, sections } = payload;
+    const questionSource = payload.questionSource ?? 'library';
 
     const resolved = await this.resolveSections(examId, sections);
 
-    await this.validateSectionAvailability(examId, resolved, userId);
+    await this.validateSectionAvailability(examId, resolved, userId, questionSource);
 
     const exam = await prisma.exam.findFirst({
       where: { id: examId },
@@ -132,13 +133,14 @@ export class MockExamService {
 
     const autoName = name?.trim() || `${exam.name} – ${totalQuestions} questões`;
 
-    const selectedQuestionIds = await this.drawQuestions(examId, resolved, userId);
+    const selectedQuestionIds = await this.drawQuestions(examId, resolved, userId, questionSource);
 
     const mockExam = await prisma.mockExam.create({
       data: {
         name: autoName,
         examId,
         userId,
+        questionSource,
         sections: { create: sections.map((s) => ({ sectionName: s.sectionName, questionCount: s.questionCount })) },
         questions: {
           create: selectedQuestionIds.map((id, index) => ({
@@ -167,14 +169,61 @@ export class MockExamService {
     };
   }
 
+  private async questionIdHistory(
+    examId: string,
+    userId: string
+  ): Promise<{ seen: Set<number>; wrong: Set<number> }> {
+    const answers = await prisma.mockExamAttemptAnswer.findMany({
+      where: { attempt: { userId, finishedAt: { not: null }, mockExam: { examId } } },
+      select: { isCorrect: true, mockExamQuestion: { select: { examQuestionId: true } } },
+    });
+
+    const seen = new Set<number>();
+    const wrong = new Set<number>();
+
+    for (const answer of answers) {
+      const examQuestionId = answer.mockExamQuestion.examQuestionId;
+
+      seen.add(examQuestionId);
+      if (!answer.isCorrect) wrong.add(examQuestionId);
+    }
+
+    return { seen, wrong };
+  }
+
+  private sourceIdFilter(
+    source: MockExamQuestionSource,
+    history: { seen: Set<number>; wrong: Set<number> }
+  ): { id?: { in: number[] } | { notIn: number[] } } {
+    if (source === 'unseen') return { id: { notIn: Array.from(history.seen) } };
+    if (source === 'wrong') return { id: { in: Array.from(history.wrong) } };
+
+    return {};
+  }
+
+  private async buildSourceFilter(
+    examId: string,
+    userId: string,
+    source: MockExamQuestionSource
+  ): Promise<{ id?: { in: number[] } | { notIn: number[] } }> {
+    if (source === 'library') return {};
+
+    const history = await this.questionIdHistory(examId, userId);
+
+    return this.sourceIdFilter(source, history);
+  }
+
   private async validateSectionAvailability(
     examId: string,
     sections: Array<MockExamSectionConfig & { sectionId: string | null }>,
-    userId: string
+    userId: string,
+    source: MockExamQuestionSource
   ) {
     const exam = await prisma.exam.findFirst({ where: { id: examId } });
 
     if (!exam) throw Object.assign(new Error('Exame não encontrado'), { status: 404 });
+
+    const sourceFilter = await this.buildSourceFilter(examId, userId, source);
 
     for (const s of sections) {
       // Prefer FK match when available. Fall back to the denormalized string
@@ -182,6 +231,7 @@ export class MockExamService {
       const count = s.sectionId
         ? await prisma.examQuestion.count({
             where: {
+              ...sourceFilter,
               userId,
               OR: [
                 { sectionId: s.sectionId },
@@ -190,13 +240,13 @@ export class MockExamService {
             },
           })
         : await prisma.examQuestion.count({
-            where: { examName: exam.name, sectionName: normalizeName(s.sectionName), userId },
+            where: { ...sourceFilter, examName: exam.name, sectionName: normalizeName(s.sectionName), userId },
           });
 
       if (count < s.questionCount) {
         throw Object.assign(
           new Error(
-            `Questões insuficientes para a seção "${s.sectionName}": ${count} disponíveis, ${s.questionCount} necessárias`
+            `Questões insuficientes para "${s.sectionName}" (fonte: ${source}): ${count} disponíveis, ${s.questionCount} necessárias`
           ),
           { status: 422 }
         );
@@ -207,15 +257,18 @@ export class MockExamService {
   private async drawQuestions(
     examId: string,
     sections: Array<MockExamSectionConfig & { sectionId: string | null }>,
-    userId: string
+    userId: string,
+    source: MockExamQuestionSource
   ): Promise<number[]> {
     const exam = await prisma.exam.findFirstOrThrow({ where: { id: examId } });
+    const sourceFilter = await this.buildSourceFilter(examId, userId, source);
     const ids: number[] = [];
 
     for (const s of sections) {
       const questions = s.sectionId
         ? await prisma.examQuestion.findMany({
             where: {
+              ...sourceFilter,
               userId,
               OR: [
                 { sectionId: s.sectionId },
@@ -225,7 +278,7 @@ export class MockExamService {
             select: { id: true },
           })
         : await prisma.examQuestion.findMany({
-            where: { examName: exam.name, sectionName: normalizeName(s.sectionName), userId },
+            where: { ...sourceFilter, examName: exam.name, sectionName: normalizeName(s.sectionName), userId },
             select: { id: true },
           });
 
