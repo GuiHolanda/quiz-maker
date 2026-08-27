@@ -32,7 +32,7 @@ export function ScorePanel({ view }: ScorePanelProps) {
       : null;
 
   return (
-    <div className="bg-content1 border border-default-200 rounded-xl p-6 md:p-7">
+    <div className="bg-content1 rounded-xl p-6 md:p-7">
       <div className="grid gap-8 md:grid-cols-[232px_minmax(0,1fr)] md:items-center">
         <div className="mx-auto md:mx-0">
           <ScoreDonut percent={view.percent} toneClass={toneText}>
@@ -47,10 +47,8 @@ export function ScorePanel({ view }: ScorePanelProps) {
             </div>
             {view.passed != null && (
               <div
-                className={`mt-3 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
-                  view.passed
-                    ? 'border-success/30 bg-success/10 text-success'
-                    : 'border-danger/30 bg-danger/10 text-danger'
+                className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
+                  view.passed ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'
                 }`}
               >
                 <FontAwesomeIcon icon={view.passed ? faCircleCheck : faTriangleExclamation} />

@@ -15,25 +15,10 @@ interface ReviewQuestionRowProps {
   readonly onLoadExplanation: (questionId: number) => Promise<Record<string, string>>;
 }
 
-const STATUS_META: Record<QuestionStatus, { icon: typeof faCheck; badge: string; chip: string; label: string }> = {
-  correct: {
-    icon: faCheck,
-    badge: 'border-success/30 bg-success/10 text-success',
-    chip: 'border-success/30 bg-success/10 text-success',
-    label: 'simulado.result.statusCorrect',
-  },
-  wrong: {
-    icon: faXmark,
-    badge: 'border-danger/30 bg-danger/10 text-danger',
-    chip: 'border-danger/30 bg-danger/10 text-danger',
-    label: 'simulado.result.statusWrong',
-  },
-  blank: {
-    icon: faMinus,
-    badge: 'border-default-300 bg-default-200 text-default-400',
-    chip: 'border-default-300 bg-default-200 text-default-400',
-    label: 'simulado.result.statusBlank',
-  },
+const STATUS_META: Record<QuestionStatus, { icon: typeof faCheck; badge: string; label: string }> = {
+  correct: { icon: faCheck, badge: 'bg-success/10 text-success', label: 'simulado.result.statusCorrect' },
+  wrong: { icon: faXmark, badge: 'bg-danger/10 text-danger', label: 'simulado.result.statusWrong' },
+  blank: { icon: faMinus, badge: 'bg-default-200 text-default-400', label: 'simulado.result.statusBlank' },
 };
 
 export function ReviewQuestionRow({ question, isOpen, onToggle, onLoadExplanation }: ReviewQuestionRowProps) {
@@ -67,16 +52,14 @@ export function ReviewQuestionRow({ question, isOpen, onToggle, onLoadExplanatio
     : t('simulado.result.reference', { section: question.sectionName });
 
   return (
-    <div
-      className={`overflow-hidden rounded-xl border bg-background/60 ${isOpen ? 'border-default-300' : 'border-default-200'}`}
-    >
+    <div className="overflow-hidden rounded-xl bg-content2">
       <button
         aria-expanded={isOpen}
-        className="grid w-full grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3.5 text-left transition-colors duration-200 hover:bg-content2 sm:grid-cols-[2rem_minmax(0,1fr)_7rem_1.25rem] sm:gap-4"
+        className="grid w-full grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3.5 text-left transition-colors duration-200 hover:bg-default-100 sm:grid-cols-[2rem_minmax(0,1fr)_7rem_1.25rem] sm:gap-4"
         type="button"
         onClick={onToggle}
       >
-        <span className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs ${meta.badge}`}>
+        <span className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs ${meta.badge}`}>
           <FontAwesomeIcon icon={meta.icon} />
         </span>
 
@@ -88,7 +71,7 @@ export function ReviewQuestionRow({ question, isOpen, onToggle, onLoadExplanatio
         </span>
 
         <span
-          className={`hidden justify-self-start whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold sm:inline-block ${meta.chip}`}
+          className={`hidden justify-self-start whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold sm:inline-block ${meta.badge}`}
         >
           {t(meta.label)}
         </span>
@@ -107,18 +90,18 @@ export function ReviewQuestionRow({ question, isOpen, onToggle, onLoadExplanatio
               const isSelected = question.selectedOptions.includes(key);
               const isWrongPick = isSelected && !isCorrect;
 
-              let shell = 'border-default-200 bg-transparent';
+              let shell = 'bg-content1';
               let letter = 'text-default-400';
               let body = 'text-default-500';
               let mark = '';
 
               if (isCorrect) {
-                shell = 'border-success/30 bg-success/10';
+                shell = 'border border-success/30 bg-success/10';
                 letter = 'text-success';
                 body = 'text-foreground';
                 mark = isSelected ? t('simulado.result.markYoursCorrect') : t('simulado.result.markKey');
               } else if (isWrongPick) {
-                shell = 'border-danger/30 bg-danger/10';
+                shell = 'border border-danger/30 bg-danger/10';
                 letter = 'text-danger';
                 body = 'text-foreground';
                 mark = t('simulado.result.markYours');
@@ -127,7 +110,7 @@ export function ReviewQuestionRow({ question, isOpen, onToggle, onLoadExplanatio
               return (
                 <div
                   key={key}
-                  className={`grid grid-cols-[1.5rem_minmax(0,1fr)_auto] items-start gap-3 rounded-lg border p-3 ${shell}`}
+                  className={`grid grid-cols-[1.5rem_minmax(0,1fr)_auto] items-start gap-3 rounded-lg p-3 ${shell}`}
                 >
                   <span className={`font-mono text-sm ${letter}`}>{key}</span>
                   <span className={`text-sm leading-relaxed ${body}`}>{text}</span>
@@ -137,7 +120,7 @@ export function ReviewQuestionRow({ question, isOpen, onToggle, onLoadExplanatio
             })}
           </div>
 
-          <div className="mt-4 rounded-xl border border-default-200 bg-content1 p-4">
+          <div className="mt-4 rounded-xl bg-content1 p-4">
             <div className="flex items-center gap-2 text-primary">
               <FontAwesomeIcon icon={faLightbulb} />
               <span className="text-xs font-semibold">{t('simulado.result.commentedKey')}</span>
@@ -149,7 +132,7 @@ export function ReviewQuestionRow({ question, isOpen, onToggle, onLoadExplanatio
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <p className="text-sm text-default-500">{t('simulado.result.commentError')}</p>
                 <button
-                  className="rounded-lg border border-default-200 px-3 py-1.5 text-xs text-default-500 transition-colors duration-200 hover:bg-content2 hover:text-foreground"
+                  className="rounded-lg border border-divider px-3 py-1.5 text-xs text-default-500 transition-colors duration-200 hover:bg-content2 hover:text-foreground"
                   type="button"
                   onClick={loadExplanation}
                 >
@@ -168,7 +151,7 @@ export function ReviewQuestionRow({ question, isOpen, onToggle, onLoadExplanatio
               </div>
             )}
 
-            <div className="mt-4 border-t border-default-200 pt-3">
+            <div className="mt-4 border-t border-divider pt-3">
               <span className="text-xs text-default-500">{reference}</span>
             </div>
           </div>

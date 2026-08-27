@@ -25,7 +25,7 @@ export function NextStepPanel({ view, isRetrying, onRetry }: NextStepPanelProps)
     .slice(0, 3);
 
   return (
-    <div className="bg-content1 border border-default-200 rounded-xl p-5">
+    <div className="bg-content1 rounded-xl p-5">
       <h3 className="text-xs font-semibold text-default-400">{t('simulado.result.nextStepTitle')}</h3>
 
       {focus ? (
@@ -57,7 +57,7 @@ export function NextStepPanel({ view, isRetrying, onRetry }: NextStepPanelProps)
       </Button>
 
       {weakTopics.length > 0 && (
-        <div className="mt-4 flex flex-col gap-2.5 border-t border-default-200 pt-4">
+        <div className="mt-4 flex flex-col gap-2.5 border-t border-divider pt-4">
           {weakTopics.map((topic) => (
             <div key={topic.sectionName} className="flex items-center justify-between gap-3">
               <span className="min-w-0 truncate text-sm text-foreground">{topic.sectionName}</span>

@@ -15,9 +15,9 @@ const TAG_LABEL: Record<TopicTag, string> = {
 };
 
 const TAG_CHIP: Record<TopicTag, string> = {
-  strong: 'border-success/30 bg-success/10 text-success',
-  attention: 'border-primary/30 bg-primary/10 text-primary',
-  critical: 'border-danger/30 bg-danger/10 text-danger',
+  strong: 'bg-success/10 text-success',
+  attention: 'bg-primary/10 text-primary',
+  critical: 'bg-danger/10 text-danger',
 };
 
 export function TopicPerformancePanel({ view }: TopicPerformancePanelProps) {
@@ -26,7 +26,7 @@ export function TopicPerformancePanel({ view }: TopicPerformancePanelProps) {
   const hasBaseline = view.previousAvgPercent != null;
 
   return (
-    <div className="bg-content1 border border-default-200 rounded-xl p-6">
+    <div className="bg-content1 rounded-xl p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
         <h2 className="text-base font-bold tracking-tight text-foreground">{t('simulado.result.byTopicTitle')}</h2>
         <span className="font-mono text-xs text-default-400">{t('simulado.result.byTopicLegend')}</span>
@@ -70,7 +70,7 @@ export function TopicPerformancePanel({ view }: TopicPerformancePanelProps) {
 
             <div className="sm:justify-self-end">
               <span
-                className={`inline-block whitespace-nowrap rounded-full border px-3 py-1 text-xs font-semibold ${TAG_CHIP[topic.tag]}`}
+                className={`inline-block whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${TAG_CHIP[topic.tag]}`}
               >
                 {t(TAG_LABEL[topic.tag])}
               </span>

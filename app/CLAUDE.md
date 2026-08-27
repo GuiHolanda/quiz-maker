@@ -26,10 +26,12 @@ Guia de referência para padronização de páginas e componentes. Todas as deci
 ```
 bg-background / bg-background2 / bg-content1 / bg-content2
 text-foreground / text-default-500 / text-default-400 / text-primary
-border-divider / border-default-200
+border-divider
 ```
 
 **Gotcha:** `bg-default-100` não é superfície — use `bg-content2`. Só aparece em `hover:bg-default-100` interno do HeroUI.
+
+**Sem borda em card/input:** cards são `bg-content1` sem borda; inputs ficam sobre `bg-content2` sem borda em repouso. Profundidade é tonal (`background2` → `content1` → `background` afundado / `content2` elevado). `border` só para tints semânticos (`border-success/30`) e chrome de controle (pills, paginação → `border-divider`). Nunca `border-default-200`.
 
 ### Fundos de página
 
@@ -73,8 +75,10 @@ Variantes: `primary`, `secondary` (`variant="bordered"`), `flat`, `primarySm`, `
 ## Padrão de cards
 
 ```tsx
-<div className="bg-content1 border border-default-200 rounded-xl p-6">
+<div className="bg-content1 rounded-xl p-6">
 ```
+
+Sem borda. Superfície aninhada afundada usa `bg-background`; item elevado (linha clicável) usa `bg-content2`.
 
 ---
 
@@ -108,14 +112,14 @@ Use `<PageHeader>` de `shared/components/ui/PageHeader.tsx` — inclui `.app-bg`
 
 **Tabs classNames:**
 ```tsx
-{ tabList: 'bg-content2 border border-default-200 rounded-xl p-1 gap-1',
+{ tabList: 'bg-content2 rounded-xl p-1 gap-1',
   tab: 'text-default-400 data-[selected=true]:text-foreground data-[selected=true]:font-semibold',
   cursor: 'bg-primary rounded-xl' }
 ```
 
 **Accordion itemClasses:**
 ```tsx
-{ base: 'bg-content1 border border-default-200 rounded-xl',
+{ base: 'bg-content1 rounded-xl',
   title: 'text-sm font-bold text-foreground',
   trigger: 'px-6 py-4 hover:bg-content2 transition-colors duration-200',
   content: 'px-6 pb-6', indicator: 'text-default-400' }
@@ -279,6 +283,7 @@ Não precisa chamar em: quiz Generate (gabarito incluído no fluxo), browse/libr
 - Sem gradient text (`bg-clip-text text-transparent`)
 - Sem colored shadows (`shadow-[...]` com rgba)
 - Sem hover lifts (`hover:-translate-y-*`)
+- Sem `border-default-200` em card/input — cards sem borda, profundidade tonal
 - Sempre tokens semânticos — nunca cores hard-coded
 
 ---

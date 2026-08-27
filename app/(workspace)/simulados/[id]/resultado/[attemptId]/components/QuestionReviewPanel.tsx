@@ -20,7 +20,7 @@ type StatusFilter = 'all' | 'correct' | 'wrong';
 
 const PILL_BASE = 'rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors duration-200';
 const PILL_ACTIVE = 'border-primary bg-primary/10 text-primary';
-const PILL_IDLE = 'border-default-200 text-default-500 hover:bg-content2 hover:text-foreground';
+const PILL_IDLE = 'border-divider text-default-500 hover:bg-content2 hover:text-foreground';
 
 export function QuestionReviewPanel({ view, onLoadExplanation }: QuestionReviewPanelProps) {
   const { t } = useTranslation();
@@ -78,7 +78,7 @@ export function QuestionReviewPanel({ view, onLoadExplanation }: QuestionReviewP
   }
 
   return (
-    <div className="bg-content1 border border-default-200 rounded-xl p-6">
+    <div className="bg-content1 rounded-xl p-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="text-base font-bold tracking-tight text-foreground">{t('simulado.result.reviewTitle')}</h2>
@@ -101,7 +101,7 @@ export function QuestionReviewPanel({ view, onLoadExplanation }: QuestionReviewP
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-default-200 pt-4">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-divider pt-4">
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-xs text-default-500">{t('simulado.result.topicFilterLabel')}</span>
           <Select
@@ -122,7 +122,7 @@ export function QuestionReviewPanel({ view, onLoadExplanation }: QuestionReviewP
           </Select>
           {hasActiveFilters && (
             <button
-              className="rounded-lg border border-default-200 px-3 py-1.5 text-xs text-default-500 transition-colors duration-200 hover:bg-content2 hover:text-foreground"
+              className="rounded-lg border border-divider px-3 py-1.5 text-xs text-default-500 transition-colors duration-200 hover:bg-content2 hover:text-foreground"
               type="button"
               onClick={resetFilters}
             >
@@ -171,7 +171,7 @@ export function QuestionReviewPanel({ view, onLoadExplanation }: QuestionReviewP
       </div>
 
       {filtered.length > 0 && (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-default-200 pt-4">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-divider pt-4">
           <span className="text-xs text-default-500">
             {t('simulado.result.showingCount', {
               from: start + 1,
@@ -182,7 +182,7 @@ export function QuestionReviewPanel({ view, onLoadExplanation }: QuestionReviewP
           {totalPages > 1 && (
             <div className="flex items-center gap-1.5">
               <button
-                className="flex items-center gap-2 rounded-lg border border-default-200 px-3 py-1.5 text-xs text-default-500 transition-colors duration-200 hover:bg-content2 hover:text-foreground disabled:pointer-events-none disabled:opacity-45"
+                className="flex items-center gap-2 rounded-lg border border-divider px-3 py-1.5 text-xs text-default-500 transition-colors duration-200 hover:bg-content2 hover:text-foreground disabled:pointer-events-none disabled:opacity-45"
                 disabled={currentPage === 1}
                 type="button"
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
@@ -203,7 +203,7 @@ export function QuestionReviewPanel({ view, onLoadExplanation }: QuestionReviewP
                 </button>
               ))}
               <button
-                className="flex items-center gap-2 rounded-lg border border-default-200 px-3 py-1.5 text-xs text-default-500 transition-colors duration-200 hover:bg-content2 hover:text-foreground disabled:pointer-events-none disabled:opacity-45"
+                className="flex items-center gap-2 rounded-lg border border-divider px-3 py-1.5 text-xs text-default-500 transition-colors duration-200 hover:bg-content2 hover:text-foreground disabled:pointer-events-none disabled:opacity-45"
                 disabled={currentPage === totalPages}
                 type="button"
                 onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
