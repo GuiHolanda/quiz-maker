@@ -31,7 +31,7 @@ export function ComparisonPanel({ view }: ComparisonPanelProps) {
     });
   }
 
-  if (view.passingScorePercent != null) {
+  if (view.comparable && view.passingScorePercent != null) {
     rows.push({
       key: 'cut',
       label: t('simulado.result.compareCut'),

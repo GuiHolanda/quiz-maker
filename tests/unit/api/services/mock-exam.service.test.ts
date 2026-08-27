@@ -626,6 +626,18 @@ describe('MockExamService', () => {
       expect(prismaMock.mockExamAttempt.update.mock.calls[0][0].data).toMatchObject({ timedOut: false });
     });
 
+    it('finishAttempt() is a no-op when the attempt is already finished', async () => {
+      prismaMock.mockExamAttempt.findFirst.mockResolvedValue({
+        id: 10, mockExamId: 1, userId: 'u1', startedAt: new Date(), finishedAt: new Date(),
+      } as any);
+
+      await service.finishAttempt(1, 10, 'u1', [{ mockExamQuestionId: 5, selectedOptions: ['A'] }]);
+
+      expect(prismaMock.mockExam.findFirst).not.toHaveBeenCalled();
+      expect(prismaMock.$transaction).not.toHaveBeenCalled();
+      expect(prismaMock.mockExamAttemptAnswer.createMany).not.toHaveBeenCalled();
+    });
+
     it('getAttemptResult() returns timedOut and prefers mockExam.durationMinutes over exam', async () => {
       prismaMock.mockExamAttempt.findFirst.mockResolvedValue({
         id: 10, mockExamId: 1, startedAt: new Date(), finishedAt: new Date(), score: 5, timedOut: true,

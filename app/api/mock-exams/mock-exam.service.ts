@@ -529,6 +529,7 @@ export class MockExamService {
     });
 
     if (!attempt) throw Object.assign(new Error('Tentativa não encontrada'), { status: 404 });
+    if (attempt.finishedAt != null) return;
 
     const mockExam = await prisma.mockExam.findFirst({
       where: { id: mockExamId },

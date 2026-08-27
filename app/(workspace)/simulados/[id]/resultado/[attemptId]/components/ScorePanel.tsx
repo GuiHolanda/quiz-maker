@@ -67,13 +67,13 @@ export function ScorePanel({ view }: ScorePanelProps) {
                   {view.correct}
                   <span className="text-default-400">/{view.total}</span>
                 </span>
-                {view.passingScorePercent != null && (
+                {view.comparable && view.passingScorePercent != null && (
                   <span className="text-xs text-default-400">
                     {t('simulado.result.cut', { score: view.passingScorePercent })}
                   </span>
                 )}
               </div>
-              {view.passingScorePercent != null ? (
+              {view.comparable && view.passingScorePercent != null ? (
                 <>
                   <div className="relative mt-3 h-1.5 rounded-full bg-default-300">
                     <div

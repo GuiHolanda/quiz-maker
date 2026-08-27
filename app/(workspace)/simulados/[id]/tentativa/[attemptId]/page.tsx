@@ -28,6 +28,7 @@ export default function SimuladoTentativaPage() {
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const pendingProceedRef = useRef<(() => void) | null>(null);
+  const finishingRef = useRef(false);
 
   const { answers, handleAnswerChange, clearProgress } = useAttemptProgress(Number(params.attemptId));
 
@@ -51,9 +52,7 @@ export default function SimuladoTentativaPage() {
   } = useAttemptDeadline({
     startedAt: currentAttempt?.startedAt ?? null,
     durationMinutes: mockExam?.durationMinutes ?? null,
-    onExpire: () => {
-      if (!isFinishing) handleFinish();
-    },
+    onExpire: () => handleFinish(),
   });
 
   if (!mockExam) {
@@ -122,7 +121,8 @@ export default function SimuladoTentativaPage() {
   }
 
   async function handleFinish() {
-    if (isFinishing) return;
+    if (finishingRef.current) return;
+    finishingRef.current = true;
     setIsFinishing(true);
     try {
       const attemptAnswers: MockExamAttemptAnswer[] = mockExam!.questions.map((mq) => {
@@ -136,6 +136,7 @@ export default function SimuladoTentativaPage() {
       bypassNext();
       router.push(`/simulados/${params.id}/resultado/${params.attemptId}`);
     } catch (e: unknown) {
+      finishingRef.current = false;
       notify.error(
         t('toast.error'),
         (e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t('toast.somethingWrong')
@@ -150,11 +151,13 @@ export default function SimuladoTentativaPage() {
     total: questions.length,
   });
 
-  const timerToneClass =
-    remainingMs < 60_000 ? 'text-danger' : remainingMs < 5 * 60_000 ? 'text-warning' : 'text-default-500';
-
   const timer = timerOn ? (
-    <span className={`font-mono text-sm font-semibold tabular-nums ${timerToneClass}`} aria-live="polite">
+    <span
+      aria-live="polite"
+      className={`font-mono text-sm font-semibold tabular-nums ${
+        remainingMs < 60_000 ? 'text-danger' : remainingMs < 5 * 60_000 ? 'text-warning' : 'text-default-500'
+      }`}
+    >
       {t('simulado.timer.remaining', { time: remainingLabel })}
     </span>
   ) : undefined;

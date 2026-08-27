@@ -149,7 +149,7 @@ export function deriveResult(result: MockExamResult): ResultView {
 
   const passingScorePercent = result.examMeta.passingScorePercent;
   const passed = comparable && passingScorePercent != null ? percent >= passingScorePercent : null;
-  const marginPP = passingScorePercent != null ? percent - passingScorePercent : null;
+  const marginPP = comparable && passingScorePercent != null ? percent - passingScorePercent : null;
   const tone: ScoreTone = passed == null ? overallTone(percent) : passed ? 'success' : 'danger';
 
   const startedAt = new Date(result.attempt.startedAt).getTime();
