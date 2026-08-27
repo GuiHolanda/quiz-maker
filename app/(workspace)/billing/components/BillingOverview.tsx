@@ -15,6 +15,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 import { UsageCard } from '@/app/(workspace)/billing/components/UsageCard';
 import { ReferralCard } from '@/app/(workspace)/billing/components/ReferralCard';
@@ -26,6 +27,7 @@ import { buttonStyles } from '@/config/constants/buttonStyles';
 
 export function BillingOverview() {
   const { t } = useTranslation();
+  const { update: updateSession } = useSession();
   const searchParams = useSearchParams();
   const [usage, setUsage] = useState<UsageStats | null>(null);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
@@ -51,6 +53,7 @@ export function BillingOverview() {
 
         if (data.plan !== 'free' || attempts === 7) {
           setUsage(data);
+          if (data.plan !== 'free') void updateSession();
           return;
         }
 
