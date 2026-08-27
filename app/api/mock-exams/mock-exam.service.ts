@@ -1,7 +1,13 @@
 import { prisma } from '@/lib/prisma';
 import { shuffleItems } from '@/lib/shuffle-options';
 import { MOCK_EXAM_TIME_GRACE_MINUTES } from '@/config/constants';
-import { CreateMockExamPayload, MockExamSectionConfig, MockExamQuestionSource, ExamType } from '@/shared/types';
+import {
+  CreateMockExamPayload,
+  MockExamSectionConfig,
+  MockExamQuestionSource,
+  MockExamAvailability,
+  ExamType,
+} from '@/shared/types';
 import { normalizeName, looseKey } from '@/shared/utils';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { ExamQuestionService } from '@/features/services/exam-question.service';
@@ -179,6 +185,44 @@ export class MockExamService {
       passingScorePercent: mockExam.exam.passingScore ?? null,
       createdAt: mockExam.createdAt.toISOString(),
     };
+  }
+
+  async availability(examId: string, userId: string): Promise<MockExamAvailability> {
+    const exam = await prisma.exam.findFirst({ where: { id: examId } });
+
+    if (!exam) throw Object.assign(new Error('Exame não encontrado'), { status: 404 });
+
+    const dbSections = await prisma.examSection.findMany({
+      where: { examId },
+      select: { id: true, name: true },
+    });
+    const history = await this.questionIdHistory(examId, userId);
+
+    const sections: MockExamAvailability['sections'] = [];
+    const totals = { library: 0, unseen: 0, wrong: 0 };
+
+    for (const section of dbSections) {
+      const rows = await prisma.examQuestion.findMany({
+        where: {
+          userId,
+          OR: [
+            { sectionId: section.id },
+            { sectionId: null, examName: exam.name, sectionName: normalizeName(section.name) },
+          ],
+        },
+        select: { id: true },
+      });
+      const library = rows.length;
+      const unseen = rows.filter((row) => !history.seen.has(row.id)).length;
+      const wrong = rows.filter((row) => history.wrong.has(row.id)).length;
+
+      sections.push({ sectionName: section.name, library, unseen, wrong });
+      totals.library += library;
+      totals.unseen += unseen;
+      totals.wrong += wrong;
+    }
+
+    return { sections, totals };
   }
 
   private async questionIdHistory(

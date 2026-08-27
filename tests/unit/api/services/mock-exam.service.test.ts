@@ -725,4 +725,22 @@ describe('MockExamService', () => {
       );
     });
   });
+
+  describe('availability', () => {
+    it('availability() counts library/unseen/wrong per section and totals', async () => {
+      prismaMock.examSection.findMany.mockResolvedValue([{ id: 's1', name: 'Security' }] as any);
+      prismaMock.exam.findFirst.mockResolvedValue({ id: 'e1', name: 'AWS' } as any);
+      prismaMock.exam.findFirstOrThrow.mockResolvedValue({ id: 'e1', name: 'AWS' } as any);
+      prismaMock.mockExamAttemptAnswer.findMany.mockResolvedValue([
+        { isCorrect: true, mockExamQuestion: { examQuestionId: 1 } },
+        { isCorrect: false, mockExamQuestion: { examQuestionId: 2 } },
+      ] as any);
+      prismaMock.examQuestion.findMany.mockResolvedValue([{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }] as any);
+
+      const res = await service.availability('e1', 'u1');
+
+      expect(res.sections).toEqual([{ sectionName: 'Security', library: 4, unseen: 2, wrong: 1 }]);
+      expect(res.totals).toEqual({ library: 4, unseen: 2, wrong: 1 });
+    });
+  });
 });

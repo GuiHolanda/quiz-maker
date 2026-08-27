@@ -181,6 +181,7 @@ export const PLAN_PRICES_BRL_MONTHLY: Record<string, number> = {
 };
 
 export const MOCK_EXAMS_URL = '/mock-exams';
+export const MOCK_EXAMS_AVAILABILITY_URL = '/mock-exams/availability';
 export const MOCK_EXAMS_LOCAL_STORAGE_KEY = 'MOCK_EXAMS';
 export const MOCK_EXAM_TIME_GRACE_MINUTES = 2;
 

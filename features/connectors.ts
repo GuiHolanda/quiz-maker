@@ -16,6 +16,7 @@ import {
   AUTO_CONFIG_IDENTIFY_URL,
   AUTO_CONFIG_LOCATE_EDITAL_URL,
   MOCK_EXAMS_URL,
+  MOCK_EXAMS_AVAILABILITY_URL,
   ADMIN_USERS_URL,
   ADMIN_OVERVIEW_URL,
   ADMIN_AUDIT_LOG_URL,
@@ -53,6 +54,7 @@ import {
   MockExamAttempt,
   FinishAttemptPayload,
   MockExamResult,
+  MockExamAvailability,
   AdminOverviewStats,
   AdminUsersResponse,
   AdminAuditLogResponse,
@@ -319,6 +321,12 @@ export async function getMockExams(): Promise<MockExamListItem[]> {
   const { data } = await api.get<{ mockExams: MockExamListItem[] }>(MOCK_EXAMS_URL);
 
   return data.mockExams;
+}
+
+export async function getMockExamAvailability(examId: string): Promise<MockExamAvailability> {
+  const { data } = await api.get<MockExamAvailability>(`${MOCK_EXAMS_AVAILABILITY_URL}?examId=${examId}`);
+
+  return data;
 }
 
 export async function createMockExam(payload: CreateMockExamPayload): Promise<MockExamListItem> {

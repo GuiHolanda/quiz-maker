@@ -370,6 +370,11 @@ export interface MockExamResult {
   overallPreviousAvgPercent: number | null;
 }
 
+export interface MockExamAvailability {
+  sections: { sectionName: string; library: number; unseen: number; wrong: number }[];
+  totals: { library: number; unseen: number; wrong: number };
+}
+
 export interface UserAdminRow {
   id: string;
   name: string | null;
