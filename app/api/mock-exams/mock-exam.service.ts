@@ -634,7 +634,8 @@ export class MockExamService {
 
     const thisIndex = finishedSiblings.findIndex((a) => a.id === attemptId);
     const earlierAttempts = thisIndex >= 0 ? finishedSiblings.slice(0, thisIndex) : finishedSiblings;
-    const earlierSectionMaps = earlierAttempts.map((a) =>
+    const comparableEarlierAttempts = earlierAttempts.filter((a) => !a.timedOut);
+    const earlierSectionMaps = comparableEarlierAttempts.map((a) =>
       sectionStatsFor(
         new Map(a.answers.map((ans) => [ans.mockExamQuestionId, JSON.parse(ans.selectedOptions) as string[]]))
       )
@@ -652,10 +653,10 @@ export class MockExamService {
     };
 
     const overallPreviousAvgPercent =
-      earlierAttempts.length > 0 && totalQuestions > 0
+      comparableEarlierAttempts.length > 0 && totalQuestions > 0
         ? Math.round(
-            earlierAttempts.reduce((sum, a) => sum + ((a.score ?? 0) / totalQuestions) * 100, 0) /
-              earlierAttempts.length
+            comparableEarlierAttempts.reduce((sum, a) => sum + ((a.score ?? 0) / totalQuestions) * 100, 0) /
+              comparableEarlierAttempts.length
           )
         : null;
 
@@ -666,6 +667,7 @@ export class MockExamService {
         startedAt: attempt.startedAt.toISOString(),
         finishedAt: attempt.finishedAt?.toISOString() ?? null,
         score: attempt.score,
+        timedOut: attempt.timedOut,
         answers: attempt.answers.map((a) => ({
           mockExamQuestionId: a.mockExamQuestionId,
           selectedOptions: JSON.parse(a.selectedOptions) as string[],
@@ -706,7 +708,7 @@ export class MockExamService {
       })),
       examMeta: {
         passingScorePercent: attempt.mockExam.exam.passingScore ?? null,
-        durationMinutes: attempt.mockExam.exam.examDurationMinutes ?? null,
+        durationMinutes: attempt.mockExam.durationMinutes ?? attempt.mockExam.exam.examDurationMinutes ?? null,
       },
       attemptNumber: thisIndex >= 0 ? thisIndex + 1 : finishedSiblings.length + 1,
       totalAttempts: thisIndex >= 0 ? finishedSiblings.length : finishedSiblings.length + 1,

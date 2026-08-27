@@ -626,6 +626,42 @@ describe('MockExamService', () => {
       expect(prismaMock.mockExamAttempt.update.mock.calls[0][0].data).toMatchObject({ timedOut: false });
     });
 
+    it('getAttemptResult() returns timedOut and prefers mockExam.durationMinutes over exam', async () => {
+      prismaMock.mockExamAttempt.findFirst.mockResolvedValue({
+        id: 10, mockExamId: 1, startedAt: new Date(), finishedAt: new Date(), score: 5, timedOut: true,
+        answers: [],
+        mockExam: {
+          id: 1, name: 'x', durationMinutes: 45,
+          exam: { id: 'e1', name: 'AWS', type: 'certification', passingScore: 70, examDurationMinutes: 130 },
+          questions: [],
+        },
+      } as any);
+      prismaMock.mockExamAttempt.findMany.mockResolvedValue([] as any);
+
+      const res = await service.getAttemptResult(1, 10, 'u1');
+      expect(res.attempt.timedOut).toBe(true);
+      expect(res.examMeta.durationMinutes).toBe(45);
+    });
+
+    it('getAttemptResult() excludes timedOut attempts from previous averages', async () => {
+      prismaMock.mockExamAttempt.findFirst.mockResolvedValue({
+        id: 3, mockExamId: 1, startedAt: new Date(), finishedAt: new Date(), score: 8, timedOut: false,
+        answers: [],
+        mockExam: {
+          id: 1, name: 'x', durationMinutes: null,
+          exam: { id: 'e1', name: 'AWS', type: 'certification', passingScore: 70, examDurationMinutes: null },
+          questions: [{ id: 1, order: 0, examQuestion: { id: 1, sectionName: 'S', options: [], answer: { correctOptions: ['A'], explanations: [] } } }],
+        },
+      } as any);
+      prismaMock.mockExamAttempt.findMany.mockResolvedValue([
+        { id: 1, score: 2, finishedAt: new Date(1), timedOut: true, answers: [] },
+        { id: 2, score: 6, finishedAt: new Date(2), timedOut: false, answers: [] },
+      ] as any);
+
+      const res = await service.getAttemptResult(1, 3, 'u1');
+      expect(res.overallPreviousAvgPercent).toBe(600);
+    });
+
     it('list() bestScore ignores timedOut attempts', async () => {
       prismaMock.mockExam.findMany.mockResolvedValue([{
         id: 1, name: 'x', exam: { id: 'e1', name: 'AWS', type: 'certification', passingScore: 70 },
