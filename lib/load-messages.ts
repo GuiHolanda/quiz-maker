@@ -3,10 +3,18 @@ import { join } from 'node:path';
 
 import { parseProperties } from '@/lib/properties-parser';
 
+let cached: Record<string, string> | null = null;
+
 async function readPtProperties(): Promise<Record<string, string>> {
+  if (cached) return cached;
+
   try {
     const raw = await readFile(join(process.cwd(), 'public', 'messages', 'pt.properties'), 'utf-8');
-    return parseProperties(raw);
+    const parsed = parseProperties(raw);
+
+    if (process.env.NODE_ENV === 'production') cached = parsed;
+
+    return parsed;
   } catch {
     return {};
   }

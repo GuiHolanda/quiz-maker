@@ -14,57 +14,96 @@ import {
   faTriangleExclamation,
 } from '@fortawesome/free-solid-svg-icons';
 import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 import { UsageCard } from '@/app/(workspace)/billing/components/UsageCard';
 import { ReferralCard } from '@/app/(workspace)/billing/components/ReferralCard';
 import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
 import { getBillingUsage, getPortalUrl } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { notify } from '@/shared/lib/notify';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+import { PLAN_LIMITS } from '@/config/constants';
+
+function questionsCeiling(plan: string): number {
+  return PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS]?.questionsPerPeriod ?? 0;
+}
 
 export function BillingOverview() {
   const { t } = useTranslation();
+  const { data: session, status, update: updateSession } = useSession();
+  const { refreshUsage } = useUsageContext();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [usage, setUsage] = useState<UsageStats | null>(null);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [portalLoadingKey, setPortalLoadingKey] = useState<string | null>(null);
   const toastFiredRef = useRef(false);
+  const reconciledRef = useRef(false);
   const isUpgradeFlow = searchParams.get('upgraded') === 'true';
+  const isSyncFlow = searchParams.get('synced') === '1';
+  const isReconcileFlow = isUpgradeFlow || isSyncFlow;
 
   useEffect(() => {
-    if (!isUpgradeFlow) {
-      getBillingUsage().then(setUsage);
-      return;
-    }
+    if (isReconcileFlow) return;
 
-    let attempts = 0;
     let cancelled = false;
 
-    async function pollUntilUpgraded() {
-      while (attempts < 8 && !cancelled) {
-        const data = await getBillingUsage();
-
-        if (cancelled) return;
-
-        if (data.plan !== 'free' || attempts === 7) {
-          setUsage(data);
-          return;
-        }
-
-        attempts++;
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      }
-    }
-
-    pollUntilUpgraded();
+    getBillingUsage().then((data) => {
+      if (!cancelled) setUsage(data);
+    });
 
     return () => {
       cancelled = true;
     };
-  }, [isUpgradeFlow]);
+  }, [isReconcileFlow]);
+
+  useEffect(() => {
+    if (!isReconcileFlow || reconciledRef.current || status !== 'authenticated') return;
+    reconciledRef.current = true;
+
+    let cancelled = false;
+
+    async function reconcilePlan() {
+      const tokenPlan = session?.user?.plan;
+      let data = await getBillingUsage();
+
+      if (cancelled) return;
+      setUsage(data);
+
+      const baseline = data.plan;
+      let attempts = 0;
+
+      while (attempts < 8 && !cancelled && data.plan === baseline && data.plan === tokenPlan) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        data = await getBillingUsage();
+
+        if (cancelled) return;
+        setUsage(data);
+        attempts++;
+      }
+
+      if (cancelled) return;
+
+      await updateSession();
+      refreshUsage();
+      router.refresh();
+
+      if (isSyncFlow && questionsCeiling(data.plan) > questionsCeiling(baseline) && !toastFiredRef.current) {
+        toastFiredRef.current = true;
+        notify.success(t('billing.toast.planUpdated'), t('billing.toast.planUpdatedDescription'));
+      }
+    }
+
+    reconcilePlan();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isReconcileFlow, status]);
 
   useEffect(() => {
     if (!isUpgradeFlow || !usage || toastFiredRef.current) return;

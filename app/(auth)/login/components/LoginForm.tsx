@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@heroui/input';
@@ -35,6 +35,7 @@ export function LoginForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isNavigating, startNavigation] = useTransition();
 
   const isJustVerified = searchParams.get('verified') === '1';
   const isPasswordReset = searchParams.get('reset') === 'success';
@@ -64,8 +65,11 @@ export function LoginForm() {
 
       return;
     }
-    router.push('/dashboard');
-    router.refresh();
+
+    startNavigation(() => {
+      router.push('/dashboard');
+      router.refresh();
+    });
   }
 
   async function handleGoogle() {
@@ -195,7 +199,7 @@ export function LoginForm() {
             <Button
               fullWidth
               className="bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200 h-12"
-              isLoading={loading}
+              isLoading={loading || isNavigating}
               type="submit"
             >
               {t('common.signIn')}

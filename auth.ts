@@ -11,6 +11,7 @@ import { prisma } from '@/lib/prisma';
 import { REFERRAL_CODE_COOKIE_KEY, UTM_COOKIE_KEY } from '@/config/constants';
 import { generateUniqueReferralCode } from '@/lib/referral-code';
 import { parseUtmCookie } from '@/lib/utm';
+import { syncTokenPlan } from '@/lib/auth-plan-sync';
 
 class EmailNotVerifiedError extends CredentialsSignin {
   code = 'EMAIL_NOT_VERIFIED';
@@ -19,6 +20,14 @@ class EmailNotVerifiedError extends CredentialsSignin {
 declare module 'next-auth' {
   interface Session {
     user: { id: string; plan: string } & DefaultSession['user'];
+  }
+}
+
+declare module '@auth/core/jwt' {
+  interface JWT {
+    plan?: string;
+    sprintExpiresAt?: number | null;
+    planSyncedAt?: number;
   }
 }
 
@@ -66,33 +75,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     ...authConfig.callbacks,
-    jwt({ token, user }) {
+    jwt({ token, user, trigger }) {
       if (user) token.sub = user.id;
 
-      return token;
+      // Plan is carried on the token so `session` stays a zero-DB read on every request.
+      return syncTokenPlan(token, trigger);
     },
-    async session({ session, token }) {
+    session({ session, token }) {
       if (token.sub) {
         session.user.id = token.sub;
-        let dbUser = await prisma.user.findUnique({
-          where: { id: token.sub },
-          select: { plan: true, sprintExpiresAt: true },
-        });
-
-        // Sprint is the only plan with a fixed term — every other plan is indefinite until
-        // canceled, so this is the one place that needs to expire it. Self-heals on the
-        // first session read past expiry (same pattern as QuotaService's 30-day period
-        // reset): this callback runs at the top of every authenticated request, so by the
-        // time any other code path reads the user's plan, the downgrade has already landed.
-        if (dbUser?.plan === 'sprint' && dbUser.sprintExpiresAt && dbUser.sprintExpiresAt <= new Date()) {
-          dbUser = await prisma.user.update({
-            where: { id: token.sub },
-            data: { plan: 'free', sprintExpiresAt: null },
-            select: { plan: true, sprintExpiresAt: true },
-          });
-        }
-
-        session.user.plan = dbUser?.plan ?? 'free';
+        session.user.plan = token.plan ?? 'free';
       }
 
       return session;
