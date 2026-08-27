@@ -23,6 +23,7 @@ interface SimuladosTableProps {
 }
 
 const GRID_COLUMNS = 'minmax(220px,1.7fr) 90px 90px 140px 120px 100px 120px 130px 116px';
+const ROW_GRID_CLASS = 'grid items-center gap-4 px-5 py-3.5';
 
 const STATUS_COLOR = {
   answered: 'success',
@@ -47,37 +48,50 @@ export function SimuladosTable({
     pending: t('simulado.statusPending'),
   };
 
+  const columnHeaders = [
+    { label: t('simulado.table.colSimulado'), align: '' },
+    { label: t('simulado.table.colQuestions'), align: 'text-center' },
+    { label: t('simulado.table.colTime'), align: 'text-center' },
+    { label: t('simulado.table.colStatus'), align: '' },
+    { label: t('simulado.table.colBestScore'), align: 'text-center' },
+    { label: t('simulado.table.colAttempts'), align: 'text-center' },
+    { label: t('simulado.table.colCreated'), align: '' },
+    { label: t('simulado.table.colLastAttempt'), align: '' },
+    { label: t('simulado.table.colActions'), align: 'text-right' },
+  ];
+
   return (
     <div className="overflow-x-auto rounded-xl bg-content1">
-      <div
-        className="grid min-w-[1220px] items-center gap-4 bg-content2 px-5 py-3 text-xs font-semibold text-default-500"
-        style={{ gridTemplateColumns: GRID_COLUMNS }}
-      >
-        <span>{t('simulado.table.colSimulado')}</span>
-        <span className="text-center">{t('simulado.table.colQuestions')}</span>
-        <span className="text-center">{t('simulado.table.colTime')}</span>
-        <span>{t('simulado.table.colStatus')}</span>
-        <span className="text-center">{t('simulado.table.colBestScore')}</span>
-        <span className="text-center">{t('simulado.table.colAttempts')}</span>
-        <span>{t('simulado.table.colCreated')}</span>
-        <span>{t('simulado.table.colLastAttempt')}</span>
-        <span className="text-right">{t('simulado.table.colActions')}</span>
-      </div>
-
-      {rows.length === 0 ? (
-        <div className="border-t border-divider px-5 py-10 text-center text-sm text-default-400">
-          {t('simulado.table.empty')}
+      <div aria-label={t('simulado.table.sectionTitle')} className="min-w-[1220px]" role="table">
+        <div
+          className="grid items-center gap-4 bg-content2 px-5 py-3 text-xs font-semibold text-default-500"
+          role="row"
+          style={{ gridTemplateColumns: GRID_COLUMNS }}
+        >
+          {columnHeaders.map((column) => (
+            <span key={column.label} className={column.align} role="columnheader">
+              {column.label}
+            </span>
+          ))}
         </div>
-      ) : (
-        rows.map((s) => (startingKey === s.key ? renderStartingRow(s) : renderRow(s)))
-      )}
+
+        {rows.length === 0 ? (
+          <div className="border-t border-divider" role="row">
+            <div className="px-5 py-10 text-center text-sm text-default-400" role="cell">
+              {t('simulado.table.empty')}
+            </div>
+          </div>
+        ) : (
+          rows.map((s) => (startingKey === s.key ? renderStartingRow(s) : renderRow(s)))
+        )}
+      </div>
     </div>
   );
 
   function renderStartingRow(s: UnifiedSimulado) {
     return (
-      <div key={s.key} className="min-w-[1220px] border-t border-divider px-5 py-3.5">
-        <div className="flex flex-col gap-2">
+      <div key={s.key} className="border-t border-divider" data-testid="simulado-row" role="row">
+        <div className="flex flex-col gap-2 px-5 py-3.5" role="cell">
           <p className="text-xs font-medium text-primary">{t('simulado.preparingAttempt')}</p>
           <Progress isIndeterminate aria-label={t('simulado.preparingAttempt')} color="primary" size="sm" />
         </div>
@@ -93,27 +107,31 @@ export function SimuladosTable({
     return (
       <div
         key={s.key}
-        className="grid min-w-[1220px] items-center gap-4 border-t border-divider px-5 py-3.5 transition-colors duration-150 hover:bg-background"
+        className={`${ROW_GRID_CLASS} border-t border-divider transition-colors duration-150 hover:bg-background`}
         data-testid="simulado-row"
+        role="row"
+        style={{ gridTemplateColumns: GRID_COLUMNS }}
       >
-        <div className="min-w-0">
+        <div className="min-w-0" role="cell">
           <p className="truncate text-sm font-semibold text-foreground">{s.name ?? s.sourceLabel}</p>
           <p className="truncate text-xs text-default-500">{s.sourceLabel}</p>
         </div>
 
-        <div className="text-center font-mono text-sm text-foreground">{s.totalQuestions}</div>
+        <div className="text-center font-mono text-sm text-foreground" role="cell">
+          {s.totalQuestions}
+        </div>
 
-        <div className="text-center font-mono text-sm text-foreground">
+        <div className="text-center font-mono text-sm text-foreground" role="cell">
           {s.durationMinutes == null ? t('simulado.table.timeFree') : fmtTempo(s.durationMinutes)}
         </div>
 
-        <div>
+        <div role="cell">
           <Chip color={STATUS_COLOR[s.status]} size="sm" variant="flat">
             {statusLabel[s.status]}
           </Chip>
         </div>
 
-        <div className="flex flex-col items-center gap-0.5">
+        <div className="flex flex-col items-center gap-0.5" role="cell">
           <span
             className={`font-mono text-sm ${
               bestPercent == null ? 'text-default-400' : bestPercent >= 70 ? 'text-success' : 'text-danger'
@@ -124,27 +142,29 @@ export function SimuladosTable({
           {scoreMeta != null && <span className="text-[11px] text-default-400">{scoreMeta}</span>}
         </div>
 
-        <div className="text-center">
+        <div className="flex justify-center" role="cell">
           <Button
-            className="font-mono"
+            aria-label={t('simulado.attemptHistory')}
+            className={`${buttonStyles.flat} font-mono`}
             data-testid="simulado-attempts-btn"
             size="sm"
-            variant="light"
             onPress={() => onOpenHistory(s)}
           >
             {s.attemptCount}
           </Button>
         </div>
 
-        <div className="text-xs text-default-500">
+        <div className="text-xs text-default-500" role="cell">
           <RelativeDate date={s.createdAt} />
         </div>
 
-        <div className="text-xs text-default-500">
+        <div className="text-xs text-default-500" role="cell">
           {s.lastFinishedAt ? <RelativeDate date={s.lastFinishedAt} /> : '—'}
         </div>
 
-        <div className="flex justify-end gap-1">{renderActions(s)}</div>
+        <div className="flex justify-end gap-1" role="cell">
+          {renderActions(s)}
+        </div>
       </div>
     );
   }

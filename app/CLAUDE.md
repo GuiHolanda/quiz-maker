@@ -268,7 +268,7 @@ Domínio compartilhado: `CertificationManager`, `PublicExamManager`, `SectionsTa
 
 Questões salvas podem não ter `Answer` no banco. Antes de iniciar tentativa ou carregar resultado, chamar `ensureCertSimuladoAnswers(id)` ou `ensureMockExamAnswers(id)`.
 
-Ponto de uso 1: `SimuladosListTab.handleStart()` antes de `start*Attempt`.
+Ponto de uso 1: `SimuladosCreatedSection.handleStart()` antes de `start*Attempt`.
 
 Ponto de uso 2: página de resultado — ao detectar `answer === null` em qualquer questão, chamar ensure + refetch.
 

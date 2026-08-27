@@ -60,8 +60,7 @@ export function scoreColor(percent: number): 'success' | 'warning' | 'danger' {
   return 'danger';
 }
 
-export function fmtTempo(minutes: number | null): string {
-  if (minutes == null) return 'livre';
+export function fmtTempo(minutes: number): string {
   if (minutes < 60) return `${minutes}min`;
 
   const hours = Math.floor(minutes / 60);

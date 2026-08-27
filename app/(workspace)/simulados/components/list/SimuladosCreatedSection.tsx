@@ -31,6 +31,12 @@ function extractMessage(error: unknown): string | undefined {
   return (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
 }
 
+function bestScoreRatio(simulado: UnifiedSimulado): number {
+  if (simulado.bestScore == null) return -1;
+
+  return simulado.bestScore / Math.max(simulado.totalQuestions, 1);
+}
+
 export function SimuladosCreatedSection() {
   const { t } = useTranslation();
   const mock = useMockExamsContext();
@@ -53,10 +59,10 @@ export function SimuladosCreatedSection() {
 
   const isLoading = mock.isLoading;
 
-  const simulados = useMemo<UnifiedSimulado[]>(() => mock.mockExams.map((m) => normalizeMock(m)), [mock.mockExams]);
+  const simulados = useMemo<UnifiedSimulado[]>(() => mock.mockExams.map(normalizeMock), [mock.mockExams]);
 
   const examOptions = useMemo(() => {
-    const labels = new Set(simulados.map((s) => s.sourceLabel));
+    const labels = new Set(simulados.map((simulado) => simulado.sourceLabel));
 
     return Array.from(labels).sort((a, b) => a.localeCompare(b));
   }, [simulados]);
@@ -66,11 +72,11 @@ export function SimuladosCreatedSection() {
   const filtered = useMemo(() => {
     const query = deferredSearch.trim().toLowerCase();
 
-    return simulados.filter((s) => {
-      if (exam !== 'all' && s.sourceLabel !== exam) return false;
-      if (status !== 'all' && s.status !== status) return false;
+    return simulados.filter((simulado) => {
+      if (exam !== 'all' && simulado.sourceLabel !== exam) return false;
+      if (status !== 'all' && simulado.status !== status) return false;
       if (query) {
-        const haystack = `${s.name ?? ''} ${s.sourceLabel}`.toLowerCase();
+        const haystack = `${simulado.name ?? ''} ${simulado.sourceLabel}`.toLowerCase();
 
         if (!haystack.includes(query)) return false;
       }
@@ -86,7 +92,7 @@ export function SimuladosCreatedSection() {
       case 'oldest':
         return list.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       case 'bestScore':
-        return list.sort((a, b) => (b.bestScore ?? -1) - (a.bestScore ?? -1));
+        return list.sort((a, b) => bestScoreRatio(b) - bestScoreRatio(a));
       case 'name':
         return list.sort((a, b) => (a.name ?? a.sourceLabel).localeCompare(b.name ?? b.sourceLabel));
       default:
