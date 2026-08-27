@@ -117,6 +117,6 @@ export async function finalizeAttempt(page: Page): Promise<void> {
 export async function assertResult(page: Page, domain: DomainConfig): Promise<void> {
   await expect(page.locator(tid(TID.resultScore))).toBeVisible();
   await expect(page.locator(tid(TID.resultPercent))).toBeVisible();
-  await expect(page.getByText(domain.seedTopic)).toBeVisible();
+  await expect(page.getByText(domain.seedTopic).first()).toBeVisible();
   await expect(page.locator(tid(TID.resultRetryBtn))).toBeVisible();
 }
