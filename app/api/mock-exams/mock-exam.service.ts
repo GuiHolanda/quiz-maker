@@ -509,28 +509,74 @@ export class MockExamService {
 
     if (!attempt) throw Object.assign(new Error('Tentativa não encontrada'), { status: 404 });
 
-    const sectionMap = new Map<string, { correct: number; total: number }>();
-    const answersMap = new Map(
-      attempt.answers.map((a) => [a.mockExamQuestionId, JSON.parse(a.selectedOptions) as string[]])
+    const questions = attempt.mockExam.questions;
+    const totalQuestions = questions.length;
+
+    const correctOptionsByMqId = new Map<number, string[]>(
+      questions.map((mq) => [
+        mq.id,
+        mq.examQuestion.answer ? (mq.examQuestion.answer.correctOptions as unknown as string[]) : [],
+      ])
     );
 
-    for (const mq of attempt.mockExam.questions) {
-      const sectionName = mq.examQuestion.sectionName;
-      const correctOptions: string[] = mq.examQuestion.answer
-        ? (mq.examQuestion.answer.correctOptions as unknown as string[])
-        : [];
-      const selected = answersMap.get(mq.id) ?? [];
-      const isCorrect =
-        correctOptions.length > 0 &&
-        selected.length === correctOptions.length &&
-        selected.every((s) => correctOptions.includes(s));
+    const sectionStatsFor = (selectedByMqId: Map<number, string[]>) => {
+      const map = new Map<string, { correct: number; total: number }>();
 
-      if (!sectionMap.has(sectionName)) sectionMap.set(sectionName, { correct: 0, total: 0 });
-      const entry = sectionMap.get(sectionName)!;
+      for (const mq of questions) {
+        const sectionName = mq.examQuestion.sectionName;
+        const correctOptions = correctOptionsByMqId.get(mq.id) ?? [];
+        const selected = selectedByMqId.get(mq.id) ?? [];
+        const isCorrect =
+          correctOptions.length > 0 &&
+          selected.length === correctOptions.length &&
+          selected.every((s) => correctOptions.includes(s));
 
-      entry.total += 1;
-      if (isCorrect) entry.correct += 1;
-    }
+        if (!map.has(sectionName)) map.set(sectionName, { correct: 0, total: 0 });
+        const entry = map.get(sectionName)!;
+
+        entry.total += 1;
+        if (isCorrect) entry.correct += 1;
+      }
+
+      return map;
+    };
+
+    const sectionMap = sectionStatsFor(
+      new Map(attempt.answers.map((a) => [a.mockExamQuestionId, JSON.parse(a.selectedOptions) as string[]]))
+    );
+
+    const finishedSiblings = await prisma.mockExamAttempt.findMany({
+      where: { mockExamId, userId, finishedAt: { not: null } },
+      include: { answers: true },
+      orderBy: { finishedAt: 'asc' },
+    });
+
+    const thisIndex = finishedSiblings.findIndex((a) => a.id === attemptId);
+    const earlierAttempts = thisIndex >= 0 ? finishedSiblings.slice(0, thisIndex) : finishedSiblings;
+    const earlierSectionMaps = earlierAttempts.map((a) =>
+      sectionStatsFor(
+        new Map(a.answers.map((ans) => [ans.mockExamQuestionId, JSON.parse(ans.selectedOptions) as string[]]))
+      )
+    );
+
+    const previousAvgPercentFor = (sectionName: string): number | null => {
+      const percents = earlierSectionMaps
+        .map((m) => m.get(sectionName))
+        .filter((e): e is { correct: number; total: number } => !!e && e.total > 0)
+        .map((e) => (e.correct / e.total) * 100);
+
+      if (percents.length === 0) return null;
+
+      return Math.round(percents.reduce((sum, p) => sum + p, 0) / percents.length);
+    };
+
+    const overallPreviousAvgPercent =
+      earlierAttempts.length > 0 && totalQuestions > 0
+        ? Math.round(
+            earlierAttempts.reduce((sum, a) => sum + ((a.score ?? 0) / totalQuestions) * 100, 0) /
+              earlierAttempts.length
+          )
+        : null;
 
     return {
       attempt: {
@@ -574,7 +620,16 @@ export class MockExamService {
         sectionName,
         correct: v.correct,
         total: v.total,
+        weightPercent: totalQuestions > 0 ? Math.round((v.total / totalQuestions) * 100) : 0,
+        previousAvgPercent: previousAvgPercentFor(sectionName),
       })),
+      examMeta: {
+        passingScorePercent: attempt.mockExam.exam.passingScore ?? null,
+        durationMinutes: attempt.mockExam.exam.examDurationMinutes ?? null,
+      },
+      attemptNumber: thisIndex >= 0 ? thisIndex + 1 : finishedSiblings.length + 1,
+      totalAttempts: thisIndex >= 0 ? finishedSiblings.length : finishedSiblings.length + 1,
+      overallPreviousAvgPercent,
     };
   }
 }

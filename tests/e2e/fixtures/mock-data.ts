@@ -117,9 +117,13 @@ export const mockMockExamResult = {
     },
   ],
   sectionBreakdown: [
-    { sectionName: E2E_CERT_TOPIC, correct: 2, total: 3 },
-    { sectionName: E2E_SUBJECT, correct: 2, total: 3 },
+    { sectionName: E2E_CERT_TOPIC, correct: 2, total: 3, weightPercent: 100, previousAvgPercent: null },
+    { sectionName: E2E_SUBJECT, correct: 2, total: 3, weightPercent: 100, previousAvgPercent: null },
   ],
+  examMeta: { passingScorePercent: null, durationMinutes: null },
+  attemptNumber: 1,
+  totalAttempts: 1,
+  overallPreviousAvgPercent: null,
 };
 
 // ─── Generation Job SSE helpers ───────────────────────────────────────────────

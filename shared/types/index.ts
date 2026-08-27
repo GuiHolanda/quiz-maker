@@ -337,11 +337,26 @@ export interface FinishAttemptPayload {
   answers: MockExamAttemptAnswer[];
 }
 
+export interface MockExamSectionResult {
+  sectionName: string;
+  correct: number;
+  total: number;
+  weightPercent: number;
+  previousAvgPercent: number | null;
+}
+
 export interface MockExamResult {
   attempt: MockExamAttempt;
   mockExam: Pick<MockExam, 'id' | 'name' | 'exam'>;
   questions: MockExamQuestion[];
-  sectionBreakdown: { sectionName: string; correct: number; total: number }[];
+  sectionBreakdown: MockExamSectionResult[];
+  examMeta: {
+    passingScorePercent: number | null;
+    durationMinutes: number | null;
+  };
+  attemptNumber: number;
+  totalAttempts: number;
+  overallPreviousAvgPercent: number | null;
 }
 
 export interface UserAdminRow {
@@ -419,24 +434,13 @@ export interface AdminAuditLogResponse {
   totalPages: number;
 }
 
-// Generic interfaces for SimuladoQuestionList and ResultQuestionCard (both domains)
+// Generic interface for SimuladoQuestionList (both domains)
 export interface SimuladoQuestion {
   readonly id: number;
   readonly simuladoQuestionId: number;
   readonly text: string;
   readonly correctCount: number;
   readonly options: Record<string, string>;
-}
-
-export interface SimuladoResultQuestion {
-  readonly id: number;
-  readonly simuladoQuestionId: number;
-  readonly order: number;
-  readonly groupLabel: string;
-  readonly text: string;
-  readonly correctCount: number;
-  readonly options: Record<string, string>;
-  readonly answer: { correctOptions: string[] } | null;
 }
 
 export interface UnifiedQuestion {

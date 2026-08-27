@@ -171,7 +171,11 @@ function buildAllWrongResult() {
         },
       },
     ],
-    sectionBreakdown: [{ sectionName: 'E2E Topic', correct: 0, total: 3 }],
+    sectionBreakdown: [{ sectionName: 'E2E Topic', correct: 0, total: 3, weightPercent: 100, previousAvgPercent: null }],
+    examMeta: { passingScorePercent: null, durationMinutes: null },
+    attemptNumber: 1,
+    totalAttempts: 1,
+    overallPreviousAvgPercent: null,
   };
 }
 

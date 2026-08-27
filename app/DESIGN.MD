@@ -178,7 +178,7 @@ Metadata / counter   → text-xs text-default-400 font-mono (Fira Code)
 
 - **App shell:** Sidebar `w-64 sticky h-screen` + `WorkspaceHeader h-14` + main content.
 - **Container:** `max-w-7xl mx-auto px-6` inside `PageHeader`.
-- **Card standard:** `bg-content1 border border-default-200 rounded-xl p-6`.
+- **Card standard:** `bg-content1 rounded-xl p-6`. No border — separation is tonal (`content1` on the darker page, `background`/`content2` for recessed/raised nested surfaces). Reserve `border` for semantic tints (`border-success/30`) and control chrome, never as the default card edge.
 - **Spacing rhythm:** 4px base, standard increments 8px / 16px / 24px / 48px. Nav gaps: `gap-0.5`.
 
 ## Components
@@ -191,7 +191,7 @@ All class strings live in `config/constants/buttonStyles.ts`. Never repeat inlin
 |---|---|
 | Primary | `bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90` |
 | Secondary | `variant="bordered"` + secondary className |
-| Flat | `bg-default-100 border border-default-200` |
+| Flat | `bg-content2` |
 | Danger | `bg-danger text-white` |
 
 **Rules:** Never use `color=` on `<Button>`. Never `variant="ghost"`, `"solid"`, or `"shadow"`. Icon-only requires `isIconOnly` + `size="sm"` + `aria-label`.
@@ -199,8 +199,10 @@ All class strings live in `config/constants/buttonStyles.ts`. Never repeat inlin
 ### Cards
 
 ```tsx
-<div className="bg-content1 border border-default-200 rounded-xl p-6">
+<div className="bg-content1 rounded-xl p-6">
 ```
+
+No border. Depth comes from the tonal stack: page `background2` → card `content1` → recessed well `background` → raised item `content2`.
 
 ### Nav active state
 
@@ -212,7 +214,7 @@ Hover state:       hover:bg-default-100 hover:text-foreground
 
 ### Inputs
 
-Always via `inputProperties` spread from `config/constants/inputStyles.ts`. `variant="bordered"`, `rounded-lg`, focus border `border-primary`.
+Always via `inputProperties` spread from `config/constants/inputStyles.ts`. `rounded-lg`, fill `bg-content2`, resting edge matches the fill (no `border-default-200`), focus border `border-primary`.
 
 ### Chips / Badges
 
@@ -258,6 +260,7 @@ Depth via tonal layering, never shadows:
 - No gradients (`bg-gradient-to-*`, `from-*`, `via-*`, `to-*`)
 - No glassmorphism (`backdrop-blur-*`)
 - No gradient text (`bg-clip-text text-transparent`)
+- No `border-default-200` on cards or inputs — cards are borderless, inputs sit on `bg-content2`; depth is tonal
 - No hard-coded hex values in components — use semantic tokens
 - No colored shadows
 - No hover lifts (`hover:-translate-y-*`)
