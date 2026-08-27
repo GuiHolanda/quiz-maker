@@ -537,7 +537,7 @@ describe('MockExamService', () => {
           { examId: 'exam-1', totalQuestions: 5, sections: [{ sectionName: 'Security', questionCount: 5 }], questionSource: 'wrong' },
           'user-1',
         ),
-      ).rejects.toMatchObject({ status: 422, message: /insuficientes/i });
+      ).rejects.toMatchObject({ status: 422, message: /fonte: wrong/ });
     });
 
     it('library (default): does not add an id filter', async () => {
@@ -554,6 +554,54 @@ describe('MockExamService', () => {
       const drawCall = prismaMock.examQuestion.findMany.mock.calls.find((c) => c[0]?.where);
       expect(drawCall?.[0]?.where?.id).toBeUndefined();
       expect(prismaMock.mockExamAttemptAnswer.findMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('create — persistência de tempo e fonte', () => {
+    it('create() persists durationMinutes (number) and questionSource', async () => {
+      prismaMock.examSection.findMany.mockResolvedValue([{ id: 's1', name: 'Security' }] as any);
+      prismaMock.exam.findFirst.mockResolvedValue({ id: 'e1', name: 'AWS', passingScore: 72 } as any);
+      prismaMock.exam.findFirstOrThrow.mockResolvedValue({ id: 'e1', name: 'AWS' } as any);
+      prismaMock.examQuestion.count.mockResolvedValue(10);
+      prismaMock.examQuestion.findMany.mockResolvedValue([{ id: 1 }, { id: 2 }] as any);
+      prismaMock.mockExam.create.mockResolvedValue({
+        id: 9, name: 'x', exam: { id: 'e1', name: 'AWS', type: 'certification', passingScore: 72 },
+        durationMinutes: 90, questionSource: 'library', _count: { questions: 2 }, createdAt: new Date(),
+      } as any);
+
+      const res = await service.create(
+        { examId: 'e1', totalQuestions: 2, durationMinutes: 90, questionSource: 'library',
+          sections: [{ sectionName: 'Security', questionCount: 2 }] },
+        'user-1',
+      );
+
+      expect(prismaMock.mockExam.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ durationMinutes: 90, questionSource: 'library' }) }),
+      );
+      expect(res.durationMinutes).toBe(90);
+      expect(res.questionSource).toBe('library');
+      expect(res.passingScorePercent).toBe(72);
+    });
+
+    it('create() persists durationMinutes = null for livre', async () => {
+      prismaMock.examSection.findMany.mockResolvedValue([{ id: 's1', name: 'Security' }] as any);
+      prismaMock.exam.findFirst.mockResolvedValue({ id: 'e1', name: 'AWS', passingScore: null } as any);
+      prismaMock.exam.findFirstOrThrow.mockResolvedValue({ id: 'e1', name: 'AWS' } as any);
+      prismaMock.examQuestion.count.mockResolvedValue(10);
+      prismaMock.examQuestion.findMany.mockResolvedValue([{ id: 1 }] as any);
+      prismaMock.mockExam.create.mockResolvedValue({
+        id: 9, name: 'x', exam: { id: 'e1', name: 'AWS', type: 'certification', passingScore: null },
+        durationMinutes: null, questionSource: 'library', _count: { questions: 1 }, createdAt: new Date(),
+      } as any);
+
+      await service.create(
+        { examId: 'e1', totalQuestions: 1, durationMinutes: null, sections: [{ sectionName: 'Security', questionCount: 1 }] },
+        'user-1',
+      );
+
+      expect(prismaMock.mockExam.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ durationMinutes: null }) }),
+      );
     });
   });
 });

@@ -312,6 +312,9 @@ export interface MockExam {
   sections: MockExamSectionConfig[];
   questions: MockExamQuestion[];
   attempts: MockExamAttempt[];
+  durationMinutes: number | null;
+  questionSource: MockExamQuestionSource;
+  passingScorePercent: number | null;
   createdAt: string;
 }
 
@@ -325,6 +328,9 @@ export interface MockExamListItem {
   lastAttemptId: number | null;
   openAttemptId: number | null;
   attempts: Pick<MockExamAttempt, 'id' | 'score' | 'startedAt' | 'finishedAt'>[];
+  durationMinutes: number | null;
+  questionSource: MockExamQuestionSource;
+  passingScorePercent: number | null;
   createdAt: string;
 }
 
@@ -334,6 +340,7 @@ export interface CreateMockExamPayload {
   totalQuestions: number;
   sections: MockExamSectionConfig[];
   questionSource?: MockExamQuestionSource;
+  durationMinutes?: number | null;
 }
 
 export interface FinishAttemptPayload {

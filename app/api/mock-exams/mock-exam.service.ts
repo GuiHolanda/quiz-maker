@@ -86,6 +86,9 @@ export class MockExamService {
           startedAt: a.startedAt.toISOString(),
           finishedAt: a.finishedAt?.toISOString() ?? null,
         })),
+        durationMinutes: m.durationMinutes,
+        questionSource: m.questionSource as MockExamQuestionSource,
+        passingScorePercent: m.exam.passingScore ?? null,
         createdAt: m.createdAt.toISOString(),
       };
     });
@@ -118,7 +121,8 @@ export class MockExamService {
 
   async create(payload: CreateMockExamPayload, userId: string) {
     const { examId, name, totalQuestions, sections } = payload;
-    const questionSource = payload.questionSource ?? 'library';
+    const questionSource: MockExamQuestionSource =
+      payload.questionSource === 'unseen' || payload.questionSource === 'wrong' ? payload.questionSource : 'library';
 
     const resolved = await this.resolveSections(examId, sections);
 
@@ -141,6 +145,7 @@ export class MockExamService {
         examId,
         userId,
         questionSource,
+        durationMinutes: payload.durationMinutes ?? null,
         sections: { create: sections.map((s) => ({ sectionName: s.sectionName, questionCount: s.questionCount })) },
         questions: {
           create: selectedQuestionIds.map((id, index) => ({
@@ -165,6 +170,9 @@ export class MockExamService {
       lastAttemptId: null,
       openAttemptId: null,
       attempts: [],
+      durationMinutes: mockExam.durationMinutes ?? null,
+      questionSource,
+      passingScorePercent: mockExam.exam.passingScore ?? null,
       createdAt: mockExam.createdAt.toISOString(),
     };
   }
@@ -324,7 +332,11 @@ export class MockExamService {
 
     if (!mockExam) throw Object.assign(new Error('Simulado não encontrado'), { status: 404 });
 
-    return mockExam;
+    return {
+      ...mockExam,
+      passingScorePercent: mockExam.exam.passingScore ?? null,
+      questionSource: mockExam.questionSource as MockExamQuestionSource,
+    };
   }
 
   async startAttempt(mockExamId: number, userId: string) {
