@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { shuffleItems } from '@/lib/shuffle-options';
+import { MOCK_EXAM_TIME_GRACE_MINUTES } from '@/config/constants';
 import { CreateMockExamPayload, MockExamSectionConfig, MockExamQuestionSource, ExamType } from '@/shared/types';
 import { normalizeName, looseKey } from '@/shared/utils';
 import { OpenAIService } from '@/features/services/openAI.service';
@@ -68,7 +69,9 @@ export class MockExamService {
         .filter((a) => a.finishedAt !== null)
         .sort((a, b) => (b.finishedAt?.getTime() ?? 0) - (a.finishedAt?.getTime() ?? 0));
       const open = m.attempts.find((a) => a.finishedAt === null) ?? null;
-      const bestScore = finishedAttempts.length > 0 ? Math.max(...finishedAttempts.map((a) => a.score ?? 0)) : null;
+      const comparableAttempts = finishedAttempts.filter((a) => !a.timedOut);
+      const bestScore =
+        comparableAttempts.length > 0 ? Math.max(...comparableAttempts.map((a) => a.score ?? 0)) : null;
       const lastAttemptId = finishedAttempts.length > 0 ? finishedAttempts[0].id : null;
 
       return {
@@ -85,6 +88,7 @@ export class MockExamService {
           score: a.score,
           startedAt: a.startedAt.toISOString(),
           finishedAt: a.finishedAt?.toISOString() ?? null,
+          timedOut: a.timedOut,
         })),
         durationMinutes: m.durationMinutes,
         questionSource: m.questionSource as MockExamQuestionSource,
@@ -482,6 +486,11 @@ export class MockExamService {
 
     if (!attempt) throw Object.assign(new Error('Tentativa não encontrada'), { status: 404 });
 
+    const mockExam = await prisma.mockExam.findFirst({
+      where: { id: mockExamId },
+      select: { durationMinutes: true },
+    });
+
     let mockExamQuestions = await prisma.mockExamQuestion.findMany({
       where: { mockExamId },
       include: { examQuestion: { include: { answer: true } } },
@@ -498,6 +507,7 @@ export class MockExamService {
     }
 
     const answersMap = new Map(answers.map((a) => [a.mockExamQuestionId, a.selectedOptions]));
+    const correctByMockExamQuestionId = new Map<number, boolean>();
     let score = 0;
 
     for (const mq of mockExamQuestions) {
@@ -510,8 +520,13 @@ export class MockExamService {
         selected.length === correctOptions.length &&
         selected.every((s) => correctOptions.includes(s));
 
+      correctByMockExamQuestionId.set(mq.id, isCorrect);
       if (isCorrect) score += 1;
     }
+
+    const timedOut =
+      mockExam?.durationMinutes != null &&
+      Date.now() > attempt.startedAt.getTime() + (mockExam.durationMinutes + MOCK_EXAM_TIME_GRACE_MINUTES) * 60_000;
 
     await prisma.$transaction([
       prisma.mockExamAttemptAnswer.createMany({
@@ -519,11 +534,12 @@ export class MockExamService {
           attemptId,
           mockExamQuestionId: a.mockExamQuestionId,
           selectedOptions: JSON.stringify(a.selectedOptions),
+          isCorrect: correctByMockExamQuestionId.get(a.mockExamQuestionId) ?? false,
         })),
       }),
       prisma.mockExamAttempt.update({
         where: { id: attemptId },
-        data: { finishedAt: new Date(), score },
+        data: { finishedAt: new Date(), score, timedOut },
       }),
     ]);
 

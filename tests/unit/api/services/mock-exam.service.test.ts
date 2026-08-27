@@ -555,6 +555,91 @@ describe('MockExamService', () => {
       expect(drawCall?.[0]?.where?.id).toBeUndefined();
       expect(prismaMock.mockExamAttemptAnswer.findMany).not.toHaveBeenCalled();
     });
+
+    it('unrecognized questionSource falls back to library', async () => {
+      seedCommon();
+      prismaMock.examQuestion.count.mockResolvedValue(10);
+      prismaMock.examQuestion.findMany.mockResolvedValue([{ id: 1 }, { id: 2 }, { id: 3 }] as any);
+      prismaMock.mockExam.create.mockResolvedValue({ id: 1, name: 'x', exam, _count: { questions: 3 }, createdAt: new Date() } as any);
+
+      await service.create(
+        {
+          examId: 'exam-1',
+          totalQuestions: 3,
+          sections: [{ sectionName: 'Security', questionCount: 3 }],
+          questionSource: 'bogus' as any,
+        },
+        'user-1',
+      );
+
+      expect(prismaMock.mockExamAttemptAnswer.findMany).not.toHaveBeenCalled();
+      expect(prismaMock.mockExam.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ questionSource: 'library' }) }),
+      );
+    });
+  });
+
+  describe('finishAttempt — correção por resposta e tempo esgotado', () => {
+    it('finishAttempt() writes isCorrect per answer', async () => {
+      prismaMock.mockExamAttempt.findFirst.mockResolvedValue({ id: 10, mockExamId: 1, userId: 'u1', startedAt: new Date() } as any);
+      prismaMock.mockExam.findFirst.mockResolvedValue({ id: 1, durationMinutes: null } as any);
+      prismaMock.mockExamQuestion.findMany.mockResolvedValue([
+        { id: 5, examQuestion: { answer: { correctOptions: ['A'] } } },
+        { id: 6, examQuestion: { answer: { correctOptions: ['B'] } } },
+      ] as any);
+      prismaMock.$transaction.mockImplementation(async (arr: any) => arr);
+
+      await service.finishAttempt(1, 10, 'u1', [
+        { mockExamQuestionId: 5, selectedOptions: ['A'] },
+        { mockExamQuestionId: 6, selectedOptions: ['C'] },
+      ]);
+
+      const createManyCall = prismaMock.mockExamAttemptAnswer.createMany.mock.calls[0][0]!;
+      expect(createManyCall.data).toEqual([
+        expect.objectContaining({ mockExamQuestionId: 5, isCorrect: true }),
+        expect.objectContaining({ mockExamQuestionId: 6, isCorrect: false }),
+      ]);
+    });
+
+    it('finishAttempt() sets timedOut=true when submitted past deadline + grace', async () => {
+      const startedAt = new Date(Date.now() - 65 * 60_000);
+      prismaMock.mockExamAttempt.findFirst.mockResolvedValue({ id: 10, mockExamId: 1, userId: 'u1', startedAt } as any);
+      prismaMock.mockExam.findFirst.mockResolvedValue({ id: 1, durationMinutes: 60 } as any);
+      prismaMock.mockExamQuestion.findMany.mockResolvedValue([{ id: 5, examQuestion: { answer: { correctOptions: ['A'] } } }] as any);
+      prismaMock.$transaction.mockImplementation(async (arr: any) => arr);
+
+      await service.finishAttempt(1, 10, 'u1', [{ mockExamQuestionId: 5, selectedOptions: ['A'] }]);
+
+      const updateCall = prismaMock.mockExamAttempt.update.mock.calls[0][0];
+      expect(updateCall.data).toMatchObject({ timedOut: true, score: 1 });
+    });
+
+    it('finishAttempt() keeps timedOut=false within the grace window', async () => {
+      const startedAt = new Date(Date.now() - 61 * 60_000);
+      prismaMock.mockExamAttempt.findFirst.mockResolvedValue({ id: 10, mockExamId: 1, userId: 'u1', startedAt } as any);
+      prismaMock.mockExam.findFirst.mockResolvedValue({ id: 1, durationMinutes: 60 } as any);
+      prismaMock.mockExamQuestion.findMany.mockResolvedValue([{ id: 5, examQuestion: { answer: { correctOptions: ['A'] } } }] as any);
+      prismaMock.$transaction.mockImplementation(async (arr: any) => arr);
+
+      await service.finishAttempt(1, 10, 'u1', [{ mockExamQuestionId: 5, selectedOptions: ['A'] }]);
+
+      expect(prismaMock.mockExamAttempt.update.mock.calls[0][0].data).toMatchObject({ timedOut: false });
+    });
+
+    it('list() bestScore ignores timedOut attempts', async () => {
+      prismaMock.mockExam.findMany.mockResolvedValue([{
+        id: 1, name: 'x', exam: { id: 'e1', name: 'AWS', type: 'certification', passingScore: 70 },
+        sections: [], durationMinutes: 60, questionSource: 'library', createdAt: new Date(),
+        _count: { questions: 10 },
+        attempts: [
+          { id: 1, score: 9, startedAt: new Date(), finishedAt: new Date(), timedOut: true },
+          { id: 2, score: 6, startedAt: new Date(), finishedAt: new Date(), timedOut: false },
+        ],
+      }] as any);
+
+      const [item] = await service.list('u1');
+      expect(item.bestScore).toBe(6);
+    });
   });
 
   describe('create — persistência de tempo e fonte', () => {

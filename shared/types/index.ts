@@ -301,6 +301,7 @@ export interface MockExamAttempt {
   startedAt: string;
   finishedAt: string | null;
   score: number | null;
+  timedOut: boolean;
   answers: MockExamAttemptAnswer[];
 }
 
@@ -327,7 +328,7 @@ export interface MockExamListItem {
   bestScore: number | null;
   lastAttemptId: number | null;
   openAttemptId: number | null;
-  attempts: Pick<MockExamAttempt, 'id' | 'score' | 'startedAt' | 'finishedAt'>[];
+  attempts: Pick<MockExamAttempt, 'id' | 'score' | 'startedAt' | 'finishedAt' | 'timedOut'>[];
   durationMinutes: number | null;
   questionSource: MockExamQuestionSource;
   passingScorePercent: number | null;
