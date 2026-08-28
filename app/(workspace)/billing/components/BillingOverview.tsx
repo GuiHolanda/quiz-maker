@@ -5,6 +5,7 @@ import type { UsageStats } from '@/shared/types';
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@heroui/modal';
+import { Spinner } from '@heroui/spinner';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faCreditCard,
@@ -41,6 +42,9 @@ export function BillingOverview() {
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [portalLoadingKey, setPortalLoadingKey] = useState<string | null>(null);
+  const [pollTimedOut, setPollTimedOut] = useState(false);
+  const [isReconciling, setIsReconciling] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const toastFiredRef = useRef(false);
   const reconciledRef = useRef(false);
   const isUpgradeFlow = searchParams.get('upgraded') === 'true';
@@ -66,6 +70,7 @@ export function BillingOverview() {
     reconciledRef.current = true;
 
     let cancelled = false;
+    setIsReconciling(true);
 
     async function reconcilePlan() {
       const tokenPlan = session?.user?.plan;
@@ -77,8 +82,8 @@ export function BillingOverview() {
       const baseline = data.plan;
       let attempts = 0;
 
-      while (attempts < 8 && !cancelled && data.plan === baseline && data.plan === tokenPlan) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+      while (attempts < 20 && !cancelled && data.plan === baseline && data.plan === tokenPlan) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
         data = await getBillingUsage();
 
         if (cancelled) return;
@@ -87,14 +92,24 @@ export function BillingOverview() {
       }
 
       if (cancelled) return;
+      setIsReconciling(false);
+
+      if (data.plan === baseline) {
+        setPollTimedOut(true);
+        return;
+      }
 
       await updateSession();
       refreshUsage();
       router.refresh();
 
-      if (isSyncFlow && questionsCeiling(data.plan) > questionsCeiling(baseline) && !toastFiredRef.current) {
+      if (!toastFiredRef.current) {
         toastFiredRef.current = true;
-        notify.success(t('billing.toast.planUpdated'), t('billing.toast.planUpdatedDescription'));
+        if (isUpgradeFlow) {
+          notify.success(t('billing.toast.upgraded'), t('billing.toast.upgradedDescription'));
+        } else if (isSyncFlow && questionsCeiling(data.plan) > questionsCeiling(baseline)) {
+          notify.success(t('billing.toast.planUpdated'), t('billing.toast.planUpdatedDescription'));
+        }
       }
     }
 
@@ -102,14 +117,10 @@ export function BillingOverview() {
 
     return () => {
       cancelled = true;
+      setIsReconciling(false);
     };
-  }, [isReconcileFlow, status]);
-
-  useEffect(() => {
-    if (!isUpgradeFlow || !usage || toastFiredRef.current) return;
-    toastFiredRef.current = true;
-    notify.success(t('billing.toast.upgraded'), t('billing.toast.upgradedDescription'));
-  }, [isUpgradeFlow, usage, t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReconcileFlow, status, retryCount]);
 
   if (!usage) return null;
 
@@ -137,6 +148,13 @@ export function BillingOverview() {
           ? t('billing.planSprint')
           : t('billing.planFree');
 
+  function handleRetry() {
+    setPollTimedOut(false);
+    toastFiredRef.current = false;
+    reconciledRef.current = false;
+    setRetryCount((c) => c + 1);
+  }
+
   async function handlePortal(key: string) {
     setPortalLoadingKey(key);
     try {
@@ -151,6 +169,7 @@ export function BillingOverview() {
 
   return (
     <div className="flex flex-col gap-8">
+      {renderReconcileBanner()}
       {renderPlanBanner()}
       {renderUsageSection()}
       <ReferralCard />
@@ -161,6 +180,41 @@ export function BillingOverview() {
       <UpgradeModal isOpen={isUpgradeOpen} onClose={() => setIsUpgradeOpen(false)} />
     </div>
   );
+
+  function renderReconcileBanner() {
+    if (!isReconcileFlow) return null;
+
+    if (isReconciling) {
+      return (
+        <section className="bg-primary/10 border border-primary/20 rounded-xl p-6 flex items-center gap-4">
+          <Spinner color="primary" size="sm" />
+          <div>
+            <p className="text-sm font-semibold text-foreground">{t('billing.reconciling.title')}</p>
+            <p className="text-xs text-default-500">{t('billing.reconciling.description')}</p>
+          </div>
+        </section>
+      );
+    }
+
+    if (pollTimedOut) {
+      return (
+        <section className="bg-warning/10 border border-warning/20 rounded-xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <FontAwesomeIcon className="text-warning mt-0.5 shrink-0" icon={faTriangleExclamation} />
+            <div>
+              <p className="text-sm font-semibold text-foreground">{t('billing.reconciling.timeoutTitle')}</p>
+              <p className="text-xs text-default-500">{t('billing.reconciling.timeoutDescription')}</p>
+            </div>
+          </div>
+          <Button className={buttonStyles.secondary} size="sm" variant="bordered" onPress={handleRetry}>
+            {t('billing.reconciling.retryButton')}
+          </Button>
+        </section>
+      );
+    }
+
+    return null;
+  }
 
   function renderPlanBanner() {
     return (
