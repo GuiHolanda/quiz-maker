@@ -24,7 +24,7 @@ export function readSimuladoPrefill(): SimuladoPrefill | null {
   localStorage.removeItem(SIMULADO_NEW_PREFILL_KEY);
 
   try {
-    const p = JSON.parse(raw);
+    const p = JSON.parse(raw) as Partial<SimuladoPrefill> & { type?: string };
 
     if (!p?.examId || typeof p.totalQuestions !== 'number') return null;
 

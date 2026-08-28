@@ -51,6 +51,7 @@ export function SimuladosCreatedSection() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [historyTarget, setHistoryTarget] = useState<UnifiedSimulado | null>(null);
   const [startingKey, setStartingKey] = useState<string | null>(null);
+  const [duplicatingId, setDuplicatingId] = useState<number | null>(null);
 
   const deferredSearch = useDeferredValue(search);
 
@@ -143,10 +144,13 @@ export function SimuladosCreatedSection() {
   }
 
   async function handleDuplicate(s: UnifiedSimulado) {
+    if (duplicatingId != null) return;
+
     const listItem = mock.mockExams.find((item) => item.id === s.id);
 
     if (!listItem) return;
 
+    setDuplicatingId(s.id);
     try {
       const full = await getMockExam(s.id);
 
@@ -166,6 +170,8 @@ export function SimuladosCreatedSection() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error: unknown) {
       notify.error(t('toast.error'), extractMessage(error) ?? t('toast.somethingWrong'));
+    } finally {
+      setDuplicatingId(null);
     }
   }
 

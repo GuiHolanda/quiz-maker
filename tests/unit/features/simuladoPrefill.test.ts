@@ -77,4 +77,11 @@ describe('simuladoPrefill', () => {
     expect(readSimuladoPrefill()).toBeNull();
     expect(localStorage.getItem(SIMULADO_NEW_PREFILL_KEY)).toBeNull();
   });
+
+  it('returns null and clears the key when the payload has no examId', () => {
+    localStorage.setItem(SIMULADO_NEW_PREFILL_KEY, JSON.stringify({ totalQuestions: 5 }));
+
+    expect(readSimuladoPrefill()).toBeNull();
+    expect(localStorage.getItem(SIMULADO_NEW_PREFILL_KEY)).toBeNull();
+  });
 });

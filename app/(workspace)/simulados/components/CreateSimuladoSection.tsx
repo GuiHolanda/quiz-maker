@@ -131,12 +131,14 @@ export function CreateSimuladoSection() {
   }, [isLoading, certifications, publicExams]);
 
   useEffect(() => {
-    const handler = () => applyPrefill();
+    const handler = () => {
+      if (!isLoading) applyPrefill();
+    };
 
     window.addEventListener('simulado-prefill', handler);
 
     return () => window.removeEventListener('simulado-prefill', handler);
-  }, [certifications, publicExams]);
+  }, [isLoading, certifications, publicExams]);
 
   useEffect(() => {
     if (!exam?.id) {
