@@ -1,3 +1,5 @@
+import type { Prisma } from '@prisma/client';
+
 import { prisma } from '@/lib/prisma';
 import { shuffleItems } from '@/lib/shuffle-options';
 import { MOCK_EXAM_TIME_GRACE_MINUTES } from '@/config/constants';
@@ -258,26 +260,26 @@ export class MockExamService {
     return { seen, wrong };
   }
 
-  private sourceIdFilter(
-    source: MockExamQuestionSource,
-    history: { seen: Set<number>; wrong: Set<number> }
-  ): { id?: { in: number[] } | { notIn: number[] } } {
-    if (source === 'unseen') return { id: { notIn: Array.from(history.seen) } };
-    if (source === 'wrong') return { id: { in: Array.from(history.wrong) } };
-
-    return {};
-  }
-
-  private async buildSourceFilter(
+  private buildSourceFilter(
     examId: string,
     userId: string,
     source: MockExamQuestionSource
-  ): Promise<{ id?: { in: number[] } | { notIn: number[] } }> {
-    if (source === 'library') return {};
+  ): Prisma.ExamQuestionWhereInput {
+    if (source !== 'unseen' && source !== 'wrong') return {};
 
-    const history = await this.questionIdHistory(examId, userId);
+    const answeredInFinishedAttempt: Prisma.MockExamAttemptAnswerWhereInput = {
+      attempt: { userId, finishedAt: { not: null }, mockExam: { examId } },
+    };
 
-    return this.sourceIdFilter(source, history);
+    if (source === 'unseen') {
+      return { mockExamQuestions: { none: { attemptAnswers: { some: answeredInFinishedAttempt } } } };
+    }
+
+    return {
+      mockExamQuestions: {
+        some: { attemptAnswers: { some: { ...answeredInFinishedAttempt, isCorrect: false } } },
+      },
+    };
   }
 
   private async validateSectionAvailability(
@@ -290,7 +292,7 @@ export class MockExamService {
 
     if (!exam) throw Object.assign(new Error('Exame não encontrado'), { status: 404 });
 
-    const sourceFilter = await this.buildSourceFilter(examId, userId, source);
+    const sourceFilter = this.buildSourceFilter(examId, userId, source);
 
     for (const s of sections) {
       // Prefer FK match when available. Fall back to the denormalized string
@@ -328,7 +330,7 @@ export class MockExamService {
     source: MockExamQuestionSource
   ): Promise<number[]> {
     const exam = await prisma.exam.findFirstOrThrow({ where: this.ownedExamWhere(examId, userId) });
-    const sourceFilter = await this.buildSourceFilter(examId, userId, source);
+    const sourceFilter = this.buildSourceFilter(examId, userId, source);
     const ids: number[] = [];
 
     for (const s of sections) {

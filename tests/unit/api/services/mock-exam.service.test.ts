@@ -493,12 +493,12 @@ describe('MockExamService', () => {
       prismaMock.exam.findFirstOrThrow.mockResolvedValue(exam as any);
     }
 
-    it('unseen: excludes examQuestion ids already answered in a finished attempt for this exam', async () => {
+    const answeredInFinishedAttempt = {
+      attempt: { userId: 'user-1', finishedAt: { not: null }, mockExam: { examId: 'exam-1' } },
+    };
+
+    it('unseen: filters via a relational none clause, never a materialized id list', async () => {
       seedCommon();
-      prismaMock.mockExamAttemptAnswer.findMany.mockResolvedValue([
-        { isCorrect: true, mockExamQuestion: { examQuestionId: 10 } },
-        { isCorrect: false, mockExamQuestion: { examQuestionId: 11 } },
-      ] as any);
       prismaMock.examQuestion.count.mockResolvedValue(5);
       prismaMock.examQuestion.findMany.mockResolvedValue([{ id: 12 }, { id: 13 }, { id: 14 }] as any);
       prismaMock.mockExam.create.mockResolvedValue({ id: 1, name: 'x', exam, _count: { questions: 3 }, createdAt: new Date() } as any);
@@ -508,16 +508,16 @@ describe('MockExamService', () => {
         'user-1',
       );
 
-      const drawCall = prismaMock.examQuestion.findMany.mock.calls.find((c) => c[0]?.where?.id);
-      expect(drawCall?.[0]?.where?.id).toEqual({ notIn: [10, 11] });
+      const drawCall = prismaMock.examQuestion.findMany.mock.calls.find((c) => c[0]?.where?.mockExamQuestions);
+      expect(drawCall?.[0]?.where?.id).toBeUndefined();
+      expect(drawCall?.[0]?.where?.mockExamQuestions).toEqual({
+        none: { attemptAnswers: { some: answeredInFinishedAttempt } },
+      });
+      expect(prismaMock.mockExamAttemptAnswer.findMany).not.toHaveBeenCalled();
     });
 
-    it('wrong: restricts to examQuestion ids answered incorrectly in a finished attempt for this exam', async () => {
+    it('wrong: filters via a relational some clause on isCorrect:false, never a materialized id list', async () => {
       seedCommon();
-      prismaMock.mockExamAttemptAnswer.findMany.mockResolvedValue([
-        { isCorrect: true, mockExamQuestion: { examQuestionId: 10 } },
-        { isCorrect: false, mockExamQuestion: { examQuestionId: 11 } },
-      ] as any);
       prismaMock.examQuestion.count.mockResolvedValue(1);
       prismaMock.examQuestion.findMany.mockResolvedValue([{ id: 11 }] as any);
       prismaMock.mockExam.create.mockResolvedValue({ id: 1, name: 'x', exam, _count: { questions: 1 }, createdAt: new Date() } as any);
@@ -527,13 +527,15 @@ describe('MockExamService', () => {
         'user-1',
       );
 
-      const drawCall = prismaMock.examQuestion.findMany.mock.calls.find((c) => c[0]?.where?.id);
-      expect(drawCall?.[0]?.where?.id).toEqual({ in: [11] });
+      const drawCall = prismaMock.examQuestion.findMany.mock.calls.find((c) => c[0]?.where?.mockExamQuestions);
+      expect(drawCall?.[0]?.where?.id).toBeUndefined();
+      expect(drawCall?.[0]?.where?.mockExamQuestions).toEqual({
+        some: { attemptAnswers: { some: { ...answeredInFinishedAttempt, isCorrect: false } } },
+      });
     });
 
     it('wrong: throws 422 when there are not enough incorrect questions', async () => {
       seedCommon();
-      prismaMock.mockExamAttemptAnswer.findMany.mockResolvedValue([] as any);
       prismaMock.examQuestion.count.mockResolvedValue(0);
 
       await expect(
@@ -580,6 +582,25 @@ describe('MockExamService', () => {
       expect(prismaMock.mockExam.create).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ questionSource: 'library' }) }),
       );
+    });
+
+    it('unseen: no examQuestion query carries an id clause, no matter how large the answer history is', async () => {
+      seedCommon();
+      prismaMock.examQuestion.count.mockResolvedValue(10);
+      prismaMock.examQuestion.findMany.mockResolvedValue([{ id: 90001 }, { id: 90002 }] as any);
+      prismaMock.mockExam.create.mockResolvedValue({ id: 1, name: 'x', exam, _count: { questions: 2 }, createdAt: new Date() } as any);
+
+      await service.create(
+        { examId: 'exam-1', totalQuestions: 2, sections: [{ sectionName: 'Security', questionCount: 2 }], questionSource: 'unseen' },
+        'user-1',
+      );
+
+      for (const call of prismaMock.examQuestion.findMany.mock.calls) {
+        expect(call[0]?.where?.id).toBeUndefined();
+      }
+      for (const call of prismaMock.examQuestion.count.mock.calls) {
+        expect(call[0]?.where?.id).toBeUndefined();
+      }
     });
   });
 
