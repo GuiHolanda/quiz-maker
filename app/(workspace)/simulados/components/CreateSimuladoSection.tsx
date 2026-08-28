@@ -1,6 +1,6 @@
 'use client';
 
-import type { Exam, ExamType } from '@/shared/types';
+import type { Exam, ExamType, MockExamAvailability, MockExamQuestionSource } from '@/shared/types';
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -26,7 +26,12 @@ import {
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { useMockExamsContext } from '@/features/providers/mockExams.provider';
-import { createMockExam, ensureMockExamAnswers, startMockExamAttempt } from '@/features/connectors';
+import {
+  createMockExam,
+  ensureMockExamAnswers,
+  getMockExamAvailability,
+  startMockExamAttempt,
+} from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
@@ -34,6 +39,12 @@ import { inputProperties } from '@/config/constants/inputStyles';
 import { SIMULADO_NEW_PREFILL_KEY } from '@/config/constants';
 
 const FIELD_LABEL = 'text-xs font-semibold text-default-400';
+
+const SOURCE_TITLE_KEY: Record<MockExamQuestionSource, string> = {
+  library: 'simulado.create.sourceLibraryTitle',
+  unseen: 'simulado.create.sourceUnseenTitle',
+  wrong: 'simulado.create.sourceWrongTitle',
+};
 
 const INITIAL_STATE: SimuladoFormState = {
   name: '',
@@ -55,6 +66,7 @@ function deriveFromExam(exam: Exam): Partial<SimuladoFormState> {
     examId: exam.id ?? null,
     totalQuestions: exam.totalQuestions,
     customMinutes: exam.examDurationMinutes ?? 60,
+    source: 'library',
     selectedSections: exam.sections.map((section) => section.name),
   };
 }
@@ -66,6 +78,7 @@ export function CreateSimuladoSection() {
   const { addMockExam } = useMockExamsContext();
 
   const [state, setState] = useState<SimuladoFormState>(INITIAL_STATE);
+  const [availability, setAvailability] = useState<MockExamAvailability | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [phase, setPhase] = useState<'config' | 'gerando' | 'pronto'>('config');
   const [stepIndex, setStepIndex] = useState(0);
@@ -130,16 +143,53 @@ export function CreateSimuladoSection() {
     } catch {}
   }, [isLoading, certifications, publicExams]);
 
+  useEffect(() => {
+    if (!exam?.id) {
+      setAvailability(null);
+
+      return;
+    }
+
+    let cancelled = false;
+
+    getMockExamAvailability(exam.id)
+      .then((result) => {
+        if (!cancelled) setAvailability(result);
+      })
+      .catch(() => {
+        if (!cancelled) setAvailability(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [exam?.id]);
+
   const weights = exam ? sectionWeights(exam.sections) : {};
   const distribution = exam ? distributeQuestions(exam.sections, state.selectedSections, state.totalQuestions) : [];
   const coverage = exam ? coveragePercent(exam.sections, state.selectedSections) : 0;
   const countByName = new Map(distribution.map((entry) => [entry.sectionName, entry.questionCount]));
 
+  const availableForSource = (sectionName: string): number | null => {
+    const entry = availability?.sections.find((section) => section.sectionName === sectionName);
+
+    return entry ? entry[state.source] : null;
+  };
+
   const topicRows = (exam?.sections ?? []).map((section) => ({
     name: section.name,
     weight: weights[section.name] ?? 0,
     count: countByName.get(section.name) ?? 0,
+    available: availableForSource(section.name),
   }));
+
+  const insufficient =
+    availability != null &&
+    distribution.some((entry) => {
+      const avail = availableForSource(entry.sectionName) ?? 0;
+
+      return entry.questionCount > avail;
+    });
 
   const selectedCount = state.selectedSections.length;
   const sectionCount = exam?.sections.length ?? 0;
@@ -171,6 +221,8 @@ export function CreateSimuladoSection() {
     statusText = t('simulado.create.statusNeedCount');
   } else if (tooFewForTopics) {
     statusText = t('simulado.create.statusTooFewTopics');
+  } else if (insufficient) {
+    statusText = t('simulado.create.statusInsufficient');
   } else {
     statusTone = 'ok';
     statusText = t('simulado.create.statusReady', { count: state.totalQuestions, percent: coverage });
@@ -182,7 +234,7 @@ export function CreateSimuladoSection() {
     { label: t('simulado.create.summaryExam'), value: exam?.name ?? '—' },
     { label: t('simulado.create.summaryQuestions'), value: String(state.totalQuestions) },
     { label: t('simulado.create.summaryTime'), value: resolveSummaryTime() },
-    { label: t('simulado.create.summarySource'), value: t('simulado.create.sourceLibraryTitle') },
+    { label: t('simulado.create.summarySource'), value: t(SOURCE_TITLE_KEY[state.source]) },
     {
       label: t('simulado.create.summaryTopics'),
       value: t('simulado.create.summaryTopicsValue', { selected: selectedCount, total: sectionCount }),
@@ -403,7 +455,11 @@ export function CreateSimuladoSection() {
           onMode={(timeMode) => patchState({ timeMode })}
         />
 
-        <SourcePicker examId={state.examId} value={state.source} />
+        <SourcePicker
+          counts={availability?.totals ?? null}
+          value={state.source}
+          onChange={(source) => patchState({ source })}
+        />
 
         <TopicChecklist
           sections={topicRows}

@@ -11,7 +11,7 @@ interface TopicRow {
   readonly name: string;
   readonly weight: number;
   readonly count: number;
-  readonly available?: number;
+  readonly available: number | null;
 }
 
 interface TopicChecklistProps {
@@ -46,7 +46,7 @@ export function TopicChecklist({ sections, selected, onToggle, onAll, onNone }: 
         <div className="min-w-[440px]">
           {sections.map((section) => {
             const isChecked = selected.includes(section.name);
-            const isInsufficient = isChecked && section.available !== undefined && section.count > section.available;
+            const isInsufficient = isChecked && section.available !== null && section.count > section.available;
 
             return (
               <button
