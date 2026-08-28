@@ -23,6 +23,9 @@ export const TID = {
   simuladoDeleteBtn: 'simulado-delete-btn',
 
   // Simulado — create form (/simulados)
+  simuladoPresetOfficial: 'simulado-preset-official',
+  simuladoPresetQuick: 'simulado-preset-quick',
+  simuladoPresetErrors: 'simulado-preset-errors',
   simuladoNameInput: 'simulado-name-input',
   simuladoScopeCertification: 'simulado-scope-certification',
   simuladoScopePublicExam: 'simulado-scope-public-exam',

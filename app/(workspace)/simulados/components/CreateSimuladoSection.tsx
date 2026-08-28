@@ -16,10 +16,13 @@ import { TopicChecklist } from './create/TopicChecklist';
 import { SummarySidebar } from './create/SummarySidebar';
 import { GenerationPanel } from './create/GenerationPanel';
 import {
+  PresetKey,
   SimuladoFormState,
+  applyPreset,
   buildCreatePayload,
   coveragePercent,
   distributeQuestions,
+  matchesPreset,
   sectionWeights,
 } from './create/simuladoFormState';
 
@@ -150,6 +153,8 @@ export function CreateSimuladoSection() {
       return;
     }
 
+    setAvailability(null);
+
     let cancelled = false;
 
     getMockExamAvailability(exam.id)
@@ -168,6 +173,9 @@ export function CreateSimuladoSection() {
   const weights = exam ? sectionWeights(exam.sections) : {};
   const distribution = exam ? distributeQuestions(exam.sections, state.selectedSections, state.totalQuestions) : [];
   const coverage = exam ? coveragePercent(exam.sections, state.selectedSections) : 0;
+  const activePreset: PresetKey | null = exam
+    ? ((['official', 'quick', 'errors'] as const).find((key) => matchesPreset(key, state, exam)) ?? null)
+    : null;
   const countByName = new Map(distribution.map((entry) => [entry.sectionName, entry.questionCount]));
 
   const availableForSource = (sectionName: string): number | null => {
@@ -274,7 +282,12 @@ export function CreateSimuladoSection() {
       <div className="flex flex-col gap-6">
         {phase === 'config' ? (
           <>
-            <PresetShortcuts exam={exam} />
+            <PresetShortcuts
+              activePreset={activePreset}
+              officialCount={exam?.totalQuestions ?? 0}
+              officialTime={exam?.examDurationMinutes != null ? fmtTempo(exam.examDurationMinutes) : '—'}
+              onPick={handlePreset}
+            />
             {renderConfigCard()}
           </>
         ) : (
@@ -341,6 +354,10 @@ export function CreateSimuladoSection() {
 
   function handleAllSections() {
     if (exam) patchState({ selectedSections: exam.sections.map((section) => section.name) });
+  }
+
+  function handlePreset(key: PresetKey) {
+    if (exam) setState(applyPreset(key, state, exam));
   }
 
   function handleNoSections() {

@@ -1,7 +1,9 @@
 import {
+  applyPreset,
   buildCreatePayload,
   coveragePercent,
   distributeQuestions,
+  matchesPreset,
   resolveDurationMinutes,
   sectionWeights,
 } from '@/app/(workspace)/simulados/components/create/simuladoFormState';
@@ -18,7 +20,10 @@ describe('simuladoFormState', () => {
 
   it('distributeQuestions splits by weight and the last selected absorbs the remainder', () => {
     const d = distributeQuestions(sections, ['A', 'B'], 10);
-    expect(d).toEqual([{ sectionName: 'A', questionCount: 8 }, { sectionName: 'B', questionCount: 2 }]);
+    expect(d).toEqual([
+      { sectionName: 'A', questionCount: 8 },
+      { sectionName: 'B', questionCount: 2 },
+    ]);
     expect(d.reduce((s, x) => s + x.questionCount, 0)).toBe(10);
   });
 
@@ -86,5 +91,56 @@ describe('simuladoFormState', () => {
 
     const customZero = buildCreatePayload({ ...base, timeMode: 'personalizado', customMinutes: 0 } as any, exam);
     expect(customZero.durationMinutes).toBeNull();
+  });
+});
+
+describe('presets', () => {
+  const exam = {
+    totalQuestions: 65,
+    examDurationMinutes: 130,
+    sections: [
+      { name: 'A', maxQuestions: 30 },
+      { name: 'B', maxQuestions: 10 },
+    ],
+  } as any;
+  const base = {
+    name: '',
+    scope: 'certification',
+    examId: 'e1',
+    totalQuestions: 65,
+    timeMode: 'oficial',
+    customMinutes: 130,
+    source: 'library',
+    selectedSections: ['A', 'B'],
+  } as any;
+
+  it('official: full count, official time, library, all sections', () => {
+    const s = applyPreset('official', base, exam);
+
+    expect(s).toMatchObject({
+      totalQuestions: 65,
+      timeMode: 'oficial',
+      source: 'library',
+      selectedSections: ['A', 'B'],
+    });
+    expect(matchesPreset('official', s, exam)).toBe(true);
+  });
+
+  it('quick: 15 questions, custom 30min, unseen', () => {
+    const s = applyPreset('quick', base, exam);
+
+    expect(s).toMatchObject({ totalQuestions: 15, timeMode: 'personalizado', customMinutes: 30, source: 'unseen' });
+  });
+
+  it('errors: 20 questions, livre, wrong', () => {
+    const s = applyPreset('errors', base, exam);
+
+    expect(s).toMatchObject({ totalQuestions: 20, timeMode: 'livre', source: 'wrong' });
+  });
+
+  it('matchesPreset is false after a manual edit', () => {
+    const s = { ...applyPreset('quick', base, exam), totalQuestions: 16 };
+
+    expect(matchesPreset('quick', s, exam)).toBe(false);
   });
 });
