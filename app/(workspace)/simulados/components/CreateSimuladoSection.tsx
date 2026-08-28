@@ -1,13 +1,11 @@
 'use client';
 
-import type { Exam, ExamType, MockExamAvailability, MockExamQuestionSource } from '@/shared/types';
+import type { Exam, ExamType, MockExamQuestionSource } from '@/shared/types';
 
-import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { Input } from '@heroui/input';
 
-import { fmtTempo, normalizeMock, UnifiedSimulado } from './list/normalizeSimulado';
-import { readSimuladoPrefill, writeSimuladoPrefill } from './create/simuladoPrefill';
+import { fmtTempo } from './list/normalizeSimulado';
 import { PresetShortcuts } from './create/PresetShortcuts';
 import { ScopePicker } from './create/ScopePicker';
 import { ExamAndCountRow } from './create/ExamAndCountRow';
@@ -16,12 +14,13 @@ import { SourcePicker } from './create/SourcePicker';
 import { TopicChecklist } from './create/TopicChecklist';
 import { SummarySidebar } from './create/SummarySidebar';
 import { GenerationPanel } from './create/GenerationPanel';
+import { useSimuladoAvailability } from './create/useSimuladoAvailability.hook';
+import { useSimuladoGeneration } from './create/useSimuladoGeneration.hook';
+import { useSimuladoPrefill } from './create/useSimuladoPrefill.hook';
 import {
   PresetKey,
   SimuladoFormState,
-  TimeMode,
   applyPreset,
-  buildCreatePayload,
   coveragePercent,
   distributeQuestions,
   matchesPreset,
@@ -30,14 +29,6 @@ import {
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
-import { useMockExamsContext } from '@/features/providers/mockExams.provider';
-import {
-  createMockExam,
-  ensureMockExamAnswers,
-  getMockExamAvailability,
-  startMockExamAttempt,
-} from '@/features/connectors';
-import { notify } from '@/shared/lib/notify';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { inputProperties } from '@/config/constants/inputStyles';
@@ -61,10 +52,6 @@ const INITIAL_STATE: SimuladoFormState = {
   selectedSections: [],
 };
 
-function extractMessage(error: unknown): string | undefined {
-  return (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
-}
-
 function deriveFromExam(exam: Exam): Partial<SimuladoFormState> {
   return {
     examId: exam.id ?? null,
@@ -77,43 +64,25 @@ function deriveFromExam(exam: Exam): Partial<SimuladoFormState> {
 
 export function CreateSimuladoSection() {
   const { t } = useTranslation();
-  const router = useRouter();
   const { certifications, publicExams, isLoading } = useExamsContext();
-  const { addMockExam } = useMockExamsContext();
 
   const [state, setState] = useState<SimuladoFormState>(INITIAL_STATE);
-  const [availability, setAvailability] = useState<MockExamAvailability | null>(null);
-  const [isBusy, setIsBusy] = useState(false);
-  const [phase, setPhase] = useState<'config' | 'gerando' | 'pronto'>('config');
-  const [stepIndex, setStepIndex] = useState(0);
-  const [postDone, setPostDone] = useState(false);
-  const [createdSimulado, setCreatedSimulado] = useState<UnifiedSimulado | null>(null);
-  const [isStarting, setIsStarting] = useState(false);
-  const prefillApplied = useRef(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (phase !== 'gerando') return;
-
-    if (stepIndex >= 4 && intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-
-    if (stepIndex >= 4 && postDone) {
-      setPhase('pronto');
-      setIsBusy(false);
-    }
-  }, [phase, stepIndex, postDone]);
 
   const list = state.scope === 'certification' ? certifications : publicExams;
   const exam = list.find((candidate) => candidate.id === state.examId) ?? list[0] ?? null;
+
+  const generation = useSimuladoGeneration({ exam, state });
+  const availability = useSimuladoAvailability(exam?.id);
+
+  useSimuladoPrefill({
+    isLoading,
+    certifications,
+    publicExams,
+    onApply: (next) => {
+      setState(next);
+      generation.backToConfig();
+    },
+  });
 
   useEffect(() => {
     if (isLoading || list.length === 0 || !list[0]?.id) return;
@@ -122,47 +91,6 @@ export function CreateSimuladoSection() {
     if (isValid) return;
     setState((prev) => ({ ...prev, ...deriveFromExam(list[0]) }));
   }, [isLoading, list, state.examId]);
-
-  useEffect(() => {
-    if (isLoading || prefillApplied.current) return;
-    if (certifications.length === 0 && publicExams.length === 0) return;
-    prefillApplied.current = true;
-    applyPrefill();
-  }, [isLoading, certifications, publicExams]);
-
-  useEffect(() => {
-    const handler = () => {
-      if (!isLoading) applyPrefill();
-    };
-
-    window.addEventListener('simulado-prefill', handler);
-
-    return () => window.removeEventListener('simulado-prefill', handler);
-  }, [isLoading, certifications, publicExams]);
-
-  useEffect(() => {
-    if (!exam?.id) {
-      setAvailability(null);
-
-      return;
-    }
-
-    setAvailability(null);
-
-    let cancelled = false;
-
-    getMockExamAvailability(exam.id)
-      .then((result) => {
-        if (!cancelled) setAvailability(result);
-      })
-      .catch(() => {
-        if (!cancelled) setAvailability(null);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [exam?.id]);
 
   const weights = exam ? sectionWeights(exam.sections) : {};
   const distribution = exam ? distributeQuestions(exam.sections, state.selectedSections, state.totalQuestions) : [];
@@ -230,7 +158,7 @@ export function CreateSimuladoSection() {
     statusText = t('simulado.create.statusReady', { count: state.totalQuestions, percent: coverage });
   }
 
-  const canCreate = statusTone === 'ok' && hasExam && !isBusy;
+  const canCreate = statusTone === 'ok' && hasExam && !generation.isBusy;
 
   const summaryRows = [
     { label: t('simulado.create.summaryExam'), value: exam?.name ?? '—' },
@@ -250,7 +178,7 @@ export function CreateSimuladoSection() {
 
   const notes = [t('simulado.create.note1'), t('simulado.create.note2'), t('simulado.create.note3')];
 
-  const simuladoName = createdSimulado?.name ?? (state.name.trim() || exam?.name || '');
+  const simuladoName = generation.createdSimulado?.name ?? (state.name.trim() || exam?.name || '');
   const summaryLine = t('simulado.create.generatingMeta', {
     questions: state.totalQuestions,
     time: resolveSummaryTime(),
@@ -274,7 +202,7 @@ export function CreateSimuladoSection() {
   return (
     <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
       <div className="flex flex-col gap-6">
-        {phase === 'config' ? (
+        {generation.phase === 'config' ? (
           <>
             <PresetShortcuts
               activePreset={activePreset}
@@ -286,13 +214,13 @@ export function CreateSimuladoSection() {
           </>
         ) : (
           <GenerationPanel
-            isStarting={isStarting}
-            phase={phase}
+            isStarting={generation.isStarting}
+            phase={generation.phase}
             simuladoName={simuladoName}
-            stepIndex={stepIndex}
+            stepIndex={generation.stepIndex}
             summaryLine={summaryLine}
             onCreateAnother={handleCreateAnother}
-            onStart={handleStart}
+            onStart={generation.start}
           />
         )}
       </div>
@@ -300,19 +228,19 @@ export function CreateSimuladoSection() {
       <SummarySidebar
         canCreate={canCreate}
         footnote={resolveFootnote()}
-        isBusy={isBusy}
+        isBusy={generation.isBusy}
         notes={notes}
         rows={summaryRows}
         statusText={statusText}
         statusTone={statusTone}
-        onCreate={handleCreate}
+        onCreate={generation.create}
       />
     </div>
   );
 
   function resolveFootnote(): string | undefined {
-    if (phase === 'gerando') return t('simulado.create.generatingFootnote');
-    if (phase === 'pronto') return t('simulado.create.readyFootnote');
+    if (generation.phase === 'gerando') return t('simulado.create.generatingFootnote');
+    if (generation.phase === 'pronto') return t('simulado.create.readyFootnote');
 
     return undefined;
   }
@@ -327,65 +255,6 @@ export function CreateSimuladoSection() {
 
   function patchState(patch: Partial<SimuladoFormState>) {
     setState((prev) => ({ ...prev, ...patch }));
-  }
-
-  function applyPrefill() {
-    const prefill = readSimuladoPrefill();
-
-    if (!prefill) return;
-
-    const scope: ExamType = certifications.some((candidate) => candidate.id === prefill.examId)
-      ? 'certification'
-      : 'public_exam';
-    const targetList = scope === 'certification' ? certifications : publicExams;
-    const target = targetList.find((candidate) => candidate.id === prefill.examId);
-
-    if (!target) {
-      const listIsLoaded = !isLoading && targetList.length > 0;
-
-      if (!listIsLoaded) {
-        writeSimuladoPrefill(prefill);
-        prefillApplied.current = false;
-      }
-
-      return;
-    }
-
-    const officialMinutes = target.examDurationMinutes ?? null;
-
-    let timeMode: TimeMode;
-    let customMinutes: number;
-
-    if (prefill.durationMinutes === undefined) {
-      timeMode = 'oficial';
-      customMinutes = officialMinutes ?? 60;
-    } else if (prefill.durationMinutes === null) {
-      timeMode = 'livre';
-      customMinutes = officialMinutes ?? 60;
-    } else if (prefill.durationMinutes === officialMinutes) {
-      timeMode = 'oficial';
-      customMinutes = prefill.durationMinutes;
-    } else {
-      timeMode = 'personalizado';
-      customMinutes = prefill.durationMinutes;
-    }
-
-    const selectedSections =
-      prefill.sections.length > 0
-        ? prefill.sections.map((section) => section.sectionName)
-        : target.sections.map((section) => section.name);
-
-    setState({
-      name: prefill.name ?? '',
-      scope,
-      examId: prefill.examId,
-      totalQuestions: prefill.totalQuestions,
-      timeMode,
-      customMinutes,
-      source: prefill.questionSource,
-      selectedSections,
-    });
-    setPhase('config');
   }
 
   function handleExam(nextId: string) {
@@ -417,13 +286,6 @@ export function CreateSimuladoSection() {
     patchState({ selectedSections: [] });
   }
 
-  function clearGenerationInterval() {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  }
-
   function resetForm() {
     if (!exam) return;
     setState((prev) => ({
@@ -434,60 +296,8 @@ export function CreateSimuladoSection() {
     }));
   }
 
-  async function handleCreate() {
-    if (!exam || !canCreate) return;
-
-    setIsBusy(true);
-    setPhase('gerando');
-    setStepIndex(0);
-    setPostDone(false);
-    setCreatedSimulado(null);
-
-    clearGenerationInterval();
-    intervalRef.current = setInterval(() => {
-      setStepIndex((prev) => Math.min(prev + 1, 4));
-    }, 1600);
-
-    try {
-      const saved = await createMockExam(buildCreatePayload(state, exam));
-
-      addMockExam(saved);
-      notify.success(t('simulado.created'), t('simulado.createdDescription', { name: saved.name ?? exam.name }));
-      setCreatedSimulado(normalizeMock(saved));
-      setPostDone(true);
-    } catch (err) {
-      clearGenerationInterval();
-      setPhase('config');
-      setStepIndex(0);
-      setPostDone(false);
-      setIsBusy(false);
-      notify.error(t('toast.error'), extractMessage(err) ?? t('toast.somethingWrong'));
-    }
-  }
-
-  async function handleStart() {
-    if (!createdSimulado) return;
-
-    setIsStarting(true);
-    try {
-      ensureMockExamAnswers(createdSimulado.id).catch(() => {});
-      const attempt = await startMockExamAttempt(createdSimulado.id);
-
-      router.push(`/simulados/${createdSimulado.id}/tentativa/${attempt.id}`);
-    } catch (err) {
-      notify.error(t('toast.error'), extractMessage(err) ?? t('toast.somethingWrong'));
-      setIsStarting(false);
-    }
-  }
-
   function handleCreateAnother() {
-    clearGenerationInterval();
-    setPhase('config');
-    setStepIndex(0);
-    setPostDone(false);
-    setCreatedSimulado(null);
-    setIsBusy(false);
-    setIsStarting(false);
+    generation.backToConfig();
     resetForm();
   }
 
