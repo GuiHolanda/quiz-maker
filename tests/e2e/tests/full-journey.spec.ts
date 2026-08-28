@@ -4,7 +4,7 @@ import { tid, TID } from '../support/selectors';
 import {
   generateAndSaveQuestions,
   createSimulado,
-  startAttempt,
+  startSimuladoAttempt,
   answerAllQuestions,
   finalizeAttempt,
   assertResult,
@@ -15,7 +15,7 @@ for (const domain of ALL_DOMAINS) {
     test('generate → save → simulado → answer → result → retry → cancel', async ({ authedPage: page }) => {
       await generateAndSaveQuestions(page, domain);
       await createSimulado(page, domain, 3);
-      const { attemptId } = await startAttempt(page, domain);
+      const { attemptId } = await startSimuladoAttempt(page, domain);
       expect(attemptId).not.toBe('');
       await answerAllQuestions(page);
       await finalizeAttempt(page);

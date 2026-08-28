@@ -154,6 +154,7 @@ export default function SimuladoTentativaPage() {
   const timer = timerOn ? (
     <span
       aria-live="polite"
+      data-testid="simulado-timer"
       className={`font-mono text-sm font-semibold tabular-nums ${
         remainingMs < 60_000 ? 'text-danger' : remainingMs < 5 * 60_000 ? 'text-warning' : 'text-default-500'
       }`}

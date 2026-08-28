@@ -43,13 +43,13 @@ Everything reusable lives here. Specs compose these helpers; they don't hand-rol
 | `journey-config.ts` | The `DOMAINS` map — everything that differs between `certification` and `public_exam` (type-picker id, generation URL, seed label/topic, configure URL, stream glob). Keeps flows and specs type-agnostic. | `DomainType`, `DomainConfig`, `DOMAINS`, `ALL_DOMAINS` |
 | `fake-eventsource.ts` | Overrides `window.EventSource` via `addInitScript` before app scripts run, so no real SSE connection is made. | `injectFakeEventSource`, `injectNeverDoneEventSource` |
 | `mocks.ts` | Route mocks for the generation-job lifecycle and a result override. | `setupGenerationJobMocks`, `mockGenerationJobFailure`, `mockGenerationTimeout`, `mockActiveJobOnLoad`, `mockCertResultAllWrong` |
-| `flows.ts` | Functional flow helpers that compose selectors + mocks into user journeys. | `generateAndSaveQuestions`, `createSimulado`, `startAttempt`, `answerAllQuestions`, `finalizeAttempt`, `assertResult` |
+| `flows.ts` | Functional flow helpers that compose selectors + mocks into user journeys. | `generateAndSaveQuestions`, `createSimulado`, `startSimuladoAttempt`, `answerAllQuestions`, `finalizeAttempt`, `assertResult` |
 
 ---
 
 ## 4. Test-id convention
 
-- **Format:** `domain-element[-variant]`, kebab-case — e.g. `simulado-card`, `question-gen-generate-btn`, `type-option-certification`.
+- **Format:** `domain-element[-variant]`, kebab-case — e.g. `simulado-row`, `question-gen-generate-btn`, `type-option-certification`.
 - **Catalog is authoritative.** `TID` in `support/selectors.ts` is the single source of truth. Component `data-testid` attributes must match a `TID` value exactly; the two are kept in sync by hand.
 - **HeroUI forwards `data-testid`.** react-aria's `filterDOMProps` (`/^(data-.*)$/`) passes `data-*` through to a real DOM element, so `<Tab>`, `<Input>`, `<Select>`, `<Radio>`, and `<Button>` all accept `data-testid` and land it on the rendered node. Place the attribute *before* any `{...inputProperties.*}` spread so the spread cannot override it.
 - **Why test-ids over labels.** Labels are i18n'd (PT/EN) and often non-unique (many cards share a label). Test-ids are stable, language-agnostic, and scope precisely.
@@ -66,8 +66,9 @@ Everything reusable lives here. Specs compose these helpers; they don't hand-rol
 | `wizard-validation.spec.ts` | 2 (×2 domains) | ✓ | Discard-draft returns to the list tab; cannot advance past step 1 with an empty title. |
 | `question-bank.spec.ts` | 2 | cert only | Seed 3 questions via the real `save-questions` API → verify → search narrows to one → delete; search with no match shows the empty state. |
 | `empty-states.spec.ts` | 2 | mixed | Simulados list shows the empty state when both list endpoints return empty; certifications list shows the empty state when its endpoint returns empty. |
+| `simulado-timer.spec.ts` | 1 | cert only | Create a simulado with a custom time limit → start the attempt → the countdown (`simulado-timer`) is visible on the tentativa page. |
 
-**Total: 20 tests.**
+**Total: 46 tests.**
 
 ---
 
@@ -78,8 +79,8 @@ Everything reusable lives here. Specs compose these helpers; they don't hand-rol
 1. Navigate to `/questions?type=…`, pick the vertical, select the seeded entity.
 2. Generate — the fake `EventSource` fires an `awaiting_review` event; the status region appears.
 3. Save all — success banner confirms.
-4. Create a simulado in `/simulados` (public_exam first picks the concurso type).
-5. Start the attempt from the "Meus Simulados" tab.
+4. Create a simulado in `/simulados` — the create form is always visible at the top (no tabs); pick the scope card, choose the seeded exam, set the question count, create.
+5. Start the attempt from the simulados table row (filtered by the seeded exam label).
 6. Answer every question (HeroUI Radio + Form workaround), finalize.
 7. Assert the result page (score, percent, topic/subject breakdown, retry button).
 8. Retry → cancel the new attempt → confirm discard → back to `/simulados`.
@@ -111,7 +112,7 @@ A plain `.click()` on the submit button selects the radio but never commits the 
 `GET /api/generation-job` (no query params) returns an **array** of the authenticated user's active jobs; the client reconnects to any that are still `running` / `awaiting_review`. `mockActiveJobOnLoad` fulfills that GET with a one-element array in the requested state.
 
 ### Accumulated notifications
-A prior run can leave a notification open (the bell dialog can intercept clicks). `createSimulado` dismisses any open notification dialog with `Escape` before interacting with the form, and scopes form selectors to the tabpanel.
+A prior run can leave a notification open (the bell dialog can intercept clicks). `createSimulado` calls `dismissNotificationDialog` — closes any open notification dialog with `Escape` — before interacting with the always-visible create form.
 
 ---
 

@@ -14,13 +14,12 @@ export const TID = {
   questionGenJobCancelBtn: 'question-gen-job-cancel-btn',
 
   // Simulado (/simulados)
-  simuladoCard: 'simulado-card',
-  simuladoTabNew: 'simulado-tab-new',
-  simuladoTabMine: 'simulado-tab-mine',
+  simuladoRow: 'simulado-row',
+  simuladoStartBtn: 'simulado-start-btn',
   simuladoTotalInput: 'simulado-total-input',
   simuladoCreateBtn: 'simulado-create-btn',
-  simuladoAnswerBtn: 'simulado-answer-btn',
   simuladoDeleteBtn: 'simulado-delete-btn',
+  simuladoTimer: 'simulado-timer',
 
   // Simulado — create form (/simulados)
   simuladoPresetOfficial: 'simulado-preset-official',
