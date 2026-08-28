@@ -35,6 +35,10 @@ export const TID = {
   simuladoTopicsSelectAll: 'simulado-topics-select-all',
   simuladoTopicsClear: 'simulado-topics-clear',
   simuladoCreateStatus: 'simulado-create-status',
+  simuladoCreateFootnote: 'simulado-create-footnote',
+  simuladoGenerationPanel: 'simulado-generation-panel',
+  simuladoGenerationStartBtn: 'simulado-generation-start-btn',
+  simuladoGenerationCreateAnotherBtn: 'simulado-generation-create-another-btn',
 
   // Answer / result
   answerOption: 'answer-option',

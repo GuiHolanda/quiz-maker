@@ -21,6 +21,7 @@ interface SummarySidebarProps {
   readonly isBusy: boolean;
   readonly onCreate: () => void;
   readonly notes: string[];
+  readonly footnote?: string;
 }
 
 const STATUS_OK = 'border-success/30 bg-success/10 text-success';
@@ -34,6 +35,7 @@ export function SummarySidebar({
   isBusy,
   onCreate,
   notes,
+  footnote,
 }: SummarySidebarProps) {
   const { t } = useTranslation();
 
@@ -56,27 +58,33 @@ export function SummarySidebar({
           ))}
         </div>
 
-        <div className="mt-2 flex flex-col gap-2.5">
-          <span
-            className={`self-start rounded-full border px-3 py-1.5 font-mono text-xs ${
-              statusTone === 'ok' ? STATUS_OK : STATUS_WARN
-            }`}
-            data-testid="simulado-create-status"
-          >
-            {statusText}
-          </span>
+        {footnote ? (
+          <p className="mt-2 text-[13px] leading-relaxed text-default-400" data-testid="simulado-create-footnote">
+            {footnote}
+          </p>
+        ) : (
+          <div className="mt-2 flex flex-col gap-2.5">
+            <span
+              className={`self-start rounded-full border px-3 py-1.5 font-mono text-xs ${
+                statusTone === 'ok' ? STATUS_OK : STATUS_WARN
+              }`}
+              data-testid="simulado-create-status"
+            >
+              {statusText}
+            </span>
 
-          <Button
-            className={`${buttonStyles.primary} w-full`}
-            data-testid="simulado-create-btn"
-            isDisabled={!canCreate}
-            isLoading={isBusy}
-            startContent={<FontAwesomeIcon icon={faPlay} />}
-            onPress={onCreate}
-          >
-            {t('simulado.create.createButton')}
-          </Button>
-        </div>
+            <Button
+              className={`${buttonStyles.primary} w-full`}
+              data-testid="simulado-create-btn"
+              isDisabled={!canCreate}
+              isLoading={isBusy}
+              startContent={<FontAwesomeIcon icon={faPlay} />}
+              onPress={onCreate}
+            >
+              {t('simulado.create.createButton')}
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-3 rounded-xl bg-content1 p-5">

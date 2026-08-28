@@ -3,9 +3,10 @@
 import type { Exam, ExamType } from '@/shared/types';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Input } from '@heroui/input';
 
-import { fmtTempo } from './list/normalizeSimulado';
+import { fmtTempo, normalizeMock, UnifiedSimulado } from './list/normalizeSimulado';
 import { PresetShortcuts } from './create/PresetShortcuts';
 import { ScopePicker } from './create/ScopePicker';
 import { ExamAndCountRow } from './create/ExamAndCountRow';
@@ -13,6 +14,7 @@ import { TimePicker } from './create/TimePicker';
 import { SourcePicker } from './create/SourcePicker';
 import { TopicChecklist } from './create/TopicChecklist';
 import { SummarySidebar } from './create/SummarySidebar';
+import { GenerationPanel } from './create/GenerationPanel';
 import {
   SimuladoFormState,
   buildCreatePayload,
@@ -24,7 +26,7 @@ import {
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { useMockExamsContext } from '@/features/providers/mockExams.provider';
-import { createMockExam } from '@/features/connectors';
+import { createMockExam, ensureMockExamAnswers, startMockExamAttempt } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
@@ -59,13 +61,39 @@ function deriveFromExam(exam: Exam): Partial<SimuladoFormState> {
 
 export function CreateSimuladoSection() {
   const { t } = useTranslation();
+  const router = useRouter();
   const { certifications, publicExams, isLoading } = useExamsContext();
   const { addMockExam } = useMockExamsContext();
 
   const [state, setState] = useState<SimuladoFormState>(INITIAL_STATE);
   const [isBusy, setIsBusy] = useState(false);
-  const [phase] = useState<'config' | 'gerando' | 'pronto'>('config');
+  const [phase, setPhase] = useState<'config' | 'gerando' | 'pronto'>('config');
+  const [stepIndex, setStepIndex] = useState(0);
+  const [postDone, setPostDone] = useState(false);
+  const [createdSimulado, setCreatedSimulado] = useState<UnifiedSimulado | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
   const prefillApplied = useRef(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (phase !== 'gerando') return;
+
+    if (stepIndex >= 4 && intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    if (stepIndex >= 4 && postDone) {
+      setPhase('pronto');
+      setIsBusy(false);
+    }
+  }, [phase, stepIndex, postDone]);
 
   const list = state.scope === 'certification' ? certifications : publicExams;
   const exam = list.find((candidate) => candidate.id === state.examId) ?? list[0] ?? null;
@@ -168,6 +196,13 @@ export function CreateSimuladoSection() {
 
   const notes = [t('simulado.create.note1'), t('simulado.create.note2'), t('simulado.create.note3')];
 
+  const simuladoName = createdSimulado?.name ?? (state.name.trim() || exam?.name || '');
+  const summaryLine = t('simulado.create.generatingMeta', {
+    questions: state.totalQuestions,
+    time: resolveSummaryTime(),
+    topics: selectedCount,
+  });
+
   if (isLoading) {
     return <SkeletonListLoader count={4} height="h-12" />;
   }
@@ -185,12 +220,27 @@ export function CreateSimuladoSection() {
   return (
     <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
       <div className="flex flex-col gap-6">
-        <PresetShortcuts exam={exam} />
-        {phase === 'config' && renderConfigCard()}
+        {phase === 'config' ? (
+          <>
+            <PresetShortcuts exam={exam} />
+            {renderConfigCard()}
+          </>
+        ) : (
+          <GenerationPanel
+            isStarting={isStarting}
+            phase={phase}
+            simuladoName={simuladoName}
+            stepIndex={stepIndex}
+            summaryLine={summaryLine}
+            onCreateAnother={handleCreateAnother}
+            onStart={handleStart}
+          />
+        )}
       </div>
 
       <SummarySidebar
         canCreate={canCreate}
+        footnote={resolveFootnote()}
         isBusy={isBusy}
         notes={notes}
         rows={summaryRows}
@@ -200,6 +250,13 @@ export function CreateSimuladoSection() {
       />
     </div>
   );
+
+  function resolveFootnote(): string | undefined {
+    if (phase === 'gerando') return t('simulado.create.generatingFootnote');
+    if (phase === 'pronto') return t('simulado.create.readyFootnote');
+
+    return undefined;
+  }
 
   function resolveSummaryTime(): string {
     if (state.timeMode === 'livre') return t('simulado.create.timeFree');
@@ -238,26 +295,78 @@ export function CreateSimuladoSection() {
     patchState({ selectedSections: [] });
   }
 
+  function clearGenerationInterval() {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }
+
+  function resetForm() {
+    if (!exam) return;
+    setState((prev) => ({
+      ...prev,
+      name: '',
+      timeMode: 'oficial',
+      ...deriveFromExam(exam),
+    }));
+  }
+
   async function handleCreate() {
     if (!exam || !canCreate) return;
+
     setIsBusy(true);
+    setPhase('gerando');
+    setStepIndex(0);
+    setPostDone(false);
+    setCreatedSimulado(null);
+
+    clearGenerationInterval();
+    intervalRef.current = setInterval(() => {
+      setStepIndex((prev) => Math.min(prev + 1, 4));
+    }, 1600);
+
     try {
       const saved = await createMockExam(buildCreatePayload(state, exam));
 
       addMockExam(saved);
       notify.success(t('simulado.created'), t('simulado.createdDescription', { name: saved.name ?? exam.name }));
-      setState((prev) => ({
-        ...prev,
-        name: '',
-        timeMode: 'oficial',
-        ...deriveFromExam(exam),
-      }));
+      setCreatedSimulado(normalizeMock(saved));
+      setPostDone(true);
+    } catch (err) {
+      clearGenerationInterval();
+      setPhase('config');
+      setStepIndex(0);
+      setPostDone(false);
       setIsBusy(false);
-      window.scrollTo({ top: document.body.scrollHeight });
+      notify.error(t('toast.error'), extractMessage(err) ?? t('toast.somethingWrong'));
+    }
+  }
+
+  async function handleStart() {
+    if (!createdSimulado) return;
+
+    setIsStarting(true);
+    try {
+      ensureMockExamAnswers(createdSimulado.id).catch(() => {});
+      const attempt = await startMockExamAttempt(createdSimulado.id);
+
+      router.push(`/simulados/${createdSimulado.id}/tentativa/${attempt.id}`);
     } catch (err) {
       notify.error(t('toast.error'), extractMessage(err) ?? t('toast.somethingWrong'));
-      setIsBusy(false);
+      setIsStarting(false);
     }
+  }
+
+  function handleCreateAnother() {
+    clearGenerationInterval();
+    setPhase('config');
+    setStepIndex(0);
+    setPostDone(false);
+    setCreatedSimulado(null);
+    setIsBusy(false);
+    setIsStarting(false);
+    resetForm();
   }
 
   function renderConfigCard() {
