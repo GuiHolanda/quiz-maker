@@ -46,9 +46,15 @@ export function distributeQuestions(
   });
 
   if (distribution.length > 0) {
-    const othersSum = distribution.slice(0, -1).reduce((sum, entry) => sum + entry.questionCount, 0);
+    let remaining = total;
 
-    distribution[distribution.length - 1].questionCount = total - othersSum;
+    distribution.forEach((entry, index) => {
+      const isLast = index === distribution.length - 1;
+      const take = isLast ? Math.max(0, remaining) : Math.min(entry.questionCount, Math.max(0, remaining));
+
+      entry.questionCount = take;
+      remaining -= take;
+    });
   }
 
   return distribution;
@@ -68,7 +74,7 @@ export function coveragePercent(sections: ExamSection[], selected: string[]): nu
 
 export function resolveDurationMinutes(state: SimuladoFormState, exam: Exam | null): number | null {
   if (state.timeMode === 'livre') return null;
-  if (state.timeMode === 'personalizado') return state.customMinutes;
+  if (state.timeMode === 'personalizado') return state.customMinutes > 0 ? state.customMinutes : null;
 
   return exam?.examDurationMinutes ?? null;
 }

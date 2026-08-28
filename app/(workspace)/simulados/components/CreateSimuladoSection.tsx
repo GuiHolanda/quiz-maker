@@ -71,7 +71,7 @@ export function CreateSimuladoSection() {
   const exam = list.find((candidate) => candidate.id === state.examId) ?? list[0] ?? null;
 
   useEffect(() => {
-    if (isLoading || list.length === 0) return;
+    if (isLoading || list.length === 0 || !list[0]?.id) return;
     const isValid = list.some((candidate) => candidate.id === state.examId);
 
     if (isValid) return;
@@ -130,17 +130,25 @@ export function CreateSimuladoSection() {
     time: exam?.examDurationMinutes != null ? fmtTempo(exam.examDurationMinutes) : '—',
   });
 
-  let statusTone: 'ok' | 'warn' = 'warn';
-  let statusText = t('simulado.create.statusNeedTopic');
+  const hasExam = exam != null;
+  const needsCustomMinutes = state.timeMode === 'personalizado' && state.customMinutes <= 0;
+  const tooFewForTopics = state.totalQuestions > 0 && state.totalQuestions < selectedCount;
 
-  if (selectedCount > 0 && state.totalQuestions <= 0) {
+  let statusTone: 'ok' | 'warn' = 'warn';
+  let statusText: string;
+
+  if (!hasExam || selectedCount === 0) {
+    statusText = t('simulado.create.statusNeedTopic');
+  } else if (state.totalQuestions <= 0 || needsCustomMinutes) {
     statusText = t('simulado.create.statusNeedCount');
-  } else if (selectedCount > 0) {
+  } else if (tooFewForTopics) {
+    statusText = t('simulado.create.statusTooFewTopics');
+  } else {
     statusTone = 'ok';
     statusText = t('simulado.create.statusReady', { count: state.totalQuestions, percent: coverage });
   }
 
-  const canCreate = statusTone === 'ok' && exam != null && !isBusy;
+  const canCreate = statusTone === 'ok' && hasExam && !isBusy;
 
   const summaryRows = [
     { label: t('simulado.create.summaryExam'), value: exam?.name ?? '—' },
@@ -208,7 +216,7 @@ export function CreateSimuladoSection() {
   function handleExam(nextId: string) {
     const target = list.find((candidate) => (candidate.id ?? candidate.name) === nextId);
 
-    if (target) patchState(deriveFromExam(target));
+    if (target) patchState({ timeMode: 'oficial', ...deriveFromExam(target) });
   }
 
   function handleToggleSection(name: string) {
