@@ -157,7 +157,7 @@ export function SimuladosTable({
 
         <div className="flex justify-center" role="cell">
           <Button
-            aria-label={t('simulado.attempts', { count: s.attemptCount })}
+            aria-label={t('simulado.table.attemptsAria', { count: s.attemptCount })}
             className={`${buttonStyles.flat} font-mono`}
             data-testid="simulado-attempts-btn"
             size="sm"

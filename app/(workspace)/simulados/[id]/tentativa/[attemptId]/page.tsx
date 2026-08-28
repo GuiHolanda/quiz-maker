@@ -66,6 +66,7 @@ export default function SimuladoTentativaPage() {
     startedAt: currentAttempt?.startedAt ?? null,
     durationMinutes: mockExam?.durationMinutes ?? null,
     onExpire: () => {
+      if (finishingRef.current) return;
       setIsAutoSubmitting(true);
       handleFinish();
     },
@@ -181,7 +182,11 @@ export default function SimuladoTentativaPage() {
         {t('simulado.timer.remaining', { time: remainingLabel })}
       </span>
       <span aria-live="polite" className="sr-only">
-        {announcedThreshold != null ? t('simulado.timer.remaining', { time: ANNOUNCE_LABEL[announcedThreshold] }) : ''}
+        {announcedThreshold == null
+          ? ''
+          : announcedThreshold === 0
+            ? t('simulado.result.timedOut')
+            : t('simulado.timer.remaining', { time: ANNOUNCE_LABEL[announcedThreshold] })}
       </span>
     </span>
   ) : undefined;
