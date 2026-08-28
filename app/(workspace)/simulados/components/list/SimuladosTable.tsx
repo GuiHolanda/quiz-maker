@@ -90,7 +90,13 @@ export function SimuladosTable({
 
   function renderStartingRow(s: UnifiedSimulado) {
     return (
-      <div key={s.key} className="border-t border-divider" data-testid="simulado-row" role="row">
+      <div
+        key={s.key}
+        className="border-t border-divider"
+        data-simulado-name={s.name ?? s.sourceLabel}
+        data-testid="simulado-row"
+        role="row"
+      >
         <div className="flex flex-col gap-2 px-5 py-3.5" role="cell">
           <p className="text-xs font-medium text-primary">{t('simulado.preparingAttempt')}</p>
           <Progress isIndeterminate aria-label={t('simulado.preparingAttempt')} color="primary" size="sm" />
@@ -108,6 +114,7 @@ export function SimuladosTable({
       <div
         key={s.key}
         className={`${ROW_GRID_CLASS} border-t border-divider transition-colors duration-150 hover:bg-background`}
+        data-simulado-name={s.name ?? s.sourceLabel}
         data-testid="simulado-row"
         role="row"
         style={{ gridTemplateColumns: GRID_COLUMNS }}

@@ -39,6 +39,7 @@ export function ExamAndCountRow({ examLabel, exams, examId, onExam, totalQuestio
           aria-label={examLabel}
           data-testid="simulado-exam-select"
           disallowEmptySelection
+          placeholder=" "
           isDisabled={exams.length === 0}
           selectedKeys={examId ? new Set([examId]) : new Set()}
           onSelectionChange={(keys) => {

@@ -36,8 +36,7 @@ export async function dismissNotificationDialog(page: Page): Promise<void> {
   }
 }
 
-// Pick the scope card. The create form auto-selects the only exam seeded for that
-// scope, so asserting the exam Select shows it is enough — no dropdown interaction.
+// Pick the scope card, then open the exam Select and choose the seeded exam.
 export async function pickSimuladoScopeAndExam(page: Page, domain: DomainConfig): Promise<void> {
   const scopeTid =
     domain.type === 'certification' ? TID.simuladoScopeCertification : TID.simuladoScopePublicExam;
@@ -45,6 +44,16 @@ export async function pickSimuladoScopeAndExam(page: Page, domain: DomainConfig)
 
   const examSelect = page.locator(tid(TID.simuladoExamSelect));
   await expect(examSelect).toBeVisible({ timeout: 10_000 });
+
+  // HeroUI Select trigger is a react-aria pressable — a plain .click() focuses it
+  // but does not open the listbox under Playwright, so dispatch the click event.
+  const option = page.getByRole('option', { name: new RegExp(domain.seedLabel, 'i') });
+  await expect(async () => {
+    await examSelect.dispatchEvent('click');
+    await expect(option).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 10_000 });
+  await option.click();
+
   await expect(examSelect).toContainText(domain.seedLabel, { timeout: 10_000 });
 }
 
@@ -73,7 +82,9 @@ export async function startSimuladoAttempt(
   domain: DomainConfig,
 ): Promise<{ simuladoId: string; attemptId: string }> {
   await page.goto('/simulados');
-  const row = page.locator(tid(TID.simuladoRow)).filter({ hasText: domain.seedLabel }).first();
+  const row = page
+    .locator(`${tid(TID.simuladoRow)}[data-simulado-name*="${domain.seedLabel}"]`)
+    .first();
   await row.locator(tid(TID.simuladoStartBtn)).click();
   await page.waitForURL(/\/tentativa\/\d+/);
   const match = page.url().match(/simulados\/(\d+)\/tentativa\/(\d+)/);
