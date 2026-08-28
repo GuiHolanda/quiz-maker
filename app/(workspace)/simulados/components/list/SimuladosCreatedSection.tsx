@@ -10,10 +10,11 @@ import { SimuladoHistoryModal } from './SimuladoHistoryModal';
 import { SimuladosTable } from './SimuladosTable';
 import { SimuladosToolbar } from './SimuladosToolbar';
 import { normalizeMock, UnifiedSimulado } from './normalizeSimulado';
+import { writeSimuladoPrefill } from '../create/simuladoPrefill';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useMockExamsContext } from '@/features/providers/mockExams.provider';
-import { deleteMockExam, ensureMockExamAnswers, startMockExamAttempt } from '@/features/connectors';
+import { deleteMockExam, ensureMockExamAnswers, getMockExam, startMockExamAttempt } from '@/features/connectors';
 import { usePaginatedItems } from '@/features/hooks/usePaginatedItems.hook';
 import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
 import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
@@ -141,6 +142,33 @@ export function SimuladosCreatedSection() {
     }
   }
 
+  async function handleDuplicate(s: UnifiedSimulado) {
+    const listItem = mock.mockExams.find((item) => item.id === s.id);
+
+    if (!listItem) return;
+
+    try {
+      const full = await getMockExam(s.id);
+
+      writeSimuladoPrefill({
+        examId: listItem.exam.id,
+        name: listItem.name ?? undefined,
+        totalQuestions: listItem.totalQuestions,
+        durationMinutes: listItem.durationMinutes,
+        questionSource: listItem.questionSource,
+        sections: full.sections.map((section) => ({
+          sectionName: section.sectionName,
+          questionCount: section.questionCount,
+        })),
+      });
+      window.dispatchEvent(new CustomEvent('simulado-prefill'));
+      notify.success(t('simulado.table.duplicated'));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (error: unknown) {
+      notify.error(t('toast.error'), extractMessage(error) ?? t('toast.somethingWrong'));
+    }
+  }
+
   async function handleDelete() {
     if (!deleteTarget) return;
     setIsDeleting(true);
@@ -239,7 +267,7 @@ export function SimuladosCreatedSection() {
             rows={pageItems}
             startingKey={startingKey}
             onDelete={setDeleteTarget}
-            onDuplicate={() => {}}
+            onDuplicate={handleDuplicate}
             onOpenHistory={setHistoryTarget}
             onStart={handleStart}
             onViewResult={viewResult}

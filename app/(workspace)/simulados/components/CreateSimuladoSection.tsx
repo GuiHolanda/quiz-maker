@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Input } from '@heroui/input';
 
 import { fmtTempo, normalizeMock, UnifiedSimulado } from './list/normalizeSimulado';
+import { readSimuladoPrefill } from './create/simuladoPrefill';
 import { PresetShortcuts } from './create/PresetShortcuts';
 import { ScopePicker } from './create/ScopePicker';
 import { ExamAndCountRow } from './create/ExamAndCountRow';
@@ -18,6 +19,7 @@ import { GenerationPanel } from './create/GenerationPanel';
 import {
   PresetKey,
   SimuladoFormState,
+  TimeMode,
   applyPreset,
   buildCreatePayload,
   coveragePercent,
@@ -39,7 +41,6 @@ import { notify } from '@/shared/lib/notify';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { inputProperties } from '@/config/constants/inputStyles';
-import { SIMULADO_NEW_PREFILL_KEY } from '@/config/constants';
 
 const FIELD_LABEL = 'text-xs font-semibold text-default-400';
 
@@ -126,25 +127,16 @@ export function CreateSimuladoSection() {
     if (isLoading || prefillApplied.current) return;
     if (certifications.length === 0 && publicExams.length === 0) return;
     prefillApplied.current = true;
-    try {
-      const raw = localStorage.getItem(SIMULADO_NEW_PREFILL_KEY);
-
-      if (!raw) return;
-      localStorage.removeItem(SIMULADO_NEW_PREFILL_KEY);
-      const prefill = JSON.parse(raw) as { examId?: string; totalQuestions?: number };
-
-      if (!prefill.examId) return;
-      const target = [...certifications, ...publicExams].find((candidate) => candidate.id === prefill.examId);
-
-      if (!target) return;
-      setState((prev) => ({
-        ...prev,
-        scope: target.type,
-        ...deriveFromExam(target),
-        totalQuestions: prefill.totalQuestions ?? target.totalQuestions,
-      }));
-    } catch {}
+    applyPrefill();
   }, [isLoading, certifications, publicExams]);
+
+  useEffect(() => {
+    const handler = () => applyPrefill();
+
+    window.addEventListener('simulado-prefill', handler);
+
+    return () => window.removeEventListener('simulado-prefill', handler);
+  }, [certifications, publicExams]);
 
   useEffect(() => {
     if (!exam?.id) {
@@ -333,6 +325,53 @@ export function CreateSimuladoSection() {
 
   function patchState(patch: Partial<SimuladoFormState>) {
     setState((prev) => ({ ...prev, ...patch }));
+  }
+
+  function applyPrefill() {
+    const prefill = readSimuladoPrefill();
+
+    if (!prefill) return;
+
+    const scope: ExamType = certifications.some((candidate) => candidate.id === prefill.examId)
+      ? 'certification'
+      : 'public_exam';
+    const targetList = scope === 'certification' ? certifications : publicExams;
+    const target = targetList.find((candidate) => candidate.id === prefill.examId);
+
+    if (!target) return;
+
+    const officialMinutes = target.examDurationMinutes ?? null;
+
+    let timeMode: TimeMode;
+    let customMinutes: number;
+
+    if (prefill.durationMinutes == null) {
+      timeMode = 'livre';
+      customMinutes = officialMinutes ?? 60;
+    } else if (prefill.durationMinutes === officialMinutes) {
+      timeMode = 'oficial';
+      customMinutes = prefill.durationMinutes;
+    } else {
+      timeMode = 'personalizado';
+      customMinutes = prefill.durationMinutes;
+    }
+
+    const selectedSections =
+      prefill.sections.length > 0
+        ? prefill.sections.map((section) => section.sectionName)
+        : target.sections.map((section) => section.name);
+
+    setState({
+      name: prefill.name ?? '',
+      scope,
+      examId: prefill.examId,
+      totalQuestions: prefill.totalQuestions,
+      timeMode,
+      customMinutes,
+      source: prefill.questionSource,
+      selectedSections,
+    });
+    setPhase('config');
   }
 
   function handleExam(nextId: string) {
