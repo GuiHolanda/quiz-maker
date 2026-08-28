@@ -9,6 +9,10 @@ export function computeTimerState(startedAtMs: number, durationMinutes: number |
   return { enabled: true, remainingMs, expired: remainingMs === 0 };
 }
 
+export function shouldFireExpiry(state: { enabled: boolean; expired: boolean }, alreadyFired: boolean): boolean {
+  return state.enabled && state.expired && !alreadyFired;
+}
+
 function formatMMSS(ms: number): string {
   const total = Math.ceil(ms / 1000);
   const m = Math.floor(total / 60);
@@ -26,7 +30,10 @@ export function useAttemptDeadline({ startedAt, durationMinutes, onExpire }: Use
   const [now, setNow] = useState(() => Date.now());
   const firedRef = useRef(false);
   const onExpireRef = useRef(onExpire);
-  onExpireRef.current = onExpire;
+
+  useEffect(() => {
+    onExpireRef.current = onExpire;
+  });
 
   const startedAtMs = startedAt ? new Date(startedAt).getTime() : null;
   const state =
@@ -41,7 +48,7 @@ export function useAttemptDeadline({ startedAt, durationMinutes, onExpire }: Use
   }, [state.enabled]);
 
   useEffect(() => {
-    if (state.enabled && state.expired && !firedRef.current) {
+    if (shouldFireExpiry(state, firedRef.current)) {
       firedRef.current = true;
       onExpireRef.current();
     }

@@ -39,6 +39,7 @@ export default function SimuladoTentativaPage() {
   const [hasPendingDrafts, setHasPendingDrafts] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const [isAutoSubmitting, setIsAutoSubmitting] = useState(false);
   const pendingProceedRef = useRef<(() => void) | null>(null);
   const finishingRef = useRef(false);
 
@@ -64,7 +65,10 @@ export default function SimuladoTentativaPage() {
   } = useAttemptDeadline({
     startedAt: currentAttempt?.startedAt ?? null,
     durationMinutes: mockExam?.durationMinutes ?? null,
-    onExpire: () => handleFinish(),
+    onExpire: () => {
+      setIsAutoSubmitting(true);
+      handleFinish();
+    },
   });
 
   if (!mockExam) {
@@ -149,6 +153,7 @@ export default function SimuladoTentativaPage() {
       router.push(`/simulados/${params.id}/resultado/${params.attemptId}`);
     } catch (e: unknown) {
       finishingRef.current = false;
+      setIsAutoSubmitting(false);
       notify.error(
         t('toast.error'),
         (e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t('toast.somethingWrong')
@@ -183,7 +188,7 @@ export default function SimuladoTentativaPage() {
 
   return (
     <>
-      <BusyDialog isOpen={isFinishing} />
+      <BusyDialog isOpen={isFinishing} label={isAutoSubmitting ? t('simulado.timer.autoSubmitting') : undefined} />
       <ConfirmModal
         body={<p className="text-sm text-default-500">{t('simulado.discardAttemptBody')}</p>}
         cancelLabel={t('common.back')}

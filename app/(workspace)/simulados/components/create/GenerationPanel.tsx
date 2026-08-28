@@ -144,6 +144,7 @@ export function GenerationPanel({
           <Button
             className="rounded-lg border-divider text-default-500 data-[hover=true]:bg-content2 data-[hover=true]:text-foreground"
             data-testid="simulado-generation-create-another-btn"
+            isDisabled={isStarting}
             variant="bordered"
             onPress={onCreateAnother}
           >

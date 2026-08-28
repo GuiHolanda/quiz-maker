@@ -16,7 +16,7 @@ export {
   E2E_SUBJECT,
 };
 
-// Stub returned by GET /api/exam/browse-questions/summary — tells NewMockExamForm that
+// Stub returned by GET /api/exam/browse-questions/summary — tells CreateSimuladoSection that
 // questions are available so it renders the creation form instead of the EmptyState.
 // Unified shape: { exams: [{ id, name, type, referenceName, totalCount, sections }] }.
 // Both verticals are included so totalSavedQuestions > 0 regardless of the selected exam.

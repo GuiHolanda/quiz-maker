@@ -40,5 +40,9 @@ if (require.main === module) {
     .then((r) => {
       console.log(`isCorrect backfill: ${r.updated} corretas, ${r.indeterminate} indeterminadas (deixadas como false)`);
     })
+    .catch((e) => {
+      console.error(e);
+      process.exitCode = 1;
+    })
     .finally(() => client.$disconnect());
 }
