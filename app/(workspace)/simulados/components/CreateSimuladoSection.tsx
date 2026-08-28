@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Input } from '@heroui/input';
 
 import { fmtTempo, normalizeMock, UnifiedSimulado } from './list/normalizeSimulado';
-import { readSimuladoPrefill } from './create/simuladoPrefill';
+import { readSimuladoPrefill, writeSimuladoPrefill } from './create/simuladoPrefill';
 import { PresetShortcuts } from './create/PresetShortcuts';
 import { ScopePicker } from './create/ScopePicker';
 import { ExamAndCountRow } from './create/ExamAndCountRow';
@@ -340,14 +340,26 @@ export function CreateSimuladoSection() {
     const targetList = scope === 'certification' ? certifications : publicExams;
     const target = targetList.find((candidate) => candidate.id === prefill.examId);
 
-    if (!target) return;
+    if (!target) {
+      const listIsLoaded = !isLoading && targetList.length > 0;
+
+      if (!listIsLoaded) {
+        writeSimuladoPrefill(prefill);
+        prefillApplied.current = false;
+      }
+
+      return;
+    }
 
     const officialMinutes = target.examDurationMinutes ?? null;
 
     let timeMode: TimeMode;
     let customMinutes: number;
 
-    if (prefill.durationMinutes == null) {
+    if (prefill.durationMinutes === undefined) {
+      timeMode = 'oficial';
+      customMinutes = officialMinutes ?? 60;
+    } else if (prefill.durationMinutes === null) {
       timeMode = 'livre';
       customMinutes = officialMinutes ?? 60;
     } else if (prefill.durationMinutes === officialMinutes) {

@@ -129,17 +129,28 @@ export class MockExamService {
     }));
   }
 
+  private ownedExamWhere(examId: string, userId: string) {
+    return { id: examId, OR: [{ userId }, { isTemplate: true }] };
+  }
+
   async create(payload: CreateMockExamPayload, userId: string) {
     const { examId, name, totalQuestions, sections } = payload;
     const questionSource: MockExamQuestionSource =
       payload.questionSource === 'unseen' || payload.questionSource === 'wrong' ? payload.questionSource : 'library';
+
+    if (
+      payload.durationMinutes != null &&
+      (!Number.isInteger(payload.durationMinutes) || payload.durationMinutes < 1)
+    ) {
+      throw Object.assign(new Error('Duração inválida'), { status: 400 });
+    }
 
     const resolved = await this.resolveSections(examId, sections);
 
     await this.validateSectionAvailability(examId, resolved, userId, questionSource);
 
     const exam = await prisma.exam.findFirst({
-      where: { id: examId },
+      where: this.ownedExamWhere(examId, userId),
       include: { provider: true, examBoard: true },
     });
 
@@ -188,7 +199,7 @@ export class MockExamService {
   }
 
   async availability(examId: string, userId: string): Promise<MockExamAvailability> {
-    const exam = await prisma.exam.findFirst({ where: { id: examId } });
+    const exam = await prisma.exam.findFirst({ where: this.ownedExamWhere(examId, userId) });
 
     if (!exam) throw Object.assign(new Error('Exame não encontrado'), { status: 404 });
 
@@ -275,7 +286,7 @@ export class MockExamService {
     userId: string,
     source: MockExamQuestionSource
   ) {
-    const exam = await prisma.exam.findFirst({ where: { id: examId } });
+    const exam = await prisma.exam.findFirst({ where: this.ownedExamWhere(examId, userId) });
 
     if (!exam) throw Object.assign(new Error('Exame não encontrado'), { status: 404 });
 
@@ -316,7 +327,7 @@ export class MockExamService {
     userId: string,
     source: MockExamQuestionSource
   ): Promise<number[]> {
-    const exam = await prisma.exam.findFirstOrThrow({ where: { id: examId } });
+    const exam = await prisma.exam.findFirstOrThrow({ where: this.ownedExamWhere(examId, userId) });
     const sourceFilter = await this.buildSourceFilter(examId, userId, source);
     const ids: number[] = [];
 

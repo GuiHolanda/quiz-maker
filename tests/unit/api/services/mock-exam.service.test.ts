@@ -776,5 +776,47 @@ describe('MockExamService', () => {
       expect(res.sections).toEqual([{ sectionName: 'Security', library: 4, unseen: 2, wrong: 1 }]);
       expect(res.totals).toEqual({ library: 4, unseen: 2, wrong: 1 });
     });
+
+    it('availability() scopes the exam lookup to the caller or a catalog template', async () => {
+      prismaMock.exam.findFirst.mockResolvedValue(null);
+
+      await expect(service.availability('e1', 'u1')).rejects.toMatchObject({ status: 404 });
+      expect(prismaMock.exam.findFirst).toHaveBeenCalledWith({
+        where: { id: 'e1', OR: [{ userId: 'u1' }, { isTemplate: true }] },
+      });
+    });
+  });
+
+  describe('create — ownership e validação de duração', () => {
+    it('create() throws 404 for an exam the user does not own and that is not a template', async () => {
+      prismaMock.examSection.findMany.mockResolvedValue([] as any);
+      prismaMock.exam.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.create(
+          { examId: 'other-exam', totalQuestions: 1, sections: [{ sectionName: 'S', questionCount: 1 }] },
+          'u1',
+        ),
+      ).rejects.toMatchObject({ status: 404 });
+      expect(prismaMock.exam.findFirst).toHaveBeenCalledWith({
+        where: { id: 'other-exam', OR: [{ userId: 'u1' }, { isTemplate: true }] },
+      });
+    });
+
+    it('create() throws 400 when durationMinutes is not a positive integer', async () => {
+      await expect(
+        service.create(
+          { examId: 'e1', totalQuestions: 1, durationMinutes: 0, sections: [{ sectionName: 'S', questionCount: 1 }] },
+          'u1',
+        ),
+      ).rejects.toMatchObject({ status: 400 });
+
+      await expect(
+        service.create(
+          { examId: 'e1', totalQuestions: 1, durationMinutes: 12.5, sections: [{ sectionName: 'S', questionCount: 1 }] },
+          'u1',
+        ),
+      ).rejects.toMatchObject({ status: 400 });
+    });
   });
 });

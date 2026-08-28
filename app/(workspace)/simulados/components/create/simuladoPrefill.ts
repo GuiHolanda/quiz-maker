@@ -6,7 +6,7 @@ export interface SimuladoPrefill {
   examId: string;
   name?: string;
   totalQuestions: number;
-  durationMinutes: number | null;
+  durationMinutes?: number | null;
   questionSource: MockExamQuestionSource;
   sections: { sectionName: string; questionCount: number }[];
 }
@@ -28,14 +28,17 @@ export function readSimuladoPrefill(): SimuladoPrefill | null {
 
     if (!p?.examId || typeof p.totalQuestions !== 'number') return null;
 
-    return {
+    const prefill: SimuladoPrefill = {
       examId: p.examId,
       name: p.name ?? undefined,
       totalQuestions: p.totalQuestions,
-      durationMinutes: p.durationMinutes ?? null,
       questionSource: p.questionSource ?? 'library',
       sections: Array.isArray(p.sections) ? p.sections : [],
     };
+
+    if ('durationMinutes' in p) prefill.durationMinutes = p.durationMinutes ?? null;
+
+    return prefill;
   } catch {
     return null;
   }

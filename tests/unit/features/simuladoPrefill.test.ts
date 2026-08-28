@@ -65,10 +65,22 @@ describe('simuladoPrefill', () => {
       examId: 'e2',
       name: undefined,
       totalQuestions: 40,
+      questionSource: 'library',
+      sections: [],
+    });
+    expect(prefill).not.toHaveProperty('durationMinutes');
+  });
+
+  it('preserves an explicit null durationMinutes written by the duplicate flow', () => {
+    writeSimuladoPrefill({
+      examId: 'e3',
+      totalQuestions: 10,
       durationMinutes: null,
       questionSource: 'library',
       sections: [],
     });
+
+    expect(readSimuladoPrefill()).toHaveProperty('durationMinutes', null);
   });
 
   it('returns null and clears the key on malformed JSON', () => {
