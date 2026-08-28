@@ -56,7 +56,7 @@ export interface ResultView {
   elapsedMs: number | null;
   elapsedLabel: string | null;
   perQuestionLabel: string | null;
-  durationMinutes: number | null;
+  attemptDurationMinutes: number | null;
   durationLabel: string | null;
   attemptNumber: number;
   totalAttempts: number;
@@ -195,7 +195,7 @@ export function deriveResult(result: MockExamResult): ResultView {
     elapsedMs,
     elapsedLabel: elapsedMs != null ? formatClock(elapsedMs) : null,
     perQuestionLabel: elapsedMs != null && total > 0 ? formatPerQuestion(elapsedMs / total) : null,
-    durationMinutes: result.examMeta.durationMinutes,
+    attemptDurationMinutes: result.examMeta.attemptDurationMinutes,
     durationLabel: result.examMeta.durationMinutes != null ? formatBudget(result.examMeta.durationMinutes) : null,
     attemptNumber: result.attemptNumber,
     totalAttempts: result.totalAttempts,

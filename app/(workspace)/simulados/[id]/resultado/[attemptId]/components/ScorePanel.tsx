@@ -27,8 +27,8 @@ export function ScorePanel({ view }: ScorePanelProps) {
   ];
 
   const timeOverBudget =
-    view.durationMinutes != null && view.elapsedMs != null
-      ? Math.min(100, (view.elapsedMs / (view.durationMinutes * 60000)) * 100)
+    view.attemptDurationMinutes != null && view.elapsedMs != null
+      ? Math.min(100, (view.elapsedMs / (view.attemptDurationMinutes * 60000)) * 100)
       : null;
 
   return (

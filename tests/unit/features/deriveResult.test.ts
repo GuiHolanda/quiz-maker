@@ -96,6 +96,21 @@ describe('deriveResult — comparable gating', () => {
     expect(view.marginPP).toBe(10);
   });
 
+  it('livre simulado has no attempt time budget even when the exam has an official duration', () => {
+    const view = deriveResult(
+      makeResult({ timedOut: false, durationMinutes: 130, attemptDurationMinutes: null })
+    );
+
+    expect(view.attemptDurationMinutes).toBeNull();
+    expect(view.durationLabel).not.toBeNull();
+  });
+
+  it('timed attempt carries its budget through as attemptDurationMinutes', () => {
+    const view = deriveResult(makeResult({ timedOut: false, durationMinutes: 60 }));
+
+    expect(view.attemptDurationMinutes).toBe(60);
+  });
+
   it('comparable attempt fails when percent is below the cut', () => {
     const view = deriveResult(makeResult({ timedOut: false, durationMinutes: 60, score: 5, passingScorePercent: 70 }));
 
