@@ -85,12 +85,15 @@ Simulados based on saved questions. Each mock exam is a fixed question selection
 | `mock-exams` | GET | List user's mock exams with attempts and best score |
 | `mock-exams` | POST | Create mock exam (validates question availability) |
 | `mock-exams?id={id}` | DELETE | Delete mock exam |
+| `mock-exams/availability` | GET | Per-section question counts by source (library/unseen/wrong) for a given `examId` |
 | `mock-exams/[id]` | GET | Full detail (questions + options + answers + explanations) |
 | `mock-exams/[id]/answers` | POST | **Ensure answers** — generate missing `Answer` rows idempotently. Returns `{ generated: N }`. |
 | `mock-exams/[id]/attempts` | POST | Start new attempt |
 | `mock-exams/[id]/attempts/[attemptId]` | PATCH/GET | Finish attempt / Get result with score and breakdown |
 
 Service: `app/api/mock-exams/mock-exam.service.ts` (co-located).
+
+**Colunas do redesign:** `MockExam.durationMinutes` (null = livre) + `MockExam.questionSource` (`library`/`unseen`/`wrong`) + `MockExamAttempt.timedOut` + `MockExamAttemptAnswer.isCorrect` (backfilled uma vez via `prisma/dev/scripts/backfill-mock-exam-answer-correctness.ts`).
 
 **Ensure-answers:** frontend calls `POST /[id]/answers` before every attempt. Without it, result page has no `correctOptions` and `/explanation` returns 404.
 

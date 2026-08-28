@@ -208,11 +208,10 @@ Importar config via `@/app/(workspace)/exams/exam-config` (nunca relativo).
 
 | Arquivo | Papel |
 |---|---|
-| `page.tsx` | Monta 4 providers: `CertificationsProvider`, `PublicExamsProvider`, `CertSimuladosProvider`, `MockExamsProvider` |
-| `SimuladosListTab.tsx` | Lista unificada, status chips, delete, histórico de tentativas |
-| `NewSimuladoTab.tsx` | Type picker (cert/concurso) |
-| `NewCertSimuladoForm.tsx` | Form cert simulado com distribuição por tópico |
-| `CreateSimuladoSection.tsx` + `create/` | Form de criação (nome, escopo, exame+questões, tempo, tópicos) + `SummarySidebar`; lógica pura em `create/simuladoFormState.ts` |
+| `page.tsx` | Monta `ExamsProvider` + `MockExamsProvider`; página de scroll único (sem tabs): `<CreateSimuladoSection>` (form) seguido de `<SimuladosCreatedSection>` (tabela) |
+| `components/CreateSimuladoSection.tsx` | Orquestra o form (nome, escopo, exame, questões, tempo, fonte, tópicos), as fases `config`/`gerando`/`pronto`, presets e prefill de duplicar |
+| `components/create/*` | `PresetShortcuts`, `ScopePicker`, `ExamAndCountRow`, `TimePicker`, `SourcePicker`, `TopicChecklist`, `SummarySidebar` (sidebar sticky), `GenerationPanel`; `simuladoFormState.ts` (funções puras de estado/distribuição/preset) e `simuladoPrefill.ts` (`read`/`writeSimuladoPrefill`) |
+| `components/list/*` | `SimuladosCreatedSection` (toolbar + tabela + paginação + modais), `SimuladosTable` (grid de 9 colunas), `SimuladosToolbar`, `SimuladoHistoryModal`, `normalizeSimulado.ts` |
 
 Status chip map: `pending → default`, `in_progress → warning`, `answered → success`.
 
