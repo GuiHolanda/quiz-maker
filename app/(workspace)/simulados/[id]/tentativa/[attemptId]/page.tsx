@@ -17,6 +17,18 @@ import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { notify } from '@/shared/lib/notify';
 import { BreadcrumbItem, Breadcrumbs } from '@heroui/breadcrumbs';
 
+const ANNOUNCE_THRESHOLDS_MS = [0, 60_000, 5 * 60_000];
+
+const ANNOUNCE_LABEL: Record<number, string> = {
+  0: '00:00',
+  60_000: '01:00',
+  300_000: '05:00',
+};
+
+function reachedAnnounceThreshold(remainingMs: number): number | null {
+  return ANNOUNCE_THRESHOLDS_MS.find((threshold) => remainingMs <= threshold) ?? null;
+}
+
 export default function SimuladoTentativaPage() {
   const { t } = useTranslation();
   const params = useParams<{ id: string; attemptId: string }>();
@@ -151,15 +163,21 @@ export default function SimuladoTentativaPage() {
     total: questions.length,
   });
 
+  const announcedThreshold = timerOn ? reachedAnnounceThreshold(remainingMs) : null;
+
   const timer = timerOn ? (
-    <span
-      aria-live="polite"
-      data-testid="simulado-timer"
-      className={`font-mono text-sm font-semibold tabular-nums ${
-        remainingMs < 60_000 ? 'text-danger' : remainingMs < 5 * 60_000 ? 'text-warning' : 'text-default-500'
-      }`}
-    >
-      {t('simulado.timer.remaining', { time: remainingLabel })}
+    <span className="flex items-center">
+      <span
+        data-testid="simulado-timer"
+        className={`font-mono text-sm font-semibold tabular-nums ${
+          remainingMs < 60_000 ? 'text-danger' : remainingMs < 5 * 60_000 ? 'text-warning' : 'text-default-500'
+        }`}
+      >
+        {t('simulado.timer.remaining', { time: remainingLabel })}
+      </span>
+      <span aria-live="polite" className="sr-only">
+        {announcedThreshold != null ? t('simulado.timer.remaining', { time: ANNOUNCE_LABEL[announcedThreshold] }) : ''}
+      </span>
     </span>
   ) : undefined;
 

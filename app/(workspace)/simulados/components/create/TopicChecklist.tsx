@@ -51,8 +51,10 @@ export function TopicChecklist({ sections, selected, onToggle, onAll, onNone }: 
             return (
               <button
                 key={section.name}
+                aria-checked={isChecked}
                 className="grid w-full items-center gap-4 border-t border-divider px-4 py-3 text-left first:border-t-0"
                 data-testid="simulado-topic-toggle"
+                role="checkbox"
                 style={{ gridTemplateColumns: ROW_GRID }}
                 type="button"
                 onClick={() => onToggle(section.name)}

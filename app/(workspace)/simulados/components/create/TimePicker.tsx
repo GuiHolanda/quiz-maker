@@ -42,6 +42,7 @@ export function TimePicker({ mode, officialLabel, customMinutes, onMode, onCusto
         {options.map((option) => (
           <Button
             key={option.key}
+            aria-pressed={mode === option.key}
             className={`${PILL_BASE} ${mode === option.key ? PILL_ACTIVE : PILL_IDLE}`}
             data-testid={option.testId}
             size="sm"

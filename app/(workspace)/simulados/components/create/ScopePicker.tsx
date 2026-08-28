@@ -45,6 +45,7 @@ export function ScopePicker({ value, onChange }: ScopePickerProps) {
           return (
             <button
               key={option.scope}
+              aria-pressed={isSelected}
               className={`grid grid-cols-[34px_minmax(0,1fr)] items-center gap-3 rounded-lg p-4 text-left transition-colors duration-200 ${
                 isSelected ? 'border border-primary bg-primary/[0.07]' : 'border border-transparent bg-background'
               }`}
