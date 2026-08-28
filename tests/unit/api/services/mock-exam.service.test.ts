@@ -183,7 +183,11 @@ describe('MockExamService', () => {
       ]),
     );
     expect(result.sectionBreakdown).toHaveLength(2);
-    expect(result.examMeta).toEqual({ passingScorePercent: 70, durationMinutes: 120 });
+    expect(result.examMeta).toEqual({
+      passingScorePercent: 70,
+      durationMinutes: 120,
+      attemptDurationMinutes: null,
+    });
     expect(result.attemptNumber).toBe(1);
     expect(result.totalAttempts).toBe(1);
     expect(result.overallPreviousAvgPercent).toBeNull();
@@ -653,6 +657,24 @@ describe('MockExamService', () => {
       const res = await service.getAttemptResult(1, 10, 'u1');
       expect(res.attempt.timedOut).toBe(true);
       expect(res.examMeta.durationMinutes).toBe(45);
+      expect(res.examMeta.attemptDurationMinutes).toBe(45);
+    });
+
+    it('getAttemptResult() keeps attemptDurationMinutes null for a livre simulado', async () => {
+      prismaMock.mockExamAttempt.findFirst.mockResolvedValue({
+        id: 10, mockExamId: 1, startedAt: new Date(), finishedAt: new Date(), score: 5, timedOut: false,
+        answers: [],
+        mockExam: {
+          id: 1, name: 'x', durationMinutes: null,
+          exam: { id: 'e1', name: 'AWS', type: 'certification', passingScore: 70, examDurationMinutes: 130 },
+          questions: [],
+        },
+      } as any);
+      prismaMock.mockExamAttempt.findMany.mockResolvedValue([] as any);
+
+      const res = await service.getAttemptResult(1, 10, 'u1');
+      expect(res.examMeta.durationMinutes).toBe(130);
+      expect(res.examMeta.attemptDurationMinutes).toBeNull();
     });
 
     it('getAttemptResult() excludes timedOut attempts from previous averages', async () => {

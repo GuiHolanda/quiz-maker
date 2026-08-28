@@ -145,7 +145,7 @@ export function deriveResult(result: MockExamResult): ResultView {
   const percent = total > 0 ? Math.round((correct / total) * 100) : 0;
 
   const timedOut = result.attempt.timedOut;
-  const comparable = !timedOut && result.examMeta.durationMinutes != null;
+  const comparable = !timedOut && result.examMeta.attemptDurationMinutes != null;
 
   const passingScorePercent = result.examMeta.passingScorePercent;
   const passed = comparable && passingScorePercent != null ? percent >= passingScorePercent : null;

@@ -178,7 +178,7 @@ export function SimuladosTable({
 
   function resolveScoreMeta(s: UnifiedSimulado, bestPercent: number | null): string | null {
     if (bestPercent == null) return t('simulado.table.noScore');
-    if (s.passingScorePercent == null) return null;
+    if (s.durationMinutes == null || s.passingScorePercent == null) return null;
 
     return bestPercent >= s.passingScorePercent ? t('simulado.table.approved') : t('simulado.table.belowCut');
   }

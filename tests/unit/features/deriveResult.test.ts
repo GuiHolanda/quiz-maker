@@ -4,6 +4,7 @@ import type { MockExamResult } from '@/shared/types';
 interface ResultOverrides {
   timedOut?: boolean;
   durationMinutes?: number | null;
+  attemptDurationMinutes?: number | null;
   passingScorePercent?: number | null;
   score?: number;
 }
@@ -30,6 +31,10 @@ function makeResult(overrides: ResultOverrides = {}): MockExamResult {
     selectedOptions: ['A'],
   }));
 
+  const durationMinutes = overrides.durationMinutes === undefined ? 60 : overrides.durationMinutes;
+  const attemptDurationMinutes =
+    overrides.attemptDurationMinutes === undefined ? durationMinutes : overrides.attemptDurationMinutes;
+
   return {
     attempt: {
       id: 1,
@@ -45,7 +50,8 @@ function makeResult(overrides: ResultOverrides = {}): MockExamResult {
     sectionBreakdown: [{ sectionName: 'S1', correct: score, total, weightPercent: 100, previousAvgPercent: null }],
     examMeta: {
       passingScorePercent: overrides.passingScorePercent === undefined ? 70 : overrides.passingScorePercent,
-      durationMinutes: overrides.durationMinutes === undefined ? 60 : overrides.durationMinutes,
+      durationMinutes,
+      attemptDurationMinutes,
     },
     attemptNumber: 1,
     totalAttempts: 1,
@@ -65,6 +71,16 @@ describe('deriveResult — comparable gating', () => {
 
   it('attempt without a time budget is not comparable', () => {
     const view = deriveResult(makeResult({ timedOut: false, durationMinutes: null }));
+
+    expect(view.comparable).toBe(false);
+    expect(view.passed).toBeNull();
+    expect(view.marginPP).toBeNull();
+  });
+
+  it('livre simulado is not comparable even when the exam has an official duration', () => {
+    const view = deriveResult(
+      makeResult({ timedOut: false, durationMinutes: 130, attemptDurationMinutes: null, passingScorePercent: 70 })
+    );
 
     expect(view.comparable).toBe(false);
     expect(view.passed).toBeNull();

@@ -754,6 +754,7 @@ export class MockExamService {
       examMeta: {
         passingScorePercent: attempt.mockExam.exam.passingScore ?? null,
         durationMinutes: attempt.mockExam.durationMinutes ?? attempt.mockExam.exam.examDurationMinutes ?? null,
+        attemptDurationMinutes: attempt.mockExam.durationMinutes ?? null,
       },
       attemptNumber: thisIndex >= 0 ? thisIndex + 1 : finishedSiblings.length + 1,
       totalAttempts: thisIndex >= 0 ? finishedSiblings.length : finishedSiblings.length + 1,

@@ -364,6 +364,7 @@ export interface MockExamResult {
   examMeta: {
     passingScorePercent: number | null;
     durationMinutes: number | null;
+    attemptDurationMinutes: number | null;
   };
   attemptNumber: number;
   totalAttempts: number;
