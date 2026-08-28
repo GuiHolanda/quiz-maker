@@ -9,6 +9,7 @@ import { AttemptRow, scoreColor, UnifiedSimulado } from './normalizeSimulado';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+import { formatFinishedAt } from '@/app/(workspace)/simulados/[id]/resultado/[attemptId]/components/deriveResult';
 
 interface SimuladoHistoryModalProps {
   readonly simulado: UnifiedSimulado | null;
@@ -16,7 +17,7 @@ interface SimuladoHistoryModalProps {
 }
 
 export function SimuladoHistoryModal({ simulado, onClose }: SimuladoHistoryModalProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const router = useRouter();
 
   return (
@@ -43,7 +44,7 @@ export function SimuladoHistoryModal({ simulado, onClose }: SimuladoHistoryModal
         </ModalBody>
         <ModalFooter className="border-t border-divider">
           <Button className={buttonStyles.secondary} size="sm" variant="bordered" onPress={onClose}>
-            {t('common.cancel')}
+            {t('common.close')}
           </Button>
         </ModalFooter>
       </>
@@ -53,15 +54,7 @@ export function SimuladoHistoryModal({ simulado, onClose }: SimuladoHistoryModal
   function renderAttemptRow(s: UnifiedSimulado, attempt: AttemptRow, index: number) {
     const correct = attempt.score ?? 0;
     const percent = s.totalQuestions > 0 ? Math.round((correct / s.totalQuestions) * 100) : 0;
-    const attemptDate = attempt.finishedAt
-      ? new Date(attempt.finishedAt).toLocaleDateString('pt-BR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-        })
-      : '—';
+    const attemptDate = formatFinishedAt(attempt.finishedAt, language);
 
     return (
       <div
@@ -72,9 +65,16 @@ export function SimuladoHistoryModal({ simulado, onClose }: SimuladoHistoryModal
           <p className="text-sm font-semibold">{t('simulado.attemptNumber', { n: s.attempts.length - index })}</p>
           <p className="text-xs text-default-400">{attemptDate}</p>
         </div>
-        <Chip className="font-semibold" color={scoreColor(percent)} size="sm" variant="flat">
-          {t('simulado.attemptScore', { correct, total: s.totalQuestions, percent })}
-        </Chip>
+        <div className="flex items-center gap-2">
+          {attempt.timedOut && (
+            <Chip color="warning" size="sm" variant="flat">
+              {t('simulado.result.timedOut')}
+            </Chip>
+          )}
+          <Chip className="font-semibold" color={scoreColor(percent)} size="sm" variant="flat">
+            {t('simulado.attemptScore', { correct, total: s.totalQuestions, percent })}
+          </Chip>
+        </div>
         <Button
           className={buttonStyles.secondary}
           data-testid="simulado-history-view-btn"

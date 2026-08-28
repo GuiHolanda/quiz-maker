@@ -312,7 +312,7 @@ export interface MockExam {
   exam: ExamRef;
   sections: MockExamSectionConfig[];
   questions: MockExamQuestion[];
-  attempts: MockExamAttempt[];
+  attempts: Omit<MockExamAttempt, 'answers'>[];
   durationMinutes: number | null;
   questionSource: MockExamQuestionSource;
   passingScorePercent: number | null;

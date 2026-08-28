@@ -4,6 +4,7 @@ export interface AttemptRow {
   id: number;
   score: number | null;
   finishedAt: string | null;
+  timedOut: boolean;
 }
 
 export interface UnifiedSimulado {
@@ -41,7 +42,12 @@ export function normalizeMock(m: MockExamListItem): UnifiedSimulado {
     lastAttemptId: m.lastAttemptId,
     lastFinishedAt: m.attempts[0]?.finishedAt ?? null,
     createdAt: m.createdAt,
-    attempts: m.attempts.map((a) => ({ id: a.id, score: a.score, finishedAt: a.finishedAt })),
+    attempts: m.attempts.map((a) => ({
+      id: a.id,
+      score: a.score,
+      finishedAt: a.finishedAt,
+      timedOut: a.timedOut,
+    })),
     status: deriveStatus(m.openAttemptId, m.attemptCount),
   };
 }
