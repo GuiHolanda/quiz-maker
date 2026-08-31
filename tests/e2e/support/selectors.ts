@@ -45,11 +45,15 @@ export const TID = {
   simuladoGenerationStartBtn: 'simulado-generation-start-btn',
   simuladoGenerationCreateAnotherBtn: 'simulado-generation-create-another-btn',
 
-  // Answer / result
-  answerOption: 'answer-option',
-  answerSubmitBtn: 'answer-submit-btn',
+  // Attempt (/simulados/[id]/tentativa/[attemptId]) + result
+  attemptOption: 'attempt-option',
+  attemptPrevBtn: 'attempt-prev-btn',
+  attemptSkipBtn: 'attempt-skip-btn',
+  attemptNextBtn: 'attempt-next-btn',
+  attemptNavCell: 'attempt-nav-cell',
   attemptFinalizeBtn: 'attempt-finalize-btn',
-  attemptCancelBtn: 'attempt-cancel-btn',
+  attemptExitBtn: 'attempt-exit-btn',
+  attemptDiscardLink: 'attempt-discard-link',
   resultScore: 'result-score',
   resultPercent: 'result-percent',
   resultRetryBtn: 'result-retry-btn',
@@ -120,4 +124,5 @@ export const TID = {
   confirmDiscardBtn: 'confirm-discard-btn',
   confirmDeleteBtn: 'confirm-delete-btn',
   confirmDiscardAttemptBtn: 'confirm-discard-attempt-btn',
+  confirmFinishAttemptBtn: 'confirm-finish-attempt-btn',
 } as const;

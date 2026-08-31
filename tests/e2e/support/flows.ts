@@ -91,32 +91,35 @@ export async function startSimuladoAttempt(
   return { simuladoId: match?.[1] ?? '', attemptId: match?.[2] ?? '' };
 }
 
-// Answer every question using the HeroUI Radio + Form submit workaround (dispatchEvent).
-// Both the radio input (opacity ~0) and the react-aria submit button need dispatchEvent('click'):
-// a plain .click() selects the radio but does NOT trigger the HeroUI <Form> submit, so the
-// answer never persists (progress stays "0 answered" and the finalize button stays disabled).
+// The attempt screen shows one question at a time. Click an option (selection persists
+// immediately — no submit step) then advance with "Próxima" until the last question.
 export async function answerAllQuestions(page: Page): Promise<void> {
-  await expect(page.locator('[role="radiogroup"]').first()).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator(tid(TID.attemptOption)).first()).toBeVisible({ timeout: 10_000 });
 
-  const groups = page.locator('[role="radiogroup"]');
-  const count = await groups.count();
-  for (let i = 0; i < count; i++) {
-    const group = groups.nth(i);
-    await group.locator('input').first().dispatchEvent('click');
-    // The submit button only renders after React processes the radio selection.
-    // Scope to the enclosing <form> so the submit is the one for this question.
-    const submit = group.locator('xpath=ancestor::form').first().locator(tid(TID.answerSubmitBtn));
-    await expect(submit).toBeVisible({ timeout: 5_000 });
-    await submit.dispatchEvent('click');
-    // Wait for the answer to be committed (answers state updates) before moving on.
-    await page.waitForTimeout(300);
+  const total = await page.locator(tid(TID.attemptNavCell)).count();
+  for (let i = 0; i < total; i++) {
+    await page.locator(tid(TID.attemptOption)).first().click();
+    await page.waitForTimeout(150);
+    if (i < total - 1) {
+      await page.locator(tid(TID.attemptNextBtn)).click();
+      await page.waitForTimeout(150);
+    }
   }
 }
 
-// Finalize the attempt and wait for the result page.
+// Finalize the attempt (sidebar button → confirm modal) and wait for the result page.
 export async function finalizeAttempt(page: Page): Promise<void> {
   await page.locator(tid(TID.attemptFinalizeBtn)).click();
+  await page.locator(tid(TID.confirmFinishAttemptBtn)).click();
   await page.waitForURL(/\/resultado\//);
+}
+
+// From an in-progress attempt: open "Salvar e sair", discard the attempt, land on the list.
+export async function exitAndDiscardAttempt(page: Page): Promise<void> {
+  await page.locator(tid(TID.attemptExitBtn)).click();
+  await page.locator(tid(TID.attemptDiscardLink)).click();
+  await page.locator(tid(TID.confirmDiscardAttemptBtn)).click();
+  await page.waitForURL(/\/simulados/);
 }
 
 // Assert the result page shows a score/percent and the topic breakdown.
