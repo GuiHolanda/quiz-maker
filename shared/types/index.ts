@@ -451,15 +451,6 @@ export interface AdminAuditLogResponse {
   totalPages: number;
 }
 
-// Generic interface for SimuladoQuestionList (both domains)
-export interface SimuladoQuestion {
-  readonly id: number;
-  readonly simuladoQuestionId: number;
-  readonly text: string;
-  readonly correctCount: number;
-  readonly options: Record<string, string>;
-}
-
 export interface UnifiedQuestion {
   id: number;
   type: 'certification' | 'public_exam';

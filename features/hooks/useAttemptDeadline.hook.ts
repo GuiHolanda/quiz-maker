@@ -24,9 +24,10 @@ interface UseAttemptDeadlineArgs {
   readonly startedAt: string | null;
   readonly durationMinutes: number | null;
   readonly onExpire: () => void;
+  readonly nowOffsetMs?: number;
 }
 
-export function useAttemptDeadline({ startedAt, durationMinutes, onExpire }: UseAttemptDeadlineArgs) {
+export function useAttemptDeadline({ startedAt, durationMinutes, onExpire, nowOffsetMs = 0 }: UseAttemptDeadlineArgs) {
   const [now, setNow] = useState(() => Date.now());
   const firedRef = useRef(false);
   const onExpireRef = useRef(onExpire);
@@ -36,16 +37,18 @@ export function useAttemptDeadline({ startedAt, durationMinutes, onExpire }: Use
   });
 
   const startedAtMs = startedAt ? new Date(startedAt).getTime() : null;
+  const effectiveNow = now - nowOffsetMs;
   const state =
     startedAtMs != null
-      ? computeTimerState(startedAtMs, durationMinutes, now)
+      ? computeTimerState(startedAtMs, durationMinutes, effectiveNow)
       : { enabled: false, remainingMs: 0, expired: false };
+  const elapsedMs = startedAtMs != null ? Math.max(0, effectiveNow - startedAtMs) : 0;
 
   useEffect(() => {
-    if (!state.enabled) return;
+    if (startedAtMs == null) return;
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [state.enabled]);
+  }, [startedAtMs]);
 
   useEffect(() => {
     if (shouldFireExpiry(state, firedRef.current)) {
@@ -54,5 +57,10 @@ export function useAttemptDeadline({ startedAt, durationMinutes, onExpire }: Use
     }
   }, [state.enabled, state.expired]);
 
-  return { enabled: state.enabled, remainingMs: state.remainingMs, label: formatMMSS(state.remainingMs) };
+  return {
+    enabled: state.enabled,
+    remainingMs: state.remainingMs,
+    elapsedMs,
+    label: formatMMSS(state.remainingMs),
+  };
 }

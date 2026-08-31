@@ -50,6 +50,7 @@ export const UTM_COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 export const AI_CHAT_LOCAL_STORAGE_KEY = (userId: string) => `AI_CHAT_MESSAGES_${userId}`;
 export const AI_CHAT_FOLLOWUP_TIMESTAMP_KEY = (userId: string) => `AI_CHAT_FOLLOWUP_TS_${userId}`;
 export const SIMULADO_ATTEMPT_PROGRESS_KEY = (attemptId: number) => `SIMULADO_ATTEMPT_PROGRESS_${attemptId}`;
+export const SIMULADO_ATTEMPT_PAUSE_KEY = (attemptId: number) => `SIMULADO_ATTEMPT_PAUSE_${attemptId}`;
 export const APP_NOTIFICATIONS_LOCAL_STORAGE_KEY = 'APP_NOTIFICATIONS';
 export const SIMULADO_NEW_PREFILL_KEY = 'SIMULADO_NEW_PREFILL';
 export const AI_CHAT_INACTIVITY_TIMEOUT_MS = 60 * 60 * 1000;
