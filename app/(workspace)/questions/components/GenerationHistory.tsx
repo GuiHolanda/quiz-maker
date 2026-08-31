@@ -3,13 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Chip } from '@heroui/chip';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faClipboardList,
-  faGraduationCap,
-  faCheckCircle,
-  faFloppyDisk,
-  faHistory,
-} from '@fortawesome/free-solid-svg-icons';
+import { faClipboardList, faGraduationCap, faHistory } from '@fortawesome/free-solid-svg-icons';
 
 import type {
   GenerationHistoryItem,
@@ -134,10 +128,8 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
         }
       >
         {data && data.items.length > 0 && (
-          <div aria-live="polite" aria-atomic="false" className="bg-content1 border border-content2 rounded-xl p-6">
-            <div className="flex flex-col divide-y divide-divider" role="list">
-              {data.items.map((item) => renderHistoryRow(item))}
-            </div>
+          <div aria-atomic="false" aria-live="polite" className="overflow-hidden rounded-xl bg-content1">
+            <div role="list">{data.items.map((item) => renderHistoryRow(item))}</div>
           </div>
         )}
       </EntityListShell>
@@ -158,29 +150,29 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
   function renderHistoryRow(item: GenerationHistoryItem) {
     const isConcurso = item.domain === 'public_exam';
     const icon = isConcurso ? faClipboardList : faGraduationCap;
+    const title = item.topicName ?? item.refName ?? '—';
+    const subtitle = item.topicName ? `${item.refName ?? ''}${item.refRole ? ` · ${item.refRole}` : ''}` : null;
 
     return (
-      <div key={item.id} role="listitem" className="flex items-center gap-4 py-3.5 min-w-0">
-        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-          <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={icon} />
+      <div
+        key={item.id}
+        className="flex items-center gap-4 border-t border-divider px-5 py-3.5 first:border-t-0 md:grid md:grid-cols-[38px_minmax(0,1fr)_96px_96px_minmax(0,auto)] md:gap-5"
+        role="listitem"
+      >
+        <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[9px] bg-primary/10 text-primary">
+          <FontAwesomeIcon className="h-4 w-4" icon={icon} />
         </div>
 
-        <div className="flex flex-col min-w-0 flex-1">
-          <span className="text-sm text-foreground truncate leading-snug font-semibold">
-            {item.topicName ?? item.refName ?? '—'}
-          </span>
-          {item.topicName && (
-            <span className="text-xs text-default-400 truncate leading-snug mt-0.5 font-semibold">
-              {item.refName}
-              {item.refRole ? ` - ${item.refRole}` : ''}
-            </span>
-          )}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate text-[14.5px] font-semibold leading-snug text-foreground">{title}</span>
+          {subtitle && <span className="mt-0.5 truncate text-[13px] leading-snug text-default-500">{subtitle}</span>}
         </div>
 
-        {renderStatPair(item.questionsGenerated, item.questionsSaved)}
+        {renderStat(item.questionsGenerated, t('generate.historyGeneratedColumn'), false)}
+        {renderStat(item.questionsSaved, t('generate.historySavedColumn'), true)}
 
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs text-default-400 whitespace-nowrap hidden sm:block">
+        <div className="flex shrink-0 items-center gap-3 md:justify-end">
+          <span className="hidden whitespace-nowrap text-[13px] text-default-500 sm:block">
             <RelativeDate date={item.createdAt} />
           </span>
           <Chip color={statusColor(item.status)} size="sm" variant="flat">
@@ -191,24 +183,13 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
     );
   }
 
-  function renderStatPair(generated: number, saved: number) {
+  function renderStat(value: number, label: string, isSaved: boolean) {
+    const valueColor = value > 0 ? (isSaved ? 'text-success' : 'text-foreground') : 'text-default-400';
+
     return (
-      <div className="hidden md:flex items-center gap-4 shrink-0">
-        <div className="flex flex-col items-center gap-0.5">
-          <div className="flex items-center gap-1 text-default-500">
-            <FontAwesomeIcon className="w-3 h-3" icon={faCheckCircle} />
-            <span className="text-sm font-semibold tabular-nums">{generated}</span>
-          </div>
-          <span className="text-xs text-default-400">{t('generate.historyGeneratedLabel')}</span>
-        </div>
-        <div className="w-px h-6 bg-divider" />
-        <div className="flex flex-col items-center gap-0.5">
-          <div className="flex items-center gap-1 text-success">
-            <FontAwesomeIcon className="w-3 h-3" icon={faFloppyDisk} />
-            <span className="text-sm font-semibold tabular-nums">{saved}</span>
-          </div>
-          <span className="text-xs text-default-400">{t('generate.historySavedLabel')}</span>
-        </div>
+      <div className={`hidden flex-col items-center md:flex ${isSaved ? 'border-l border-divider' : ''}`}>
+        <span className={`font-mono text-[15px] font-medium tabular-nums ${valueColor}`}>{value}</span>
+        <span className="mt-0.5 text-xs text-default-400">{label}</span>
       </div>
     );
   }
