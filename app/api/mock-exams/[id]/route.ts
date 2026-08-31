@@ -21,6 +21,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       id: mockExam.id,
       name: mockExam.name,
       examId: mockExam.examId,
+      durationMinutes: mockExam.durationMinutes,
+      questionSource: mockExam.questionSource,
+      passingScorePercent: mockExam.passingScorePercent,
       exam: {
         id: mockExam.exam.id,
         name: mockExam.exam.name,

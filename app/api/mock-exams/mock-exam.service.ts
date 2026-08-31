@@ -1,6 +1,15 @@
+import type { Prisma } from '@prisma/client';
+
 import { prisma } from '@/lib/prisma';
 import { shuffleItems } from '@/lib/shuffle-options';
-import { CreateMockExamPayload, MockExamSectionConfig, ExamType } from '@/shared/types';
+import { MOCK_EXAM_TIME_GRACE_MINUTES } from '@/config/constants';
+import {
+  CreateMockExamPayload,
+  MockExamSectionConfig,
+  MockExamQuestionSource,
+  MockExamAvailability,
+  ExamType,
+} from '@/shared/types';
 import { normalizeName, looseKey } from '@/shared/utils';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { ExamQuestionService } from '@/features/services/exam-question.service';
@@ -68,7 +77,9 @@ export class MockExamService {
         .filter((a) => a.finishedAt !== null)
         .sort((a, b) => (b.finishedAt?.getTime() ?? 0) - (a.finishedAt?.getTime() ?? 0));
       const open = m.attempts.find((a) => a.finishedAt === null) ?? null;
-      const bestScore = finishedAttempts.length > 0 ? Math.max(...finishedAttempts.map((a) => a.score ?? 0)) : null;
+      const comparableAttempts = finishedAttempts.filter((a) => !a.timedOut);
+      const bestScore =
+        comparableAttempts.length > 0 ? Math.max(...comparableAttempts.map((a) => a.score ?? 0)) : null;
       const lastAttemptId = finishedAttempts.length > 0 ? finishedAttempts[0].id : null;
 
       return {
@@ -85,7 +96,11 @@ export class MockExamService {
           score: a.score,
           startedAt: a.startedAt.toISOString(),
           finishedAt: a.finishedAt?.toISOString() ?? null,
+          timedOut: a.timedOut,
         })),
+        durationMinutes: m.durationMinutes,
+        questionSource: m.questionSource as MockExamQuestionSource,
+        passingScorePercent: m.exam.passingScore ?? null,
         createdAt: m.createdAt.toISOString(),
       };
     });
@@ -116,15 +131,28 @@ export class MockExamService {
     }));
   }
 
+  private ownedExamWhere(examId: string, userId: string) {
+    return { id: examId, OR: [{ userId }, { isTemplate: true }] };
+  }
+
   async create(payload: CreateMockExamPayload, userId: string) {
     const { examId, name, totalQuestions, sections } = payload;
+    const questionSource: MockExamQuestionSource =
+      payload.questionSource === 'unseen' || payload.questionSource === 'wrong' ? payload.questionSource : 'library';
+
+    if (
+      payload.durationMinutes != null &&
+      (!Number.isInteger(payload.durationMinutes) || payload.durationMinutes < 1)
+    ) {
+      throw Object.assign(new Error('Duração inválida'), { status: 400 });
+    }
 
     const resolved = await this.resolveSections(examId, sections);
 
-    await this.validateSectionAvailability(examId, resolved, userId);
+    await this.validateSectionAvailability(examId, resolved, userId, questionSource);
 
     const exam = await prisma.exam.findFirst({
-      where: { id: examId },
+      where: this.ownedExamWhere(examId, userId),
       include: { provider: true, examBoard: true },
     });
 
@@ -132,13 +160,15 @@ export class MockExamService {
 
     const autoName = name?.trim() || `${exam.name} – ${totalQuestions} questões`;
 
-    const selectedQuestionIds = await this.drawQuestions(examId, resolved, userId);
+    const selectedQuestionIds = await this.drawQuestions(examId, resolved, userId, questionSource);
 
     const mockExam = await prisma.mockExam.create({
       data: {
         name: autoName,
         examId,
         userId,
+        questionSource,
+        durationMinutes: payload.durationMinutes ?? null,
         sections: { create: sections.map((s) => ({ sectionName: s.sectionName, questionCount: s.questionCount })) },
         questions: {
           create: selectedQuestionIds.map((id, index) => ({
@@ -163,18 +193,106 @@ export class MockExamService {
       lastAttemptId: null,
       openAttemptId: null,
       attempts: [],
+      durationMinutes: mockExam.durationMinutes ?? null,
+      questionSource,
+      passingScorePercent: mockExam.exam.passingScore ?? null,
       createdAt: mockExam.createdAt.toISOString(),
+    };
+  }
+
+  async availability(examId: string, userId: string): Promise<MockExamAvailability> {
+    const exam = await prisma.exam.findFirst({ where: this.ownedExamWhere(examId, userId) });
+
+    if (!exam) throw Object.assign(new Error('Exame não encontrado'), { status: 404 });
+
+    const dbSections = await prisma.examSection.findMany({
+      where: { examId },
+      select: { id: true, name: true },
+    });
+    const history = await this.questionIdHistory(examId, userId);
+
+    const sections: MockExamAvailability['sections'] = [];
+    const totals = { library: 0, unseen: 0, wrong: 0 };
+
+    for (const section of dbSections) {
+      const rows = await prisma.examQuestion.findMany({
+        where: {
+          userId,
+          OR: [
+            { sectionId: section.id },
+            { sectionId: null, examName: exam.name, sectionName: normalizeName(section.name) },
+          ],
+        },
+        select: { id: true },
+      });
+      const library = rows.length;
+      const unseen = rows.filter((row) => !history.seen.has(row.id)).length;
+      const wrong = rows.filter((row) => history.wrong.has(row.id)).length;
+
+      sections.push({ sectionName: section.name, library, unseen, wrong });
+      totals.library += library;
+      totals.unseen += unseen;
+      totals.wrong += wrong;
+    }
+
+    return { sections, totals };
+  }
+
+  private async questionIdHistory(
+    examId: string,
+    userId: string
+  ): Promise<{ seen: Set<number>; wrong: Set<number> }> {
+    const answers = await prisma.mockExamAttemptAnswer.findMany({
+      where: { attempt: { userId, finishedAt: { not: null }, mockExam: { examId } } },
+      select: { isCorrect: true, mockExamQuestion: { select: { examQuestionId: true } } },
+    });
+
+    const seen = new Set<number>();
+    const wrong = new Set<number>();
+
+    for (const answer of answers) {
+      const examQuestionId = answer.mockExamQuestion.examQuestionId;
+
+      seen.add(examQuestionId);
+      if (!answer.isCorrect) wrong.add(examQuestionId);
+    }
+
+    return { seen, wrong };
+  }
+
+  private buildSourceFilter(
+    examId: string,
+    userId: string,
+    source: MockExamQuestionSource
+  ): Prisma.ExamQuestionWhereInput {
+    if (source !== 'unseen' && source !== 'wrong') return {};
+
+    const answeredInFinishedAttempt: Prisma.MockExamAttemptAnswerWhereInput = {
+      attempt: { userId, finishedAt: { not: null }, mockExam: { examId } },
+    };
+
+    if (source === 'unseen') {
+      return { mockExamQuestions: { none: { attemptAnswers: { some: answeredInFinishedAttempt } } } };
+    }
+
+    return {
+      mockExamQuestions: {
+        some: { attemptAnswers: { some: { ...answeredInFinishedAttempt, isCorrect: false } } },
+      },
     };
   }
 
   private async validateSectionAvailability(
     examId: string,
     sections: Array<MockExamSectionConfig & { sectionId: string | null }>,
-    userId: string
+    userId: string,
+    source: MockExamQuestionSource
   ) {
-    const exam = await prisma.exam.findFirst({ where: { id: examId } });
+    const exam = await prisma.exam.findFirst({ where: this.ownedExamWhere(examId, userId) });
 
     if (!exam) throw Object.assign(new Error('Exame não encontrado'), { status: 404 });
+
+    const sourceFilter = this.buildSourceFilter(examId, userId, source);
 
     for (const s of sections) {
       // Prefer FK match when available. Fall back to the denormalized string
@@ -182,6 +300,7 @@ export class MockExamService {
       const count = s.sectionId
         ? await prisma.examQuestion.count({
             where: {
+              ...sourceFilter,
               userId,
               OR: [
                 { sectionId: s.sectionId },
@@ -190,13 +309,13 @@ export class MockExamService {
             },
           })
         : await prisma.examQuestion.count({
-            where: { examName: exam.name, sectionName: normalizeName(s.sectionName), userId },
+            where: { ...sourceFilter, examName: exam.name, sectionName: normalizeName(s.sectionName), userId },
           });
 
       if (count < s.questionCount) {
         throw Object.assign(
           new Error(
-            `Questões insuficientes para a seção "${s.sectionName}": ${count} disponíveis, ${s.questionCount} necessárias`
+            `Questões insuficientes para "${s.sectionName}" (fonte: ${source}): ${count} disponíveis, ${s.questionCount} necessárias`
           ),
           { status: 422 }
         );
@@ -207,15 +326,18 @@ export class MockExamService {
   private async drawQuestions(
     examId: string,
     sections: Array<MockExamSectionConfig & { sectionId: string | null }>,
-    userId: string
+    userId: string,
+    source: MockExamQuestionSource
   ): Promise<number[]> {
-    const exam = await prisma.exam.findFirstOrThrow({ where: { id: examId } });
+    const exam = await prisma.exam.findFirstOrThrow({ where: this.ownedExamWhere(examId, userId) });
+    const sourceFilter = this.buildSourceFilter(examId, userId, source);
     const ids: number[] = [];
 
     for (const s of sections) {
       const questions = s.sectionId
         ? await prisma.examQuestion.findMany({
             where: {
+              ...sourceFilter,
               userId,
               OR: [
                 { sectionId: s.sectionId },
@@ -225,7 +347,7 @@ export class MockExamService {
             select: { id: true },
           })
         : await prisma.examQuestion.findMany({
-            where: { examName: exam.name, sectionName: normalizeName(s.sectionName), userId },
+            where: { ...sourceFilter, examName: exam.name, sectionName: normalizeName(s.sectionName), userId },
             select: { id: true },
           });
 
@@ -271,7 +393,11 @@ export class MockExamService {
 
     if (!mockExam) throw Object.assign(new Error('Simulado não encontrado'), { status: 404 });
 
-    return mockExam;
+    return {
+      ...mockExam,
+      passingScorePercent: mockExam.exam.passingScore ?? null,
+      questionSource: mockExam.questionSource as MockExamQuestionSource,
+    };
   }
 
   async startAttempt(mockExamId: number, userId: string) {
@@ -416,6 +542,12 @@ export class MockExamService {
     });
 
     if (!attempt) throw Object.assign(new Error('Tentativa não encontrada'), { status: 404 });
+    if (attempt.finishedAt != null) return;
+
+    const mockExam = await prisma.mockExam.findFirst({
+      where: { id: mockExamId },
+      select: { durationMinutes: true },
+    });
 
     let mockExamQuestions = await prisma.mockExamQuestion.findMany({
       where: { mockExamId },
@@ -433,6 +565,7 @@ export class MockExamService {
     }
 
     const answersMap = new Map(answers.map((a) => [a.mockExamQuestionId, a.selectedOptions]));
+    const correctByMockExamQuestionId = new Map<number, boolean>();
     let score = 0;
 
     for (const mq of mockExamQuestions) {
@@ -445,8 +578,13 @@ export class MockExamService {
         selected.length === correctOptions.length &&
         selected.every((s) => correctOptions.includes(s));
 
+      correctByMockExamQuestionId.set(mq.id, isCorrect);
       if (isCorrect) score += 1;
     }
+
+    const timedOut =
+      mockExam?.durationMinutes != null &&
+      Date.now() > attempt.startedAt.getTime() + (mockExam.durationMinutes + MOCK_EXAM_TIME_GRACE_MINUTES) * 60_000;
 
     await prisma.$transaction([
       prisma.mockExamAttemptAnswer.createMany({
@@ -454,11 +592,12 @@ export class MockExamService {
           attemptId,
           mockExamQuestionId: a.mockExamQuestionId,
           selectedOptions: JSON.stringify(a.selectedOptions),
+          isCorrect: correctByMockExamQuestionId.get(a.mockExamQuestionId) ?? false,
         })),
       }),
       prisma.mockExamAttempt.update({
         where: { id: attemptId },
-        data: { finishedAt: new Date(), score },
+        data: { finishedAt: new Date(), score, timedOut },
       }),
     ]);
 
@@ -553,7 +692,8 @@ export class MockExamService {
 
     const thisIndex = finishedSiblings.findIndex((a) => a.id === attemptId);
     const earlierAttempts = thisIndex >= 0 ? finishedSiblings.slice(0, thisIndex) : finishedSiblings;
-    const earlierSectionMaps = earlierAttempts.map((a) =>
+    const comparableEarlierAttempts = earlierAttempts.filter((a) => !a.timedOut);
+    const earlierSectionMaps = comparableEarlierAttempts.map((a) =>
       sectionStatsFor(
         new Map(a.answers.map((ans) => [ans.mockExamQuestionId, JSON.parse(ans.selectedOptions) as string[]]))
       )
@@ -571,10 +711,10 @@ export class MockExamService {
     };
 
     const overallPreviousAvgPercent =
-      earlierAttempts.length > 0 && totalQuestions > 0
+      comparableEarlierAttempts.length > 0 && totalQuestions > 0
         ? Math.round(
-            earlierAttempts.reduce((sum, a) => sum + ((a.score ?? 0) / totalQuestions) * 100, 0) /
-              earlierAttempts.length
+            comparableEarlierAttempts.reduce((sum, a) => sum + ((a.score ?? 0) / totalQuestions) * 100, 0) /
+              comparableEarlierAttempts.length
           )
         : null;
 
@@ -585,6 +725,7 @@ export class MockExamService {
         startedAt: attempt.startedAt.toISOString(),
         finishedAt: attempt.finishedAt?.toISOString() ?? null,
         score: attempt.score,
+        timedOut: attempt.timedOut,
         answers: attempt.answers.map((a) => ({
           mockExamQuestionId: a.mockExamQuestionId,
           selectedOptions: JSON.parse(a.selectedOptions) as string[],
@@ -625,7 +766,8 @@ export class MockExamService {
       })),
       examMeta: {
         passingScorePercent: attempt.mockExam.exam.passingScore ?? null,
-        durationMinutes: attempt.mockExam.exam.examDurationMinutes ?? null,
+        durationMinutes: attempt.mockExam.durationMinutes ?? attempt.mockExam.exam.examDurationMinutes ?? null,
+        attemptDurationMinutes: attempt.mockExam.durationMinutes ?? null,
       },
       attemptNumber: thisIndex >= 0 ? thisIndex + 1 : finishedSiblings.length + 1,
       totalAttempts: thisIndex >= 0 ? finishedSiblings.length : finishedSiblings.length + 1,

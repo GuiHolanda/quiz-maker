@@ -111,12 +111,9 @@ npx playwright show-report
 
 ### Notas técnicas — HeroUI
 
-**Radio + submit:** input tem `opacity: 0.0001`, submit é pressable react-aria. Use `dispatchEvent('click')` em ambos:
-```typescript
-await group.locator('input').first().dispatchEvent('click');
-await group.locator('xpath=ancestor::form').first().locator(tid(TID.answerSubmitBtn)).dispatchEvent('click');
-```
-Não use `.click({ force: true })`, `.check({ force: true })` ou `page.mouse.click()` com boundingBox.
+**Radio + submit:** input tem `opacity: 0.0001`, submit é pressable react-aria. Onde houver `<Radio>`/`<Button type="submit">`, use `dispatchEvent('click')` em ambos. Não use `.click({ force: true })`, `.check({ force: true })` ou `page.mouse.click()` com boundingBox.
+
+**Tela de tentativa (`/tentativa`):** uma questão por vez, alternativas são `<button data-testid="attempt-option">` — clique simples persiste na hora (sem passo de "salvar"). `answerAllQuestions` clica a opção + `attempt-next-btn`; `attempt-nav-cell` conta o total; `attempt-finalize-btn` abre o modal de finalizar (`confirm-finish-attempt-btn`).
 
 **SSE:** `route.fulfill` não suporta streaming. `support/fake-eventsource.ts` sobrescreve `window.EventSource` via `addInitScript`. O app escuta via `addEventListener('awaiting_review', …)` — não `onmessage`.
 

@@ -51,10 +51,12 @@ export interface ResultView {
   passingScorePercent: number | null;
   passed: boolean | null;
   marginPP: number | null;
+  timedOut: boolean;
+  comparable: boolean;
   elapsedMs: number | null;
   elapsedLabel: string | null;
   perQuestionLabel: string | null;
-  durationMinutes: number | null;
+  attemptDurationMinutes: number | null;
   durationLabel: string | null;
   attemptNumber: number;
   totalAttempts: number;
@@ -142,9 +144,12 @@ export function deriveResult(result: MockExamResult): ResultView {
   const wrong = total - correct - blank;
   const percent = total > 0 ? Math.round((correct / total) * 100) : 0;
 
+  const timedOut = result.attempt.timedOut;
+  const comparable = !timedOut && result.examMeta.attemptDurationMinutes != null;
+
   const passingScorePercent = result.examMeta.passingScorePercent;
-  const passed = passingScorePercent != null ? percent >= passingScorePercent : null;
-  const marginPP = passingScorePercent != null ? percent - passingScorePercent : null;
+  const passed = comparable && passingScorePercent != null ? percent >= passingScorePercent : null;
+  const marginPP = comparable && passingScorePercent != null ? percent - passingScorePercent : null;
   const tone: ScoreTone = passed == null ? overallTone(percent) : passed ? 'success' : 'danger';
 
   const startedAt = new Date(result.attempt.startedAt).getTime();
@@ -185,10 +190,12 @@ export function deriveResult(result: MockExamResult): ResultView {
     passingScorePercent,
     passed,
     marginPP,
+    timedOut,
+    comparable,
     elapsedMs,
     elapsedLabel: elapsedMs != null ? formatClock(elapsedMs) : null,
     perQuestionLabel: elapsedMs != null && total > 0 ? formatPerQuestion(elapsedMs / total) : null,
-    durationMinutes: result.examMeta.durationMinutes,
+    attemptDurationMinutes: result.examMeta.attemptDurationMinutes,
     durationLabel: result.examMeta.durationMinutes != null ? formatBudget(result.examMeta.durationMinutes) : null,
     attemptNumber: result.attemptNumber,
     totalAttempts: result.totalAttempts,

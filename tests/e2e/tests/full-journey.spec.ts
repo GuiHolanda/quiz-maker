@@ -4,29 +4,28 @@ import { tid, TID } from '../support/selectors';
 import {
   generateAndSaveQuestions,
   createSimulado,
-  startAttempt,
+  startSimuladoAttempt,
   answerAllQuestions,
   finalizeAttempt,
   assertResult,
+  exitAndDiscardAttempt,
 } from '../support/flows';
 
 for (const domain of ALL_DOMAINS) {
   test.describe(`full journey — ${domain.type}`, () => {
-    test('generate → save → simulado → answer → result → retry → cancel', async ({ authedPage: page }) => {
+    test('generate → save → simulado → answer → result → retry → discard', async ({ authedPage: page }) => {
       await generateAndSaveQuestions(page, domain);
       await createSimulado(page, domain, 3);
-      const { attemptId } = await startAttempt(page, domain);
+      const { attemptId } = await startSimuladoAttempt(page, domain);
       expect(attemptId).not.toBe('');
       await answerAllQuestions(page);
       await finalizeAttempt(page);
       await assertResult(page, domain);
 
-      // retry then cancel back to the list
+      // retry then discard back to the list
       await page.locator(tid(TID.resultRetryBtn)).click();
       await page.waitForURL(/\/tentativa\//);
-      await page.locator(tid(TID.attemptCancelBtn)).click();
-      await page.locator(tid(TID.confirmDiscardAttemptBtn)).click();
-      await page.waitForURL(/\/simulados/);
+      await exitAndDiscardAttempt(page);
     });
   });
 }

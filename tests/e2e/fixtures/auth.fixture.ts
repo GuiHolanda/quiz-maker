@@ -74,7 +74,7 @@ export const test = base.extend<AuthFixtures>({
       });
     });
 
-    // ── Browse summary mock — lets NewMockExamForm render the creation form
+    // ── Browse summary mock — lets CreateSimuladoSection render the creation form
     //    instead of the EmptyState. Without this, totalSavedQuestions stays null
     //    until the real DB responds, and the form may show a skeleton or empty state.
     //    Unified endpoint returns { exams: [{ id, name, type, referenceName, totalCount, sections }] }.

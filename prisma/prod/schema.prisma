@@ -248,16 +248,18 @@ model UsageLogStep {
 }
 
 model MockExam {
-  id        Int                     @id @default(autoincrement())
-  name      String?
-  examId    String
-  userId    String?
-  createdAt DateTime                @default(now())
-  exam      Exam                    @relation(fields: [examId], references: [id])
-  user      User?                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sections  MockExamSectionConfig[]
-  questions MockExamQuestion[]
-  attempts  MockExamAttempt[]
+  id              Int                     @id @default(autoincrement())
+  name            String?
+  examId          String
+  userId          String?
+  createdAt       DateTime                @default(now())
+  durationMinutes Int?
+  questionSource  String                  @default("library")
+  exam            Exam                    @relation(fields: [examId], references: [id])
+  user            User?                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sections        MockExamSectionConfig[]
+  questions       MockExamQuestion[]
+  attempts        MockExamAttempt[]
 }
 
 model MockExamSectionConfig {
@@ -285,6 +287,7 @@ model MockExamAttempt {
   startedAt  DateTime                @default(now())
   finishedAt DateTime?
   score      Int?
+  timedOut   Boolean                 @default(false)
   mockExam   MockExam                @relation(fields: [mockExamId], references: [id], onDelete: Cascade)
   user       User?                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   answers    MockExamAttemptAnswer[]
@@ -295,6 +298,7 @@ model MockExamAttemptAnswer {
   attemptId          Int
   mockExamQuestionId Int
   selectedOptions    String
+  isCorrect          Boolean          @default(false)
   attempt            MockExamAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
   mockExamQuestion   MockExamQuestion @relation(fields: [mockExamQuestionId], references: [id])
 }

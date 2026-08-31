@@ -282,6 +282,8 @@ export interface MockExamSectionConfig {
   questionCount: number;
 }
 
+export type MockExamQuestionSource = 'library' | 'unseen' | 'wrong';
+
 export interface MockExamQuestion {
   id: number;
   order: number;
@@ -299,6 +301,7 @@ export interface MockExamAttempt {
   startedAt: string;
   finishedAt: string | null;
   score: number | null;
+  timedOut: boolean;
   answers: MockExamAttemptAnswer[];
 }
 
@@ -309,7 +312,10 @@ export interface MockExam {
   exam: ExamRef;
   sections: MockExamSectionConfig[];
   questions: MockExamQuestion[];
-  attempts: MockExamAttempt[];
+  attempts: Omit<MockExamAttempt, 'answers'>[];
+  durationMinutes: number | null;
+  questionSource: MockExamQuestionSource;
+  passingScorePercent: number | null;
   createdAt: string;
 }
 
@@ -322,7 +328,10 @@ export interface MockExamListItem {
   bestScore: number | null;
   lastAttemptId: number | null;
   openAttemptId: number | null;
-  attempts: Pick<MockExamAttempt, 'id' | 'score' | 'startedAt' | 'finishedAt'>[];
+  attempts: Pick<MockExamAttempt, 'id' | 'score' | 'startedAt' | 'finishedAt' | 'timedOut'>[];
+  durationMinutes: number | null;
+  questionSource: MockExamQuestionSource;
+  passingScorePercent: number | null;
   createdAt: string;
 }
 
@@ -331,6 +340,8 @@ export interface CreateMockExamPayload {
   name?: string;
   totalQuestions: number;
   sections: MockExamSectionConfig[];
+  questionSource?: MockExamQuestionSource;
+  durationMinutes?: number | null;
 }
 
 export interface FinishAttemptPayload {
@@ -353,10 +364,16 @@ export interface MockExamResult {
   examMeta: {
     passingScorePercent: number | null;
     durationMinutes: number | null;
+    attemptDurationMinutes: number | null;
   };
   attemptNumber: number;
   totalAttempts: number;
   overallPreviousAvgPercent: number | null;
+}
+
+export interface MockExamAvailability {
+  sections: { sectionName: string; library: number; unseen: number; wrong: number }[];
+  totals: { library: number; unseen: number; wrong: number };
 }
 
 export interface UserAdminRow {
@@ -432,15 +449,6 @@ export interface AdminAuditLogResponse {
   total: number;
   page: number;
   totalPages: number;
-}
-
-// Generic interface for SimuladoQuestionList (both domains)
-export interface SimuladoQuestion {
-  readonly id: number;
-  readonly simuladoQuestionId: number;
-  readonly text: string;
-  readonly correctCount: number;
-  readonly options: Record<string, string>;
 }
 
 export interface UnifiedQuestion {

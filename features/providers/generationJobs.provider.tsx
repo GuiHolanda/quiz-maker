@@ -97,7 +97,7 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
           topics: topicsDone,
         }),
         ctaLabel: t('generate.createSimulado'),
-        ctaHref: '/simulados?tab=new',
+        ctaHref: '/simulados',
       });
     },
     [addNotification, refreshUsage, t]

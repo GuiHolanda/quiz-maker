@@ -43,13 +43,13 @@ Everything reusable lives here. Specs compose these helpers; they don't hand-rol
 | `journey-config.ts` | The `DOMAINS` map — everything that differs between `certification` and `public_exam` (type-picker id, generation URL, seed label/topic, configure URL, stream glob). Keeps flows and specs type-agnostic. | `DomainType`, `DomainConfig`, `DOMAINS`, `ALL_DOMAINS` |
 | `fake-eventsource.ts` | Overrides `window.EventSource` via `addInitScript` before app scripts run, so no real SSE connection is made. | `injectFakeEventSource`, `injectNeverDoneEventSource` |
 | `mocks.ts` | Route mocks for the generation-job lifecycle and a result override. | `setupGenerationJobMocks`, `mockGenerationJobFailure`, `mockGenerationTimeout`, `mockActiveJobOnLoad`, `mockCertResultAllWrong` |
-| `flows.ts` | Functional flow helpers that compose selectors + mocks into user journeys. | `generateAndSaveQuestions`, `createSimulado`, `startAttempt`, `answerAllQuestions`, `finalizeAttempt`, `assertResult` |
+| `flows.ts` | Functional flow helpers that compose selectors + mocks into user journeys. | `generateAndSaveQuestions`, `createSimulado`, `startSimuladoAttempt`, `answerAllQuestions`, `finalizeAttempt`, `assertResult` |
 
 ---
 
 ## 4. Test-id convention
 
-- **Format:** `domain-element[-variant]`, kebab-case — e.g. `simulado-card`, `question-gen-generate-btn`, `type-option-certification`.
+- **Format:** `domain-element[-variant]`, kebab-case — e.g. `simulado-row`, `question-gen-generate-btn`, `type-option-certification`.
 - **Catalog is authoritative.** `TID` in `support/selectors.ts` is the single source of truth. Component `data-testid` attributes must match a `TID` value exactly; the two are kept in sync by hand.
 - **HeroUI forwards `data-testid`.** react-aria's `filterDOMProps` (`/^(data-.*)$/`) passes `data-*` through to a real DOM element, so `<Tab>`, `<Input>`, `<Select>`, `<Radio>`, and `<Button>` all accept `data-testid` and land it on the rendered node. Place the attribute *before* any `{...inputProperties.*}` spread so the spread cannot override it.
 - **Why test-ids over labels.** Labels are i18n'd (PT/EN) and often non-unique (many cards share a label). Test-ids are stable, language-agnostic, and scope precisely.
@@ -66,8 +66,9 @@ Everything reusable lives here. Specs compose these helpers; they don't hand-rol
 | `wizard-validation.spec.ts` | 2 (×2 domains) | ✓ | Discard-draft returns to the list tab; cannot advance past step 1 with an empty title. |
 | `question-bank.spec.ts` | 2 | cert only | Seed 3 questions via the real `save-questions` API → verify → search narrows to one → delete; search with no match shows the empty state. |
 | `empty-states.spec.ts` | 2 | mixed | Simulados list shows the empty state when both list endpoints return empty; certifications list shows the empty state when its endpoint returns empty. |
+| `simulado-timer.spec.ts` | 1 | cert only | Create a simulado with a custom time limit → start the attempt → the countdown (`simulado-timer`) is visible on the tentativa page. |
 
-**Total: 20 tests.**
+**Total: 46 tests.**
 
 ---
 
@@ -78,11 +79,11 @@ Everything reusable lives here. Specs compose these helpers; they don't hand-rol
 1. Navigate to `/questions?type=…`, pick the vertical, select the seeded entity.
 2. Generate — the fake `EventSource` fires an `awaiting_review` event; the status region appears.
 3. Save all — success banner confirms.
-4. Create a simulado in `/simulados` (public_exam first picks the concurso type).
-5. Start the attempt from the "Meus Simulados" tab.
+4. Create a simulado in `/simulados` — the create form is always visible at the top (no tabs); pick the scope card, choose the seeded exam, set the question count, create.
+5. Start the attempt from the simulados table row (filtered by the seeded exam label).
 6. Answer every question (HeroUI Radio + Form workaround), finalize.
 7. Assert the result page (score, percent, topic/subject breakdown, retry button).
-8. Retry → cancel the new attempt → confirm discard → back to `/simulados`.
+8. Retry → "Salvar e sair" → discard the new attempt → back to `/simulados`.
 
 **Edge cases** (dedicated specs): quota/network generation failures, SSE cancel + reconnect-after-reload in both `running` and `awaiting_review` states, wizard discard + empty-title guard, question-bank search/delete, and empty-state rendering for simulados and certifications.
 
@@ -90,16 +91,10 @@ Everything reusable lives here. Specs compose these helpers; they don't hand-rol
 
 ## 7. Technical notes
 
-### HeroUI Radio + Form submit — `dispatchEvent('click')`
-HeroUI's `<Radio>` renders an `<input type="radio">` with `opacity: 0.0001`, and its submit `<Button type="submit">` is a react-aria pressable. Playwright's `.click()` refuses the quasi-invisible input and does **not** trigger the react-aria form submit. Both need a dispatched click:
+### Attempt screen — one question at a time, no submit step
+The `tentativa` screen shows a single question with plain `<button data-testid="attempt-option">` alternatives. A click persists the selection immediately (localStorage), so `answerAllQuestions` just clicks an option and presses `attempt-next-btn` per question — no radio-input `dispatchEvent` and no per-question submit. `attempt-nav-cell` count = total questions; `attempt-finalize-btn` (sidebar) opens the finish modal (`confirm-finish-attempt-btn`).
 
-```ts
-await group.locator('input').first().dispatchEvent('click');
-const submit = group.locator('xpath=ancestor::form').first().locator(tid(TID.answerSubmitBtn));
-await submit.dispatchEvent('click');
-```
-
-A plain `.click()` on the submit button selects the radio but never commits the answer — progress stays "0 answered" and the finalize button stays disabled. Do **not** use `.click({ force: true })`, `.check()`, `page.mouse.click()`, or synthetic `page.evaluate` events — none work with react-aria.
+HeroUI `<Radio>` / `<Button type="submit">` elsewhere still need `dispatchEvent('click')` (input has `opacity: 0.0001`, submit is a react-aria pressable) — do **not** use `.click({ force: true })`, `.check()`, or `page.mouse.click()` with those.
 
 ### FakeEventSource / NeverDoneEventSource
 `route.fulfill` can't stream, and the browser `EventSource` needs a persistent HTTP connection. So `fake-eventsource.ts` overrides `window.EventSource` via `addInitScript` before app scripts load. The app listens with `es.addEventListener('awaiting_review', …)` (**not** `onmessage`), so the fake fires a `MessageEvent('awaiting_review', …)` ~100ms after construction with payload `{ doneTopics, totalTopics, queuedTopics, topics[] }`. `NeverDoneEventSource` connects but never emits — used to hold a job in the `running` state for cancel/reconnect tests.
@@ -111,7 +106,7 @@ A plain `.click()` on the submit button selects the radio but never commits the 
 `GET /api/generation-job` (no query params) returns an **array** of the authenticated user's active jobs; the client reconnects to any that are still `running` / `awaiting_review`. `mockActiveJobOnLoad` fulfills that GET with a one-element array in the requested state.
 
 ### Accumulated notifications
-A prior run can leave a notification open (the bell dialog can intercept clicks). `createSimulado` dismisses any open notification dialog with `Escape` before interacting with the form, and scopes form selectors to the tabpanel.
+A prior run can leave a notification open (the bell dialog can intercept clicks). `createSimulado` calls `dismissNotificationDialog` — closes any open notification dialog with `Escape` — before interacting with the always-visible create form.
 
 ---
 

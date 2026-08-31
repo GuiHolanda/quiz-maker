@@ -26,91 +26,100 @@ export async function generateAndSaveQuestions(page: Page, domain: DomainConfig)
   await expect(page.getByText(/Quest(õ|o)es salvas|Questions saved/i)).toBeVisible();
 }
 
-// Create a simulado for the vertical with the given total. Navigates to /simulados.
-export async function createSimulado(page: Page, domain: DomainConfig, total = 3): Promise<void> {
-  await page.goto('/simulados');
-  await page.locator(tid(TID.simuladoTabNew)).click();
-
-  // Dismiss any notification dropdown that may be open from a prior step (e.g. generation job done).
-  // The notification bell dialog can intercept clicks intended for the select trigger.
+// A prior step (e.g. generation job done) can leave the notification bell dialog open;
+// it intercepts clicks meant for the form. Dismiss it before touching the create form.
+export async function dismissNotificationDialog(page: Page): Promise<void> {
   const notificationDialog = page.getByRole('dialog').filter({ hasText: /Notifica/i });
   if (await notificationDialog.isVisible()) {
     await page.keyboard.press('Escape');
     await notificationDialog.waitFor({ state: 'hidden', timeout: 3_000 });
   }
-
-  // The unified NewMockExamForm has a single EntitySelect over all exams (cert + concurso) —
-  // there is no longer a type picker to select the vertical.
-  // Scope all selectors to the tabpanel to avoid hitting other HeroUI triggers (e.g. notification bell).
-  const panel = page.getByRole('tabpanel', { name: /Novo Simulado/i });
-
-  // Wait for the entity Select trigger to be visible inside the tabpanel.
-  // The notification bell is dismissed above so only the form's Select trigger remains.
-  // The HeroUI trigger shows the selected value as text content when filled,
-  // or just the placeholder/label text when empty.
-  const trigger = panel.locator('button[data-slot="trigger"]').first();
-  await expect(trigger).toBeVisible({ timeout: 10_000 });
-  const triggerText = await trigger.textContent() ?? '';
-  if (!triggerText.includes(domain.seedLabel)) {
-    await trigger.click();
-    await page.getByRole('option', { name: domain.seedLabel }).click();
-    // Wait for the trigger to reflect the selection before proceeding.
-    await expect(trigger).toContainText(domain.seedLabel, { timeout: 5_000 });
-  }
-
-  // Clear and fill total — the field may have a prefill value from localStorage.
-  const totalInput = page.locator(tid(TID.simuladoTotalInput));
-  await totalInput.clear();
-  await totalInput.fill(String(total));
-  // Wait for the distribution useEffect to fire (depends on both selectedCert/exam and totalQuestions)
-  // and make isDistributionValid true before attempting to click.
-  await expect(page.locator(tid(TID.simuladoCreateBtn))).toBeEnabled({ timeout: 10_000 });
-  await page.locator(tid(TID.simuladoCreateBtn)).click();
-  await expect(page.getByText(/Simulado criado|Mock exam created/i)).toBeVisible();
 }
 
-// From the simulado list, start (or retry) the attempt for the seeded entity's card.
+// Pick the scope card, then open the exam Select and choose the seeded exam.
+export async function pickSimuladoScopeAndExam(page: Page, domain: DomainConfig): Promise<void> {
+  const scopeTid =
+    domain.type === 'certification' ? TID.simuladoScopeCertification : TID.simuladoScopePublicExam;
+  await page.locator(tid(scopeTid)).click();
+
+  const examSelect = page.locator(tid(TID.simuladoExamSelect));
+  await expect(examSelect).toBeVisible({ timeout: 10_000 });
+
+  // HeroUI Select trigger is a react-aria pressable — a plain .click() focuses it
+  // but does not open the listbox under Playwright, so dispatch the click event.
+  const option = page.getByRole('option', { name: new RegExp(domain.seedLabel, 'i') });
+  await expect(async () => {
+    await examSelect.dispatchEvent('click');
+    await expect(option).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 10_000 });
+  await option.click();
+
+  await expect(examSelect).toContainText(domain.seedLabel, { timeout: 10_000 });
+}
+
+// Create a simulado for the vertical with the given total. The /simulados page has no
+// tabs — the create form is always visible at the top. Leaves the page on /simulados.
+export async function createSimulado(page: Page, domain: DomainConfig, total = 3): Promise<void> {
+  await page.goto('/simulados');
+  await dismissNotificationDialog(page);
+
+  await pickSimuladoScopeAndExam(page, domain);
+
+  const totalInput = page.locator(tid(TID.simuladoTotalInput));
+  await totalInput.fill('');
+  await totalInput.fill(String(total));
+
+  const createBtn = page.locator(tid(TID.simuladoCreateBtn));
+  await expect(createBtn).toBeEnabled({ timeout: 10_000 });
+  await createBtn.click();
+  await expect(page.getByText(/Simulado criado|Mock exam created/i)).toBeVisible({ timeout: 15_000 });
+}
+
+// From the simulados table, start (or continue/retry) the attempt for the seeded entity's row.
 // Returns the { simuladoId, attemptId } parsed from the resulting tentativa URL.
-export async function startAttempt(
+export async function startSimuladoAttempt(
   page: Page,
   domain: DomainConfig,
 ): Promise<{ simuladoId: string; attemptId: string }> {
   await page.goto('/simulados');
-  await page.locator(tid(TID.simuladoTabMine)).click();
-  const card = page.locator(tid(TID.simuladoCard)).filter({ hasText: domain.seedLabel }).first();
-  await card.locator(tid(TID.simuladoAnswerBtn)).click();
+  const row = page
+    .locator(`${tid(TID.simuladoRow)}[data-simulado-name*="${domain.seedLabel}"]`)
+    .first();
+  await row.locator(tid(TID.simuladoStartBtn)).click();
   await page.waitForURL(/\/tentativa\/\d+/);
-  const url = page.url();
-  const match = url.match(/simulados\/(\d+)\/tentativa\/(\d+)/);
+  const match = page.url().match(/simulados\/(\d+)\/tentativa\/(\d+)/);
   return { simuladoId: match?.[1] ?? '', attemptId: match?.[2] ?? '' };
 }
 
-// Answer every question using the HeroUI Radio + Form submit workaround (dispatchEvent).
-// Both the radio input (opacity ~0) and the react-aria submit button need dispatchEvent('click'):
-// a plain .click() selects the radio but does NOT trigger the HeroUI <Form> submit, so the
-// answer never persists (progress stays "0 answered" and the finalize button stays disabled).
+// The attempt screen shows one question at a time. Click an option (selection persists
+// immediately — no submit step) then advance with "Próxima" until the last question.
 export async function answerAllQuestions(page: Page): Promise<void> {
-  await expect(page.locator('[role="radiogroup"]').first()).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator(tid(TID.attemptOption)).first()).toBeVisible({ timeout: 10_000 });
 
-  const groups = page.locator('[role="radiogroup"]');
-  const count = await groups.count();
-  for (let i = 0; i < count; i++) {
-    const group = groups.nth(i);
-    await group.locator('input').first().dispatchEvent('click');
-    // The submit button only renders after React processes the radio selection.
-    // Scope to the enclosing <form> so the submit is the one for this question.
-    const submit = group.locator('xpath=ancestor::form').first().locator(tid(TID.answerSubmitBtn));
-    await expect(submit).toBeVisible({ timeout: 5_000 });
-    await submit.dispatchEvent('click');
-    // Wait for the answer to be committed (answers state updates) before moving on.
-    await page.waitForTimeout(300);
+  const total = await page.locator(tid(TID.attemptNavCell)).count();
+  for (let i = 0; i < total; i++) {
+    await page.locator(tid(TID.attemptOption)).first().click();
+    await page.waitForTimeout(150);
+    if (i < total - 1) {
+      await page.locator(tid(TID.attemptNextBtn)).click();
+      await page.waitForTimeout(150);
+    }
   }
 }
 
-// Finalize the attempt and wait for the result page.
+// Finalize the attempt (sidebar button → confirm modal) and wait for the result page.
 export async function finalizeAttempt(page: Page): Promise<void> {
   await page.locator(tid(TID.attemptFinalizeBtn)).click();
+  await page.locator(tid(TID.confirmFinishAttemptBtn)).click();
   await page.waitForURL(/\/resultado\//);
+}
+
+// From an in-progress attempt: open "Salvar e sair", discard the attempt, land on the list.
+export async function exitAndDiscardAttempt(page: Page): Promise<void> {
+  await page.locator(tid(TID.attemptExitBtn)).click();
+  await page.locator(tid(TID.attemptDiscardLink)).click();
+  await page.locator(tid(TID.confirmDiscardAttemptBtn)).click();
+  await page.waitForURL(/\/simulados/);
 }
 
 // Assert the result page shows a score/percent and the topic breakdown.

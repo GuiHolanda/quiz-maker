@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@heroui/button';
+import { Chip } from '@heroui/chip';
 import { BreadcrumbItem, Breadcrumbs } from '@heroui/breadcrumbs';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faListUl } from '@fortawesome/free-solid-svg-icons';
@@ -93,6 +94,18 @@ export default function SimuladoResultadoPage() {
   }
 
   const view = deriveResult(result);
+
+  const headerAction = (
+    <div className="flex items-center gap-3">
+      {view.timedOut && (
+        <Chip color="warning" size="sm" variant="flat">
+          {t('simulado.result.timedOut')}
+        </Chip>
+      )}
+      {allSimuladosAction}
+    </div>
+  );
+
   const finishedAt = formatFinishedAt(result.attempt.finishedAt, language);
   const subtitle =
     view.totalAttempts > 1
@@ -117,7 +130,7 @@ export default function SimuladoResultadoPage() {
 
   return (
     <PageHeader
-      action={allSimuladosAction}
+      action={headerAction}
       breadcrumbs={breadcrumbs}
       subtitle={subtitle}
       title={t('simulado.result.title', { exam: view.examName })}

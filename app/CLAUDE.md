@@ -137,7 +137,7 @@ Compacto, sem ícone. Para feedback contextual dentro de widgets, seções de fo
 
 API: `title` (obrigatório), `description?`, `action?: { label, href?, onPress?, icon? }`.
 
-Exemplos de uso: seções do dashboard (`ScoreTrendSection`, `DomainBreakdownSection`), `NewMockExamForm`, `question-bank` para erro de carga e "nenhum resultado para estes filtros".
+Exemplos de uso: seções do dashboard (`ScoreTrendSection`, `DomainBreakdownSection`), `CreateSimuladoSection`, `question-bank` para erro de carga e "nenhum resultado para estes filtros".
 
 ### `IllustratedEmptyState` (`shared/components/ui/IllustratedEmptyState.tsx`)
 
@@ -208,11 +208,10 @@ Importar config via `@/app/(workspace)/exams/exam-config` (nunca relativo).
 
 | Arquivo | Papel |
 |---|---|
-| `page.tsx` | Monta 4 providers: `CertificationsProvider`, `PublicExamsProvider`, `CertSimuladosProvider`, `MockExamsProvider` |
-| `SimuladosListTab.tsx` | Lista unificada, status chips, delete, histórico de tentativas |
-| `NewSimuladoTab.tsx` | Type picker (cert/concurso) |
-| `NewCertSimuladoForm.tsx` | Form cert simulado com distribuição por tópico |
-| `NewMockExamForm.tsx` | Form mock exam com distribuição por matéria |
+| `page.tsx` | Monta `ExamsProvider` + `MockExamsProvider`; página de scroll único (sem tabs): `<CreateSimuladoSection>` (form) seguido de `<SimuladosCreatedSection>` (tabela) |
+| `components/CreateSimuladoSection.tsx` | Orquestra o form (nome, escopo, exame, questões, tempo, fonte, tópicos), as fases `config`/`gerando`/`pronto`, presets e prefill de duplicar |
+| `components/create/*` | `PresetShortcuts`, `ScopePicker`, `ExamAndCountRow`, `TimePicker`, `SourcePicker`, `TopicChecklist`, `SummarySidebar` (sidebar sticky), `GenerationPanel`; `simuladoFormState.ts` (funções puras de estado/distribuição/preset) e `simuladoPrefill.ts` (`read`/`writeSimuladoPrefill`) |
+| `components/list/*` | `SimuladosCreatedSection` (toolbar + tabela + paginação + modais), `SimuladosTable` (grid de 9 colunas), `SimuladosToolbar`, `SimuladoHistoryModal`, `normalizeSimulado.ts` |
 
 Status chip map: `pending → default`, `in_progress → warning`, `answered → success`.
 
@@ -268,7 +267,7 @@ Domínio compartilhado: `CertificationManager`, `PublicExamManager`, `SectionsTa
 
 Questões salvas podem não ter `Answer` no banco. Antes de iniciar tentativa ou carregar resultado, chamar `ensureCertSimuladoAnswers(id)` ou `ensureMockExamAnswers(id)`.
 
-Ponto de uso 1: `SimuladosListTab.handleStart()` antes de `start*Attempt`.
+Ponto de uso 1: `SimuladosCreatedSection.handleStart()` antes de `start*Attempt`.
 
 Ponto de uso 2: página de resultado — ao detectar `answer === null` em qualquer questão, chamar ensure + refetch.
 
