@@ -12,7 +12,6 @@ import { buttonStyles } from '@/config/constants/buttonStyles';
 interface GenerationDistributionTableProps {
   readonly rows: ReadonlyArray<DistributionRow>;
   readonly isModified: boolean;
-  readonly isGenerating?: boolean;
   readonly onCountChange: (name: string, value: number) => void;
   readonly onRemove: (name: string) => void;
   readonly onRedistribute: () => void;
@@ -21,7 +20,6 @@ interface GenerationDistributionTableProps {
 export function GenerationDistributionTable({
   rows,
   isModified,
-  isGenerating = false,
   onCountChange,
   onRemove,
   onRedistribute,
@@ -38,7 +36,6 @@ export function GenerationDistributionTable({
         {isModified && (
           <Button
             className={`${buttonStyles.secondarySm} shrink-0`}
-            isDisabled={isGenerating}
             size="sm"
             startContent={<FontAwesomeIcon className="h-3 w-3" icon={faRotateLeft} />}
             variant="bordered"
@@ -82,7 +79,6 @@ export function GenerationDistributionTable({
                   input: 'text-center font-mono text-sm',
                 }}
                 hideStepper
-                isDisabled={isGenerating}
                 minValue={0}
                 size="sm"
                 value={row.count}
@@ -96,7 +92,6 @@ export function GenerationDistributionTable({
                 isIconOnly
                 aria-label={t('generate.removeTopic', { topic: row.name })}
                 className={`${buttonStyles.iconOnly.danger} shrink-0`}
-                isDisabled={isGenerating}
                 size="sm"
                 variant="light"
                 onPress={() => onRemove(row.name)}

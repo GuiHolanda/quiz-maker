@@ -21,7 +21,6 @@ interface ActiveJobStatusProps {
   readonly onSaveAll: () => void;
   readonly onReviewAndSelect: () => void;
   readonly isSaving?: boolean;
-  readonly hideActions?: boolean;
 }
 
 const SPINNER =
@@ -39,7 +38,6 @@ export function ActiveJobStatus({
   onSaveAll,
   onReviewAndSelect,
   isSaving = false,
-  hideActions = false,
 }: ActiveJobStatusProps) {
   const { t } = useTranslation();
 
@@ -138,7 +136,7 @@ export function ActiveJobStatus({
         </>
       )}
 
-      {!hideActions && isReview && (
+      {isReview && (
         <div className="mt-5 flex flex-wrap gap-3">
           <Button
             className={buttonStyles.primary}
@@ -158,7 +156,7 @@ export function ActiveJobStatus({
         </div>
       )}
 
-      {!hideActions && isRunning && (
+      {isRunning && (
         <div className="mt-5">
           <Button
             className={`${buttonStyles.dangerFlat} self-start`}

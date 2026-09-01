@@ -7,8 +7,7 @@ import { Button } from '@heroui/button';
 import { NumberInput } from '@heroui/number-input';
 import { BreadcrumbItem, Breadcrumbs } from '@heroui/breadcrumbs';
 import Link from 'next/link';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faGraduationCap, faClipboardList, faCircleCheck, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faGraduationCap, faClipboardList, faCircleCheck } from '@fortawesome/free-solid-svg-icons';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 
 import { GenerationHistory } from './GenerationHistory';
@@ -16,7 +15,7 @@ import { ActiveJobStatus } from './ActiveJobStatus';
 import { GeneratedQuestionsList } from './GeneratedQuestionsList';
 import { GenerationScopePicker } from './GenerationScopePicker';
 import { GenerationDistributionTable } from './GenerationDistributionTable';
-import { GenerationSummarySidebar, type SidebarAction, type SummaryRow } from './GenerationSummarySidebar';
+import { GenerationSummarySidebar, type SummaryRow } from './GenerationSummarySidebar';
 import { useGenerationDistribution } from './useGenerationDistribution.hook';
 
 import type { AIQuestion, Exam, ExamType } from '@/shared/types';
@@ -33,6 +32,7 @@ import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { inputProperties } from '@/config/constants/inputStyles';
+import { GENERATION_MAX_ACTIVE_JOBS_PER_USER } from '@/config/constants';
 import { notify } from '@/shared/lib/notify';
 
 const EMPTY_COPY: Record<
@@ -69,7 +69,6 @@ export function QuestionsPageContent() {
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [isStarting, setIsStarting] = useState(false);
-  const [configOpen, setConfigOpen] = useState(false);
 
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const [showSimuladosBanner, setShowSimuladosBanner] = useState(false);
@@ -78,7 +77,7 @@ export function QuestionsPageContent() {
 
   const prevActiveCount = useRef(jobs.length);
   const reviewSectionRef = useRef<HTMLElement>(null);
-  const flowColumnRef = useRef<HTMLDivElement>(null);
+  const jobsSectionRef = useRef<HTMLDivElement>(null);
 
   const exams = scope === 'certification' ? certifications : publicExams;
   const selectedExam = exams.find((exam) => examKey(exam) === selectedExamId) ?? null;
@@ -109,7 +108,7 @@ export function QuestionsPageContent() {
 
   useEffect(() => {
     if (jobs.length > prevActiveCount.current) {
-      requestAnimationFrame(() => flowColumnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      requestAnimationFrame(() => jobsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
       setHistoryRefreshKey((key) => key + 1);
     } else if (jobs.length < prevActiveCount.current) {
       setHistoryRefreshKey((key) => key + 1);
@@ -122,13 +121,12 @@ export function QuestionsPageContent() {
   const selectedIds = state?.selectedAIQuestions ?? [];
 
   const visibleJobs = mounted ? jobs.filter((job) => job.jobId !== reviewJob?.jobId) : [];
-  const generating = visibleJobs.length > 0;
-  const primaryJob = visibleJobs.length === 1 ? visibleJobs[0] : null;
-  const showConfig = !generating || configOpen || !primaryJob;
+  const reviewing = aiQuestions.length > 0 || visibleJobs.some((job) => job.status === 'awaiting_review');
+  const atJobLimit = mounted && jobs.length >= GENERATION_MAX_ACTIVE_JOBS_PER_USER;
 
   const currentSum = dist.currentTotal;
   const status = resolveStatus();
-  const canGenerate = status.tone === 'ok' && !!selectedExam?.id;
+  const canGenerate = status.tone === 'ok' && !!selectedExam?.id && !atJobLimit && !isStarting;
 
   return (
     <PageHeader
@@ -145,47 +143,29 @@ export function QuestionsPageContent() {
       <div className="flex flex-col gap-6">
         {renderSimuladosBanner()}
 
-        {!generating && isLoading ? (
+        {isLoading && visibleJobs.length === 0 ? (
           <SkeletonListLoader count={4} />
-        ) : !generating && exams.length === 0 ? (
+        ) : exams.length === 0 && visibleJobs.length === 0 ? (
           renderEmptyState()
         ) : (
           <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
-            <div ref={flowColumnRef} className="flex min-w-0 flex-col gap-6">
-              {generating &&
-                visibleJobs.map((job) => (
-                  <ActiveJobStatus
-                    key={job.jobId}
-                    doneTopics={job.doneTopics}
-                    hideActions={!!primaryJob && !configOpen}
-                    isSaving={job.isSaving}
-                    queuedTopics={job.queuedTopics}
-                    refName={job.refName}
-                    status={job.status}
-                    topics={job.topics}
-                    totalTopics={job.totalTopics}
-                    type={job.type}
-                    onCancel={() => cancelJob(job.jobId)}
-                    onReviewAndSelect={() => handleReviewAndSelect(job.jobId)}
-                    onSaveAll={() => saveAllJob(job.jobId)}
-                  />
-                ))}
-
-              {generating && primaryJob && !configOpen && (
-                <Button
-                  className={`${buttonStyles.flat} self-start`}
-                  size="sm"
-                  startContent={<FontAwesomeIcon className="h-3 w-3" icon={faPlus} />}
-                  onPress={() => setConfigOpen(true)}
-                >
-                  {t('generate.newGeneration')}
-                </Button>
-              )}
-
-              {showConfig && renderConfig()}
+            <div className="flex min-w-0 flex-col gap-6">
+              {exams.length > 0 && renderConfig()}
+              {renderActiveJobs()}
             </div>
 
-            <GenerationSummarySidebar action={resolveSidebarAction()} rows={resolveSummaryRows()} />
+            <GenerationSummarySidebar
+              canGenerate={canGenerate}
+              hasSurplus={status.tone === 'warn' && dist.rows.length > 0}
+              isBusy={isStarting}
+              rows={configSummaryRows()}
+              statusText={
+                atJobLimit ? t('generate.jobLimitReached', { max: GENERATION_MAX_ACTIVE_JOBS_PER_USER }) : status.text
+              }
+              statusTone={atJobLimit ? 'warn' : status.tone}
+              onAutoAdjust={dist.redistribute}
+              onGenerate={handleGenerate}
+            />
           </div>
         )}
 
@@ -195,8 +175,35 @@ export function QuestionsPageContent() {
     </PageHeader>
   );
 
+  function renderActiveJobs() {
+    if (visibleJobs.length === 0) return null;
+    return (
+      <div ref={jobsSectionRef} className="flex flex-col gap-4 border-t border-divider pt-6">
+        <span className="text-xs font-semibold text-default-400">
+          {t('generate.activeGenerations', { count: visibleJobs.length })}
+        </span>
+        {visibleJobs.map((job) => (
+          <ActiveJobStatus
+            key={job.jobId}
+            doneTopics={job.doneTopics}
+            isSaving={job.isSaving}
+            queuedTopics={job.queuedTopics}
+            refName={job.refName}
+            status={job.status}
+            topics={job.topics}
+            totalTopics={job.totalTopics}
+            type={job.type}
+            onCancel={() => cancelJob(job.jobId)}
+            onReviewAndSelect={() => handleReviewAndSelect(job.jobId)}
+            onSaveAll={() => saveAllJob(job.jobId)}
+          />
+        ))}
+      </div>
+    );
+  }
+
   function renderStepIndicator() {
-    const step = generating ? 2 : 1;
+    const step = reviewing ? 2 : 1;
     return (
       <div className="flex items-center gap-3.5">
         <span className="text-xs font-bold text-primary">
@@ -223,37 +230,18 @@ export function QuestionsPageContent() {
   }
 
   function renderConfig() {
-    const copy = EMPTY_COPY[scope];
-
     return (
       <div className="flex flex-col gap-6">
-        {generating && configOpen && <div className="border-t border-divider pt-2" />}
-
-        <GenerationScopePicker isDisabled={generating} value={scope} onChange={handleScopeChange} />
-
-        {isLoading ? (
-          <SkeletonListLoader count={3} />
-        ) : exams.length === 0 ? (
-          <IllustratedEmptyState
-            action={{ href: copy.href, label: t(copy.labelKey) }}
-            description={t(copy.descriptionKey)}
-            icon={copy.icon}
-            title={t(copy.titleKey)}
+        <GenerationScopePicker value={scope} onChange={handleScopeChange} />
+        {renderExamRow()}
+        {selectedExam && (
+          <GenerationDistributionTable
+            isModified={dist.isModified}
+            rows={dist.rows}
+            onCountChange={dist.setCount}
+            onRedistribute={dist.redistribute}
+            onRemove={dist.remove}
           />
-        ) : (
-          <>
-            {renderExamRow()}
-            {selectedExam && (
-              <GenerationDistributionTable
-                isGenerating={generating && !configOpen}
-                isModified={dist.isModified}
-                rows={dist.rows}
-                onCountChange={dist.setCount}
-                onRedistribute={dist.redistribute}
-                onRemove={dist.remove}
-              />
-            )}
-          </>
         )}
       </div>
     );
@@ -354,11 +342,6 @@ export function QuestionsPageContent() {
     return { tone: 'warn', text: t('generate.distStatusOver', { count: currentSum - total }) };
   }
 
-  function resolveSummaryRows(): SummaryRow[] {
-    if (!showConfig && primaryJob) return jobSummaryRows(primaryJob);
-    return configSummaryRows();
-  }
-
   function configSummaryRows(): SummaryRow[] {
     const scopeLabel =
       scope === 'certification' ? t('questionBank.typeCertification') : t('questionBank.typePublicExam');
@@ -387,67 +370,8 @@ export function QuestionsPageContent() {
     ];
   }
 
-  function jobSummaryRows(job: TrackedJob): SummaryRow[] {
-    const scopeLabel =
-      job.type === 'certification' ? t('questionBank.typeCertification') : t('questionBank.typePublicExam');
-    const jobTotal = job.topics.reduce((acc, topic) => acc + topic.questionCount, 0);
-    const avg = job.totalTopics > 0 ? Math.round(jobTotal / job.totalTopics) : 0;
-
-    return [
-      { label: t('generate.summaryScope'), value: scopeLabel },
-      { label: t('generate.summaryExam'), value: job.refName },
-      { label: t('generate.summaryActiveTopics'), value: String(job.totalTopics) },
-      {
-        label: t('generate.summaryDistributed'),
-        value: t('generate.summaryQuestionsValue', { count: jobTotal }),
-        highlight: true,
-      },
-      {
-        label: t('generate.summaryAvgPerTopic'),
-        value: job.totalTopics > 0 ? t('generate.summaryQuestionsValue', { count: avg }) : '—',
-      },
-      {
-        label: t('generate.summaryEstTime'),
-        value:
-          job.totalTopics > 0 ? t('generate.summaryMinutesValue', { minutes: estimateMinutes(job.totalTopics) }) : '—',
-      },
-    ];
-  }
-
-  function resolveSidebarAction(): SidebarAction {
-    if (showConfig || !primaryJob) {
-      return {
-        kind: 'config',
-        statusText: status.text,
-        statusTone: status.tone,
-        hasSurplus: status.tone === 'warn' && dist.rows.length > 0,
-        canGenerate: canGenerate && !isStarting,
-        isBusy: isStarting,
-        onAutoAdjust: dist.redistribute,
-        onGenerate: handleGenerate,
-      };
-    }
-
-    if (primaryJob.status === 'awaiting_review') {
-      return {
-        kind: 'review',
-        footnote: t('generate.readyFootnote'),
-        isSaving: primaryJob.isSaving,
-        onReview: () => handleReviewAndSelect(primaryJob.jobId),
-        onSaveAll: () => saveAllJob(primaryJob.jobId),
-        onDiscard: () => cancelJob(primaryJob.jobId),
-      };
-    }
-
-    return {
-      kind: 'running',
-      footnote: t('generate.generatingFootnote'),
-      onCancel: () => cancelJob(primaryJob.jobId),
-    };
-  }
-
   function handleScopeChange(next: ExamType) {
-    if (generating || next === scope) return;
+    if (next === scope) return;
     setScope(next);
     const list = next === 'certification' ? certifications : publicExams;
     const first = list[0] ?? null;
@@ -477,7 +401,6 @@ export function QuestionsPageContent() {
         totalQuestions: selectedExam.totalQuestions,
         distribution,
       });
-      setConfigOpen(false);
     } finally {
       setIsStarting(false);
     }
