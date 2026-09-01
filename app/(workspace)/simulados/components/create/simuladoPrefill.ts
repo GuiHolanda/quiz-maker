@@ -43,3 +43,17 @@ export function readSimuladoPrefill(): SimuladoPrefill | null {
     return null;
   }
 }
+
+export function buildSimuladoPrefillFromJob(job: {
+  refKey: string;
+  topics: readonly { topicName: string; savedCount: number }[];
+}): SimuladoPrefill | null {
+  const sections = job.topics
+    .filter((topic) => topic.savedCount > 0)
+    .map((topic) => ({ sectionName: topic.topicName, questionCount: topic.savedCount }));
+  const totalQuestions = sections.reduce((sum, section) => sum + section.questionCount, 0);
+
+  if (totalQuestions === 0) return null;
+
+  return { examId: job.refKey, totalQuestions, questionSource: 'library', sections };
+}
