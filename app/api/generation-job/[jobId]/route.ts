@@ -46,7 +46,6 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
           savedCount: t.savedCount,
           errorMessage: t.errorMessage,
           errorType: t.errorType,
-          pendingQuestionsJson: t.pendingQuestionsJson,
         })),
       },
       { status: 200 }
@@ -73,7 +72,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
       throw Object.assign(new Error('Job not found'), { status: 404 });
     }
 
-    if (job.status !== 'running' && job.status !== 'queued' && job.status !== 'awaiting_review') {
+    if (job.status !== 'running' && job.status !== 'queued') {
       throw Object.assign(new Error('Job cannot be cancelled'), { status: 409 });
     }
 

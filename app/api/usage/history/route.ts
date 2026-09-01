@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: sort },
       }),
       prisma.generationJob.findMany({
-        where: { userId, status: { in: ['done', 'error', 'awaiting_review', 'running', 'queued', 'cancelled'] } },
+        where: { userId, status: { in: ['done', 'error', 'saving', 'running', 'queued', 'cancelled'] } },
         orderBy: { createdAt: sort },
         include: {
           topics: {
@@ -92,8 +92,8 @@ export async function GET(request: NextRequest) {
           topic.status === 'done'
             ? job.status === 'cancelled'
               ? ('cancelled' as const)
-              : job.status === 'awaiting_review'
-                ? ('awaiting_review' as const)
+              : job.status === 'saving'
+                ? ('running' as const)
                 : ('done' as const)
             : topic.status === 'cancelled'
               ? ('cancelled' as const)
@@ -101,9 +101,7 @@ export async function GET(request: NextRequest) {
                 ? ('error' as const)
                 : topic.status === 'queued'
                   ? ('queued' as const)
-                  : job.status === 'awaiting_review'
-                    ? ('awaiting_review' as const)
-                    : ('running' as const),
+                  : ('running' as const),
         createdAt: job.createdAt.toISOString(),
       }))
     );

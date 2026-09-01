@@ -61,13 +61,11 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
         controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
       }
 
-      const TERMINAL = ['done', 'awaiting_review', 'error', 'cancelled'];
+      const TERMINAL = ['done', 'error', 'cancelled'];
 
       function emitTerminal(status: string, topics: TopicShape[], savedCount: number) {
         if (status === 'done') {
           send('done', { ...counts(topics), savedCount, topics: shapeTopics(topics) });
-        } else if (status === 'awaiting_review') {
-          send('awaiting_review', { ...counts(topics), topics: shapeTopics(topics) });
         } else {
           send(status, { message: 'Job ended', ...counts(topics), topics: shapeTopics(topics) });
         }
