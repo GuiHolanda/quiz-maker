@@ -1,8 +1,10 @@
 import { certificationQuestionsResearchPrompt } from '@/config/prompts/certification-questions/research.prompt';
 import { certificationQuestionsFormatPrompt } from '@/config/prompts/certification-questions/format.prompt';
+import { certificationQuestionsReviewPrompt } from '@/config/prompts/certification-questions/review.prompt';
 import { certificationAnswersPrompt } from '@/config/prompts/certification-questions/answers.prompt';
 import { publicExamQuestionsResearchPrompt } from '@/config/prompts/public-exam-questions/research.prompt';
 import { publicExamQuestionsFormatPrompt } from '@/config/prompts/public-exam-questions/format.prompt';
+import { publicExamQuestionsReviewPrompt } from '@/config/prompts/public-exam-questions/review.prompt';
 import { publicExamAnswersPrompt } from '@/config/prompts/public-exam-questions/answers.prompt';
 
 const certResearch = (format?: 'mc_4' | 'mc_5' | 'true_false') =>
@@ -99,6 +101,81 @@ describe('format prompts derive the JSON skeleton from the format', () => {
 
     expect(prompt).toContain('"options":{"C":"<texto>","E":"<texto>"}');
     expect(prompt).toContain('exatamente as chaves C, E');
+  });
+});
+
+describe('certification prompts pin the generation language', () => {
+  const research = (language?: 'pt' | 'en') =>
+    certificationQuestionsResearchPrompt.build({
+      certification_name: 'AWS Machine Learning',
+      topic_name: 'Deployment',
+      num_questions: '5',
+      language,
+    });
+
+  const review = (language?: 'pt' | 'en') =>
+    certificationQuestionsReviewPrompt.build({
+      certification_name: 'AWS Machine Learning',
+      topic_name: 'Deployment',
+      draft_questions: 'x',
+      language,
+    });
+
+  const format = (language?: 'pt' | 'en') =>
+    certificationQuestionsFormatPrompt.build({
+      certification_name: 'AWS Machine Learning',
+      topic_name: 'Deployment',
+      reviewed_questions: 'x',
+      language,
+    });
+
+  it('research forces every question into the requested language with no mixing', () => {
+    expect(research('en')).toContain('in English');
+    expect(research('en')).toContain('never mix languages');
+    expect(research('pt')).toContain('in Brazilian Portuguese');
+  });
+
+  it('review requires every question and option to be in the requested language', () => {
+    expect(review('en')).toContain('written entirely in English');
+    expect(review('pt')).toContain('written entirely in Brazilian Portuguese');
+    expect(review('en')).toContain('never leave a mixed-language item');
+  });
+
+  it('format is told to preserve the language, not translate', () => {
+    expect(format('en')).toContain('already written in English');
+    expect(format('en')).toContain('do not translate');
+  });
+
+  it('defaults to Brazilian Portuguese when no language is given', () => {
+    expect(research()).toContain('in Brazilian Portuguese');
+    expect(review()).toContain('written entirely in Brazilian Portuguese');
+  });
+});
+
+describe('review prompts bound correctCount to the format ceiling', () => {
+  it('tells the certification editor the hard ceiling and forbids raising it', () => {
+    const prompt = certificationQuestionsReviewPrompt.build({
+      certification_name: 'AWS Solutions Architect',
+      topic_name: 'Networking',
+      draft_questions: 'x',
+      format: 'mc_5',
+    });
+
+    expect(prompt).toContain('`correctCount` must stay between 1 and 3');
+    expect(prompt).toContain('never raise it above 3');
+  });
+
+  it('tells the concursos editor the hard ceiling for a four-option exam', () => {
+    const prompt = publicExamQuestionsReviewPrompt.build({
+      public_exam_name: 'TRF 1',
+      exam_board_name: 'FCC',
+      subject_name: 'Direito Administrativo',
+      draft_questions: 'x',
+      format: 'mc_4',
+    });
+
+    expect(prompt).toContain('permanecer entre 1 e 2');
+    expect(prompt).toContain('nunca o aumente acima de 2');
   });
 });
 

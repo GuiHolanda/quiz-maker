@@ -26,6 +26,7 @@ vi.mock('@/features/services/openAI.service', () => ({
 
 vi.mock('@/features/services/exam-question.service', () => ({
   validateAiQuestions: vi.fn().mockReturnValue([{ id: 1, text: 'Q1' }]),
+  sanitizeAiQuestions: vi.fn().mockReturnValue({ questions: [{ id: 1, text: 'Q1' }], dropped: [] }),
   CertificationQuestionService: vi.fn(),
   PublicExamQuestionService: vi.fn(),
 }));
@@ -203,8 +204,8 @@ describe('processTopic — pipeline e finalização', () => {
   });
 
   it('marca o tópico como error com errorType generation quando o pipeline lança', async () => {
-    const { validateAiQuestions } = await import('@/features/services/exam-question.service');
-    (validateAiQuestions as any).mockImplementationOnce(() => {
+    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    (sanitizeAiQuestions as any).mockImplementationOnce(() => {
       throw new Error('bad json');
     });
 
@@ -222,6 +223,114 @@ describe('processTopic — pipeline e finalização', () => {
     );
   });
 
+  it('marca o tópico como error quando todas as questões do lote são descartadas', async () => {
+    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    (sanitizeAiQuestions as any).mockReturnValueOnce({
+      questions: [],
+      dropped: ['Invalid format: correctCount must be between 1 and 3'],
+    });
+
+    await processTopic('topic-1');
+
+    expect(prismaMock.generationJobTopic.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'topic-1' },
+        data: expect.objectContaining({ status: 'error', errorType: 'generation' }),
+      }),
+    );
+  });
+
+  it('mantém as questões válidas do lote quando só algumas são descartadas', async () => {
+    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    (sanitizeAiQuestions as any).mockReturnValueOnce({
+      questions: [{ id: 1, text: 'Q1' }, { id: 2, text: 'Q2' }],
+      dropped: ['Invalid format: correctCount must be between 1 and 3'],
+    });
+
+    await processTopic('topic-1');
+
+    expect(prismaMock.generationJobTopic.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'topic-1' },
+        data: expect.objectContaining({
+          status: 'done',
+          savedCount: 0,
+          pendingQuestionsJson: JSON.stringify([{ id: 1, text: 'Q1' }, { id: 2, text: 'Q2' }]),
+        }),
+      }),
+    );
+  });
+
+  it('injeta o idioma do job nos inputs dos prompts de certificação', async () => {
+    prismaMock.generationJobTopic.findUnique.mockResolvedValue(
+      makeTopic({ job: { ...makeTopic().job, language: 'en' } }) as any
+    );
+
+    await processTopic('topic-1');
+
+    expect(openAICallMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ language: 'en' }),
+      expect.anything()
+    );
+  });
+
+  it('descarta questões que a LLM gerou em idioma diferente do solicitado', async () => {
+    prismaMock.generationJobTopic.findUnique.mockResolvedValue(
+      makeTopic({ job: { ...makeTopic().job, language: 'pt' } }) as any
+    );
+
+    const ptQuestion = {
+      id: 1,
+      text: 'Qual das alternativas descreve corretamente a função de um serviço de orquestração quando as tarefas estão distribuídas entre vários nós de processamento?',
+      options: { A: 'primeira opção', B: 'segunda opção', C: 'terceira opção', D: 'quarta opção', E: 'quinta opção' },
+    };
+    const enQuestion = {
+      id: 2,
+      text: 'Which of the following statements best describes the behaviour of an orchestration service when the tasks are distributed across multiple processing nodes in the cluster?',
+      options: { A: 'the first choice here', B: 'the second choice here', C: 'the third one', D: 'the fourth one', E: 'the fifth one' },
+    };
+
+    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    (sanitizeAiQuestions as any).mockReturnValueOnce({ questions: [ptQuestion, enQuestion], dropped: [] });
+
+    await processTopic('topic-1');
+
+    expect(prismaMock.generationJobTopic.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'topic-1' },
+        data: expect.objectContaining({
+          status: 'done',
+          pendingQuestionsJson: JSON.stringify([ptQuestion]),
+        }),
+      })
+    );
+  });
+
+  it('marca o tópico como error quando nenhuma questão está no idioma solicitado', async () => {
+    prismaMock.generationJobTopic.findUnique.mockResolvedValue(
+      makeTopic({ job: { ...makeTopic().job, language: 'pt' } }) as any
+    );
+
+    const enQuestion = {
+      id: 1,
+      text: 'Which of the following statements best describes the behaviour of an orchestration service when the tasks are distributed across multiple processing nodes in the cluster?',
+      options: { A: 'the first choice here', B: 'the second choice here', C: 'the third one', D: 'the fourth one', E: 'the fifth one' },
+    };
+
+    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    (sanitizeAiQuestions as any).mockReturnValueOnce({ questions: [enQuestion], dropped: [] });
+
+    await processTopic('topic-1');
+
+    expect(prismaMock.generationJobTopic.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'topic-1' },
+        data: expect.objectContaining({ status: 'error', errorType: 'generation' }),
+      })
+    );
+  });
+
   it('faz rollback da quota quando a geração falha após o débito', async () => {
     const rollbackMock = vi.fn().mockResolvedValue(undefined);
     quotaConstructorMock.mockImplementationOnce(function () {
@@ -230,8 +339,8 @@ describe('processTopic — pipeline e finalização', () => {
         rollbackQuota: rollbackMock,
       };
     });
-    const { validateAiQuestions } = await import('@/features/services/exam-question.service');
-    (validateAiQuestions as any).mockImplementationOnce(() => {
+    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    (sanitizeAiQuestions as any).mockImplementationOnce(() => {
       throw new Error('bad json');
     });
 
@@ -324,8 +433,8 @@ describe('processTopic — branch public_exam', () => {
   });
 
   it('marca tópico de concurso como error quando o pipeline lança', async () => {
-    const { validateAiQuestions } = await import('@/features/services/exam-question.service');
-    (validateAiQuestions as any).mockImplementationOnce(() => {
+    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    (sanitizeAiQuestions as any).mockImplementationOnce(() => {
       throw new Error('bad public exam json');
     });
 

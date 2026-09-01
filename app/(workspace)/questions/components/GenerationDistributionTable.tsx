@@ -1,179 +1,107 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Button } from '@heroui/button';
 import { NumberInput } from '@heroui/number-input';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash, faRotateLeft } from '@fortawesome/free-solid-svg-icons';
 
+import type { DistributionRow } from './useGenerationDistribution.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
-import { Chip } from '@heroui/chip';
-
-interface WeightedTopic {
-  readonly name: string;
-  readonly weight: number;
-}
 
 interface GenerationDistributionTableProps {
-  readonly topics: ReadonlyArray<WeightedTopic>;
-  readonly defaultTotal: number;
-  readonly total: number;
-  readonly onTotalChange: (value: number) => void;
-  readonly onGenerate: (distribution: Array<{ topicName: string; questionCount: number }>) => void;
-  readonly isGenerating?: boolean;
-}
-
-// Largest remainder method — garante que a soma dos counts seja exatamente `total`.
-function distributeByWeight(items: ReadonlyArray<WeightedTopic>, total: number): Record<string, number> {
-  const totalWeight = items.reduce((acc, item) => acc + item.weight, 0);
-  if (totalWeight === 0 || total === 0) {
-    return Object.fromEntries(items.map((item) => [item.name, 0]));
-  }
-
-  const floors = items.map((item) => {
-    const exact = (item.weight / totalWeight) * total;
-    const count = Math.floor(exact);
-    return { name: item.name, count, remainder: exact - count };
-  });
-  const remaining = total - floors.reduce((acc, item) => acc + item.count, 0);
-
-  const ranked = [...floors].sort((a, b) => b.remainder - a.remainder);
-  const bonusNames = new Set(ranked.slice(0, remaining).map((item) => item.name));
-
-  return Object.fromEntries(floors.map((item) => [item.name, item.count + (bonusNames.has(item.name) ? 1 : 0)]));
+  readonly rows: ReadonlyArray<DistributionRow>;
+  readonly isModified: boolean;
+  readonly onCountChange: (name: string, value: number) => void;
+  readonly onRemove: (name: string) => void;
+  readonly onRedistribute: () => void;
 }
 
 export function GenerationDistributionTable({
-  topics,
-  defaultTotal,
-  total,
-  onTotalChange,
-  onGenerate,
-  isGenerating = false,
-}: Readonly<GenerationDistributionTableProps>) {
+  rows,
+  isModified,
+  onCountChange,
+  onRemove,
+  onRedistribute,
+}: GenerationDistributionTableProps) {
   const { t } = useTranslation();
 
-  const [removed, setRemoved] = useState<Set<string>>(() => new Set());
-  const [manuallyEdited, setManuallyEdited] = useState(false);
-  const [counts, setCounts] = useState<Record<string, number>>(() => distributeByWeight(topics, defaultTotal));
-
-  const activeTopics = topics.filter((topic) => !removed.has(topic.name));
-  const currentTotal = activeTopics.reduce((acc, topic) => acc + (counts[topic.name] ?? 0), 0);
-  const isModified = total !== defaultTotal || removed.size > 0 || manuallyEdited;
-
-  useEffect(() => {
-    recompute(total, removed);
-  }, [total]);
-
-  function recompute(nextTotal: number, nextRemoved: Set<string>) {
-    const active = topics.filter((topic) => !nextRemoved.has(topic.name));
-    setCounts(distributeByWeight(active, nextTotal));
-  }
-
-  function handleCountChange(name: string, value: number) {
-    setManuallyEdited(true);
-    setCounts((prev) => ({ ...prev, [name]: value }));
-  }
-
-  function handleRemove(name: string) {
-    const nextRemoved = new Set(removed);
-    nextRemoved.add(name);
-    setRemoved(nextRemoved);
-    setManuallyEdited(false);
-    recompute(total, nextRemoved);
-  }
-
-  function handleReset() {
-    setRemoved(new Set());
-    setManuallyEdited(false);
-    setCounts(distributeByWeight(topics, defaultTotal));
-    onTotalChange(defaultTotal);
-  }
-
-  function handleGenerate() {
-    const distribution = activeTopics
-      .map((topic) => ({ topicName: topic.name, questionCount: counts[topic.name] ?? 0 }))
-      .filter((entry) => entry.questionCount > 0);
-    onGenerate(distribution);
-  }
-
   return (
-    <div className="flex flex-col gap-3 w-full">
-      <p className="font-bold text-sm mb-2">Distribuição de Tópicos</p>
-      <div className="border border-default-200 rounded-xl overflow-hidden">
-        {activeTopics.length === 0 ? (
-          <p className="text-xs text-default-400 px-4 py-3">{t('generate.noTopicsLeft')}</p>
-        ) : (
-          activeTopics.map((topic, i) => {
-            const isLast = i === activeTopics.length - 1;
-            const currentCount = counts[topic.name] ?? 0;
-
-            return (
-              <div
-                key={topic.name}
-                className={`flex items-center gap-3 px-4 py-3 ${!isLast ? 'border-b border-default-200' : ''}`}
-              >
-                <span className="text-sm text-foreground truncate flex-1 min-w-0">{topic.name}</span>
-                <NumberInput
-                  aria-label={t('simulado.topicQuestionCountLabel', { topic: topic.name })}
-                  className="w-20 shrink-0"
-                  classNames={{ inputWrapper: 'h-8' }}
-                  hideStepper
-                  isDisabled={isGenerating}
-                  minValue={0}
-                  size="sm"
-                  value={currentCount}
-                  variant="bordered"
-                  onValueChange={(v) => queueMicrotask(() => handleCountChange(topic.name, v))}
-                />
-                <Button
-                  isIconOnly
-                  aria-label={t('generate.removeTopic', { topic: topic.name })}
-                  className={buttonStyles.iconOnly.danger}
-                  isDisabled={isGenerating}
-                  size="sm"
-                  variant="light"
-                  onPress={() => handleRemove(topic.name)}
-                >
-                  <FontAwesomeIcon icon={faTrash} />
-                </Button>
-              </div>
-            );
-          })
+    <div className="flex flex-col gap-4 rounded-xl bg-content1 p-6">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <span className="text-base font-bold tracking-tight text-foreground">{t('generate.distributionTitle')}</span>
+          <span className="text-[13.5px] leading-snug text-default-500">{t('generate.distributionSubtitle')}</span>
+        </div>
+        {isModified && (
+          <Button
+            className={`${buttonStyles.secondarySm} shrink-0`}
+            size="sm"
+            startContent={<FontAwesomeIcon className="h-3 w-3" icon={faRotateLeft} />}
+            variant="bordered"
+            onPress={onRedistribute}
+          >
+            {t('generate.redistribute')}
+          </Button>
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-2 mt-4">
-        <Chip color="success" size="sm" variant="flat" classNames={{ content: 'font-bold' }}>
-          {t('simulado.distributed', { distributed: currentTotal, total: currentTotal })}
-        </Chip>
-        <div className="flex gap-4 items-center">
-          {isModified ? (
-            <Button
-              className={buttonStyles.secondary}
-              isDisabled={isGenerating}
-              size="sm"
-              startContent={<FontAwesomeIcon icon={faRotateLeft} />}
-              variant="bordered"
-              onPress={handleReset}
+      {rows.length === 0 ? (
+        <p className="rounded-lg border border-divider px-4 py-3 text-xs text-default-400">
+          {t('generate.noTopicsLeft')}
+        </p>
+      ) : (
+        <div className="rounded-lg border border-divider">
+          {rows.map((row) => (
+            <div
+              key={row.name}
+              className="flex items-start gap-3 border-t border-divider px-4 py-3.5 first:border-t-0 sm:items-center"
             >
-              {t('generate.resetDistribution')}
-            </Button>
-          ) : (
-            <span />
-          )}
-          <Button
-            className={buttonStyles.primary}
-            data-testid="question-gen-generate-btn"
-            isDisabled={currentTotal === 0 || isGenerating}
-            onPress={handleGenerate}
-            size="sm"
-          >
-            {t('common.generate')}
-          </Button>
+              <div className="min-w-0 flex-1">
+                <p className="text-[14.5px] font-medium leading-snug text-foreground sm:truncate">{row.name}</p>
+                <div className="mt-2 h-[3px] rounded-full bg-content2">
+                  <div className="h-[3px] rounded-full bg-primary" style={{ width: `${row.barPercent}%` }} />
+                </div>
+                <span className="mt-1.5 block font-mono text-[11.5px] text-default-400 sm:hidden">
+                  {t('generate.topicWeight', { weight: row.weight })}
+                </span>
+              </div>
+
+              <span className="hidden shrink-0 font-mono text-[11.5px] text-default-400 sm:block">
+                {t('generate.topicWeight', { weight: row.weight })}
+              </span>
+
+              <NumberInput
+                aria-label={t('simulado.topicQuestionCountLabel', { topic: row.name })}
+                className="w-[72px] shrink-0"
+                classNames={{
+                  inputWrapper: 'h-9 bg-background border-divider',
+                  input: 'text-center font-mono text-sm',
+                }}
+                hideStepper
+                minValue={0}
+                size="sm"
+                value={row.count}
+                variant="bordered"
+                onValueChange={(value) =>
+                  queueMicrotask(() => onCountChange(row.name, Number.isFinite(value) ? value : 0))
+                }
+              />
+
+              <Button
+                isIconOnly
+                aria-label={t('generate.removeTopic', { topic: row.name })}
+                className={`${buttonStyles.iconOnly.danger} shrink-0`}
+                size="sm"
+                variant="light"
+                onPress={() => onRemove(row.name)}
+              >
+                <FontAwesomeIcon className="h-[15px] w-[15px]" icon={faTrash} />
+              </Button>
+            </div>
+          ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { validateAiQuestions } from '@/features/services/exam-question.service';
+import { sanitizeAiQuestions, validateAiQuestions } from '@/features/services/exam-question.service';
 import { QUESTION_FORMATS } from '@/config/question-formats';
 
 const question = (overrides: Record<string, unknown> = {}) => ({
@@ -111,5 +111,41 @@ describe('validateAiQuestions — format label set', () => {
   it('leaves the label set unchecked when no format is supplied', () => {
     // Legacy payloads and jobs saved before the exam carried a format still validate.
     expect(() => validateAiQuestions(payload({ options: { A: 'a', B: 'b', C: 'c', D: 'd' } }))).not.toThrow();
+  });
+});
+
+describe('sanitizeAiQuestions — per-question resilience', () => {
+  const good = (id: number) => question({ id });
+  const badCorrectCount = (id: number) => question({ id, correctCount: 5 });
+  const badLabels = (id: number) => question({ id, options: { A: 'a', B: 'b' } });
+
+  it('returns every question and no drops when all are valid', () => {
+    const result = sanitizeAiQuestions({ questions: [good(1), good(2)] }, QUESTION_FORMATS.mc_5);
+
+    expect(result.questions).toHaveLength(2);
+    expect(result.dropped).toEqual([]);
+  });
+
+  it('drops only the malformed questions and keeps the rest', () => {
+    const result = sanitizeAiQuestions(
+      { questions: [good(1), badCorrectCount(2), good(3), badLabels(4)] },
+      QUESTION_FORMATS.mc_5
+    );
+
+    expect(result.questions.map((q) => q.id)).toEqual([1, 3]);
+    expect(result.dropped).toHaveLength(2);
+    expect(result.dropped[0]).toMatch(/correctCount must be between 1 and 3/);
+    expect(result.dropped[1]).toMatch(/expected options A, B, C, D, E/);
+  });
+
+  it('returns an empty question list when every question is malformed', () => {
+    const result = sanitizeAiQuestions({ questions: [badCorrectCount(1), badLabels(2)] }, QUESTION_FORMATS.mc_5);
+
+    expect(result.questions).toEqual([]);
+    expect(result.dropped).toHaveLength(2);
+  });
+
+  it('still throws when the questions array itself is missing', () => {
+    expect(() => sanitizeAiQuestions({})).toThrow(/questions array is required/);
   });
 });
