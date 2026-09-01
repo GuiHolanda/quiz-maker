@@ -191,13 +191,15 @@ async function maybeFinalizeJob(jobId: string): Promise<void> {
       const payload = Array.isArray(raw) ? { questions: raw } : raw;
       const questions = validateAiQuestions(payload) as AIExamQuestion[];
       await questionService.createFromPayload(questions, job.userId, job.refKey);
+      const topicSaved = topic.savedCount + questions.length;
       await prisma.generationJobTopic.update({
         where: { id: topic.id },
-        data: { savedCount: questions.length, pendingQuestionsJson: null },
+        data: { savedCount: topicSaved, pendingQuestionsJson: null },
       });
-      totalSaved += questions.length;
+      totalSaved += topicSaved;
     } catch (err) {
       console.error(`[generation-job] auto-save falhou no tópico "${topic.topicName}":`, err);
+      totalSaved += topic.savedCount;
       await prisma.generationJobTopic.update({
         where: { id: topic.id },
         data: { status: 'error', errorType: 'generation', errorMessage: 'Falha ao salvar as questões geradas' },
@@ -460,7 +462,7 @@ export async function processTopic(topicId: string): Promise<void> {
 
     await prisma.generationJobTopic.update({
       where: { id: topicId },
-      data: { status: 'done', savedCount: 0, pendingQuestionsJson: JSON.stringify(questions) },
+      data: { status: 'done', savedCount: poolResult.served, pendingQuestionsJson: JSON.stringify(questions) },
     });
   } catch (topicErr) {
     console.error(`[generation-job] Topic "${topic.topicName}" failed:`, topicErr);

@@ -212,9 +212,33 @@ describe('processTopic — pipeline e finalização', () => {
 
     await processTopic('topic-1');
 
-    expect(createFromPayloadMock).toHaveBeenCalled();
+    expect(createFromPayloadMock).toHaveBeenCalledWith(expect.anything(), 'user-1', 'exam-1');
     expect(prismaMock.generationJob.update).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: 'job-1' }, data: { status: 'done', savedCount: 1 } }),
+    );
+  });
+
+  it('acumula savedCount de pool e LLM em tópico misto', async () => {
+    const { validateAiQuestions } = await import('@/features/services/exam-question.service');
+    (validateAiQuestions as any).mockReturnValueOnce([{ id: 1 }, { id: 2 }, { id: 3 }]);
+    prismaMock.generationJobTopic.count.mockResolvedValue(0);
+    prismaMock.generationJob.updateMany.mockResolvedValue({ count: 1 } as any);
+    prismaMock.generationJob.findUnique.mockResolvedValue({
+      id: 'job-1',
+      userId: 'user-1',
+      refKey: 'exam-1',
+      topics: [
+        { id: 'topic-1', topicName: 'S3', status: 'done', savedCount: 2, pendingQuestionsJson: '[{"id":1},{"id":2},{"id":3}]' },
+      ],
+    } as any);
+
+    await processTopic('topic-1');
+
+    expect(prismaMock.generationJobTopic.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'topic-1' }, data: { savedCount: 5, pendingQuestionsJson: null } }),
+    );
+    expect(prismaMock.generationJob.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'job-1' }, data: { status: 'done', savedCount: 5 } }),
     );
   });
 
@@ -230,7 +254,7 @@ describe('processTopic — pipeline e finalização', () => {
     );
   });
 
-  it('marca o tópico como error quando createFromPayload falha, mas ainda finaliza o job', async () => {
+  it('marca o tópico como error quando createFromPayload falha, mas ainda finaliza o job contando as questões do pool', async () => {
     prismaMock.generationJobTopic.count.mockResolvedValue(0);
     prismaMock.generationJob.updateMany.mockResolvedValue({ count: 1 } as any);
     prismaMock.generationJob.findUnique.mockResolvedValue({
@@ -238,7 +262,7 @@ describe('processTopic — pipeline e finalização', () => {
       userId: 'user-1',
       refKey: 'exam-1',
       topics: [
-        { id: 'topic-1', topicName: 'S3', status: 'done', savedCount: 0, pendingQuestionsJson: '[{"id":1}]' },
+        { id: 'topic-1', topicName: 'S3', status: 'done', savedCount: 2, pendingQuestionsJson: '[{"id":1}]' },
       ],
     } as any);
     createFromPayloadMock.mockRejectedValueOnce(new Error('db down'));
@@ -251,8 +275,13 @@ describe('processTopic — pipeline e finalização', () => {
         data: expect.objectContaining({ status: 'error', errorType: 'generation' }),
       }),
     );
+    const errorUpdate = prismaMock.generationJobTopic.update.mock.calls.find((call) => {
+      const data = call[0]?.data as Record<string, unknown> | undefined;
+      return data?.status === 'error';
+    });
+    expect(errorUpdate?.[0].data).not.toHaveProperty('savedCount');
     expect(prismaMock.generationJob.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'job-1' }, data: { status: 'done', savedCount: 0 } }),
+      expect.objectContaining({ where: { id: 'job-1' }, data: { status: 'done', savedCount: 2 } }),
     );
   });
 
@@ -762,6 +791,14 @@ describe('processTopic — pool-serving path', () => {
     expect(openAICallMock).toHaveBeenCalled();
     const llmCall = openAICallMock.mock.calls[0];
     expect(llmCall[1].num_questions).toBe('2');
+
+    // Topic records the pool questions already persisted; the LLM deficit stays pending
+    expect(prismaMock.generationJobTopic.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'topic-pool-1' },
+        data: expect.objectContaining({ status: 'done', savedCount: 1, pendingQuestionsJson: expect.any(String) }),
+      }),
+    );
   });
 
   it('cai no caminho LLM normal quando o exam não tem providerId nem examBoardId', async () => {
