@@ -253,7 +253,8 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
           }))
         );
         for (const job of active) {
-          if (job.status === 'queued' || job.status === 'running') connectStream(job.id);
+          const status = job.status as TrackedJob['status'];
+          if (status === 'queued' || status === 'running' || status === 'saving') connectStream(job.id);
         }
       })
       .catch(() => {
