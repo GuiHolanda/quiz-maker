@@ -1,7 +1,7 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { prismaMock } from '../__mocks__/prisma';
 
-const { openAICallMock, quotaConstructorMock } = vi.hoisted(() => {
+const { openAICallMock, quotaConstructorMock, createFromPayloadMock } = vi.hoisted(() => {
   const defaultInstance = {
     checkAndRecordQuestions: vi.fn().mockResolvedValue({ logId: 'log-1' }),
     rollbackQuota: vi.fn().mockResolvedValue(undefined),
@@ -15,6 +15,7 @@ const { openAICallMock, quotaConstructorMock } = vi.hoisted(() => {
     quotaConstructorMock: vi.fn().mockImplementation(function () {
       return defaultInstance;
     }),
+    createFromPayloadMock: vi.fn().mockResolvedValue([]),
   };
 });
 
@@ -27,6 +28,9 @@ vi.mock('@/features/services/openAI.service', () => ({
 vi.mock('@/features/services/exam-question.service', () => ({
   validateAiQuestions: vi.fn().mockReturnValue([{ id: 1, text: 'Q1' }]),
   sanitizeAiQuestions: vi.fn().mockReturnValue({ questions: [{ id: 1, text: 'Q1' }], dropped: [] }),
+  ExamQuestionService: class {
+    createFromPayload = createFromPayloadMock;
+  },
   CertificationQuestionService: vi.fn(),
   PublicExamQuestionService: vi.fn(),
 }));
@@ -159,11 +163,13 @@ describe('claimSlots — respeita tetos global e por usuário', () => {
 
 describe('processTopic — pipeline e finalização', () => {
   beforeEach(() => {
+    createFromPayloadMock.mockClear();
     prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
     prismaMock.generationJobTopic.findUnique.mockResolvedValue(makeTopic() as any);
     prismaMock.generationJobTopic.update.mockResolvedValue(makeTopic() as any);
     prismaMock.generationJob.update.mockResolvedValue({} as any);
     prismaMock.generationJob.updateMany.mockResolvedValue({ count: 0 } as any);
+    prismaMock.generationJob.findUnique.mockResolvedValue(null as any);
     prismaMock.generationJobTopic.updateMany.mockResolvedValue({ count: 0 } as any);
     prismaMock.generationJobTopic.count.mockResolvedValue(0);
     prismaMock.generationJobTopic.findMany.mockResolvedValue([]);
@@ -192,14 +198,61 @@ describe('processTopic — pipeline e finalização', () => {
     );
   });
 
-  it('marca o job como awaiting_review quando não restam tópicos pendentes', async () => {
-    // maybeFinalizeJob conta 0 tópicos pendentes → finaliza
+  it('salva as questões pendentes e marca o job como done quando não restam tópicos pendentes', async () => {
     prismaMock.generationJobTopic.count.mockResolvedValue(0);
+    prismaMock.generationJob.updateMany.mockResolvedValue({ count: 1 } as any);
+    prismaMock.generationJob.findUnique.mockResolvedValue({
+      id: 'job-1',
+      userId: 'user-1',
+      refKey: 'exam-1',
+      topics: [
+        { id: 'topic-1', topicName: 'S3', status: 'done', savedCount: 0, pendingQuestionsJson: '[{"id":1,"text":"Q1"}]' },
+      ],
+    } as any);
 
     await processTopic('topic-1');
 
+    expect(createFromPayloadMock).toHaveBeenCalled();
     expect(prismaMock.generationJob.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'job-1' }, data: { status: 'awaiting_review' } }),
+      expect.objectContaining({ where: { id: 'job-1' }, data: { status: 'done', savedCount: 1 } }),
+    );
+  });
+
+  it('não re-salva quando outro finally já reivindicou o job (claim perdido)', async () => {
+    prismaMock.generationJobTopic.count.mockResolvedValue(0);
+    prismaMock.generationJob.updateMany.mockResolvedValue({ count: 0 } as any);
+
+    await processTopic('topic-1');
+
+    expect(createFromPayloadMock).not.toHaveBeenCalled();
+    expect(prismaMock.generationJob.update).not.toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: 'done' }) }),
+    );
+  });
+
+  it('marca o tópico como error quando createFromPayload falha, mas ainda finaliza o job', async () => {
+    prismaMock.generationJobTopic.count.mockResolvedValue(0);
+    prismaMock.generationJob.updateMany.mockResolvedValue({ count: 1 } as any);
+    prismaMock.generationJob.findUnique.mockResolvedValue({
+      id: 'job-1',
+      userId: 'user-1',
+      refKey: 'exam-1',
+      topics: [
+        { id: 'topic-1', topicName: 'S3', status: 'done', savedCount: 0, pendingQuestionsJson: '[{"id":1}]' },
+      ],
+    } as any);
+    createFromPayloadMock.mockRejectedValueOnce(new Error('db down'));
+
+    await processTopic('topic-1');
+
+    expect(prismaMock.generationJobTopic.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'topic-1' },
+        data: expect.objectContaining({ status: 'error', errorType: 'generation' }),
+      }),
+    );
+    expect(prismaMock.generationJob.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'job-1' }, data: { status: 'done', savedCount: 0 } }),
     );
   });
 
@@ -380,9 +433,7 @@ describe('processTopic — pipeline e finalização', () => {
 
     await processTopic('topic-1');
 
-    expect(prismaMock.generationJob.update).not.toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ status: 'awaiting_review' }) }),
-    );
+    expect(prismaMock.generationJob.updateMany).not.toHaveBeenCalled();
     expect(prismaMock.generationJob.update).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: 'job-1' }, data: { updatedAt: expect.any(Date) } }),
     );
@@ -398,6 +449,7 @@ describe('processTopic — branch public_exam', () => {
     prismaMock.generationJobTopic.update.mockResolvedValue(makePublicExamTopic() as any);
     prismaMock.generationJob.update.mockResolvedValue({} as any);
     prismaMock.generationJob.updateMany.mockResolvedValue({ count: 0 } as any);
+    prismaMock.generationJob.findUnique.mockResolvedValue(null as any);
     prismaMock.generationJobTopic.updateMany.mockResolvedValue({ count: 0 } as any);
     prismaMock.generationJobTopic.count.mockResolvedValue(0);
     prismaMock.generationJobTopic.findMany.mockResolvedValue([]);
@@ -666,11 +718,11 @@ describe('processTopic — pool-serving path', () => {
     // LLM must NOT be called
     expect(openAICallMock).not.toHaveBeenCalled();
 
-    // Topic marked done with savedCount 0 (pool questions, no pending JSON)
+    // Topic marked done with savedCount = pool questions served, no pending JSON
     expect(prismaMock.generationJobTopic.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 'topic-pool-1' },
-        data: expect.objectContaining({ status: 'done', savedCount: 0, pendingQuestionsJson: null }),
+        data: expect.objectContaining({ status: 'done', savedCount: 3, pendingQuestionsJson: null }),
       }),
     );
   });
