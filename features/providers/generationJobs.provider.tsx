@@ -2,15 +2,10 @@
 
 import { createContext, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 
-import type { AIExamQuestion, GenerationJobStatus, GenerationJobTopicStatus } from '@/shared/types';
+import type { GenerationJobStatus, GenerationJobTopicStatus } from '@/shared/types';
 import type { GenerationLanguage } from '@/config/generation-languages';
-import {
-  createGenerationJob,
-  getActiveGenerationJobs,
-  getGenerationJob,
-  cancelGenerationJob,
-  saveGenerationJob,
-} from '@/features/connectors';
+import { createGenerationJob, getActiveGenerationJobs, cancelGenerationJob } from '@/features/connectors';
+import { buildSimuladoPrefillFromJob } from '@/app/(workspace)/simulados/components/create/simuladoPrefill';
 import { SIMULADO_NEW_PREFILL_KEY, GENERATION_MAX_ACTIVE_JOBS_PER_USER } from '@/config/constants';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { useNotificationsContext } from '@/features/hooks/useNotificationsContext.hook';
@@ -25,7 +20,7 @@ export interface TrackedJob {
   readonly type: GenerationJobType;
   readonly refKey: string;
   readonly refName: string;
-  readonly status: 'queued' | 'running' | 'awaiting_review' | 'done' | 'error';
+  readonly status: 'queued' | 'running' | 'saving' | 'done' | 'error';
   readonly doneTopics: number;
   readonly totalTopics: number;
   readonly queuedTopics: number;
@@ -49,16 +44,14 @@ interface GenerationJobsContextValue {
   readonly jobs: TrackedJob[];
   readonly startJob: (input: StartJobInput) => Promise<void>;
   readonly cancelJob: (jobId: string) => Promise<void>;
-  readonly saveAllJob: (jobId: string) => Promise<void>;
-  readonly getJobPendingQuestions: (jobId: string) => Promise<Array<AIExamQuestion>>;
+  readonly dismissJob: (jobId: string) => void;
 }
 
 export const GenerationJobsContext = createContext<GenerationJobsContextValue>({
   jobs: [],
   startJob: async () => {},
   cancelJob: async () => {},
-  saveAllJob: async () => {},
-  getJobPendingQuestions: async () => [],
+  dismissJob: () => {},
 });
 
 export function GenerationJobsProvider({ children }: { readonly children: ReactNode }) {
@@ -83,13 +76,11 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
   }, []);
 
   const fireDoneNotification = useCallback(
-    (job: TrackedJob, savedCount: number, topicsDone: number) => {
+    (job: TrackedJob, savedCount: number, topicsDone: number, topics: GenerationJobTopicStatus[]) => {
       refreshUsage();
       try {
-        localStorage.setItem(
-          SIMULADO_NEW_PREFILL_KEY,
-          JSON.stringify({ type: job.type, examId: job.refKey, totalQuestions: job.prefill.totalQuestions })
-        );
+        const prefill = buildSimuladoPrefillFromJob({ refKey: job.refKey, topics });
+        if (prefill) localStorage.setItem(SIMULADO_NEW_PREFILL_KEY, JSON.stringify(prefill));
       } catch {}
       addNotification({
         title: t('notification.fullExamTitle'),
@@ -129,13 +120,6 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
 
       es.addEventListener('progress', applyProgress);
 
-      es.addEventListener('awaiting_review', (e) => {
-        applyProgress(e as MessageEvent);
-        updateJob(jobId, { status: 'awaiting_review' });
-        closeSource(jobId);
-        refreshUsage();
-      });
-
       es.addEventListener('done', (e) => {
         const data = JSON.parse((e as MessageEvent).data) as {
           doneTopics: number;
@@ -144,11 +128,22 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
           topics?: GenerationJobTopicStatus[];
         };
         closeSource(jobId);
+        const topics = data.topics ?? [];
         setJobs((prev) => {
           const job = prev.find((j) => j.jobId === jobId);
-          if (job) fireDoneNotification(job, data.savedCount, data.doneTopics);
-          // Remove o job da lista ativa; o histórico assume a partir daqui.
-          return prev.filter((j) => j.jobId !== jobId);
+          if (job) fireDoneNotification(job, data.savedCount, data.doneTopics, topics.length > 0 ? topics : job.topics);
+          return prev.map((j) =>
+            j.jobId === jobId
+              ? {
+                  ...j,
+                  status: 'done' as const,
+                  isSaving: false,
+                  doneTopics: data.doneTopics,
+                  totalTopics: data.totalTopics,
+                  ...(topics.length > 0 ? { topics } : {}),
+                }
+              : j
+          );
         });
       });
 
@@ -233,34 +228,8 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
     [closeSource]
   );
 
-  const saveAllJob = useCallback(
-    async (jobId: string) => {
-      updateJob(jobId, { isSaving: true });
-      try {
-        const job = jobs.find((j) => j.jobId === jobId);
-        const { savedCount } = await saveGenerationJob(jobId);
-        if (job) fireDoneNotification(job, savedCount, job.topics.filter((topic) => topic.status === 'done').length);
-        setJobs((prev) => prev.filter((j) => j.jobId !== jobId));
-      } catch {
-        notify.error(t('toast.error'), t('toast.somethingWrong'));
-        updateJob(jobId, { isSaving: false });
-      }
-    },
-    [jobs, fireDoneNotification, updateJob, t]
-  );
-
-  const getJobPendingQuestions = useCallback(async (jobId: string) => {
-    const job = await getGenerationJob(jobId);
-    const pending = job.topics
-      .filter((topic) => topic.status === 'done')
-      .flatMap((topic) => {
-        const withJson = topic as GenerationJobTopicStatus & { pendingQuestionsJson?: string };
-        return withJson.pendingQuestionsJson
-          ? (JSON.parse(withJson.pendingQuestionsJson) as Array<AIExamQuestion>)
-          : [];
-      });
-    // Cada tópico numera suas questões a partir de 1 — reindexa para IDs únicos na lista unificada.
-    return pending.map((question, i) => ({ ...question, id: i + 1 }));
+  const dismissJob = useCallback((jobId: string) => {
+    setJobs((prev) => prev.filter((j) => j.jobId !== jobId));
   }, []);
 
   // Reconecta a todos os jobs ativos no mount (ex.: reload da página).
@@ -274,7 +243,7 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
             type: job.type,
             refKey: job.refKey,
             refName: job.refName,
-            status: job.status === 'done' ? 'awaiting_review' : job.status,
+            status: job.status as TrackedJob['status'],
             doneTopics: job.doneTopics,
             totalTopics: job.totalTopics,
             queuedTopics: job.queuedTopics,
@@ -302,7 +271,7 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
   }, []);
 
   return (
-    <GenerationJobsContext.Provider value={{ jobs, startJob, cancelJob, saveAllJob, getJobPendingQuestions }}>
+    <GenerationJobsContext.Provider value={{ jobs, startJob, cancelJob, dismissJob }}>
       {children}
     </GenerationJobsContext.Provider>
   );
