@@ -1,7 +1,13 @@
+import { beforeEach } from 'vitest';
+
 import { prismaMock } from '../__mocks__/prisma';
 import { QuestionBankService } from '@/features/services/question-bank.service';
 
 const service = new QuestionBankService();
+
+beforeEach(() => {
+  prismaMock.mockExamAttemptAnswer.findMany.mockResolvedValue([] as never);
+});
 
 function makeQuestion(overrides: Record<string, unknown> = {}) {
   return {
@@ -11,11 +17,22 @@ function makeQuestion(overrides: Record<string, unknown> = {}) {
     examName: 'AWS SAA',
     sectionName: 'Storage',
     topicName: null,
+    examId: null,
     correctCount: 1,
     createdAt: new Date('2024-01-01'),
     options: [{ label: 'A', text: 'Object storage' }],
     answer: null,
     exam: { type: 'certification' },
+    ...overrides,
+  };
+}
+
+function makeAttemptAnswer(overrides: Record<string, unknown> = {}) {
+  return {
+    isCorrect: true,
+    selectedOptions: '["A"]',
+    attempt: { finishedAt: new Date('2024-02-01') },
+    mockExamQuestion: { examQuestionId: 1 },
     ...overrides,
   };
 }
@@ -148,6 +165,110 @@ describe('QuestionBankService.getQuestions', () => {
       prismaMock.examQuestion.findMany.mockResolvedValue([row] as any);
       const result = await service.getQuestions({ userId: 'u1', page: 1, pageSize: 10 });
       expect(result.questions[0].topic).toBe('Storage');
+    });
+  });
+
+  describe('history aggregation', () => {
+    it('derives attempts, accuracy, situation and marked options from the latest finished attempt', async () => {
+      prismaMock.examQuestion.findMany.mockResolvedValue([makeQuestion({ id: 1 })] as any);
+      prismaMock.mockExamAttemptAnswer.findMany.mockResolvedValue([
+        makeAttemptAnswer({ isCorrect: true, selectedOptions: '["B"]', attempt: { finishedAt: new Date('2024-02-10') } }),
+        makeAttemptAnswer({ isCorrect: false, selectedOptions: '["A"]', attempt: { finishedAt: new Date('2024-01-15') } }),
+      ] as any);
+
+      const result = await service.getQuestions({ userId: 'u1', page: 1, pageSize: 10 });
+
+      expect(result.questions[0].history).toEqual({
+        attempts: 2,
+        correct: 1,
+        accuracy: 50,
+        situation: 'correct',
+        markedOptions: ['B'],
+      });
+    });
+
+    it('marks a question with no attempts as unanswered', async () => {
+      prismaMock.examQuestion.findMany.mockResolvedValue([makeQuestion({ id: 9 })] as any);
+
+      const result = await service.getQuestions({ userId: 'u1', page: 1, pageSize: 10 });
+
+      expect(result.questions[0].history.situation).toBe('unanswered');
+      expect(result.questions[0].history.attempts).toBe(0);
+    });
+  });
+
+  describe('situation filter', () => {
+    it('keeps only questions matching the requested situation', async () => {
+      prismaMock.examQuestion.findMany.mockResolvedValue([
+        makeQuestion({ id: 1 }),
+        makeQuestion({ id: 2 }),
+      ] as any);
+      prismaMock.mockExamAttemptAnswer.findMany.mockResolvedValue([
+        makeAttemptAnswer({ isCorrect: true, mockExamQuestion: { examQuestionId: 1 } }),
+      ] as any);
+
+      const result = await service.getQuestions({ userId: 'u1', situation: 'unanswered', page: 1, pageSize: 10 });
+
+      expect(result.questions.map((q) => q.id)).toEqual([2]);
+    });
+  });
+
+  describe('history-aware sorts', () => {
+    it('mostUsed ranks answered questions by attempt count desc, unanswered last', async () => {
+      prismaMock.examQuestion.findMany.mockResolvedValue([
+        makeQuestion({ id: 1 }),
+        makeQuestion({ id: 2 }),
+        makeQuestion({ id: 3 }),
+      ] as any);
+      prismaMock.mockExamAttemptAnswer.findMany.mockResolvedValue([
+        makeAttemptAnswer({ mockExamQuestion: { examQuestionId: 2 } }),
+        makeAttemptAnswer({ mockExamQuestion: { examQuestionId: 1 } }),
+        makeAttemptAnswer({ mockExamQuestion: { examQuestionId: 1 } }),
+      ] as any);
+
+      const result = await service.getQuestions({ userId: 'u1', sort: 'mostUsed', page: 1, pageSize: 10 });
+
+      expect(result.questions.map((q) => q.id)).toEqual([1, 2, 3]);
+    });
+
+    it('errorRate ranks answered questions by accuracy asc, unanswered last', async () => {
+      prismaMock.examQuestion.findMany.mockResolvedValue([
+        makeQuestion({ id: 1 }),
+        makeQuestion({ id: 2 }),
+        makeQuestion({ id: 3 }),
+      ] as any);
+      prismaMock.mockExamAttemptAnswer.findMany.mockResolvedValue([
+        makeAttemptAnswer({ isCorrect: false, mockExamQuestion: { examQuestionId: 1 } }),
+        makeAttemptAnswer({ isCorrect: true, mockExamQuestion: { examQuestionId: 2 } }),
+      ] as any);
+
+      const result = await service.getQuestions({ userId: 'u1', sort: 'errorRate', page: 1, pageSize: 10 });
+
+      expect(result.questions.map((q) => q.id)).toEqual([1, 2, 3]);
+    });
+  });
+
+  describe('summary', () => {
+    it('aggregates counts across the whole bank regardless of the page filters', async () => {
+      const answered = makeQuestion({ id: 1, answer: { explanations: [] } });
+      const unanswered = makeQuestion({ id: 2, answer: null });
+      prismaMock.examQuestion.findMany.mockResolvedValue([answered, unanswered] as any);
+      prismaMock.mockExamAttemptAnswer.findMany.mockResolvedValue([
+        makeAttemptAnswer({ isCorrect: true, mockExamQuestion: { examQuestionId: 1 } }),
+        makeAttemptAnswer({ isCorrect: false, mockExamQuestion: { examQuestionId: 1 } }),
+      ] as any);
+
+      const result = await service.getQuestions({ userId: 'u1', situation: 'unanswered', page: 1, pageSize: 10 });
+
+      expect(result.summary).toEqual({
+        saved: 2,
+        answered: 1,
+        accuracy: 50,
+        attempts: 2,
+        correct: 1,
+        withoutExplanation: 1,
+        bySituation: { correct: 1, wrong: 0, unanswered: 1 },
+      });
     });
   });
 });

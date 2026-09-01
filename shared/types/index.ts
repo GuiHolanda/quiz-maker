@@ -451,13 +451,25 @@ export interface AdminAuditLogResponse {
   totalPages: number;
 }
 
+export type QuestionSituation = 'correct' | 'wrong' | 'unanswered';
+
+export interface QuestionHistory {
+  attempts: number;
+  correct: number;
+  accuracy: number;
+  situation: QuestionSituation;
+  markedOptions: string[];
+}
+
 export interface UnifiedQuestion {
   id: number;
   type: 'certification' | 'public_exam';
   text: string;
   difficulty: string;
   topic: string;
+  sectionName: string;
   sourceLabel: string;
+  examId: string | null;
   options: Record<string, string>;
   answer: {
     correctOptions: string[];
@@ -465,7 +477,10 @@ export interface UnifiedQuestion {
   } | null;
   createdAt: string;
   correctCount: number;
+  history: QuestionHistory;
 }
+
+export type QuestionBankSort = 'asc' | 'desc' | 'errorRate' | 'mostUsed';
 
 export interface QuestionBankParams {
   type?: 'certification' | 'public_exam' | 'all';
@@ -475,9 +490,21 @@ export interface QuestionBankParams {
   difficulty?: string[];
   hasAnswer?: boolean;
   hasExplanation?: boolean;
-  sort?: 'asc' | 'desc';
+  situation?: QuestionSituation;
+  explanation?: 'with' | 'without';
+  sort?: QuestionBankSort;
   page: number;
   pageSize: number;
+}
+
+export interface QuestionBankSummary {
+  saved: number;
+  answered: number;
+  accuracy: number;
+  attempts: number;
+  correct: number;
+  withoutExplanation: number;
+  bySituation: { correct: number; wrong: number; unanswered: number };
 }
 
 export interface QuestionBankResponse {
@@ -485,6 +512,7 @@ export interface QuestionBankResponse {
   total: number;
   page: number;
   pageSize: number;
+  summary: QuestionBankSummary;
 }
 
 export interface AppNotification {

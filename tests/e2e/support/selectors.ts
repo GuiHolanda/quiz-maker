@@ -97,6 +97,12 @@ export const TID = {
   questionBankSourceFilter: 'question-bank-source-filter',
   questionBankDifficultyFilter: 'question-bank-difficulty-filter',
   questionBankDeleteBtn: 'question-bank-delete-btn',
+  questionBankSortSelect: 'question-bank-sort-select',
+  questionBankSelectAll: 'question-bank-select-all',
+  questionBankCardCheckbox: 'question-bank-card-checkbox',
+  questionBankBulkBar: 'question-bank-bulk-bar',
+  questionBankBulkDelete: 'question-bank-bulk-delete',
+  questionBankCreateSimulado: 'question-bank-create-simulado',
 
   // Collapsible filter panel
   filterPanelToggle: 'filter-panel-toggle',
@@ -123,6 +129,7 @@ export const TID = {
   // Confirmation dialogs
   confirmDiscardBtn: 'confirm-discard-btn',
   confirmDeleteBtn: 'confirm-delete-btn',
+  confirmBulkDeleteBtn: 'confirm-bulk-delete-btn',
   confirmDiscardAttemptBtn: 'confirm-discard-attempt-btn',
   confirmFinishAttemptBtn: 'confirm-finish-attempt-btn',
 } as const;

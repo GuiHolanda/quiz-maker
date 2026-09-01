@@ -33,10 +33,16 @@ export async function GET(request: NextRequest) {
   const difficulty = difficultyRaw.length > 0 ? difficultyRaw : undefined;
   const hasAnswerRaw = searchParams.get('hasAnswer');
   const hasExplanationRaw = searchParams.get('hasExplanation');
+  const situationRaw = searchParams.get('situation');
+  const explanationRaw = searchParams.get('explanation');
   const page = parseInt(searchParams.get('page') ?? '1', 10);
   const pageSize = parseInt(searchParams.get('pageSize') ?? '10', 10);
   const sortRaw = searchParams.get('sort');
-  const sort: 'asc' | 'desc' = sortRaw === 'asc' ? 'asc' : 'desc';
+  const sort: 'asc' | 'desc' | 'errorRate' | 'mostUsed' =
+    sortRaw === 'asc' || sortRaw === 'errorRate' || sortRaw === 'mostUsed' ? sortRaw : 'desc';
+  const situation =
+    situationRaw === 'correct' || situationRaw === 'wrong' || situationRaw === 'unanswered' ? situationRaw : undefined;
+  const explanation = explanationRaw === 'with' || explanationRaw === 'without' ? explanationRaw : undefined;
 
   if (!['all', 'certification', 'public_exam'].includes(type)) {
     return NextResponse.json({ message: 'Invalid type filter' }, { status: 400 });
@@ -61,6 +67,8 @@ export async function GET(request: NextRequest) {
       difficulty,
       hasAnswer,
       hasExplanation,
+      situation,
+      explanation,
       sort,
       page,
       pageSize,
