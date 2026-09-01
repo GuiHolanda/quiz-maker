@@ -39,6 +39,13 @@ function difficultyColor(value: string): 'success' | 'warning' | 'danger' | 'def
   return 'default';
 }
 
+const DIFFICULTY_DOT = {
+  success: 'bg-success',
+  warning: 'bg-warning',
+  danger: 'bg-danger',
+  default: 'bg-default-400',
+} as const;
+
 const SITUATION_META = {
   correct: { color: 'success' as const, icon: faCircleCheck, labelKey: 'questionBank.situationCorrect' },
   wrong: { color: 'danger' as const, icon: faCircleXmark, labelKey: 'questionBank.situationWrong' },
@@ -63,9 +70,6 @@ export function QuestionBankCard({
   const explanations = question.answer?.explanations ?? {};
   const hasExplanations = Object.keys(explanations).length > 0;
   const code = `Q-${String(question.id).padStart(4, '0')}`;
-
-  const accuracyTone =
-    history.accuracy >= 70 ? 'text-success' : history.accuracy >= 50 ? 'text-primary' : 'text-danger';
 
   return (
     <div
@@ -109,14 +113,7 @@ export function QuestionBankCard({
     const situation = SITUATION_META[history.situation];
 
     return (
-      <div className="flex flex-wrap items-center gap-2.5">
-        <span className="font-mono text-[11px] text-default-400">{code}</span>
-        <Chip className="max-w-[240px]" color="default" size="sm" variant="flat">
-          <span className="truncate">{question.topic}</span>
-        </Chip>
-        <Chip className="capitalize" color={difficultyColor(question.difficulty)} size="sm" variant="flat">
-          {question.difficulty}
-        </Chip>
+      <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2">
         <Chip
           color={situation.color}
           size="sm"
@@ -125,11 +122,23 @@ export function QuestionBankCard({
         >
           {t(situation.labelKey)}
         </Chip>
-        {answered && (
-          <Chip color={hasExplanations ? 'default' : 'warning'} size="sm" variant="flat">
-            {hasExplanations ? t('questionBank.hasExplanation') : t('questionBank.statusNoExplanation')}
-          </Chip>
-        )}
+        <div className="flex flex-wrap items-center gap-2 text-xs text-default-500">
+          <span className="font-mono text-[11px] text-default-400">{code}</span>
+          <span aria-hidden="true" className="text-default-400">
+            ·
+          </span>
+          <span className="max-w-[220px] truncate">{question.topic}</span>
+          <span aria-hidden="true" className="text-default-400">
+            ·
+          </span>
+          <span className="flex items-center gap-1.5 capitalize">
+            <span
+              aria-hidden="true"
+              className={`h-[7px] w-[7px] shrink-0 rounded-full ${DIFFICULTY_DOT[difficultyColor(question.difficulty)]}`}
+            />
+            {question.difficulty}
+          </span>
+        </div>
       </div>
     );
   }
@@ -142,11 +151,11 @@ export function QuestionBankCard({
         : t('questionBank.usedMany', { count: history.attempts });
 
     return (
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-        <span className="text-default-400">{question.sourceLabel}</span>
-        <span className="text-default-400">{usageLabel}</span>
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-default-400">
+        <span>{question.sourceLabel}</span>
+        <span>{usageLabel}</span>
         {answered && (
-          <span className={accuracyTone}>
+          <span>
             {t('questionBank.accuracyValue', {
               correct: history.correct,
               total: history.attempts,
@@ -154,7 +163,7 @@ export function QuestionBankCard({
             })}
           </span>
         )}
-        <span className="text-default-400">
+        <span>
           {t('questionBank.savedPrefix')} <RelativeDate date={question.createdAt} />
         </span>
       </div>
@@ -163,23 +172,33 @@ export function QuestionBankCard({
 
   function renderActions() {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
         {answered ? (
-          <Button
-            aria-expanded={open}
-            className={`${buttonStyles.flat} h-8 px-3 text-xs`}
-            endContent={
-              <FontAwesomeIcon
-                aria-hidden="true"
-                className={`w-3 h-3 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-                icon={faChevronDown}
-              />
-            }
-            size="sm"
-            onPress={onToggleOpen}
-          >
-            {open ? t('questionBank.hideAnswer') : t('questionBank.showAnswer')}
-          </Button>
+          <>
+            <span
+              className={`flex items-center gap-1.5 whitespace-nowrap text-xs ${
+                hasExplanations ? 'text-default-400' : 'text-primary'
+              }`}
+            >
+              <FontAwesomeIcon aria-hidden="true" className="w-3 h-3" icon={faLightbulb} />
+              {hasExplanations ? t('questionBank.hasExplanation') : t('questionBank.statusNoExplanation')}
+            </span>
+            <Button
+              aria-expanded={open}
+              className={`${buttonStyles.flat} h-8 px-3 text-xs`}
+              endContent={
+                <FontAwesomeIcon
+                  aria-hidden="true"
+                  className={`w-3 h-3 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+                  icon={faChevronDown}
+                />
+              }
+              size="sm"
+              onPress={onToggleOpen}
+            >
+              {open ? t('questionBank.hideAnswer') : t('questionBank.showAnswer')}
+            </Button>
+          </>
         ) : (
           <span className="flex items-center gap-2 whitespace-nowrap rounded-lg border border-dashed border-divider px-3 py-2 text-xs text-default-400">
             <FontAwesomeIcon aria-hidden="true" className="w-3 h-3" icon={faEyeSlash} />
