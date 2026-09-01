@@ -32,7 +32,7 @@ For each question, check and correct if needed:
 3. **Distractor quality** — wrong options must be plausible but clearly incorrect on reflection; avoid obviously wrong options.
 4. **Language** — correct grammar and phrasing in the exam's official language.
 5. **Difficulty calibration** — difficulty label (easy/medium/hard) is appropriate.
-6. **Correctness of correctCount** — the number of correct options declared is realistic for this question.
+6. **correctCount within bounds** — \`correctCount\` must stay between 1 and ${format.maxCorrect}. Keep the drafted value unless it is plainly wrong, and never raise it above ${format.maxCorrect}. If your edits would leave more than ${format.maxCorrect} options defensibly correct, rewrite the surplus ones to be clearly incorrect instead of increasing \`correctCount\`.
 7. **Self-containment** — each question is answerable without external context.
 8. **Format fidelity** — every question must keep exactly the options ${labelList(format)}. Never add, drop, or relabel an option. ${format.labelsAreSemantic ? 'These labels carry meaning and their texts are fixed — criterion 3 does not apply to this format.' : ''}
 

@@ -26,6 +26,7 @@ vi.mock('@/features/services/openAI.service', () => ({
 
 vi.mock('@/features/services/exam-question.service', () => ({
   validateAiQuestions: vi.fn().mockReturnValue([{ id: 1, text: 'Q1' }]),
+  sanitizeAiQuestions: vi.fn().mockReturnValue({ questions: [{ id: 1, text: 'Q1' }], dropped: [] }),
   CertificationQuestionService: vi.fn(),
   PublicExamQuestionService: vi.fn(),
 }));
@@ -203,8 +204,8 @@ describe('processTopic — pipeline e finalização', () => {
   });
 
   it('marca o tópico como error com errorType generation quando o pipeline lança', async () => {
-    const { validateAiQuestions } = await import('@/features/services/exam-question.service');
-    (validateAiQuestions as any).mockImplementationOnce(() => {
+    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    (sanitizeAiQuestions as any).mockImplementationOnce(() => {
       throw new Error('bad json');
     });
 
@@ -222,6 +223,44 @@ describe('processTopic — pipeline e finalização', () => {
     );
   });
 
+  it('marca o tópico como error quando todas as questões do lote são descartadas', async () => {
+    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    (sanitizeAiQuestions as any).mockReturnValueOnce({
+      questions: [],
+      dropped: ['Invalid format: correctCount must be between 1 and 3'],
+    });
+
+    await processTopic('topic-1');
+
+    expect(prismaMock.generationJobTopic.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'topic-1' },
+        data: expect.objectContaining({ status: 'error', errorType: 'generation' }),
+      }),
+    );
+  });
+
+  it('mantém as questões válidas do lote quando só algumas são descartadas', async () => {
+    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    (sanitizeAiQuestions as any).mockReturnValueOnce({
+      questions: [{ id: 1, text: 'Q1' }, { id: 2, text: 'Q2' }],
+      dropped: ['Invalid format: correctCount must be between 1 and 3'],
+    });
+
+    await processTopic('topic-1');
+
+    expect(prismaMock.generationJobTopic.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'topic-1' },
+        data: expect.objectContaining({
+          status: 'done',
+          savedCount: 0,
+          pendingQuestionsJson: JSON.stringify([{ id: 1, text: 'Q1' }, { id: 2, text: 'Q2' }]),
+        }),
+      }),
+    );
+  });
+
   it('faz rollback da quota quando a geração falha após o débito', async () => {
     const rollbackMock = vi.fn().mockResolvedValue(undefined);
     quotaConstructorMock.mockImplementationOnce(function () {
@@ -230,8 +269,8 @@ describe('processTopic — pipeline e finalização', () => {
         rollbackQuota: rollbackMock,
       };
     });
-    const { validateAiQuestions } = await import('@/features/services/exam-question.service');
-    (validateAiQuestions as any).mockImplementationOnce(() => {
+    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    (sanitizeAiQuestions as any).mockImplementationOnce(() => {
       throw new Error('bad json');
     });
 
@@ -324,8 +363,8 @@ describe('processTopic — branch public_exam', () => {
   });
 
   it('marca tópico de concurso como error quando o pipeline lança', async () => {
-    const { validateAiQuestions } = await import('@/features/services/exam-question.service');
-    (validateAiQuestions as any).mockImplementationOnce(() => {
+    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    (sanitizeAiQuestions as any).mockImplementationOnce(() => {
       throw new Error('bad public exam json');
     });
 

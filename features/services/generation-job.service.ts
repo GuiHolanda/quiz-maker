@@ -9,7 +9,7 @@ import { OpenAIService } from '@/features/services/openAI.service';
 import { QuotaService } from '@/features/services/quota.service';
 import { MetricsService } from '@/features/services/metrics.service';
 import { ReferralService } from '@/features/services/referral.service';
-import { validateAiQuestions } from '@/features/services/exam-question.service';
+import { sanitizeAiQuestions } from '@/features/services/exam-question.service';
 import { EXAM_PROMPTS } from '@/config/prompts';
 import {
   GENERATION_MAX_CONCURRENT_TOPICS,
@@ -356,7 +356,22 @@ export async function processTopic(topicId: string): Promise<void> {
       Date.now() - t0
     );
 
-    questions = validateAiQuestions(JSON.parse(extractJson(format.text)), examFormat) as AIExamQuestion[];
+    const { questions: validQuestions, dropped } = sanitizeAiQuestions(
+      JSON.parse(extractJson(format.text)),
+      examFormat
+    );
+
+    if (dropped.length > 0) {
+      console.warn(
+        `[generation-job] Topic "${topic.topicName}": descartadas ${dropped.length} questão(ões) malformada(s) — ${dropped.join('; ')}`
+      );
+    }
+
+    if (validQuestions.length === 0) {
+      throw new Error(`Invalid format: a geração não produziu nenhuma questão válida (${dropped.length} descartadas)`);
+    }
+
+    questions = validQuestions;
 
     // Defense: the review step may return more questions than requested despite prompt constraints.
     // Truncate to the requested count so saved count never exceeds what was charged to quota.
