@@ -3,154 +3,135 @@
 import { useEffect, useState } from 'react';
 import { Input } from '@heroui/input';
 import { Select, SelectItem } from '@heroui/select';
-import { Button } from '@heroui/button';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMagnifyingGlass, faSliders, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faMagnifyingGlass, faRotateLeft } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
-import { buttonStyles } from '@/config/constants/buttonStyles';
-import { getQuestionBankTopics, getQuestionBankSources } from '@/features/connectors';
+import { getQuestionBankSources, getQuestionBankTopics } from '@/features/connectors';
+import type { QuestionBankSummary, QuestionSituation } from '@/shared/types';
 
 export interface QuestionBankFilters {
   readonly search: string;
-  readonly type: 'all' | 'certification' | 'public_exam';
-  readonly source: string[];
-  readonly topic: string[];
-  readonly difficulty: string[];
-  readonly hasAnswer: '' | 'true' | 'false';
-  readonly hasExplanation: '' | 'true' | 'false';
-  readonly sort: 'asc' | 'desc';
+  readonly certification: string;
+  readonly topic: string;
+  readonly difficulty: string;
+  readonly explanation: '' | 'with' | 'without';
+  readonly situation: '' | QuestionSituation;
 }
 
 export const EMPTY_FILTERS: QuestionBankFilters = {
   search: '',
-  type: 'all',
-  source: [],
-  topic: [],
-  difficulty: [],
-  hasAnswer: '',
-  hasExplanation: '',
-  sort: 'desc',
+  certification: '',
+  topic: '',
+  difficulty: '',
+  explanation: '',
+  situation: '',
 };
 
 export function hasActiveFilters(filters: QuestionBankFilters): boolean {
   return (
     filters.search !== '' ||
-    filters.type !== 'all' ||
-    filters.source.length > 0 ||
-    filters.topic.length > 0 ||
-    filters.difficulty.length > 0 ||
-    filters.hasAnswer !== '' ||
-    filters.hasExplanation !== ''
+    filters.certification !== '' ||
+    filters.topic !== '' ||
+    filters.difficulty !== '' ||
+    filters.explanation !== '' ||
+    filters.situation !== ''
   );
 }
+
 interface QuestionBankFiltersBarProps {
   readonly filters: QuestionBankFilters;
+  readonly summary: QuestionBankSummary | null;
   readonly onFilterChange: <K extends keyof QuestionBankFilters>(key: K, value: QuestionBankFilters[K]) => void;
   readonly onClear: () => void;
 }
 
-export function QuestionBankFiltersBar({ filters, onFilterChange, onClear }: QuestionBankFiltersBarProps) {
+const SITUATION_CHIPS: { key: '' | QuestionSituation; labelKey: string }[] = [
+  { key: '', labelKey: 'questionBank.situationAll' },
+  { key: 'correct', labelKey: 'questionBank.situationCorrect' },
+  { key: 'wrong', labelKey: 'questionBank.situationWrong' },
+  { key: 'unanswered', labelKey: 'questionBank.situationUnanswered' },
+];
+
+export function QuestionBankFiltersBar({ filters, summary, onFilterChange, onClear }: QuestionBankFiltersBarProps) {
   const { t } = useTranslation();
-  const active = hasActiveFilters(filters);
   const [sources, setSources] = useState<string[]>([]);
   const [topics, setTopics] = useState<string[]>([]);
 
   useEffect(() => {
-    const type = filters.type === 'all' ? undefined : filters.type;
     Promise.all([
-      getQuestionBankSources(type).catch(() => [] as string[]),
-      getQuestionBankTopics(type).catch(() => [] as string[]),
-    ]).then(([s, tp]) => {
-      setSources(s);
-      setTopics(tp);
+      getQuestionBankSources().catch(() => [] as string[]),
+      getQuestionBankTopics().catch(() => [] as string[]),
+    ]).then(([nextSources, nextTopics]) => {
+      setSources(nextSources);
+      setTopics(nextTopics);
     });
-  }, [filters.type]);
+  }, []);
+
+  const situationCount = (key: '' | QuestionSituation): number => {
+    if (!summary) return 0;
+    if (key === '') return summary.saved;
+    if (key === 'correct') return summary.bySituation.correct;
+    if (key === 'wrong') return summary.bySituation.wrong;
+    return summary.bySituation.unanswered;
+  };
 
   return (
-    <div className="bg-content1 border border-default-200 rounded-xl p-4 flex flex-col gap-3">
-      <div className="flex items-center gap-3">
-        <FontAwesomeIcon className="w-3.5 h-3.5 text-default-400 shrink-0" icon={faSliders} />
-        <span className="text-xs font-semibold text-default-500">{t('questionBank.filters')}</span>
-        {active && (
-          <Button
-            className={`${buttonStyles.flat} ml-auto h-7 px-3 text-xs`}
-            size="sm"
-            startContent={<FontAwesomeIcon className="w-3 h-3" icon={faXmark} />}
-            onPress={onClear}
-          >
-            {t('questionBank.clearFilters')}
-          </Button>
-        )}
-      </div>
-
-      {/* Row 1: Search + Source */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div className="bg-content1 rounded-xl p-6 flex flex-col gap-4">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(220px,1.4fr)_repeat(4,minmax(0,1fr))]">
         <Input
-          data-testid="question-bank-search"
           {...inputProperties.input}
-          label={t('questionBank.labelSearch')}
+          aria-label={t('questionBank.labelSearch')}
+          data-testid="question-bank-search"
           placeholder={t('questionBank.searchPlaceholder')}
           startContent={<FontAwesomeIcon className="w-3.5 h-3.5 text-default-400" icon={faMagnifyingGlass} />}
           value={filters.search}
-          onValueChange={(v) => onFilterChange('search', v)}
+          onValueChange={(value) => onFilterChange('search', value)}
         />
-        <Select
-          data-testid="question-bank-source-filter"
-          {...inputProperties.select}
-          label={t('questionBank.labelSource')}
-          placeholder={t('questionBank.filterSource')}
-          selectionMode="multiple"
-          selectedKeys={new Set(filters.source)}
-          onSelectionChange={(keys) => onFilterChange('source', Array.from(keys) as string[])}
-        >
-          {sources.map((src) => (
-            <SelectItem key={src}>{src}</SelectItem>
-          ))}
-        </Select>
-      </div>
 
-      {/* Row 2: Type + Topic + Difficulty + Status */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <Select
           {...inputProperties.select}
-          label={t('questionBank.labelType')}
-          placeholder={t('questionBank.filterType')}
-          selectedKeys={filters.type !== 'all' ? new Set([filters.type]) : new Set([])}
+          aria-label={t('questionBank.labelSource')}
+          data-testid="question-bank-source-filter"
+          selectedKeys={new Set([filters.certification || 'all'])}
           onSelectionChange={(keys) => {
-            const val = Array.from(keys)[0] as QuestionBankFilters['type'] | undefined;
-            onFilterChange('type', val ?? 'all');
-            onFilterChange('source', []);
-            onFilterChange('topic', []);
+            const value = Array.from(keys)[0] as string;
+            onFilterChange('certification', value === 'all' ? '' : value);
           }}
         >
-          <SelectItem key="certification">{t('questionBank.typeCertification')}</SelectItem>
-          <SelectItem key="public_exam">{t('questionBank.typePublicExam')}</SelectItem>
+          {[
+            <SelectItem key="all">{t('questionBank.allCertifications')}</SelectItem>,
+            ...sources.map((source) => <SelectItem key={source}>{source}</SelectItem>),
+          ]}
         </Select>
 
         <Select
           {...inputProperties.select}
-          label={t('questionBank.labelTopic')}
-          placeholder={t('questionBank.filterTopic')}
-          selectionMode="multiple"
-          selectedKeys={new Set(filters.topic)}
-          onSelectionChange={(keys) => onFilterChange('topic', Array.from(keys) as string[])}
+          aria-label={t('questionBank.labelTopic')}
+          selectedKeys={new Set([filters.topic || 'all'])}
+          onSelectionChange={(keys) => {
+            const value = Array.from(keys)[0] as string;
+            onFilterChange('topic', value === 'all' ? '' : value);
+          }}
         >
-          {topics.map((topic) => (
-            <SelectItem key={topic}>{topic}</SelectItem>
-          ))}
+          {[
+            <SelectItem key="all">{t('questionBank.allTopics')}</SelectItem>,
+            ...topics.map((topic) => <SelectItem key={topic}>{topic}</SelectItem>),
+          ]}
         </Select>
 
         <Select
+          {...inputProperties.select}
+          aria-label={t('questionBank.labelDifficulty')}
           data-testid="question-bank-difficulty-filter"
-          {...inputProperties.select}
-          label={t('questionBank.labelDifficulty')}
-          placeholder={t('questionBank.filterDifficulty')}
-          selectionMode="multiple"
-          selectedKeys={new Set(filters.difficulty)}
-          onSelectionChange={(keys) => onFilterChange('difficulty', Array.from(keys) as string[])}
+          selectedKeys={new Set([filters.difficulty || 'all'])}
+          onSelectionChange={(keys) => {
+            const value = Array.from(keys)[0] as string;
+            onFilterChange('difficulty', value === 'all' ? '' : value);
+          }}
         >
+          <SelectItem key="all">{t('questionBank.allDifficulties')}</SelectItem>
           <SelectItem key="easy">{t('questionBank.difficultyEasy')}</SelectItem>
           <SelectItem key="medium">{t('questionBank.difficultyMedium')}</SelectItem>
           <SelectItem key="hard">{t('questionBank.difficultyHard')}</SelectItem>
@@ -158,34 +139,49 @@ export function QuestionBankFiltersBar({ filters, onFilterChange, onClear }: Que
 
         <Select
           {...inputProperties.select}
-          label={t('questionBank.labelStatus')}
-          placeholder={t('questionBank.filterStatus')}
-          selectedKeys={
-            filters.hasAnswer !== ''
-              ? new Set([`answer_${filters.hasAnswer}`])
-              : filters.hasExplanation !== ''
-                ? new Set([`explanation_${filters.hasExplanation}`])
-                : new Set([])
-          }
+          aria-label={t('questionBank.filterExplanation')}
+          selectedKeys={new Set([filters.explanation || 'all'])}
           onSelectionChange={(keys) => {
-            const val = Array.from(keys)[0] as string | undefined;
-            if (!val) {
-              onFilterChange('hasAnswer', '');
-              onFilterChange('hasExplanation', '');
-            } else if (val.startsWith('answer_')) {
-              onFilterChange('hasAnswer', val.replace('answer_', '') as '' | 'true' | 'false');
-              onFilterChange('hasExplanation', '');
-            } else if (val.startsWith('explanation_')) {
-              onFilterChange('hasExplanation', val.replace('explanation_', '') as '' | 'true' | 'false');
-              onFilterChange('hasAnswer', '');
-            }
+            const value = Array.from(keys)[0] as string;
+            onFilterChange('explanation', value === 'all' ? '' : (value as QuestionBankFilters['explanation']));
           }}
         >
-          <SelectItem key="answer_true">{t('questionBank.statusHasAnswer')}</SelectItem>
-          <SelectItem key="answer_false">{t('questionBank.statusNoAnswer')}</SelectItem>
-          <SelectItem key="explanation_true">{t('questionBank.statusHasExplanation')}</SelectItem>
-          <SelectItem key="explanation_false">{t('questionBank.statusNoExplanation')}</SelectItem>
+          <SelectItem key="all">{t('questionBank.explanationAll')}</SelectItem>
+          <SelectItem key="with">{t('questionBank.explanationWith')}</SelectItem>
+          <SelectItem key="without">{t('questionBank.explanationWithout')}</SelectItem>
         </Select>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-semibold text-default-400 mr-1">{t('questionBank.situationLabel')}</span>
+        {SITUATION_CHIPS.map((chip) => {
+          const isActive = filters.situation === chip.key;
+
+          return (
+            <button
+              key={chip.key || 'all'}
+              aria-pressed={isActive}
+              className={`flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm transition-colors duration-200 ${
+                isActive
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-divider bg-content1 text-default-500 hover:border-primary/50'
+              }`}
+              type="button"
+              onClick={() => onFilterChange('situation', chip.key)}
+            >
+              {t(chip.labelKey)}
+              <span className="font-mono text-xs opacity-75">{situationCount(chip.key)}</span>
+            </button>
+          );
+        })}
+        <button
+          className="ml-auto flex items-center gap-2 rounded-lg border border-divider px-3 py-1.5 text-sm text-default-500 transition-colors duration-200 hover:bg-content2 hover:text-foreground"
+          type="button"
+          onClick={onClear}
+        >
+          <FontAwesomeIcon className="w-3.5 h-3.5" icon={faRotateLeft} />
+          {t('questionBank.clearFilters')}
+        </button>
       </div>
     </div>
   );
