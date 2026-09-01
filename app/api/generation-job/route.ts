@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { toApiErrorResponse } from '@/lib/api-error';
 import { claimSlots, processTopic } from '@/features/services/generation-job.service';
 import { QuotaService } from '@/features/services/quota.service';
+import { isGenerationLanguage, resolveGenerationLanguage } from '@/config/generation-languages';
 import {
   GENERATION_MAX_TOPICS_PER_JOB,
   GENERATION_MAX_QUESTIONS_PER_TOPIC,
@@ -66,6 +67,7 @@ export async function POST(request: NextRequest) {
       refKey?: unknown;
       refName?: unknown;
       examBoardName?: unknown;
+      language?: unknown;
       distribution?: unknown;
     };
 
@@ -81,6 +83,9 @@ export async function POST(request: NextRequest) {
     }
     if (body.examBoardName !== undefined && typeof body.examBoardName !== 'string') {
       throw Object.assign(new Error('Invalid examBoardName'), { status: 400 });
+    }
+    if (body.language !== undefined && !isGenerationLanguage(body.language)) {
+      throw Object.assign(new Error('Invalid language'), { status: 400 });
     }
     if (!Array.isArray(body.distribution)) {
       throw Object.assign(new Error('Invalid distribution'), { status: 400 });
@@ -149,6 +154,10 @@ export async function POST(request: NextRequest) {
     const quotaService = new QuotaService();
     await quotaService.check(session.user.id, 'generate_questions', 1);
 
+    // Concursos are always Brazilian Portuguese (their prompts hard-code it); the
+    // selector only varies certification jobs.
+    const language = body.type === 'public_exam' ? 'pt' : resolveGenerationLanguage(body.language);
+
     const job = await prisma.generationJob.create({
       data: {
         userId: session.user.id,
@@ -156,6 +165,7 @@ export async function POST(request: NextRequest) {
         refKey: body.refKey,
         refName: body.refName,
         examBoardName: body.type === 'public_exam' ? ((body.examBoardName as string | undefined) ?? null) : null,
+        language,
         status: 'queued',
         topics: {
           create: validTopics.map((entry) => ({

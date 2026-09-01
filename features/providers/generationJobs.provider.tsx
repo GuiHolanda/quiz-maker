@@ -3,6 +3,7 @@
 import { createContext, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import type { AIExamQuestion, GenerationJobStatus, GenerationJobTopicStatus } from '@/shared/types';
+import type { GenerationLanguage } from '@/config/generation-languages';
 import {
   createGenerationJob,
   getActiveGenerationJobs,
@@ -39,6 +40,7 @@ interface StartJobInput {
   readonly refKey: string;
   readonly refName: string;
   readonly examBoardName?: string;
+  readonly language?: GenerationLanguage;
   readonly totalQuestions: number;
   readonly distribution: Array<{ topicName: string; questionCount: number }>;
 }
@@ -174,6 +176,7 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
           refKey: input.refKey,
           refName: input.refName,
           examBoardName: input.examBoardName,
+          language: input.language,
           distribution: validTopics,
         });
         setJobs((prev) => [

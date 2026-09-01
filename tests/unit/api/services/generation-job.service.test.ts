@@ -261,6 +261,76 @@ describe('processTopic — pipeline e finalização', () => {
     );
   });
 
+  it('injeta o idioma do job nos inputs dos prompts de certificação', async () => {
+    prismaMock.generationJobTopic.findUnique.mockResolvedValue(
+      makeTopic({ job: { ...makeTopic().job, language: 'en' } }) as any
+    );
+
+    await processTopic('topic-1');
+
+    expect(openAICallMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ language: 'en' }),
+      expect.anything()
+    );
+  });
+
+  it('descarta questões que a LLM gerou em idioma diferente do solicitado', async () => {
+    prismaMock.generationJobTopic.findUnique.mockResolvedValue(
+      makeTopic({ job: { ...makeTopic().job, language: 'pt' } }) as any
+    );
+
+    const ptQuestion = {
+      id: 1,
+      text: 'Qual das alternativas descreve corretamente a função de um serviço de orquestração quando as tarefas estão distribuídas entre vários nós de processamento?',
+      options: { A: 'primeira opção', B: 'segunda opção', C: 'terceira opção', D: 'quarta opção', E: 'quinta opção' },
+    };
+    const enQuestion = {
+      id: 2,
+      text: 'Which of the following statements best describes the behaviour of an orchestration service when the tasks are distributed across multiple processing nodes in the cluster?',
+      options: { A: 'the first choice here', B: 'the second choice here', C: 'the third one', D: 'the fourth one', E: 'the fifth one' },
+    };
+
+    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    (sanitizeAiQuestions as any).mockReturnValueOnce({ questions: [ptQuestion, enQuestion], dropped: [] });
+
+    await processTopic('topic-1');
+
+    expect(prismaMock.generationJobTopic.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'topic-1' },
+        data: expect.objectContaining({
+          status: 'done',
+          pendingQuestionsJson: JSON.stringify([ptQuestion]),
+        }),
+      })
+    );
+  });
+
+  it('marca o tópico como error quando nenhuma questão está no idioma solicitado', async () => {
+    prismaMock.generationJobTopic.findUnique.mockResolvedValue(
+      makeTopic({ job: { ...makeTopic().job, language: 'pt' } }) as any
+    );
+
+    const enQuestion = {
+      id: 1,
+      text: 'Which of the following statements best describes the behaviour of an orchestration service when the tasks are distributed across multiple processing nodes in the cluster?',
+      options: { A: 'the first choice here', B: 'the second choice here', C: 'the third one', D: 'the fourth one', E: 'the fifth one' },
+    };
+
+    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    (sanitizeAiQuestions as any).mockReturnValueOnce({ questions: [enQuestion], dropped: [] });
+
+    await processTopic('topic-1');
+
+    expect(prismaMock.generationJobTopic.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'topic-1' },
+        data: expect.objectContaining({ status: 'error', errorType: 'generation' }),
+      })
+    );
+  });
+
   it('faz rollback da quota quando a geração falha após o débito', async () => {
     const rollbackMock = vi.fn().mockResolvedValue(undefined);
     quotaConstructorMock.mockImplementationOnce(function () {

@@ -36,6 +36,7 @@ import {
   FORK_EXAM_URL,
   ADMIN_CATALOG_URL,
 } from '@/config/constants';
+import type { GenerationLanguage } from '@/config/generation-languages';
 import {
   AIExamQuestion,
   Exam,
@@ -449,6 +450,7 @@ export const createGenerationJob = (payload: {
   refKey: string;
   refName: string;
   examBoardName?: string;
+  language?: GenerationLanguage;
   distribution: Array<{ topicName: string; questionCount: number }>;
 }): Promise<{ jobId: string }> => api.post<{ jobId: string }>(GENERATION_JOB_URL, payload).then((r) => r.data);
 

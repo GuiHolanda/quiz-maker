@@ -1,6 +1,8 @@
 import type { PromptDefinition } from '../types';
 import { labelList, resolveQuestionFormat } from '@/config/question-formats';
 import type { QuestionFormatKey } from '@/config/question-formats';
+import { promptLanguageName } from '@/config/generation-languages';
+import type { GenerationLanguage } from '@/config/generation-languages';
 
 export interface CertificationQuestionsReviewInput {
   readonly certification_name: string;
@@ -8,12 +10,14 @@ export interface CertificationQuestionsReviewInput {
   readonly draft_questions: string;
   readonly topics_list?: string;
   readonly format?: QuestionFormatKey;
+  readonly language?: GenerationLanguage;
 }
 
 export const certificationQuestionsReviewPrompt = {
   build: (input: CertificationQuestionsReviewInput): string => {
     const { certification_name, topic_name, draft_questions, topics_list } = input;
     const format = resolveQuestionFormat(input.format);
+    const languageName = promptLanguageName(input.language ?? 'pt');
     const topicsContext = topics_list
       ? ` The sub-topics that should be covered are:\n${topics_list}\nEnsure questions are distributed across these sub-topics.`
       : '';
@@ -30,7 +34,7 @@ For each question, check and correct if needed:
 1. **Factual accuracy** — all content matches current official documentation or standards for ${certification_name}.
 2. **Style fidelity** — question style, vocabulary, and distractor quality match the real exam.
 3. **Distractor quality** — wrong options must be plausible but clearly incorrect on reflection; avoid obviously wrong options.
-4. **Language** — correct grammar and phrasing in the exam's official language.
+4. **Language** — every question and every option must be written entirely in ${languageName}, with correct grammar and phrasing. Translate any question or option left in another language; never leave a mixed-language item.
 5. **Difficulty calibration** — difficulty label (easy/medium/hard) is appropriate.
 6. **correctCount within bounds** — \`correctCount\` must stay between 1 and ${format.maxCorrect}. Keep the drafted value unless it is plainly wrong, and never raise it above ${format.maxCorrect}. If your edits would leave more than ${format.maxCorrect} options defensibly correct, rewrite the surplus ones to be clearly incorrect instead of increasing \`correctCount\`.
 7. **Self-containment** — each question is answerable without external context.

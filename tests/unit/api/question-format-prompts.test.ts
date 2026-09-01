@@ -104,6 +104,54 @@ describe('format prompts derive the JSON skeleton from the format', () => {
   });
 });
 
+describe('certification prompts pin the generation language', () => {
+  const research = (language?: 'pt' | 'en') =>
+    certificationQuestionsResearchPrompt.build({
+      certification_name: 'AWS Machine Learning',
+      topic_name: 'Deployment',
+      num_questions: '5',
+      language,
+    });
+
+  const review = (language?: 'pt' | 'en') =>
+    certificationQuestionsReviewPrompt.build({
+      certification_name: 'AWS Machine Learning',
+      topic_name: 'Deployment',
+      draft_questions: 'x',
+      language,
+    });
+
+  const format = (language?: 'pt' | 'en') =>
+    certificationQuestionsFormatPrompt.build({
+      certification_name: 'AWS Machine Learning',
+      topic_name: 'Deployment',
+      reviewed_questions: 'x',
+      language,
+    });
+
+  it('research forces every question into the requested language with no mixing', () => {
+    expect(research('en')).toContain('in English');
+    expect(research('en')).toContain('never mix languages');
+    expect(research('pt')).toContain('in Brazilian Portuguese');
+  });
+
+  it('review requires every question and option to be in the requested language', () => {
+    expect(review('en')).toContain('written entirely in English');
+    expect(review('pt')).toContain('written entirely in Brazilian Portuguese');
+    expect(review('en')).toContain('never leave a mixed-language item');
+  });
+
+  it('format is told to preserve the language, not translate', () => {
+    expect(format('en')).toContain('already written in English');
+    expect(format('en')).toContain('do not translate');
+  });
+
+  it('defaults to Brazilian Portuguese when no language is given', () => {
+    expect(research()).toContain('in Brazilian Portuguese');
+    expect(review()).toContain('written entirely in Brazilian Portuguese');
+  });
+});
+
 describe('review prompts bound correctCount to the format ceiling', () => {
   it('tells the certification editor the hard ceiling and forbids raising it', () => {
     const prompt = certificationQuestionsReviewPrompt.build({

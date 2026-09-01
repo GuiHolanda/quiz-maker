@@ -5,6 +5,8 @@ import { shuffleOptionTexts } from '@/lib/shuffle-options';
 import { extractJson, sanitizeLlmError, type LlmErrorType } from '@/lib/llm-response';
 import { resolveQuestionFormat } from '@/config/question-formats';
 import type { QuestionFormat } from '@/config/question-formats';
+import { resolveGenerationLanguage } from '@/config/generation-languages';
+import { detectQuestionLanguage } from '@/lib/detect-question-language';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { QuotaService } from '@/features/services/quota.service';
 import { MetricsService } from '@/features/services/metrics.service';
@@ -191,6 +193,7 @@ export async function processTopic(topicId: string): Promise<void> {
     select: { providerId: true, examBoardId: true, questionFormat: true },
   });
   const examFormat = resolveQuestionFormat(exam?.questionFormat);
+  const targetLanguage = resolveGenerationLanguage(job.language);
 
   // Fetch the sub-topics for this section so they can be included in the prompts.
   const sectionTopics = await prisma.examSection
@@ -283,6 +286,7 @@ export async function processTopic(topicId: string): Promise<void> {
             num_questions: numStr,
             topics_list: topicsList,
             format,
+            language: targetLanguage,
           };
         if (step === 'review')
           return {
@@ -291,8 +295,15 @@ export async function processTopic(topicId: string): Promise<void> {
             draft_questions: priorText,
             topics_list: topicsList,
             format,
+            language: targetLanguage,
           };
-        return { certification_name: refName, topic_name: topic.topicName, reviewed_questions: priorText, format };
+        return {
+          certification_name: refName,
+          topic_name: topic.topicName,
+          reviewed_questions: priorText,
+          format,
+          language: targetLanguage,
+        };
       }
       if (step === 'research') {
         return {
@@ -372,6 +383,30 @@ export async function processTopic(topicId: string): Promise<void> {
     }
 
     questions = validQuestions;
+
+    // The prompts pin the language at every step, but a drafting/review model still
+    // occasionally emits a question wholesale in another language. Drop those so the
+    // saved batch is never mixed; keep anything the detector is unsure about.
+    const inLanguage: AIExamQuestion[] = [];
+    let offLanguageCount = 0;
+    for (const question of questions) {
+      const sample = `${question.text} ${Object.values(question.options ?? {}).join(' ')}`;
+      const detected = detectQuestionLanguage(sample);
+      if (detected !== 'unknown' && detected !== targetLanguage) offLanguageCount += 1;
+      else inLanguage.push(question);
+    }
+
+    if (offLanguageCount > 0) {
+      console.warn(
+        `[generation-job] Topic "${topic.topicName}": descartadas ${offLanguageCount} questão(ões) fora do idioma "${targetLanguage}"`
+      );
+    }
+
+    if (inLanguage.length === 0) {
+      throw new Error(`Invalid format: nenhuma questão no idioma solicitado ("${targetLanguage}")`);
+    }
+
+    questions = inLanguage;
 
     // Defense: the review step may return more questions than requested despite prompt constraints.
     // Truncate to the requested count so saved count never exceeds what was charged to quota.

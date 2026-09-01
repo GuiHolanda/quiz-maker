@@ -1,6 +1,8 @@
 import type { PromptDefinition } from '../types';
 import { correctCountRange, resolveQuestionFormat } from '@/config/question-formats';
 import type { QuestionFormatKey } from '@/config/question-formats';
+import { promptLanguageName } from '@/config/generation-languages';
+import type { GenerationLanguage } from '@/config/generation-languages';
 
 export interface CertificationQuestionsResearchInput {
   readonly certification_name: string;
@@ -8,12 +10,14 @@ export interface CertificationQuestionsResearchInput {
   readonly num_questions: string;
   readonly topics_list?: string;
   readonly format?: QuestionFormatKey;
+  readonly language?: GenerationLanguage;
 }
 
 export const certificationQuestionsResearchPrompt = {
   build: (input: CertificationQuestionsResearchInput): string => {
     const { certification_name, topic_name, num_questions, topics_list } = input;
     const format = resolveQuestionFormat(input.format);
+    const languageName = promptLanguageName(input.language ?? 'pt');
     const topicsBlock = topics_list
       ? `\nSub-topics to cover (distribute questions across these):\n${topics_list}\n`
       : '';
@@ -35,7 +39,7 @@ Based on the research, write exactly ${num_questions} **original** questions (do
 - Topic: ${topic_name}${topicsBlock}
 
 Rules:
-1. Use the same language as the official exam (search if unsure — some certifications test in the local language).
+1. Write every question — the stem and all options — in ${languageName}. Every question in this set must be entirely in ${languageName}; never mix languages within a question or across the set, regardless of the language the "${certification_name}" exam normally uses.
 2. Reflect the style identified in research (vocabulary, typical distractors, depth).
 3. Only factually correct content based on current official documentation or standards.
 4. Do NOT indicate the correct answer.

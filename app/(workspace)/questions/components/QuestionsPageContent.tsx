@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Chip } from '@heroui/chip';
 import { Button } from '@heroui/button';
 import { NumberInput } from '@heroui/number-input';
+import { Select, SelectItem } from '@heroui/select';
 import { BreadcrumbItem, Breadcrumbs } from '@heroui/breadcrumbs';
 import Link from 'next/link';
 import { faGraduationCap, faClipboardList, faCircleCheck } from '@fortawesome/free-solid-svg-icons';
@@ -33,6 +34,8 @@ import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptySt
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { GENERATION_MAX_ACTIVE_JOBS_PER_USER } from '@/config/constants';
+import { GENERATION_LANGUAGES, resolveGenerationLanguage } from '@/config/generation-languages';
+import type { GenerationLanguage } from '@/config/generation-languages';
 import { notify } from '@/shared/lib/notify';
 
 const EMPTY_COPY: Record<
@@ -59,7 +62,7 @@ const examKey = (exam: Exam) => exam.id ?? exam.name;
 const estimateMinutes = (topicCount: number) => Math.max(1, Math.ceil(topicCount / 5) * 2);
 
 export function QuestionsPageContent() {
-  const { t } = useTranslation();
+  const { t, language: uiLanguage } = useTranslation();
   const searchParams = useSearchParams();
   const { certifications, publicExams, isLoading } = useExamsContext();
   const { state, setAIquestions, setSelectedAIquestions } = useQuizContext();
@@ -68,7 +71,10 @@ export function QuestionsPageContent() {
   const [scope, setScope] = useState<ExamType>((searchParams.get('type') as ExamType) ?? 'certification');
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
+  const [language, setLanguage] = useState<GenerationLanguage>(() => resolveGenerationLanguage(uiLanguage));
   const [isStarting, setIsStarting] = useState(false);
+
+  const languageTouched = useRef(false);
 
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const [showSimuladosBanner, setShowSimuladosBanner] = useState(false);
@@ -96,6 +102,10 @@ export function QuestionsPageContent() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!languageTouched.current) setLanguage(resolveGenerationLanguage(uiLanguage));
+  }, [uiLanguage]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -255,7 +265,11 @@ export function QuestionsPageContent() {
     }));
 
     return (
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-end">
+      <div
+        className={`grid grid-cols-1 gap-4 sm:items-end ${
+          isCert ? 'sm:grid-cols-[minmax(0,1fr)_160px_150px]' : 'sm:grid-cols-[minmax(0,1fr)_180px]'
+        }`}
+      >
         <EntitySelect
           items={items}
           label={isCert ? t('certification.selectCertification') : t('concurso.selectPublicExam')}
@@ -266,6 +280,28 @@ export function QuestionsPageContent() {
           selectedKey={selectedExamId}
           onSelect={(key) => handleExamChange(key)}
         />
+
+        {isCert && (
+          <Select
+            {...inputProperties.select}
+            disallowEmptySelection
+            id="generation_language"
+            label={t('generate.language')}
+            placeholder=" "
+            selectedKeys={new Set([language])}
+            onSelectionChange={(keys) => {
+              const next = String(Array.from(keys)[0] ?? '');
+              if (next === 'pt' || next === 'en') {
+                languageTouched.current = true;
+                setLanguage(next);
+              }
+            }}
+          >
+            {GENERATION_LANGUAGES.map((code) => (
+              <SelectItem key={code}>{t(`generate.language_${code}`)}</SelectItem>
+            ))}
+          </Select>
+        )}
 
         <NumberInput
           {...inputProperties.numberInput}
@@ -350,6 +386,9 @@ export function QuestionsPageContent() {
     return [
       { label: t('generate.summaryScope'), value: scopeLabel },
       { label: t('generate.summaryExam'), value: selectedExam?.name ?? '—' },
+      ...(scope === 'certification'
+        ? [{ label: t('generate.language'), value: t(`generate.language_${language}`) }]
+        : []),
       { label: t('generate.summaryActiveTopics'), value: String(dist.activeCount) },
       {
         label: t('generate.summaryDistributed'),
@@ -398,6 +437,7 @@ export function QuestionsPageContent() {
         refKey: selectedExam.id,
         refName: selectedExam.name,
         examBoardName: selectedExam.examBoard?.name,
+        language: scope === 'certification' ? language : undefined,
         totalQuestions: selectedExam.totalQuestions,
         distribution,
       });

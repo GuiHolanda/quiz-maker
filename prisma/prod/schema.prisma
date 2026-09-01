@@ -323,6 +323,7 @@ model GenerationJob {
   refKey        String // certKey ou publicExamId
   refName       String // label humano para a notificação
   examBoardName String? // apenas para public_exam
+  language      String               @default("pt") // "pt" | "en" — idioma-alvo das questões (concurso é sempre "pt")
   status        String               @default("queued") // "queued" | "running" | "awaiting_review" | "done" | "error"
   savedCount    Int                  @default(0)
   createdAt     DateTime             @default(now())
