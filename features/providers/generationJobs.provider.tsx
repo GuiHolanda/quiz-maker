@@ -59,6 +59,10 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
   const { addNotification } = useNotificationsContext();
 
   const [jobs, setJobs] = useState<TrackedJob[]>([]);
+  // Espelha o estado atual para leitura dentro de callbacks de evento SSE, sem
+  // disparar efeitos colaterais de dentro do updater do setJobs.
+  const jobsRef = useRef<TrackedJob[]>(jobs);
+  jobsRef.current = jobs;
   // Um EventSource por jobId — sobrevive enquanto o job está ativo.
   const sourcesRef = useRef<Map<string, EventSource>>(new Map());
 
@@ -128,10 +132,12 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
         };
         closeSource(jobId);
         const topics = data.topics ?? [];
-        setJobs((prev) => {
-          const job = prev.find((j) => j.jobId === jobId);
-          if (job) fireDoneNotification(job, data.savedCount, data.doneTopics, topics.length > 0 ? topics : job.topics);
-          return prev.map((j) =>
+        const job = jobsRef.current.find((j) => j.jobId === jobId);
+        if (job) {
+          fireDoneNotification(job, data.savedCount, data.doneTopics, topics.length > 0 ? topics : job.topics);
+        }
+        setJobs((prev) =>
+          prev.map((j) =>
             j.jobId === jobId
               ? {
                   ...j,
@@ -141,8 +147,8 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
                   ...(topics.length > 0 ? { topics } : {}),
                 }
               : j
-          );
-        });
+          )
+        );
       });
 
       es.addEventListener('error', () => {
