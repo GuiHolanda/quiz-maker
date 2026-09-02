@@ -6,14 +6,13 @@ import type { ExamType } from '@/shared/types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGraduationCap, faLandmark } from '@fortawesome/free-solid-svg-icons';
 
+import { FieldLabel } from '@/shared/components/ui/FieldLabel';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface ScopePickerProps {
   readonly value: ExamType;
   readonly onChange: (value: ExamType) => void;
 }
-
-const FIELD_LABEL = 'text-xs font-semibold text-default-400';
 
 export function ScopePicker({ value, onChange }: ScopePickerProps) {
   const { t } = useTranslation();
@@ -37,7 +36,7 @@ export function ScopePicker({ value, onChange }: ScopePickerProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      <span className={FIELD_LABEL}>{t('simulado.create.scopeLabel')}</span>
+      <FieldLabel>{t('simulado.create.scopeLabel')}</FieldLabel>
       <div className="grid gap-3.5 sm:grid-cols-2">
         {options.map((option) => {
           const isSelected = option.scope === value;

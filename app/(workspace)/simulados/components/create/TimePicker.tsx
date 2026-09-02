@@ -5,6 +5,7 @@ import type { TimeMode } from './simuladoFormState';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 
+import { FieldLabel } from '@/shared/components/ui/FieldLabel';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 
@@ -16,7 +17,6 @@ interface TimePickerProps {
   readonly onCustomMinutes: (minutes: number) => void;
 }
 
-const FIELD_LABEL = 'text-xs font-semibold text-default-400';
 const PILL_BASE = 'h-auto rounded-full border bg-transparent px-4 py-2.5 text-sm font-medium';
 const PILL_ACTIVE = 'border-primary bg-primary/10 text-primary';
 const PILL_IDLE = 'border-divider text-default-500 data-[hover=true]:text-foreground';
@@ -37,7 +37,7 @@ export function TimePicker({ mode, officialLabel, customMinutes, onMode, onCusto
 
   return (
     <div className="flex flex-col gap-2">
-      <span className={FIELD_LABEL}>{t('simulado.create.timeLabel')}</span>
+      <FieldLabel>{t('simulado.create.timeLabel')}</FieldLabel>
       <div className="flex flex-wrap items-center gap-2.5">
         {options.map((option) => (
           <Button

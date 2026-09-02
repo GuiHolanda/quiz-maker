@@ -20,6 +20,7 @@ import { EntitySelect } from '@/shared/components/EntitySelect';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { useGenerationJobsContext } from '@/features/hooks/useGenerationJobsContext.hook';
+import { FieldLabel } from '@/shared/components/ui/FieldLabel';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
@@ -173,9 +174,7 @@ export function QuestionsPageContent() {
     if (visibleJobs.length === 0) return null;
     return (
       <div ref={jobsSectionRef} className="flex flex-col gap-4 border-t border-divider pt-6">
-        <span className="text-xs font-semibold text-default-400">
-          {t('generate.activeGenerations', { count: visibleJobs.length })}
-        </span>
+        <FieldLabel>{t('generate.activeGenerations', { count: visibleJobs.length })}</FieldLabel>
         {visibleJobs.map((job) => (
           <ActiveJobStatus
             key={job.jobId}

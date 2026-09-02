@@ -3,6 +3,7 @@
 import { Input } from '@heroui/input';
 import { Select, SelectItem } from '@heroui/select';
 
+import { FieldLabel } from '@/shared/components/ui/FieldLabel';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
 
@@ -20,8 +21,6 @@ interface ExamAndCountRowProps {
   readonly onTotal: (value: number) => void;
 }
 
-const FIELD_LABEL = 'text-xs font-semibold text-default-400';
-
 const monoInputClassNames = {
   ...inputProperties.input.classNames,
   input: `${inputProperties.input.classNames.input} text-center font-mono`,
@@ -33,7 +32,7 @@ export function ExamAndCountRow({ examLabel, exams, examId, onExam, totalQuestio
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_160px] sm:items-end">
       <div className="flex flex-col gap-2">
-        <span className={FIELD_LABEL}>{examLabel}</span>
+        <FieldLabel>{examLabel}</FieldLabel>
         <Select
           {...inputProperties.select}
           aria-label={examLabel}
@@ -55,7 +54,7 @@ export function ExamAndCountRow({ examLabel, exams, examId, onExam, totalQuestio
       </div>
 
       <div className="flex flex-col gap-2">
-        <span className={FIELD_LABEL}>{t('simulado.create.questionsLabel')}</span>
+        <FieldLabel>{t('simulado.create.questionsLabel')}</FieldLabel>
         <Input
           {...inputProperties.input}
           aria-label={t('simulado.create.questionsLabel')}

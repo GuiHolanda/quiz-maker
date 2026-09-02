@@ -27,13 +27,12 @@ import {
   sectionWeights,
 } from './create/simuladoFormState';
 
+import { FieldLabel } from '@/shared/components/ui/FieldLabel';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { inputProperties } from '@/config/constants/inputStyles';
-
-const FIELD_LABEL = 'text-xs font-semibold text-default-400';
 
 const SOURCE_TITLE_KEY: Record<MockExamQuestionSource, string> = {
   library: 'simulado.create.sourceLibraryTitle',
@@ -305,7 +304,7 @@ export function CreateSimuladoSection() {
     return (
       <div className="flex flex-col gap-6 rounded-xl bg-content1 p-6">
         <div className="flex flex-col gap-2">
-          <span className={FIELD_LABEL}>{t('simulado.create.nameLabel')}</span>
+          <FieldLabel>{t('simulado.create.nameLabel')}</FieldLabel>
           <Input
             {...inputProperties.input}
             aria-label={t('simulado.create.nameLabel')}

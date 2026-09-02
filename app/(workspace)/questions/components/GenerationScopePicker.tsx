@@ -6,6 +6,7 @@ import type { ExamType } from '@/shared/types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGraduationCap, faLandmark } from '@fortawesome/free-solid-svg-icons';
 
+import { FieldLabel } from '@/shared/components/ui/FieldLabel';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface GenerationScopePickerProps {
@@ -13,8 +14,6 @@ interface GenerationScopePickerProps {
   readonly isDisabled?: boolean;
   readonly onChange: (value: ExamType) => void;
 }
-
-const FIELD_LABEL = 'text-xs font-semibold text-default-400';
 
 export function GenerationScopePicker({ value, isDisabled = false, onChange }: GenerationScopePickerProps) {
   const { t } = useTranslation();
@@ -36,7 +35,7 @@ export function GenerationScopePicker({ value, isDisabled = false, onChange }: G
 
   return (
     <div className="flex flex-col gap-3">
-      <span className={FIELD_LABEL}>{t('generate.scopeSectionLabel')}</span>
+      <FieldLabel>{t('generate.scopeSectionLabel')}</FieldLabel>
       <div className="grid gap-4 sm:grid-cols-2">
         {options.map((option) => {
           const isSelected = option.scope === value;

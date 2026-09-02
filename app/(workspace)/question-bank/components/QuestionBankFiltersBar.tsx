@@ -7,6 +7,7 @@ import { faRotateLeft } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
+import { FieldLabel } from '@/shared/components/ui/FieldLabel';
 import { SearchInput } from '@/shared/components/ui/SearchInput';
 import { getQuestionBankSources, getQuestionBankTopics } from '@/features/connectors';
 import type { QuestionBankSummary, QuestionSituation } from '@/shared/types';
@@ -151,7 +152,7 @@ export function QuestionBankFiltersBar({ filters, summary, onFilterChange, onCle
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-semibold text-default-400 mr-1">{t('questionBank.situationLabel')}</span>
+        <FieldLabel className="mr-1">{t('questionBank.situationLabel')}</FieldLabel>
         {SITUATION_CHIPS.map((chip) => {
           const isActive = filters.situation === chip.key;
 

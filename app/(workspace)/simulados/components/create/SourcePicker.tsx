@@ -2,6 +2,7 @@
 
 import type { MockExamQuestionSource } from '@/shared/types';
 
+import { FieldLabel } from '@/shared/components/ui/FieldLabel';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface SourcePickerProps {
@@ -9,8 +10,6 @@ interface SourcePickerProps {
   readonly onChange: (value: MockExamQuestionSource) => void;
   readonly counts: { library: number; unseen: number; wrong: number } | null;
 }
-
-const FIELD_LABEL = 'text-xs font-semibold text-default-400';
 
 export function SourcePicker({ value, onChange, counts }: SourcePickerProps) {
   const { t } = useTranslation();
@@ -38,7 +37,7 @@ export function SourcePicker({ value, onChange, counts }: SourcePickerProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      <span className={FIELD_LABEL}>{t('simulado.create.sourceLabel')}</span>
+      <FieldLabel>{t('simulado.create.sourceLabel')}</FieldLabel>
       <div className="grid grid-cols-3 gap-3">
         {options.map((option) => {
           const isSelected = option.key === value;

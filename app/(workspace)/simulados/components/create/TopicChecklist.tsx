@@ -2,6 +2,7 @@
 
 import { Button } from '@heroui/button';
 
+import { FieldLabel } from '@/shared/components/ui/FieldLabel';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { FauxCheckbox } from '@/shared/components/ui/FauxCheckbox';
@@ -21,7 +22,6 @@ interface TopicChecklistProps {
   readonly onNone: () => void;
 }
 
-const FIELD_LABEL = 'text-xs font-semibold text-default-400';
 const ROW_GRID = '22px minmax(120px,1fr) 100px 110px';
 
 export function TopicChecklist({ sections, selected, onToggle, onAll, onNone }: TopicChecklistProps) {
@@ -30,7 +30,7 @@ export function TopicChecklist({ sections, selected, onToggle, onAll, onNone }: 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
-        <span className={FIELD_LABEL}>{t('simulado.create.topicsLabel')}</span>
+        <FieldLabel>{t('simulado.create.topicsLabel')}</FieldLabel>
         <div className="flex items-center gap-2">
           <Button className={buttonStyles.flat} data-testid="simulado-topics-select-all" size="sm" onPress={onAll}>
             {t('simulado.create.selectAll')}
