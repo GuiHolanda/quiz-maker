@@ -26,12 +26,13 @@ export async function finalizeAwaitingReviewJobs(
       const questions = validateAiQuestions(payload);
 
       await questionService.createFromPayload(questions, job.userId, job.refKey);
+      const topicSaved = topic.savedCount + questions.length;
       await client.generationJobTopic.update({
         where: { id: topic.id },
-        data: { savedCount: questions.length, pendingQuestionsJson: null },
+        data: { savedCount: topicSaved, pendingQuestionsJson: null },
       });
 
-      totalSaved += questions.length;
+      totalSaved += topicSaved;
     }
 
     await client.generationJob.update({
