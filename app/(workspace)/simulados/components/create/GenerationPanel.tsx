@@ -6,6 +6,7 @@ import { faArrowRight, faCheck, faFileCircleCheck } from '@fortawesome/free-soli
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+import { StatusPill } from '@/shared/components/ui/StatusPill';
 
 interface GenerationPanelProps {
   readonly phase: 'gerando' | 'pronto';
@@ -83,14 +84,9 @@ export function GenerationPanel({
           </div>
         </div>
 
-        <span
-          className={`flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-[7px] text-[13px] font-semibold ${
-            isReady ? 'border-success/30 bg-success/10 text-success' : 'border-primary/35 bg-primary/10 text-primary'
-          }`}
-        >
-          {!isReady && <span className={SPINNER} />}
+        <StatusPill size="md" spinner={!isReady} tone={isReady ? 'ok' : 'busy'}>
           {isReady ? t('simulado.create.readyPill') : t('simulado.create.generatingPill')}
-        </span>
+        </StatusPill>
       </div>
 
       <div className="mt-[22px] border-t border-divider pt-5">

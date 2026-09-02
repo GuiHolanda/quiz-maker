@@ -6,6 +6,7 @@ import { faCheck, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+import { StatusPill } from '@/shared/components/ui/StatusPill';
 
 export interface SummaryRow {
   readonly label: string;
@@ -24,8 +25,6 @@ interface GenerationSummarySidebarProps {
   readonly onGenerate: () => void;
 }
 
-const STATUS_OK = 'border-success/30 bg-success/10 text-success';
-const STATUS_WARN = 'border-primary/35 bg-primary/10 text-primary';
 const GHOST_BTN =
   'rounded-lg border-divider text-default-500 data-[hover=true]:bg-content2 data-[hover=true]:text-foreground';
 
@@ -65,13 +64,9 @@ export function GenerationSummarySidebar({
         </div>
 
         <div className="mt-2 flex flex-col gap-2.5">
-          <span
-            className={`self-start rounded-full border px-3 py-1.5 font-mono text-xs ${
-              statusTone === 'ok' ? STATUS_OK : STATUS_WARN
-            }`}
-          >
+          <StatusPill className="self-start" tone={statusTone === 'ok' ? 'ok' : 'busy'}>
             {statusText}
-          </span>
+          </StatusPill>
 
           {hasSurplus && (
             <Button

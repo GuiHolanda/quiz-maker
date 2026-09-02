@@ -6,6 +6,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import type { GenerationJobTopicStatus } from '@/shared/types';
 import { InlineAlert } from '@/shared/components/ui/InlineAlert';
+import { StatusPill } from '@/shared/components/ui/StatusPill';
+import type { StatusTone } from '@/shared/components/ui/tone';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 
@@ -54,15 +56,15 @@ export function ActiveJobStatus({
   const progressPercent = totalTopics > 0 ? Math.round((doneTopics / totalTopics) * 100) : 0;
   const scopeLabel = type === 'certification' ? t('questionBank.typeCertification') : t('questionBank.typePublicExam');
 
-  const pill = isDone
+  const pill: { text: string; tone: StatusTone; spin: boolean } = isDone
     ? {
         text: t(questionsSaved === 1 ? 'generate.savedPillOne' : 'generate.savedPill', { count: questionsSaved }),
-        className: 'border-success/30 bg-success/10 text-success',
+        tone: 'ok',
         spin: false,
       }
     : isError
-      ? { text: t('generate.statusError'), className: 'border-danger/30 bg-danger/10 text-danger', spin: false }
-      : { text: t('generate.generatingPill'), className: 'border-primary/35 bg-primary/10 text-primary', spin: true };
+      ? { text: t('generate.statusError'), tone: 'error', spin: false }
+      : { text: t('generate.generatingPill'), tone: 'busy', spin: true };
 
   return (
     <section aria-live="polite" className="flex flex-col rounded-xl bg-content1 p-6" data-testid="question-gen-status">
@@ -82,12 +84,9 @@ export function ActiveJobStatus({
           </div>
         </div>
 
-        <span
-          className={`flex shrink-0 items-center gap-2 self-start rounded-full border px-3.5 py-[7px] text-[13px] font-semibold sm:self-auto ${pill.className}`}
-        >
-          {pill.spin && <span className={SPINNER} />}
+        <StatusPill className="self-start sm:self-auto" size="md" spinner={pill.spin} tone={pill.tone}>
           {pill.text}
-        </span>
+        </StatusPill>
       </div>
 
       {isError && !isTimeout && (
