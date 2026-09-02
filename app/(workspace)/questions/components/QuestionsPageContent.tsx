@@ -356,7 +356,6 @@ export function QuestionsPageContent() {
         refName: selectedExam.name,
         examBoardName: selectedExam.examBoard?.name,
         language: scope === 'certification' ? language : undefined,
-        totalQuestions: selectedExam.totalQuestions,
         distribution,
       });
     } finally {

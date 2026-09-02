@@ -25,9 +25,6 @@ export interface TrackedJob {
   readonly totalTopics: number;
   readonly queuedTopics: number;
   readonly topics: GenerationJobTopicStatus[];
-  readonly isSaving: boolean;
-  // Contexto para pré-preencher o simulado após salvar.
-  readonly prefill: { totalQuestions: number };
 }
 
 interface StartJobInput {
@@ -36,7 +33,6 @@ interface StartJobInput {
   readonly refName: string;
   readonly examBoardName?: string;
   readonly language?: GenerationLanguage;
-  readonly totalQuestions: number;
   readonly distribution: Array<{ topicName: string; questionCount: number }>;
 }
 
@@ -137,7 +133,6 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
               ? {
                   ...j,
                   status: 'done' as const,
-                  isSaving: false,
                   doneTopics: data.doneTopics,
                   totalTopics: data.totalTopics,
                   ...(topics.length > 0 ? { topics } : {}),
@@ -196,8 +191,6 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
               errorMessage: null,
               errorType: null,
             })),
-            isSaving: false,
-            prefill: { totalQuestions: input.totalQuestions },
           },
         ]);
         connectStream(jobId);
@@ -243,18 +236,15 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
             type: job.type,
             refKey: job.refKey,
             refName: job.refName,
-            status: job.status as TrackedJob['status'],
+            status: job.status,
             doneTopics: job.doneTopics,
             totalTopics: job.totalTopics,
             queuedTopics: job.queuedTopics,
             topics: job.topics,
-            isSaving: false,
-            prefill: { totalQuestions: job.totalTopics },
           }))
         );
         for (const job of active) {
-          const status = job.status as TrackedJob['status'];
-          if (status === 'queued' || status === 'running' || status === 'saving') connectStream(job.id);
+          if (job.status === 'queued' || job.status === 'running' || job.status === 'saving') connectStream(job.id);
         }
       })
       .catch(() => {
