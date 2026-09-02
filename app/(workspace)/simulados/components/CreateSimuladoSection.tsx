@@ -28,6 +28,7 @@ import {
 } from './create/simuladoFormState';
 
 import { FieldLabel } from '@/shared/components/ui/FieldLabel';
+import { type KeyValueRow } from '@/shared/components/ui/KeyValueList';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
@@ -159,7 +160,7 @@ export function CreateSimuladoSection() {
 
   const canCreate = statusTone === 'ok' && hasExam && !generation.isBusy;
 
-  const summaryRows = [
+  const summaryRows: KeyValueRow[] = [
     { label: t('simulado.create.summaryExam'), value: exam?.name ?? '—' },
     { label: t('simulado.create.summaryQuestions'), value: String(state.totalQuestions) },
     { label: t('simulado.create.summaryTime'), value: resolveSummaryTime() },
@@ -171,7 +172,7 @@ export function CreateSimuladoSection() {
     {
       label: t('simulado.create.summaryCoverage'),
       value: t('simulado.create.summaryCoverageValue', { percent: coverage }),
-      highlight: true,
+      tone: 'primary',
     },
   ];
 

@@ -6,16 +6,12 @@ import { faCheck, faPlay } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+import { FieldLabel } from '@/shared/components/ui/FieldLabel';
+import { KeyValueList, type KeyValueRow } from '@/shared/components/ui/KeyValueList';
 import { StatusPill } from '@/shared/components/ui/StatusPill';
 
-interface SummaryRow {
-  readonly label: string;
-  readonly value: string;
-  readonly highlight?: boolean;
-}
-
 interface SummarySidebarProps {
-  readonly rows: SummaryRow[];
+  readonly rows: ReadonlyArray<KeyValueRow>;
   readonly statusText: string;
   readonly statusTone: 'ok' | 'warn';
   readonly canCreate: boolean;
@@ -40,21 +36,9 @@ export function SummarySidebar({
   return (
     <div className="flex flex-col gap-4 lg:sticky lg:top-4">
       <div className="flex flex-col gap-3 rounded-xl bg-content1 p-6">
-        <span className="text-xs font-semibold text-default-400">{t('simulado.create.summary')}</span>
+        <FieldLabel>{t('simulado.create.summary')}</FieldLabel>
 
-        <div className="flex flex-col">
-          {rows.map((row) => (
-            <div
-              key={row.label}
-              className="flex items-baseline justify-between gap-4 border-t border-divider py-2.5 first:border-t-0"
-            >
-              <span className="text-sm text-default-500">{row.label}</span>
-              <span className={`text-sm font-semibold ${row.highlight ? 'text-primary' : 'text-foreground'}`}>
-                {row.value}
-              </span>
-            </div>
-          ))}
-        </div>
+        <KeyValueList rows={rows} />
 
         {footnote ? (
           <p className="mt-2 text-[13px] leading-relaxed text-default-400" data-testid="simulado-create-footnote">
@@ -85,7 +69,7 @@ export function SummarySidebar({
       </div>
 
       <div className="flex flex-col gap-3 rounded-xl bg-content1 p-5">
-        <span className="text-xs font-semibold text-default-400">{t('simulado.create.aboutFormat')}</span>
+        <FieldLabel>{t('simulado.create.aboutFormat')}</FieldLabel>
         <div className="flex flex-col gap-3">
           {notes.map((note) => (
             <div key={note} className="grid grid-cols-[16px_minmax(0,1fr)] items-start gap-2.5">

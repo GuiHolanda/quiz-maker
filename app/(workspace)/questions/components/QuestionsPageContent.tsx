@@ -12,7 +12,7 @@ import { GenerationHistory } from './GenerationHistory';
 import { ActiveJobStatus } from './ActiveJobStatus';
 import { GenerationScopePicker } from './GenerationScopePicker';
 import { GenerationDistributionTable } from './GenerationDistributionTable';
-import { GenerationSummarySidebar, type SummaryRow } from './GenerationSummarySidebar';
+import { GenerationSummarySidebar } from './GenerationSummarySidebar';
 import { useGenerationDistribution } from './useGenerationDistribution.hook';
 
 import type { Exam, ExamType } from '@/shared/types';
@@ -21,6 +21,7 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { useGenerationJobsContext } from '@/features/hooks/useGenerationJobsContext.hook';
 import { FieldLabel } from '@/shared/components/ui/FieldLabel';
+import { type KeyValueRow } from '@/shared/components/ui/KeyValueList';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
@@ -295,7 +296,7 @@ export function QuestionsPageContent() {
     return { tone: 'warn', text: t('generate.distStatusOver', { count: currentSum - total }) };
   }
 
-  function configSummaryRows(): SummaryRow[] {
+  function configSummaryRows(): KeyValueRow[] {
     const scopeLabel =
       scope === 'certification' ? t('questionBank.typeCertification') : t('questionBank.typePublicExam');
     const avg = dist.activeCount > 0 ? Math.round(currentSum / dist.activeCount) : 0;
@@ -310,7 +311,7 @@ export function QuestionsPageContent() {
       {
         label: t('generate.summaryDistributed'),
         value: t('generate.summaryQuestionsValue', { count: currentSum }),
-        highlight: true,
+        tone: 'primary',
       },
       {
         label: t('generate.summaryAvgPerTopic'),
