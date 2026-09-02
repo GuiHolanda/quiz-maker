@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import type { PrismaService } from '@/lib/prisma';
 import { ExamQuestionService, validateAiQuestions } from '@/features/services/exam-question.service';
 
 export async function finalizeAwaitingReviewJobs(
@@ -9,7 +10,7 @@ export async function finalizeAwaitingReviewJobs(
     include: { topics: true },
   });
 
-  const questionService = new ExamQuestionService();
+  const questionService = new ExamQuestionService(client as unknown as PrismaService);
   let questionsSaved = 0;
 
   for (const job of jobs) {
