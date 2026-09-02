@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Input } from '@heroui/input';
 import { Select, SelectItem } from '@heroui/select';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMagnifyingGlass, faRotateLeft } from '@fortawesome/free-solid-svg-icons';
+import { faRotateLeft } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
+import { SearchInput } from '@/shared/components/ui/SearchInput';
 import { getQuestionBankSources, getQuestionBankTopics } from '@/features/connectors';
 import type { QuestionBankSummary, QuestionSituation } from '@/shared/types';
 
@@ -80,12 +80,10 @@ export function QuestionBankFiltersBar({ filters, summary, onFilterChange, onCle
   return (
     <div className="bg-content1 rounded-xl p-6 flex flex-col gap-4">
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(220px,1.4fr)_repeat(4,minmax(0,1fr))]">
-        <Input
-          {...inputProperties.input}
-          aria-label={t('questionBank.labelSearch')}
-          data-testid="question-bank-search"
+        <SearchInput
+          ariaLabel={t('questionBank.labelSearch')}
           placeholder={t('questionBank.searchPlaceholder')}
-          startContent={<FontAwesomeIcon className="w-3.5 h-3.5 text-default-400" icon={faMagnifyingGlass} />}
+          testId="question-bank-search"
           value={filters.search}
           onValueChange={(value) => onFilterChange('search', value)}
         />
