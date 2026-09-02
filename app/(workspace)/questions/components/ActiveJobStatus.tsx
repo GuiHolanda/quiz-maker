@@ -150,8 +150,12 @@ export function ActiveJobStatus({
               {t('generate.createSimulado')}
             </Button>
           )}
-          <Button className={`${buttonStyles.flat} ml-auto`} size="sm" onPress={onDismiss}>
-            {t('generate.dismiss')}
+          <Button
+            className={questionsSaved > 0 ? `${buttonStyles.flat} ml-auto` : buttonStyles.flat}
+            size="sm"
+            onPress={onDismiss}
+          >
+            {t('generate.continueGenerating')}
           </Button>
         </div>
       )}
