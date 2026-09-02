@@ -3,7 +3,6 @@
 import { faGraduationCap, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 
 import { SimuladoHistoryModal } from './SimuladoHistoryModal';
-import { SimuladosPagination } from './SimuladosPagination';
 import { SimuladosTable } from './SimuladosTable';
 import { SimuladosToolbar } from './SimuladosToolbar';
 import { useSimuladoActions } from './useSimuladoActions.hook';
@@ -13,6 +12,7 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
 import { IconBadge } from '@/shared/components/ui/IconBadge';
 import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
+import { PaginationBar } from '@/shared/components/ui/PaginationBar';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 
 export function SimuladosCreatedSection() {
@@ -106,14 +106,14 @@ export function SimuladosCreatedSection() {
           />
         </div>
 
-        <SimuladosPagination
-          from={list.from}
+        <PaginationBar
+          className="mt-4"
+          itemLabel={t('common.simulados')}
           page={list.page}
-          pageNumbers={list.pageNumbers}
-          to={list.to}
+          perPage={list.perPage}
           total={list.total}
           totalPages={list.totalPages}
-          onPage={list.setPage}
+          onPageChange={list.setPage}
         />
       </>
     );
