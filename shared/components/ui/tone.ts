@@ -40,3 +40,7 @@ export function iconBadgeToneClasses(tone: IconBadgeTone): string {
 export function iconBadgeSizeClasses(size: Size): { box: string; icon: string } {
   return ICON_BADGE_SIZE[size];
 }
+
+export function fauxCheckboxClasses(checked: boolean): string {
+  return checked ? 'border-primary bg-primary text-primary-foreground' : 'border-default-400';
+}

@@ -1,11 +1,10 @@
 'use client';
 
 import { Button } from '@heroui/button';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+import { FauxCheckbox } from '@/shared/components/ui/FauxCheckbox';
 
 interface TopicRow {
   readonly name: string;
@@ -59,13 +58,7 @@ export function TopicChecklist({ sections, selected, onToggle, onAll, onNone }: 
                 type="button"
                 onClick={() => onToggle(section.name)}
               >
-                <span
-                  className={`flex h-5 w-5 items-center justify-center rounded-[5px] border transition-colors duration-200 ${
-                    isChecked ? 'border-primary bg-primary text-primary-foreground' : 'border-divider'
-                  }`}
-                >
-                  {isChecked && <FontAwesomeIcon className="h-3 w-3" icon={faCheck} />}
-                </span>
+                <FauxCheckbox checked={isChecked} />
 
                 <span className={`truncate text-sm ${isChecked ? 'text-foreground' : 'text-default-500'}`}>
                   {section.name}

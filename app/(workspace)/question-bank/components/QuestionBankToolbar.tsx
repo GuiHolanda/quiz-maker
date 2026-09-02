@@ -2,11 +2,10 @@
 
 import type { ChangeEvent } from 'react';
 import { Select, SelectItem } from '@heroui/select';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
+import { FauxCheckbox } from '@/shared/components/ui/FauxCheckbox';
 import { ItemsPerPageSelect } from '@/shared/components/ui/ItemsPerPageSelect';
 import type { QuestionBankSort } from '@/shared/types';
 
@@ -54,15 +53,7 @@ export function QuestionBankToolbar({
           type="button"
           onClick={onToggleSelectPage}
         >
-          <span
-            className={`flex h-4 w-4 items-center justify-center rounded border ${
-              allOnPageSelected ? 'border-primary bg-primary' : 'border-default-400 bg-transparent'
-            }`}
-          >
-            {allOnPageSelected && (
-              <FontAwesomeIcon aria-hidden="true" className="w-2.5 h-2.5 text-primary-foreground" icon={faCheck} />
-            )}
-          </span>
+          <FauxCheckbox checked={allOnPageSelected} />
           {allOnPageSelected ? t('questionBank.deselectPage') : t('questionBank.selectPage')}
         </button>
         <span className="text-sm text-default-500">{countLabel}</span>

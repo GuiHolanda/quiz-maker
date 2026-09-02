@@ -5,6 +5,7 @@ import {
   statusPillSizeClasses,
   iconBadgeToneClasses,
   iconBadgeSizeClasses,
+  fauxCheckboxClasses,
 } from '@/shared/components/ui/tone';
 
 describe('statusPillToneClasses', () => {
@@ -43,6 +44,16 @@ describe('iconBadgeToneClasses', () => {
   it('maps success and danger to their soft tint', () => {
     expect(iconBadgeToneClasses('success')).toBe('bg-success/15 text-success');
     expect(iconBadgeToneClasses('danger')).toBe('bg-danger/15 text-danger');
+  });
+});
+
+describe('fauxCheckboxClasses', () => {
+  it('checked fills with primary and flips the glyph colour', () => {
+    expect(fauxCheckboxClasses(true)).toBe('border-primary bg-primary text-primary-foreground');
+  });
+
+  it('unchecked is an empty box with a visible edge', () => {
+    expect(fauxCheckboxClasses(false)).toBe('border-default-400');
   });
 });
 
