@@ -120,7 +120,7 @@ export function QuestionsPageContent() {
   }, [activeJobCount]);
 
   const visibleJobs = mounted ? jobs : [];
-  const atJobLimit = mounted && jobs.length >= GENERATION_MAX_ACTIVE_JOBS_PER_USER;
+  const atJobLimit = mounted && activeJobCount >= GENERATION_MAX_ACTIVE_JOBS_PER_USER;
 
   const currentSum = dist.currentTotal;
   const status = resolveStatus();
