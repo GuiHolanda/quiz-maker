@@ -43,7 +43,7 @@ Everything reusable lives here. Specs compose these helpers; they don't hand-rol
 | `journey-config.ts` | The `DOMAINS` map — everything that differs between `certification` and `public_exam` (type-picker id, generation URL, seed label/topic, configure URL, stream glob). Keeps flows and specs type-agnostic. | `DomainType`, `DomainConfig`, `DOMAINS`, `ALL_DOMAINS` |
 | `fake-eventsource.ts` | Overrides `window.EventSource` via `addInitScript` before app scripts run, so no real SSE connection is made. | `injectFakeEventSource`, `injectNeverDoneEventSource` |
 | `mocks.ts` | Route mocks for the generation-job lifecycle and a result override. | `setupGenerationJobMocks`, `mockGenerationJobFailure`, `mockGenerationTimeout`, `mockActiveJobOnLoad`, `mockCertResultAllWrong` |
-| `flows.ts` | Functional flow helpers that compose selectors + mocks into user journeys. | `generateAndSaveQuestions`, `createSimulado`, `startSimuladoAttempt`, `answerAllQuestions`, `finalizeAttempt`, `assertResult` |
+| `flows.ts` | Functional flow helpers that compose selectors + mocks into user journeys. | `generateQuestions`, `createSimulado`, `startSimuladoAttempt`, `answerAllQuestions`, `finalizeAttempt`, `assertResult` |
 
 ---
 
@@ -60,9 +60,9 @@ Everything reusable lives here. Specs compose these helpers; they don't hand-rol
 
 | Spec | Tests | Per-domain | Covers |
 |---|---|---|---|
-| `full-journey.spec.ts` | 1 (×2 domains) | ✓ | The whole loop: generate (fake SSE → `awaiting_review`) → save all → create simulado → start attempt → answer every question → finalize → assert result → retry → cancel back to list. |
+| `full-journey.spec.ts` | 1 (×2 domains) | ✓ | The whole loop: generate (fake SSE → `done`, questions auto-saved) → create simulado → start attempt → answer every question → finalize → assert result → retry → cancel back to list. |
 | `generation-errors.spec.ts` | 2 (×2 domains) | ✓ | 403 quota failure surfaces an error and **no** success badge; a network abort on the generation POST shows the generic error toast. |
-| `sse-reconnect.spec.ts` | 3 (×2 domains) | ✓ | Cancel a running job calls `DELETE` and resets state; a `running` job is restored after reload (cancel button reappears); an `awaiting_review` job is restored after reload (save-all button reappears). |
+| `sse-reconnect.spec.ts` | 2 (×2 domains) | ✓ | Cancel a running job calls `DELETE` and resets state; a `running` job is restored after reload (cancel button reappears). |
 | `wizard-validation.spec.ts` | 2 (×2 domains) | ✓ | Discard-draft returns to the list tab; cannot advance past step 1 with an empty title. |
 | `question-bank.spec.ts` | 2 | cert only | Seed 3 questions via the real `save-questions` API → verify → search narrows to one → delete; search with no match shows the empty state. |
 | `empty-states.spec.ts` | 2 | mixed | Simulados list shows the empty state when both list endpoints return empty; certifications list shows the empty state when its endpoint returns empty. |
@@ -77,15 +77,14 @@ Everything reusable lives here. Specs compose these helpers; they don't hand-rol
 **Primary journey** (`full-journey`, both verticals):
 
 1. Navigate to `/questions?type=…`, pick the vertical, select the seeded entity.
-2. Generate — the fake `EventSource` fires an `awaiting_review` event; the status region appears.
-3. Save all — success banner confirms.
-4. Create a simulado in `/simulados` — the create form is always visible at the top (no tabs); pick the scope card, choose the seeded exam, set the question count, create.
-5. Start the attempt from the simulados table row (filtered by the seeded exam label).
-6. Answer every question (HeroUI Radio + Form workaround), finalize.
-7. Assert the result page (score, percent, topic/subject breakdown, retry button).
-8. Retry → "Salvar e sair" → discard the new attempt → back to `/simulados`.
+2. Generate — the fake `EventSource` fires a `done` event; the completed job card appears with a "Criar simulado" button (questions were auto-saved server-side).
+3. Create a simulado in `/simulados` — the create form is always visible at the top (no tabs); pick the scope card, choose the seeded exam, set the question count, create.
+4. Start the attempt from the simulados table row (filtered by the seeded exam label).
+5. Answer every question (HeroUI Radio + Form workaround), finalize.
+6. Assert the result page (score, percent, topic/subject breakdown, retry button).
+7. Retry → "Salvar e sair" → discard the new attempt → back to `/simulados`.
 
-**Edge cases** (dedicated specs): quota/network generation failures, SSE cancel + reconnect-after-reload in both `running` and `awaiting_review` states, wizard discard + empty-title guard, question-bank search/delete, and empty-state rendering for simulados and certifications.
+**Edge cases** (dedicated specs): quota/network generation failures, SSE cancel + reconnect-after-reload for a `running` job, wizard discard + empty-title guard, question-bank search/delete, and empty-state rendering for simulados and certifications.
 
 ---
 
@@ -97,13 +96,13 @@ The `tentativa` screen shows a single question with plain `<button data-testid="
 HeroUI `<Radio>` / `<Button type="submit">` elsewhere still need `dispatchEvent('click')` (input has `opacity: 0.0001`, submit is a react-aria pressable) — do **not** use `.click({ force: true })`, `.check()`, or `page.mouse.click()` with those.
 
 ### FakeEventSource / NeverDoneEventSource
-`route.fulfill` can't stream, and the browser `EventSource` needs a persistent HTTP connection. So `fake-eventsource.ts` overrides `window.EventSource` via `addInitScript` before app scripts load. The app listens with `es.addEventListener('awaiting_review', …)` (**not** `onmessage`), so the fake fires a `MessageEvent('awaiting_review', …)` ~100ms after construction with payload `{ doneTopics, totalTopics, queuedTopics, topics[] }`. `NeverDoneEventSource` connects but never emits — used to hold a job in the `running` state for cancel/reconnect tests.
+`route.fulfill` can't stream, and the browser `EventSource` needs a persistent HTTP connection. So `fake-eventsource.ts` overrides `window.EventSource` via `addInitScript` before app scripts load. The app listens with `es.addEventListener('done', …)` (**not** `onmessage`), so the fake fires a `MessageEvent('done', …)` ~100ms after construction with payload `{ doneTopics, totalTopics, queuedTopics, savedCount, topics[] }`. `NeverDoneEventSource` connects but never emits — used to hold a job in the `running` state for cancel/reconnect tests.
 
 ### Result pages are static mocks
 `auth.fixture.ts` stubs the finish-attempt `PATCH` and the result `GET` (`mockCertSimuladoResult` / `mockMockExamResult`, always score 2/3). This avoids the server-side `ensureAnswers` path (a real OpenAI call). For a deterministic all-wrong (0/3) result, `mockCertResultAllWrong` overrides the same GET — available for wrong-answer assertions.
 
 ### Reconnect endpoint
-`GET /api/generation-job` (no query params) returns an **array** of the authenticated user's active jobs; the client reconnects to any that are still `running` / `awaiting_review`. `mockActiveJobOnLoad` fulfills that GET with a one-element array in the requested state.
+`GET /api/generation-job` (no query params) returns an **array** of the authenticated user's active jobs; the client reconnects to any that are still `running` / `saving`. `mockActiveJobOnLoad` fulfills that GET with a one-element array for a `running` job.
 
 ### Accumulated notifications
 A prior run can leave a notification open (the bell dialog can intercept clicks). `createSimulado` calls `dismissNotificationDialog` — closes any open notification dialog with `Escape` — before interacting with the always-visible create form.

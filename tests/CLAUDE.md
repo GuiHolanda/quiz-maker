@@ -103,7 +103,7 @@ npx playwright show-report
 |---|---|
 | `full-journey` (×2) | gerar → salvar → simulado → responder → resultado → tentar novamente |
 | `generation-errors` (×2) | quota 403; abort de rede → toast de erro |
-| `sse-reconnect` (×2) | cancelar job; restaura `running`/`awaiting_review` após reload |
+| `sse-reconnect` (×2) | cancelar job; restaura `running` após reload |
 | `exam-editor-validation` (×2) | discard de draft (limpa localStorage); guard de Salvar sem nome |
 | `exam-identify` (×2) | identificação dentro da tela de loading: cancelar em voo não é ressuscitado por resposta tardia (guarda `runId`); sem match oferece retry inline; falha do identify não despeja no editor em branco; desambiguação confirma o match escolhido |
 | `question-bank` | seed via API → verificar → buscar → deletar; empty state |
@@ -115,7 +115,7 @@ npx playwright show-report
 
 **Tela de tentativa (`/tentativa`):** uma questão por vez, alternativas são `<button data-testid="attempt-option">` — clique simples persiste na hora (sem passo de "salvar"). `answerAllQuestions` clica a opção + `attempt-next-btn`; `attempt-nav-cell` conta o total; `attempt-finalize-btn` abre o modal de finalizar (`confirm-finish-attempt-btn`).
 
-**SSE:** `route.fulfill` não suporta streaming. `support/fake-eventsource.ts` sobrescreve `window.EventSource` via `addInitScript`. O app escuta via `addEventListener('awaiting_review', …)` — não `onmessage`.
+**SSE:** `route.fulfill` não suporta streaming. `support/fake-eventsource.ts` sobrescreve `window.EventSource` via `addInitScript`. O app escuta via `addEventListener('done', …)` — não `onmessage`.
 
 **i18n:** UI padrão é PT-BR. Prefira `data-testid`; quando precisar de texto, use regex bilíngue.
 

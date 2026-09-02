@@ -1,7 +1,7 @@
 import { test, expect } from '../fixtures/auth.fixture';
 import { ALL_DOMAINS } from '../support/journey-config';
 import { tid, TID } from '../support/selectors';
-import { injectNeverDoneEventSource, injectFakeEventSource } from '../support/fake-eventsource';
+import { injectNeverDoneEventSource } from '../support/fake-eventsource';
 import { setupGenerationJobMocks, mockActiveJobOnLoad } from '../support/mocks';
 
 for (const domain of ALL_DOMAINS) {
@@ -27,14 +27,6 @@ for (const domain of ALL_DOMAINS) {
       await page.goto(domain.generationUrl);
       await page.reload();
       await expect(page.locator(tid(TID.questionGenJobCancelBtn))).toBeVisible({ timeout: 10000 });
-    });
-
-    test('restores an awaiting_review job after reload', async ({ authedPage: page }) => {
-      await injectFakeEventSource(page, { topicName: domain.seedTopic });
-      await mockActiveJobOnLoad(page, { jobId: 'e2e-job-1', status: 'awaiting_review', topicName: domain.seedTopic });
-      await page.goto(domain.generationUrl);
-      await page.reload();
-      await expect(page.locator(tid(TID.questionGenSaveAllBtn))).toBeVisible({ timeout: 10000 });
     });
   });
 }

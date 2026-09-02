@@ -2,7 +2,7 @@ import { test, expect } from '../fixtures/auth.fixture';
 import { ALL_DOMAINS } from '../support/journey-config';
 import { tid, TID } from '../support/selectors';
 import {
-  generateAndSaveQuestions,
+  generateQuestions,
   createSimulado,
   startSimuladoAttempt,
   answerAllQuestions,
@@ -13,8 +13,8 @@ import {
 
 for (const domain of ALL_DOMAINS) {
   test.describe(`full journey — ${domain.type}`, () => {
-    test('generate → save → simulado → answer → result → retry → discard', async ({ authedPage: page }) => {
-      await generateAndSaveQuestions(page, domain);
+    test('generate → simulado → answer → result → retry → discard', async ({ authedPage: page }) => {
+      await generateQuestions(page, domain);
       await createSimulado(page, domain, 3);
       const { attemptId } = await startSimuladoAttempt(page, domain);
       expect(attemptId).not.toBe('');
