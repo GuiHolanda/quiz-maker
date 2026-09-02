@@ -1,42 +1,43 @@
 'use client';
 
-import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import type { ExamType } from '@/shared/types';
-
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGraduationCap, faLandmark } from '@fortawesome/free-solid-svg-icons';
 
 import { FieldLabel } from '@/shared/components/ui/FieldLabel';
-import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import type { ExamType } from '@/shared/types';
 
-interface GenerationScopePickerProps {
-  readonly value: ExamType;
-  readonly isDisabled?: boolean;
-  readonly onChange: (value: ExamType) => void;
+interface ExamTypeOption {
+  readonly title: string;
+  readonly body: string;
+  readonly testId?: string;
 }
 
-export function GenerationScopePicker({ value, isDisabled = false, onChange }: GenerationScopePickerProps) {
-  const { t } = useTranslation();
+interface ExamTypePickerProps {
+  readonly value: ExamType;
+  readonly onChange: (value: ExamType) => void;
+  readonly label: string;
+  readonly certification: ExamTypeOption;
+  readonly publicExam: ExamTypeOption;
+  readonly isDisabled?: boolean;
+}
 
-  const options: { scope: ExamType; icon: IconDefinition; title: string; body: string }[] = [
-    {
-      scope: 'certification',
-      icon: faGraduationCap,
-      title: t('generate.typeCertification'),
-      body: t('generate.chooseTypeCertification'),
-    },
-    {
-      scope: 'public_exam',
-      icon: faLandmark,
-      title: t('generate.typePublicExam'),
-      body: t('generate.chooseTypePublicExam'),
-    },
+export function ExamTypePicker({
+  value,
+  onChange,
+  label,
+  certification,
+  publicExam,
+  isDisabled = false,
+}: ExamTypePickerProps) {
+  const options: (ExamTypeOption & { scope: ExamType; icon: typeof faGraduationCap })[] = [
+    { ...certification, scope: 'certification', icon: faGraduationCap },
+    { ...publicExam, scope: 'public_exam', icon: faLandmark },
   ];
 
   return (
     <div className="flex flex-col gap-3">
-      <FieldLabel>{t('generate.scopeSectionLabel')}</FieldLabel>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <FieldLabel>{label}</FieldLabel>
+      <div className="grid gap-3.5 sm:grid-cols-2">
         {options.map((option) => {
           const isSelected = option.scope === value;
 
@@ -45,15 +46,17 @@ export function GenerationScopePicker({ value, isDisabled = false, onChange }: G
               key={option.scope}
               aria-pressed={isSelected}
               className={`grid grid-cols-[36px_minmax(0,1fr)] items-start gap-3.5 rounded-xl border p-[18px] text-left transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60 ${
-                isSelected ? 'border-primary bg-primary/[0.07]' : 'border-content2 bg-content1 hover:border-primary/40'
+                isSelected
+                  ? 'border-primary bg-primary/[0.07]'
+                  : 'border-transparent bg-background hover:border-primary/40'
               }`}
-              data-testid={`type-option-${option.scope}`}
+              data-testid={option.testId}
               disabled={isDisabled}
               type="button"
               onClick={() => onChange(option.scope)}
             >
               <span
-                className={`flex h-9 w-9 items-center justify-center rounded-[9px] ${
+                className={`flex h-9 w-9 items-center justify-center rounded-lg ${
                   isSelected ? 'bg-primary/[0.14] text-primary' : 'bg-content2 text-default-500'
                 }`}
               >

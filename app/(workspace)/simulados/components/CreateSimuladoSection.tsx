@@ -7,7 +7,6 @@ import { Input } from '@heroui/input';
 
 import { fmtTempo } from './list/normalizeSimulado';
 import { PresetShortcuts } from './create/PresetShortcuts';
-import { ScopePicker } from './create/ScopePicker';
 import { ExamAndCountRow } from './create/ExamAndCountRow';
 import { TimePicker } from './create/TimePicker';
 import { SourcePicker } from './create/SourcePicker';
@@ -27,6 +26,7 @@ import {
   sectionWeights,
 } from './create/simuladoFormState';
 
+import { ExamTypePicker } from '@/shared/components/ui/ExamTypePicker';
 import { FieldLabel } from '@/shared/components/ui/FieldLabel';
 import { type KeyValueRow } from '@/shared/components/ui/KeyValueList';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -316,7 +316,21 @@ export function CreateSimuladoSection() {
           />
         </div>
 
-        <ScopePicker value={state.scope} onChange={(scope: ExamType) => patchState({ scope })} />
+        <ExamTypePicker
+          certification={{
+            title: t('simulado.create.scopeCertificationTitle'),
+            body: t('simulado.create.scopeCertificationBody'),
+            testId: 'simulado-scope-certification',
+          }}
+          label={t('simulado.create.scopeLabel')}
+          publicExam={{
+            title: t('simulado.create.scopeConcursoTitle'),
+            body: t('simulado.create.scopeConcursoBody'),
+            testId: 'simulado-scope-public-exam',
+          }}
+          value={state.scope}
+          onChange={(scope: ExamType) => patchState({ scope })}
+        />
 
         <ExamAndCountRow
           examId={exam?.id ?? null}
