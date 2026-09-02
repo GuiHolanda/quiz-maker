@@ -45,7 +45,7 @@ export async function mockGenerationTimeout(page: Page, routeGlob: string): Prom
   await page.route(routeGlob, (route) => route.abort('timedout'));
 }
 
-// GET /api/generation-job → returns an array with one job in the given state,
+// GET /api/generation-job → returns an array with one running job,
 // used by reconnect-after-reload tests.
 // Note: the GET endpoint takes no query params — it filters by authenticated user server-side.
 export async function mockActiveJobOnLoad(

@@ -68,7 +68,7 @@ Everything reusable lives here. Specs compose these helpers; they don't hand-rol
 | `empty-states.spec.ts` | 2 | mixed | Simulados list shows the empty state when both list endpoints return empty; certifications list shows the empty state when its endpoint returns empty. |
 | `simulado-timer.spec.ts` | 1 | cert only | Create a simulado with a custom time limit → start the attempt → the countdown (`simulado-timer`) is visible on the tentativa page. |
 
-**Total: 46 tests.**
+**Total: 45 tests.**
 
 ---
 
