@@ -9,7 +9,7 @@ export const TID = {
   typeOptionPublicExam: 'type-option-public_exam',
   questionGenSelectTrigger: 'question-gen-select-trigger',
   questionGenGenerateBtn: 'question-gen-generate-btn',
-  questionGenSaveAllBtn: 'question-gen-save-all-btn',
+  questionGenCreateSimuladoBtn: 'question-gen-create-simulado-btn',
   questionGenStatus: 'question-gen-status',
   questionGenJobCancelBtn: 'question-gen-job-cancel-btn',
 

@@ -12,15 +12,14 @@ import { buttonStyles } from '@/config/constants/buttonStyles';
 interface ActiveJobStatusProps {
   readonly refName: string;
   readonly type: 'certification' | 'public_exam';
-  readonly status: 'queued' | 'running' | 'awaiting_review' | 'done' | 'error';
+  readonly status: 'queued' | 'running' | 'saving' | 'done' | 'error';
   readonly doneTopics: number;
   readonly totalTopics: number;
   readonly queuedTopics: number;
   readonly topics: GenerationJobTopicStatus[];
   readonly onCancel: () => void;
-  readonly onSaveAll: () => void;
-  readonly onReviewAndSelect: () => void;
-  readonly isSaving?: boolean;
+  readonly onCreateSimulado: () => void;
+  readonly onDismiss: () => void;
 }
 
 const SPINNER =
@@ -35,16 +34,14 @@ export function ActiveJobStatus({
   queuedTopics,
   topics,
   onCancel,
-  onSaveAll,
-  onReviewAndSelect,
-  isSaving = false,
+  onCreateSimulado,
+  onDismiss,
 }: ActiveJobStatusProps) {
   const { t } = useTranslation();
 
-  if (status === 'done') return null;
-
   const isRunning = status === 'running' || status === 'queued';
-  const isReview = status === 'awaiting_review';
+  const isSaving = status === 'saving';
+  const isDone = status === 'done';
   const isError = status === 'error';
   const isTimeout =
     isError && topics.length > 0 && topics.every((topic) => topic.status === 'queued' || topic.status === 'running');
@@ -53,11 +50,16 @@ export function ActiveJobStatus({
   const questionsReady = topics
     .filter((topic) => topic.status === 'done')
     .reduce((acc, topic) => acc + topic.questionCount, 0);
+  const questionsSaved = topics.reduce((acc, topic) => acc + topic.savedCount, 0);
   const progressPercent = totalTopics > 0 ? Math.round((doneTopics / totalTopics) * 100) : 0;
   const scopeLabel = type === 'certification' ? t('questionBank.typeCertification') : t('questionBank.typePublicExam');
 
-  const pill = isReview
-    ? { text: t('generate.readyPill'), className: 'border-success/30 bg-success/10 text-success', spin: false }
+  const pill = isDone
+    ? {
+        text: t(questionsSaved === 1 ? 'generate.savedPillOne' : 'generate.savedPill', { count: questionsSaved }),
+        className: 'border-success/30 bg-success/10 text-success',
+        spin: false,
+      }
     : isError
       ? { text: t('generate.statusError'), className: 'border-danger/30 bg-danger/10 text-danger', spin: false }
       : { text: t('generate.generatingPill'), className: 'border-primary/35 bg-primary/10 text-primary', spin: true };
@@ -124,7 +126,7 @@ export function ActiveJobStatus({
             <div className="mt-2.5 h-[5px] overflow-hidden rounded-full bg-content2">
               <div
                 className="h-full rounded-full bg-primary transition-[width] duration-500"
-                style={{ width: `${isReview ? 100 : progressPercent}%` }}
+                style={{ width: `${isDone || isSaving ? 100 : progressPercent}%` }}
               />
             </div>
             {isRunning && queuedTopics > 0 && (
@@ -136,22 +138,18 @@ export function ActiveJobStatus({
         </>
       )}
 
-      {isReview && (
+      {isDone && (
         <div className="mt-5 flex flex-wrap gap-3">
           <Button
             className={buttonStyles.primary}
-            data-testid="question-gen-save-all-btn"
-            isLoading={isSaving}
+            data-testid="question-gen-create-simulado-btn"
             size="sm"
-            onPress={onSaveAll}
+            onPress={onCreateSimulado}
           >
-            {t('generate.saveAll')}
+            {t('generate.createSimulado')}
           </Button>
-          <Button className={buttonStyles.secondary} size="sm" variant="bordered" onPress={onReviewAndSelect}>
-            {t('generate.reviewAndSelect')}
-          </Button>
-          <Button className={`${buttonStyles.dangerFlat} ml-auto`} size="sm" onPress={onCancel}>
-            {t('common.discard')}
+          <Button className={`${buttonStyles.flat} ml-auto`} size="sm" onPress={onDismiss}>
+            {t('generate.dismiss')}
           </Button>
         </div>
       )}
