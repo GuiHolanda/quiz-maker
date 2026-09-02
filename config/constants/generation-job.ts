@@ -14,7 +14,7 @@ export const GENERATION_MAX_TOPICS_PER_JOB = 15;
 // Above this, requested output exceeds max_output_tokens (16000) and JSON truncates.
 export const GENERATION_MAX_QUESTIONS_PER_TOPIC = 50;
 
-// Active jobs (queued + running + awaiting_review) a single user may hold.
+// Active jobs (queued + running + saving) a single user may hold.
 export const GENERATION_MAX_ACTIVE_JOBS_PER_USER = 3;
 
 // Max sub-topics included in the generation prompt. Above this the list dilutes focus

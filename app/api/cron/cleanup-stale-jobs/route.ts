@@ -26,9 +26,9 @@ export async function GET(request: NextRequest) {
 
   const cutoff = new Date(Date.now() - STALE_THRESHOLD_MS);
 
-  // Jobs travados em 'running' ou 'queued' (nunca promovidos por falha) além do TTL.
+  // Jobs travados em 'running', 'queued' ou 'saving' (nunca promovidos por falha) além do TTL.
   const staleJobs = await prisma.generationJob.findMany({
-    where: { status: { in: ['running', 'queued'] }, updatedAt: { lt: cutoff } },
+    where: { status: { in: ['running', 'queued', 'saving'] }, updatedAt: { lt: cutoff } },
     select: { id: true },
   });
 

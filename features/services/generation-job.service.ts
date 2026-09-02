@@ -11,7 +11,11 @@ import { OpenAIService } from '@/features/services/openAI.service';
 import { QuotaService } from '@/features/services/quota.service';
 import { MetricsService } from '@/features/services/metrics.service';
 import { ReferralService } from '@/features/services/referral.service';
-import { sanitizeAiQuestions } from '@/features/services/exam-question.service';
+import {
+  sanitizeAiQuestions,
+  validateAiQuestions,
+  ExamQuestionService,
+} from '@/features/services/exam-question.service';
 import { EXAM_PROMPTS } from '@/config/prompts';
 import {
   GENERATION_MAX_CONCURRENT_TOPICS,
@@ -149,24 +153,64 @@ export async function claimGlobalSlotsAndDispatch(): Promise<void> {
   }
 }
 
-// Marca o job como "awaiting_review" quando todos os tópicos terminaram (done/error/cancelled).
-// Sempre atualiza updatedAt para que o cron de cleanup não mate jobs grandes ainda em progresso.
 async function maybeFinalizeJob(jobId: string): Promise<void> {
   const pending = await prisma.generationJobTopic.count({
     where: { jobId, status: { in: ['queued', 'running'] } },
   });
-  if (pending === 0) {
-    await prisma.generationJob.update({
-      where: { id: jobId },
-      data: { status: 'awaiting_review' },
-    });
-  } else {
-    // Heartbeat: cada tópico concluído renova o TTL do job para o cron não o considerar travado.
+
+  if (pending > 0) {
     await prisma.generationJob.update({
       where: { id: jobId },
       data: { updatedAt: new Date() },
     });
+    return;
   }
+
+  const claimed = await prisma.generationJob.updateMany({
+    where: { id: jobId, status: { in: ['queued', 'running'] } },
+    data: { status: 'saving' },
+  });
+  if (claimed.count === 0) return;
+
+  const job = await prisma.generationJob.findUnique({
+    where: { id: jobId },
+    include: { topics: true },
+  });
+  if (!job) return;
+
+  const questionService = new ExamQuestionService();
+  let totalSaved = 0;
+
+  for (const topic of job.topics) {
+    if (!topic.pendingQuestionsJson) {
+      totalSaved += topic.savedCount;
+      continue;
+    }
+    try {
+      const raw = JSON.parse(topic.pendingQuestionsJson);
+      const payload = Array.isArray(raw) ? { questions: raw } : raw;
+      const questions = validateAiQuestions(payload) as AIExamQuestion[];
+      await questionService.createFromPayload(questions, job.userId, job.refKey);
+      const topicSaved = topic.savedCount + questions.length;
+      await prisma.generationJobTopic.update({
+        where: { id: topic.id },
+        data: { savedCount: topicSaved, pendingQuestionsJson: null },
+      });
+      totalSaved += topicSaved;
+    } catch (err) {
+      console.error(`[generation-job] auto-save falhou no tópico "${topic.topicName}":`, err);
+      totalSaved += topic.savedCount;
+      await prisma.generationJobTopic.update({
+        where: { id: topic.id },
+        data: { status: 'error', errorType: 'generation', errorMessage: 'Falha ao salvar as questões geradas' },
+      });
+    }
+  }
+
+  await prisma.generationJob.update({
+    where: { id: jobId },
+    data: { status: 'done', savedCount: totalSaved },
+  });
 }
 
 // Processa um único tópico: roda o pipeline de 3 etapas e persiste as questões geradas
@@ -218,6 +262,7 @@ export async function processTopic(topicId: string): Promise<void> {
     promptTopics.length > 0 ? promptTopics.map((t: { name: string }) => `- ${t.name}`).join('\n') : undefined;
 
   let logId: string | null = null;
+  let poolServed = 0;
 
   try {
     const startTime = Date.now();
@@ -250,12 +295,13 @@ export async function processTopic(topicId: string): Promise<void> {
       topic.topicName,
       topic.questionCount
     );
+    poolServed = poolResult.served;
 
     if (poolResult.served === topic.questionCount) {
       await metricsService.finalize(logId, Date.now() - startTime);
       await prisma.generationJobTopic.update({
         where: { id: topicId },
-        data: { status: 'done', savedCount: 0, pendingQuestionsJson: null },
+        data: { status: 'done', savedCount: poolResult.served, pendingQuestionsJson: null },
       });
       await maybeFinalizeJob(job.id);
       await releaseAndClaimNext(userId);
@@ -418,7 +464,7 @@ export async function processTopic(topicId: string): Promise<void> {
 
     await prisma.generationJobTopic.update({
       where: { id: topicId },
-      data: { status: 'done', savedCount: 0, pendingQuestionsJson: JSON.stringify(questions) },
+      data: { status: 'done', savedCount: poolResult.served, pendingQuestionsJson: JSON.stringify(questions) },
     });
   } catch (topicErr) {
     console.error(`[generation-job] Topic "${topic.topicName}" failed:`, topicErr);
@@ -433,7 +479,7 @@ export async function processTopic(topicId: string): Promise<void> {
     }
     await prisma.generationJobTopic.update({
       where: { id: topicId },
-      data: { status: 'error', errorMessage: message, errorType },
+      data: { status: 'error', errorMessage: message, errorType, savedCount: poolServed },
     });
   } finally {
     try {

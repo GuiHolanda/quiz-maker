@@ -27,7 +27,6 @@ import {
   GENERATION_JOB_URL,
   USAGE_HISTORY_URL,
   USAGE_HISTORY_FILTERS_URL,
-  GENERATION_JOB_SAVE_URL,
   DASHBOARD_STATS_URL,
   SEARCH_URL,
   CATALOG_URL,
@@ -454,9 +453,6 @@ export const createGenerationJob = (payload: {
   distribution: Array<{ topicName: string; questionCount: number }>;
 }): Promise<{ jobId: string }> => api.post<{ jobId: string }>(GENERATION_JOB_URL, payload).then((r) => r.data);
 
-export const getGenerationJob = (jobId: string): Promise<GenerationJobStatus> =>
-  api.get<GenerationJobStatus>(`${GENERATION_JOB_URL}/${jobId}`).then((r) => r.data);
-
 export const getActiveGenerationJobs = (): Promise<GenerationJobStatus[]> =>
   api
     .get<GenerationJobStatus[]>(GENERATION_JOB_URL)
@@ -465,9 +461,6 @@ export const getActiveGenerationJobs = (): Promise<GenerationJobStatus[]> =>
 
 export const cancelGenerationJob = (jobId: string): Promise<void> =>
   api.delete(`${GENERATION_JOB_URL}/${jobId}`).then(() => undefined);
-
-export const saveGenerationJob = (jobId: string, topicIds?: string[]): Promise<{ savedCount: number }> =>
-  api.post<{ savedCount: number }>(GENERATION_JOB_SAVE_URL(jobId), { topicIds }).then((r) => r.data);
 
 export const getGenerationHistory = (
   page: number,

@@ -197,7 +197,6 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
 
 function statusColor(status: GenerationHistoryItem['status']): 'success' | 'warning' | 'danger' | 'default' {
   if (status === 'done') return 'success';
-  if (status === 'awaiting_review') return 'warning';
   if (status === 'error') return 'danger';
   if (status === 'cancelled') return 'default';
   return 'default';
@@ -205,7 +204,6 @@ function statusColor(status: GenerationHistoryItem['status']): 'success' | 'warn
 
 function statusLabel(status: GenerationHistoryItem['status'], t: (key: string) => string): string {
   if (status === 'done') return t('generate.statusDone');
-  if (status === 'awaiting_review') return t('generate.statusAwaitingReview');
   if (status === 'cancelled') return t('generate.statusCancelled');
   if (status === 'running') return t('generate.statusRunning');
   if (status === 'queued') return t('generate.statusQueued');

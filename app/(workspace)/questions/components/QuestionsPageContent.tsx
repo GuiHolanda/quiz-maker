@@ -1,42 +1,36 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Chip } from '@heroui/chip';
-import { Button } from '@heroui/button';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { NumberInput } from '@heroui/number-input';
 import { Select, SelectItem } from '@heroui/select';
 import { BreadcrumbItem, Breadcrumbs } from '@heroui/breadcrumbs';
-import Link from 'next/link';
-import { faGraduationCap, faClipboardList, faCircleCheck } from '@fortawesome/free-solid-svg-icons';
+import { faGraduationCap, faClipboardList } from '@fortawesome/free-solid-svg-icons';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 
 import { GenerationHistory } from './GenerationHistory';
 import { ActiveJobStatus } from './ActiveJobStatus';
-import { GeneratedQuestionsList } from './GeneratedQuestionsList';
 import { GenerationScopePicker } from './GenerationScopePicker';
 import { GenerationDistributionTable } from './GenerationDistributionTable';
 import { GenerationSummarySidebar, type SummaryRow } from './GenerationSummarySidebar';
 import { useGenerationDistribution } from './useGenerationDistribution.hook';
 
-import type { AIQuestion, Exam, ExamType } from '@/shared/types';
+import type { Exam, ExamType } from '@/shared/types';
 import { EntitySelect } from '@/shared/components/EntitySelect';
-import useQuizContext from '@/features/hooks/useQuizContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { useGenerationJobsContext } from '@/features/hooks/useGenerationJobsContext.hook';
-import type { TrackedJob } from '@/features/providers/generationJobs.provider';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
-import { InlineAlert } from '@/shared/components/ui/InlineAlert';
-import { SectionHeader } from '@/shared/components/ui/SectionHeader';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
-import { buttonStyles } from '@/config/constants/buttonStyles';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { GENERATION_MAX_ACTIVE_JOBS_PER_USER } from '@/config/constants';
 import { GENERATION_LANGUAGES, resolveGenerationLanguage } from '@/config/generation-languages';
 import type { GenerationLanguage } from '@/config/generation-languages';
-import { notify } from '@/shared/lib/notify';
+import {
+  writeSimuladoPrefill,
+  buildSimuladoPrefillFromJob,
+} from '@/app/(workspace)/simulados/components/create/simuladoPrefill';
 
 const EMPTY_COPY: Record<
   ExamType,
@@ -64,9 +58,9 @@ const estimateMinutes = (topicCount: number) => Math.max(1, Math.ceil(topicCount
 export function QuestionsPageContent() {
   const { t, language: uiLanguage } = useTranslation();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { certifications, publicExams, isLoading } = useExamsContext();
-  const { state, setAIquestions, setSelectedAIquestions } = useQuizContext();
-  const { jobs, startJob, cancelJob, saveAllJob, getJobPendingQuestions } = useGenerationJobsContext();
+  const { jobs, startJob, cancelJob, dismissJob } = useGenerationJobsContext();
 
   const [scope, setScope] = useState<ExamType>((searchParams.get('type') as ExamType) ?? 'certification');
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
@@ -77,12 +71,8 @@ export function QuestionsPageContent() {
   const languageTouched = useRef(false);
 
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
-  const [showSimuladosBanner, setShowSimuladosBanner] = useState(false);
-  const [reviewJob, setReviewJob] = useState<TrackedJob | null>(null);
   const [mounted, setMounted] = useState(false);
 
-  const prevActiveCount = useRef(jobs.length);
-  const reviewSectionRef = useRef<HTMLElement>(null);
   const jobsSectionRef = useRef<HTMLDivElement>(null);
 
   const exams = scope === 'certification' ? certifications : publicExams;
@@ -116,23 +106,21 @@ export function QuestionsPageContent() {
     setTotal(first?.totalQuestions ?? 0);
   }, [isLoading, exams, selectedExamId]);
 
+  const activeJobCount = jobs.filter((job) => job.status !== 'done').length;
+  const prevActiveJobCount = useRef(activeJobCount);
+
   useEffect(() => {
-    if (jobs.length > prevActiveCount.current) {
-      requestAnimationFrame(() => jobsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    if (activeJobCount !== prevActiveJobCount.current) {
+      if (activeJobCount > prevActiveJobCount.current) {
+        requestAnimationFrame(() => jobsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      }
       setHistoryRefreshKey((key) => key + 1);
-    } else if (jobs.length < prevActiveCount.current) {
-      setHistoryRefreshKey((key) => key + 1);
-      setShowSimuladosBanner(true);
+      prevActiveJobCount.current = activeJobCount;
     }
-    prevActiveCount.current = jobs.length;
-  }, [jobs.length]);
+  }, [activeJobCount]);
 
-  const aiQuestions = state?.aiQuestions ?? [];
-  const selectedIds = state?.selectedAIQuestions ?? [];
-
-  const visibleJobs = mounted ? jobs.filter((job) => job.jobId !== reviewJob?.jobId) : [];
-  const reviewing = aiQuestions.length > 0 || visibleJobs.some((job) => job.status === 'awaiting_review');
-  const atJobLimit = mounted && jobs.length >= GENERATION_MAX_ACTIVE_JOBS_PER_USER;
+  const visibleJobs = mounted ? jobs : [];
+  const atJobLimit = mounted && activeJobCount >= GENERATION_MAX_ACTIVE_JOBS_PER_USER;
 
   const currentSum = dist.currentTotal;
   const status = resolveStatus();
@@ -140,7 +128,6 @@ export function QuestionsPageContent() {
 
   return (
     <PageHeader
-      action={renderStepIndicator()}
       breadcrumbs={
         <Breadcrumbs>
           <BreadcrumbItem href="/">{t('nav.dashboard')}</BreadcrumbItem>
@@ -151,8 +138,6 @@ export function QuestionsPageContent() {
       title={t('generate.pageTitle')}
     >
       <div className="flex flex-col gap-6">
-        {renderSimuladosBanner()}
-
         {isLoading && visibleJobs.length === 0 ? (
           <SkeletonListLoader count={4} />
         ) : exams.length === 0 && visibleJobs.length === 0 ? (
@@ -179,7 +164,6 @@ export function QuestionsPageContent() {
           </div>
         )}
 
-        {renderReviewList()}
         <GenerationHistory refreshKey={historyRefreshKey} />
       </div>
     </PageHeader>
@@ -196,7 +180,6 @@ export function QuestionsPageContent() {
           <ActiveJobStatus
             key={job.jobId}
             doneTopics={job.doneTopics}
-            isSaving={job.isSaving}
             queuedTopics={job.queuedTopics}
             refName={job.refName}
             status={job.status}
@@ -204,25 +187,10 @@ export function QuestionsPageContent() {
             totalTopics={job.totalTopics}
             type={job.type}
             onCancel={() => cancelJob(job.jobId)}
-            onReviewAndSelect={() => handleReviewAndSelect(job.jobId)}
-            onSaveAll={() => saveAllJob(job.jobId)}
+            onCreateSimulado={() => handleCreateSimulado(job)}
+            onDismiss={() => dismissJob(job.jobId)}
           />
         ))}
-      </div>
-    );
-  }
-
-  function renderStepIndicator() {
-    const step = reviewing ? 2 : 1;
-    return (
-      <div className="flex items-center gap-3.5">
-        <span className="text-xs font-bold text-primary">
-          {t('generate.stepIndicator', { current: step, total: 2 })}
-        </span>
-        <div className="flex w-[120px] gap-[5px]">
-          <span className="h-[3px] flex-1 rounded-full bg-primary" />
-          <span className={`h-[3px] flex-1 rounded-full ${step === 2 ? 'bg-primary' : 'bg-content2'}`} />
-        </div>
       </div>
     );
   }
@@ -317,56 +285,6 @@ export function QuestionsPageContent() {
     );
   }
 
-  function renderSimuladosBanner() {
-    if (!showSimuladosBanner) return null;
-    return (
-      <InlineAlert
-        color="success"
-        endContent={
-          <Button as={Link} className={buttonStyles.secondary} href="/simulados" size="sm" variant="bordered">
-            {t('generate.goToSimulados')}
-          </Button>
-        }
-        icon={faCircleCheck}
-        title={t('generate.questionsReadyHint')}
-        onDismiss={() => setShowSimuladosBanner(false)}
-      />
-    );
-  }
-
-  function renderReviewList() {
-    if (!mounted || aiQuestions.length === 0) return null;
-    const first = aiQuestions[0];
-    const isPublicExam = reviewJob?.type === 'public_exam';
-    const refName = reviewJob?.refName ?? first?.certificationTitle ?? '';
-
-    return (
-      <section ref={reviewSectionRef} className="mt-8 flex flex-col gap-4 border-t border-divider pt-8">
-        <SectionHeader
-          action={
-            <Chip color="primary" size="sm" variant="flat">
-              {t('generate.reviewCount', { count: aiQuestions.length })}
-            </Chip>
-          }
-          icon={isPublicExam ? faClipboardList : faGraduationCap}
-          label={refName || undefined}
-          subtitle={t('generate.reviewSectionSubtitle')}
-          title={t('generate.reviewSectionTitle')}
-        />
-        <GeneratedQuestionsList
-          isLoadingMore={false}
-          isSaving={false}
-          questions={aiQuestions}
-          remainingCount={0}
-          selectedIds={selectedIds}
-          setSelectedIds={setSelectedAIquestions}
-          onDiscard={handleReviewDiscard}
-          onSave={handleReviewSave}
-        />
-      </section>
-    );
-  }
-
   function resolveStatus(): { tone: 'ok' | 'warn'; text: string } {
     if (currentSum === 0) return { tone: 'warn', text: t('generate.distStatusEmpty') };
     if (currentSum === total) {
@@ -438,7 +356,6 @@ export function QuestionsPageContent() {
         refName: selectedExam.name,
         examBoardName: selectedExam.examBoard?.name,
         language: scope === 'certification' ? language : undefined,
-        totalQuestions: selectedExam.totalQuestions,
         distribution,
       });
     } finally {
@@ -446,29 +363,9 @@ export function QuestionsPageContent() {
     }
   }
 
-  async function handleReviewAndSelect(jobId: string) {
-    const job = jobs.find((candidate) => candidate.jobId === jobId) ?? null;
-    try {
-      const pending = await getJobPendingQuestions(jobId);
-      setAIquestions(pending as unknown as AIQuestion[], null);
-      setReviewJob(job);
-      requestAnimationFrame(() => reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
-    } catch {
-      notify.error(t('toast.error'), t('toast.somethingWrong'));
-    }
-  }
-
-  async function handleReviewSave() {
-    if (reviewJob) await saveAllJob(reviewJob.jobId);
-    setReviewJob(null);
-    setAIquestions([], null);
-    setSelectedAIquestions([]);
-  }
-
-  async function handleReviewDiscard() {
-    if (reviewJob) await cancelJob(reviewJob.jobId);
-    setReviewJob(null);
-    setSelectedAIquestions([]);
-    setAIquestions([], null);
+  function handleCreateSimulado(job: (typeof jobs)[number]) {
+    const prefill = buildSimuladoPrefillFromJob({ refKey: job.refKey, topics: job.topics });
+    if (prefill) writeSimuladoPrefill(prefill);
+    router.push('/simulados');
   }
 }

@@ -52,19 +52,6 @@ export const test = base.extend<AuthFixtures>({
       }
     });
 
-    // ── Generation job save mock ──────────────────────────────────────────
-    await page.route('**/api/generation-job/*/save', (route) => {
-      if (route.request().method() === 'POST') {
-        route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ savedCount: 5 }),
-        });
-      } else {
-        route.continue();
-      }
-    });
-
     // ── Usage history mock (empty — avoids real DB reads) ─────────────────
     await page.route('**/api/usage/history**', (route) => {
       route.fulfill({

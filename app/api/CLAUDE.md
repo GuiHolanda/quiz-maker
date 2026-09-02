@@ -72,7 +72,6 @@ Async question generation with SSE progress streaming.
 | `generation-job/[jobId]` | GET | Polling fallback — current status + topics array |
 | `generation-job/[jobId]` | DELETE | Cancel running job |
 | `generation-job/[jobId]/stream` | GET | SSE stream: `progress`/`done`/`error` with `topics[]`. `maxDuration = 300`. |
-| `generation-job/[jobId]/save` | POST | Persist approved questions from completed job |
 
 Service: `features/services/generation-job.service.ts`.
 

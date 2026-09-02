@@ -1,4 +1,3 @@
-import type { QuizState } from '@/features/reducers/quiz.reducer';
 import type { QuestionFormatKey } from '@/config/question-formats';
 
 import { SVGProps } from 'react';
@@ -16,42 +15,10 @@ export type QuizFormErrors = {
   num_questions?: string;
 };
 
-export interface AIQuestion {
-  id: number;
-  certificationTitle: string;
-  text: string;
-  correctCount: number;
-  topic: string;
-  difficulty: string;
-  options: Option;
-  topicSubarea?: string;
-}
-
-export interface StoredQuestion {
-  id: number;
-  certificationTitle: string;
-  text: string;
-  correctCount: number;
-  topic: string;
-  difficulty: string;
-  options: Option;
-  answer: Answer;
-  topicSubarea?: string;
-}
-
 export interface Answer {
   questionId: number;
   correctOptions: string[];
   explanations: Record<string, string>;
-}
-
-export interface QuizLocalStoragePayload {
-  meta: { topic: string; num_questions: number };
-  aiQuestions: AIQuestion[];
-  selectedAIQuestions: number[] | null;
-  answers?: AnswersMap;
-  isFinished?: boolean;
-  questions?: StoredQuestion[];
 }
 
 export type ExamType = 'certification' | 'public_exam';
@@ -100,16 +67,6 @@ export interface SectionUpdatePayload {
   newName?: string;
   minQuestions: number;
   maxQuestions: number;
-}
-
-export interface QuizStoreApi {
-  state: QuizState;
-  setAIquestions: (aiQuestions: AIQuestion[], selectedAIQuestions: number[] | null) => void;
-  setSelectedAIquestions: (selectedAIQuestions: number[] | null) => void;
-  setAnswers: (answers: AnswersMap) => void;
-  replaceQuiz: (payload: QuizLocalStoragePayload) => void;
-  setFinished: (isFinished: boolean) => void;
-  clear: () => void;
 }
 
 export interface ExamPayload {
@@ -537,7 +494,7 @@ export interface GenerationJobTopicStatus {
 
 export interface GenerationJobStatus {
   id: string;
-  status: 'queued' | 'running' | 'done' | 'error' | 'awaiting_review';
+  status: 'queued' | 'running' | 'saving' | 'done' | 'error';
   totalTopics: number;
   doneTopics: number;
   queuedTopics: number;
@@ -613,7 +570,7 @@ export interface GenerationHistoryItem {
   topicName: string | null;
   questionsGenerated: number;
   questionsSaved: number;
-  status: 'done' | 'error' | 'awaiting_review' | 'cancelled' | 'running' | 'queued';
+  status: 'done' | 'error' | 'cancelled' | 'running' | 'queued';
   createdAt: string;
 }
 

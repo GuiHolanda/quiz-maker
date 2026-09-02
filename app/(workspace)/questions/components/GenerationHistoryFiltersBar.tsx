@@ -104,7 +104,6 @@ export function GenerationHistoryFiltersBar({
           onSelectionChange={(keys) => onFilterChange('status', Array.from(keys) as string[])}
         >
           <SelectItem key="done">{t('generate.statusDone')}</SelectItem>
-          <SelectItem key="awaiting_review">{t('generate.statusAwaitingReview')}</SelectItem>
           <SelectItem key="error">{t('generate.statusError')}</SelectItem>
           <SelectItem key="cancelled">{t('generate.statusCancelled')}</SelectItem>
           <SelectItem key="running">{t('generate.statusRunning')}</SelectItem>

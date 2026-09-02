@@ -5,8 +5,8 @@ import { injectFakeEventSource } from './fake-eventsource';
 import { setupGenerationJobMocks } from './mocks';
 
 // Navigate to the generation page, pick the vertical, select the seeded entity,
-// generate (fake SSE → awaiting_review), then save all. Leaves the page on /questions.
-export async function generateAndSaveQuestions(page: Page, domain: DomainConfig): Promise<void> {
+// generate (fake SSE → done). Leaves the page on /questions with the completed job card.
+export async function generateQuestions(page: Page, domain: DomainConfig): Promise<void> {
   await injectFakeEventSource(page, { topicName: domain.seedTopic });
   await setupGenerationJobMocks(page);
 
@@ -21,9 +21,7 @@ export async function generateAndSaveQuestions(page: Page, domain: DomainConfig)
 
   await page.locator(tid(TID.questionGenGenerateBtn)).click();
   await expect(page.locator(tid(TID.questionGenStatus))).toBeVisible();
-
-  await page.locator(tid(TID.questionGenSaveAllBtn)).click();
-  await expect(page.getByText(/Quest(õ|o)es salvas|Questions saved/i)).toBeVisible();
+  await expect(page.locator(tid(TID.questionGenCreateSimuladoBtn))).toBeVisible({ timeout: 10_000 });
 }
 
 // A prior step (e.g. generation job done) can leave the notification bell dialog open;

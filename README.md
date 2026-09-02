@@ -292,7 +292,6 @@ Token counts are recorded to `UsageLog` after each generation call. See [Admin D
 |---|---|
 | Certifications list + selected cert | `CertificationsProvider` (Context + Reducer) |
 | Public exams list + selected exam | `PublicExamsProvider` (Context + Reducer) |
-| Quiz state (questions, answers) | `QuizProvider` (Context + Reducer) |
 | Billing usage (quota counters) | `UsageProvider` — wraps the workspace layout; exposes `usage` and `refreshUsage()` via `useUsageContext()` hook. `Sidebar` and `WorkspaceHeader` consume this instead of fetching independently. `refreshUsage()` is called after questions are saved so the counter updates instantly. |
 | UI-only state (active tab, etc.) | `localStorage` |
 | Domain data | Database (source of truth) via API |

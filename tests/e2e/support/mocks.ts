@@ -45,25 +45,23 @@ export async function mockGenerationTimeout(page: Page, routeGlob: string): Prom
   await page.route(routeGlob, (route) => route.abort('timedout'));
 }
 
-// GET /api/generation-job → returns an array with one job in the given state,
+// GET /api/generation-job → returns an array with one running job,
 // used by reconnect-after-reload tests.
 // Note: the GET endpoint takes no query params — it filters by authenticated user server-side.
 export async function mockActiveJobOnLoad(
   page: Page,
-  job: { jobId: string; status: 'running' | 'awaiting_review'; topicName: string }
+  job: { jobId: string; status: 'running'; topicName: string }
 ): Promise<void> {
   await page.route('**/api/generation-job', (route) => {
     if (route.request().method() === 'GET') {
-      const topicStatus = job.status === 'awaiting_review' ? 'done' : 'running';
-      const doneTopics = job.status === 'awaiting_review' ? 1 : 0;
       route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify([
           {
             id: job.jobId,
-            status: job.status,
-            doneTopics,
+            status: 'running',
+            doneTopics: 0,
             totalTopics: 1,
             queuedTopics: 0,
             savedCount: 0,
@@ -76,7 +74,7 @@ export async function mockActiveJobOnLoad(
                 id: 'e2e-topic-1',
                 topicName: job.topicName,
                 questionCount: 3,
-                status: topicStatus,
+                status: 'running',
                 savedCount: 0,
                 errorMessage: null,
                 errorType: null,

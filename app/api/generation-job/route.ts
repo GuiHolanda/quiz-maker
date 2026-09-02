@@ -138,13 +138,13 @@ export async function POST(request: NextRequest) {
     const activeJobCount = await prisma.generationJob.count({
       where: {
         userId: session.user.id,
-        status: { in: ['queued', 'running', 'awaiting_review'] },
+        status: { in: ['queued', 'running', 'saving'] },
       },
     });
     if (activeJobCount >= GENERATION_MAX_ACTIVE_JOBS_PER_USER) {
       throw Object.assign(
         new Error(
-          `You already have ${activeJobCount} generations in progress (limit ${GENERATION_MAX_ACTIVE_JOBS_PER_USER}). Wait for one to finish or review its results before starting another.`
+          `You already have ${activeJobCount} generations in progress (limit ${GENERATION_MAX_ACTIVE_JOBS_PER_USER}). Wait for one to finish before starting another.`
         ),
         { status: 429 }
       );
@@ -197,7 +197,7 @@ export async function GET() {
   try {
     // Retorna todos os jobs ativos do usuário (para o provider central reconectar).
     const jobs = await prisma.generationJob.findMany({
-      where: { userId: session.user.id, status: { in: ['queued', 'running', 'awaiting_review'] } },
+      where: { userId: session.user.id, status: { in: ['queued', 'running', 'saving'] } },
       orderBy: { createdAt: 'desc' },
       include: { topics: { orderBy: { createdAt: 'asc' } } },
     });

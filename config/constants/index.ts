@@ -18,7 +18,6 @@ export const AUTO_CONFIG_LOCATE_EDITAL_URL = '/exam/auto-config/locate-edital';
 export const GENERATION_JOB_URL = '/generation-job';
 export const USAGE_HISTORY_URL = '/usage/history';
 export const USAGE_HISTORY_FILTERS_URL = '/usage/history/filters';
-export const GENERATION_JOB_SAVE_URL = (jobId: string) => `/generation-job/${jobId}/save`;
 export const CATALOG_URL = '/exam/catalog';
 export const FORK_EXAM_URL = '/exam/fork-exam';
 export const ADMIN_CATALOG_URL = '/admin/catalog';
@@ -37,7 +36,6 @@ export const DEMO_QUIZ_SIZE = 10;
 // Per-exam fidelity to the real option count is enforced by the seed script.
 export const DEMO_MIN_OPTIONS = 3;
 
-export const QUIZ_LOCAL_STORAGE_KEY = 'QUIZ';
 export const EXAMS_LOCAL_STORAGE_KEY = 'EXAMS';
 export const LANGUAGE_LOCAL_STORAGE_KEY = 'app-language';
 export const SIDEBAR_COLLAPSED_LOCAL_STORAGE_KEY = 'certifiqueai_sidebar_collapsed';

@@ -31,9 +31,6 @@ export async function injectFakeEventSource(
         close() {}
 
         private fire() {
-          // Drive the UI into `awaiting_review` state.
-          // The provider listens via es.addEventListener('awaiting_review', ...) and expects:
-          //   { doneTopics, totalTopics, queuedTopics?, topics? }
           const topic = {
             id: 'fake-topic-1',
             topicName,
@@ -47,10 +44,11 @@ export async function injectFakeEventSource(
             doneTopics: 1,
             totalTopics: 1,
             queuedTopics: 0,
+            savedCount: count,
             topics: [topic],
           };
-          const ev = new MessageEvent('awaiting_review', { data: JSON.stringify(payload) });
-          (this.listeners['awaiting_review'] ?? []).forEach((cb) => cb(ev));
+          const ev = new MessageEvent('done', { data: JSON.stringify(payload) });
+          (this.listeners['done'] ?? []).forEach((cb) => cb(ev));
         }
       }
 
