@@ -4,6 +4,8 @@ import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
+import { ProgressTrack } from '@/shared/components/ui/ProgressTrack';
+
 interface UsageCardProps {
   readonly icon: IconDefinition;
   readonly label: string;
@@ -28,12 +30,7 @@ export function UsageCard({ icon, label, used, limit, limitLabel, renewNote }: U
           {used} / {limitLabel}
         </span>
       </div>
-      <div className="w-full bg-default-200 rounded-full h-2.5 mb-2 overflow-hidden">
-        <div
-          className="bg-primary h-2.5 rounded-full transition-all duration-300"
-          style={{ width: isUnlimited ? '0%' : `${pct}%` }}
-        />
-      </div>
+      <ProgressTrack animated className="mb-2" heightClass="h-2.5" value={isUnlimited ? 0 : pct} />
       {renewNote && <p className="text-xs text-default-400">{renewNote}</p>}
     </div>
   );

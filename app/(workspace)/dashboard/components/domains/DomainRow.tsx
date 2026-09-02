@@ -1,5 +1,6 @@
 'use client';
 
+import { ProgressTrack } from '@/shared/components/ui/ProgressTrack';
 import { scoreToneText } from '@/shared/lib/scoreTone';
 import type { DashboardDomainStat } from '@/shared/types';
 
@@ -16,10 +17,8 @@ export function DomainRow({ domain }: DomainRowProps) {
           {domain.totalAttempts} {domain.totalAttempts === 1 ? 'attempt' : 'attempts'}
         </p>
       </div>
-      <div className="flex-1 relative">
-        <div className="h-2 bg-default-200 rounded-full overflow-hidden">
-          <div className="h-full rounded-full bg-primary" style={{ width: `${domain.avgScore}%` }} />
-        </div>
+      <div className="flex-1">
+        <ProgressTrack heightClass="h-2" value={domain.avgScore} />
       </div>
       <div className="w-10 text-right shrink-0">
         <span className={`font-mono font-semibold text-xs ${scoreToneText(domain.avgScore)}`}>{domain.avgScore}%</span>

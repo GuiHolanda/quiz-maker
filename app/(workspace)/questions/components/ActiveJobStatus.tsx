@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import type { GenerationJobTopicStatus } from '@/shared/types';
 import { IconBadge } from '@/shared/components/ui/IconBadge';
 import { InlineAlert } from '@/shared/components/ui/InlineAlert';
+import { ProgressTrack } from '@/shared/components/ui/ProgressTrack';
 import { StatusPill } from '@/shared/components/ui/StatusPill';
 import type { StatusTone } from '@/shared/components/ui/tone';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -118,12 +119,13 @@ export function ActiveJobStatus({
                 {questionsReady}/{totalQuestions}
               </span>
             </div>
-            <div className="mt-2.5 h-[5px] overflow-hidden rounded-full bg-content2">
-              <div
-                className="h-full rounded-full bg-primary transition-[width] duration-500"
-                style={{ width: `${isDone || isSaving ? 100 : progressPercent}%` }}
-              />
-            </div>
+            <ProgressTrack
+              animated
+              className="mt-2.5"
+              heightClass="h-[5px]"
+              trackClass="bg-content2"
+              value={isDone || isSaving ? 100 : progressPercent}
+            />
             {isRunning && queuedTopics > 0 && (
               <p className="mt-2 text-xs text-default-400">{t('generate.queuedHint', { count: queuedTopics })}</p>
             )}

@@ -7,6 +7,7 @@ import { faArrowRight, faCheck, faFileCircleCheck } from '@fortawesome/free-soli
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { IconBadge } from '@/shared/components/ui/IconBadge';
+import { ProgressTrack } from '@/shared/components/ui/ProgressTrack';
 import { StatusPill } from '@/shared/components/ui/StatusPill';
 
 interface GenerationPanelProps {
@@ -95,12 +96,13 @@ export function GenerationPanel({
           </span>
           <span className="font-mono text-xs text-default-400">{progressPercent}%</span>
         </div>
-        <div className="mt-2 h-[5px] rounded-full bg-content2">
-          <div
-            className="h-full rounded-full bg-primary transition-[width] duration-500"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
+        <ProgressTrack
+          animated
+          className="mt-2"
+          heightClass="h-[5px]"
+          trackClass="bg-content2"
+          value={progressPercent}
+        />
       </div>
 
       <div className="mt-3.5 flex flex-col">

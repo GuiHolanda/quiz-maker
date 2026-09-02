@@ -7,6 +7,7 @@ import { faBolt } from '@fortawesome/free-solid-svg-icons';
 
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { ProgressTrack } from '@/shared/components/ui/ProgressTrack';
 import { scoreToneBg, scoreToneText } from '@/shared/lib/scoreTone';
 import type { DashboardDomainStat } from '@/shared/types';
 
@@ -46,12 +47,7 @@ export function FocusAreaCard({ domain }: FocusAreaCardProps) {
           <span className="font-mono text-[9px] text-default-400">{t('dashboard.masteryProgress')}</span>
           <span className={`font-mono text-[9px] ${scoreToneText(domain.avgScore)}`}>{domain.avgScore} / 100</span>
         </div>
-        <div className="h-1.5 bg-default-200 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full ${scoreToneBg(domain.avgScore)}`}
-            style={{ width: `${domain.avgScore}%` }}
-          />
-        </div>
+        <ProgressTrack fillClass={scoreToneBg(domain.avgScore)} value={domain.avgScore} />
       </div>
 
       <div className="flex items-center">
