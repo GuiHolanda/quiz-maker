@@ -5,6 +5,7 @@ import { faCircleXmark, faCheck, faGraduationCap, faClipboardList } from '@forta
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import type { GenerationJobTopicStatus } from '@/shared/types';
+import { IconBadge } from '@/shared/components/ui/IconBadge';
 import { InlineAlert } from '@/shared/components/ui/InlineAlert';
 import { StatusPill } from '@/shared/components/ui/StatusPill';
 import type { StatusTone } from '@/shared/components/ui/tone';
@@ -70,12 +71,7 @@ export function ActiveJobStatus({
     <section aria-live="polite" className="flex flex-col rounded-xl bg-content1 p-6" data-testid="question-gen-status">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div className="flex min-w-0 items-center gap-3.5">
-          <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[9px] bg-primary/10 text-primary">
-            <FontAwesomeIcon
-              className="h-[19px] w-[19px]"
-              icon={type === 'certification' ? faGraduationCap : faClipboardList}
-            />
-          </div>
+          <IconBadge icon={type === 'certification' ? faGraduationCap : faClipboardList} size="md" />
           <div className="flex min-w-0 flex-col gap-1">
             <span className="truncate text-[17px] font-bold tracking-tight text-foreground">{refName}</span>
             <span className="truncate font-mono text-[11.5px] text-default-400">

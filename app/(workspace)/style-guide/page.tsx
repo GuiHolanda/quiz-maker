@@ -27,6 +27,7 @@ import { buttonStyles } from '@/config/constants/buttonStyles';
 
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { IconBadge } from '@/shared/components/ui/IconBadge';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { PasswordInput } from '@/shared/components/ui/PasswordInput';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -530,9 +531,7 @@ function StyleGuideContent() {
           {/* Card with icon header */}
           <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
-                <FontAwesomeIcon className="w-4 h-4" icon={faBell} />
-              </div>
+              <IconBadge icon={faBell} size="md" />
               <div>
                 <h3 className="text-base font-bold text-foreground">Icon Header</h3>
                 <p className="text-xs text-default-400">Card subtitle</p>

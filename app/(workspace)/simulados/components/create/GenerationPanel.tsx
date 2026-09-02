@@ -6,6 +6,7 @@ import { faArrowRight, faCheck, faFileCircleCheck } from '@fortawesome/free-soli
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+import { IconBadge } from '@/shared/components/ui/IconBadge';
 import { StatusPill } from '@/shared/components/ui/StatusPill';
 
 interface GenerationPanelProps {
@@ -75,9 +76,7 @@ export function GenerationPanel({
     <div className="flex flex-col rounded-xl bg-content1 p-6" data-testid="simulado-generation-panel">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <FontAwesomeIcon className="h-[19px] w-[19px]" icon={faFileCircleCheck} />
-          </div>
+          <IconBadge icon={faFileCircleCheck} size="md" />
           <div className="flex min-w-0 flex-col gap-1">
             <span className="truncate text-[17px] font-bold text-foreground">{simuladoName}</span>
             <span className="font-mono text-[11.5px] text-default-400">{summaryLine}</span>
