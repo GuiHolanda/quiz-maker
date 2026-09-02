@@ -63,7 +63,7 @@ export function QuestionBankSummary({ summary }: QuestionBankSummaryProps) {
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {cards.map((card) => (
         <div key={card.label} className="bg-content1 rounded-xl p-6 flex flex-col gap-3">
-          <div className="flex items-center gap-2 text-xs font-semibold text-default-400">
+          <div className="flex items-center gap-2 text-xs font-semibold text-navy-400/60">
             <FontAwesomeIcon aria-hidden="true" className="w-3.5 h-3.5" icon={card.icon} />
             {card.label}
           </div>

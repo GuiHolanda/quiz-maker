@@ -69,7 +69,6 @@ export function QuestionBankCard({
   const correctOptions = question.answer?.correctOptions ?? [];
   const explanations = question.answer?.explanations ?? {};
   const hasExplanations = Object.keys(explanations).length > 0;
-  const code = `Q-${String(question.id).padStart(4, '0')}`;
 
   return (
     <div
@@ -82,7 +81,7 @@ export function QuestionBankCard({
         {renderCheckbox()}
         <div className="min-w-[240px] flex-1">
           {renderMeta()}
-          <p className="mt-3 text-[15px] leading-relaxed text-foreground">{question.text}</p>
+          <p className="my-4 text-base leading-relaxed">{question.text}</p>
           {renderFooterMeta()}
         </div>
         <div className="ml-auto">{renderActions()}</div>
@@ -113,7 +112,7 @@ export function QuestionBankCard({
     const situation = SITUATION_META[history.situation];
 
     return (
-      <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2">
+      <div className="flex flex-wrap items-center gap-4">
         <Chip
           color={situation.color}
           size="sm"
@@ -122,15 +121,8 @@ export function QuestionBankCard({
         >
           {t(situation.labelKey)}
         </Chip>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-default-500">
-          <span className="font-mono text-[11px] text-default-400">{code}</span>
-          <span aria-hidden="true" className="text-default-400">
-            ·
-          </span>
-          <span className="max-w-[220px] truncate">{question.topic}</span>
-          <span aria-hidden="true" className="text-default-400">
-            ·
-          </span>
+        <div className="flex flex-wrap items-center gap-4 text-xs text-navy-400 font-semibold">
+          <span className="max-w-md truncate">{question.topic}</span>
           <span className="flex items-center gap-1.5 capitalize">
             <span
               aria-hidden="true"
@@ -151,7 +143,7 @@ export function QuestionBankCard({
         : t('questionBank.usedMany', { count: history.attempts });
 
     return (
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-default-400">
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-navy-400 font-semibold">
         <span>{question.sourceLabel}</span>
         <span>{usageLabel}</span>
         {answered && (
@@ -175,17 +167,10 @@ export function QuestionBankCard({
       <div className="flex flex-wrap items-center justify-end gap-2">
         {answered ? (
           <>
-            <span
-              className={`flex items-center gap-1.5 whitespace-nowrap text-xs ${
-                hasExplanations ? 'text-default-400' : 'text-primary'
-              }`}
-            >
-              <FontAwesomeIcon aria-hidden="true" className="w-3 h-3" icon={faLightbulb} />
-              {hasExplanations ? t('questionBank.hasExplanation') : t('questionBank.statusNoExplanation')}
-            </span>
             <Button
               aria-expanded={open}
-              className={`${buttonStyles.flat} h-8 px-3 text-xs`}
+              className={`${buttonStyles.flat} h-8 px-3 text-xs text-primary`}
+              startContent={<FontAwesomeIcon aria-hidden="true" className="w-3 h-3" icon={faLightbulb} />}
               endContent={
                 <FontAwesomeIcon
                   aria-hidden="true"
