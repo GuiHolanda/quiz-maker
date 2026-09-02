@@ -59,13 +59,6 @@ export function deriveStatus(openAttemptId: number | null, attemptCount: number)
   return 'pending';
 }
 
-export function scoreColor(percent: number): 'success' | 'warning' | 'danger' {
-  if (percent >= 70) return 'success';
-  if (percent >= 50) return 'warning';
-
-  return 'danger';
-}
-
 export function fmtTempo(minutes: number): string {
   if (minutes < 60) return `${minutes}min`;
 

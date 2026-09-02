@@ -6,21 +6,16 @@ import { Progress } from '@heroui/progress';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartColumn, faCopy, faPlay, faRotateRight, faTrash } from '@fortawesome/free-solid-svg-icons';
 
-import { fmtTempo, scoreColor, UnifiedSimulado } from './normalizeSimulado';
+import { fmtTempo, UnifiedSimulado } from './normalizeSimulado';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { RelativeDate } from '@/shared/components/ui/RelativeDate';
+import { scoreToneText } from '@/shared/lib/scoreTone';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 
 export const SIMULADO_GRID_COLUMNS = 'minmax(220px,1.7fr) 90px 90px 140px 120px 100px 120px 130px 116px';
 
 const ROW_GRID_CLASS = 'grid items-center gap-4 px-5 py-3.5';
-
-const SCORE_TEXT = {
-  success: 'text-success',
-  warning: 'text-warning',
-  danger: 'text-danger',
-} as const;
 
 const STATUS_COLOR = {
   answered: 'success',
@@ -97,11 +92,7 @@ export function SimuladoRow({
       </div>
 
       <div className="flex flex-col items-center gap-0.5" role="cell">
-        <span
-          className={`font-mono text-sm ${
-            bestPercent == null ? 'text-default-400' : SCORE_TEXT[scoreColor(bestPercent)]
-          }`}
-        >
+        <span className={`font-mono text-sm ${bestPercent == null ? 'text-default-400' : scoreToneText(bestPercent)}`}>
           {bestPercent == null ? '—' : `${bestPercent}%`}
         </span>
         {scoreMeta != null && <span className="text-[11px] text-default-400">{scoreMeta}</span>}

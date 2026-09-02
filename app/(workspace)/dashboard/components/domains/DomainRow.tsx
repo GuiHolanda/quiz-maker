@@ -1,15 +1,10 @@
 'use client';
 
+import { scoreToneText } from '@/shared/lib/scoreTone';
 import type { DashboardDomainStat } from '@/shared/types';
 
 interface DomainRowProps {
   readonly domain: DashboardDomainStat;
-}
-
-function scoreTextColor(score: number) {
-  if (score >= 75) return 'text-success';
-  if (score >= 60) return 'text-warning';
-  return 'text-danger';
 }
 
 export function DomainRow({ domain }: DomainRowProps) {
@@ -27,7 +22,7 @@ export function DomainRow({ domain }: DomainRowProps) {
         </div>
       </div>
       <div className="w-10 text-right shrink-0">
-        <span className={`font-mono font-semibold text-xs ${scoreTextColor(domain.avgScore)}`}>{domain.avgScore}%</span>
+        <span className={`font-mono font-semibold text-xs ${scoreToneText(domain.avgScore)}`}>{domain.avgScore}%</span>
       </div>
     </div>
   );

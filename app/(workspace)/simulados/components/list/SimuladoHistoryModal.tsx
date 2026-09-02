@@ -5,9 +5,10 @@ import { Chip } from '@heroui/chip';
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@heroui/modal';
 import { useRouter } from 'next/navigation';
 
-import { AttemptRow, scoreColor, UnifiedSimulado } from './normalizeSimulado';
+import { AttemptRow, UnifiedSimulado } from './normalizeSimulado';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { scoreToneName } from '@/shared/lib/scoreTone';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { formatFinishedAt } from '@/app/(workspace)/simulados/[id]/resultado/[attemptId]/components/deriveResult';
 
@@ -71,7 +72,7 @@ export function SimuladoHistoryModal({ simulado, onClose }: SimuladoHistoryModal
               {t('simulado.result.timedOut')}
             </Chip>
           )}
-          <Chip className="font-semibold" color={scoreColor(percent)} size="sm" variant="flat">
+          <Chip className="font-semibold" color={scoreToneName(percent)} size="sm" variant="flat">
             {t('simulado.attemptScore', { correct, total: s.totalQuestions, percent })}
           </Chip>
         </div>
