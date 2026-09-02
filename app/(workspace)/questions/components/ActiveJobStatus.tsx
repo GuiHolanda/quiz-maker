@@ -140,14 +140,16 @@ export function ActiveJobStatus({
 
       {isDone && (
         <div className="mt-5 flex flex-wrap gap-3">
-          <Button
-            className={buttonStyles.primary}
-            data-testid="question-gen-create-simulado-btn"
-            size="sm"
-            onPress={onCreateSimulado}
-          >
-            {t('generate.createSimulado')}
-          </Button>
+          {questionsSaved > 0 && (
+            <Button
+              className={buttonStyles.primary}
+              data-testid="question-gen-create-simulado-btn"
+              size="sm"
+              onPress={onCreateSimulado}
+            >
+              {t('generate.createSimulado')}
+            </Button>
+          )}
           <Button className={`${buttonStyles.flat} ml-auto`} size="sm" onPress={onDismiss}>
             {t('generate.dismiss')}
           </Button>
@@ -170,11 +172,11 @@ export function ActiveJobStatus({
   );
 
   function renderTopicRow(topic: GenerationJobTopicStatus) {
-    const isDone = topic.status === 'done';
+    const isTopicDone = topic.status === 'done';
     const isTopicRunning = topic.status === 'running';
     const isTopicError = topic.status === 'error';
 
-    const dot = isDone
+    const dot = isTopicDone
       ? 'bg-success/15'
       : isTopicRunning
         ? 'bg-primary/15'
@@ -182,7 +184,7 @@ export function ActiveJobStatus({
           ? 'bg-danger/15'
           : 'border border-divider';
 
-    const meta = isDone
+    const meta = isTopicDone
       ? { text: t('generate.topicQuestions', { count: topic.questionCount }), className: 'text-success' }
       : isTopicRunning
         ? { text: `${t('generate.statusRunning')} · ${topic.questionCount}`, className: 'text-primary' }
@@ -204,13 +206,13 @@ export function ActiveJobStatus({
         className="grid grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-3.5 border-t border-divider py-[15px] first:border-t-0"
       >
         <span className={`flex h-6 w-6 items-center justify-center rounded-full ${dot}`}>
-          {isDone && <FontAwesomeIcon className="h-3 w-3 text-success" icon={faCheck} />}
+          {isTopicDone && <FontAwesomeIcon className="h-3 w-3 text-success" icon={faCheck} />}
           {isTopicRunning && <span className={SPINNER} />}
           {isTopicError && <FontAwesomeIcon className="h-3 w-3 text-danger" icon={faCircleXmark} />}
         </span>
         <span
           className={`truncate text-[14.5px] ${
-            isDone || isTopicRunning ? 'text-foreground' : isTopicError ? 'text-danger' : 'text-default-400'
+            isTopicDone || isTopicRunning ? 'text-foreground' : isTopicError ? 'text-danger' : 'text-default-400'
           }`}
         >
           {topic.topicName}

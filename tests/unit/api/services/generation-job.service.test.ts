@@ -801,6 +801,31 @@ describe('processTopic — pool-serving path', () => {
     );
   });
 
+  it('registra as questões do pool já persistidas no savedCount quando o pipeline LLM falha', async () => {
+    prismaMock.generationJobTopic.findUnique.mockResolvedValue(makeTopicWithRefKey() as any);
+    prismaMock.exam.findFirst.mockResolvedValue({ providerId: 'prov-1', examBoardId: null } as any);
+    prismaMock.questionPool.findMany.mockResolvedValue([{ id: 'pool-1' }] as any);
+
+    prismaMock.examQuestion.findMany
+      .mockResolvedValueOnce([]) // alreadyHas
+      .mockResolvedValueOnce([makePoolQuestion(1), makePoolQuestion(2)]); // pool serves 2 of 3
+    prismaMock.examQuestion.create.mockResolvedValue({} as any);
+
+    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    (sanitizeAiQuestions as any).mockImplementationOnce(() => {
+      throw new Error('bad json');
+    });
+
+    await processTopic('topic-pool-1');
+
+    expect(prismaMock.generationJobTopic.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'topic-pool-1' },
+        data: expect.objectContaining({ status: 'error', errorType: 'generation', savedCount: 2 }),
+      }),
+    );
+  });
+
   it('cai no caminho LLM normal quando o exam não tem providerId nem examBoardId', async () => {
     prismaMock.generationJobTopic.findUnique.mockResolvedValue(makeTopicWithRefKey() as any);
 

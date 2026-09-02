@@ -1,4 +1,5 @@
 import {
+  buildSimuladoPrefillFromJob,
   readSimuladoPrefill,
   writeSimuladoPrefill,
 } from '@/app/(workspace)/simulados/components/create/simuladoPrefill';
@@ -95,5 +96,56 @@ describe('simuladoPrefill', () => {
 
     expect(readSimuladoPrefill()).toBeNull();
     expect(localStorage.getItem(SIMULADO_NEW_PREFILL_KEY)).toBeNull();
+  });
+});
+
+describe('buildSimuladoPrefillFromJob', () => {
+  it('keeps only the topics with a positive savedCount as sections', () => {
+    const prefill = buildSimuladoPrefillFromJob({
+      refKey: 'exam-1',
+      topics: [
+        { topicName: 'Redes', savedCount: 3 },
+        { topicName: 'Segurança', savedCount: 0 },
+        { topicName: 'Storage', savedCount: 2 },
+      ],
+    });
+
+    expect(prefill).toEqual({
+      examId: 'exam-1',
+      totalQuestions: 5,
+      questionSource: 'library',
+      sections: [
+        { sectionName: 'Redes', questionCount: 3 },
+        { sectionName: 'Storage', questionCount: 2 },
+      ],
+    });
+  });
+
+  it('sums totalQuestions from the savedCount of the included topics', () => {
+    const prefill = buildSimuladoPrefillFromJob({
+      refKey: 'exam-2',
+      topics: [
+        { topicName: 'A', savedCount: 4 },
+        { topicName: 'B', savedCount: 6 },
+        { topicName: 'C', savedCount: 0 },
+      ],
+    });
+
+    expect(prefill?.totalQuestions).toBe(10);
+    expect(prefill?.sections).toHaveLength(2);
+  });
+
+  it('returns null when no topic has a saved question', () => {
+    expect(
+      buildSimuladoPrefillFromJob({
+        refKey: 'exam-3',
+        topics: [
+          { topicName: 'A', savedCount: 0 },
+          { topicName: 'B', savedCount: 0 },
+        ],
+      })
+    ).toBeNull();
+
+    expect(buildSimuladoPrefillFromJob({ refKey: 'exam-3', topics: [] })).toBeNull();
   });
 });

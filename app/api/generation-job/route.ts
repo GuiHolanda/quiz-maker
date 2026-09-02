@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
     if (activeJobCount >= GENERATION_MAX_ACTIVE_JOBS_PER_USER) {
       throw Object.assign(
         new Error(
-          `You already have ${activeJobCount} generations in progress (limit ${GENERATION_MAX_ACTIVE_JOBS_PER_USER}). Wait for one to finish or review its results before starting another.`
+          `You already have ${activeJobCount} generations in progress (limit ${GENERATION_MAX_ACTIVE_JOBS_PER_USER}). Wait for one to finish before starting another.`
         ),
         { status: 429 }
       );

@@ -5,8 +5,11 @@ import { createContext, useCallback, useEffect, useRef, useState, type ReactNode
 import type { GenerationJobStatus, GenerationJobTopicStatus } from '@/shared/types';
 import type { GenerationLanguage } from '@/config/generation-languages';
 import { createGenerationJob, getActiveGenerationJobs, cancelGenerationJob } from '@/features/connectors';
-import { buildSimuladoPrefillFromJob } from '@/app/(workspace)/simulados/components/create/simuladoPrefill';
-import { SIMULADO_NEW_PREFILL_KEY, GENERATION_MAX_ACTIVE_JOBS_PER_USER } from '@/config/constants';
+import {
+  buildSimuladoPrefillFromJob,
+  writeSimuladoPrefill,
+} from '@/app/(workspace)/simulados/components/create/simuladoPrefill';
+import { GENERATION_MAX_ACTIVE_JOBS_PER_USER } from '@/config/constants';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { useNotificationsContext } from '@/features/hooks/useNotificationsContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -76,7 +79,7 @@ export function GenerationJobsProvider({ children }: { readonly children: ReactN
       refreshUsage();
       try {
         const prefill = buildSimuladoPrefillFromJob({ refKey: job.refKey, topics });
-        if (prefill) localStorage.setItem(SIMULADO_NEW_PREFILL_KEY, JSON.stringify(prefill));
+        if (prefill) writeSimuladoPrefill(prefill);
       } catch {}
       addNotification({
         title: t('notification.fullExamTitle'),

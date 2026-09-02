@@ -262,6 +262,7 @@ export async function processTopic(topicId: string): Promise<void> {
     promptTopics.length > 0 ? promptTopics.map((t: { name: string }) => `- ${t.name}`).join('\n') : undefined;
 
   let logId: string | null = null;
+  let poolServed = 0;
 
   try {
     const startTime = Date.now();
@@ -294,6 +295,7 @@ export async function processTopic(topicId: string): Promise<void> {
       topic.topicName,
       topic.questionCount
     );
+    poolServed = poolResult.served;
 
     if (poolResult.served === topic.questionCount) {
       await metricsService.finalize(logId, Date.now() - startTime);
@@ -477,7 +479,7 @@ export async function processTopic(topicId: string): Promise<void> {
     }
     await prisma.generationJobTopic.update({
       where: { id: topicId },
-      data: { status: 'error', errorMessage: message, errorType },
+      data: { status: 'error', errorMessage: message, errorType, savedCount: poolServed },
     });
   } finally {
     try {
