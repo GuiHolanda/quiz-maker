@@ -11,9 +11,13 @@ function readCredentials(): { url: string; token: string } | null {
 
 // O cliente vem com 5 retries e backoff exponencial, e sem teto de tempo por request.
 // Num caminho de usuário isso transforma "Redis fora do ar" em vários segundos de espera
-// antes do fallback — o oposto da degradação que esta camada promete. Um retry curto cobre
-// o blip transiente; o AbortSignal garante que o pior caso continue na casa dos 2s.
-const REQUEST_TIMEOUT_MS = 1000;
+// antes do fallback — o oposto da degradação que esta camada promete.
+//
+// O teto é 2s por medição, não por chute: em regime a ida e volta ficou em ~190ms, mas a
+// primeira chamada de um processo frio custou 713ms (TLS + DNS). Um teto de 1s reprovaria
+// justamente os cold starts, que é quando o cache mais ajudaria. Estourar não é erro — cai
+// no fallback — mas cair à toa desperdiça o cache.
+const REQUEST_TIMEOUT_MS = 2000;
 
 let cachedClient: Redis | null | undefined;
 

@@ -110,6 +110,7 @@ describe('lib/redis', () => {
       expect(config.retry.backoff(1)).toBe(100);
       expect(typeof config.signal).toBe('function');
       expect(config.signal()).toBeInstanceOf(AbortSignal);
+      expect(config.signal().reason).toBeUndefined();
     });
 
     it('aceita os nomes KV_* que a integração da Vercel injeta', async () => {
