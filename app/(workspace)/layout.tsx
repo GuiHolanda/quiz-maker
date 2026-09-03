@@ -12,14 +12,19 @@ import { NotificationsProvider } from '@/features/providers/notifications.provid
 import { LanguageProvider } from '@/features/providers/language.provider';
 import { SIDEBAR_COLLAPSED_COOKIE_KEY } from '@/config/constants';
 import { auth } from '@/auth';
-import { loadAllMessages } from '@/lib/load-messages';
+import { loadMessagesForPrefixes } from '@/lib/load-messages';
+import { WORKSPACE_MESSAGE_PREFIXES } from '@/config/i18n-prefixes';
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
 export default async function WorkspaceLayout({ children }: { children: React.ReactNode }) {
-  const [cookieStore, session, messages] = await Promise.all([cookies(), auth(), loadAllMessages()]);
+  const [cookieStore, session, messages] = await Promise.all([
+    cookies(),
+    auth(),
+    loadMessagesForPrefixes(WORKSPACE_MESSAGE_PREFIXES),
+  ]);
   const defaultCollapsed = cookieStore.get(SIDEBAR_COLLAPSED_COOKIE_KEY)?.value === 'true';
 
   return (

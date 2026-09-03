@@ -91,7 +91,6 @@
     "bcryptjs": "^3.0.3",
     "clsx": "2.1.1",
     "framer-motion": "11.18.2",
-    "intl-messageformat": "10.7.16",
     "next": "^15.5.4",
     "next-auth": "^5.0.0-beta.31",
     "next-themes": "0.4.6",

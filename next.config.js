@@ -1,5 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Os pacotes de ícone são barrels enormes; sem isto o dev recompila todos a cada mudança
+  // e o bundle de produção depende do tree-shaking acertar sozinho.
+  experimental: {
+    optimizePackageImports: [
+      '@fortawesome/free-solid-svg-icons',
+      '@fortawesome/free-regular-svg-icons',
+      '@fortawesome/free-brands-svg-icons',
+      '@tabler/icons-react',
+    ],
+  },
   // Force Next.js output file tracing to include .properties files in the Lambda bundle.
   // Without this, readFile('public/messages/*.properties') silently fails on Vercel.
   outputFileTracingIncludes: {
