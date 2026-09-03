@@ -157,11 +157,11 @@ export function SimuladoRow({
     const deleteButton = (
       <Button
         isIconOnly
-        aria-label={t('simulado.table.actionDelete')}
+        aria-label={t('common.delete')}
         className={buttonStyles.iconOnly.danger}
         data-testid="simulado-delete-btn"
         size="sm"
-        title={t('simulado.table.actionDelete')}
+        title={t('common.delete')}
         variant="light"
         onPress={() => onDelete(s)}
       >

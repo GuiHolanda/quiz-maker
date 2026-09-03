@@ -61,7 +61,7 @@ export function QuestionBankToolbar({
       <div className="flex flex-wrap items-end gap-3">
         <SortSelect
           className="w-52"
-          label={t('questionBank.sortLabel')}
+          label={t('common.sortBy')}
           options={SORT_OPTIONS.map((option) => ({ key: option.key, label: t(option.labelKey) }))}
           testId="question-bank-sort-select"
           value={sort}

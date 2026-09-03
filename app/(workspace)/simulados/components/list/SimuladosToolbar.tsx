@@ -101,7 +101,7 @@ export function SimuladosToolbar({
 
         {hasActiveFilters && (
           <Button className={buttonStyles.flat} data-testid="simulado-clear-filters-btn" size="sm" onPress={onClear}>
-            {t('simulado.table.clearFilters')}
+            {t('common.clearFilters')}
           </Button>
         )}
       </div>
@@ -109,7 +109,7 @@ export function SimuladosToolbar({
       <div className="flex flex-wrap items-center gap-2.5">
         <SortSelect
           className="w-[170px]"
-          label={t('simulado.table.sortLabel')}
+          label={t('common.sortBy')}
           options={sortItems}
           testId="simulado-sort-select"
           value={sort}

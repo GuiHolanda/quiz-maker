@@ -115,7 +115,7 @@ export function AttemptQuestionPanel({
           variant="bordered"
           onPress={onPrev}
         >
-          {t('simulado.attempt.previous')}
+          {t('common.previous')}
         </Button>
         <div className="flex gap-2">
           <Button

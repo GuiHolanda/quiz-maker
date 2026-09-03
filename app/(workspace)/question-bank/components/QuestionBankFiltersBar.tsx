@@ -115,7 +115,7 @@ export function QuestionBankFiltersBar({ filters, summary, onFilterChange, onCle
           }}
         >
           {[
-            <SelectItem key="all">{t('questionBank.allTopics')}</SelectItem>,
+            <SelectItem key="all">{t('common.allTopics')}</SelectItem>,
             ...topics.map((topic) => <SelectItem key={topic}>{topic}</SelectItem>),
           ]}
         </Select>
@@ -179,7 +179,7 @@ export function QuestionBankFiltersBar({ filters, summary, onFilterChange, onCle
           onClick={onClear}
         >
           <FontAwesomeIcon className="w-3.5 h-3.5" icon={faRotateLeft} />
-          {t('questionBank.clearFilters')}
+          {t('common.clearFilters')}
         </button>
       </div>
     </div>

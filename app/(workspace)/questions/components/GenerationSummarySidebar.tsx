@@ -69,7 +69,7 @@ export function GenerationSummarySidebar({
             startContent={<FontAwesomeIcon icon={faWandMagicSparkles} />}
             onPress={onGenerate}
           >
-            {t('generate.generateButton')}
+            {t('common.generateQuestions')}
           </Button>
         </div>
       </div>

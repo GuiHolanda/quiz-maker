@@ -10,7 +10,7 @@ The product is not limited to any single industry vertical. When generating ques
 
 ## Project Structure
 
-**Component co-location:** page-specific components in `app/(workspace)/<domain>/<page>/components/`; components used by 2+ pages in `shared/components/`. Group 3+ related files in a subfolder (`wizard/`, `list/`).
+**Component co-location:** page-specific components in `app/(workspace)/<domain>/<page>/components/`; components used by 2+ pages in `shared/components/`. Group 3+ related files in a subfolder (`seed/`, `list/`).
 
 **`lib/bff.api.ts` — client-side only.** Uses `baseURL: '/api'`. Never import in server components or API routes. Server components call services directly.
 
