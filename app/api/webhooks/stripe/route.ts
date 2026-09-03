@@ -2,11 +2,14 @@ import Stripe from 'stripe';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
+import { cacheDelete, claimOnce } from '@/lib/redis';
 import { resolvePlanFromPriceId, isCapacityUpgrade } from '@/app/api/webhooks/stripe/stripe-webhook.utils';
 
 export const dynamic = 'force-dynamic';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-06-24.dahlia' });
+
+const STRIPE_EVENT_LOCK_SECONDS = 24 * 60 * 60;
 
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
@@ -18,6 +21,15 @@ export async function POST(request: NextRequest) {
     event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET!);
   } catch {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+  }
+
+  // O Stripe reentrega um evento até três dias quando não recebe 200 — e reentrega também
+  // quando recebeu, mas a resposta se perdeu. Sem Redis claimOnce devolve true e o
+  // comportamento continua o de hoje: processar sempre.
+  const eventKey = `stripe:event:${event.id}`;
+
+  if (!(await claimOnce(eventKey, STRIPE_EVENT_LOCK_SECONDS))) {
+    return NextResponse.json({ received: true, duplicate: true }, { status: 200 });
   }
 
   try {
@@ -117,6 +129,10 @@ export async function POST(request: NextRequest) {
     }
   } catch (err) {
     console.error('Webhook processing error:', err);
+
+    // Sem soltar a trava, a reentrega do Stripe seria descartada como duplicata e o evento
+    // se perderia de vez — exatamente o caso que a retry existe para cobrir.
+    await cacheDelete(eventKey);
 
     return NextResponse.json({ error: 'Processing failed' }, { status: 500 });
   }

@@ -6,6 +6,7 @@ import { AiChatService } from '@/features/services/aiChat.service';
 import { QuotaService } from '@/features/services/quota.service';
 import { AI_CHAT_ALLOWED_PLANS } from '@/config/constants';
 import { toApiErrorResponse } from '@/lib/api-error';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
 const aiChatService = new AiChatService();
 const quotaService = new QuotaService();
@@ -32,6 +33,9 @@ export async function POST(request: NextRequest) {
   let logId: string | null = null;
 
   try {
+    // Antes de qualquer débito de quota: uma rajada barrada não deve consumir cota.
+    await enforceRateLimit('ai_chat', session.user.id);
+
     const body = await request.json().catch(() => null);
     const { messages, language } = aiChatService.validate(body);
 

@@ -4,6 +4,7 @@ import { after } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { toApiErrorResponse } from '@/lib/api-error';
+import { enforceRateLimit } from '@/lib/rate-limit';
 import { claimSlots, processTopic } from '@/features/services/generation-job.service';
 import { QuotaService } from '@/features/services/quota.service';
 import { isGenerationLanguage, resolveGenerationLanguage } from '@/config/generation-languages';
@@ -62,6 +63,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Antes de qualquer débito de quota: uma rajada barrada não deve consumir cota.
+    await enforceRateLimit('generate_questions', session.user.id);
+
     const body = (await request.json()) as {
       type?: unknown;
       refKey?: unknown;
