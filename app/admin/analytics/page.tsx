@@ -104,7 +104,10 @@ export default async function AdminAnalyticsPage() {
   return (
     <div>
       <h1 className="page-header-title text-foreground mb-2">Analytics</h1>
-      <p className="text-sm text-default-500 mb-8">Consumo de tokens, custos e margens por plano</p>
+      <p className="text-sm text-default-500 mb-8">
+        Consumo de tokens, custos e margens por plano
+        {overview ? ` — últimos ${overview.analyticsWindowDays} dias` : ''}
+      </p>
 
       {overview && (
         <>
