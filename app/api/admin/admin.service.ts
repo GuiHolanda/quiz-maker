@@ -3,6 +3,8 @@ import type { UserPlan, UserAdminRow, AdminOverviewStats, AdminAuditEntry, Admin
 import { prisma } from '@/lib/prisma';
 import { PLAN_LIMITS } from '@/config/constants';
 
+export const ANALYTICS_WINDOW_DAYS = 90;
+
 // Nearest-rank percentile over an ascending-sorted array — simple and deterministic,
 // no interpolation between ranks. Empty input returns 0 rather than NaN.
 export function percentile(sortedAscending: number[], p: number): number {
@@ -15,19 +17,33 @@ export function percentile(sortedAscending: number[], p: number): number {
 
 export class AdminService {
   async getOverview(): Promise<AdminOverviewStats> {
+    // Sem janela, os groupBy por usageLogId varrem UsageLogStep inteira e produzem um
+    // IN (...) com um id por log — uma lista que cresce a cada geração e que o Postgres
+    // deixa de aceitar muito antes de o dashboard ficar lento.
+    const since = new Date(Date.now() - ANALYTICS_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+    const withinWindow = { createdAt: { gte: since } };
+    const stepsWithinWindow = { usageLog: withinWindow };
+
     const [allUsers, usageLogs, tokenAgg, allStepsByLog, allCountsByUser, actionGroups, stepGroups] = await Promise.all(
       [
         prisma.user.findMany({ select: { plan: true, questionsGeneratedThisPeriod: true, subscriptionStatus: true } }),
-        prisma.usageLog.aggregate({ _sum: { count: true }, where: { action: 'generate_questions' } }),
-        prisma.usageLogStep.aggregate({ _sum: { inputTokens: true, outputTokens: true } }),
+        prisma.usageLog.aggregate({
+          _sum: { count: true },
+          where: { action: 'generate_questions', ...withinWindow },
+        }),
+        prisma.usageLogStep.aggregate({
+          _sum: { inputTokens: true, outputTokens: true },
+          where: stepsWithinWindow,
+        }),
         prisma.usageLogStep.groupBy({
           by: ['usageLogId'],
           _sum: { inputTokens: true, outputTokens: true },
+          where: stepsWithinWindow,
         }),
         prisma.usageLog.groupBy({
           by: ['userId'],
           _sum: { count: true },
-          where: { action: 'generate_questions' },
+          where: { action: 'generate_questions', ...withinWindow },
         }),
         // per-action aggregation
         prisma.usageLog.groupBy({
@@ -35,12 +51,14 @@ export class AdminService {
           _sum: { count: true },
           _avg: { totalDurationMs: true },
           _count: { id: true },
+          where: withinWindow,
         }),
         // per-action per-step aggregation
         prisma.usageLogStep.groupBy({
           by: ['step', 'usageLogId'],
           _sum: { inputTokens: true, outputTokens: true },
           _avg: { durationMs: true },
+          where: stepsWithinWindow,
         }),
       ]
     );
@@ -220,6 +238,7 @@ export class AdminService {
       tokensByPlan,
       tokensByAction,
       usagePercentilesByPlan,
+      analyticsWindowDays: ANALYTICS_WINDOW_DAYS,
     };
   }
 

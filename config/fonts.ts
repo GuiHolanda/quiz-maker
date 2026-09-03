@@ -3,7 +3,6 @@ import {
   Barlow_Condensed as FontBarlowCondensed,
   Fira_Code as FontMono,
   Inter as FontSans,
-  Playfair_Display as FontPlayfair,
   Sora as FontSora,
 } from 'next/font/google';
 
@@ -22,14 +21,7 @@ export const fontMono = FontMono({
 export const fontSora = FontSora({
   subsets: ['latin'],
   variable: '--font-sora',
-  weight: ['300', '400', '500', '600', '700', '800'],
-  display: 'swap',
-});
-
-export const fontPlayfair = FontPlayfair({
-  subsets: ['latin'],
-  variable: '--font-playfair',
-  weight: ['400', '700', '800', '900'],
+  weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
 });
 

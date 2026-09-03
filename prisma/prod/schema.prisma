@@ -189,6 +189,9 @@ model ExamQuestion {
   @@index([examId])
   @@index([sectionId])
   @@index([topicId])
+  @@index([userId])
+  @@index([poolId])
+  @@index([userId, examName, sectionName])
 }
 
 model ExamOption {
@@ -197,6 +200,8 @@ model ExamOption {
   question   ExamQuestion @relation(fields: [questionId], references: [id])
   label      String
   text       String
+
+  @@index([questionId])
 }
 
 model ExamAnswer {
@@ -214,6 +219,8 @@ model ExamExplanation {
   label     String
   text      String
   createdAt DateTime   @default(now())
+
+  @@index([answerId])
 }
 
 model UsageLog {
@@ -232,6 +239,7 @@ model UsageLog {
   steps                  UsageLogStep[]
 
   @@index([userId])
+  @@index([userId, createdAt])
 }
 
 model UsageLogStep {
@@ -260,6 +268,9 @@ model MockExam {
   sections        MockExamSectionConfig[]
   questions       MockExamQuestion[]
   attempts        MockExamAttempt[]
+
+  @@index([userId])
+  @@index([examId])
 }
 
 model MockExamSectionConfig {
@@ -268,6 +279,8 @@ model MockExamSectionConfig {
   sectionName   String
   questionCount Int
   mockExam      MockExam @relation(fields: [mockExamId], references: [id], onDelete: Cascade)
+
+  @@index([mockExamId])
 }
 
 model MockExamQuestion {
@@ -278,6 +291,9 @@ model MockExamQuestion {
   mockExam       MockExam                @relation(fields: [mockExamId], references: [id], onDelete: Cascade)
   examQuestion   ExamQuestion            @relation(fields: [examQuestionId], references: [id])
   attemptAnswers MockExamAttemptAnswer[]
+
+  @@index([mockExamId])
+  @@index([examQuestionId])
 }
 
 model MockExamAttempt {
@@ -291,6 +307,9 @@ model MockExamAttempt {
   mockExam   MockExam                @relation(fields: [mockExamId], references: [id], onDelete: Cascade)
   user       User?                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   answers    MockExamAttemptAnswer[]
+
+  @@index([userId, finishedAt])
+  @@index([mockExamId])
 }
 
 model MockExamAttemptAnswer {
@@ -301,6 +320,9 @@ model MockExamAttemptAnswer {
   isCorrect          Boolean          @default(false)
   attempt            MockExamAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
   mockExamQuestion   MockExamQuestion @relation(fields: [mockExamQuestionId], references: [id])
+
+  @@index([attemptId])
+  @@index([mockExamQuestionId])
 }
 
 model AdminAuditLog {

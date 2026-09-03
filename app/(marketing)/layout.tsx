@@ -6,20 +6,7 @@ import { jsonLd } from '@/lib/json-ld';
 import { UtmCapture } from '@/app/(marketing)/components/UtmCapture';
 import { LanguageProvider } from '@/features/providers/language.provider';
 import { loadMessagesForPrefixes } from '@/lib/load-messages';
-
-const MARKETING_MESSAGE_PREFIXES = [
-  'demo',
-  'homepage',
-  'landing',
-  'pricing',
-  'nav',
-  'footer',
-  'toast',
-  'common',
-  'billing',
-  'aria',
-  'simuladoHub',
-];
+import { MARKETING_MESSAGE_PREFIXES } from '@/config/i18n-prefixes';
 
 const organizationSchema = {
   '@context': 'https://schema.org',

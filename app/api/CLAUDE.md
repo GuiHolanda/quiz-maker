@@ -147,6 +147,36 @@ Rotas públicas (sem auth). Service: `features/services/demo-catalog.service.ts`
 
 ---
 
+## Redis (opcional) — `lib/redis.ts`
+
+Camada de cache/coordenação sobre Upstash (REST/HTTP, sem pool TCP em serverless).
+
+**Tudo é opcional.** Sem `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` (ou os
+`KV_REST_API_*` que a integração da Vercel injeta), cada função vira no-op e o chamador cai
+no caminho que já existia. Um Redis fora do ar também degrada em vez de derrubar o request.
+
+| Função | Comportamento sem Redis |
+|---|---|
+| `cacheGet` | `null` — quem chamou vai ao banco |
+| `cacheSet` / `cacheDelete` | no-op silencioso |
+| `claimOnce(key, ttl)` | `true` — o trabalho deduplicado **acontece** |
+
+`claimOnce` devolver `true` sem Redis é deliberado: quem usa a trava para deduplicar precisa
+processar quando não há trava, nunca pular.
+
+### Usos
+
+| Uso | Módulo | Nota |
+|---|---|---|
+| Snapshot de progresso de job (SSE) | `features/services/job-progress.service.ts` | O escritor publica a cada transição; o leitor cai no Postgres em cache miss. TTL de 30s limita a defasagem no único caminho ruim (publish que falhou). |
+| Rate limit das rotas de LLM | `lib/rate-limit.ts` | Proteção de rajada, **separada** de `PLAN_LIMITS` — quota diz quanto, isto diz com que velocidade. Chamado como primeira linha do `try` de cada rota, antes de qualquer débito de quota. Erro sobe como `status: 429` + `code: 'rate_limited'` via `toApiErrorResponse`. |
+| Idempotência do webhook Stripe | `app/api/webhooks/stripe/route.ts` | `claimOnce` por `event.id` (24h). A trava é **liberada no catch** — sem isso a reentrega do Stripe seria descartada como duplicata e o evento se perderia. |
+
+**Autorização nunca vem do snapshot.** As rotas de stream continuam checando dono no Postgres
+antes de ler o cache — as chaves são indexadas só por `jobId`.
+
+---
+
 ## Service layer (`features/services/`)
 
 | File | Responsibility |
@@ -159,7 +189,8 @@ Rotas públicas (sem auth). Service: `features/services/demo-catalog.service.ts`
 | `exam-catalog.service.ts` | `getTemplates(userId)`, `forkExam`, `promoteExam`, admin catalog entries. |
 | `quiz-generator.service.ts` | Distribute questions across sections. |
 | `question-bank.service.ts` | Unified question search across exam types. |
-| `generation-job.service.ts` | Async batch generation — batches of 5 topics, per-topic status tracking. |
+| `generation-job.service.ts` | Async batch generation — batches of 5 topics, per-topic status tracking. Publica o progresso no Redis a cada transição (ver seção Redis). |
+| `job-progress.service.ts` | Snapshot de progresso de job para o SSE — `read*`/`publish*` para geração e auto-config, com fallback no Postgres. |
 | `auto-config-job.service.ts` | Auto-config pipeline — `identifyExam` (cheap lookup) + `createAutoConfigJob`/`runAutoConfigJob`/`cancelAutoConfigJob` (research→review→format, one `AutoConfigJob` row, one `auto_config` unit). |
 | `aiChat.service.ts` | Validate messages, select prompt, stream response — powers the `pro_ai` chat drawer only; unrelated to the auto-config job pipeline above. |
 

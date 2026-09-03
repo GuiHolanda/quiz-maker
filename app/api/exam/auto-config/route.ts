@@ -6,6 +6,7 @@ import { createAutoConfigJob, getActiveAutoConfigJob } from '@/features/services
 import { QuotaService } from '@/features/services/quota.service';
 import { canEditExams } from '@/config/constants';
 import { toApiErrorResponse } from '@/lib/api-error';
+import { enforceRateLimit } from '@/lib/rate-limit';
 import type { ExamType } from '@/shared/types';
 
 const quotaService = new QuotaService();
@@ -31,6 +32,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Antes de qualquer débito de quota: uma rajada barrada não deve consumir cota.
+    await enforceRateLimit('auto_config', session.user.id);
+
     await quotaService.check(session.user.id, 'create_exam', 1);
 
     const body = await request.json().catch(() => null);

@@ -8,6 +8,7 @@ import { MetricsService } from '@/features/services/metrics.service';
 import { certificationExplanationsPrompt } from '@/config/prompts/certification-questions/explanations.prompt';
 import { publicExamExplanationsPrompt } from '@/config/prompts/public-exam-questions/explanations.prompt';
 import { toApiErrorResponse } from '@/lib/api-error';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
 export const maxDuration = 300;
 
@@ -21,6 +22,9 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
+    // Antes de qualquer débito de quota: uma rajada barrada não deve consumir cota.
+    await enforceRateLimit('explanation', session.user.id);
+
     const { questionId } = await params;
     const id = Number(questionId);
 

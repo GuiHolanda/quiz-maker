@@ -52,6 +52,29 @@ function buildHistory(entries: HistoryEntry[] | undefined): QuestionHistory {
   };
 }
 
+type QuestionCandidate = { id: number; answer: { explanations: { id: number }[] } | null };
+
+type HydratedQuestion = {
+  id: number;
+  text: string;
+  difficulty: string;
+  examName: string;
+  sectionName: string;
+  topicName: string | null;
+  examId: string | null;
+  correctCount: number;
+  createdAt: Date;
+  options: { label: string; text: string }[];
+  answer: { correctOptions: unknown; explanations: { label: string; text: string }[] } | null;
+  exam: { type: string } | null;
+};
+
+// Presença de explicação é tudo que os filtros checam — take: 1 evita puxar a lista inteira.
+const CANDIDATE_SELECT = {
+  id: true,
+  answer: { select: { explanations: { take: 1, select: { id: true } } } },
+} as const;
+
 export class QuestionBankService {
   async getQuestions(params: QuestionBankParams): Promise<QuestionBankResponse> {
     const {
@@ -91,71 +114,91 @@ export class QuestionBankService {
 
     const dbSort: 'asc' | 'desc' = sort === 'asc' ? 'asc' : 'desc';
 
-    const [rows, historyMap, summaryBase] = await Promise.all([
-      prisma.examQuestion.findMany({
-        where,
-        orderBy: { createdAt: dbSort },
-        include: { options: true, answer: { include: { explanations: true } }, exam: { select: { type: true } } },
-      }),
+    // Os filtros de situação/explicação e os sorts errorRate/mostUsed dependem do histórico
+    // agregado, que não existe em coluna — por isso a lista de candidatos é lida inteira.
+    // Ela carrega só id + presença de explicação; texto, alternativas e explicações são
+    // buscados depois, apenas para os ids da página.
+    const [candidates, historyMap, summaryBase] = await Promise.all([
+      prisma.examQuestion.findMany({ where, orderBy: { createdAt: dbSort }, select: CANDIDATE_SELECT }),
       this.loadHistoryMap(userId),
-      prisma.examQuestion.findMany({
-        where: { userId },
-        select: { id: true, answer: { select: { explanations: { take: 1, select: { id: true } } } } },
-      }),
+      prisma.examQuestion.findMany({ where: { userId }, select: CANDIDATE_SELECT }),
     ]);
 
-    const combined: UnifiedQuestion[] = rows.map((q) => {
-      const examType = (q.exam?.type as 'certification' | 'public_exam') ?? 'certification';
-      const topicLabel =
-        examType === 'public_exam' ? q.sectionName + (q.topicName ? ` · ${q.topicName}` : '') : q.sectionName;
-
-      return {
-        id: q.id,
-        type: examType,
-        text: q.text,
-        difficulty: q.difficulty,
-        topic: topicLabel,
-        sectionName: q.sectionName,
-        sourceLabel: q.examName,
-        examId: q.examId ?? null,
-        options: q.options.reduce((acc: Record<string, string>, o) => {
-          acc[o.label] = o.text;
-          return acc;
-        }, {}),
-        answer: q.answer
-          ? {
-              correctOptions: q.answer.correctOptions as string[],
-              explanations: (q.answer.explanations ?? []).reduce((a: Record<string, string>, ex) => {
-                a[ex.label] = ex.text;
-                return a;
-              }, {}),
-            }
-          : null,
-        createdAt: q.createdAt.toISOString(),
-        correctCount: q.correctCount,
-        history: buildHistory(historyMap.get(q.id)),
-      };
-    });
-
-    const filtered = combined.filter((q) => {
-      const answered = q.history.situation !== 'unanswered';
-      const explanationCount = q.answer ? Object.keys(q.answer.explanations).length : 0;
+    const eligible = (candidates as QuestionCandidate[]).filter((candidate) => {
+      const history = buildHistory(historyMap.get(candidate.id));
+      const answered = history.situation !== 'unanswered';
+      const explanationCount = candidate.answer?.explanations.length ?? 0;
 
       if (hasExplanation === true && explanationCount === 0) return false;
       if (hasExplanation === false && explanationCount > 0) return false;
       if (explanation === 'with' && !(answered && explanationCount > 0)) return false;
       if (explanation === 'without' && !(answered && explanationCount === 0)) return false;
-      if (situation && q.history.situation !== situation) return false;
+      if (situation && history.situation !== situation) return false;
 
       return true;
     });
 
-    const sorted = this.applySort(filtered, sort);
-    const total = sorted.length;
-    const questions = sorted.slice(skip, skip + pageSize);
-    const summary = this.buildSummary(summaryBase, historyMap);
+    const ordered = this.applySort(eligible, historyMap, sort);
+    const pageIds = ordered.slice(skip, skip + pageSize).map((candidate) => candidate.id);
 
-    return { questions, total, page, pageSize, summary };
+    return {
+      questions: await this.hydrate(pageIds, historyMap),
+      total: ordered.length,
+      page,
+      pageSize,
+      summary: this.buildSummary(summaryBase, historyMap),
+    };
+  }
+
+  private async hydrate(pageIds: number[], historyMap: Map<number, HistoryEntry[]>): Promise<UnifiedQuestion[]> {
+    if (pageIds.length === 0) return [];
+
+    const rows = (await prisma.examQuestion.findMany({
+      where: { id: { in: pageIds } },
+      include: { options: true, answer: { include: { explanations: true } }, exam: { select: { type: true } } },
+    })) as unknown as HydratedQuestion[];
+
+    const byId = new Map(rows.map((row) => [row.id, row]));
+
+    // findMany não devolve na ordem do `in` — a ordenação vive em pageIds.
+    return pageIds.flatMap((id) => {
+      const row = byId.get(id);
+
+      return row ? [this.toUnifiedQuestion(row, historyMap)] : [];
+    });
+  }
+
+  private toUnifiedQuestion(row: HydratedQuestion, historyMap: Map<number, HistoryEntry[]>): UnifiedQuestion {
+    const examType = (row.exam?.type as 'certification' | 'public_exam') ?? 'certification';
+    const topicLabel =
+      examType === 'public_exam' ? row.sectionName + (row.topicName ? ` · ${row.topicName}` : '') : row.sectionName;
+
+    return {
+      id: row.id,
+      type: examType,
+      text: row.text,
+      difficulty: row.difficulty,
+      topic: topicLabel,
+      sectionName: row.sectionName,
+      sourceLabel: row.examName,
+      examId: row.examId ?? null,
+      options: row.options.reduce((acc: Record<string, string>, option) => {
+        acc[option.label] = option.text;
+        return acc;
+      }, {}),
+      answer: row.answer
+        ? {
+            correctOptions: row.answer.correctOptions as string[],
+            explanations: (row.answer.explanations ?? []).reduce((acc: Record<string, string>, entry) => {
+              acc[entry.label] = entry.text;
+              return acc;
+            }, {}),
+          }
+        : null,
+      createdAt: row.createdAt.toISOString(),
+      correctCount: row.correctCount,
+      history: buildHistory(historyMap.get(row.id)),
+    };
   }
 
   private async loadHistoryMap(userId: string): Promise<Map<number, HistoryEntry[]>> {
@@ -192,23 +235,25 @@ export class QuestionBankService {
     return map;
   }
 
-  private applySort(questions: UnifiedQuestion[], sort: QuestionBankParams['sort']): UnifiedQuestion[] {
-    if (sort !== 'errorRate' && sort !== 'mostUsed') return questions;
+  private applySort(
+    candidates: QuestionCandidate[],
+    historyMap: Map<number, HistoryEntry[]>,
+    sort: QuestionBankParams['sort']
+  ): QuestionCandidate[] {
+    if (sort !== 'errorRate' && sort !== 'mostUsed') return candidates;
 
-    const answeredRank = (q: UnifiedQuestion) => (q.history.situation === 'unanswered' ? 0 : 1);
-    const list = questions.slice();
+    const historyOf = (candidate: QuestionCandidate) => buildHistory(historyMap.get(candidate.id));
+    const answeredRank = (candidate: QuestionCandidate) => (historyOf(candidate).situation === 'unanswered' ? 0 : 1);
+    const list = candidates.slice();
 
     if (sort === 'errorRate') {
-      return list.sort((a, b) => answeredRank(b) - answeredRank(a) || a.history.accuracy - b.history.accuracy);
+      return list.sort((a, b) => answeredRank(b) - answeredRank(a) || historyOf(a).accuracy - historyOf(b).accuracy);
     }
 
-    return list.sort((a, b) => answeredRank(b) - answeredRank(a) || b.history.attempts - a.history.attempts);
+    return list.sort((a, b) => answeredRank(b) - answeredRank(a) || historyOf(b).attempts - historyOf(a).attempts);
   }
 
-  private buildSummary(
-    base: { id: number; answer: { explanations: { id: number }[] } | null }[],
-    historyMap: Map<number, HistoryEntry[]>
-  ): QuestionBankSummary {
+  private buildSummary(base: QuestionCandidate[], historyMap: Map<number, HistoryEntry[]>): QuestionBankSummary {
     const bySituation = { correct: 0, wrong: 0, unanswered: 0 };
     let attempts = 0;
     let correct = 0;

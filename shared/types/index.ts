@@ -378,6 +378,7 @@ export interface AdminOverviewStats {
   tokensByPlan: Record<UserPlan, { inputTokens: number; outputTokens: number; questionsGenerated: number }>;
   tokensByAction: Record<string, AdminActionStats>;
   usagePercentilesByPlan: Record<UserPlan, { count: number; p50: number; p75: number; p90: number }>;
+  analyticsWindowDays: number;
 }
 
 export interface AdminAuditEntry {

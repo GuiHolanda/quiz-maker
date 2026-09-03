@@ -49,7 +49,7 @@ export function QuestionBankBulkBar({
           startContent={<FontAwesomeIcon aria-hidden="true" className="w-3.5 h-3.5" icon={faTrash} />}
           onPress={onBulkDelete}
         >
-          {t('questionBank.bulkDelete')}
+          {t('common.delete')}
         </Button>
       </div>
     </div>

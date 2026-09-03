@@ -1,9 +1,12 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, type Prisma } from '@prisma/client';
+
+const LOG_LEVELS: Prisma.LogLevel[] =
+  process.env.NODE_ENV === 'development' ? ['query', 'warn', 'error'] : ['warn', 'error'];
 
 export class PrismaService extends PrismaClient {
   constructor() {
     super({
-      log: ['query', 'info', 'warn', 'error'],
+      log: LOG_LEVELS,
     });
   }
 

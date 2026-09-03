@@ -3,6 +3,7 @@ import { after } from 'next/server';
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { publishGenerationProgress } from '@/features/services/job-progress.service';
 import { toApiErrorResponse } from '@/lib/api-error';
 import { claimGlobalSlotsAndDispatch } from '@/features/services/generation-job.service';
 
@@ -92,6 +93,8 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
       where: { jobId, status: { in: ['queued', 'running'] } },
       data: { status: 'cancelled', errorMessage: null },
     });
+
+    await publishGenerationProgress(jobId);
 
     // Libera os slots ocupados por este job para que jobs na fila (de qualquer usuário) avancem.
     after(() => claimGlobalSlotsAndDispatch());

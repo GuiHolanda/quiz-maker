@@ -246,7 +246,7 @@ export function QuestionBankContent() {
           href="/questions?type=certification"
           startContent={<FontAwesomeIcon aria-hidden="true" className="w-3.5 h-3.5" icon={faWandMagicSparkles} />}
         >
-          {t('questionBank.generateQuestions')}
+          {t('common.generateQuestions')}
         </Button>
       }
       breadcrumbs={
@@ -316,7 +316,7 @@ export function QuestionBankContent() {
     if (summary && summary.saved === 0) {
       return (
         <IllustratedEmptyState
-          action={{ label: t('questionBank.emptyCta'), href: '/questions?type=certification' }}
+          action={{ label: t('common.generateQuestions'), href: '/questions?type=certification' }}
           description={t('questionBank.emptyDescription')}
           icon={faLayerGroup}
           title={t('questionBank.emptyTitle')}
@@ -356,7 +356,7 @@ export function QuestionBankContent() {
           <SkeletonListLoader count={4} height="h-40" />
         ) : questions.length === 0 ? (
           <EmptyState
-            action={activeFilters ? { label: t('questionBank.clearFilters'), onPress: clearFilters } : undefined}
+            action={activeFilters ? { label: t('common.clearFilters'), onPress: clearFilters } : undefined}
             description={t('questionBank.noResultsDescription')}
             title={t('questionBank.noResultsTitle')}
           />

@@ -61,7 +61,7 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
       getGenerationHistory(page, LIMIT, filters)
         .then(setData)
         .catch(() => {});
-    }, 3000);
+    }, 10_000);
     return () => clearInterval(id);
   }, [hasRunning, page, filters]);
 

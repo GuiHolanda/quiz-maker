@@ -9,51 +9,58 @@ describe('DashboardService', () => {
     service = new DashboardService();
   });
 
-  function makeAnswer(sectionName: string, correctOptions: string[], selectedOptions: string[]) {
-    return {
-      selectedOptions: JSON.stringify(selectedOptions),
-      mockExamQuestion: {
-        examQuestion: {
-          sectionName,
-          answer: correctOptions.length > 0 ? { correctOptions } : null,
-        },
-      },
-    };
-  }
-
-  function makeAttempt(overrides: {
-    id?: string;
+  function makeRecentAttempt(overrides: {
     score?: number | null;
     startedAt?: Date;
     finishedAt?: Date | null;
     mockExamName?: string | null;
     examName?: string;
-    answers?: ReturnType<typeof makeAnswer>[];
+    answerCount?: number;
   } = {}) {
     const {
-      id = 'attempt-1',
       score = 80,
       startedAt = new Date('2024-01-01T10:00:00Z'),
       finishedAt = new Date('2024-01-01T11:00:00Z'),
       mockExamName = 'Test Simulado',
       examName = 'Test Exam',
-      answers = [],
+      answerCount = 0,
     } = overrides;
 
     return {
-      id,
-      userId: 'user-1',
       score,
       startedAt,
       finishedAt,
       mockExam: { name: mockExamName, exam: { name: examName } },
-      answers,
+      _count: { answers: answerCount },
     };
+  }
+
+  function makeSectionAnswer(attemptId: number, sectionName: string, isCorrect: boolean) {
+    return { attemptId, isCorrect, mockExamQuestion: { examQuestion: { sectionName } } };
+  }
+
+  // As duas leituras de mockExamAttempt.findMany se distinguem pelo `take`: a de sessões
+  // recentes pede 5, a de tendência pede 10.
+  function setup(options: {
+    total?: number;
+    bestScore?: number | null;
+    recent?: ReturnType<typeof makeRecentAttempt>[];
+    trend?: { score: number | null; finishedAt: Date | null }[];
+    sectionAnswers?: ReturnType<typeof makeSectionAnswer>[];
+  } = {}) {
+    const { total = 0, bestScore = null, recent = [], trend = [], sectionAnswers = [] } = options;
+
+    prismaMock.mockExamAttempt.count.mockResolvedValue(total);
+    prismaMock.mockExamAttempt.aggregate.mockResolvedValue({ _max: { score: bestScore } } as any);
+    prismaMock.mockExamAttempt.findMany.mockImplementation((args: any) =>
+      Promise.resolve(args?.take === 5 ? recent : trend) as any
+    );
+    prismaMock.mockExamAttemptAnswer.findMany.mockResolvedValue(sectionAnswers as any);
   }
 
   describe('getStats', () => {
     it('returns empty stats when user has no completed attempts', async () => {
-      prismaMock.mockExamAttempt.findMany.mockResolvedValue([]);
+      setup();
 
       const result = await service.getStats('user-1');
 
@@ -65,10 +72,7 @@ describe('DashboardService', () => {
     });
 
     it('returns bestScore as null when all attempt scores are null', async () => {
-      prismaMock.mockExamAttempt.findMany.mockResolvedValue([
-        makeAttempt({ id: 'a1', score: null }),
-        makeAttempt({ id: 'a2', score: null }),
-      ] as any);
+      setup({ total: 2, bestScore: null, recent: [makeRecentAttempt({ score: null })] });
 
       const result = await service.getStats('user-1');
 
@@ -76,22 +80,15 @@ describe('DashboardService', () => {
     });
 
     it('returns the highest score as bestScore', async () => {
-      prismaMock.mockExamAttempt.findMany.mockResolvedValue([
-        makeAttempt({ id: 'a1', score: 70 }),
-        makeAttempt({ id: 'a2', score: 90 }),
-        makeAttempt({ id: 'a3', score: 55 }),
-      ] as any);
+      setup({ total: 3, bestScore: 90 });
 
       const result = await service.getStats('user-1');
 
       expect(result.bestScore).toBe(90);
     });
 
-    it('limits recentSessions to 5 but counts all attempts in totalSimuladosCompleted', async () => {
-      const attempts = Array.from({ length: 7 }, (_, i) =>
-        makeAttempt({ id: `a${i}`, score: 70 + i })
-      );
-      prismaMock.mockExamAttempt.findMany.mockResolvedValue(attempts as any);
+    it('counts every finished attempt but only reads the 5 most recent sessions', async () => {
+      setup({ total: 7, recent: Array.from({ length: 5 }, () => makeRecentAttempt()) });
 
       const result = await service.getStats('user-1');
 
@@ -99,23 +96,42 @@ describe('DashboardService', () => {
       expect(result.recentSessions).toHaveLength(5);
     });
 
+    it('pushes the session and trend limits down to the database', async () => {
+      setup({ total: 40 });
+
+      await service.getStats('user-1');
+
+      const takes = prismaMock.mockExamAttempt.findMany.mock.calls.map(([args]: any) => args.take);
+      expect(takes).toEqual([5, 10]);
+    });
+
+    it('excludes null scores from the trend query instead of filtering in memory', async () => {
+      setup({ total: 3 });
+
+      await service.getStats('user-1');
+
+      const trendCall = prismaMock.mockExamAttempt.findMany.mock.calls.find(
+        ([args]: any) => args.take === 10
+      )?.[0] as any;
+      expect(trendCall.where.score).toEqual({ not: null });
+    });
+
     it('maps recentSessions fields correctly', async () => {
       const startedAt = new Date('2024-03-01T09:00:00Z');
       const finishedAt = new Date('2024-03-01T09:45:00Z');
-      prismaMock.mockExamAttempt.findMany.mockResolvedValue([
-        makeAttempt({
-          id: 'a1',
-          score: 75,
-          startedAt,
-          finishedAt,
-          mockExamName: 'Meu Simulado',
-          examName: 'AWS SAA',
-          answers: [
-            makeAnswer('EC2', ['A'], ['A']),
-            makeAnswer('S3', ['B'], ['C']),
-          ],
-        }),
-      ] as any);
+      setup({
+        total: 1,
+        recent: [
+          makeRecentAttempt({
+            score: 75,
+            startedAt,
+            finishedAt,
+            mockExamName: 'Meu Simulado',
+            examName: 'AWS SAA',
+            answerCount: 2,
+          }),
+        ],
+      });
 
       const result = await service.getStats('user-1');
 
@@ -130,9 +146,7 @@ describe('DashboardService', () => {
     });
 
     it('falls back to examName as simuladoName when mockExam.name is null', async () => {
-      prismaMock.mockExamAttempt.findMany.mockResolvedValue([
-        makeAttempt({ mockExamName: null, examName: 'AWS SAA' }),
-      ] as any);
+      setup({ total: 1, recent: [makeRecentAttempt({ mockExamName: null, examName: 'AWS SAA' })] });
 
       const result = await service.getStats('user-1');
 
@@ -140,77 +154,43 @@ describe('DashboardService', () => {
     });
 
     it('returns scoreTrend in chronological order (oldest first)', async () => {
-      // DB returns newest first (orderBy: finishedAt desc)
-      prismaMock.mockExamAttempt.findMany.mockResolvedValue([
-        makeAttempt({ id: 'a3', score: 90, finishedAt: new Date('2024-03-03T10:00:00Z') }),
-        makeAttempt({ id: 'a2', score: 70, finishedAt: new Date('2024-03-02T10:00:00Z') }),
-        makeAttempt({ id: 'a1', score: 60, finishedAt: new Date('2024-03-01T10:00:00Z') }),
-      ] as any);
+      // O banco devolve do mais novo para o mais antigo (orderBy: finishedAt desc)
+      setup({
+        total: 3,
+        trend: [
+          { score: 90, finishedAt: new Date('2024-03-03T10:00:00Z') },
+          { score: 70, finishedAt: new Date('2024-03-02T10:00:00Z') },
+          { score: 60, finishedAt: new Date('2024-03-01T10:00:00Z') },
+        ],
+      });
 
       const result = await service.getStats('user-1');
 
       expect(result.scoreTrend.map((p) => p.score)).toEqual([60, 70, 90]);
     });
 
-    it('limits scoreTrend to 10 most recent attempts', async () => {
-      // 12 attempts newest-first; service keeps first 10, then reverses to chronological
-      const attempts = Array.from({ length: 12 }, (_, i) =>
-        makeAttempt({
-          id: `a${12 - i}`,
-          score: 50 + i,
-          finishedAt: new Date(`2024-01-${String(12 - i).padStart(2, '0')}T10:00:00Z`),
-        })
-      );
-      prismaMock.mockExamAttempt.findMany.mockResolvedValue(attempts as any);
-
-      const result = await service.getStats('user-1');
-
-      expect(result.scoreTrend).toHaveLength(10);
-    });
-
-    it('excludes attempts with null score from scoreTrend', async () => {
-      // DB newest first: a3 (90), a2 (null), a1 (80) → after filter & reverse: [80, 90]
-      prismaMock.mockExamAttempt.findMany.mockResolvedValue([
-        makeAttempt({ id: 'a3', score: 90, finishedAt: new Date('2024-03-03T10:00:00Z') }),
-        makeAttempt({ id: 'a2', score: null, finishedAt: new Date('2024-03-02T10:00:00Z') }),
-        makeAttempt({ id: 'a1', score: 80, finishedAt: new Date('2024-03-01T10:00:00Z') }),
-      ] as any);
-
-      const result = await service.getStats('user-1');
-
-      expect(result.scoreTrend).toHaveLength(2);
-      expect(result.scoreTrend.map((p) => p.score)).toEqual([80, 90]);
-    });
-
     it('computes domainBreakdown average per section across attempts', async () => {
-      // Attempt 1: Math 2/4 correct → sectionScore=50, Science 3/3 → sectionScore=100
-      // Attempt 2: Math 4/4 → sectionScore=100, Science 1/2 → sectionScore=50
-      // Expected: Math avgScore=round((50+100)/2)=75, Science avgScore=round((100+50)/2)=75
-      prismaMock.mockExamAttempt.findMany.mockResolvedValue([
-        makeAttempt({
-          id: 'a1',
-          answers: [
-            makeAnswer('Math', ['A'], ['A']),
-            makeAnswer('Math', ['B'], ['B']),
-            makeAnswer('Math', ['C'], ['D']),
-            makeAnswer('Math', ['D'], ['A']),
-            makeAnswer('Science', ['A'], ['A']),
-            makeAnswer('Science', ['B'], ['B']),
-            makeAnswer('Science', ['C'], ['C']),
-          ],
-        }),
-        makeAttempt({
-          id: 'a2',
-          answers: [
-            makeAnswer('Math', ['A'], ['A']),
-            makeAnswer('Math', ['B'], ['B']),
-            makeAnswer('Math', ['C'], ['C']),
-            makeAnswer('Math', ['D'], ['D']),
-            makeAnswer('Science', ['A'], ['A']),
-            makeAnswer('Science', ['B'], ['C']),
-          ],
-        }),
-      ] as any);
+      // Tentativa 1: Math 2/4 → 50, Science 3/3 → 100
+      // Tentativa 2: Math 4/4 → 100, Science 1/2 → 50
+      // Esperado: Math (50+100)/2 = 75, Science (100+50)/2 = 75
+      setup({
+        total: 2,
+        sectionAnswers: [
+          makeSectionAnswer(1, 'Math', true),
+          makeSectionAnswer(1, 'Math', true),
+          makeSectionAnswer(1, 'Math', false),
+          makeSectionAnswer(1, 'Math', false),
+          makeSectionAnswer(1, 'Science', true),
+          makeSectionAnswer(1, 'Science', true),
+          makeSectionAnswer(1, 'Science', true),
+          makeSectionAnswer(2, 'Math', true),
+          makeSectionAnswer(2, 'Math', true),
+          makeSectionAnswer(2, 'Math', true),
+          makeSectionAnswer(2, 'Math', true),
+          makeSectionAnswer(2, 'Science', true),
+          makeSectionAnswer(2, 'Science', false),
+        ],
+      });
 
       const result = await service.getStats('user-1');
 
@@ -221,26 +201,28 @@ describe('DashboardService', () => {
       expect(science).toMatchObject({ sectionName: 'Science', avgScore: 75, totalAttempts: 2 });
     });
 
-    it('treats questions without an answer record as incorrect in domainBreakdown', async () => {
-      // 1 question has no answer → counted as wrong; 1 has answer → correct
-      // sectionScore = round(1/2 * 100) = 50 for single attempt → avgScore = 50
-      prismaMock.mockExamAttempt.findMany.mockResolvedValue([
-        makeAttempt({
-          id: 'a1',
-          answers: [
-            {
-              selectedOptions: JSON.stringify(['A']),
-              mockExamQuestion: { examQuestion: { sectionName: 'Math', answer: null } },
-            },
-            makeAnswer('Math', ['B'], ['B']),
-          ],
-        }),
-      ] as any);
+    it('keeps a section separate per attempt when scoring the breakdown', async () => {
+      // A mesma seção em duas tentativas conta como duas amostras, não como um pote só:
+      // 1/1 e 0/1 → (100 + 0) / 2 = 50, e não 1/2 = 50 por acaso — totalAttempts prova a diferença.
+      setup({
+        total: 2,
+        sectionAnswers: [makeSectionAnswer(1, 'Math', true), makeSectionAnswer(2, 'Math', false)],
+      });
 
       const result = await service.getStats('user-1');
 
-      const math = result.domainBreakdown.find((d) => d.sectionName === 'Math');
-      expect(math?.avgScore).toBe(50);
+      expect(result.domainBreakdown).toEqual([{ sectionName: 'Math', avgScore: 50, totalAttempts: 2 }]);
+    });
+
+    it('treats an answer stored as incorrect (no gabarito at finish time) as wrong', async () => {
+      setup({
+        total: 1,
+        sectionAnswers: [makeSectionAnswer(1, 'Math', false), makeSectionAnswer(1, 'Math', true)],
+      });
+
+      const result = await service.getStats('user-1');
+
+      expect(result.domainBreakdown.find((d) => d.sectionName === 'Math')?.avgScore).toBe(50);
     });
   });
 });

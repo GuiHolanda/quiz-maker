@@ -1,6 +1,7 @@
 import { after } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
+import { publishGenerationProgress } from '@/features/services/job-progress.service';
 import { shuffleOptionTexts } from '@/lib/shuffle-options';
 import { extractJson, sanitizeLlmError, type LlmErrorType } from '@/lib/llm-response';
 import { resolveQuestionFormat } from '@/config/question-formats';
@@ -211,6 +212,7 @@ async function maybeFinalizeJob(jobId: string): Promise<void> {
     where: { id: jobId },
     data: { status: 'done', savedCount: totalSaved },
   });
+  await publishGenerationProgress(jobId);
 }
 
 // Processa um único tópico: roda o pipeline de 3 etapas e persiste as questões geradas
@@ -229,6 +231,8 @@ export async function processTopic(topicId: string): Promise<void> {
 
   const { job } = topic;
   const { userId, type, refName, examBoardName } = job;
+
+  await publishGenerationProgress(job.id);
 
   // One lookup serves both the pool query and the prompts: the exam declares the
   // question shape every step of the pipeline must produce.
@@ -303,6 +307,7 @@ export async function processTopic(topicId: string): Promise<void> {
         where: { id: topicId },
         data: { status: 'done', savedCount: poolResult.served, pendingQuestionsJson: null },
       });
+      await publishGenerationProgress(job.id);
       await maybeFinalizeJob(job.id);
       await releaseAndClaimNext(userId);
       return;
@@ -466,6 +471,7 @@ export async function processTopic(topicId: string): Promise<void> {
       where: { id: topicId },
       data: { status: 'done', savedCount: poolResult.served, pendingQuestionsJson: JSON.stringify(questions) },
     });
+    await publishGenerationProgress(job.id);
   } catch (topicErr) {
     console.error(`[generation-job] Topic "${topic.topicName}" failed:`, topicErr);
     const { message, errorType } = sanitizeError(topicErr);
@@ -481,6 +487,7 @@ export async function processTopic(topicId: string): Promise<void> {
       where: { id: topicId },
       data: { status: 'error', errorMessage: message, errorType, savedCount: poolServed },
     });
+    await publishGenerationProgress(job.id);
   } finally {
     try {
       await maybeFinalizeJob(job.id);

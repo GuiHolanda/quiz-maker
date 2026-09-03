@@ -36,7 +36,7 @@ export function QuestionReviewPanel({ view, onLoadExplanation }: QuestionReviewP
     for (const question of view.questions) counts[question.sectionName] = (counts[question.sectionName] ?? 0) + 1;
 
     return [
-      { key: 'all', label: t('simulado.result.allTopics') },
+      { key: 'all', label: t('common.allTopics') },
       ...view.topics.map((topic) => ({
         key: topic.sectionName,
         label: t('simulado.result.topicOption', { name: topic.sectionName, count: counts[topic.sectionName] ?? 0 }),
@@ -125,7 +125,7 @@ export function QuestionReviewPanel({ view, onLoadExplanation }: QuestionReviewP
               type="button"
               onClick={resetFilters}
             >
-              {t('simulado.result.clearFilters')}
+              {t('common.clearFilters')}
             </button>
           )}
         </div>

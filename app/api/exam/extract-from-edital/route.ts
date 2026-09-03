@@ -6,6 +6,7 @@ import { EditalExtractorService } from '@/features/services/edital-extractor.ser
 import { QuotaService } from '@/features/services/quota.service';
 import { canEditExams } from '@/config/constants';
 import { toApiErrorResponse } from '@/lib/api-error';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
 const editalExtractorService = new EditalExtractorService();
 const quotaService = new QuotaService();
@@ -34,6 +35,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Antes de qualquer débito de quota: uma rajada barrada não deve consumir cota.
+    await enforceRateLimit('extract_edital', session.user.id);
+
     // Same ordering as /auto-config: never parse an edital the user can't turn into an exam.
     await quotaService.check(session.user.id, 'create_exam', 1);
     await quotaService.checkAndRecordAutoConfig(session.user.id);
