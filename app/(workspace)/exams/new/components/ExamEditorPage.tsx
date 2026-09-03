@@ -123,7 +123,7 @@ export function ExamEditorPage({
             />
           )}
 
-          <div className="bg-content1 border border-content2 rounded-xl p-6 pt-4">
+          <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 pt-4">
             <div className="text-xs font-bold text-default-500 mb-1">{t('exam.identifyCardTitle')}</div>
             <ExamIdentityFields
               density="comfortable"
@@ -134,7 +134,7 @@ export function ExamEditorPage({
             />
           </div>
 
-          <div className="bg-content1 border border-content2 rounded-xl p-6 pt-4">
+          <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 pt-4">
             <div className="text-xs font-bold text-default-500 mb-1">{t('exam.formatCardTitle')}</div>
             <ExamFormatFields
               density="comfortable"

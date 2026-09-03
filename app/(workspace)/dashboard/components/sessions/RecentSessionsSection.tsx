@@ -16,7 +16,7 @@ export function RecentSessionsSection({ sessions }: RecentSessionsSectionProps) 
 
   return (
     <div
-      className="bg-content1 border border-default-200 rounded-xl flex flex-col flex-1"
+      className="bg-content1 rounded-xl border border-default-200 dark:border-transparent flex flex-col flex-1"
       data-testid="dashboard-recent-sessions"
     >
       <div className="px-5 pt-5 pb-3">

@@ -17,7 +17,7 @@ export function SeedModulesSkeleton({ type }: SeedModulesSkeletonProps) {
   const { t } = useTranslation();
 
   return (
-    <div className="bg-content1 border border-default-200 rounded-xl p-5">
+    <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-5">
       <div className="flex items-center justify-between">
         <div className="font-mono text-[11px] uppercase tracking-widest text-default-400">
           {t(EXAM_CONFIG[type].step2SectionsTitle)}

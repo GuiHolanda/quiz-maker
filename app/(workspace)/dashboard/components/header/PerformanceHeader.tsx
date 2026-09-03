@@ -26,7 +26,7 @@ export function PerformanceHeader() {
   else greeting = `${t('dashboard.greeting.evening')}, ${first}.`;
 
   return (
-    <section className="bg-content1 border border-default-200 rounded-xl overflow-hidden">
+    <section className="bg-content1 rounded-xl border border-default-200 dark:border-transparent overflow-hidden">
       <div className="flex flex-col lg:flex-row">
         <div className="flex-1 p-6 lg:p-8">
           <h2 className="font-bold text-foreground text-2xl lg:text-3xl mb-2 leading-snug">

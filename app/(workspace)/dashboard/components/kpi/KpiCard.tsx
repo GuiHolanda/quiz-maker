@@ -17,7 +17,9 @@ export function KpiCard({ icon, badge, value, label, detail, comingSoon = false 
   const { t } = useTranslation();
 
   return (
-    <div className={`bg-content1 border border-default-200 rounded-xl p-5 ${comingSoon ? 'opacity-50' : ''}`}>
+    <div
+      className={`bg-content1 rounded-xl border border-default-200 dark:border-transparent p-5 ${comingSoon ? 'opacity-50' : ''}`}
+    >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2.5">
           {icon}

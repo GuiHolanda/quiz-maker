@@ -99,7 +99,7 @@ export function ExamChecklistCard({ draft, validation }: ExamChecklistCardProps)
   }
 
   return (
-    <div className="bg-content1 border border-content2 rounded-xl p-5">
+    <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-5">
       <div className="text-xs font-bold text-default-500 mb-4">{t('exam.checklistTitle')}</div>
       <div className="flex flex-col">
         {rows.map((row) => (

@@ -152,7 +152,7 @@ export function SeedLoadingScreen({
               <SeedIdentifyCard phase={{ kind: 'confirmed', match: variant.seed }} query="" type={type} />
             )}
 
-            <div className="bg-content1 border border-content2 rounded-xl p-5 h-fit">
+            <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-5 h-fit">
               <div className="flex items-center gap-2">
                 <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={faShieldHalved} />
                 <div className="text-sm font-semibold text-foreground">{t('exam.loadingSourceTitle')}</div>
@@ -167,7 +167,7 @@ export function SeedLoadingScreen({
           <SeedExtractionLog currentTimeLabel={elapsedLabel} lines={logLines} />
 
           {variant.kind === 'auto-config' && (
-            <div className="bg-content1 border border-content2 rounded-xl p-5">
+            <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-5">
               <div className="flex items-center gap-2">
                 <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={faArrowRightFromBracket} />
                 <div className="text-sm font-semibold text-foreground">{t('exam.loadingKeepGoingTitle')}</div>

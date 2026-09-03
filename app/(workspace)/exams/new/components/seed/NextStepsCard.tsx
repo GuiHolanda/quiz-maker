@@ -12,7 +12,7 @@ export function NextStepsCard() {
   const { t } = useTranslation();
 
   return (
-    <div className="bg-content1 border border-content2 rounded-xl p-5">
+    <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-5">
       <div className="text-xs font-semibold text-default-500">{t('exam.nextStepsTitle')}</div>
       <div className="mt-4 flex flex-col gap-4">
         {STEPS.map((step) => (

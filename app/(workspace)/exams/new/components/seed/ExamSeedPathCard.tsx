@@ -19,7 +19,7 @@ interface ExamSeedPathCardProps {
 }
 
 const cardClassName =
-  'block w-full text-left bg-content1 border border-content2 rounded-xl p-5 hover:bg-content2 transition-colors duration-200';
+  'block w-full text-left bg-content1 rounded-xl border border-default-200 dark:border-transparent p-5 hover:bg-content2 transition-colors duration-200';
 
 function CardContent({ icon, title, body, cta }: Omit<ExamSeedPathCardProps, 'href' | 'onPress' | 'testId'>) {
   return (

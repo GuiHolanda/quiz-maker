@@ -44,7 +44,7 @@ export function ExamSummaryCard({
   ];
 
   return (
-    <div className="bg-content1 border border-content2 rounded-xl p-5">
+    <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-5">
       <div className="text-xs font-bold text-default-500">{t('exam.summaryTitle')}</div>
       <KeyValueList className="mt-3" mono rows={rows} />
     </div>

@@ -109,7 +109,7 @@ export function SeedIdentifyCard({
   }, [approvingEditalKey]);
 
   return (
-    <div className="bg-content1 border border-content2 rounded-xl p-6">
+    <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6">
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-xs font-bold text-default-500">{t('exam.identifyCardTitle')}</span>
         {phase.kind === 'disambiguating' && (

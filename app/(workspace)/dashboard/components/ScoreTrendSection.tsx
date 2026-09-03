@@ -32,7 +32,7 @@ export function ScoreTrendSection({ scoreTrend }: ScoreTrendSectionProps) {
     hasTrend && scoreTrend !== null ? scoreTrend[scoreTrend.length - 1].score - scoreTrend[0].score : null;
 
   return (
-    <div className="bg-content1 border border-default-200 rounded-xl p-5 shrink-0">
+    <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-5 shrink-0">
       <div className="flex items-center justify-between mb-3">
         <div>
           <p className="text-xs font-semibold text-primary">{t('dashboard.scoreTrend')}</p>

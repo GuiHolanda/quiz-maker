@@ -85,7 +85,7 @@ export function SeedProgressCard({ type, variant, step, isAwaitingUser = false, 
   const completedPct = (currentIndex / stepOrder.length) * 100;
 
   return (
-    <div className="bg-content1 border border-content2 rounded-xl p-6">
+    <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-xs font-bold text-default-500">{t('exam.loadingProgressTitle')}</div>

@@ -39,7 +39,7 @@ export function ExamSeedPicker({ type, onIdentify, onUploadEdital, onStartBlank 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_560px] gap-6 items-start mt-7">
       <div>
-        <div className="bg-content1 border border-content2 rounded-xl p-6">
+        <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6">
           <ExamSearchForm isBusy={false} isSearching={false} type={type} onSubmit={onIdentify} />
         </div>
 

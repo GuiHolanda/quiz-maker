@@ -20,7 +20,7 @@ export function FocusAreasSection({ domainBreakdown }: FocusAreasSectionProps) {
 
   return (
     <div
-      className="lg:col-span-3 bg-content1 border border-default-200 rounded-xl flex flex-col"
+      className="lg:col-span-3 bg-content1 rounded-xl border border-default-200 dark:border-transparent flex flex-col"
       data-testid="dashboard-focus-areas"
     >
       <div className="px-5 pt-5 pb-3 border-b border-default-200">

@@ -43,7 +43,7 @@ export function ExamSectionsCard({
   const sumTone = getDistributionSumTone(distributionSum);
 
   return (
-    <div className="bg-content1 border border-content2 rounded-xl p-6 pt-4">
+    <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 pt-4">
       <div className="flex items-end justify-between gap-6">
         <div className="flex flex-col gap-1.5">
           <div className="text-xs font-bold text-default-500 mb-1">{title}</div>
