@@ -102,6 +102,12 @@ STRIPE_PRICE_ID_SPRINT=price_...          # one-time (not recurring) price — R
 
 # Email (password reset)
 RESEND_API_KEY=re_...
+
+# Redis (optional — see "Redis (optional)" below).
+# Leave these unset and the app runs exactly as it does today: job progress falls back to
+# polling Postgres, rate limiting is off, and the Stripe webhook processes every delivery.
+# UPSTASH_REDIS_REST_URL=https://<name>.upstash.io
+# UPSTASH_REDIS_REST_TOKEN=<token>
 ```
 
 > Never commit `.env` to source control.
@@ -331,6 +337,63 @@ UsageLog { id, userId, action, count, inputTokens, outputTokens, createdAt }
 - `count` — number of questions requested in the call
 - `inputTokens` / `outputTokens` — token usage from the OpenAI Responses API, recorded asynchronously (fire-and-forget) after the response is returned to the client
 - Used by the Admin analytics page to compute per-user and per-plan token costs in BRL
+
+## Redis (optional)
+
+Redis is wired into three places but **is not active until you provision it**. Everything in
+`lib/redis.ts` degrades to a no-op when the credentials are missing, and a Redis that is
+configured but unreachable degrades the same way rather than failing the request.
+
+| Feature | With Redis | Without Redis (current state) |
+|---|---|---|
+| Job progress (SSE) | Stream reads a snapshot the worker publishes on each state transition — roughly 10 Postgres queries per 300s stream instead of ~200 | Stream polls Postgres every 1.5s, as before |
+| Rate limiting on LLM routes | Per-user sliding window on the six routes that call OpenAI; rejections return `429` with `code: 'rate_limited'` | No burst protection — only the per-period plan quota applies |
+| Stripe webhook idempotency | `SET NX` on `event.id` (24h) so a redelivery is not processed twice | Every delivery is processed, as before |
+
+### What you still have to do manually
+
+Nothing in the codebase changes for any of this — activation is entirely environment setup.
+
+**1. Create the database.** In the Vercel dashboard: **Storage → Create Database → Upstash for
+Redis**. The free tier is enough to start. Pick the region closest to your functions.
+
+**2. Connect it to the project.** From the database page, **Connect Project** → select this
+project → select the environments (Production, Preview, Development). The integration injects
+the credentials as `KV_REST_API_URL` / `KV_REST_API_TOKEN`.
+
+`lib/redis.ts` accepts either naming — `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`
+first, then the `KV_REST_API_*` pair — so the Vercel integration works with no code change. If
+you create the database directly at [console.upstash.com](https://console.upstash.com) instead,
+copy the **REST** URL and token (not the `redis://` connection string — this codebase uses the
+HTTP client on purpose, so serverless functions never hold a TCP connection) and set the
+`UPSTASH_*` names yourself.
+
+**3. Redeploy.** Environment variables are read at runtime, but a redeploy is the simplest way
+to be sure every function picks them up.
+
+**4. (Optional) Enable it locally.** Add the same two variables to `.env`. Useful for exercising
+the cached path before it reaches production; unnecessary for normal local work.
+
+### Verifying it is on
+
+Start a question generation and watch the dev server log. With `NODE_ENV=development` the Prisma
+query log is on, so before activation you see a `GenerationJob` query scroll past every 1.5
+seconds for the life of the stream. After activation those queries stop, appearing only when the
+worker publishes a transition or the 30s snapshot TTL lapses.
+
+A rate-limit rejection is also easy to confirm: fire the same generation request more than 10
+times inside a minute and the extra calls return `429` instead of reaching OpenAI.
+
+### Notes
+
+- **Authorization never comes from the cache.** The SSE routes still check job ownership against
+  Postgres before reading a snapshot — snapshot keys are indexed by `jobId` alone.
+- **Rate limits are burst protection, not plan quota.** `PLAN_LIMITS` governs how much a user may
+  consume per period; `lib/rate-limit.ts` governs how fast. The two are independent.
+- **Turning it off is safe.** Remove the variables and redeploy; every call site returns to the
+  path it used before.
+
+---
 
 ## Admin Dashboard
 
