@@ -5,6 +5,8 @@ import type { ExamDraftFieldId, ExamDraftValidation } from '@/lib/exam-draft-val
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 
+import { BulletList } from '@/shared/components/ui/BulletList';
+import { CardHeading } from '@/shared/components/ui/CardHeading';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { getDistributionSumTone } from '@/lib/exam-draft-validation';
 
@@ -100,29 +102,27 @@ export function ExamChecklistCard({ draft, validation }: ExamChecklistCardProps)
 
   return (
     <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-5">
-      <div className="text-xs font-bold text-default-500 mb-4">{t('exam.checklistTitle')}</div>
-      <div className="flex flex-col">
-        {rows.map((row) => (
-          <div key={row.key} className="grid grid-cols-[22px_1fr] gap-3 items-start py-2">
-            <div className="w-[22px] h-[22px] flex items-center justify-center">
-              <div
-                className={`w-5 h-5 rounded-full flex items-center justify-center ${
-                  row.tone === 'success' ? 'bg-success/15' : 'bg-warning/15'
-                }`}
-              >
-                <FontAwesomeIcon
-                  className={`w-2.5 h-2.5 ${row.tone === 'success' ? 'text-success' : 'text-warning'}`}
-                  icon={row.tone === 'success' ? faCheck : faTriangleExclamation}
-                />
-              </div>
+      <CardHeading className="mb-4">{t('exam.checklistTitle')}</CardHeading>
+      <BulletList
+        gap="sm"
+        items={rows.map((row) => ({
+          key: row.key,
+          leading: (
+            <div
+              className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                row.tone === 'success' ? 'bg-success/15' : 'bg-warning/15'
+              }`}
+            >
+              <FontAwesomeIcon
+                className={`w-2.5 h-2.5 ${row.tone === 'success' ? 'text-success' : 'text-warning'}`}
+                icon={row.tone === 'success' ? faCheck : faTriangleExclamation}
+              />
             </div>
-            <div>
-              <div className="text-sm font-semibold text-foreground">{row.title}</div>
-              <p className="mt-1 text-[13px] leading-relaxed text-default-500 text-pretty">{row.body}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+          ),
+          title: row.title,
+          body: row.body,
+        }))}
+      />
     </div>
   );
 }
