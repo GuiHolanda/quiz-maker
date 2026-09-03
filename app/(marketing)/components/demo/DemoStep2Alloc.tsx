@@ -258,7 +258,7 @@ export function DemoStep2Alloc({ exam, onGenerate, onBack }: DemoStep2AllocProps
           }`}
         >
           <BlueprintCorners />
-          {t('demo.step2.generateBtn')}
+          {t('common.generateQuestions')}
         </button>
       </div>
     </div>

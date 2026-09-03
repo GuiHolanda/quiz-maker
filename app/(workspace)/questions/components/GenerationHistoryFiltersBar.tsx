@@ -37,7 +37,7 @@ export function GenerationHistoryFiltersBar({
     <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-4 flex flex-col gap-3">
       <div className="flex items-center gap-3">
         <FontAwesomeIcon className="w-3.5 h-3.5 text-default-400 shrink-0" icon={faSliders} />
-        <span className="text-xs font-semibold text-default-500">{t('generate.historyFilters')}</span>
+        <span className="text-xs font-semibold text-default-500">{t('common.filters')}</span>
         {active && (
           <Button
             className={`${buttonStyles.flat} ml-auto h-7 px-3 text-xs`}
@@ -45,7 +45,7 @@ export function GenerationHistoryFiltersBar({
             startContent={<FontAwesomeIcon className="w-3 h-3" icon={faXmark} />}
             onPress={onClear}
           >
-            {t('generate.historyClearFilters')}
+            {t('common.clearFilters')}
           </Button>
         )}
       </div>
