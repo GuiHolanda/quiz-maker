@@ -12,6 +12,7 @@ import { SeedProgressCard, STEP_HEADLINE_KEYS, stepFromStage, type SeedStep } fr
 import { SeedModulesSkeleton } from './SeedModulesSkeleton';
 import { SeedIdentifyCard, type ConfirmedSeed, type IdentifyPhase } from './SeedIdentifyCard';
 import { SeedExtractionLog, type LogLine } from './SeedExtractionLog';
+import { WorkspaceSplitLayout } from '@/shared/components/ui/WorkspaceSplitLayout';
 
 export type SeedLoadingVariant =
   | {
@@ -122,61 +123,62 @@ export function SeedLoadingScreen({
         onCancel={onCancel}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_560px] gap-6 items-start mt-7">
-        <div className="flex flex-col gap-4">
-          <SeedProgressCard
-            elapsedLabel={elapsedLabel}
-            isAwaitingUser={isAwaitingUser}
-            step={step}
-            type={type}
-            variant={variant.kind === 'edital' ? 'edital' : 'auto-config'}
-          />
+      <WorkspaceSplitLayout
+        variant="editor"
+        rail={
+          <>
+            <NextStepsCard />
+            <SeedExtractionLog currentTimeLabel={elapsedLabel} lines={logLines} />
 
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-4">
-            {variant.kind === 'edital' ? (
-              <SeedModulesSkeleton type={type} />
-            ) : variant.kind === 'identify' ? (
-              <SeedIdentifyCard
-                phase={variant.phase}
-                query={variant.query}
-                type={type}
-                onApproveEdital={onApproveEdital}
-                onRelocateEdital={onRelocateEdital}
-                onRetry={onRetry}
-                onSelectMatch={onSelectMatch}
-                onSelectRole={onSelectRole}
-                onSkipEdital={onSkipEdital}
-                onStartBlank={onStartBlank}
-              />
-            ) : (
-              <SeedIdentifyCard phase={{ kind: 'confirmed', match: variant.seed }} query="" type={type} />
-            )}
-
-            <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-5 h-fit">
-              <div className="flex items-center gap-2">
-                <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={faShieldHalved} />
-                <div className="text-sm font-semibold text-foreground">{t('exam.loadingSourceTitle')}</div>
+            {variant.kind === 'auto-config' && (
+              <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-5">
+                <div className="flex items-center gap-2">
+                  <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={faArrowRightFromBracket} />
+                  <div className="text-sm font-semibold text-foreground">{t('exam.loadingKeepGoingTitle')}</div>
+                </div>
+                <p className="mt-2 text-[13px] leading-relaxed text-default-500">{t('exam.loadingKeepGoingBody')}</p>
               </div>
-              <p className="mt-2 text-[13px] leading-relaxed text-default-500">{t('exam.loadingSourceBody')}</p>
+            )}
+          </>
+        }
+      >
+        <SeedProgressCard
+          elapsedLabel={elapsedLabel}
+          isAwaitingUser={isAwaitingUser}
+          step={step}
+          type={type}
+          variant={variant.kind === 'edital' ? 'edital' : 'auto-config'}
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-4">
+          {variant.kind === 'edital' ? (
+            <SeedModulesSkeleton type={type} />
+          ) : variant.kind === 'identify' ? (
+            <SeedIdentifyCard
+              phase={variant.phase}
+              query={variant.query}
+              type={type}
+              onApproveEdital={onApproveEdital}
+              onRelocateEdital={onRelocateEdital}
+              onRetry={onRetry}
+              onSelectMatch={onSelectMatch}
+              onSelectRole={onSelectRole}
+              onSkipEdital={onSkipEdital}
+              onStartBlank={onStartBlank}
+            />
+          ) : (
+            <SeedIdentifyCard phase={{ kind: 'confirmed', match: variant.seed }} query="" type={type} />
+          )}
+
+          <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-5 h-fit">
+            <div className="flex items-center gap-2">
+              <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={faShieldHalved} />
+              <div className="text-sm font-semibold text-foreground">{t('exam.loadingSourceTitle')}</div>
             </div>
+            <p className="mt-2 text-[13px] leading-relaxed text-default-500">{t('exam.loadingSourceBody')}</p>
           </div>
         </div>
-
-        <div className="flex flex-col gap-4">
-          <NextStepsCard />
-          <SeedExtractionLog currentTimeLabel={elapsedLabel} lines={logLines} />
-
-          {variant.kind === 'auto-config' && (
-            <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-5">
-              <div className="flex items-center gap-2">
-                <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={faArrowRightFromBracket} />
-                <div className="text-sm font-semibold text-foreground">{t('exam.loadingKeepGoingTitle')}</div>
-              </div>
-              <p className="mt-2 text-[13px] leading-relaxed text-default-500">{t('exam.loadingKeepGoingBody')}</p>
-            </div>
-          )}
-        </div>
-      </div>
+      </WorkspaceSplitLayout>
     </>
   );
 

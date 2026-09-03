@@ -8,6 +8,7 @@ import { ExamIdentityFields } from '@/shared/components/exam-editor/ExamIdentity
 import { ExamFormatFields } from '@/shared/components/exam-editor/ExamFormatFields';
 import { InlineAlert } from '@/shared/components/ui/InlineAlert';
 import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
+import { WorkspaceSplitLayout } from '@/shared/components/ui/WorkspaceSplitLayout';
 import { useExamDraftCard } from '@/features/hooks/useExamDraftCard.hook';
 import { getExamDraftValidation } from '@/lib/exam-draft-validation';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -111,73 +112,74 @@ export function ExamEditorPage({
         title={draft.name || t(isEdit ? config.editLabel : config.tabNew)}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_560px] gap-6 items-start mt-7">
-        <div className="flex flex-col gap-4">
-          {warningKey && !warningDismissed && (
-            <InlineAlert
-              color="warning"
-              description={t(warningKey)}
-              icon={faTriangleExclamation}
-              title={t('exam.aiSeedFallbackTitle')}
-              onDismiss={() => setWarningDismissed(true)}
-            />
-          )}
-
-          <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 pt-4">
-            <div className="text-xs font-bold text-default-500 mb-1">{t('exam.identifyCardTitle')}</div>
-            <ExamIdentityFields
-              density="comfortable"
-              draft={draft}
-              isSaving={isSaving}
-              onUpdateField={updateField}
-              onUpdateReferenceName={updateReferenceName}
-            />
-          </div>
-
-          <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 pt-4">
-            <div className="text-xs font-bold text-default-500 mb-1">{t('exam.formatCardTitle')}</div>
-            <ExamFormatFields
-              density="comfortable"
-              draft={draft}
-              isSaving={isSaving}
-              onUpdateNumericField={updateNumericField}
-              onUpdateQuestionFormat={updateQuestionFormat}
-            />
-          </div>
-
-          <ExamSectionsCard
-            distributionSum={validation.distributionSum}
-            isSaving={isSaving}
-            sectionCount={validation.sectionCount}
-            sections={draft.sections}
-            title={t(config.step2SectionsTitle)}
-            topicCount={validation.topicCount}
-            onAddSection={addSection}
-            onAddTopic={addTopic}
-            onRemoveSection={removeSection}
-            onRemoveTopic={removeTopic}
-            onUpdateSection={updateSection}
-            onUpdateTopic={updateTopic}
+      <WorkspaceSplitLayout
+        variant="editor"
+        rail={
+          <ExamReviewSidebar
+            confidence={confidence}
+            context={context}
+            draft={draft}
+            sources={sources}
+            validation={validation}
           />
+        }
+      >
+        {warningKey && !warningDismissed && (
+          <InlineAlert
+            color="warning"
+            description={t(warningKey)}
+            icon={faTriangleExclamation}
+            title={t('exam.aiSeedFallbackTitle')}
+            onDismiss={() => setWarningDismissed(true)}
+          />
+        )}
 
-          <ExamEditorFooterBar
-            canSave={canSave}
-            discardLabel={discardLabel}
+        <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 pt-4">
+          <div className="text-xs font-bold text-default-500 mb-1">{t('exam.identifyCardTitle')}</div>
+          <ExamIdentityFields
+            density="comfortable"
+            draft={draft}
             isSaving={isSaving}
-            saveLabel={saveLabel}
-            onDiscard={openDiscardConfirm}
-            onSave={handleSaveClick}
+            onUpdateField={updateField}
+            onUpdateReferenceName={updateReferenceName}
           />
         </div>
 
-        <ExamReviewSidebar
-          confidence={confidence}
-          context={context}
-          draft={draft}
-          sources={sources}
-          validation={validation}
+        <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 pt-4">
+          <div className="text-xs font-bold text-default-500 mb-1">{t('exam.formatCardTitle')}</div>
+          <ExamFormatFields
+            density="comfortable"
+            draft={draft}
+            isSaving={isSaving}
+            onUpdateNumericField={updateNumericField}
+            onUpdateQuestionFormat={updateQuestionFormat}
+          />
+        </div>
+
+        <ExamSectionsCard
+          distributionSum={validation.distributionSum}
+          isSaving={isSaving}
+          sectionCount={validation.sectionCount}
+          sections={draft.sections}
+          title={t(config.step2SectionsTitle)}
+          topicCount={validation.topicCount}
+          onAddSection={addSection}
+          onAddTopic={addTopic}
+          onRemoveSection={removeSection}
+          onRemoveTopic={removeTopic}
+          onUpdateSection={updateSection}
+          onUpdateTopic={updateTopic}
         />
-      </div>
+
+        <ExamEditorFooterBar
+          canSave={canSave}
+          discardLabel={discardLabel}
+          isSaving={isSaving}
+          saveLabel={saveLabel}
+          onDiscard={openDiscardConfirm}
+          onSave={handleSaveClick}
+        />
+      </WorkspaceSplitLayout>
 
       <ConfirmModal
         body={<p className="text-sm text-default-500">{t(isEdit ? 'exam.cancelEditBody' : config.discardDraftBody)}</p>}

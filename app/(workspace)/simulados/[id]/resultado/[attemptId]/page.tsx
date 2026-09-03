@@ -17,6 +17,7 @@ import {
 } from '@/features/connectors';
 import { MockExamResult } from '@/shared/types';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { WorkspaceSplitLayout } from '@/shared/components/ui/WorkspaceSplitLayout';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 
 import { ScorePanel } from './components/ScorePanel';
@@ -138,17 +139,18 @@ export default function SimuladoResultadoPage() {
       <div className="flex flex-col gap-6">
         <ScorePanel view={view} />
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start xl:gap-8">
-          <div className="flex min-w-0 flex-col gap-6">
-            <TopicPerformancePanel view={view} />
-            <QuestionReviewPanel view={view} onLoadExplanation={getExamQuestionExplanation} />
-          </div>
-
-          <div className="flex flex-col gap-4 lg:sticky lg:top-20">
-            <ComparisonPanel view={view} />
-            <NextStepPanel isRetrying={isStarting} view={view} onRetry={handleTryAgain} />
-          </div>
-        </div>
+        <WorkspaceSplitLayout
+          stickyRail
+          rail={
+            <>
+              <ComparisonPanel view={view} />
+              <NextStepPanel isRetrying={isStarting} view={view} onRetry={handleTryAgain} />
+            </>
+          }
+        >
+          <TopicPerformancePanel view={view} />
+          <QuestionReviewPanel view={view} onLoadExplanation={getExamQuestionExplanation} />
+        </WorkspaceSplitLayout>
       </div>
     </PageHeader>
   );

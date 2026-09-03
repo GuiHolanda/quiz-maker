@@ -23,6 +23,7 @@ import { ExamTypePicker } from '@/shared/components/ui/ExamTypePicker';
 import { FieldLabel } from '@/shared/components/ui/FieldLabel';
 import { type KeyValueRow } from '@/shared/components/ui/KeyValueList';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { WorkspaceSplitLayout } from '@/shared/components/ui/WorkspaceSplitLayout';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
 import { inputProperties } from '@/config/constants/inputStyles';
@@ -145,25 +146,25 @@ export function QuestionsPageContent() {
         ) : exams.length === 0 && visibleJobs.length === 0 ? (
           renderEmptyState()
         ) : (
-          <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
-            <div className="flex min-w-0 flex-col gap-6">
-              {exams.length > 0 && renderConfig()}
-              {renderActiveJobs()}
-            </div>
-
-            <GenerationSummarySidebar
-              canGenerate={canGenerate}
-              hasSurplus={status.tone === 'warn' && dist.rows.length > 0}
-              isBusy={isStarting}
-              rows={configSummaryRows()}
-              statusText={
-                atJobLimit ? t('generate.jobLimitReached', { max: GENERATION_MAX_ACTIVE_JOBS_PER_USER }) : status.text
-              }
-              statusTone={atJobLimit ? 'warn' : status.tone}
-              onAutoAdjust={dist.redistribute}
-              onGenerate={handleGenerate}
-            />
-          </div>
+          <WorkspaceSplitLayout
+            rail={
+              <GenerationSummarySidebar
+                canGenerate={canGenerate}
+                hasSurplus={status.tone === 'warn' && dist.rows.length > 0}
+                isBusy={isStarting}
+                rows={configSummaryRows()}
+                statusText={
+                  atJobLimit ? t('generate.jobLimitReached', { max: GENERATION_MAX_ACTIVE_JOBS_PER_USER }) : status.text
+                }
+                statusTone={atJobLimit ? 'warn' : status.tone}
+                onAutoAdjust={dist.redistribute}
+                onGenerate={handleGenerate}
+              />
+            }
+          >
+            {exams.length > 0 && renderConfig()}
+            {renderActiveJobs()}
+          </WorkspaceSplitLayout>
         )}
 
         <GenerationHistory refreshKey={historyRefreshKey} />

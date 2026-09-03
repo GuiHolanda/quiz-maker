@@ -14,6 +14,7 @@ import { ExamSearchForm } from './ExamSearchForm';
 import { ExamSeedPathCard } from './ExamSeedPathCard';
 import { NextStepsCard } from './NextStepsCard';
 import { MyExamsCard } from './MyExamsCard';
+import { WorkspaceSplitLayout } from '@/shared/components/ui/WorkspaceSplitLayout';
 
 interface ExamSeedPickerProps {
   readonly type: ExamType;
@@ -37,7 +38,15 @@ export function ExamSeedPicker({ type, onIdentify, onUploadEdital, onStartBlank 
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_560px] gap-6 items-start mt-7">
+    <WorkspaceSplitLayout
+      variant="editor"
+      rail={
+        <>
+          <NextStepsCard />
+          <MyExamsCard type={type} />
+        </>
+      }
+    >
       <div>
         <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6">
           <ExamSearchForm isBusy={false} isSearching={false} type={type} onSubmit={onIdentify} />
@@ -103,11 +112,6 @@ export function ExamSeedPicker({ type, onIdentify, onUploadEdital, onStartBlank 
           </div>
         )}
       </div>
-
-      <div className="flex flex-col gap-4">
-        <NextStepsCard />
-        <MyExamsCard type={type} />
-      </div>
-    </div>
+    </WorkspaceSplitLayout>
   );
 }
