@@ -3,6 +3,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowTrendUp } from '@fortawesome/free-solid-svg-icons';
 
+import { CardHeading } from '@/shared/components/ui/CardHeading';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -33,21 +34,23 @@ export function ScoreTrendSection({ scoreTrend }: ScoreTrendSectionProps) {
 
   return (
     <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-5 shrink-0">
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <p className="text-xs font-semibold text-primary">{t('dashboard.scoreTrend')}</p>
-          <p className="text-[11px] text-default-400 mt-0.5">{t('dashboard.recentSessionsSubtitle')}</p>
-        </div>
-        {trendDelta !== null && (
-          <span
-            className={`font-mono text-[10px] flex items-center gap-1 ${trendDelta >= 0 ? 'text-success' : 'text-danger'}`}
-          >
-            <FontAwesomeIcon icon={faArrowTrendUp} />
-            {trendDelta >= 0 ? '+' : ''}
-            {trendDelta}%
-          </span>
-        )}
-      </div>
+      <CardHeading
+        className="mb-3"
+        subtitle={t('dashboard.recentSessionsSubtitle')}
+        action={
+          trendDelta !== null && (
+            <span
+              className={`font-mono text-[10px] flex items-center gap-1 ${trendDelta >= 0 ? 'text-success' : 'text-danger'}`}
+            >
+              <FontAwesomeIcon icon={faArrowTrendUp} />
+              {trendDelta >= 0 ? '+' : ''}
+              {trendDelta}%
+            </span>
+          )
+        }
+      >
+        {t('dashboard.scoreTrend')}
+      </CardHeading>
 
       {scoreTrend === null ? (
         <SkeletonListLoader count={1} height="h-20" />

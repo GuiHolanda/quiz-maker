@@ -3,6 +3,7 @@ import type { ExamSection } from '@/shared/types';
 
 import { Button } from '@heroui/button';
 
+import { CardHeading } from '@/shared/components/ui/CardHeading';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { getDistributionSumTone, DISTRIBUTION_SUM_TONE_CLASS } from '@/lib/exam-draft-validation';
 import { buttonStyles } from '@/config/constants/buttonStyles';
@@ -46,7 +47,7 @@ export function ExamSectionsCard({
     <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 pt-4">
       <div className="flex items-end justify-between gap-6">
         <div className="flex flex-col gap-1.5">
-          <div className="text-xs font-bold text-default-500 mb-1">{title}</div>
+          <CardHeading className="mb-1">{title}</CardHeading>
           <p className="text-xs text-default-500">
             {t('exam.sectionsCardSubtitle', { sections: sectionCount, topics: topicCount })}
           </p>

@@ -1,5 +1,6 @@
 'use client';
 
+import { CardHeading } from '@/shared/components/ui/CardHeading';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -20,8 +21,7 @@ export function RecentSessionsSection({ sessions }: RecentSessionsSectionProps) 
       data-testid="dashboard-recent-sessions"
     >
       <div className="px-5 pt-5 pb-3">
-        <p className="text-xs font-semibold text-primary">{t('dashboard.recentSessions')}</p>
-        <p className="text-[11px] text-default-400 mt-0.5">{t('dashboard.recentSessionsSubtitle')}</p>
+        <CardHeading subtitle={t('dashboard.recentSessionsSubtitle')}>{t('dashboard.recentSessions')}</CardHeading>
       </div>
 
       <div className="flex-1">

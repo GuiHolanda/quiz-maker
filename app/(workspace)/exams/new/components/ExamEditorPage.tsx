@@ -8,6 +8,7 @@ import { ExamIdentityFields } from '@/shared/components/exam-editor/ExamIdentity
 import { ExamFormatFields } from '@/shared/components/exam-editor/ExamFormatFields';
 import { InlineAlert } from '@/shared/components/ui/InlineAlert';
 import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
+import { CardHeading } from '@/shared/components/ui/CardHeading';
 import { WorkspaceSplitLayout } from '@/shared/components/ui/WorkspaceSplitLayout';
 import { useExamDraftCard } from '@/features/hooks/useExamDraftCard.hook';
 import { getExamDraftValidation } from '@/lib/exam-draft-validation';
@@ -135,7 +136,7 @@ export function ExamEditorPage({
         )}
 
         <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 pt-4">
-          <div className="text-xs font-bold text-default-500 mb-1">{t('exam.identifyCardTitle')}</div>
+          <CardHeading className="mb-1">{t('exam.identifyCardTitle')}</CardHeading>
           <ExamIdentityFields
             density="comfortable"
             draft={draft}
@@ -146,7 +147,7 @@ export function ExamEditorPage({
         </div>
 
         <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 pt-4">
-          <div className="text-xs font-bold text-default-500 mb-1">{t('exam.formatCardTitle')}</div>
+          <CardHeading className="mb-1">{t('exam.formatCardTitle')}</CardHeading>
           <ExamFormatFields
             density="comfortable"
             draft={draft}

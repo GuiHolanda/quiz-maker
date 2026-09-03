@@ -22,6 +22,7 @@ import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { CardHeading } from '@/shared/components/ui/CardHeading';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { ExamSearchForm } from './ExamSearchForm';
@@ -110,14 +111,17 @@ export function SeedIdentifyCard({
 
   return (
     <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-xs font-bold text-default-500">{t('exam.identifyCardTitle')}</span>
-        {phase.kind === 'disambiguating' && (
-          <span className="font-mono text-[11px] text-default-400">
-            {t('exam.identifyMatchCount', { count: String(phase.matches.length) })}
-          </span>
-        )}
-      </div>
+      <CardHeading
+        action={
+          phase.kind === 'disambiguating' && (
+            <span className="font-mono text-[11px] text-default-400">
+              {t('exam.identifyMatchCount', { count: String(phase.matches.length) })}
+            </span>
+          )
+        }
+      >
+        {t('exam.identifyCardTitle')}
+      </CardHeading>
 
       <div className="mt-4">{renderPhase()}</div>
 

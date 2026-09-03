@@ -1,6 +1,7 @@
 'use client';
 import type { DistributionSumTone } from '@/lib/exam-draft-validation';
 
+import { CardHeading } from '@/shared/components/ui/CardHeading';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { KeyValueList, type KeyValueRow, type KeyValueTone } from '@/shared/components/ui/KeyValueList';
 
@@ -45,7 +46,7 @@ export function ExamSummaryCard({
 
   return (
     <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-5">
-      <div className="text-xs font-bold text-default-500">{t('exam.summaryTitle')}</div>
+      <CardHeading>{t('exam.summaryTitle')}</CardHeading>
       <KeyValueList className="mt-3" mono rows={rows} />
     </div>
   );
