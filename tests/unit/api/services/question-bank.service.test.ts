@@ -272,3 +272,60 @@ describe('QuestionBankService.getQuestions', () => {
     });
   });
 });
+
+describe('leitura em duas fases', () => {
+  function calls() {
+    return prismaMock.examQuestion.findMany.mock.calls.map(([args]: any) => args);
+  }
+
+  it('não carrega texto, alternativas nem explicações na varredura de candidatos', async () => {
+    prismaMock.examQuestion.findMany.mockResolvedValue([]);
+
+    await service.getQuestions({ userId: 'u1', page: 1, pageSize: 10 });
+
+    const [candidateQuery, summaryQuery] = calls();
+    for (const query of [candidateQuery, summaryQuery]) {
+      expect(query.include).toBeUndefined();
+      expect(query.select).toEqual({
+        id: true,
+        answer: { select: { explanations: { take: 1, select: { id: true } } } },
+      });
+    }
+  });
+
+  it('hidrata apenas os ids da página, não a biblioteca inteira', async () => {
+    const rows = Array.from({ length: 25 }, (_, i) => makeQuestion({ id: i + 1 }));
+    prismaMock.examQuestion.findMany.mockResolvedValue(rows as any);
+
+    const result = await service.getQuestions({ userId: 'u1', page: 2, pageSize: 5 });
+
+    const hydrationQuery = calls()[2];
+    expect(hydrationQuery.where).toEqual({ id: { in: [6, 7, 8, 9, 10] } });
+    expect(hydrationQuery.include).toMatchObject({ options: true });
+    expect(result.total).toBe(25);
+    expect(result.questions.map((q) => q.id)).toEqual([6, 7, 8, 9, 10]);
+  });
+
+  it('respeita a ordem de pageIds mesmo quando o banco devolve embaralhado', async () => {
+    // findMany com `where: { id: { in: [...] } }` não garante a ordem do array — a fase de
+    // hidratação devolve de propósito numa ordem diferente da que os candidatos definiram.
+    const candidates = [makeQuestion({ id: 3 }), makeQuestion({ id: 1 }), makeQuestion({ id: 2 })];
+    const hydratedOutOfOrder = [makeQuestion({ id: 1 }), makeQuestion({ id: 2 }), makeQuestion({ id: 3 })];
+    prismaMock.examQuestion.findMany.mockImplementation((args: any) =>
+      Promise.resolve(args.include ? hydratedOutOfOrder : candidates) as any
+    );
+
+    const result = await service.getQuestions({ userId: 'u1', page: 1, pageSize: 3 });
+
+    expect(result.questions.map((q) => q.id)).toEqual([3, 1, 2]);
+  });
+
+  it('não emite a query de hidratação quando a página está vazia', async () => {
+    prismaMock.examQuestion.findMany.mockResolvedValue([]);
+
+    const result = await service.getQuestions({ userId: 'u1', page: 5, pageSize: 10 });
+
+    expect(calls()).toHaveLength(2);
+    expect(result.questions).toEqual([]);
+  });
+});
