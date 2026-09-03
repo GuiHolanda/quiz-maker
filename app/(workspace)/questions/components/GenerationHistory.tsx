@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { Chip } from '@heroui/chip';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClipboardList, faGraduationCap, faHistory } from '@fortawesome/free-solid-svg-icons';
 
 import type {
@@ -14,6 +13,7 @@ import type {
 import { EMPTY_HISTORY_FILTERS } from '@/shared/types';
 import { getGenerationHistory, getGenerationHistoryFilters } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { IconBadge } from '@/shared/components/ui/IconBadge';
 import { RelativeDate } from '@/shared/components/ui/RelativeDate';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { SectionHeader } from '@/shared/components/ui/SectionHeader';
@@ -159,9 +159,7 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
         className="flex items-center gap-4 border-t border-divider px-5 py-3.5 first:border-t-0 md:grid md:grid-cols-[38px_minmax(0,1fr)_96px_96px_minmax(0,auto)] md:gap-5"
         role="listitem"
       >
-        <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[9px] bg-primary/10 text-primary">
-          <FontAwesomeIcon className="h-4 w-4" icon={icon} />
-        </div>
+        <IconBadge icon={icon} size="md" />
 
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-[14.5px] font-semibold leading-snug text-foreground">{title}</span>

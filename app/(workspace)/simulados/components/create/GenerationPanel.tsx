@@ -6,6 +6,9 @@ import { faArrowRight, faCheck, faFileCircleCheck } from '@fortawesome/free-soli
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+import { IconBadge } from '@/shared/components/ui/IconBadge';
+import { ProgressTrack } from '@/shared/components/ui/ProgressTrack';
+import { StatusPill } from '@/shared/components/ui/StatusPill';
 
 interface GenerationPanelProps {
   readonly phase: 'gerando' | 'pronto';
@@ -74,23 +77,16 @@ export function GenerationPanel({
     <div className="flex flex-col rounded-xl bg-content1 p-6" data-testid="simulado-generation-panel">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <FontAwesomeIcon className="h-[19px] w-[19px]" icon={faFileCircleCheck} />
-          </div>
+          <IconBadge icon={faFileCircleCheck} size="md" />
           <div className="flex min-w-0 flex-col gap-1">
             <span className="truncate text-[17px] font-bold text-foreground">{simuladoName}</span>
             <span className="font-mono text-[11.5px] text-default-400">{summaryLine}</span>
           </div>
         </div>
 
-        <span
-          className={`flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-[7px] text-[13px] font-semibold ${
-            isReady ? 'border-success/30 bg-success/10 text-success' : 'border-primary/35 bg-primary/10 text-primary'
-          }`}
-        >
-          {!isReady && <span className={SPINNER} />}
+        <StatusPill size="md" spinner={!isReady} tone={isReady ? 'ok' : 'busy'}>
           {isReady ? t('simulado.create.readyPill') : t('simulado.create.generatingPill')}
-        </span>
+        </StatusPill>
       </div>
 
       <div className="mt-[22px] border-t border-divider pt-5">
@@ -100,12 +96,13 @@ export function GenerationPanel({
           </span>
           <span className="font-mono text-xs text-default-400">{progressPercent}%</span>
         </div>
-        <div className="mt-2 h-[5px] rounded-full bg-content2">
-          <div
-            className="h-full rounded-full bg-primary transition-[width] duration-500"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
+        <ProgressTrack
+          animated
+          className="mt-2"
+          heightClass="h-[5px]"
+          trackClass="bg-content2"
+          value={progressPercent}
+        />
       </div>
 
       <div className="mt-3.5 flex flex-col">

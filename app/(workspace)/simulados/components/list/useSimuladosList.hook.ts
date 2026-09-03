@@ -73,10 +73,6 @@ export function useSimuladosList() {
 
   const { pageItems, page, totalPages, perPage, setPage, setPerPage } = usePaginatedItems(sorted);
 
-  const from = sorted.length === 0 ? 0 : (page - 1) * perPage + 1;
-  const to = Math.min(page * perPage, sorted.length);
-  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
-
   function clearFilters() {
     setSearch('');
     setExam('all');
@@ -103,9 +99,6 @@ export function useSimuladosList() {
     totalPages,
     perPage,
     setPerPage,
-    from,
-    to,
     total: sorted.length,
-    pageNumbers,
   };
 }

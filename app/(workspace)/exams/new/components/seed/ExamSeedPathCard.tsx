@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
 
+import { IconBadge } from '@/shared/components/ui/IconBadge';
+
 interface ExamSeedPathCardProps {
   readonly icon: IconDefinition;
   readonly title: string;
@@ -23,9 +25,7 @@ function CardContent({ icon, title, body, cta }: Omit<ExamSeedPathCardProps, 'hr
   return (
     <>
       <div className="flex items-center gap-2">
-        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-          <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={icon} />
-        </div>
+        <IconBadge icon={icon} />
         <div className="text-lg font-bold tracking-tight">{title}</div>
       </div>
       <p className="mt-4 text-sm leading-relaxed text-default-500">{body}</p>

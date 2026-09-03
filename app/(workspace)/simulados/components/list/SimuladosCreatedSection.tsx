@@ -1,10 +1,8 @@
 'use client';
 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGraduationCap, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 
 import { SimuladoHistoryModal } from './SimuladoHistoryModal';
-import { SimuladosPagination } from './SimuladosPagination';
 import { SimuladosTable } from './SimuladosTable';
 import { SimuladosToolbar } from './SimuladosToolbar';
 import { useSimuladoActions } from './useSimuladoActions.hook';
@@ -12,7 +10,9 @@ import { useSimuladosList } from './useSimuladosList.hook';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
+import { IconBadge } from '@/shared/components/ui/IconBadge';
 import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
+import { PaginationBar } from '@/shared/components/ui/PaginationBar';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 
 export function SimuladosCreatedSection() {
@@ -23,9 +23,7 @@ export function SimuladosCreatedSection() {
   return (
     <section className="border-t border-divider pt-8">
       <div className="flex items-start gap-3.5">
-        <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[9px] bg-primary/10 text-primary">
-          <FontAwesomeIcon icon={faLayerGroup} />
-        </div>
+        <IconBadge icon={faLayerGroup} />
         <div className="flex flex-col gap-1">
           <h2 className="text-[22px] font-bold text-foreground">{t('simulado.table.sectionTitle')}</h2>
           <p className="max-w-[820px] text-sm text-default-500">{t('simulado.table.sectionSubtitle')}</p>
@@ -108,14 +106,14 @@ export function SimuladosCreatedSection() {
           />
         </div>
 
-        <SimuladosPagination
-          from={list.from}
+        <PaginationBar
+          className="mt-4"
+          itemLabel={t('common.simulados')}
           page={list.page}
-          pageNumbers={list.pageNumbers}
-          to={list.to}
+          perPage={list.perPage}
           total={list.total}
           totalPages={list.totalPages}
-          onPage={list.setPage}
+          onPageChange={list.setPage}
         />
       </>
     );

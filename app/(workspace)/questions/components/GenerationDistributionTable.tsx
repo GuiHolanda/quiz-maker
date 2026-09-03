@@ -7,6 +7,7 @@ import { faTrash, faRotateLeft } from '@fortawesome/free-solid-svg-icons';
 
 import type { DistributionRow } from './useGenerationDistribution.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { ProgressTrack } from '@/shared/components/ui/ProgressTrack';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 
 interface GenerationDistributionTableProps {
@@ -59,9 +60,7 @@ export function GenerationDistributionTable({
             >
               <div className="min-w-0 flex-1">
                 <p className="text-[14.5px] font-medium leading-snug text-foreground sm:truncate">{row.name}</p>
-                <div className="mt-2 h-[3px] rounded-full bg-content2">
-                  <div className="h-[3px] rounded-full bg-primary" style={{ width: `${row.barPercent}%` }} />
-                </div>
+                <ProgressTrack className="mt-2" heightClass="h-[3px]" trackClass="bg-content2" value={row.barPercent} />
                 <span className="mt-1.5 block font-mono text-[11.5px] text-default-400 sm:hidden">
                   {t('generate.topicWeight', { weight: row.weight })}
                 </span>

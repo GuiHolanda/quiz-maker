@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Card, CardBody, CardFooter } from '@heroui/card';
 import { Chip } from '@heroui/chip';
 
+import { ProgressTrack } from '@/shared/components/ui/ProgressTrack';
 import { RelativeDate } from '@/shared/components/ui/RelativeDate';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import type { Exam, ExamType } from '@/shared/types';
@@ -128,9 +129,12 @@ export function ExamCard({ exam, type, isSelected, onClick, footerAction, isDisa
               {exam.sections.map((section) => (
                 <div key={section.id ?? section.name} className="flex items-center gap-3">
                   <span className="text-xs lg:text-sm text-default-500 min-w-0 truncate">{section.name}</span>
-                  <div className="flex-1 h-1 bg-default-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-primary rounded-full" style={{ width: `${section.minQuestions}%` }} />
-                  </div>
+                  <ProgressTrack
+                    className="flex-1"
+                    heightClass="h-1"
+                    trackClass="bg-default-100"
+                    value={section.minQuestions}
+                  />
                   <span className="text-xs text-default-400 shrink-0 w-8 text-right">{section.minQuestions}%</span>
                 </div>
               ))}

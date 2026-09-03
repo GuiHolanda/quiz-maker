@@ -7,7 +7,6 @@ import { Input } from '@heroui/input';
 
 import { fmtTempo } from './list/normalizeSimulado';
 import { PresetShortcuts } from './create/PresetShortcuts';
-import { ScopePicker } from './create/ScopePicker';
 import { ExamAndCountRow } from './create/ExamAndCountRow';
 import { TimePicker } from './create/TimePicker';
 import { SourcePicker } from './create/SourcePicker';
@@ -27,13 +26,14 @@ import {
   sectionWeights,
 } from './create/simuladoFormState';
 
+import { ExamTypePicker } from '@/shared/components/ui/ExamTypePicker';
+import { FieldLabel } from '@/shared/components/ui/FieldLabel';
+import { type KeyValueRow } from '@/shared/components/ui/KeyValueList';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { inputProperties } from '@/config/constants/inputStyles';
-
-const FIELD_LABEL = 'text-xs font-semibold text-default-400';
 
 const SOURCE_TITLE_KEY: Record<MockExamQuestionSource, string> = {
   library: 'simulado.create.sourceLibraryTitle',
@@ -160,7 +160,7 @@ export function CreateSimuladoSection() {
 
   const canCreate = statusTone === 'ok' && hasExam && !generation.isBusy;
 
-  const summaryRows = [
+  const summaryRows: KeyValueRow[] = [
     { label: t('simulado.create.summaryExam'), value: exam?.name ?? '—' },
     { label: t('simulado.create.summaryQuestions'), value: String(state.totalQuestions) },
     { label: t('simulado.create.summaryTime'), value: resolveSummaryTime() },
@@ -172,7 +172,7 @@ export function CreateSimuladoSection() {
     {
       label: t('simulado.create.summaryCoverage'),
       value: t('simulado.create.summaryCoverageValue', { percent: coverage }),
-      highlight: true,
+      tone: 'primary',
     },
   ];
 
@@ -305,7 +305,7 @@ export function CreateSimuladoSection() {
     return (
       <div className="flex flex-col gap-6 rounded-xl bg-content1 p-6">
         <div className="flex flex-col gap-2">
-          <span className={FIELD_LABEL}>{t('simulado.create.nameLabel')}</span>
+          <FieldLabel>{t('simulado.create.nameLabel')}</FieldLabel>
           <Input
             {...inputProperties.input}
             aria-label={t('simulado.create.nameLabel')}
@@ -316,7 +316,21 @@ export function CreateSimuladoSection() {
           />
         </div>
 
-        <ScopePicker value={state.scope} onChange={(scope: ExamType) => patchState({ scope })} />
+        <ExamTypePicker
+          certification={{
+            title: t('simulado.create.scopeCertificationTitle'),
+            body: t('simulado.create.scopeCertificationBody'),
+            testId: 'simulado-scope-certification',
+          }}
+          label={t('simulado.create.scopeLabel')}
+          publicExam={{
+            title: t('simulado.create.scopeConcursoTitle'),
+            body: t('simulado.create.scopeConcursoBody'),
+            testId: 'simulado-scope-public-exam',
+          }}
+          value={state.scope}
+          onChange={(scope: ExamType) => patchState({ scope })}
+        />
 
         <ExamAndCountRow
           examId={exam?.id ?? null}

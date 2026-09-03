@@ -7,6 +7,7 @@ import { faBolt, faFileLines, faRotateLeft } from '@fortawesome/free-solid-svg-i
 
 import type { PresetKey } from './simuladoFormState';
 
+import { FieldLabel } from '@/shared/components/ui/FieldLabel';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface PresetShortcutsProps {
@@ -15,8 +16,6 @@ interface PresetShortcutsProps {
   readonly officialTime: string;
   readonly onPick: (key: PresetKey) => void;
 }
-
-const FIELD_LABEL = 'text-xs font-semibold text-default-400';
 
 export function PresetShortcuts({ activePreset, officialCount, officialTime, onPick }: PresetShortcutsProps) {
   const { t } = useTranslation();
@@ -47,7 +46,7 @@ export function PresetShortcuts({ activePreset, officialCount, officialTime, onP
 
   return (
     <div className="flex flex-col gap-2">
-      <span className={FIELD_LABEL}>{t('simulado.create.shortcut')}</span>
+      <FieldLabel>{t('simulado.create.shortcut')}</FieldLabel>
       <div className="grid grid-cols-3 gap-3.5">
         {cards.map((card) => {
           const isActive = card.key === activePreset;

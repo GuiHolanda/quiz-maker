@@ -1,14 +1,13 @@
 'use client';
 
 import { Button } from '@heroui/button';
-import { Input } from '@heroui/input';
 import { Select, SelectItem } from '@heroui/select';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { inputProperties } from '@/config/constants/inputStyles';
+import { SearchInput } from '@/shared/components/ui/SearchInput';
+import { SortSelect } from '@/shared/components/ui/SortSelect';
 
 interface SimuladosToolbarProps {
   readonly search: string;
@@ -64,13 +63,10 @@ export function SimuladosToolbar({
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
       <div className="flex flex-wrap items-center gap-2.5">
-        <Input
-          {...inputProperties.input}
-          aria-label={t('simulado.table.searchPlaceholder')}
+        <SearchInput
           className="w-[260px]"
-          data-testid="simulado-search-input"
           placeholder={t('simulado.table.searchPlaceholder')}
-          startContent={<FontAwesomeIcon className="h-3.5 w-3.5 text-default-400" icon={faMagnifyingGlass} />}
+          testId="simulado-search-input"
           value={search}
           onValueChange={onSearch}
         />
@@ -111,22 +107,14 @@ export function SimuladosToolbar({
       </div>
 
       <div className="flex flex-wrap items-center gap-2.5">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-default-500">{t('simulado.table.sortLabel')}</span>
-          <Select
-            {...inputProperties.select}
-            aria-label={t('simulado.table.sortLabel')}
-            className="w-[170px]"
-            data-testid="simulado-sort-select"
-            disallowEmptySelection
-            selectedKeys={new Set([sort])}
-            onSelectionChange={(keys) => onSort(Array.from(keys)[0] as SimuladosToolbarProps['sort'])}
-          >
-            {sortItems.map((item) => (
-              <SelectItem key={item.key}>{item.label}</SelectItem>
-            ))}
-          </Select>
-        </div>
+        <SortSelect
+          className="w-[170px]"
+          label={t('simulado.table.sortLabel')}
+          options={sortItems}
+          testId="simulado-sort-select"
+          value={sort}
+          onChange={(value) => onSort(value as SimuladosToolbarProps['sort'])}
+        />
 
         <div className="flex items-center gap-2">
           <span className="text-xs text-default-500">{t('simulado.table.perPage')}</span>

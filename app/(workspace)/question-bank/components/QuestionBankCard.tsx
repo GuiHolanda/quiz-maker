@@ -4,7 +4,6 @@ import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faCheck,
   faChevronDown,
   faCircleCheck,
   faCircleQuestion,
@@ -17,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+import { FauxCheckbox } from '@/shared/components/ui/FauxCheckbox';
 import { RelativeDate } from '@/shared/components/ui/RelativeDate';
 import type { UnifiedQuestion } from '@/shared/types';
 
@@ -96,14 +96,12 @@ export function QuestionBankCard({
       <button
         aria-label={t('questionBank.selectQuestion')}
         aria-pressed={selected}
-        className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-[5px] border transition-colors duration-200 ${
-          selected ? 'border-primary bg-primary' : 'border-default-400 bg-transparent hover:border-primary'
-        }`}
+        className="mt-0.5 rounded-[5px]"
         data-testid="question-bank-card-checkbox"
         type="button"
         onClick={onToggleSelect}
       >
-        {selected && <FontAwesomeIcon aria-hidden="true" className="w-3 h-3 text-primary-foreground" icon={faCheck} />}
+        <FauxCheckbox checked={selected} />
       </button>
     );
   }

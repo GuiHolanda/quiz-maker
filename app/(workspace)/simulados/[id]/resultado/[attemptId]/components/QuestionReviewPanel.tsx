@@ -2,11 +2,10 @@
 
 import { useMemo, useState } from 'react';
 import { Select, SelectItem } from '@heroui/select';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties } from '@/config/constants/inputStyles';
+import { PaginationBar } from '@/shared/components/ui/PaginationBar';
 
 import { ReviewQuestionRow } from './ReviewQuestionRow';
 import type { ResultView } from './deriveResult';
@@ -171,49 +170,15 @@ export function QuestionReviewPanel({ view, onLoadExplanation }: QuestionReviewP
       </div>
 
       {filtered.length > 0 && (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-divider pt-4">
-          <span className="text-xs text-default-500">
-            {t('simulado.result.showingCount', {
-              from: start + 1,
-              to: start + visible.length,
-              count: filtered.length,
-            })}
-          </span>
-          {totalPages > 1 && (
-            <div className="flex items-center gap-1.5">
-              <button
-                className="flex items-center gap-2 rounded-lg border border-divider px-3 py-1.5 text-xs text-default-500 transition-colors duration-200 hover:bg-content2 hover:text-foreground disabled:pointer-events-none disabled:opacity-45"
-                disabled={currentPage === 1}
-                type="button"
-                onClick={() => setPage((current) => Math.max(1, current - 1))}
-              >
-                <FontAwesomeIcon icon={faChevronLeft} />
-                {t('simulado.result.prev')}
-              </button>
-              {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
-                <button
-                  key={pageNumber}
-                  className={`min-w-9 rounded-lg border px-2.5 py-1.5 font-mono text-xs transition-colors duration-200 ${
-                    pageNumber === currentPage ? PILL_ACTIVE : PILL_IDLE
-                  }`}
-                  type="button"
-                  onClick={() => setPage(pageNumber)}
-                >
-                  {pageNumber}
-                </button>
-              ))}
-              <button
-                className="flex items-center gap-2 rounded-lg border border-divider px-3 py-1.5 text-xs text-default-500 transition-colors duration-200 hover:bg-content2 hover:text-foreground disabled:pointer-events-none disabled:opacity-45"
-                disabled={currentPage === totalPages}
-                type="button"
-                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-              >
-                {t('simulado.result.next')}
-                <FontAwesomeIcon icon={faChevronRight} />
-              </button>
-            </div>
-          )}
-        </div>
+        <PaginationBar
+          className="mt-4 border-t border-divider pt-4"
+          itemLabel={t('common.questions')}
+          page={currentPage}
+          perPage={perPage}
+          total={filtered.length}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );

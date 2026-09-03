@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleCheck, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { ProgressTrack } from '@/shared/components/ui/ProgressTrack';
 
 import { ScoreDonut } from './ScoreDonut';
 import { TONE_BG, TONE_TEXT, type ResultView } from './deriveResult';
@@ -75,16 +76,18 @@ export function ScorePanel({ view }: ScorePanelProps) {
               </div>
               {view.comparable && view.passingScorePercent != null ? (
                 <>
-                  <div className="relative mt-3 h-1.5 rounded-full bg-default-300">
-                    <div
-                      className={`h-1.5 rounded-full ${toneBg}`}
-                      style={{ width: `${Math.min(100, view.percent)}%` }}
-                    />
+                  <ProgressTrack
+                    className="mt-3"
+                    fillClass={toneBg}
+                    overflowVisible
+                    trackClass="bg-default-300"
+                    value={view.percent}
+                  >
                     <div
                       className="absolute -top-1 h-3.5 w-0.5 bg-primary"
                       style={{ left: `${Math.min(100, view.passingScorePercent)}%` }}
                     />
-                  </div>
+                  </ProgressTrack>
                   <div className="mt-2 text-xs text-default-500">
                     {view.marginPP != null && view.marginPP >= 0
                       ? t('simulado.result.marginAbove', { delta: view.marginPP })
@@ -103,9 +106,12 @@ export function ScorePanel({ view }: ScorePanelProps) {
                 {view.durationLabel != null && <span className="text-xs text-default-400">/ {view.durationLabel}</span>}
               </div>
               {timeOverBudget != null ? (
-                <div className="mt-3 h-1.5 rounded-full bg-default-300">
-                  <div className="h-1.5 rounded-full bg-default-500" style={{ width: `${timeOverBudget}%` }} />
-                </div>
+                <ProgressTrack
+                  className="mt-3"
+                  fillClass="bg-default-500"
+                  trackClass="bg-default-300"
+                  value={timeOverBudget}
+                />
               ) : (
                 <div className="mt-3 h-1.5" />
               )}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { ProgressTrack } from '@/shared/components/ui/ProgressTrack';
 
 import { TONE_BG, signedPP, type ResultView, type TopicTag } from './deriveResult';
 
@@ -49,9 +50,7 @@ export function TopicPerformancePanel({ view }: TopicPerformancePanelProps) {
             </div>
 
             <div>
-              <div className="h-1.5 rounded-full bg-default-300">
-                <div className={`h-1.5 rounded-full ${TONE_BG[topic.tone]}`} style={{ width: `${topic.percent}%` }} />
-              </div>
+              <ProgressTrack fillClass={TONE_BG[topic.tone]} trackClass="bg-default-300" value={topic.percent} />
               <div className="mt-2 flex items-center justify-between gap-3 font-mono text-xs">
                 <span className="text-default-500">
                   {topic.correct}/{topic.total} · {topic.percent}%

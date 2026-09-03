@@ -6,6 +6,7 @@ import { faFlag } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+import { ProgressTrack } from '@/shared/components/ui/ProgressTrack';
 
 interface AttemptProgressCardProps {
   readonly answeredCount: number;
@@ -53,12 +54,13 @@ export function AttemptProgressCard({
         <span className="text-sm text-default-500">{t('simulado.attempt.answeredOfTotal', { total })}</span>
       </div>
 
-      <div className="mt-3.5 h-[5px] overflow-hidden rounded-full bg-content2">
-        <div
-          className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
-          style={{ width: `${progressPercent}%` }}
-        />
-      </div>
+      <ProgressTrack
+        animated
+        className="mt-3.5"
+        heightClass="h-[5px]"
+        trackClass="bg-content2"
+        value={progressPercent}
+      />
 
       <div className="mt-4 flex flex-col">
         {rows.map((row) => (

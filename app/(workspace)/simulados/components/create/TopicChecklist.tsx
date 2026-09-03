@@ -1,11 +1,11 @@
 'use client';
 
 import { Button } from '@heroui/button';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck } from '@fortawesome/free-solid-svg-icons';
 
+import { FieldLabel } from '@/shared/components/ui/FieldLabel';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+import { FauxCheckbox } from '@/shared/components/ui/FauxCheckbox';
 
 interface TopicRow {
   readonly name: string;
@@ -22,7 +22,6 @@ interface TopicChecklistProps {
   readonly onNone: () => void;
 }
 
-const FIELD_LABEL = 'text-xs font-semibold text-default-400';
 const ROW_GRID = '22px minmax(120px,1fr) 100px 110px';
 
 export function TopicChecklist({ sections, selected, onToggle, onAll, onNone }: TopicChecklistProps) {
@@ -31,7 +30,7 @@ export function TopicChecklist({ sections, selected, onToggle, onAll, onNone }: 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
-        <span className={FIELD_LABEL}>{t('simulado.create.topicsLabel')}</span>
+        <FieldLabel>{t('simulado.create.topicsLabel')}</FieldLabel>
         <div className="flex items-center gap-2">
           <Button className={buttonStyles.flat} data-testid="simulado-topics-select-all" size="sm" onPress={onAll}>
             {t('simulado.create.selectAll')}
@@ -59,13 +58,7 @@ export function TopicChecklist({ sections, selected, onToggle, onAll, onNone }: 
                 type="button"
                 onClick={() => onToggle(section.name)}
               >
-                <span
-                  className={`flex h-5 w-5 items-center justify-center rounded-[5px] border transition-colors duration-200 ${
-                    isChecked ? 'border-primary bg-primary text-primary-foreground' : 'border-divider'
-                  }`}
-                >
-                  {isChecked && <FontAwesomeIcon className="h-3 w-3" icon={faCheck} />}
-                </span>
+                <FauxCheckbox checked={isChecked} />
 
                 <span className={`truncate text-sm ${isChecked ? 'text-foreground' : 'text-default-500'}`}>
                   {section.name}

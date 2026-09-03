@@ -10,6 +10,7 @@ import { faLayerGroup, faWandMagicSparkles } from '@fortawesome/free-solid-svg-i
 import NextLink from 'next/link';
 
 import { PageHeader } from '@/shared/components/ui/PageHeader';
+import { PaginationBar } from '@/shared/components/ui/PaginationBar';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
@@ -25,7 +26,6 @@ import { QuestionBankSummary } from './QuestionBankSummary';
 import { QuestionBankToolbar } from './QuestionBankToolbar';
 import { QuestionBankBulkBar } from './QuestionBankBulkBar';
 import { QuestionBankCard } from './QuestionBankCard';
-import { QuestionBankPagination } from './QuestionBankPagination';
 import { buildSimuladoPrefillFromQuestions } from './simuladoFromSelection';
 import {
   EMPTY_FILTERS,
@@ -376,10 +376,11 @@ export function QuestionBankContent() {
         )}
 
         {questions.length > 0 && (
-          <QuestionBankPagination
-            filteredTotal={result?.total ?? 0}
+          <PaginationBar
+            itemLabel={t('common.questions')}
             page={page}
-            shown={questions.length}
+            perPage={pageSize}
+            total={result?.total ?? 0}
             totalPages={totalPages}
             onPageChange={setPage}
           />

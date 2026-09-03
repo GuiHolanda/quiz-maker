@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { ProgressTrack } from '@/shared/components/ui/ProgressTrack';
 
 import { TONE_BG, TONE_TEXT, signedPP, type ResultView } from './deriveResult';
 
@@ -62,9 +63,7 @@ export function ComparisonPanel({ view }: ComparisonPanelProps) {
               <span className="text-sm text-default-500">{row.label}</span>
               <span className={`font-mono text-sm font-medium ${row.valueClass}`}>{row.value}%</span>
             </div>
-            <div className="mt-2 h-1.5 rounded-full bg-default-200">
-              <div className={`h-1.5 rounded-full ${row.bar}`} style={{ width: `${Math.min(100, row.value)}%` }} />
-            </div>
+            <ProgressTrack className="mt-2" fillClass={row.bar} value={row.value} />
           </div>
         ))}
       </div>

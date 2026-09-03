@@ -1,13 +1,11 @@
 'use client';
 
 import type { ChangeEvent } from 'react';
-import { Select, SelectItem } from '@heroui/select';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { inputProperties } from '@/config/constants/inputStyles';
+import { FauxCheckbox } from '@/shared/components/ui/FauxCheckbox';
 import { ItemsPerPageSelect } from '@/shared/components/ui/ItemsPerPageSelect';
+import { SortSelect } from '@/shared/components/ui/SortSelect';
 import type { QuestionBankSort } from '@/shared/types';
 
 interface QuestionBankToolbarProps {
@@ -54,44 +52,21 @@ export function QuestionBankToolbar({
           type="button"
           onClick={onToggleSelectPage}
         >
-          <span
-            className={`flex h-4 w-4 items-center justify-center rounded border ${
-              allOnPageSelected ? 'border-primary bg-primary' : 'border-default-400 bg-transparent'
-            }`}
-          >
-            {allOnPageSelected && (
-              <FontAwesomeIcon aria-hidden="true" className="w-2.5 h-2.5 text-primary-foreground" icon={faCheck} />
-            )}
-          </span>
+          <FauxCheckbox checked={allOnPageSelected} />
           {allOnPageSelected ? t('questionBank.deselectPage') : t('questionBank.selectPage')}
         </button>
         <span className="text-sm text-default-500">{countLabel}</span>
       </div>
 
       <div className="flex flex-wrap items-end gap-3">
-        <div className="flex items-end gap-2">
-          <label className="pb-0.5 text-xs font-semibold text-default-500" htmlFor="questionBankSort">
-            {t('questionBank.sortLabel')}
-          </label>
-          <Select
-            aria-label={t('questionBank.sortLabel')}
-            className="w-52"
-            data-testid="question-bank-sort-select"
-            id="questionBankSort"
-            selectedKeys={new Set([sort])}
-            {...inputProperties.select}
-            size="sm"
-            classNames={{
-              ...inputProperties.select.classNames,
-              trigger: inputProperties.select.classNames.trigger.replace('h-11', '').trim(),
-            }}
-            onSelectionChange={(keys) => onSortChange(Array.from(keys)[0] as QuestionBankSort)}
-          >
-            {SORT_OPTIONS.map((option) => (
-              <SelectItem key={option.key}>{t(option.labelKey)}</SelectItem>
-            ))}
-          </Select>
-        </div>
+        <SortSelect
+          className="w-52"
+          label={t('questionBank.sortLabel')}
+          options={SORT_OPTIONS.map((option) => ({ key: option.key, label: t(option.labelKey) }))}
+          testId="question-bank-sort-select"
+          value={sort}
+          onChange={(value) => onSortChange(value as QuestionBankSort)}
+        />
         <ItemsPerPageSelect value={pageSize} onChange={onPageSizeChange} />
       </div>
     </div>

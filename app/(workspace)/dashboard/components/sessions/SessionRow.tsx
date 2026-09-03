@@ -5,16 +5,11 @@ import { faPlay } from '@fortawesome/free-solid-svg-icons';
 import { Chip } from '@heroui/chip';
 
 import { RelativeDate } from '@/shared/components/ui/RelativeDate';
+import { scoreToneName } from '@/shared/lib/scoreTone';
 import type { DashboardRecentSession } from '@/shared/types';
 
 interface SessionRowProps {
   readonly session: DashboardRecentSession;
-}
-
-function scoreColor(score: number): 'success' | 'warning' | 'danger' {
-  if (score >= 70) return 'success';
-  if (score >= 50) return 'warning';
-  return 'danger';
 }
 
 export function SessionRow({ session }: SessionRowProps) {
@@ -35,7 +30,7 @@ export function SessionRow({ session }: SessionRowProps) {
         </p>
       </div>
       <div className="shrink-0">
-        <Chip color={scoreColor(session.score)} size="sm" variant="flat">
+        <Chip color={scoreToneName(session.score)} size="sm" variant="flat">
           {session.score}%
         </Chip>
       </div>

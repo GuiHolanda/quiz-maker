@@ -6,17 +6,12 @@ import { faBullseye, faFire, faTrophy } from '@fortawesome/free-solid-svg-icons'
 import { KpiCard } from './KpiCard';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { scoreToneText } from '@/shared/lib/scoreTone';
 import type { DashboardStats, UsageStats } from '@/shared/types';
 
 interface KpiRibbonProps {
   readonly stats: DashboardStats | null;
   readonly usage: UsageStats | null;
-}
-
-function scoreTextColor(score: number) {
-  if (score >= 75) return 'text-success';
-  if (score >= 60) return 'text-warning';
-  return 'text-danger';
 }
 
 export function KpiRibbon({ stats, usage }: KpiRibbonProps) {
@@ -80,7 +75,7 @@ export function KpiRibbon({ stats, usage }: KpiRibbonProps) {
         }
         badge={
           !isLoading && stats.bestScore !== null ? (
-            <span className={`font-mono text-[9px] border rounded px-1.5 py-0.5 ${scoreTextColor(stats.bestScore)}`}>
+            <span className={`font-mono text-[9px] border rounded px-1.5 py-0.5 ${scoreToneText(stats.bestScore)}`}>
               {t('dashboard.bestScoreDetail')}
             </span>
           ) : (

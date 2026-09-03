@@ -1,7 +1,8 @@
 'use client';
 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+
+import { IconBadge } from '@/shared/components/ui/IconBadge';
 
 interface SectionHeaderProps {
   readonly icon: IconDefinition;
@@ -15,9 +16,7 @@ interface SectionHeaderProps {
 export function SectionHeader({ icon, title, label, subtitle, action, className }: SectionHeaderProps) {
   return (
     <div className={['flex items-start gap-3', className].filter(Boolean).join(' ')}>
-      <div className="mt-0.5 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-        <FontAwesomeIcon className="w-3.5 h-3.5 text-primary" icon={icon} />
-      </div>
+      <IconBadge className="mt-0.5" icon={icon} />
       <div className="flex-1 min-w-0">
         <h2 className="text-xl font-bold text-foreground">{title}</h2>
         {label && <p className="text-sm font-semibold text-primary mt-0.5 truncate">{label}</p>}
