@@ -353,26 +353,67 @@ configured but unreachable degrades the same way rather than failing the request
 ### What you still have to do manually
 
 Nothing in the codebase changes for any of this — activation is entirely environment setup.
+There are two routes; the CLI one is a single command.
 
-**1. Create the database.** In the Vercel dashboard: **Storage → Create Database → Upstash for
-Redis**. The free tier is enough to start. Pick the region closest to your functions.
+#### Option A — Vercel CLI (recommended)
 
-**2. Connect it to the project.** From the database page, **Connect Project** → select this
-project → select the environments (Production, Preview, Development). The integration injects
-the credentials as `KV_REST_API_URL` / `KV_REST_API_TOKEN`.
+Provisions the database, installs the Marketplace integration, and connects it to the project
+in one step:
 
-`lib/redis.ts` accepts either naming — `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`
-first, then the `KV_REST_API_*` pair — so the Vercel integration works with no code change. If
-you create the database directly at [console.upstash.com](https://console.upstash.com) instead,
-copy the **REST** URL and token (not the `redis://` connection string — this codebase uses the
-HTTP client on purpose, so serverless functions never hold a TCP connection) and set the
-`UPSTASH_*` names yourself.
+```bash
+vercel integration add upstash/upstash-kv --no-env-pull
+```
 
-**3. Redeploy.** Environment variables are read at runtime, but a redeploy is the simplest way
-to be sure every function picks them up.
+The slug is `upstash-kv`, not `upstash-redis` — confirm with `vercel integration discover upstash`
+if it ever changes. Useful flags:
 
-**4. (Optional) Enable it locally.** Add the same two variables to `.env`. Useful for exercising
-the cached path before it reaches production; unnecessary for normal local work.
+| Flag | Why |
+|---|---|
+| `--no-env-pull` | **Use this.** See the warning below. |
+| `-e production -e preview` | Limit which environments get the credentials (defaults to all three) |
+| `-n <name>` | Name the resource instead of taking the generated one |
+| `--no-connect` | Provision without attaching it to this project |
+
+The first install opens an interactive terms prompt, so run it yourself in a real terminal — it
+cannot be scripted headlessly.
+
+> **Do not let it run `env pull`.** `vercel env pull` writes **`.env.local`**, and Next.js loads
+> that file with higher precedence than `.env`. This project's Vercel environment defines
+> `DATABASE_URL` as cloud Postgres, while your local `.env` points at SQLite (`prisma/dev.db`) —
+> so a pull silently overrides your local database URL, and `npm run dev` breaks against the
+> SQLite-generated Prisma client. Pass `--no-env-pull` and copy the two Redis variables into
+> `.env` by hand.
+
+Verify and inspect afterwards:
+
+```bash
+vercel integration list          # resources attached to this project
+vercel integration-resource inspect <resource>
+vercel env ls production         # confirm the credentials landed (names only, values stay encrypted)
+```
+
+#### Option B — Vercel dashboard
+
+**Storage → Create Database → Upstash for Redis**, then **Connect Project** on the database page
+and pick the environments. Same result as Option A.
+
+#### Either way
+
+The integration injects the credentials as `KV_REST_API_URL` / `KV_REST_API_TOKEN`. `lib/redis.ts`
+accepts either naming — `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` first, then the
+`KV_REST_API_*` pair — so no code change is needed.
+
+If you provision directly at [console.upstash.com](https://console.upstash.com) instead, copy the
+**REST** URL and token, not the `redis://` connection string. This codebase uses the HTTP client
+on purpose so serverless functions never hold a TCP connection; the `redis://` string is what
+every generic tutorial hands you and it is the wrong one here.
+
+Finally, **redeploy**. Environment variables are read at runtime, but a redeploy is the simplest
+way to be sure every function picks them up.
+
+**Enabling it locally (optional).** Add the same two variables to `.env` — not `.env.local`, for
+the reason above. Useful for exercising the cached path before it reaches production;
+unnecessary for normal local work.
 
 ### Verifying it is on
 
