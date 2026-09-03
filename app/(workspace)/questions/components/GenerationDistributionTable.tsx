@@ -28,7 +28,7 @@ export function GenerationDistributionTable({
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl bg-content1 p-6">
+    <div className="flex flex-col gap-4 rounded-xl border border-default-200 dark:border-transparent bg-content1 p-6">
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
           <span className="text-base font-bold tracking-tight text-foreground">{t('generate.distributionTitle')}</span>

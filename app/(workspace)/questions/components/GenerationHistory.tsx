@@ -128,7 +128,11 @@ export function GenerationHistory({ refreshKey = 0 }: GenerationHistoryProps) {
         }
       >
         {data && data.items.length > 0 && (
-          <div aria-atomic="false" aria-live="polite" className="overflow-hidden rounded-xl bg-content1">
+          <div
+            aria-atomic="false"
+            aria-live="polite"
+            className="overflow-hidden rounded-xl border border-default-200 dark:border-transparent bg-content1"
+          >
             <div role="list">{data.items.map((item) => renderHistoryRow(item))}</div>
           </div>
         )}

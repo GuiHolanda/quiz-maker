@@ -20,7 +20,7 @@ export function UsageCard({ icon, label, used, limit, limitLabel, renewNote }: U
   const pct = isUnlimited ? 0 : Math.min(100, Math.round((used / limit!) * 100));
 
   return (
-    <div className="bg-content1 border border-default-200 rounded-xl p-6">
+    <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6">
       <div className="flex justify-between items-center mb-4">
         <h4 className="text-sm font-medium text-foreground flex items-center gap-2">
           <FontAwesomeIcon className="text-primary" icon={icon} />

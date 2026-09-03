@@ -1,5 +1,7 @@
 'use client';
 
+import { BulletList } from '@/shared/components/ui/BulletList';
+import { CardHeading } from '@/shared/components/ui/CardHeading';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 const STEPS = [
@@ -12,11 +14,13 @@ export function NextStepsCard() {
   const { t } = useTranslation();
 
   return (
-    <div className="bg-content1 border border-content2 rounded-xl p-5">
-      <div className="text-xs font-semibold text-default-500">{t('exam.nextStepsTitle')}</div>
-      <div className="mt-4 flex flex-col gap-4">
-        {STEPS.map((step) => (
-          <div key={step.num} className="grid grid-cols-[26px_1fr] gap-3">
+    <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-5">
+      <CardHeading>{t('exam.nextStepsTitle')}</CardHeading>
+      <BulletList
+        className="mt-4"
+        items={STEPS.map((step) => ({
+          key: step.num,
+          leading: (
             <div
               className={`w-[26px] h-[26px] rounded-lg font-mono text-[11px] flex items-center justify-center ${
                 step.active ? 'bg-primary text-primary-foreground' : 'bg-content2 text-default-400'
@@ -24,13 +28,11 @@ export function NextStepsCard() {
             >
               {step.num}
             </div>
-            <div>
-              <div className="text-sm font-semibold text-foreground">{t(step.titleKey)}</div>
-              <p className="mt-1 text-[13px] leading-relaxed text-default-500 text-pretty">{t(step.bodyKey)}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+          ),
+          title: t(step.titleKey),
+          body: t(step.bodyKey),
+        }))}
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBullseye, faCircleCheck, faLayerGroup, faLightbulb } from '@fortawesome/free-solid-svg-icons';
 
+import { StatCard } from '@/shared/components/ui/StatCard';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import type { QuestionBankSummary as Summary } from '@/shared/types';
 
@@ -62,18 +63,14 @@ export function QuestionBankSummary({ summary }: QuestionBankSummaryProps) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {cards.map((card) => (
-        <div key={card.label} className="bg-content1 rounded-xl p-6 flex flex-col gap-3">
-          <div className="flex items-center gap-2 text-xs font-semibold text-navy-400/60">
-            <FontAwesomeIcon aria-hidden="true" className="w-3.5 h-3.5" icon={card.icon} />
-            {card.label}
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className={`font-mono text-3xl font-medium tracking-tight ${toneClass[card.tone]}`}>
-              {card.value}
-            </span>
-            <span className="text-sm text-default-500">{card.suffix}</span>
-          </div>
-        </div>
+        <StatCard
+          key={card.label}
+          icon={<FontAwesomeIcon aria-hidden="true" className="w-3.5 h-3.5 text-navy-400/60" icon={card.icon} />}
+          label={card.label}
+          value={card.value}
+          valueClassName={`font-mono text-3xl font-medium tracking-tight ${toneClass[card.tone]}`}
+          suffix={card.suffix}
+        />
       ))}
     </div>
   );

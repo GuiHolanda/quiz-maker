@@ -5,6 +5,7 @@ import { faCheck } from '@fortawesome/free-solid-svg-icons';
 import { Spinner } from '@heroui/spinner';
 
 import type { AutoConfigStage, ExamType } from '@/shared/types';
+import { CardHeading } from '@/shared/components/ui/CardHeading';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 // certification keeps its original 3-stage pipeline (research/review/format). public_exam now
@@ -85,10 +86,10 @@ export function SeedProgressCard({ type, variant, step, isAwaitingUser = false, 
   const completedPct = (currentIndex / stepOrder.length) * 100;
 
   return (
-    <div className="bg-content1 border border-content2 rounded-xl p-6">
+    <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-xs font-bold text-default-500">{t('exam.loadingProgressTitle')}</div>
+          <CardHeading>{t('exam.loadingProgressTitle')}</CardHeading>
           <div className="text-lg font-bold mt-2">
             {t(isAwaitingUser ? STEP_ROW_KEYS[step] : STEP_HEADLINE_KEYS[step])}
           </div>

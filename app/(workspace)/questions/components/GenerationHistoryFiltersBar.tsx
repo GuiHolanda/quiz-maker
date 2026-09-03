@@ -34,7 +34,7 @@ export function GenerationHistoryFiltersBar({
   const active = hasActiveHistoryFilters(filters);
 
   return (
-    <div className="bg-content1 border border-default-200 rounded-xl p-4 flex flex-col gap-3">
+    <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-4 flex flex-col gap-3">
       <div className="flex items-center gap-3">
         <FontAwesomeIcon className="w-3.5 h-3.5 text-default-400 shrink-0" icon={faSliders} />
         <span className="text-xs font-semibold text-default-500">{t('generate.historyFilters')}</span>

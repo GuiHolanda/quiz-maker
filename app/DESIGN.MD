@@ -178,7 +178,7 @@ Metadata / counter   → text-xs text-default-400 font-mono (Fira Code)
 
 - **App shell:** Sidebar `w-64 sticky h-screen` + `WorkspaceHeader h-14` + main content.
 - **Container:** `max-w-7xl mx-auto px-6` inside `PageHeader`.
-- **Card standard:** `bg-content1 rounded-xl p-6`. No border — separation is tonal (`content1` on the darker page, `background`/`content2` for recessed/raised nested surfaces). Reserve `border` for semantic tints (`border-success/30`) and control chrome, never as the default card edge.
+- **Card standard:** `bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6`. **Dark** carries separation tonally (`content1` on the darker page); the border is transparent so cards read borderless. **Light** keeps the 1px `default-200` edge — the `#fff`-on-`#f8fafc` tonal step is too small to define a card on its own. Reserve extra `border` colors for semantic tints (`border-success/30`) and control chrome.
 - **Spacing rhythm:** 4px base, standard increments 8px / 16px / 24px / 48px. Nav gaps: `gap-0.5`.
 
 ## Components
@@ -199,10 +199,10 @@ All class strings live in `config/constants/buttonStyles.ts`. Never repeat inlin
 ### Cards
 
 ```tsx
-<div className="bg-content1 rounded-xl p-6">
+<div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6">
 ```
 
-No border. Depth comes from the tonal stack: page `background2` → card `content1` → recessed well `background` → raised item `content2`.
+Borderless in dark (the border is transparent), 1px `default-200` edge in light. Depth otherwise comes from the tonal stack: page `background2` → card `content1` → recessed well `background` → raised item `content2`.
 
 ### Nav active state
 
@@ -260,7 +260,7 @@ Depth via tonal layering, never shadows:
 - No gradients (`bg-gradient-to-*`, `from-*`, `via-*`, `to-*`)
 - No glassmorphism (`backdrop-blur-*`)
 - No gradient text (`bg-clip-text text-transparent`)
-- No `border-default-200` on cards or inputs — cards are borderless, inputs sit on `bg-content2`; depth is tonal
+- Cards: `border border-default-200 dark:border-transparent` — borderless in dark, 1px edge in light. Inputs sit on `bg-content2` with no resting border. Never a bare `border-default-200` (it would show in dark too).
 - No hard-coded hex values in components — use semantic tokens
 - No colored shadows
 - No hover lifts (`hover:-translate-y-*`)

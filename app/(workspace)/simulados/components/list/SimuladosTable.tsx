@@ -39,7 +39,7 @@ export function SimuladosTable({
   ];
 
   return (
-    <div className="overflow-x-auto rounded-xl bg-content1">
+    <div className="overflow-x-auto rounded-xl border border-default-200 dark:border-transparent bg-content1">
       <div aria-label={t('simulado.table.sectionTitle')} className="min-w-[1220px]" role="table">
         <div
           className="grid items-center gap-4 bg-content2 px-5 py-3 text-xs font-semibold text-default-500"

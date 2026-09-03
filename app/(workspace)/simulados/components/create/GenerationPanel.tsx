@@ -74,7 +74,10 @@ export function GenerationPanel({
   }
 
   return (
-    <div className="flex flex-col rounded-xl bg-content1 p-6" data-testid="simulado-generation-panel">
+    <div
+      className="flex flex-col rounded-xl border border-default-200 dark:border-transparent bg-content1 p-6"
+      data-testid="simulado-generation-panel"
+    >
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <IconBadge icon={faFileCircleCheck} size="md" />

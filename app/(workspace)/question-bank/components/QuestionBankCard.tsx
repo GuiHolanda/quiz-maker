@@ -74,7 +74,7 @@ export function QuestionBankCard({
     <div
       data-testid="question-bank-card"
       className={`bg-content1 rounded-xl overflow-hidden border transition-colors duration-200 ${
-        selected ? 'border-primary/45' : 'border-transparent'
+        selected ? 'border-primary/45' : 'border-default-200 dark:border-transparent'
       }`}
     >
       <div className="flex flex-wrap items-start gap-x-[18px] gap-y-3 p-5">

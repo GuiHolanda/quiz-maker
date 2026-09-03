@@ -289,7 +289,10 @@ export function QuestionBankContent() {
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-28 rounded-xl bg-content1 animate-pulse" />
+              <div
+                key={i}
+                className="h-28 rounded-xl border border-default-200 dark:border-transparent bg-content1 animate-pulse"
+              />
             ))}
           </div>
           <SkeletonListLoader count={4} height="h-40" />

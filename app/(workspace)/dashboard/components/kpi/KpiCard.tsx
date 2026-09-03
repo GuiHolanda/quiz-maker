@@ -2,6 +2,7 @@
 
 import { Chip } from '@heroui/chip';
 
+import { StatCard } from '@/shared/components/ui/StatCard';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface KpiCardProps {
@@ -17,24 +18,21 @@ export function KpiCard({ icon, badge, value, label, detail, comingSoon = false 
   const { t } = useTranslation();
 
   return (
-    <div className={`bg-content1 border border-default-200 rounded-xl p-5 ${comingSoon ? 'opacity-50' : ''}`}>
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2.5">
-          {icon}
-          <div>
-            <p className="text-xs font-semibold text-foreground leading-tight">{label}</p>
-            <p className="font-mono text-[9px] text-default-400 leading-tight mt-0.5">{detail}</p>
-          </div>
-        </div>
-        {comingSoon ? (
+    <StatCard
+      icon={icon}
+      label={label}
+      detail={detail}
+      value={comingSoon ? '-' : value}
+      muted={comingSoon}
+      action={
+        comingSoon ? (
           <Chip color="default" size="sm" variant="flat">
             {t('dashboard.comingSoon')}
           </Chip>
         ) : (
           badge
-        )}
-      </div>
-      <p className="font-bold text-foreground text-2xl leading-none">{comingSoon ? '-' : value}</p>
-    </div>
+        )
+      }
+    />
   );
 }

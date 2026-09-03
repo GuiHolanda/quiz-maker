@@ -3,6 +3,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 
+import { CardHeading } from '@/shared/components/ui/CardHeading';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -20,15 +21,16 @@ export function FocusAreasSection({ domainBreakdown }: FocusAreasSectionProps) {
 
   return (
     <div
-      className="lg:col-span-3 bg-content1 border border-default-200 rounded-xl flex flex-col"
+      className="lg:col-span-3 bg-content1 rounded-xl border border-default-200 dark:border-transparent flex flex-col"
       data-testid="dashboard-focus-areas"
     >
       <div className="px-5 pt-5 pb-3 border-b border-default-200">
-        <div className="flex items-center gap-2 mb-0.5">
-          <FontAwesomeIcon className="text-warning text-xs" icon={faTriangleExclamation} />
-          <p className="text-xs font-semibold text-primary">{t('dashboard.focusAreas')}</p>
-        </div>
-        <p className="text-[11px] text-default-400 mt-0.5">{t('dashboard.focusAreasSubtitle')}</p>
+        <CardHeading
+          icon={<FontAwesomeIcon className="text-warning text-xs" icon={faTriangleExclamation} />}
+          subtitle={t('dashboard.focusAreasSubtitle')}
+        >
+          {t('dashboard.focusAreas')}
+        </CardHeading>
       </div>
 
       <div className="p-5 space-y-4 flex-1">

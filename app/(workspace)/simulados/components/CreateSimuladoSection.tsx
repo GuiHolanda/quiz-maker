@@ -33,6 +33,7 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { SkeletonListLoader } from '@/shared/components/ui/SkeletonListLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { WorkspaceSplitLayout } from '@/shared/components/ui/WorkspaceSplitLayout';
 import { inputProperties } from '@/config/constants/inputStyles';
 
 const SOURCE_TITLE_KEY: Record<MockExamQuestionSource, string> = {
@@ -200,42 +201,42 @@ export function CreateSimuladoSection() {
   }
 
   return (
-    <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
-      <div className="flex flex-col gap-6">
-        {generation.phase === 'config' ? (
-          <>
-            <PresetShortcuts
-              activePreset={activePreset}
-              officialCount={exam?.totalQuestions ?? 0}
-              officialTime={exam?.examDurationMinutes != null ? fmtTempo(exam.examDurationMinutes) : '—'}
-              onPick={handlePreset}
-            />
-            {renderConfigCard()}
-          </>
-        ) : (
-          <GenerationPanel
-            isStarting={generation.isStarting}
-            phase={generation.phase}
-            simuladoName={simuladoName}
-            stepIndex={generation.stepIndex}
-            summaryLine={summaryLine}
-            onCreateAnother={handleCreateAnother}
-            onStart={generation.start}
+    <WorkspaceSplitLayout
+      rail={
+        <SummarySidebar
+          canCreate={canCreate}
+          footnote={resolveFootnote()}
+          isBusy={generation.isBusy}
+          notes={notes}
+          rows={summaryRows}
+          statusText={statusText}
+          statusTone={statusTone}
+          onCreate={generation.create}
+        />
+      }
+    >
+      {generation.phase === 'config' ? (
+        <>
+          <PresetShortcuts
+            activePreset={activePreset}
+            officialCount={exam?.totalQuestions ?? 0}
+            officialTime={exam?.examDurationMinutes != null ? fmtTempo(exam.examDurationMinutes) : '—'}
+            onPick={handlePreset}
           />
-        )}
-      </div>
-
-      <SummarySidebar
-        canCreate={canCreate}
-        footnote={resolveFootnote()}
-        isBusy={generation.isBusy}
-        notes={notes}
-        rows={summaryRows}
-        statusText={statusText}
-        statusTone={statusTone}
-        onCreate={generation.create}
-      />
-    </div>
+          {renderConfigCard()}
+        </>
+      ) : (
+        <GenerationPanel
+          isStarting={generation.isStarting}
+          phase={generation.phase}
+          simuladoName={simuladoName}
+          stepIndex={generation.stepIndex}
+          summaryLine={summaryLine}
+          onCreateAnother={handleCreateAnother}
+          onStart={generation.start}
+        />
+      )}
+    </WorkspaceSplitLayout>
   );
 
   function resolveFootnote(): string | undefined {
@@ -303,7 +304,7 @@ export function CreateSimuladoSection() {
 
   function renderConfigCard() {
     return (
-      <div className="flex flex-col gap-6 rounded-xl bg-content1 p-6">
+      <div className="flex flex-col gap-6 rounded-xl border border-default-200 dark:border-transparent bg-content1 p-6">
         <div className="flex flex-col gap-2">
           <FieldLabel>{t('simulado.create.nameLabel')}</FieldLabel>
           <Input

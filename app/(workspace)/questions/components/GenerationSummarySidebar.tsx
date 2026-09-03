@@ -40,7 +40,7 @@ export function GenerationSummarySidebar({
 
   return (
     <div className="flex flex-col gap-4 lg:sticky lg:top-6">
-      <div className="flex flex-col gap-3 rounded-xl bg-content1 p-6">
+      <div className="flex flex-col gap-3 rounded-xl border border-default-200 dark:border-transparent bg-content1 p-6">
         <FieldLabel>{t('generate.batchSummary')}</FieldLabel>
 
         <KeyValueList rows={rows} />
@@ -74,7 +74,7 @@ export function GenerationSummarySidebar({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3.5 rounded-xl bg-content1 p-5">
+      <div className="flex flex-col gap-3.5 rounded-xl border border-default-200 dark:border-transparent bg-content1 p-5">
         <FieldLabel>{t('generate.aiCalibrationTitle')}</FieldLabel>
         <div className="flex flex-col gap-3">
           {calibration.map((line) => (

@@ -25,7 +25,7 @@ export function NextStepPanel({ view, isRetrying, onRetry }: NextStepPanelProps)
     .slice(0, 3);
 
   return (
-    <div className="bg-content1 rounded-xl p-5">
+    <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-5">
       <h3 className="text-xs font-semibold text-default-400">{t('simulado.result.nextStepTitle')}</h3>
 
       {focus ? (

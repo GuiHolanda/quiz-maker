@@ -190,7 +190,7 @@ function StyleGuideContent() {
   function renderTypography() {
     return (
       <StyleGuideSection title={t('styleguide.section.typography')}>
-        <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6">
+        <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 flex flex-col gap-6">
           <div className="flex flex-col gap-1">
             <p className="text-xs font-semibold text-primary">Page Title</p>
             <h1 className="page-header-title">The quick brown fox jumps over the lazy dog</h1>
@@ -259,7 +259,7 @@ function StyleGuideContent() {
     return (
       <StyleGuideSection title={t('styleguide.section.buttons')}>
         {/* Variants row */}
-        <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4">
+        <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 flex flex-col gap-4">
           <p className="text-xs font-semibold text-primary">Variants</p>
           <div className="flex flex-wrap gap-3">
             {variants.map((v) => (
@@ -271,7 +271,7 @@ function StyleGuideContent() {
         </div>
 
         {/* Colors */}
-        <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4">
+        <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 flex flex-col gap-4">
           <p className="text-xs font-semibold text-primary">Semantic Colors (solid)</p>
           <div className="flex flex-wrap gap-3">
             {semanticColors.map((c) => (
@@ -283,7 +283,7 @@ function StyleGuideContent() {
         </div>
 
         {/* Sizes */}
-        <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4">
+        <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 flex flex-col gap-4">
           <p className="text-xs font-semibold text-primary">Sizes</p>
           <div className="flex flex-wrap items-center gap-3">
             <Button color="primary" size="sm">
@@ -299,7 +299,7 @@ function StyleGuideContent() {
         </div>
 
         {/* States & Icon buttons */}
-        <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4">
+        <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 flex flex-col gap-4">
           <p className="text-xs font-semibold text-primary">States & Icons</p>
           <div className="flex flex-wrap items-center gap-3">
             <Button
@@ -339,7 +339,7 @@ function StyleGuideContent() {
   function renderIconOnlyButtons() {
     return (
       <StyleGuideSection title={t('styleguide.section.iconOnly')}>
-        <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6">
+        <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 flex flex-col gap-6">
           <div className="flex flex-col gap-3">
             <p className="text-xs font-semibold text-primary">Neutral (close / dismiss)</p>
             <p className="text-xs text-default-400 font-mono">
@@ -404,7 +404,7 @@ function StyleGuideContent() {
   function renderInputs() {
     return (
       <StyleGuideSection title={t('styleguide.section.inputs')}>
-        <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6">
+        <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 flex flex-col gap-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input {...inputProperties.input} label="Text Input" placeholder="Enter text" />
             <Input {...inputProperties.input} label="Email" placeholder="user@example.com" type="email" />
@@ -451,7 +451,7 @@ function StyleGuideContent() {
 
     return (
       <StyleGuideSection title={t('styleguide.section.chips')}>
-        <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-6">
+        <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 flex flex-col gap-6">
           {/* flat */}
           <div className="flex flex-col gap-3">
             <p className="text-xs font-semibold text-primary">Solid</p>
@@ -496,7 +496,7 @@ function StyleGuideContent() {
       <StyleGuideSection title={t('styleguide.section.cards')}>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Standard card */}
-          <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-2">
+          <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 flex flex-col gap-2">
             <h3 className="text-base font-bold text-foreground">Standard Card</h3>
             <p className="text-sm text-default-500">
               This is the standard card pattern used across the application. Uses{' '}
@@ -505,7 +505,7 @@ function StyleGuideContent() {
           </div>
 
           {/* Card with divider */}
-          <div className="bg-content1 border border-default-200 rounded-xl overflow-hidden flex flex-col">
+          <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent overflow-hidden flex flex-col">
             <div className="px-6 pt-6 pb-4">
               <h3 className="text-base font-bold text-foreground">Card with Divider</h3>
               <p className="text-xs text-default-400 mt-1">Header section</p>
@@ -529,7 +529,7 @@ function StyleGuideContent() {
           </div>
 
           {/* Card with icon header */}
-          <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4">
+          <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 flex flex-col gap-4">
             <div className="flex items-center gap-3">
               <IconBadge icon={faBell} size="md" />
               <div>
@@ -558,7 +558,7 @@ function StyleGuideContent() {
   function renderModals() {
     return (
       <StyleGuideSection title={t('styleguide.section.modals')}>
-        <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4">
+        <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 flex flex-col gap-4">
           <p className="text-sm text-default-500">
             Three modal sizes are used in this application. Click to preview each variant.
           </p>
@@ -589,7 +589,7 @@ function StyleGuideContent() {
   function renderToasters() {
     return (
       <StyleGuideSection title={t('styleguide.section.toasters')}>
-        <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4">
+        <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 flex flex-col gap-4">
           <p className="text-sm text-default-500">
             All notifications use <span className="font-mono text-xs">notify.*</span> from{' '}
             <span className="font-mono text-xs">@/shared/lib/notify</span>. Click to fire each variant.
@@ -654,13 +654,13 @@ function StyleGuideContent() {
       <StyleGuideSection title={t('styleguide.section.loading')}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* SkeletonListLoader */}
-          <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4">
+          <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 flex flex-col gap-4">
             <p className="text-xs font-semibold text-primary">SkeletonListLoader</p>
             <SkeletonListLoader count={3} height="h-12" />
           </div>
 
           {/* Spinner sizes */}
-          <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4">
+          <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 flex flex-col gap-4">
             <p className="text-xs font-semibold text-primary">Spinner</p>
             <div className="flex items-center gap-8">
               <div className="flex flex-col items-center gap-2">
@@ -680,7 +680,7 @@ function StyleGuideContent() {
         </div>
 
         {/* isLoading button state */}
-        <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4">
+        <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 flex flex-col gap-4">
           <p className="text-xs font-semibold text-primary">Button Loading State</p>
           <div className="flex flex-wrap gap-3">
             <Button className="bg-primary text-primary-foreground font-semibold rounded-lg" isLoading>
@@ -702,7 +702,7 @@ function StyleGuideContent() {
   function renderTabs() {
     return (
       <StyleGuideSection title={t('styleguide.section.tabs')}>
-        <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col gap-4">
+        <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 flex flex-col gap-4">
           <Tabs
             classNames={{
               tabList: 'bg-default-100 border border-default-200 rounded-xl gap-1 p-1',
@@ -745,7 +745,7 @@ function StyleGuideContent() {
       <StyleGuideSection title={t('styleguide.section.accordion')}>
         <Accordion
           itemClasses={{
-            base: 'bg-content1 border border-default-200 rounded-xl',
+            base: 'bg-content1 rounded-xl border border-default-200 dark:border-transparent',
             title: 'text-sm font-bold text-foreground',
             trigger: 'px-6 py-4 hover:bg-default-100 transition-colors duration-200 rounded-xl',
             content: 'px-6 pb-6 text-sm text-default-500',

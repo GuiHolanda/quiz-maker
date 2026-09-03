@@ -31,7 +31,7 @@ border-divider
 
 **Gotcha:** `bg-default-100` não é superfície — use `bg-content2`. Só aparece em `hover:bg-default-100` interno do HeroUI.
 
-**Sem borda em card/input:** cards são `bg-content1` sem borda; inputs ficam sobre `bg-content2` sem borda em repouso. Profundidade é tonal (`background2` → `content1` → `background` afundado / `content2` elevado). `border` só para tints semânticos (`border-success/30`) e chrome de controle (pills, paginação → `border-divider`). Nunca `border-default-200`.
+**Borda de card:** `bg-content1 rounded-xl border border-default-200 dark:border-transparent`. No **dark** a borda é transparente (card sem borda, separação tonal: `background2` → `content1` → `background` afundado / `content2` elevado); no **light** a aresta de 1px `default-200` fica — `#fff` sobre `#f8fafc` não tem contraste tonal suficiente pra definir o card sozinho. Inputs ficam sobre `bg-content2` sem borda em repouso. `border` com outra cor só para tints semânticos (`border-success/30`) e chrome de controle (pills, paginação → `border-divider`). Nunca `border-default-200` puro (apareceria no dark também).
 
 ### Fundos de página
 
@@ -75,10 +75,10 @@ Variantes: `primary`, `secondary` (`variant="bordered"`), `flat`, `primarySm`, `
 ## Padrão de cards
 
 ```tsx
-<div className="bg-content1 rounded-xl p-6">
+<div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6">
 ```
 
-Sem borda. Superfície aninhada afundada usa `bg-background`; item elevado (linha clicável) usa `bg-content2`.
+Sem borda no dark (borda transparente), aresta de 1px no light. Superfície aninhada afundada usa `bg-background`; item elevado (linha clicável) usa `bg-content2`.
 
 ---
 
@@ -282,7 +282,7 @@ Não precisa chamar em: quiz Generate (gabarito incluído no fluxo), browse/libr
 - Sem gradient text (`bg-clip-text text-transparent`)
 - Sem colored shadows (`shadow-[...]` com rgba)
 - Sem hover lifts (`hover:-translate-y-*`)
-- Sem `border-default-200` em card/input — cards sem borda, profundidade tonal
+- Cards: `border border-default-200 dark:border-transparent` (sem borda no dark, aresta no light). Nunca `border-default-200` puro. Inputs sem borda em repouso.
 - Sempre tokens semânticos — nunca cores hard-coded
 
 ---

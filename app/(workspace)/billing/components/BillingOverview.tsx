@@ -288,7 +288,7 @@ export function BillingOverview() {
     return (
       <section>
         <h3 className="text-sm font-semibold text-foreground mb-4">{t('billing.paymentSectionTitle')}</h3>
-        <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-content2 border border-default-200 rounded-lg flex items-center justify-center text-primary">
               <FontAwesomeIcon icon={faCreditCard} />
@@ -312,7 +312,7 @@ export function BillingOverview() {
     return (
       <section>
         <h3 className="text-sm font-semibold text-foreground mb-4">{t('billing.billingSectionTitle')}</h3>
-        <div className="bg-content1 border border-default-200 rounded-xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-content2 border border-default-200 rounded-lg flex items-center justify-center text-primary">
               <FontAwesomeIcon icon={faReceipt} />
