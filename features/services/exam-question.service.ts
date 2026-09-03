@@ -130,6 +130,27 @@ export class ExamQuestionService {
         }
       }
 
+      // A chave de QuestionPool é única por (type, providerId, examBoardId, sectionName, topicName),
+      // então uma leitura por lote substitui um findFirst por questão sem mudar o resultado.
+      const poolIdByKey = new Map<string, string>();
+
+      if (exam && (exam.providerId || exam.examBoardId)) {
+        const pools = await tx.questionPool.findMany({
+          where: {
+            type: exam.type,
+            providerId: exam.providerId ?? null,
+            examBoardId: exam.examBoardId ?? null,
+          },
+          select: { id: true, sectionName: true, topicName: true },
+        });
+
+        for (const pool of pools) {
+          poolIdByKey.set(`${pool.sectionName}::${pool.topicName ?? ''}`, pool.id);
+        }
+      }
+
+      const optionRows: { questionId: number; label: string; text: string }[] = [];
+
       for (const question of questions) {
         const { examName: qExamName, sectionName, topic, text, correctCount, options, difficulty } = question;
 
@@ -146,22 +167,7 @@ export class ExamQuestionService {
         const canonicalTopicName = matchedTopic?.name ?? incomingTopic;
         const topicId = matchedTopic?.id ?? null;
 
-        // Look up a matching QuestionPool entry so this question joins the shared pool.
-        // Only attempts the lookup when the exam has a provider or examBoard (pool key requires one).
-        let poolId: string | null = null;
-        if (exam && (exam.providerId || exam.examBoardId)) {
-          const matchingPool = await tx.questionPool.findFirst({
-            where: {
-              type: exam.type,
-              providerId: exam.providerId ?? null,
-              examBoardId: exam.examBoardId ?? null,
-              sectionName: canonicalSectionName,
-              topicName: canonicalTopicName ?? null,
-            },
-            select: { id: true },
-          });
-          poolId = matchingPool?.id ?? null;
-        }
+        const poolId = poolIdByKey.get(`${canonicalSectionName}::${canonicalTopicName ?? ''}`) ?? null;
 
         const createdQuestion = await tx.examQuestion.create({
           data: {
@@ -195,10 +201,14 @@ export class ExamQuestionService {
         const optionsObj = format.labelsAreSemantic ? sanitizedOptions : shuffleOptionTexts(sanitizedOptions);
 
         for (const [label, text] of Object.entries(optionsObj)) {
-          await tx.examOption.create({ data: { questionId: createdQuestion.id, label, text } });
+          optionRows.push({ questionId: createdQuestion.id, label, text });
         }
 
         results.push({ question: createdQuestion, options: optionsObj });
+      }
+
+      if (optionRows.length > 0) {
+        await tx.examOption.createMany({ data: optionRows });
       }
 
       return results;

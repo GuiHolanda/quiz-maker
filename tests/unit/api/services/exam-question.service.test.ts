@@ -37,13 +37,13 @@ describe('createFromPayload — pool attachment', () => {
         },
       ],
     };
-    const pool = { id: 'pool-1' };
+    const pool = { id: 'pool-1', sectionName: 'Cloud Architecture', topicName: 'VPC' };
 
     prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
     prismaMock.exam.findFirst.mockResolvedValue(exam as any);
-    prismaMock.questionPool.findFirst.mockResolvedValue(pool as any);
+    prismaMock.questionPool.findMany.mockResolvedValue([pool] as any);
     prismaMock.examQuestion.create.mockResolvedValue({ id: 1 } as any);
-    prismaMock.examOption.create.mockResolvedValue({} as any);
+    prismaMock.examOption.createMany.mockResolvedValue({ count: 0 } as any);
 
     const service = new ExamQuestionService(prismaMock as any);
     await service.createFromPayload(
@@ -81,9 +81,9 @@ describe('createFromPayload — pool attachment', () => {
 
     prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
     prismaMock.exam.findFirst.mockResolvedValue(exam as any);
-    prismaMock.questionPool.findFirst.mockResolvedValue(null);
+    prismaMock.questionPool.findMany.mockResolvedValue([] as any);
     prismaMock.examQuestion.create.mockResolvedValue({ id: 2 } as any);
-    prismaMock.examOption.create.mockResolvedValue({} as any);
+    prismaMock.examOption.createMany.mockResolvedValue({ count: 0 } as any);
 
     const service = new ExamQuestionService(prismaMock as any);
     await service.createFromPayload(
@@ -120,16 +120,16 @@ describe('createFromPayload — option shuffling', () => {
   };
 
   function persistedOptions() {
-    return prismaMock.examOption.create.mock.calls.map(([call]: any) => call.data);
+    return prismaMock.examOption.createMany.mock.calls.flatMap(([call]: any) => call.data);
   }
 
   beforeEach(() => {
     prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
     prismaMock.exam.findFirst.mockResolvedValue(null);
-    prismaMock.questionPool.findFirst.mockResolvedValue(null);
+    prismaMock.questionPool.findMany.mockResolvedValue([] as any);
     prismaMock.examQuestion.create.mockResolvedValue({ id: 1 } as any);
-    prismaMock.examOption.create.mockResolvedValue({} as any);
-    prismaMock.examOption.create.mockClear();
+    prismaMock.examOption.createMany.mockResolvedValue({ count: 0 } as any);
+    prismaMock.examOption.createMany.mockClear();
   });
 
   it('persists every option text exactly once under the same label set', async () => {
@@ -152,7 +152,7 @@ describe('createFromPayload — option shuffling', () => {
     const labels = new Set<string>();
 
     for (let run = 0; run < 60; run++) {
-      prismaMock.examOption.create.mockClear();
+      prismaMock.examOption.createMany.mockClear();
       await service.createFromPayload([question] as any, 'user-1', 'exam-1');
 
       const correct = persistedOptions().find((option: any) => option.text === 'correct');
@@ -176,15 +176,15 @@ describe('createFromPayload — question format', () => {
   };
 
   function persistedOptions() {
-    return prismaMock.examOption.create.mock.calls.map(([call]: any) => call.data);
+    return prismaMock.examOption.createMany.mock.calls.flatMap(([call]: any) => call.data);
   }
 
   beforeEach(() => {
     prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
-    prismaMock.questionPool.findFirst.mockResolvedValue(null);
+    prismaMock.questionPool.findMany.mockResolvedValue([] as any);
     prismaMock.examQuestion.create.mockResolvedValue({ id: 1 } as any);
-    prismaMock.examOption.create.mockResolvedValue({} as any);
-    prismaMock.examOption.create.mockClear();
+    prismaMock.examOption.createMany.mockResolvedValue({ count: 0 } as any);
+    prismaMock.examOption.createMany.mockClear();
     prismaMock.examQuestion.create.mockClear();
   });
 
@@ -234,7 +234,7 @@ describe('createFromPayload — question format', () => {
     const service = new ExamQuestionService(prismaMock as any);
 
     for (let run = 0; run < 40; run++) {
-      prismaMock.examOption.create.mockClear();
+      prismaMock.examOption.createMany.mockClear();
       await service.createFromPayload([trueFalseQuestion] as any, 'user-1', 'exam-1');
 
       const persisted = persistedOptions();
@@ -242,5 +242,63 @@ describe('createFromPayload — question format', () => {
       expect(persisted.find((option: any) => option.label === 'C').text).toBe('Certo');
       expect(persisted.find((option: any) => option.label === 'E').text).toBe('Errado');
     }
+  });
+});
+
+describe('createFromPayload — batching de escritas', () => {
+  it('lê o pool uma vez e grava todas as alternativas num único createMany', async () => {
+    const exam = {
+      id: 'exam-1',
+      userId: 'user-1',
+      type: 'certification',
+      name: 'AWS SAA',
+      providerId: 'provider-1',
+      examBoardId: null,
+      questionFormat: 'mc_5',
+      sections: [{ id: 'section-1', name: 'Cloud Architecture', topics: [{ id: 'topic-1', name: 'VPC' }] }],
+    };
+
+    prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+    prismaMock.exam.findFirst.mockResolvedValue(exam as any);
+    prismaMock.questionPool.findMany.mockResolvedValue([
+      { id: 'pool-1', sectionName: 'Cloud Architecture', topicName: 'VPC' },
+    ] as any);
+    let nextId = 1;
+    prismaMock.examQuestion.create.mockImplementation(() => Promise.resolve({ id: nextId++ }) as any);
+    prismaMock.examOption.createMany.mockResolvedValue({ count: 0 } as any);
+
+    const questions = Array.from({ length: 4 }, (_, i) => ({
+      id: i + 1,
+      examName: 'AWS SAA',
+      sectionName: 'Cloud Architecture',
+      topic: 'VPC',
+      text: `Q${i}?`,
+      correctCount: 1,
+      difficulty: 'medium',
+      options: { A: 'a', B: 'b', C: 'c', D: 'd', E: 'e' },
+    }));
+
+    const service = new ExamQuestionService(prismaMock as any);
+    await service.createFromPayload(questions as any, 'user-1', 'exam-1');
+
+    expect(prismaMock.questionPool.findMany).toHaveBeenCalledTimes(1);
+    expect(prismaMock.questionPool.findFirst).not.toHaveBeenCalled();
+    expect(prismaMock.examOption.createMany).toHaveBeenCalledTimes(1);
+
+    const inserted = prismaMock.examOption.createMany.mock.calls[0][0] as any;
+    expect(inserted.data).toHaveLength(20);
+    expect(new Set(inserted.data.map((row: any) => row.questionId))).toEqual(new Set([1, 2, 3, 4]));
+  });
+
+  it('não chama createMany quando não há alternativas para gravar', async () => {
+    prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+    prismaMock.exam.findFirst.mockResolvedValue(null);
+    prismaMock.questionPool.findMany.mockResolvedValue([] as any);
+    prismaMock.examOption.createMany.mockResolvedValue({ count: 0 } as any);
+
+    const service = new ExamQuestionService(prismaMock as any);
+    await service.createFromPayload([], 'user-1', 'exam-1');
+
+    expect(prismaMock.examOption.createMany).not.toHaveBeenCalled();
   });
 });

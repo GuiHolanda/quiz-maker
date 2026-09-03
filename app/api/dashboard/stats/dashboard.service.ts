@@ -6,87 +6,103 @@ import type {
   DashboardScoreTrendPoint,
 } from '@/shared/types';
 
+const RECENT_SESSIONS_LIMIT = 5;
+const SCORE_TREND_LIMIT = 10;
+
+type SectionAnswer = {
+  attemptId: number;
+  isCorrect: boolean;
+  mockExamQuestion: { examQuestion: { sectionName: string } };
+};
+
 export class DashboardService {
   async getStats(userId: string): Promise<DashboardStats> {
-    const attempts = await prisma.mockExamAttempt.findMany({
-      where: { userId, finishedAt: { not: null } },
-      orderBy: { finishedAt: 'desc' },
-      include: {
-        mockExam: { include: { exam: true } },
-        answers: {
-          include: {
-            mockExamQuestion: {
-              include: {
-                examQuestion: { include: { answer: true } },
-              },
-            },
-          },
+    const finishedAttempts = { userId, finishedAt: { not: null } };
+
+    const [totalSimuladosCompleted, scoreAggregate, recentAttempts, trendAttempts, sectionAnswers] = await Promise.all([
+      prisma.mockExamAttempt.count({ where: finishedAttempts }),
+      prisma.mockExamAttempt.aggregate({ where: finishedAttempts, _max: { score: true } }),
+      prisma.mockExamAttempt.findMany({
+        where: finishedAttempts,
+        orderBy: { finishedAt: 'desc' },
+        take: RECENT_SESSIONS_LIMIT,
+        select: {
+          score: true,
+          startedAt: true,
+          finishedAt: true,
+          mockExam: { select: { name: true, exam: { select: { name: true } } } },
+          _count: { select: { answers: true } },
         },
-      },
-    });
+      }),
+      prisma.mockExamAttempt.findMany({
+        where: { ...finishedAttempts, score: { not: null } },
+        orderBy: { finishedAt: 'desc' },
+        take: SCORE_TREND_LIMIT,
+        select: { score: true, finishedAt: true },
+      }),
+      // isCorrect é a mesma comparação de conjuntos que finishAttempt grava, e o script
+      // db:backfill-answer-correctness cobriu as linhas antigas — ler o campo evita
+      // carregar examQuestion.text e answer.correctOptions só para recomputá-lo aqui.
+      prisma.mockExamAttemptAnswer.findMany({
+        where: { attempt: finishedAttempts },
+        select: {
+          attemptId: true,
+          isCorrect: true,
+          mockExamQuestion: { select: { examQuestion: { select: { sectionName: true } } } },
+        },
+      }),
+    ]);
 
-    const totalSimuladosCompleted = attempts.length;
-    const bestScore = attempts.reduce<number | null>((best, a) => {
-      if (a.score === null) return best;
-      return best === null || a.score > best ? a.score : best;
-    }, null);
-
-    const recentSessions: DashboardRecentSession[] = attempts.slice(0, 5).map((attempt) => ({
+    const recentSessions: DashboardRecentSession[] = recentAttempts.map((attempt) => ({
       simuladoName: attempt.mockExam.name ?? attempt.mockExam.exam.name,
       examName: attempt.mockExam.exam.name,
       score: attempt.score ?? 0,
-      totalQuestions: attempt.answers.length,
+      totalQuestions: attempt._count.answers,
       durationMs: attempt.finishedAt
         ? new Date(attempt.finishedAt).getTime() - new Date(attempt.startedAt).getTime()
         : 0,
       finishedAt: attempt.finishedAt!.toISOString(),
     }));
 
-    const scoreTrend: DashboardScoreTrendPoint[] = [...attempts]
-      .filter((a) => a.score !== null)
-      .slice(0, 10)
-      .reverse()
-      .map((a) => ({
-        score: a.score!,
-        finishedAt: a.finishedAt!.toISOString(),
-      }));
+    const scoreTrend: DashboardScoreTrendPoint[] = [...trendAttempts].reverse().map((attempt) => ({
+      score: attempt.score!,
+      finishedAt: attempt.finishedAt!.toISOString(),
+    }));
 
-    const domainBreakdown = this.computeDomainBreakdown(attempts);
-
-    return { totalSimuladosCompleted, bestScore, recentSessions, scoreTrend, domainBreakdown };
+    return {
+      totalSimuladosCompleted,
+      bestScore: scoreAggregate._max.score ?? null,
+      recentSessions,
+      scoreTrend,
+      domainBreakdown: this.computeDomainBreakdown(sectionAnswers),
+    };
   }
 
-  private computeDomainBreakdown(attempts: any[]): DashboardDomainStat[] {
+  private computeDomainBreakdown(answers: SectionAnswer[]): DashboardDomainStat[] {
+    const perAttemptSection = new Map<string, { section: string; correct: number; total: number }>();
+
+    for (const answer of answers) {
+      const section = answer.mockExamQuestion.examQuestion.sectionName;
+      const key = `${answer.attemptId}::${section}`;
+      const current = perAttemptSection.get(key) ?? { section, correct: 0, total: 0 };
+
+      perAttemptSection.set(key, {
+        section,
+        correct: current.correct + (answer.isCorrect ? 1 : 0),
+        total: current.total + 1,
+      });
+    }
+
     const sectionMap = new Map<string, { correctSum: number; attemptCount: number }>();
 
-    for (const attempt of attempts) {
-      const sectionCorrect = new Map<string, { correct: number; total: number }>();
+    for (const { section, correct, total } of Array.from(perAttemptSection.values())) {
+      const existing = sectionMap.get(section) ?? { correctSum: 0, attemptCount: 0 };
+      const sectionScore = total > 0 ? Math.round((correct / total) * 100) : 0;
 
-      for (const answer of attempt.answers) {
-        const question = answer.mockExamQuestion.examQuestion;
-        const section = question.sectionName;
-        const correctOptions: string[] = question.answer ? (question.answer.correctOptions as string[]) : [];
-        const selectedOptions: string[] = JSON.parse(answer.selectedOptions);
-        const isCorrect =
-          correctOptions.length > 0 &&
-          correctOptions.length === selectedOptions.length &&
-          correctOptions.every((o: string) => selectedOptions.includes(o));
-
-        const current = sectionCorrect.get(section) ?? { correct: 0, total: 0 };
-        sectionCorrect.set(section, {
-          correct: current.correct + (isCorrect ? 1 : 0),
-          total: current.total + 1,
-        });
-      }
-
-      for (const [section, { correct, total }] of Array.from(sectionCorrect.entries())) {
-        const existing = sectionMap.get(section) ?? { correctSum: 0, attemptCount: 0 };
-        const sectionScore = total > 0 ? Math.round((correct / total) * 100) : 0;
-        sectionMap.set(section, {
-          correctSum: existing.correctSum + sectionScore,
-          attemptCount: existing.attemptCount + 1,
-        });
-      }
+      sectionMap.set(section, {
+        correctSum: existing.correctSum + sectionScore,
+        attemptCount: existing.attemptCount + 1,
+      });
     }
 
     return Array.from(sectionMap.entries()).map(([sectionName, { correctSum, attemptCount }]) => ({
