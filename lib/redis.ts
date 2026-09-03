@@ -9,13 +9,25 @@ function readCredentials(): { url: string; token: string } | null {
   return url && token ? { url, token } : null;
 }
 
+// O cliente vem com 5 retries e backoff exponencial, e sem teto de tempo por request.
+// Num caminho de usuário isso transforma "Redis fora do ar" em vários segundos de espera
+// antes do fallback — o oposto da degradação que esta camada promete. Um retry curto cobre
+// o blip transiente; o AbortSignal garante que o pior caso continue na casa dos 2s.
+const REQUEST_TIMEOUT_MS = 1000;
+
 let cachedClient: Redis | null | undefined;
 
 export function getRedis(): Redis | null {
   if (cachedClient === undefined) {
     const credentials = readCredentials();
 
-    cachedClient = credentials ? new Redis(credentials) : null;
+    cachedClient = credentials
+      ? new Redis({
+          ...credentials,
+          retry: { retries: 1, backoff: () => 100 },
+          signal: () => AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        })
+      : null;
   }
 
   return cachedClient;

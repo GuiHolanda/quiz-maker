@@ -93,10 +93,23 @@ describe('lib/redis', () => {
 
       expect(first).toBe(second);
       expect(redisConstructor).toHaveBeenCalledTimes(1);
-      expect(redisConstructor).toHaveBeenCalledWith({
-        url: 'https://exemplo.upstash.io',
-        token: 'token-secreto',
-      });
+      expect(redisConstructor).toHaveBeenCalledWith(
+        expect.objectContaining({ url: 'https://exemplo.upstash.io', token: 'token-secreto' })
+      );
+    });
+
+    // O padrão do SDK é 5 retries com backoff exponencial e nenhum teto por request, o que
+    // faria um Redis fora do ar custar segundos antes do fallback. Sem este teste a
+    // configuração some numa refatoração e ninguém percebe até a produção ficar lenta.
+    it('limita retry e impõe teto de tempo por request', async () => {
+      (await loadRedisModule()).getRedis();
+
+      const [config] = redisConstructor.mock.calls[0] as [any];
+
+      expect(config.retry).toEqual({ retries: 1, backoff: expect.any(Function) });
+      expect(config.retry.backoff(1)).toBe(100);
+      expect(typeof config.signal).toBe('function');
+      expect(config.signal()).toBeInstanceOf(AbortSignal);
     });
 
     it('aceita os nomes KV_* que a integração da Vercel injeta', async () => {
@@ -107,10 +120,9 @@ describe('lib/redis', () => {
       const { isRedisConfigured } = await loadRedisModule();
 
       expect(isRedisConfigured()).toBe(true);
-      expect(redisConstructor).toHaveBeenCalledWith({
-        url: 'https://vercel.upstash.io',
-        token: 'token-kv',
-      });
+      expect(redisConstructor).toHaveBeenCalledWith(
+        expect.objectContaining({ url: 'https://vercel.upstash.io', token: 'token-kv' })
+      );
     });
 
     it('cacheSet aplica o TTL recebido', async () => {

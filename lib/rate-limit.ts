@@ -25,6 +25,8 @@ const LIMITS: Record<RateLimitedAction, { requests: number; window: `${number} $
 
 const RATE_LIMITED_CODE = 'rate_limited';
 
+const RATE_LIMIT_TIMEOUT_MS = 1000;
+
 const limiters = new Map<RateLimitedAction, Ratelimit>();
 
 function limiterFor(action: RateLimitedAction): Ratelimit | null {
@@ -42,6 +44,9 @@ function limiterFor(action: RateLimitedAction): Ratelimit | null {
     limiter: Ratelimit.slidingWindow(requests, window),
     prefix: `rl:${action}`,
     analytics: false,
+    // O padrão da lib é 5s, somados a uma rota que já é cara. Estourado o prazo ela deixa
+    // passar, que é exatamente a política desejada — só que 1s antes de decidir isso.
+    timeout: RATE_LIMIT_TIMEOUT_MS,
   });
 
   limiters.set(action, limiter);

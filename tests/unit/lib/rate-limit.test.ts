@@ -69,6 +69,18 @@ describe('enforceRateLimit', () => {
       const prefixes = ratelimitConstructor.mock.calls.map(([config]: any) => config.prefix);
       expect(prefixes).toEqual(['rl:generate_questions', 'rl:ai_chat']);
     });
+
+    // O padrão da lib é 5s. Numa rota que já é cara, esperar 5s por um limitador lento é
+    // pior do que não limitar — e ao estourar o prazo ela deixa passar de qualquer forma.
+    it('não deixa o limitador segurar a rota por mais de 1s', async () => {
+      limit.mockResolvedValue({ success: true, reset: Date.now() + 60_000 });
+
+      await enforceRateLimit('generate_questions', 'user-1');
+
+      const [config] = ratelimitConstructor.mock.calls[0] as [any];
+      expect(config.timeout).toBe(1000);
+      expect(config.analytics).toBe(false);
+    });
   });
 
   describe('estourando o limite', () => {
