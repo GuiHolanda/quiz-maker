@@ -53,7 +53,7 @@ export function ComparisonPanel({ view }: ComparisonPanelProps) {
   else if (delta === 0) footer = t('simulado.result.compareFlat');
 
   return (
-    <div className="bg-content1 rounded-xl p-5">
+    <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-5">
       <h3 className="text-xs font-semibold text-default-400">{t('simulado.result.compareTitle')}</h3>
 
       <div className="mt-4 flex flex-col gap-4">

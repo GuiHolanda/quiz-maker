@@ -77,7 +77,7 @@ export function QuestionReviewPanel({ view, onLoadExplanation }: QuestionReviewP
   }
 
   return (
-    <div className="bg-content1 rounded-xl p-6">
+    <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="text-base font-bold tracking-tight text-foreground">{t('simulado.result.reviewTitle')}</h2>

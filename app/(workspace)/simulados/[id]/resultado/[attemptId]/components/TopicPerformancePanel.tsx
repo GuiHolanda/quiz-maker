@@ -27,7 +27,7 @@ export function TopicPerformancePanel({ view }: TopicPerformancePanelProps) {
   const hasBaseline = view.previousAvgPercent != null;
 
   return (
-    <div className="bg-content1 rounded-xl p-6">
+    <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
         <h2 className="text-base font-bold tracking-tight text-foreground">{t('simulado.result.byTopicTitle')}</h2>
         <span className="font-mono text-xs text-default-400">{t('simulado.result.byTopicLegend')}</span>

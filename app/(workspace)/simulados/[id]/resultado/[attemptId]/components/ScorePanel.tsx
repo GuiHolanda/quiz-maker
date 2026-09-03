@@ -33,7 +33,7 @@ export function ScorePanel({ view }: ScorePanelProps) {
       : null;
 
   return (
-    <div className="bg-content1 rounded-xl p-6 md:p-7">
+    <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 md:p-7">
       <div className="grid gap-8 md:grid-cols-[232px_minmax(0,1fr)] md:items-center">
         <div className="mx-auto md:mx-0">
           <ScoreDonut percent={view.percent} toneClass={toneText}>

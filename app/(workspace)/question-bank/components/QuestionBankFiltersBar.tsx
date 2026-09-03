@@ -79,7 +79,7 @@ export function QuestionBankFiltersBar({ filters, summary, onFilterChange, onCle
   };
 
   return (
-    <div className="bg-content1 rounded-xl p-6 flex flex-col gap-4">
+    <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 flex flex-col gap-4">
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(220px,1.4fr)_repeat(4,minmax(0,1fr))]">
         <SearchInput
           ariaLabel={t('questionBank.labelSearch')}

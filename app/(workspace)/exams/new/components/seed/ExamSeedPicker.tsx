@@ -77,7 +77,7 @@ export function ExamSeedPicker({ type, onIdentify, onUploadEdital, onStartBlank 
         </div>
 
         {type === 'public_exam' && showEditalUpload && (
-          <div className="flex mt-5 bg-content1 rounded-xl p-5 gap-4 items-end-safe">
+          <div className="flex mt-5 bg-content1 rounded-xl border border-default-200 dark:border-transparent p-5 gap-4 items-end-safe">
             <Input
               {...inputProperties.input}
               label={t('concurso.cargo')}

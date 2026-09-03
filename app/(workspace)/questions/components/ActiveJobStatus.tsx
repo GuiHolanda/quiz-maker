@@ -69,7 +69,11 @@ export function ActiveJobStatus({
       : { text: t('generate.generatingPill'), tone: 'busy', spin: true };
 
   return (
-    <section aria-live="polite" className="flex flex-col rounded-xl bg-content1 p-6" data-testid="question-gen-status">
+    <section
+      aria-live="polite"
+      className="flex flex-col rounded-xl border border-default-200 dark:border-transparent bg-content1 p-6"
+      data-testid="question-gen-status"
+    >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div className="flex min-w-0 items-center gap-3.5">
           <IconBadge icon={type === 'certification' ? faGraduationCap : faClipboardList} size="md" />

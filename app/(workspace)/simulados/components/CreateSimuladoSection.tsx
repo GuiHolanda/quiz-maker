@@ -303,7 +303,7 @@ export function CreateSimuladoSection() {
 
   function renderConfigCard() {
     return (
-      <div className="flex flex-col gap-6 rounded-xl bg-content1 p-6">
+      <div className="flex flex-col gap-6 rounded-xl border border-default-200 dark:border-transparent bg-content1 p-6">
         <div className="flex flex-col gap-2">
           <FieldLabel>{t('simulado.create.nameLabel')}</FieldLabel>
           <Input
