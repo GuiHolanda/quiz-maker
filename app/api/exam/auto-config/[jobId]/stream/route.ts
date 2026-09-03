@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { readAutoConfigProgress, type AutoConfigJobSnapshot } from '@/features/services/job-progress.service';
 
 export const maxDuration = 300;
 
@@ -15,7 +16,18 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   const { jobId } = await params;
 
-  const job = await prisma.autoConfigJob.findFirst({ where: { id: jobId, userId: session.user.id } });
+  // Dono continua vindo do Postgres: o snapshot é indexado só por jobId e não pode
+  // responder por autorização.
+  const owned = await prisma.autoConfigJob.findFirst({
+    where: { id: jobId, userId: session.user.id },
+    select: { id: true },
+  });
+
+  if (!owned) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  const job = await readAutoConfigProgress(jobId);
 
   if (!job) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -30,7 +42,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
         controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
       }
 
-      function emitTerminal(current: NonNullable<typeof job>) {
+      function emitTerminal(current: AutoConfigJobSnapshot) {
         if (current.status === 'done') {
           send('done', { exam: current.resultJson ? JSON.parse(current.resultJson) : null });
         } else if (current.status === 'cancelled') {
@@ -53,7 +65,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
         if (polling) return;
         polling = true;
         try {
-          const current = await prisma.autoConfigJob.findUnique({ where: { id: jobId } });
+          const current = await readAutoConfigProgress(jobId);
           if (!current) {
             clearInterval(pollInterval);
             controller.close();

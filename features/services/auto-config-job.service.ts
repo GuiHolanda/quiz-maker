@@ -1,6 +1,7 @@
 import { after } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
+import { publishAutoConfigProgress } from '@/features/services/job-progress.service';
 import { extractJson, sanitizeLlmError, type LlmErrorType } from '@/lib/llm-response';
 import { validateExamBlueprint, type ParsedExamBlueprint } from '@/lib/exam-blueprint';
 import { OpenAIService } from '@/features/services/openAI.service';
@@ -597,6 +598,7 @@ export async function createAutoConfigJob(userId: string, seed: AutoConfigSeed):
 
 async function setStage(jobId: string, stage: AutoConfigStage): Promise<void> {
   await prisma.autoConfigJob.update({ where: { id: jobId }, data: { stage, status: 'running' } });
+  await publishAutoConfigProgress(jobId);
 }
 
 function buildResearchInput(
@@ -813,6 +815,7 @@ export async function runAutoConfigJob(
       where: { id: jobId },
       data: { status: 'done', stage: null, resultJson: JSON.stringify(parsed) },
     });
+    await publishAutoConfigProgress(jobId);
   } catch (err) {
     // Same race as above, the other direction: a cancel already rolled back the quota
     // and marked the job — don't clobber 'cancelled' with a late 'error'.
@@ -831,6 +834,7 @@ export async function runAutoConfigJob(
       where: { id: jobId },
       data: { status: 'error', errorMessage: message, errorType },
     });
+    await publishAutoConfigProgress(jobId);
   }
 }
 
@@ -865,6 +869,7 @@ export async function cancelAutoConfigJob(jobId: string, userId: string): Promis
     where: { id: jobId },
     data: { status: 'cancelled', stage: null },
   });
+  await publishAutoConfigProgress(jobId);
 }
 
 export async function getActiveAutoConfigJob(userId: string, type: ExamType) {

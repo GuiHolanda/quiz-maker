@@ -2,32 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import {
+  readGenerationProgress,
+  type GenerationJobSnapshot,
+  type GenerationTopicSnapshot,
+} from '@/features/services/job-progress.service';
 
 export const maxDuration = 300;
 
-type TopicShape = {
-  id: string;
-  topicName: string;
-  questionCount: number;
-  status: string;
-  savedCount: number;
-  errorMessage: string | null;
-  errorType: string | null;
-};
-
-function shapeTopics(topics: TopicShape[]) {
-  return topics.map((t) => ({
-    id: t.id,
-    topicName: t.topicName,
-    questionCount: t.questionCount,
-    status: t.status,
-    savedCount: t.savedCount,
-    errorMessage: t.errorMessage,
-    errorType: t.errorType,
-  }));
-}
-
-function counts(topics: TopicShape[]) {
+function counts(topics: GenerationTopicSnapshot[]) {
   return {
     totalTopics: topics.length,
     doneTopics: topics.filter((t) => t.status === 'done' || t.status === 'error').length,
@@ -43,10 +26,19 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   const { jobId } = await params;
 
-  const job = await prisma.generationJob.findFirst({
+  // A checagem de dono continua no Postgres e fora do snapshot: o cache é indexado só por
+  // jobId, então deixá-lo responder por autorização daria a qualquer sessão o progresso de
+  // um job alheio.
+  const owned = await prisma.generationJob.findFirst({
     where: { id: jobId, userId: session.user.id },
-    include: { topics: { orderBy: { createdAt: 'asc' } } },
+    select: { id: true },
   });
+
+  if (!owned) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  const job = await readGenerationProgress(jobId);
 
   if (!job) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -63,32 +55,30 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
       const TERMINAL = ['done', 'error', 'cancelled'];
 
-      function emitTerminal(status: string, topics: TopicShape[], savedCount: number) {
-        if (status === 'done') {
-          send('done', { ...counts(topics), savedCount, topics: shapeTopics(topics) });
+      function emitTerminal(snapshot: GenerationJobSnapshot) {
+        if (snapshot.status === 'done') {
+          send('done', { ...counts(snapshot.topics), savedCount: snapshot.savedCount, topics: snapshot.topics });
         } else {
-          send(status, { message: 'Job ended', ...counts(topics), topics: shapeTopics(topics) });
+          send(snapshot.status, { message: 'Job ended', ...counts(snapshot.topics), topics: snapshot.topics });
         }
       }
 
       if (TERMINAL.includes(job.status)) {
-        emitTerminal(job.status, job.topics, job.savedCount);
+        emitTerminal(job);
         controller.close();
         return;
       }
 
       // 'queued' e 'running' emitem progress — a UI distingue via os status dos tópicos.
-      send('progress', { ...counts(job.topics), savedCount: job.savedCount, topics: shapeTopics(job.topics) });
+      send('progress', { ...counts(job.topics), savedCount: job.savedCount, topics: job.topics });
 
       let polling = false;
       const pollInterval = setInterval(async () => {
         if (polling) return;
         polling = true;
         try {
-          const current = await prisma.generationJob.findUnique({
-            where: { id: jobId },
-            include: { topics: { orderBy: { createdAt: 'asc' } } },
-          });
+          const current = await readGenerationProgress(jobId);
+
           if (!current) {
             clearInterval(pollInterval);
             controller.close();
@@ -96,15 +86,11 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
           }
           if (TERMINAL.includes(current.status)) {
             clearInterval(pollInterval);
-            emitTerminal(current.status, current.topics, current.savedCount);
+            emitTerminal(current);
             controller.close();
             return;
           }
-          send('progress', {
-            ...counts(current.topics),
-            savedCount: current.savedCount,
-            topics: shapeTopics(current.topics),
-          });
+          send('progress', { ...counts(current.topics), savedCount: current.savedCount, topics: current.topics });
         } catch {
           clearInterval(pollInterval);
           controller.close();
