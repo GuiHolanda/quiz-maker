@@ -142,6 +142,56 @@ export interface ReferralStats {
   bonusQuestionsEarned: number;
 }
 
+export interface PaymentMethodInfo {
+  brand: string;
+  last4: string;
+  expMonth: number;
+  expYear: number;
+}
+
+export interface BillingProfile {
+  customerId: string;
+  email: string | null;
+  name: string | null;
+  address: string | null;
+  taxId: string | null;
+}
+
+export interface SubscriptionInfo {
+  status: string; // active | past_due | canceled | unpaid | incomplete | trialing
+  interval: 'month' | 'year' | null;
+  amount: number | null; // recurring charge, in cents
+  currency: string;
+  startedAt: string | null; // ISO
+  currentPeriodEnd: string | null; // ISO — renewal date
+  cancelAtPeriodEnd: boolean;
+}
+
+export interface UpcomingInvoiceInfo {
+  amount: number; // in cents
+  currency: string;
+  date: string | null; // ISO
+}
+
+export interface BillingInvoice {
+  id: string;
+  date: string; // ISO
+  description: string | null;
+  amount: number; // in cents
+  currency: string;
+  status: string; // paid | open | draft | void | uncollectible
+  pdfUrl: string | null;
+  hostedUrl: string | null;
+}
+
+export interface BillingDetails {
+  paymentMethod: PaymentMethodInfo | null;
+  profile: BillingProfile;
+  subscription: SubscriptionInfo | null;
+  upcomingInvoice: UpcomingInvoiceInfo | null;
+  invoices: BillingInvoice[];
+}
+
 export interface BrowseSectionSummary {
   name: string;
   questionCount: number;
