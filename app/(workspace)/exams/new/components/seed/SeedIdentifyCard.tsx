@@ -134,6 +134,7 @@ export function SeedIdentifyCard({
             isSearching={false}
             showLabel={false}
             type={type}
+            withDetails={false}
             onSubmit={(next) => onRetry?.(next)}
           />
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">

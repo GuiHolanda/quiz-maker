@@ -1,5 +1,5 @@
 'use client';
-import type { ExamType } from '@/shared/types';
+import type { ExamIdentifyHints, ExamType } from '@/shared/types';
 
 import { useRef, useState } from 'react';
 import { Input } from '@heroui/input';
@@ -18,7 +18,7 @@ import { WorkspaceSplitLayout } from '@/shared/components/ui/WorkspaceSplitLayou
 
 interface ExamSeedPickerProps {
   readonly type: ExamType;
-  readonly onIdentify: (query: string) => void;
+  readonly onIdentify: (query: string, hints?: ExamIdentifyHints) => void;
   readonly onUploadEdital: (file: File, role: string | undefined) => void;
   readonly onStartBlank: () => void;
 }

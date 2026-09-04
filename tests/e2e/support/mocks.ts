@@ -183,13 +183,15 @@ function buildAllWrongResult() {
 export async function mockIdentify(
   page: Page,
   responses: readonly { readonly status: number; readonly body: unknown; readonly delayMs?: number }[]
-): Promise<{ callCount: () => number }> {
+): Promise<{ callCount: () => number; requests: () => Record<string, unknown>[] }> {
   let call = 0;
+  const requests: Record<string, unknown>[] = [];
 
   await page.route('**/api/exam/auto-config/identify', async (route) => {
     const response = responses[Math.min(call, responses.length - 1)];
 
     call += 1;
+    requests.push((route.request().postDataJSON() ?? {}) as Record<string, unknown>);
     if (response.delayMs) await new Promise((r) => setTimeout(r, response.delayMs));
     await route.fulfill({
       status: response.status,
@@ -198,7 +200,7 @@ export async function mockIdentify(
     });
   });
 
-  return { callCount: () => call };
+  return { callCount: () => call, requests: () => requests };
 }
 
 // POST /api/exam/auto-config → returns a jobId without ever running the real pipeline, so a
@@ -221,13 +223,15 @@ export async function mockCreateAutoConfigJob(page: Page, jobId = 'e2e-auto-conf
 export async function mockLocateEdital(
   page: Page,
   responses: readonly { readonly status: number; readonly body: unknown; readonly delayMs?: number }[]
-): Promise<{ callCount: () => number }> {
+): Promise<{ callCount: () => number; requests: () => Record<string, unknown>[] }> {
   let call = 0;
+  const requests: Record<string, unknown>[] = [];
 
   await page.route('**/api/exam/auto-config/locate-edital', async (route) => {
     const response = responses[Math.min(call, responses.length - 1)];
 
     call += 1;
+    requests.push((route.request().postDataJSON() ?? {}) as Record<string, unknown>);
     if (response.delayMs) await new Promise((r) => setTimeout(r, response.delayMs));
     await route.fulfill({
       status: response.status,
@@ -236,5 +240,5 @@ export async function mockLocateEdital(
     });
   });
 
-  return { callCount: () => call };
+  return { callCount: () => call, requests: () => requests };
 }
