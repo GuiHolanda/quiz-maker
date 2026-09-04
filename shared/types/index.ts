@@ -147,6 +147,7 @@ export interface PaymentMethodInfo {
   last4: string;
   expMonth: number;
   expYear: number;
+  holder: string | null;
 }
 
 export interface BillingProfile {

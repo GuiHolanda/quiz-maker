@@ -14,6 +14,7 @@ import { useSession } from 'next-auth/react';
 
 import { CurrentPlanCard } from '@/app/(workspace)/billing/components/CurrentPlanCard';
 import { PaymentMethodCard } from '@/app/(workspace)/billing/components/PaymentMethodCard';
+import { EmptyBillingCard } from '@/app/(workspace)/billing/components/EmptyBillingCard';
 import { NextChargeCard } from '@/app/(workspace)/billing/components/NextChargeCard';
 import { PlanSwitcher } from '@/app/(workspace)/billing/components/PlanSwitcher';
 import { BillingHistoryTable } from '@/app/(workspace)/billing/components/BillingHistoryTable';
@@ -162,14 +163,16 @@ export function BillingOverview() {
   const hasStripeCustomer = usage.hasStripePortalAccess;
   const hasActiveSubscription = !!subscription && subscription.status === 'active' && !subscription.cancelAtPeriodEnd;
 
-  const planLabel =
-    usage.plan === 'pro_ai'
-      ? t('billing.planProAi')
-      : usage.plan === 'pro'
-        ? t('billing.planPro')
-        : isSprint
-          ? t('billing.planSprint')
-          : t('billing.planFree');
+  const PLAN_LABEL_KEY: Record<string, string> = {
+    pro_ai: 'billing.planProAi',
+    pro: 'billing.planPro',
+    sprint: 'billing.planSprint',
+    tester: 'billing.planTester',
+    admin: 'billing.planAdmin',
+    free: 'billing.planFree',
+  };
+  const planLabel = t(PLAN_LABEL_KEY[usage.plan] ?? 'billing.planFree');
+  const isInternalPlan = usage.plan === 'tester' || usage.plan === 'admin';
 
   const meters = [
     {
@@ -213,6 +216,8 @@ export function BillingOverview() {
   }
 
   function renderRenewalNote(): ReactNode {
+    if (isInternalPlan) return t('billing.internalPlanNote');
+
     if (isSprint && usage!.sprintExpiresAt) {
       return t('billing.sprintExpiresOn', { date: formatDate(usage!.sprintExpiresAt, language) });
     }
@@ -291,28 +296,30 @@ export function BillingOverview() {
     <div className="flex flex-col gap-8">
       {renderReconcileBanner()}
 
-      {details ? (
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start">
-          {planCard}
-          <div className="flex flex-col gap-5">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start">
+        {planCard}
+        <div className="flex flex-col gap-5">
+          {details ? (
             <PaymentMethodCard
               isPortalLoading={portalLoadingKey === 'portal'}
               onManage={() => handlePortal('portal')}
               paymentMethod={details.paymentMethod}
               profile={details.profile}
             />
-            {details.upcomingInvoice && (
-              <NextChargeCard paymentMethod={details.paymentMethod} upcoming={details.upcomingInvoice} />
-            )}
-          </div>
+          ) : (
+            <EmptyBillingCard onUpgrade={scrollToPlans} showUpgrade={usage.plan === 'free'} />
+          )}
+          {details?.upcomingInvoice && (
+            <NextChargeCard paymentMethod={details.paymentMethod} upcoming={details.upcomingInvoice} />
+          )}
         </div>
-      ) : (
-        planCard
-      )}
-
-      <div id="billing-plans">
-        <PlanSwitcher currentPlan={usage.plan} hasStripeSubscription={!!subscription} />
       </div>
+
+      {!isInternalPlan && (
+        <div id="billing-plans">
+          <PlanSwitcher currentPlan={usage.plan} hasStripeSubscription={!!subscription} />
+        </div>
+      )}
 
       {details && details.invoices.length > 0 && (
         <BillingHistoryTable

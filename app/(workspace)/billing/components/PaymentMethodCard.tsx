@@ -60,6 +60,7 @@ export function PaymentMethodCard({ paymentMethod, profile, isPortalLoading, onM
                 month: String(paymentMethod.expMonth).padStart(2, '0'),
                 year: paymentMethod.expYear,
               })}
+              {paymentMethod.holder && ` · ${t('billing.cardHolder', { name: paymentMethod.holder })}`}
             </p>
           </div>
         ) : (

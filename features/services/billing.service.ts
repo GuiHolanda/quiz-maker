@@ -35,15 +35,17 @@ export class BillingService {
     const customerId = user.stripeCustomerId;
     const subscriptionId = user.stripeSubscriptionId;
 
+    // Stripe reads fail soft — a missing customer is the only hard stop, so a transient
+    // Stripe error degrades one field instead of blanking the whole billing page.
     const [customer, subscription, invoiceList] = await Promise.all([
-      stripe.customers.retrieve(customerId, { expand: ['invoice_settings.default_payment_method'] }),
+      stripe.customers.retrieve(customerId, { expand: ['invoice_settings.default_payment_method'] }).catch(() => null),
       subscriptionId
-        ? stripe.subscriptions.retrieve(subscriptionId, { expand: ['items.data.price'] })
+        ? stripe.subscriptions.retrieve(subscriptionId, { expand: ['items.data.price'] }).catch(() => null)
         : Promise.resolve(null),
-      stripe.invoices.list({ customer: customerId, limit: 12 }),
+      stripe.invoices.list({ customer: customerId, limit: 12 }).catch(() => ({ data: [] as Stripe.Invoice[] })),
     ]);
 
-    if (customer.deleted) return null;
+    if (!customer || customer.deleted) return null;
 
     const [paymentMethod, taxId] = await Promise.all([
       this.resolvePaymentMethod(customer, subscription),
@@ -85,27 +87,37 @@ export class BillingService {
     const fromCustomer = customer.invoice_settings?.default_payment_method;
 
     if (fromCustomer && typeof fromCustomer !== 'string' && fromCustomer.card) {
-      return this.cardToInfo(fromCustomer.card);
+      return this.methodToInfo(fromCustomer);
     }
 
     const fromSubscription = subscription?.default_payment_method;
 
     if (fromSubscription && typeof fromSubscription !== 'string' && fromSubscription.card) {
-      return this.cardToInfo(fromSubscription.card);
+      return this.methodToInfo(fromSubscription);
     }
 
     try {
       const methods = await stripe.paymentMethods.list({ customer: customer.id, type: 'card', limit: 1 });
-      const card = methods.data[0]?.card;
+      const method = methods.data[0];
 
-      return card ? this.cardToInfo(card) : null;
+      return method?.card ? this.methodToInfo(method) : null;
     } catch {
       return null;
     }
   }
 
-  private cardToInfo(card: Stripe.PaymentMethod.Card): PaymentMethodInfo {
-    return { brand: card.brand, last4: card.last4, expMonth: card.exp_month, expYear: card.exp_year };
+  private methodToInfo(method: Stripe.PaymentMethod): PaymentMethodInfo | null {
+    const card = method.card;
+
+    if (!card) return null;
+
+    return {
+      brand: card.brand,
+      last4: card.last4,
+      expMonth: card.exp_month,
+      expYear: card.exp_year,
+      holder: method.billing_details?.name ?? null,
+    };
   }
 
   private async resolveTaxId(customerId: string): Promise<string | null> {

@@ -24,7 +24,10 @@ function stripeCustomer(overrides: Record<string, unknown> = {}) {
     name: 'Marina Alves',
     address: { line1: 'Rua A, 1', line2: null, city: 'São Paulo', state: 'SP', postal_code: '01000-000' },
     invoice_settings: {
-      default_payment_method: { card: { brand: 'visa', last4: '4242', exp_month: 7, exp_year: 2029 } },
+      default_payment_method: {
+        card: { brand: 'visa', last4: '4242', exp_month: 7, exp_year: 2029 },
+        billing_details: { name: 'Marina Alves' },
+      },
     },
     ...overrides,
   };
@@ -109,7 +112,7 @@ describe('BillingService', () => {
       const result = await service.getBillingDetails('user-1');
 
       expect(result).toEqual({
-        paymentMethod: { brand: 'visa', last4: '4242', expMonth: 7, expYear: 2029 },
+        paymentMethod: { brand: 'visa', last4: '4242', expMonth: 7, expYear: 2029, holder: 'Marina Alves' },
         profile: {
           customerId: 'cus_123',
           email: 'marina@example.com',
@@ -144,6 +147,21 @@ describe('BillingService', () => {
           },
         ],
       });
+    });
+
+    it('degrades to subscription: null when the Stripe subscription read fails', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue({
+        stripeCustomerId: 'cus_123',
+        stripeSubscriptionId: 'sub_123',
+      } as never);
+      stripeMock.customers.retrieve.mockResolvedValue(stripeCustomer());
+      stripeMock.subscriptions.retrieve.mockRejectedValue(new Error('stripe down'));
+
+      const result = await service.getBillingDetails('user-1');
+
+      expect(result).not.toBeNull();
+      expect(result?.subscription).toBeNull();
+      expect(result?.profile.customerId).toBe('cus_123');
     });
 
     it('does not preview an upcoming invoice for a subscription set to cancel', async () => {

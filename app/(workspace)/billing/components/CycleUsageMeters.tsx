@@ -41,15 +41,17 @@ export function CycleUsageMeters({ meters }: CycleUsageMetersProps) {
                 {valueLabel}
               </span>
             </div>
-            <ProgressTrack
-              animated
-              className="mt-2"
-              fillClass={unlimited ? 'bg-primary/40' : fillClass(pct)}
-              heightClass="h-1.5"
-              trackClass="bg-background"
-              value={unlimited ? 100 : pct}
-            />
-            <p className="mt-1.5 text-xs text-default-400">{meter.note}</p>
+            {!unlimited && (
+              <ProgressTrack
+                animated
+                className="mt-2"
+                fillClass={fillClass(pct)}
+                heightClass="h-1.5"
+                trackClass="bg-background"
+                value={pct}
+              />
+            )}
+            <p className={`text-xs text-default-400 ${unlimited ? 'mt-1' : 'mt-1.5'}`}>{meter.note}</p>
           </div>
         );
       })}
