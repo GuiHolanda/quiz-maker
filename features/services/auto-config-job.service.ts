@@ -539,7 +539,15 @@ export async function locateEdital(userId: string, seed: LocateEditalSeed): Prom
 
   await metricsService.finalize(logId, Date.now() - t0);
 
-  const orderedEditais = orderByVerification(Array.from(seen.values()), seed.year).slice(0, 5);
+  // A candidate the user can neither recognise (no number/year/órgão) nor trust (never
+  // confirmed) is just noise on the approval screen — "Usar o edital de — como modelo".
+  const isShowable = (candidate: EditalCandidate): boolean =>
+    candidate.verification === 'confirmed' ||
+    candidate.editalNumber != null ||
+    candidate.year != null ||
+    candidate.orgao != null;
+
+  const orderedEditais = orderByVerification(Array.from(seen.values()).filter(isShowable), seed.year).slice(0, 5);
   const confirmedCandidates = orderedEditais.filter((candidate) => candidate.verification === 'confirmed');
   const confirmedFound = confirmedCandidates.length > 0;
   const targetYearFound =

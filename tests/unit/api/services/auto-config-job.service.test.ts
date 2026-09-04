@@ -490,12 +490,12 @@ describe('locateEdital', () => {
     openAICallMock.mockResolvedValue({
       text: JSON.stringify({
         editais: [
-          { url: 'https://a.gov.br/1.pdf' },
-          { url: 'https://a.gov.br/2.pdf' },
-          { url: 'https://a.gov.br/3.pdf' },
-          { url: 'https://a.gov.br/4.pdf' },
-          { url: 'https://a.gov.br/5.pdf' },
-          { url: 'https://a.gov.br/6.pdf' },
+          { url: 'https://a.gov.br/1.pdf', year: 2024 },
+          { url: 'https://a.gov.br/2.pdf', year: 2024 },
+          { url: 'https://a.gov.br/3.pdf', year: 2024 },
+          { url: 'https://a.gov.br/4.pdf', year: 2024 },
+          { url: 'https://a.gov.br/5.pdf', year: 2024 },
+          { url: 'https://a.gov.br/6.pdf', year: 2024 },
           { editalNumber: 'no url' },
           { url: 'ftp://not-http.gov.br/x.pdf' },
         ],
@@ -702,10 +702,10 @@ describe('locateEdital', () => {
       .mockResolvedValueOnce({
         text: JSON.stringify({
           editais: [
-            { url: 'https://x.gov.br/doc-a.pdf' },
-            { url: 'https://x.gov.br/doc-b.pdf' },
-            { url: 'https://x.gov.br/doc-c.pdf' },
-            { url: 'https://x.gov.br/doc-d.pdf' },
+            { url: 'https://x.gov.br/doc-a.pdf', year: 2019 },
+            { url: 'https://x.gov.br/doc-b.pdf', year: 2019 },
+            { url: 'https://x.gov.br/doc-c.pdf', year: 2019 },
+            { url: 'https://x.gov.br/doc-d.pdf', year: 2019 },
           ],
           targetYearFound: false,
         }),
@@ -815,6 +815,34 @@ describe('locateEdital', () => {
     const result = await locateEdital('user-1', seed);
 
     expect(result).toEqual({ editais: [], targetYearFound: false, confirmedFound: false });
+  });
+
+  it('drops an unverified candidate that carries no edital number, year or órgão to show', async () => {
+    openAICallMock.mockResolvedValueOnce({
+      text: JSON.stringify({
+        editais: [
+          { url: 'https://x.gov.br/a.pdf', editalNumber: 'E-1/2025', year: 2025, orgao: 'TRF 1ª Região' },
+          { url: 'https://x.gov.br/b.pdf', editalNumber: 'E-2/2025', year: 2025, orgao: 'TRF 1ª Região' },
+          { url: 'https://x.gov.br/c.pdf', editalNumber: 'E-3/2025', year: 2025, orgao: 'TRF 1ª Região' },
+        ],
+        targetYearFound: true,
+      }),
+      inputTokens: 1,
+      outputTokens: 1,
+      sources: ['https://mirror.example.com/harvested-no-label.pdf'],
+    });
+    fetchEditalPdfMock.mockResolvedValue({} as any);
+    editalVerifyMock.mockResolvedValue({ isMainEdital: true, documentType: 'edital', year: 2025, editalNumber: null });
+
+    const result = await locateEdital('user-1', seed);
+
+    // The 3 labelled editais use up the round's verify budget, so the harvested source-only
+    // URL is never probed — it stays unchecked with nothing to display, and must be dropped.
+    expect(result.editais.map((e) => e.url)).toEqual([
+      'https://x.gov.br/a.pdf',
+      'https://x.gov.br/b.pdf',
+      'https://x.gov.br/c.pdf',
+    ]);
   });
 
   it('finalizes the log and rethrows when the first round LLM call fails', async () => {
