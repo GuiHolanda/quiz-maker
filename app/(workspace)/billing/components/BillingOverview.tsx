@@ -1,27 +1,26 @@
 'use client';
 
-import type { UsageStats } from '@/shared/types';
+import type { ReactNode } from 'react';
+import type { BillingDetails, UsageStats } from '@/shared/types';
+import type { StatusTone } from '@/shared/components/ui/tone';
 
 import { Button } from '@heroui/button';
-import { Chip } from '@heroui/chip';
-import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@heroui/modal';
 import { Spinner } from '@heroui/spinner';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faCreditCard,
-  faFileContract,
-  faReceipt,
-  faRobot,
-  faTriangleExclamation,
-} from '@fortawesome/free-solid-svg-icons';
+import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
-import { UsageCard } from '@/app/(workspace)/billing/components/UsageCard';
+import { CurrentPlanCard } from '@/app/(workspace)/billing/components/CurrentPlanCard';
+import { PaymentMethodCard } from '@/app/(workspace)/billing/components/PaymentMethodCard';
+import { NextChargeCard } from '@/app/(workspace)/billing/components/NextChargeCard';
+import { PlanSwitcher } from '@/app/(workspace)/billing/components/PlanSwitcher';
+import { BillingHistoryTable } from '@/app/(workspace)/billing/components/BillingHistoryTable';
 import { ReferralCard } from '@/app/(workspace)/billing/components/ReferralCard';
-import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
-import { getBillingUsage, getPortalUrl } from '@/features/connectors';
+import { CancelSubscriptionPanel } from '@/app/(workspace)/billing/components/CancelSubscriptionPanel';
+import { formatDate, formatMoney, formatShortDate } from '@/app/(workspace)/billing/components/billingFormat';
+import { getBillingDetails, getBillingUsage, getPortalUrl } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { notify } from '@/shared/lib/notify';
@@ -33,14 +32,13 @@ function questionsCeiling(plan: string): number {
 }
 
 export function BillingOverview() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { data: session, status, update: updateSession } = useSession();
   const { refreshUsage } = useUsageContext();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [usage, setUsage] = useState<UsageStats | null>(null);
-  const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
-  const [isCancelOpen, setIsCancelOpen] = useState(false);
+  const [details, setDetails] = useState<BillingDetails | null>(null);
   const [portalLoadingKey, setPortalLoadingKey] = useState<string | null>(null);
   const [pollTimedOut, setPollTimedOut] = useState(false);
   const [isReconciling, setIsReconciling] = useState(false);
@@ -51,13 +49,41 @@ export function BillingOverview() {
   const isSyncFlow = searchParams.get('synced') === '1';
   const isReconcileFlow = isUpgradeFlow || isSyncFlow;
 
+  async function loadDetails(hasCustomer: boolean) {
+    if (!hasCustomer) {
+      setDetails(null);
+      return;
+    }
+
+    try {
+      setDetails(await getBillingDetails());
+    } catch {
+      setDetails(null);
+    }
+  }
+
+  async function refetchAll() {
+    const fresh = await getBillingUsage();
+
+    setUsage(fresh);
+    await loadDetails(fresh.hasStripePortalAccess);
+  }
+
   useEffect(() => {
     if (isReconcileFlow) return;
 
     let cancelled = false;
 
     getBillingUsage().then((data) => {
-      if (!cancelled) setUsage(data);
+      if (cancelled) return;
+      setUsage(data);
+      if (data.hasStripePortalAccess) {
+        getBillingDetails()
+          .then((d) => {
+            if (!cancelled) setDetails(d);
+          })
+          .catch(() => {});
+      }
     });
 
     return () => {
@@ -94,6 +120,8 @@ export function BillingOverview() {
       if (cancelled) return;
       setIsReconciling(false);
 
+      await loadDetails(data.hasStripePortalAccess);
+
       if (data.plan === baseline) {
         setPollTimedOut(true);
         return;
@@ -119,7 +147,6 @@ export function BillingOverview() {
       cancelled = true;
       setIsReconciling(false);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isReconcileFlow, status, retryCount]);
 
   if (!usage) return null;
@@ -127,17 +154,13 @@ export function BillingOverview() {
   const resetDate = new Date(usage.periodStartDate);
 
   resetDate.setDate(resetDate.getDate() + 30);
-  const resetLabel = resetDate.toLocaleDateString('pt-BR');
+  const resetIso = resetDate.toISOString();
+  const resetLabel = formatDate(resetIso, language);
 
-  const isPaid = usage.plan !== 'free';
   const isSprint = usage.plan === 'sprint';
-  // Sprint purchasers get a stripeCustomerId (for receipts) but never a subscription — the
-  // portal's "manage/cancel subscription" flows don't apply to a completed one-time payment.
-  const hasStripeSubscription = usage.hasStripePortalAccess && !isSprint;
-  const sprintExpiryLabel = usage.sprintExpiresAt ? new Date(usage.sprintExpiresAt).toLocaleDateString('pt-BR') : null;
-
-  const certLimitLabel = usage.examsLimit === -1 ? t('billing.unlimited') : String(usage.examsLimit);
-  const qLimitLabel = usage.questionsLimit === -1 ? t('billing.unlimited') : String(usage.questionsLimit);
+  const subscription = details?.subscription ?? null;
+  const hasStripeCustomer = usage.hasStripePortalAccess;
+  const hasActiveSubscription = !!subscription && subscription.status === 'active' && !subscription.cancelAtPeriodEnd;
 
   const planLabel =
     usage.plan === 'pro_ai'
@@ -148,6 +171,94 @@ export function BillingOverview() {
           ? t('billing.planSprint')
           : t('billing.planFree');
 
+  const meters = [
+    {
+      label: t('billing.meter.questions'),
+      used: usage.questionsUsed,
+      limit: usage.questionsLimit,
+      note: t('billing.meter.questionsNote'),
+    },
+    {
+      label: t('billing.meter.exams'),
+      used: usage.examsUsed,
+      limit: usage.examsLimit,
+      note: t('billing.meter.examsNote'),
+    },
+    ...(usage.aiChatLimit !== 0
+      ? [
+          {
+            label: t('billing.meter.aiChat'),
+            used: usage.aiChatUsed,
+            limit: usage.aiChatLimit,
+            note: t('billing.meter.aiChatNote'),
+          },
+        ]
+      : []),
+  ];
+
+  const statusInfo = resolveStatus();
+  const accessUntilNote = subscription?.currentPeriodEnd
+    ? t('billing.cancel.rowNote', { date: formatDate(subscription.currentPeriodEnd, language) })
+    : t('billing.cancel.rowNoteGeneric');
+
+  function resolveStatus(): { label: string; tone: StatusTone } | null {
+    if (!subscription) return null;
+    if (subscription.cancelAtPeriodEnd) return { label: t('billing.status.canceled'), tone: 'error' };
+    if (subscription.status === 'active') return { label: t('billing.status.active'), tone: 'ok' };
+    if (['past_due', 'unpaid', 'incomplete'].includes(subscription.status)) {
+      return { label: t('billing.status.pastDue'), tone: 'busy' };
+    }
+
+    return { label: subscription.status, tone: 'busy' };
+  }
+
+  function renderRenewalNote(): ReactNode {
+    if (isSprint && usage!.sprintExpiresAt) {
+      return t('billing.sprintExpiresOn', { date: formatDate(usage!.sprintExpiresAt, language) });
+    }
+
+    if (subscription?.cancelAtPeriodEnd && subscription.currentPeriodEnd) {
+      return t('billing.canceledAccessUntil', { date: formatDate(subscription.currentPeriodEnd, language) });
+    }
+
+    if (subscription && subscription.currentPeriodEnd) {
+      const renews = t('billing.renewsOn', { date: formatDate(subscription.currentPeriodEnd, language) });
+      const since = subscription.startedAt
+        ? ` ${t('billing.memberSince', { date: formatDate(subscription.startedAt, language) })}`
+        : '';
+
+      return `${renews}${since}`;
+    }
+
+    return t('billing.periodResetsOn', { date: resetLabel });
+  }
+
+  function priceLabel(): string {
+    if (!subscription || subscription.amount == null) return '';
+
+    return formatMoney(subscription.amount, subscription.currency, language);
+  }
+
+  function cycleNote(): string {
+    if (!subscription) return '';
+
+    return subscription.interval === 'year' ? t('billing.cycleYearly') : t('billing.cycleMonthly');
+  }
+
+  function scrollToPlans() {
+    document.getElementById('billing-plans')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  async function handlePortal(key: string) {
+    setPortalLoadingKey(key);
+    try {
+      window.location.href = await getPortalUrl();
+    } catch {
+      notify.error(t('toast.error'), t('toast.somethingWrong'));
+      setPortalLoadingKey(null);
+    }
+  }
+
   function handleRetry() {
     setPollTimedOut(false);
     toastFiredRef.current = false;
@@ -155,29 +266,72 @@ export function BillingOverview() {
     setRetryCount((c) => c + 1);
   }
 
-  async function handlePortal(key: string) {
-    setPortalLoadingKey(key);
-    try {
-      const url = await getPortalUrl();
-
-      window.location.href = url;
-    } catch {
-      notify.error(t('toast.error'), t('toast.somethingWrong'));
-      setPortalLoadingKey(null);
-    }
-  }
+  const planCard = (
+    <CurrentPlanCard
+      cycleNote={cycleNote()}
+      isPortalLoading={portalLoadingKey === 'portal'}
+      meters={meters}
+      onPortal={() => handlePortal('portal')}
+      onUpgrade={scrollToPlans}
+      periodLabel={t('billing.usagePeriod', {
+        start: formatShortDate(usage.periodStartDate, language),
+        end: formatShortDate(resetIso, language),
+      })}
+      planLabel={planLabel}
+      price={priceLabel()}
+      renewalNote={renderRenewalNote()}
+      showPortal={hasStripeCustomer}
+      showUpgrade={usage.plan === 'free' || usage.plan === 'pro'}
+      statusLabel={statusInfo?.label ?? null}
+      statusTone={statusInfo?.tone ?? 'ok'}
+    />
+  );
 
   return (
     <div className="flex flex-col gap-8">
       {renderReconcileBanner()}
-      {renderPlanBanner()}
-      {renderUsageSection()}
+
+      {details ? (
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start">
+          {planCard}
+          <div className="flex flex-col gap-5">
+            <PaymentMethodCard
+              isPortalLoading={portalLoadingKey === 'portal'}
+              onManage={() => handlePortal('portal')}
+              paymentMethod={details.paymentMethod}
+              profile={details.profile}
+            />
+            {details.upcomingInvoice && (
+              <NextChargeCard paymentMethod={details.paymentMethod} upcoming={details.upcomingInvoice} />
+            )}
+          </div>
+        </div>
+      ) : (
+        planCard
+      )}
+
+      <div id="billing-plans">
+        <PlanSwitcher currentPlan={usage.plan} hasStripeSubscription={!!subscription} />
+      </div>
+
+      {details && details.invoices.length > 0 && (
+        <BillingHistoryTable
+          invoices={details.invoices}
+          isPortalLoading={portalLoadingKey === 'portal'}
+          onViewAll={() => handlePortal('portal')}
+        />
+      )}
+
       <ReferralCard />
-      {hasStripeSubscription && renderPaymentSection()}
-      {hasStripeSubscription && renderBillingHistorySection()}
-      {hasStripeSubscription && renderCancelSection()}
-      {renderCancelModal()}
-      <UpgradeModal isOpen={isUpgradeOpen} onClose={() => setIsUpgradeOpen(false)} />
+
+      {hasActiveSubscription && (
+        <CancelSubscriptionPanel
+          accessUntilNote={accessUntilNote}
+          freeQuestionsLimit={String(PLAN_LIMITS.free.questionsPerPeriod)}
+          onCanceled={refetchAll}
+          planLabel={planLabel}
+        />
+      )}
     </div>
   );
 
@@ -214,171 +368,5 @@ export function BillingOverview() {
     }
 
     return null;
-  }
-
-  function renderPlanBanner() {
-    return (
-      <section className="bg-primary/10 border border-primary/20 rounded-xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <h2 className="text-lg font-semibold text-foreground">{planLabel}</h2>
-            {isPaid && (
-              <Chip color="success" size="sm" variant="flat">
-                {t('billing.planActive')}
-              </Chip>
-            )}
-          </div>
-          <p className="text-sm text-default-500">
-            {isSprint && sprintExpiryLabel
-              ? t('billing.sprintExpiresOn', { date: sprintExpiryLabel })
-              : isPaid
-                ? t('billing.nextBilling', { date: resetLabel })
-                : t('billing.periodResetsOn', { date: resetLabel })}
-          </p>
-        </div>
-        {hasStripeSubscription ? (
-          <Button
-            className={buttonStyles.secondary}
-            isLoading={portalLoadingKey === 'changePlan'}
-            variant="bordered"
-            onPress={() => handlePortal('changePlan')}
-          >
-            {t('billing.changePlan')}
-          </Button>
-        ) : !isPaid ? (
-          <Button className={buttonStyles.primary} onPress={() => setIsUpgradeOpen(true)}>
-            {t('billing.upgradeButton')}
-          </Button>
-        ) : null}
-      </section>
-    );
-  }
-
-  function renderUsageSection() {
-    return (
-      <section>
-        <h3 className="text-sm font-semibold text-foreground mb-4">{t('billing.usageSectionTitle')}</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <UsageCard
-            icon={faRobot}
-            label={t('billing.questionsCard')}
-            limit={usage!.questionsLimit}
-            limitLabel={qLimitLabel}
-            renewNote={t('billing.questionsRenewNote', { date: resetLabel })}
-            used={usage!.questionsUsed}
-          />
-          <UsageCard
-            icon={faFileContract}
-            label={t('billing.certificationsCard')}
-            limit={usage!.examsLimit}
-            limitLabel={certLimitLabel}
-            renewNote={
-              usage!.examsLimit === -1
-                ? t('billing.certificationsNote')
-                : t('billing.questionsRenewNote', { date: resetLabel })
-            }
-            used={usage!.examsUsed}
-          />
-        </div>
-      </section>
-    );
-  }
-
-  function renderPaymentSection() {
-    return (
-      <section>
-        <h3 className="text-sm font-semibold text-foreground mb-4">{t('billing.paymentSectionTitle')}</h3>
-        <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-content2 border border-default-200 rounded-lg flex items-center justify-center text-primary">
-              <FontAwesomeIcon icon={faCreditCard} />
-            </div>
-            <p className="text-sm text-default-500">{t('billing.paymentManagedNote')}</p>
-          </div>
-          <Button
-            className={buttonStyles.secondary}
-            isLoading={portalLoadingKey === 'updatePayment'}
-            variant="bordered"
-            onPress={() => handlePortal('updatePayment')}
-          >
-            {t('billing.updatePayment')}
-          </Button>
-        </div>
-      </section>
-    );
-  }
-
-  function renderBillingHistorySection() {
-    return (
-      <section>
-        <h3 className="text-sm font-semibold text-foreground mb-4">{t('billing.billingSectionTitle')}</h3>
-        <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-content2 border border-default-200 rounded-lg flex items-center justify-center text-primary">
-              <FontAwesomeIcon icon={faReceipt} />
-            </div>
-            <p className="text-sm text-default-500">{t('billing.billingSectionTitle')}</p>
-          </div>
-          <Button
-            className={buttonStyles.secondary}
-            isLoading={portalLoadingKey === 'viewInvoices'}
-            variant="bordered"
-            onPress={() => handlePortal('viewInvoices')}
-          >
-            {t('billing.viewInvoices')}
-          </Button>
-        </div>
-      </section>
-    );
-  }
-
-  function renderCancelSection() {
-    return (
-      <section className="pt-6 border-t border-default-200">
-        <div className="bg-danger/5 border border-danger/20 rounded-xl p-6">
-          <h3 className="text-base font-semibold text-danger mb-2">{t('billing.cancelButton')}</h3>
-          <p className="text-sm text-default-500 mb-4 max-w-2xl">{t('billing.cancelDescription')}</p>
-          <Button className={buttonStyles.dangerFlat} onPress={() => setIsCancelOpen(true)}>
-            {t('billing.cancelButton')}
-          </Button>
-        </div>
-      </section>
-    );
-  }
-
-  function renderCancelModal() {
-    return (
-      <Modal isOpen={isCancelOpen} onClose={() => setIsCancelOpen(false)}>
-        <ModalContent>
-          <ModalHeader className="text-base font-semibold text-foreground border-b border-default-200 flex flex-col items-center gap-0 pt-6">
-            <div className="w-12 h-12 rounded-full bg-danger/10 flex items-center justify-center text-danger mb-3">
-              <FontAwesomeIcon icon={faTriangleExclamation} />
-            </div>
-            <span>{t('billing.cancelModalTitle')}</span>
-          </ModalHeader>
-          <ModalBody className="py-6">
-            <p className="text-sm text-center text-default-500">{t('billing.cancelConfirm')}</p>
-          </ModalBody>
-          <ModalFooter className="border-t border-default-200 flex flex-col sm:flex-row gap-3">
-            <Button
-              className={`flex-1 ${buttonStyles.secondary}`}
-              size="sm"
-              variant="bordered"
-              onPress={() => setIsCancelOpen(false)}
-            >
-              {t('billing.cancelKeep')}
-            </Button>
-            <Button
-              className={`flex-1 ${buttonStyles.danger}`}
-              isLoading={portalLoadingKey === 'cancel'}
-              size="sm"
-              onPress={() => handlePortal('cancel')}
-            >
-              {t('billing.cancelConfirmCta')}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-    );
   }
 }
