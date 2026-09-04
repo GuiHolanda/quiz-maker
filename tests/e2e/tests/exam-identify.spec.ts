@@ -129,6 +129,37 @@ for (const domain of ALL_DOMAINS) {
       await expect(page.locator(tid(TID.seedIdentifyConfirmedLabel))).toHaveText(chosen.label);
       await expect(page.getByText(chosen.key ?? '')).toBeVisible();
     });
+
+    test('renders a disambiguation list with repeated labels without a duplicate-key warning', async ({
+      authedPage: page,
+    }) => {
+      const keyWarnings: string[] = [];
+
+      page.on('console', (msg) => {
+        if (msg.type() === 'error' && msg.text().includes('same key')) keyWarnings.push(msg.text());
+      });
+
+      await mockIdentify(page, [
+        {
+          status: 200,
+          body: {
+            matches: [
+              { ...MATCHES[0], label: 'Same Exam Name', key: 'A-1' },
+              { ...MATCHES[1], label: 'Same Exam Name', key: 'B-2' },
+            ],
+            clarification: null,
+          },
+        },
+      ]);
+
+      await page.goto(domain.configureUrl);
+      await page.locator(tid(TID.examSeedBlankBtn)).waitFor({ state: 'visible' });
+      await page.locator(tid(TID.examSearchInput)).fill('ambiguous');
+      await page.locator(tid(TID.examSearchSubmitBtn)).click();
+
+      await expect(page.locator(tid(TID.seedIdentifyMatchOption))).toHaveCount(2, { timeout: 10000 });
+      expect(keyWarnings).toEqual([]);
+    });
   });
 }
 
@@ -367,4 +398,73 @@ test('public_exam: skipping the edital approval screen still confirms the seed v
   await page.locator(tid(TID.seedIdentifyRoleOption)).first().click();
 
   await expect(page.locator(tid(TID.seedIdentifyConfirmedLabel))).toHaveText(match.label, { timeout: 10000 });
+});
+
+test('certification: the optional "detalhes da prova" fields ride along as identify hints', async ({
+  authedPage: page,
+}) => {
+  const match = {
+    label: 'AWS Certified Solutions Architect – Associate',
+    key: 'SAA-C03',
+    provider: 'AWS',
+    examBoard: null,
+    role: null,
+    roles: [],
+    year: null,
+  };
+
+  await injectNeverDoneEventSource(page);
+  await mockCreateAutoConfigJob(page);
+  const identify = await mockIdentify(page, [{ status: 200, body: { matches: [match], clarification: null } }]);
+
+  await page.goto('/exams/new?type=certification');
+  await page.locator(tid(TID.examSeedBlankBtn)).waitFor({ state: 'visible' });
+
+  await page.locator(tid(TID.examDetailsToggle)).click();
+  await page.locator(tid(TID.examDetailsProvider)).fill('AWS');
+  await page.locator(tid(TID.examDetailsKey)).fill('SAA-C03');
+  await page.locator(tid(TID.examSearchInput)).fill('solutions architect');
+  await page.locator(tid(TID.examSearchSubmitBtn)).click();
+
+  await expect(page.locator(tid(TID.seedIdentifyConfirmedLabel))).toBeVisible({ timeout: 10000 });
+  expect(identify.requests()[0].hints).toMatchObject({ provider: 'AWS', key: 'SAA-C03' });
+});
+
+test('public_exam: an edital hint seeds the locate search and a cargo hint skips the role screen', async ({
+  authedPage: page,
+}) => {
+  const match = {
+    label: 'TRF 4ª Região 2026',
+    key: null,
+    provider: null,
+    examBoard: 'FCC',
+    role: null,
+    roles: ['Analista Judiciário', 'Técnico Judiciário'],
+    year: 2026,
+  };
+
+  await injectNeverDoneEventSource(page);
+  await mockCreateAutoConfigJob(page);
+  await mockIdentify(page, [{ status: 200, body: { matches: [match], clarification: null } }]);
+  const locate = await mockLocateEdital(page, [
+    { status: 200, body: { editais: [], targetYearFound: false, confirmedFound: false } },
+  ]);
+
+  await page.goto('/exams/new?type=public_exam');
+  await page.locator(tid(TID.examSeedBlankBtn)).waitFor({ state: 'visible' });
+
+  await page.locator(tid(TID.examDetailsToggle)).click();
+  await page.locator(tid(TID.examDetailsExamBoard)).fill('FCC');
+  await page.locator(tid(TID.examDetailsRole)).fill('Analista Judiciário');
+  await page.locator(tid(TID.examDetailsEdital)).fill('Edital nº 1/2026');
+  await page.locator(tid(TID.examSearchInput)).fill('TRF 4');
+  await page.locator(tid(TID.examSearchSubmitBtn)).click();
+
+  await page.locator(tid(TID.seedIdentifySkipEditalBtn)).waitFor({ state: 'visible', timeout: 10000 });
+  expect(locate.requests()[0]).toMatchObject({ editalKey: '1/2026', year: 2026 });
+
+  await page.locator(tid(TID.seedIdentifySkipEditalBtn)).click();
+
+  await expect(page.locator(tid(TID.seedIdentifyConfirmedLabel))).toHaveText(match.label, { timeout: 10000 });
+  await expect(page.locator(tid(TID.seedIdentifyRoleOption))).toHaveCount(0);
 });

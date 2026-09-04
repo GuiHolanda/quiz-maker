@@ -7,7 +7,24 @@ import { QuotaService } from '@/features/services/quota.service';
 import { canEditExams } from '@/config/constants';
 import { toApiErrorResponse } from '@/lib/api-error';
 import { enforceRateLimit } from '@/lib/rate-limit';
-import type { ExamType } from '@/shared/types';
+import type { ExamIdentifyHints, ExamType } from '@/shared/types';
+
+const HINT_FIELDS = ['provider', 'key', 'examBoard', 'role', 'edital'] as const;
+
+function parseHints(raw: unknown): ExamIdentifyHints | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+
+  const source = raw as Record<string, unknown>;
+  const hints: Record<string, string> = {};
+
+  for (const field of HINT_FIELDS) {
+    const value = source[field];
+
+    if (typeof value === 'string' && value.trim()) hints[field] = value.trim().slice(0, 200);
+  }
+
+  return Object.keys(hints).length > 0 ? (hints as ExamIdentifyHints) : undefined;
+}
 
 const quotaService = new QuotaService();
 
@@ -47,7 +64,7 @@ export async function POST(request: NextRequest) {
     if (!body || typeof body !== 'object') {
       throw Object.assign(new Error('Invalid request body'), { status: 400 });
     }
-    const { query, type, language } = body as Record<string, unknown>;
+    const { query, type, language, hints } = body as Record<string, unknown>;
 
     if (type !== 'certification' && type !== 'public_exam') {
       throw Object.assign(new Error('type must be "certification" or "public_exam"'), { status: 400 });
@@ -56,7 +73,13 @@ export async function POST(request: NextRequest) {
       throw Object.assign(new Error('query is required'), { status: 400 });
     }
 
-    const result = await identifyExam(session.user.id, query.trim(), type as ExamType, language === 'pt' ? 'pt' : 'en');
+    const result = await identifyExam(
+      session.user.id,
+      query.trim(),
+      type as ExamType,
+      language === 'pt' ? 'pt' : 'en',
+      parseHints(hints)
+    );
 
     return NextResponse.json(result);
   } catch (err: unknown) {

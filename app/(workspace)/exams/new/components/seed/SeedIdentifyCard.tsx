@@ -134,6 +134,7 @@ export function SeedIdentifyCard({
             isSearching={false}
             showLabel={false}
             type={type}
+            withDetails={false}
             onSubmit={(next) => onRetry?.(next)}
           />
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -176,9 +177,9 @@ export function SeedIdentifyCard({
       case 'disambiguating':
         return (
           <div className="flex flex-col gap-2">
-            {phase.matches.map((match) => (
+            {phase.matches.map((match, index) => (
               <button
-                key={match.label}
+                key={`${match.label}|${match.key ?? ''}|${index}`}
                 className="group flex items-center gap-3 text-left bg-content2 border border-default-200 rounded-lg px-4 py-3 hover:bg-primary/10 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors duration-200"
                 data-testid="seed-identify-match-option"
                 type="button"
@@ -320,6 +321,13 @@ export function SeedIdentifyCard({
             )}
             {editais.map((candidate, index) => {
               const isOfficial = targetYearFound && index === 0 && candidate.verification === 'confirmed';
+              const optionLabel = isOfficial
+                ? t('exam.editalApproveOfficialBadge')
+                : candidate.year != null
+                  ? t('exam.editalNotFoundUsePriorYear', { year: String(candidate.year) })
+                  : t('exam.editalApproveUseAsModel');
+              const optionMeta =
+                [candidate.editalNumber, candidate.orgao].filter(Boolean).join(' · ') || editalHost(candidate.url);
 
               return (
                 <div
@@ -333,14 +341,10 @@ export function SeedIdentifyCard({
                     onClick={() => onApproveEdital?.(candidate)}
                   >
                     <span className="min-w-0 grow">
-                      <span className="block text-sm font-semibold text-foreground truncate">
-                        {isOfficial
-                          ? t('exam.editalApproveOfficialBadge')
-                          : t('exam.editalNotFoundUsePriorYear', { year: String(candidate.year ?? '—') })}
-                      </span>
-                      <span className="block mt-1 font-mono text-[11px] text-default-400 truncate">
-                        {[candidate.editalNumber, candidate.orgao].filter(Boolean).join(' · ')}
-                      </span>
+                      <span className="block text-sm font-semibold text-foreground truncate">{optionLabel}</span>
+                      {optionMeta && (
+                        <span className="block mt-1 font-mono text-[11px] text-default-400 truncate">{optionMeta}</span>
+                      )}
                       {!isOfficial && renderVerificationNote(candidate.verification)}
                     </span>
                     <FontAwesomeIcon
@@ -543,4 +547,14 @@ export function SeedIdentifyCard({
 
 function matchMeta(match: AutoConfigMatch): string {
   return [match.provider ?? match.examBoard, match.key, match.role, match.year].filter(Boolean).join(' · ');
+}
+
+// Fallback subtitle for an edital candidate the locate step couldn't name — the host at least
+// tells the user whose site the file is on.
+function editalHost(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return '';
+  }
 }

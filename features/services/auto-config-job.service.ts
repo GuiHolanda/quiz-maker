@@ -17,6 +17,7 @@ import type {
   EditalDocumentKind,
   EditalDomainClass,
   EditalVerification,
+  ExamIdentifyHints,
   ExamType,
   LocateEditalResult,
 } from '@/shared/types';
@@ -90,8 +91,44 @@ function validateIdentifyResult(data: unknown): IdentifyResult {
       year: typeof m.year === 'number' ? m.year : null,
     }));
 
+  // The public-exam prompt defines "label" as órgão + ano without the cargo, so the model
+  // sometimes emits the same concurso once per nível/cargo group — occasionally with the key
+  // or year filled on only one of them. Two matches sharing a label are the same concurso
+  // unless one of them *positively* contradicts the other (both state a key/year and they
+  // differ) — fold everything else into a single entry (merging cargos, filling gaps) so the
+  // disambiguation list never shows two identical-looking options.
+  const dedupedMatches: IdentifyMatch[] = [];
+  for (const match of matches) {
+    const twin = dedupedMatches.find((existing) => {
+      if (existing.label.toLowerCase() !== match.label.toLowerCase()) return false;
+      const keyConflicts = existing.key != null && match.key != null && existing.key !== match.key;
+      const yearConflicts = existing.year != null && match.year != null && existing.year !== match.year;
+
+      return !keyConflicts && !yearConflicts;
+    });
+
+    if (!twin) {
+      dedupedMatches.push(match);
+      continue;
+    }
+
+    const mergedRoles = [...twin.roles];
+    for (const role of match.roles) {
+      if (!mergedRoles.some((existing) => existing.toLowerCase() === role.toLowerCase())) mergedRoles.push(role);
+    }
+    dedupedMatches[dedupedMatches.indexOf(twin)] = {
+      ...twin,
+      key: twin.key ?? match.key,
+      provider: twin.provider ?? match.provider,
+      examBoard: twin.examBoard ?? match.examBoard,
+      role: twin.role ?? match.role,
+      year: twin.year ?? match.year,
+      roles: mergedRoles.slice(0, 12),
+    };
+  }
+
   return {
-    matches,
+    matches: dedupedMatches,
     clarification:
       typeof payload.clarification === 'string' && payload.clarification.trim() ? payload.clarification.trim() : null,
   };
@@ -105,7 +142,8 @@ export async function identifyExam(
   userId: string,
   query: string,
   type: ExamType,
-  language: 'pt' | 'en'
+  language: 'pt' | 'en',
+  hints?: ExamIdentifyHints
 ): Promise<IdentifyResult> {
   const openAIService = new OpenAIService();
   const metricsService = new MetricsService();
@@ -119,7 +157,11 @@ export async function identifyExam(
     // stay plain-text; jsonMode-only calls never set webSearch). The prompt already asks
     // for JSON-only output, and extractJson() below tolerates surrounding prose or fences.
     const model = process.env.OPENAI_MODEL_IDENTIFY || process.env.OPENAI_MODEL;
-    const result = await openAIService.call(IDENTIFY_PROMPTS[type], { query, language }, { webSearch: true, model });
+    const result = await openAIService.call(
+      IDENTIFY_PROMPTS[type],
+      { query, language, ...hints },
+      { webSearch: true, model }
+    );
     const durationMs = Date.now() - t0;
     void metricsService.recordStep(
       logId,
@@ -533,7 +575,15 @@ export async function locateEdital(userId: string, seed: LocateEditalSeed): Prom
 
   await metricsService.finalize(logId, Date.now() - t0);
 
-  const orderedEditais = orderByVerification(Array.from(seen.values()), seed.year).slice(0, 5);
+  // A candidate the user can neither recognise (no number/year/órgão) nor trust (never
+  // confirmed) is just noise on the approval screen — "Usar o edital de — como modelo".
+  const isShowable = (candidate: EditalCandidate): boolean =>
+    candidate.verification === 'confirmed' ||
+    candidate.editalNumber != null ||
+    candidate.year != null ||
+    candidate.orgao != null;
+
+  const orderedEditais = orderByVerification(Array.from(seen.values()).filter(isShowable), seed.year).slice(0, 5);
   const confirmedCandidates = orderedEditais.filter((candidate) => candidate.verification === 'confirmed');
   const confirmedFound = confirmedCandidates.length > 0;
   const targetYearFound =

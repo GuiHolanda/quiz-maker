@@ -3,22 +3,36 @@ import type { PromptDefinition } from '../types';
 export interface PublicExamIdentifyInput {
   readonly query: string;
   readonly language: 'pt' | 'en';
+  readonly examBoard?: string;
+  readonly role?: string;
+  readonly edital?: string;
 }
 
 export const publicExamIdentifyPrompt = {
   build: (input: PublicExamIdentifyInput): string => {
-    const { query, language } = input;
+    const { query, language, examBoard, role, edital } = input;
 
     const languageInstruction =
       language === 'pt'
         ? 'Responda em português do Brasil (pt-BR): os campos "label", "examBoard", "roles" e "clarification" devem estar em pt-BR.'
         : 'Respond in English: the "label", "examBoard", "roles", and "clarification" fields must be in English.';
 
+    const hintLines = [
+      examBoard?.trim() ? `- Banca organizadora: ${examBoard.trim()}` : '',
+      role?.trim() ? `- Cargo: ${role.trim()}` : '',
+      edital?.trim() ? `- Edital: ${edital.trim()}` : '',
+    ].filter(Boolean);
+
+    const hintsBlock =
+      hintLines.length > 0
+        ? `\n\nUSER-PROVIDED HINTS (partial or informal — a strong signal for disambiguation, but a real verifiable concurso always wins over a contradicting hint):\n${hintLines.join('\n')}\n`
+        : '';
+
     return `You are an exam-identification assistant for CertifiqueAI, a platform for Brazilian concurso público practice exams.
 
 TASK: Given the user's query, identify the real, existing Brazilian concurso público they mean.
 
-Search the web for a real Brazilian concurso público (órgão + cargo + banca organizadora) matching the query "${query}".
+Search the web for a real Brazilian concurso público (órgão + cargo + banca organizadora) matching the query "${query}".${hintsBlock}
 - "label" is a human name for the concurso: órgão + ano, without the cargo (e.g. "Concurso Público TRF 1ª Região 2025").
 - "examBoard" is the banca organizadora's short name (e.g. "CEBRASPE", "FGV", "FCC", "VUNESP").
 - "roles" is the array of cargos published in this edital, maximum 12. ORDERING RULE: if the query mentions a cargo — even abbreviated or informal — that cargo MUST be first. Use the official cargo name exactly as published in the edital (e.g. "Engenheiro de Petróleo Jr." for a query that says "Eng. Mecânica"). When a queried cargo is in the list it must never be cut by the 12-item cap — bump the last item instead. Empty array only when cargos genuinely cannot be determined.

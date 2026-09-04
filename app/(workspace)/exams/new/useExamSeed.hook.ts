@@ -5,6 +5,7 @@ import type {
   BlueprintConfidence,
   EditalCandidate,
   Exam,
+  ExamIdentifyHints,
   ExamType,
   Language,
 } from '@/shared/types';
@@ -24,6 +25,7 @@ import { useLimitModal } from '@/features/hooks/useLimitModal.hook';
 import { DEFAULT_QUESTION_FORMAT } from '@/config/question-formats';
 import { classifyEditalUrl } from '@/lib/edital-classifier';
 import { classifyEditalDomain } from '@/lib/edital-domains';
+import { parseEditalReference } from '@/lib/edital-reference';
 import { AUTO_CONFIG_URL } from '@/config/constants';
 
 export type ExamSeedState =
@@ -128,7 +130,7 @@ interface DoneEventData {
 
 interface UseExamSeedReturn {
   readonly state: ExamSeedState;
-  readonly identifyByName: (query: string) => Promise<void>;
+  readonly identifyByName: (query: string, hints?: ExamIdentifyHints) => Promise<void>;
   readonly selectMatch: (match: AutoConfigMatch) => Promise<void>;
   readonly confirmRole: (role: string) => Promise<void>;
   readonly approveEdital: (candidate: EditalCandidate) => void;
@@ -158,6 +160,10 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
   // discard). Guards the mount-time reconnect below: if the user already acted before the
   // "is there a job in flight" check resolves, that stale result must not override them.
   const userActedRef = useRef(false);
+  // The optional "detalhes da prova" hints from the seed screen. Kept in a ref so every
+  // step after identify (locate-edital, role selection, job creation) can still read them
+  // without re-plumbing them through each state transition.
+  const hintsRef = useRef<ExamIdentifyHints | undefined>(undefined);
   const { showLimitIfBlocked } = useLimitModal();
 
   const closeStream = useCallback(() => {
@@ -172,6 +178,7 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
   const reset = useCallback(() => {
     userActedRef.current = true;
     runIdRef.current += 1;
+    hintsRef.current = undefined;
     closeStream();
     if (jobIdRef.current) {
       const jobId = jobIdRef.current;
@@ -245,9 +252,17 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
   );
 
   const confirmMatch = useCallback(
-    async (match: AutoConfigMatch, edital?: { readonly url: string; readonly isPriorYear: boolean } | null) => {
+    async (rawMatch: AutoConfigMatch, edital?: { readonly url: string; readonly isPriorYear: boolean } | null) => {
       userActedRef.current = true;
       const runId = ++runIdRef.current;
+      const hints = hintsRef.current;
+      // Hints only ever fill a gap the identify step left — a value the model resolved wins.
+      const match: AutoConfigMatch = {
+        ...rawMatch,
+        key: rawMatch.key ?? hints?.key ?? null,
+        provider: rawMatch.provider ?? hints?.provider ?? null,
+        examBoard: rawMatch.examBoard ?? hints?.examBoard ?? null,
+      };
       const seed: ConfirmedSeed = {
         label: match.label,
         key: match.key,
@@ -311,12 +326,14 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
       }));
 
       try {
+        const hints = hintsRef.current;
+        const editalHint = hints?.edital ? parseEditalReference(hints.edital) : null;
         const result = await locateEdital({
           examName: match.label,
-          examBoard: match.examBoard,
-          editalKey: match.key,
-          year: match.year,
-          role: match.role ?? '',
+          examBoard: match.examBoard ?? hints?.examBoard ?? null,
+          editalKey: match.key ?? editalHint?.editalKey ?? null,
+          year: match.year ?? editalHint?.year ?? null,
+          role: match.role ?? hints?.role ?? '',
           language,
         });
 
@@ -373,21 +390,27 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
     [confirmMatch]
   );
 
-  const approveEdital = useCallback((candidate: EditalCandidate) => {
-    const current = stateRef.current;
+  const approveEdital = useCallback(
+    (candidate: EditalCandidate) => {
+      const current = stateRef.current;
 
-    if (current.kind !== 'approving-edital') return;
-    const { match, targetYearFound } = current;
-    const isPriorYear = candidate.year != null && match.year != null ? candidate.year !== match.year : !targetYearFound;
+      if (current.kind !== 'approving-edital') return;
+      const { match, targetYearFound } = current;
+      const isPriorYear =
+        candidate.year != null && match.year != null ? candidate.year !== match.year : !targetYearFound;
+      const edital = { url: candidate.url, isPriorYear };
+      const hintedRole = hintsRef.current?.role?.trim();
 
-    setState({
-      kind: 'selecting-role',
-      examName: match.label,
-      match,
-      edital: { url: candidate.url, isPriorYear },
-      startedAt: Date.now(),
-    });
-  }, []);
+      // A cargo hint means the user already named their role — skip the selection screen.
+      if (hintedRole) {
+        void confirmMatch({ ...match, role: hintedRole }, edital);
+        return;
+      }
+
+      setState({ kind: 'selecting-role', examName: match.label, match, edital, startedAt: Date.now() });
+    },
+    [confirmMatch]
+  );
 
   const relocateEdital = useCallback(
     async (editalKey: string) => {
@@ -424,6 +447,12 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
     const current = stateRef.current;
 
     if (current.kind !== 'approving-edital') return;
+    const hintedRole = hintsRef.current?.role?.trim();
+
+    if (hintedRole) {
+      void confirmMatch({ ...current.match, role: hintedRole }, null);
+      return;
+    }
     setState({
       kind: 'selecting-role',
       examName: current.match.label,
@@ -431,22 +460,25 @@ export function useExamSeed(type: ExamType, language: Language): UseExamSeedRetu
       edital: null,
       startedAt: Date.now(),
     });
-  }, []);
+  }, [confirmMatch]);
 
   const identifyByName = useCallback(
-    async (query: string) => {
+    async (query: string, hints?: ExamIdentifyHints) => {
       const trimmed = query.trim();
 
       if (!trimmed) return;
 
       userActedRef.current = true;
+      // A bare retry (from the clarify/failed recovery form) omits hints — keep the ones the
+      // user entered on the seed screen instead of wiping them.
+      if (hints !== undefined) hintsRef.current = hints;
       const runId = ++runIdRef.current;
       const startedAt = Date.now();
 
       setState({ kind: 'identifying', query: trimmed, startedAt });
 
       try {
-        const result = await identifyExam(trimmed, type, language);
+        const result = await identifyExam(trimmed, type, language, hints);
 
         if (runIdRef.current !== runId) return;
         if (result.matches.length === 0) {

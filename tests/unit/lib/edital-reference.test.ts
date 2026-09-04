@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { compactEditalReference } from '@/lib/edital-reference';
+import { compactEditalReference, parseEditalReference } from '@/lib/edital-reference';
 
 describe('compactEditalReference', () => {
   it('reduces a long official edital key to the number/year pair used in searches', () => {
@@ -33,5 +33,32 @@ describe('compactEditalReference', () => {
     expect(compactEditalReference(null, 2026)).toBeNull();
     expect(compactEditalReference('   ', 2026)).toBeNull();
     expect(compactEditalReference('Edital de Abertura', 2026)).toBeNull();
+  });
+});
+
+describe('parseEditalReference', () => {
+  it('parses a "nº N/YYYY" reference into a compact key and the year', () => {
+    expect(parseEditalReference('Edital nº 1/2026 · TRT 4ª Região')).toEqual({ editalKey: '1/2026', year: 2026 });
+  });
+
+  it('combines a bare "nº N" with a year mentioned elsewhere in the text', () => {
+    expect(parseEditalReference('Edital de Abertura nº 33, de 2025')).toEqual({ editalKey: '33/2025', year: 2025 });
+  });
+
+  it('reads a bare edital number when no year is present', () => {
+    expect(parseEditalReference('edital n 7')).toEqual({ editalKey: '7', year: null });
+  });
+
+  it('accepts an already-compact "N/YYYY" string', () => {
+    expect(parseEditalReference('1/2026')).toEqual({ editalKey: '1/2026', year: 2026 });
+  });
+
+  it('extracts only the year when no edital number is present', () => {
+    expect(parseEditalReference('Edital de Abertura 2025')).toEqual({ editalKey: null, year: 2025 });
+  });
+
+  it('returns nulls for empty text or text with no number or year', () => {
+    expect(parseEditalReference('')).toEqual({ editalKey: null, year: null });
+    expect(parseEditalReference('  TRT 4ª Região  ')).toEqual({ editalKey: null, year: null });
   });
 });

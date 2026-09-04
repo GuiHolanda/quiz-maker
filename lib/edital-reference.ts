@@ -17,3 +17,31 @@ export function compactEditalReference(editalKey: string | null, year: number | 
 
   return year ? `${number}/${year}` : number;
 }
+
+const REFERENCE_YEAR = /\b(19|20)\d{2}\b/;
+const NUMBER_SLASH_YEAR = /(\d{1,4})\s*\/\s*(?:19|20)\d{2}\b/;
+const NUMBERED_EDITAL = /\bn[º°o]?\.?\s*(\d{1,4})\b/i;
+
+// Turns the free-text "Edital" hint people type ("Edital nº 1/2026 · TRT 4ª Região") into
+// the { editalKey, year } pair locateEdital works with. Never throws — anything it can't
+// read out becomes null and the flow falls back to the identify match's own values.
+export function parseEditalReference(raw: string): { editalKey: string | null; year: number | null } {
+  const text = raw.trim();
+
+  if (!text) return { editalKey: null, year: null };
+
+  const yearMatch = REFERENCE_YEAR.exec(text);
+  const year = yearMatch ? Number(yearMatch[0]) : null;
+
+  const slashMatch = NUMBER_SLASH_YEAR.exec(text);
+  if (slashMatch) return { editalKey: `${Number(slashMatch[1])}/${year}`, year };
+
+  const numberedMatch = NUMBERED_EDITAL.exec(text);
+  if (numberedMatch) {
+    const number = Number(numberedMatch[1]);
+
+    return { editalKey: year ? `${number}/${year}` : String(number), year };
+  }
+
+  return { editalKey: null, year };
+}

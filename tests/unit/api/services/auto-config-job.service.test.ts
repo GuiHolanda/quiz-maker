@@ -268,6 +268,92 @@ describe('identifyExam', () => {
     expect(result.matches[0].role).toBe('Analista Judiciário');
   });
 
+  it('collapses matches the model split by nível — same label, key and year — into one, merging their cargos', async () => {
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({
+        matches: [
+          {
+            label: 'Processo Seletivo Público Transpetro 2026',
+            key: 'PSP-2026',
+            year: 2026,
+            examBoard: 'CESGRANRIO',
+            roles: ['Técnico de Operações Júnior', 'Técnico de Manutenção Júnior'],
+          },
+          {
+            label: 'Processo Seletivo Público Transpetro 2026',
+            key: 'PSP-2026',
+            year: 2026,
+            examBoard: 'CESGRANRIO',
+            roles: ['Engenheiro(a) Júnior - Mecânica', 'Técnico de Operações Júnior'],
+          },
+        ],
+        clarification: null,
+      }),
+      inputTokens: 10,
+      outputTokens: 10,
+    });
+
+    const result = await identifyExam('user-1', 'Transpetro 2026', 'public_exam', 'pt');
+
+    expect(result.matches).toHaveLength(1);
+    expect(result.matches[0].roles).toEqual([
+      'Técnico de Operações Júnior',
+      'Técnico de Manutenção Júnior',
+      'Engenheiro(a) Júnior - Mecânica',
+    ]);
+  });
+
+  it('merges same-label matches when the key or year is only stated on one side, filling the gaps', async () => {
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({
+        matches: [
+          {
+            label: 'Processo Seletivo Público Transpetro 2026',
+            key: null,
+            year: 2026,
+            examBoard: null,
+            roles: ['Engenheiro(a) Júnior - Mecânica'],
+          },
+          {
+            label: 'Processo Seletivo Público Transpetro 2026',
+            key: null,
+            year: null,
+            examBoard: 'CESGRANRIO',
+            roles: ['Técnico de Operações'],
+          },
+        ],
+        clarification: null,
+      }),
+      inputTokens: 10,
+      outputTokens: 10,
+    });
+
+    const result = await identifyExam('user-1', 'Transpetro 2026', 'public_exam', 'pt');
+
+    expect(result.matches).toHaveLength(1);
+    expect(result.matches[0].year).toBe(2026);
+    expect(result.matches[0].examBoard).toBe('CESGRANRIO');
+    expect(result.matches[0].roles).toEqual(['Engenheiro(a) Júnior - Mecânica', 'Técnico de Operações']);
+  });
+
+  it('keeps two matches with the same label but different edital keys apart', async () => {
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({
+        matches: [
+          { label: 'Concurso TRF 1ª Região 2025', key: 'PGJ-001/2025', year: 2025, examBoard: 'FCC' },
+          { label: 'Concurso TRF 1ª Região 2025', key: 'PGJ-014/2025', year: 2025, examBoard: 'FCC' },
+        ],
+        clarification: null,
+      }),
+      inputTokens: 10,
+      outputTokens: 10,
+    });
+
+    const result = await identifyExam('user-1', 'TRF 1', 'public_exam', 'pt');
+
+    expect(result.matches).toHaveLength(2);
+  });
+
   it('passes OPENAI_MODEL_IDENTIFY as the model option when set', async () => {
     const saved = process.env.OPENAI_MODEL_IDENTIFY;
     process.env.OPENAI_MODEL_IDENTIFY = 'gpt-identify-model';
@@ -310,6 +396,47 @@ describe('identifyExam', () => {
 
     const options = openAICallMock.mock.calls[0][2] as { model?: string };
     expect(options.model).toBe('gpt-default-model');
+  });
+
+  it('threads user-provided hints into the identify prompt', async () => {
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({ matches: [{ label: 'TRF 1ª Região 2026' }], clarification: null }),
+      inputTokens: 1,
+      outputTokens: 1,
+    });
+
+    await identifyExam('user-1', 'TRF', 'public_exam', 'pt', {
+      examBoard: 'FCC',
+      role: 'Analista Judiciário',
+      edital: '1/2026',
+    });
+
+    const [promptArg, inputArg] = openAICallMock.mock.calls[0] as [
+      { build: (input: unknown) => string },
+      unknown,
+    ];
+    const builtPrompt = promptArg.build(inputArg);
+
+    expect(builtPrompt).toContain('- Banca organizadora: FCC');
+    expect(builtPrompt).toContain('- Cargo: Analista Judiciário');
+    expect(builtPrompt).toContain('- Edital: 1/2026');
+  });
+
+  it('builds the identify prompt without a hints section when no hints are given', async () => {
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({ matches: [{ label: 'AWS' }], clarification: null }),
+      inputTokens: 1,
+      outputTokens: 1,
+    });
+
+    await identifyExam('user-1', 'AWS', 'certification', 'en');
+
+    const [promptArg, inputArg] = openAICallMock.mock.calls[0] as [
+      { build: (input: unknown) => string },
+      unknown,
+    ];
+
+    expect(promptArg.build(inputArg)).not.toContain('USER-PROVIDED HINTS');
   });
 });
 
@@ -449,12 +576,12 @@ describe('locateEdital', () => {
     openAICallMock.mockResolvedValue({
       text: JSON.stringify({
         editais: [
-          { url: 'https://a.gov.br/1.pdf' },
-          { url: 'https://a.gov.br/2.pdf' },
-          { url: 'https://a.gov.br/3.pdf' },
-          { url: 'https://a.gov.br/4.pdf' },
-          { url: 'https://a.gov.br/5.pdf' },
-          { url: 'https://a.gov.br/6.pdf' },
+          { url: 'https://a.gov.br/1.pdf', year: 2024 },
+          { url: 'https://a.gov.br/2.pdf', year: 2024 },
+          { url: 'https://a.gov.br/3.pdf', year: 2024 },
+          { url: 'https://a.gov.br/4.pdf', year: 2024 },
+          { url: 'https://a.gov.br/5.pdf', year: 2024 },
+          { url: 'https://a.gov.br/6.pdf', year: 2024 },
           { editalNumber: 'no url' },
           { url: 'ftp://not-http.gov.br/x.pdf' },
         ],
@@ -661,10 +788,10 @@ describe('locateEdital', () => {
       .mockResolvedValueOnce({
         text: JSON.stringify({
           editais: [
-            { url: 'https://x.gov.br/doc-a.pdf' },
-            { url: 'https://x.gov.br/doc-b.pdf' },
-            { url: 'https://x.gov.br/doc-c.pdf' },
-            { url: 'https://x.gov.br/doc-d.pdf' },
+            { url: 'https://x.gov.br/doc-a.pdf', year: 2019 },
+            { url: 'https://x.gov.br/doc-b.pdf', year: 2019 },
+            { url: 'https://x.gov.br/doc-c.pdf', year: 2019 },
+            { url: 'https://x.gov.br/doc-d.pdf', year: 2019 },
           ],
           targetYearFound: false,
         }),
@@ -774,6 +901,34 @@ describe('locateEdital', () => {
     const result = await locateEdital('user-1', seed);
 
     expect(result).toEqual({ editais: [], targetYearFound: false, confirmedFound: false });
+  });
+
+  it('drops an unverified candidate that carries no edital number, year or órgão to show', async () => {
+    openAICallMock.mockResolvedValueOnce({
+      text: JSON.stringify({
+        editais: [
+          { url: 'https://x.gov.br/a.pdf', editalNumber: 'E-1/2025', year: 2025, orgao: 'TRF 1ª Região' },
+          { url: 'https://x.gov.br/b.pdf', editalNumber: 'E-2/2025', year: 2025, orgao: 'TRF 1ª Região' },
+          { url: 'https://x.gov.br/c.pdf', editalNumber: 'E-3/2025', year: 2025, orgao: 'TRF 1ª Região' },
+        ],
+        targetYearFound: true,
+      }),
+      inputTokens: 1,
+      outputTokens: 1,
+      sources: ['https://mirror.example.com/harvested-no-label.pdf'],
+    });
+    fetchEditalPdfMock.mockResolvedValue({} as any);
+    editalVerifyMock.mockResolvedValue({ isMainEdital: true, documentType: 'edital', year: 2025, editalNumber: null });
+
+    const result = await locateEdital('user-1', seed);
+
+    // The 3 labelled editais use up the round's verify budget, so the harvested source-only
+    // URL is never probed — it stays unchecked with nothing to display, and must be dropped.
+    expect(result.editais.map((e) => e.url)).toEqual([
+      'https://x.gov.br/a.pdf',
+      'https://x.gov.br/b.pdf',
+      'https://x.gov.br/c.pdf',
+    ]);
   });
 
   it('finalizes the log and rethrows when the first round LLM call fails', async () => {

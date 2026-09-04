@@ -75,6 +75,12 @@ export const TID = {
   // Exam seed identification (inside the /exams/new loading screen)
   examSearchInput: 'exam-search-input',
   examSearchSubmitBtn: 'exam-search-submit-btn',
+  examDetailsToggle: 'exam-details-toggle',
+  examDetailsProvider: 'exam-details-provider',
+  examDetailsKey: 'exam-details-key',
+  examDetailsExamBoard: 'exam-details-exam-board',
+  examDetailsRole: 'exam-details-role',
+  examDetailsEdital: 'exam-details-edital',
   seedLoadingCancelBtn: 'seed-loading-cancel-btn',
   seedIdentifyMatchOption: 'seed-identify-match-option',
   seedIdentifyConfirmedLabel: 'seed-identify-confirmed-label',

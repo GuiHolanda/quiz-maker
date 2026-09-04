@@ -67,6 +67,7 @@ import {
   QuestionBankResponse,
   GenerationJobStatus,
   AutoConfigIdentifyResult,
+  ExamIdentifyHints,
   AutoConfigJobStatus,
   LocateEditalResult,
   GenerationHistoryResponse,
@@ -219,8 +220,13 @@ export async function extractEdital(file: File, role?: string): Promise<Exam> {
 
 // — Auto-config (isolated identify + research/review/format pipeline) —
 
-export const identifyExam = (query: string, type: ExamType, language: 'pt' | 'en'): Promise<AutoConfigIdentifyResult> =>
-  api.post<AutoConfigIdentifyResult>(AUTO_CONFIG_IDENTIFY_URL, { query, type, language }).then((r) => r.data);
+export const identifyExam = (
+  query: string,
+  type: ExamType,
+  language: 'pt' | 'en',
+  hints?: ExamIdentifyHints
+): Promise<AutoConfigIdentifyResult> =>
+  api.post<AutoConfigIdentifyResult>(AUTO_CONFIG_IDENTIFY_URL, { query, type, language, hints }).then((r) => r.data);
 
 export interface LocateEditalSeedPayload {
   readonly examName: string;
