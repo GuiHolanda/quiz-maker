@@ -319,6 +319,8 @@ export class QuotaService {
       publicExamsUsed: examConcursoCount,
       aiChatUsed: user.aiChatMessagesThisPeriod,
       aiChatLimit: limits.aiChatMessagesPerPeriod === Infinity ? -1 : limits.aiChatMessagesPerPeriod,
+      autoConfigUsed: user.autoConfigThisPeriod,
+      autoConfigLimit: limits.autoConfigPerPeriod === Infinity ? -1 : limits.autoConfigPerPeriod,
       periodStartDate: user.periodStartDate.toISOString(),
       hasStripePortalAccess: !!user.stripeCustomerId,
       sprintExpiresAt: user.sprintExpiresAt ? user.sprintExpiresAt.toISOString() : null,

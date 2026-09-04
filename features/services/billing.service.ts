@@ -199,16 +199,28 @@ export class BillingService {
 
   private buildInvoice(invoice: Stripe.Invoice): BillingInvoice {
     const paidAmount = invoice.amount_paid || invoice.amount_due || invoice.total;
+    const rawDescription = invoice.lines.data[0]?.description ?? invoice.description ?? null;
 
     return {
       id: invoice.id ?? invoice.number ?? String(invoice.created),
       date: new Date(invoice.created * 1000).toISOString(),
-      description: invoice.lines.data[0]?.description ?? invoice.description ?? null,
+      description: this.cleanDescription(rawDescription),
       amount: paidAmount,
       currency: invoice.currency,
       status: invoice.status ?? 'open',
       pdfUrl: invoice.invoice_pdf ?? null,
       hostedUrl: invoice.hosted_invoice_url ?? null,
     };
+  }
+
+  private cleanDescription(raw: string | null): string | null {
+    if (!raw) return null;
+
+    const trimmed = raw
+      .replace(/^\d+\s*×\s*/, '')
+      .replace(/\s*\(at\s+.*\)\s*$/i, '')
+      .trim();
+
+    return trimmed || null;
   }
 }

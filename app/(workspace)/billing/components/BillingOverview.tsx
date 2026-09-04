@@ -5,6 +5,7 @@ import type { BillingDetails, UsageStats } from '@/shared/types';
 import type { StatusTone } from '@/shared/components/ui/tone';
 
 import { Button } from '@heroui/button';
+import { Skeleton } from '@heroui/skeleton';
 import { Spinner } from '@heroui/spinner';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
@@ -40,6 +41,7 @@ export function BillingOverview() {
   const searchParams = useSearchParams();
   const [usage, setUsage] = useState<UsageStats | null>(null);
   const [details, setDetails] = useState<BillingDetails | null>(null);
+  const [detailsSettled, setDetailsSettled] = useState(false);
   const [portalLoadingKey, setPortalLoadingKey] = useState<string | null>(null);
   const [pollTimedOut, setPollTimedOut] = useState(false);
   const [isReconciling, setIsReconciling] = useState(false);
@@ -53,6 +55,7 @@ export function BillingOverview() {
   async function loadDetails(hasCustomer: boolean) {
     if (!hasCustomer) {
       setDetails(null);
+      setDetailsSettled(true);
       return;
     }
 
@@ -60,6 +63,8 @@ export function BillingOverview() {
       setDetails(await getBillingDetails());
     } catch {
       setDetails(null);
+    } finally {
+      setDetailsSettled(true);
     }
   }
 
@@ -78,13 +83,20 @@ export function BillingOverview() {
     getBillingUsage().then((data) => {
       if (cancelled) return;
       setUsage(data);
-      if (data.hasStripePortalAccess) {
-        getBillingDetails()
-          .then((d) => {
-            if (!cancelled) setDetails(d);
-          })
-          .catch(() => {});
+
+      if (!data.hasStripePortalAccess) {
+        setDetailsSettled(true);
+        return;
       }
+
+      getBillingDetails()
+        .then((d) => {
+          if (!cancelled) setDetails(d);
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (!cancelled) setDetailsSettled(true);
+        });
     });
 
     return () => {
@@ -187,6 +199,16 @@ export function BillingOverview() {
       limit: usage.examsLimit,
       note: t('billing.meter.examsNote'),
     },
+    ...(usage.autoConfigLimit !== 0
+      ? [
+          {
+            label: t('billing.meter.autoConfig'),
+            used: usage.autoConfigUsed,
+            limit: usage.autoConfigLimit,
+            note: t('billing.meter.autoConfigNote'),
+          },
+        ]
+      : []),
     ...(usage.aiChatLimit !== 0
       ? [
           {
@@ -296,21 +318,26 @@ export function BillingOverview() {
     <div className="flex flex-col gap-8">
       {renderReconcileBanner()}
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-stretch">
         {planCard}
         <div className="flex flex-col gap-5">
-          {details ? (
-            <PaymentMethodCard
-              isPortalLoading={portalLoadingKey === 'portal'}
-              onManage={() => handlePortal('portal')}
-              paymentMethod={details.paymentMethod}
-              profile={details.profile}
-            />
+          {!detailsSettled && usage.hasStripePortalAccess ? (
+            <Skeleton className="h-full min-h-72 w-full rounded-xl" />
+          ) : details ? (
+            <>
+              <PaymentMethodCard
+                className="flex-1"
+                isPortalLoading={portalLoadingKey === 'portal'}
+                onManage={() => handlePortal('portal')}
+                paymentMethod={details.paymentMethod}
+                profile={details.profile}
+              />
+              {details.upcomingInvoice && (
+                <NextChargeCard paymentMethod={details.paymentMethod} upcoming={details.upcomingInvoice} />
+              )}
+            </>
           ) : (
             <EmptyBillingCard onUpgrade={scrollToPlans} showUpgrade={usage.plan === 'free'} />
-          )}
-          {details?.upcomingInvoice && (
-            <NextChargeCard paymentMethod={details.paymentMethod} upcoming={details.upcomingInvoice} />
           )}
         </div>
       </div>

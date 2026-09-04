@@ -53,7 +53,7 @@ export function CurrentPlanCard({
   const { t } = useTranslation();
 
   return (
-    <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6">
+    <div className="flex flex-col bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6">
       <div className="flex flex-wrap items-start justify-between gap-5">
         <div className="min-w-0">
           <div className="flex items-center gap-3">

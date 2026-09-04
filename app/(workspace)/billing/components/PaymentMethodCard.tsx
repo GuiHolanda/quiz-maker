@@ -15,13 +15,20 @@ interface PaymentMethodCardProps {
   readonly profile: BillingProfile;
   readonly isPortalLoading: boolean;
   readonly onManage: () => void;
+  readonly className?: string;
 }
 
 function titleCase(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-export function PaymentMethodCard({ paymentMethod, profile, isPortalLoading, onManage }: PaymentMethodCardProps) {
+export function PaymentMethodCard({
+  paymentMethod,
+  profile,
+  isPortalLoading,
+  onManage,
+  className,
+}: PaymentMethodCardProps) {
   const { t } = useTranslation();
 
   const rows = [
@@ -32,7 +39,9 @@ export function PaymentMethodCard({ paymentMethod, profile, isPortalLoading, onM
   ];
 
   return (
-    <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6">
+    <div
+      className={`flex flex-col bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6 ${className ?? ''}`}
+    >
       <div className="flex items-center justify-between gap-3">
         <span className="text-xs font-semibold text-primary">{t('billing.paymentMethodLabel')}</span>
         <Button
@@ -71,6 +80,8 @@ export function PaymentMethodCard({ paymentMethod, profile, isPortalLoading, onM
       <div className="mt-4 border-t border-divider pt-1">
         <KeyValueList rows={rows} />
       </div>
+
+      <div className="flex-1" />
 
       <Button className={`${buttonStyles.flat} mt-4 w-full`} isLoading={isPortalLoading} onPress={onManage}>
         <FontAwesomeIcon className="h-3.5 w-3.5" icon={faPenToSquare} />

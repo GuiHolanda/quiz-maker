@@ -129,6 +129,8 @@ export interface UsageStats {
   publicExamsUsed: number; // display only
   aiChatUsed: number; // messages sent this period
   aiChatLimit: number; // -1 = unlimited (tester/admin), 0 = plan doesn't include AI Chat
+  autoConfigUsed: number; // auto-config runs this period
+  autoConfigLimit: number; // -1 = unlimited, 0 = plan doesn't include auto-config
   periodStartDate: string;
   hasStripePortalAccess: boolean; // true only if user has a stripeCustomerId (not all paid plans do)
   sprintExpiresAt: string | null; // set only when plan === 'sprint'

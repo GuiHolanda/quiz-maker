@@ -104,7 +104,7 @@ describe('BillingService', () => {
             status: 'paid',
             invoice_pdf: 'https://pdf',
             hosted_invoice_url: 'https://hosted',
-            lines: { data: [{ description: 'CertifiqueAI Pro' }] },
+            lines: { data: [{ description: '1 × Pro (at R$ 29.90 / month)' }] },
           },
         ],
       });
@@ -138,7 +138,7 @@ describe('BillingService', () => {
           {
             id: 'in_1',
             date: new Date(1_755_000_000 * 1000).toISOString(),
-            description: 'CertifiqueAI Pro',
+            description: 'Pro',
             amount: 2990,
             currency: 'brl',
             status: 'paid',
