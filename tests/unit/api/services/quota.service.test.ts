@@ -166,6 +166,7 @@ describe('QuotaService', () => {
       publicExamsUsed: 1,
       aiChatUsed: 0,
       aiChatLimit: -1,
+      autoConfigLimit: -1,
       periodStartDate: periodStart.toISOString(),
     });
   });
@@ -190,6 +191,7 @@ describe('QuotaService', () => {
       examsLimit: 12,
       aiChatUsed: 0,
       aiChatLimit: 300,
+      autoConfigLimit: 30,
       sprintExpiresAt: expiresAt.toISOString(),
     });
   });

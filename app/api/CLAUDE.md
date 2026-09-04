@@ -29,13 +29,16 @@ All API routes live under `app/api/` (one `route.ts` per folder). Business logic
 
 ### `billing/`
 
-Service: `features/services/quota.service.ts`.
+Services: `features/services/quota.service.ts` (usage), `features/services/billing.service.ts` (Stripe read-through + cancel), `features/services/referral.service.ts` (referral stats).
 
 | Route | Method | Description |
 |---|---|---|
 | `billing/checkout` | GET | Create Stripe checkout session, returns `{ url }` |
 | `billing/portal` | GET | Create Stripe customer portal URL, returns `{ url }` |
 | `billing/usage` | GET | Returns current quota usage (`UsageStats`) |
+| `billing/subscription` | GET | Returns `BillingDetails` (payment method, next invoice, subscription meta, billing profile, recent invoices) — `null` when the user has no `stripeCustomerId`. Read-only; every edit path opens the Stripe portal |
+| `billing/cancel` | POST | Sets `cancel_at_period_end` on the subscription; optional `{ reason }` maps to Stripe `cancellation_details.feedback` |
+| `billing/referral` | GET | Returns `ReferralStats` (code, link, counts, bonus earned) |
 
 ### `exam/`
 
@@ -193,6 +196,8 @@ antes de ler o cache — as chaves são indexadas só por `jobId`.
 | `job-progress.service.ts` | Snapshot de progresso de job para o SSE — `read*`/`publish*` para geração e auto-config, com fallback no Postgres. |
 | `auto-config-job.service.ts` | Auto-config pipeline — `identifyExam` (cheap lookup) + `createAutoConfigJob`/`runAutoConfigJob`/`cancelAutoConfigJob` (research→review→format, one `AutoConfigJob` row, one `auto_config` unit). |
 | `aiChat.service.ts` | Validate messages, select prompt, stream response — powers the `pro_ai` chat drawer only; unrelated to the auto-config job pipeline above. |
+| `billing.service.ts` | `getBillingDetails(userId)` reads the Stripe customer/subscription/invoices into `BillingDetails` (current-period end lives on `subscription.items.data[0].current_period_end`, not the subscription root). `cancelSubscription(userId, reason?)` sets `cancel_at_period_end`. Optional bits (tax id, upcoming-invoice preview) fail soft to `null`. |
+| `referral.service.ts` | `getStats(userId)`, `getOrCreateReferralCode(userId)` (lazy backfill), `activateIfEligible(userId)` — two-way bonus on real activation, capped per account. |
 
 Co-located services (not in `features/services/`): auth services in `app/api/auth/`, mock exam in `app/api/mock-exams/`, admin in `app/api/admin/`.
 

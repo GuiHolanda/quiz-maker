@@ -7,6 +7,8 @@ import {
   BILLING_CHECKOUT_URL,
   BILLING_PORTAL_URL,
   BILLING_REFERRAL_URL,
+  BILLING_SUBSCRIPTION_URL,
+  BILLING_CANCEL_URL,
   BROWSE_SUMMARY_URL,
   BROWSE_QUESTIONS_URL,
   PROVIDERS_URL,
@@ -45,6 +47,7 @@ import {
   SectionUpdatePayload,
   UsageStats,
   ReferralStats,
+  BillingDetails,
   BrowseSummary,
   Provider,
   ExamBoard,
@@ -313,6 +316,16 @@ export async function getReferralStats(): Promise<ReferralStats> {
   const { data } = await api.get<ReferralStats>(BILLING_REFERRAL_URL);
 
   return data;
+}
+
+export async function getBillingDetails(): Promise<BillingDetails | null> {
+  const { data } = await api.get<BillingDetails | null>(BILLING_SUBSCRIPTION_URL);
+
+  return data;
+}
+
+export async function cancelSubscription(reason?: string): Promise<void> {
+  await api.post(BILLING_CANCEL_URL, { reason });
 }
 
 // — Mock exams (simulados, both types) —
