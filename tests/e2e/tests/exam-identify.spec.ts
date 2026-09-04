@@ -129,6 +129,37 @@ for (const domain of ALL_DOMAINS) {
       await expect(page.locator(tid(TID.seedIdentifyConfirmedLabel))).toHaveText(chosen.label);
       await expect(page.getByText(chosen.key ?? '')).toBeVisible();
     });
+
+    test('renders a disambiguation list with repeated labels without a duplicate-key warning', async ({
+      authedPage: page,
+    }) => {
+      const keyWarnings: string[] = [];
+
+      page.on('console', (msg) => {
+        if (msg.type() === 'error' && msg.text().includes('same key')) keyWarnings.push(msg.text());
+      });
+
+      await mockIdentify(page, [
+        {
+          status: 200,
+          body: {
+            matches: [
+              { ...MATCHES[0], label: 'Same Exam Name', key: 'A-1' },
+              { ...MATCHES[1], label: 'Same Exam Name', key: 'B-2' },
+            ],
+            clarification: null,
+          },
+        },
+      ]);
+
+      await page.goto(domain.configureUrl);
+      await page.locator(tid(TID.examSeedBlankBtn)).waitFor({ state: 'visible' });
+      await page.locator(tid(TID.examSearchInput)).fill('ambiguous');
+      await page.locator(tid(TID.examSearchSubmitBtn)).click();
+
+      await expect(page.locator(tid(TID.seedIdentifyMatchOption))).toHaveCount(2, { timeout: 10000 });
+      expect(keyWarnings).toEqual([]);
+    });
   });
 }
 

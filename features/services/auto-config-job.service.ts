@@ -91,8 +91,37 @@ function validateIdentifyResult(data: unknown): IdentifyResult {
       year: typeof m.year === 'number' ? m.year : null,
     }));
 
+  // The public-exam prompt defines "label" as órgão + ano without the cargo, so the model
+  // sometimes emits the same concurso once per nível/cargo group. Those are one concurso —
+  // fold them into a single match (merging cargos) so the disambiguation list doesn't show
+  // two identical-looking options and React doesn't see two children with the same key.
+  const dedupedMatches: IdentifyMatch[] = [];
+  for (const match of matches) {
+    const twin = dedupedMatches.find(
+      (existing) =>
+        existing.label.toLowerCase() === match.label.toLowerCase() &&
+        existing.key === match.key &&
+        existing.year === match.year
+    );
+
+    if (!twin) {
+      dedupedMatches.push(match);
+      continue;
+    }
+
+    const mergedRoles = [...twin.roles];
+    for (const role of match.roles) {
+      if (!mergedRoles.some((existing) => existing.toLowerCase() === role.toLowerCase())) mergedRoles.push(role);
+    }
+    dedupedMatches[dedupedMatches.indexOf(twin)] = {
+      ...twin,
+      role: twin.role ?? match.role,
+      roles: mergedRoles.slice(0, 12),
+    };
+  }
+
   return {
-    matches,
+    matches: dedupedMatches,
     clarification:
       typeof payload.clarification === 'string' && payload.clarification.trim() ? payload.clarification.trim() : null,
   };

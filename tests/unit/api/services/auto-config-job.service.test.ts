@@ -268,6 +268,59 @@ describe('identifyExam', () => {
     expect(result.matches[0].role).toBe('Analista Judiciário');
   });
 
+  it('collapses matches the model split by nível — same label, key and year — into one, merging their cargos', async () => {
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({
+        matches: [
+          {
+            label: 'Processo Seletivo Público Transpetro 2026',
+            key: 'PSP-2026',
+            year: 2026,
+            examBoard: 'CESGRANRIO',
+            roles: ['Técnico de Operações Júnior', 'Técnico de Manutenção Júnior'],
+          },
+          {
+            label: 'Processo Seletivo Público Transpetro 2026',
+            key: 'PSP-2026',
+            year: 2026,
+            examBoard: 'CESGRANRIO',
+            roles: ['Engenheiro(a) Júnior - Mecânica', 'Técnico de Operações Júnior'],
+          },
+        ],
+        clarification: null,
+      }),
+      inputTokens: 10,
+      outputTokens: 10,
+    });
+
+    const result = await identifyExam('user-1', 'Transpetro 2026', 'public_exam', 'pt');
+
+    expect(result.matches).toHaveLength(1);
+    expect(result.matches[0].roles).toEqual([
+      'Técnico de Operações Júnior',
+      'Técnico de Manutenção Júnior',
+      'Engenheiro(a) Júnior - Mecânica',
+    ]);
+  });
+
+  it('keeps two matches with the same label but different edital keys apart', async () => {
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({
+        matches: [
+          { label: 'Concurso TRF 1ª Região 2025', key: 'PGJ-001/2025', year: 2025, examBoard: 'FCC' },
+          { label: 'Concurso TRF 1ª Região 2025', key: 'PGJ-014/2025', year: 2025, examBoard: 'FCC' },
+        ],
+        clarification: null,
+      }),
+      inputTokens: 10,
+      outputTokens: 10,
+    });
+
+    const result = await identifyExam('user-1', 'TRF 1', 'public_exam', 'pt');
+
+    expect(result.matches).toHaveLength(2);
+  });
+
   it('passes OPENAI_MODEL_IDENTIFY as the model option when set', async () => {
     const saved = process.env.OPENAI_MODEL_IDENTIFY;
     process.env.OPENAI_MODEL_IDENTIFY = 'gpt-identify-model';

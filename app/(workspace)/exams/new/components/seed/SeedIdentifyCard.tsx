@@ -177,9 +177,9 @@ export function SeedIdentifyCard({
       case 'disambiguating':
         return (
           <div className="flex flex-col gap-2">
-            {phase.matches.map((match) => (
+            {phase.matches.map((match, index) => (
               <button
-                key={match.label}
+                key={`${match.label}|${match.key ?? ''}|${index}`}
                 className="group flex items-center gap-3 text-left bg-content2 border border-default-200 rounded-lg px-4 py-3 hover:bg-primary/10 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors duration-200"
                 data-testid="seed-identify-match-option"
                 type="button"
