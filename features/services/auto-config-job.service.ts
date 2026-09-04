@@ -17,6 +17,7 @@ import type {
   EditalDocumentKind,
   EditalDomainClass,
   EditalVerification,
+  ExamIdentifyHints,
   ExamType,
   LocateEditalResult,
 } from '@/shared/types';
@@ -105,7 +106,8 @@ export async function identifyExam(
   userId: string,
   query: string,
   type: ExamType,
-  language: 'pt' | 'en'
+  language: 'pt' | 'en',
+  hints?: ExamIdentifyHints
 ): Promise<IdentifyResult> {
   const openAIService = new OpenAIService();
   const metricsService = new MetricsService();
@@ -119,7 +121,11 @@ export async function identifyExam(
     // stay plain-text; jsonMode-only calls never set webSearch). The prompt already asks
     // for JSON-only output, and extractJson() below tolerates surrounding prose or fences.
     const model = process.env.OPENAI_MODEL_IDENTIFY || process.env.OPENAI_MODEL;
-    const result = await openAIService.call(IDENTIFY_PROMPTS[type], { query, language }, { webSearch: true, model });
+    const result = await openAIService.call(
+      IDENTIFY_PROMPTS[type],
+      { query, language, ...hints },
+      { webSearch: true, model }
+    );
     const durationMs = Date.now() - t0;
     void metricsService.recordStep(
       logId,

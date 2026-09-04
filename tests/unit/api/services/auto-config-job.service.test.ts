@@ -311,6 +311,47 @@ describe('identifyExam', () => {
     const options = openAICallMock.mock.calls[0][2] as { model?: string };
     expect(options.model).toBe('gpt-default-model');
   });
+
+  it('threads user-provided hints into the identify prompt', async () => {
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({ matches: [{ label: 'TRF 1ª Região 2026' }], clarification: null }),
+      inputTokens: 1,
+      outputTokens: 1,
+    });
+
+    await identifyExam('user-1', 'TRF', 'public_exam', 'pt', {
+      examBoard: 'FCC',
+      role: 'Analista Judiciário',
+      edital: '1/2026',
+    });
+
+    const [promptArg, inputArg] = openAICallMock.mock.calls[0] as [
+      { build: (input: unknown) => string },
+      unknown,
+    ];
+    const builtPrompt = promptArg.build(inputArg);
+
+    expect(builtPrompt).toContain('- Banca organizadora: FCC');
+    expect(builtPrompt).toContain('- Cargo: Analista Judiciário');
+    expect(builtPrompt).toContain('- Edital: 1/2026');
+  });
+
+  it('builds the identify prompt without a hints section when no hints are given', async () => {
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({ matches: [{ label: 'AWS' }], clarification: null }),
+      inputTokens: 1,
+      outputTokens: 1,
+    });
+
+    await identifyExam('user-1', 'AWS', 'certification', 'en');
+
+    const [promptArg, inputArg] = openAICallMock.mock.calls[0] as [
+      { build: (input: unknown) => string },
+      unknown,
+    ];
+
+    expect(promptArg.build(inputArg)).not.toContain('USER-PROVIDED HINTS');
+  });
 });
 
 describe('locateEdital', () => {

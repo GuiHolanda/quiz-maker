@@ -575,6 +575,17 @@ export interface AutoConfigIdentifyResult {
   readonly clarification: string | null;
 }
 
+// Optional "detalhes da prova" the user fills on the seed screen to pin down the right
+// certification/concurso/edital. Every field is optional and free-text; certification only
+// reads provider/key, public_exam only reads examBoard/role/edital.
+export interface ExamIdentifyHints {
+  readonly provider?: string;
+  readonly key?: string;
+  readonly examBoard?: string;
+  readonly role?: string;
+  readonly edital?: string;
+}
+
 export type EditalDocumentKind = 'main' | 'annex' | 'unknown';
 
 export type EditalDomainClass = 'official-org' | 'official-banca' | 'aggregator' | 'other';
