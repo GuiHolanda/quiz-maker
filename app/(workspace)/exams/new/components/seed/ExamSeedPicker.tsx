@@ -38,80 +38,82 @@ export function ExamSeedPicker({ type, onIdentify, onUploadEdital, onStartBlank 
   };
 
   return (
-    <WorkspaceSplitLayout
-      variant="editor"
-      rail={
-        <>
-          <NextStepsCard />
-          <MyExamsCard type={type} />
-        </>
-      }
-    >
-      <div>
-        <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6">
-          <ExamSearchForm isBusy={false} isSearching={false} type={type} onSubmit={onIdentify} />
-        </div>
+    <div className="mt-7">
+      <WorkspaceSplitLayout
+        variant="summary"
+        rail={
+          <>
+            <NextStepsCard />
+            <MyExamsCard type={type} />
+          </>
+        }
+      >
+        <div>
+          <div className="bg-content1 rounded-xl border border-default-200 dark:border-transparent p-6">
+            <ExamSearchForm isBusy={false} isSearching={false} type={type} onSubmit={onIdentify} />
+          </div>
 
-        <div className="flex items-center gap-3.5 my-6">
-          <div className="h-px flex-1 bg-divider" />
-          <span className="text-xs tracking-widest text-default-400">{t('common.or')}</span>
-          <div className="h-px flex-1 bg-divider" />
-        </div>
+          <div className="flex items-center gap-3.5 my-6">
+            <div className="h-px flex-1 bg-divider" />
+            <span className="text-xs tracking-widest text-default-400">{t('common.or')}</span>
+            <div className="h-px flex-1 bg-divider" />
+          </div>
 
-        <div className={`grid gap-5 sm:grid-cols-2 ${type === 'public_exam' ? 'lg:grid-cols-3' : ''}`}>
-          <ExamSeedPathCard
-            body={t('exam.pathCatalogBody')}
-            cta={t('exam.pathCatalogCta')}
-            href={`/exams/catalog?type=${type}`}
-            icon={faLayerGroup}
-            title={t('catalog.browseAction')}
-          />
-          <ExamSeedPathCard
-            body={t('exam.pathBlankBody')}
-            cta={t('exam.pathBlankCta')}
-            icon={faPenToSquare}
-            testId="exam-seed-blank-btn"
-            title={t('exam.aiSeedStartBlank')}
-            onPress={onStartBlank}
-          />
-          {type === 'public_exam' && (
+          <div className={`grid gap-5 sm:grid-cols-2 ${type === 'public_exam' ? 'lg:grid-cols-3' : ''}`}>
             <ExamSeedPathCard
-              body={t('exam.pathEditalBody')}
-              cta={t('exam.pathEditalCta')}
-              icon={faFileArrowUp}
-              title={t('exam.aiSeedUploadEdital')}
-              onPress={() => setShowEditalUpload(true)}
+              body={t('exam.pathCatalogBody')}
+              cta={t('exam.pathCatalogCta')}
+              href={`/exams/catalog?type=${type}`}
+              icon={faLayerGroup}
+              title={t('catalog.browseAction')}
             />
+            <ExamSeedPathCard
+              body={t('exam.pathBlankBody')}
+              cta={t('exam.pathBlankCta')}
+              icon={faPenToSquare}
+              testId="exam-seed-blank-btn"
+              title={t('exam.aiSeedStartBlank')}
+              onPress={onStartBlank}
+            />
+            {type === 'public_exam' && (
+              <ExamSeedPathCard
+                body={t('exam.pathEditalBody')}
+                cta={t('exam.pathEditalCta')}
+                icon={faFileArrowUp}
+                title={t('exam.aiSeedUploadEdital')}
+                onPress={() => setShowEditalUpload(true)}
+              />
+            )}
+          </div>
+
+          {type === 'public_exam' && showEditalUpload && (
+            <div className="flex mt-5 bg-content1 rounded-xl border border-default-200 dark:border-transparent p-5 gap-4 items-end-safe">
+              <Input
+                {...inputProperties.input}
+                label={t('concurso.cargo')}
+                placeholder={t('concurso.cargoPlaceholder')}
+                value={role}
+                onValueChange={setRole}
+              />
+              <input
+                ref={fileInputRef}
+                accept="application/pdf"
+                className="hidden"
+                type="file"
+                onChange={handleFileChange}
+              />
+              <Button
+                className={`${buttonStyles.secondary} px-4 shrink-0`}
+                size="sm"
+                startContent={<FontAwesomeIcon icon={faFileArrowUp} />}
+                onPress={() => fileInputRef.current?.click()}
+              >
+                {t('exam.aiSeedUploadEdital')}
+              </Button>
+            </div>
           )}
         </div>
-
-        {type === 'public_exam' && showEditalUpload && (
-          <div className="flex mt-5 bg-content1 rounded-xl border border-default-200 dark:border-transparent p-5 gap-4 items-end-safe">
-            <Input
-              {...inputProperties.input}
-              label={t('concurso.cargo')}
-              placeholder={t('concurso.cargoPlaceholder')}
-              value={role}
-              onValueChange={setRole}
-            />
-            <input
-              ref={fileInputRef}
-              accept="application/pdf"
-              className="hidden"
-              type="file"
-              onChange={handleFileChange}
-            />
-            <Button
-              className={`${buttonStyles.secondary} px-4 shrink-0`}
-              size="sm"
-              startContent={<FontAwesomeIcon icon={faFileArrowUp} />}
-              onPress={() => fileInputRef.current?.click()}
-            >
-              {t('exam.aiSeedUploadEdital')}
-            </Button>
-          </div>
-        )}
-      </div>
-    </WorkspaceSplitLayout>
+      </WorkspaceSplitLayout>
+    </div>
   );
 }
