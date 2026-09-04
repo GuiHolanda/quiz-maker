@@ -50,7 +50,7 @@ export function ExamDetailsDisclosure({ type, isDisabled, value, onChange }: Exa
           <p className="text-xs leading-relaxed text-default-500">{t('exam.detailsIntro')}</p>
 
           {type === 'certification' ? (
-            <>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input
                 {...inputProperties.input}
                 data-testid="exam-details-provider"
@@ -69,27 +69,29 @@ export function ExamDetailsDisclosure({ type, isDisabled, value, onChange }: Exa
                 value={value.key ?? ''}
                 onValueChange={setField('key')}
               />
-            </>
+            </div>
           ) : (
             <>
-              <Input
-                {...inputProperties.input}
-                data-testid="exam-details-exam-board"
-                isDisabled={isDisabled}
-                label={t('exam.examBoard')}
-                placeholder={t('exam.detailsExamBoardPlaceholder')}
-                value={value.examBoard ?? ''}
-                onValueChange={setField('examBoard')}
-              />
-              <Input
-                {...inputProperties.input}
-                data-testid="exam-details-role"
-                isDisabled={isDisabled}
-                label={t('concurso.cargo')}
-                placeholder={t('exam.detailsRolePlaceholder')}
-                value={value.role ?? ''}
-                onValueChange={setField('role')}
-              />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Input
+                  {...inputProperties.input}
+                  data-testid="exam-details-exam-board"
+                  isDisabled={isDisabled}
+                  label={t('exam.examBoard')}
+                  placeholder={t('exam.detailsExamBoardPlaceholder')}
+                  value={value.examBoard ?? ''}
+                  onValueChange={setField('examBoard')}
+                />
+                <Input
+                  {...inputProperties.input}
+                  data-testid="exam-details-role"
+                  isDisabled={isDisabled}
+                  label={t('concurso.cargo')}
+                  placeholder={t('exam.detailsRolePlaceholder')}
+                  value={value.role ?? ''}
+                  onValueChange={setField('role')}
+                />
+              </div>
               <Input
                 {...inputProperties.input}
                 data-testid="exam-details-edital"
