@@ -303,6 +303,39 @@ describe('identifyExam', () => {
     ]);
   });
 
+  it('merges same-label matches when the key or year is only stated on one side, filling the gaps', async () => {
+    openAICallMock.mockResolvedValue({
+      text: JSON.stringify({
+        matches: [
+          {
+            label: 'Processo Seletivo Público Transpetro 2026',
+            key: null,
+            year: 2026,
+            examBoard: null,
+            roles: ['Engenheiro(a) Júnior - Mecânica'],
+          },
+          {
+            label: 'Processo Seletivo Público Transpetro 2026',
+            key: null,
+            year: null,
+            examBoard: 'CESGRANRIO',
+            roles: ['Técnico de Operações'],
+          },
+        ],
+        clarification: null,
+      }),
+      inputTokens: 10,
+      outputTokens: 10,
+    });
+
+    const result = await identifyExam('user-1', 'Transpetro 2026', 'public_exam', 'pt');
+
+    expect(result.matches).toHaveLength(1);
+    expect(result.matches[0].year).toBe(2026);
+    expect(result.matches[0].examBoard).toBe('CESGRANRIO');
+    expect(result.matches[0].roles).toEqual(['Engenheiro(a) Júnior - Mecânica', 'Técnico de Operações']);
+  });
+
   it('keeps two matches with the same label but different edital keys apart', async () => {
     openAICallMock.mockResolvedValue({
       text: JSON.stringify({

@@ -92,17 +92,20 @@ function validateIdentifyResult(data: unknown): IdentifyResult {
     }));
 
   // The public-exam prompt defines "label" as órgão + ano without the cargo, so the model
-  // sometimes emits the same concurso once per nível/cargo group. Those are one concurso —
-  // fold them into a single match (merging cargos) so the disambiguation list doesn't show
-  // two identical-looking options and React doesn't see two children with the same key.
+  // sometimes emits the same concurso once per nível/cargo group — occasionally with the key
+  // or year filled on only one of them. Two matches sharing a label are the same concurso
+  // unless one of them *positively* contradicts the other (both state a key/year and they
+  // differ) — fold everything else into a single entry (merging cargos, filling gaps) so the
+  // disambiguation list never shows two identical-looking options.
   const dedupedMatches: IdentifyMatch[] = [];
   for (const match of matches) {
-    const twin = dedupedMatches.find(
-      (existing) =>
-        existing.label.toLowerCase() === match.label.toLowerCase() &&
-        existing.key === match.key &&
-        existing.year === match.year
-    );
+    const twin = dedupedMatches.find((existing) => {
+      if (existing.label.toLowerCase() !== match.label.toLowerCase()) return false;
+      const keyConflicts = existing.key != null && match.key != null && existing.key !== match.key;
+      const yearConflicts = existing.year != null && match.year != null && existing.year !== match.year;
+
+      return !keyConflicts && !yearConflicts;
+    });
 
     if (!twin) {
       dedupedMatches.push(match);
@@ -115,7 +118,11 @@ function validateIdentifyResult(data: unknown): IdentifyResult {
     }
     dedupedMatches[dedupedMatches.indexOf(twin)] = {
       ...twin,
+      key: twin.key ?? match.key,
+      provider: twin.provider ?? match.provider,
+      examBoard: twin.examBoard ?? match.examBoard,
       role: twin.role ?? match.role,
+      year: twin.year ?? match.year,
       roles: mergedRoles.slice(0, 12),
     };
   }
