@@ -462,5 +462,105 @@ describe('ExamService', () => {
       expect(prismaMock.mockExam.findMany).not.toHaveBeenCalled();
       expect(prismaMock.examQuestion.findMany).not.toHaveBeenCalled();
     });
+
+    it('marks status draft and readiness 0 when the exam has no sections', async () => {
+      prismaMock.exam.findMany.mockResolvedValue([{ ...baseExamRow, sections: [] }] as any);
+      prismaMock.mockExam.findMany.mockResolvedValue([] as any);
+      prismaMock.examQuestion.findMany.mockResolvedValue([] as any);
+
+      const service = new ExamService(prismaMock as any);
+      const [exam] = await service.getExams('user-1');
+
+      expect(exam.status).toBe('draft');
+      expect(exam.readinessPercent).toBe(0);
+    });
+
+    it('computes readiness as covered-topics / total-topics when the exam has topics', async () => {
+      prismaMock.exam.findMany.mockResolvedValue([
+        {
+          ...baseExamRow,
+          sections: [
+            {
+              id: 'sec-1',
+              name: 'Security',
+              minQuestions: 30,
+              maxQuestions: 30,
+              topics: [{ id: 'top-1', name: 'IAM' }, { id: 'top-2', name: 'KMS' }, { id: 'top-3', name: 'GuardDuty' }],
+            },
+          ],
+        },
+      ] as any);
+      prismaMock.mockExam.findMany.mockResolvedValue([] as any);
+      prismaMock.examQuestion.findMany.mockResolvedValue([
+        { examId: 'exam-1', sectionId: 'sec-1', topicId: 'top-1', createdAt: new Date() },
+      ] as any);
+
+      const service = new ExamService(prismaMock as any);
+      const [exam] = await service.getExams('user-1');
+
+      expect(exam.readinessPercent).toBe(33);
+      expect(exam.status).toBe('active');
+    });
+
+    it('falls back to section-level coverage when the exam has sections but no topics', async () => {
+      prismaMock.exam.findMany.mockResolvedValue([
+        {
+          ...baseExamRow,
+          sections: [
+            { id: 'sec-1', name: 'A', minQuestions: 50, maxQuestions: 50, topics: [] },
+            { id: 'sec-2', name: 'B', minQuestions: 50, maxQuestions: 50, topics: [] },
+          ],
+        },
+      ] as any);
+      prismaMock.mockExam.findMany.mockResolvedValue([] as any);
+      prismaMock.examQuestion.findMany.mockResolvedValue([
+        { examId: 'exam-1', sectionId: 'sec-1', topicId: null, createdAt: new Date() },
+      ] as any);
+
+      const service = new ExamService(prismaMock as any);
+      const [exam] = await service.getExams('user-1');
+
+      expect(exam.readinessPercent).toBe(50);
+    });
+
+    it('marks status completed with the best qualifying attempt when a finished attempt clears passingScore', async () => {
+      prismaMock.exam.findMany.mockResolvedValue([
+        { ...baseExamRow, passingScore: 70, sections: [{ id: 'sec-1', name: 'A', minQuestions: 100, maxQuestions: 100, topics: [] }] },
+      ] as any);
+      prismaMock.mockExam.findMany.mockResolvedValue([
+        {
+          examId: 'exam-1',
+          createdAt: new Date('2026-01-05T00:00:00Z'),
+          attempts: [
+            { score: 60, finishedAt: new Date('2026-01-06T00:00:00Z') },
+            { score: 74, finishedAt: new Date('2026-05-12T00:00:00Z') },
+          ],
+        },
+      ] as any);
+      prismaMock.examQuestion.findMany.mockResolvedValue([] as any);
+
+      const service = new ExamService(prismaMock as any);
+      const [exam] = await service.getExams('user-1');
+
+      expect(exam.status).toBe('completed');
+      expect(exam.completedScore).toBe(74);
+      expect(exam.completedAt).toBe(new Date('2026-05-12T00:00:00Z').toISOString());
+    });
+
+    it('stays active when passingScore is null even with finished attempts', async () => {
+      prismaMock.exam.findMany.mockResolvedValue([
+        { ...baseExamRow, passingScore: null, sections: [{ id: 'sec-1', name: 'A', minQuestions: 100, maxQuestions: 100, topics: [] }] },
+      ] as any);
+      prismaMock.mockExam.findMany.mockResolvedValue([
+        { examId: 'exam-1', createdAt: new Date(), attempts: [{ score: 95, finishedAt: new Date() }] },
+      ] as any);
+      prismaMock.examQuestion.findMany.mockResolvedValue([] as any);
+
+      const service = new ExamService(prismaMock as any);
+      const [exam] = await service.getExams('user-1');
+
+      expect(exam.status).toBe('active');
+      expect(exam.completedScore).toBeNull();
+    });
   });
 });

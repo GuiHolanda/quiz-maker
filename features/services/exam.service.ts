@@ -816,11 +816,43 @@ export class ExamService {
   }
 
   private deriveReadinessAndStatus(
-    _exam: { sections: { id: string; topics: { id: string }[] }[]; passingScore: number | null },
-    _examQuestionsForExam: { sectionId: string | null; topicId: string | null }[],
-    _finishedAttempts: { score: number; finishedAt: Date }[]
+    exam: { sections: { id: string; topics: { id: string }[] }[]; passingScore: number | null },
+    examQuestionsForExam: { sectionId: string | null; topicId: string | null }[],
+    finishedAttempts: { score: number; finishedAt: Date }[]
   ): Pick<ExamMetrics, 'readinessPercent' | 'status' | 'completedScore' | 'completedAt'> {
-    return { readinessPercent: 0, status: 'active', completedScore: null, completedAt: null };
+    if (exam.sections.length === 0) {
+      return { readinessPercent: 0, status: 'draft', completedScore: null, completedAt: null };
+    }
+
+    const allTopics = exam.sections.flatMap((s) => s.topics);
+    const readinessPercent =
+      allTopics.length > 0
+        ? Math.round(
+            (allTopics.filter((t) => examQuestionsForExam.some((q) => q.topicId === t.id)).length / allTopics.length) *
+              100
+          )
+        : Math.round(
+            (exam.sections.filter((s) => examQuestionsForExam.some((q) => q.sectionId === s.id)).length /
+              exam.sections.length) *
+              100
+          );
+
+    if (exam.passingScore != null) {
+      const qualifying = finishedAttempts.filter((a) => a.score >= exam.passingScore!);
+
+      if (qualifying.length > 0) {
+        const best = qualifying.reduce((max, a) => (a.score > max.score ? a : max));
+
+        return {
+          readinessPercent,
+          status: 'completed',
+          completedScore: best.score,
+          completedAt: best.finishedAt.toISOString(),
+        };
+      }
+    }
+
+    return { readinessPercent, status: 'active', completedScore: null, completedAt: null };
   }
 
   private toExam(row: any, metrics?: ExamMetrics): Exam {
