@@ -148,13 +148,12 @@ export function ExamCard({ exam, onDelete }: ExamCardProps) {
           )}
           {exam.sections.length > 0 && (
             <Button
-              className="ml-auto"
+              className={`${buttonStyles.flat} ml-auto`}
               endContent={
                 <FontAwesomeIcon className="text-[10px]" icon={isDomainsOpen ? faChevronUp : faChevronDown} />
               }
               size="sm"
               startContent={<FontAwesomeIcon className="text-xs" icon={faLayerGroup} />}
-              variant="light"
               onPress={() => setIsDomainsOpen((open) => !open)}
             >
               {t('exam.domainsCount', { count: String(exam.sections.length) })}
