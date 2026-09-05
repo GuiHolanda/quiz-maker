@@ -3,6 +3,17 @@ import { defaultFormatForSource, isQuestionFormatKey, resolveQuestionFormat } fr
 import { Exam, ExamType, SectionUpdatePayload } from '@/shared/types';
 import { normalizeName } from '@/shared/utils';
 
+interface ExamMetrics {
+  generatedQuestionsCount: number;
+  simuladosCount: number;
+  accuracyPercent: number | null;
+  lastActivityAt: string;
+  readinessPercent: number;
+  status: 'draft' | 'active' | 'completed';
+  completedScore: number | null;
+  completedAt: string | null;
+}
+
 function dedupeByName<T extends { name: string }>(items: T[]): T[] {
   const seen = new Set<string>();
   return items.filter((item) => {
@@ -106,7 +117,26 @@ export class ExamService {
       orderBy: { updatedAt: 'desc' },
     });
 
-    return exams.map((exam) => this.toExam(exam));
+    if (exams.length === 0) return [];
+
+    const examIds = exams.map((exam) => exam.id);
+
+    const [mockExams, examQuestions] = await Promise.all([
+      this.prismaService.mockExam.findMany({
+        where: { userId, examId: { in: examIds } },
+        select: {
+          examId: true,
+          createdAt: true,
+          attempts: { select: { score: true, finishedAt: true } },
+        },
+      }),
+      this.prismaService.examQuestion.findMany({
+        where: { userId, examId: { in: examIds } },
+        select: { examId: true, sectionId: true, topicId: true, createdAt: true },
+      }),
+    ]);
+
+    return exams.map((exam) => this.toExam(exam, this.computeExamMetrics(exam, mockExams, examQuestions)));
   }
 
   public async save(exam: Exam, userId: string) {
@@ -739,7 +769,61 @@ export class ExamService {
     });
   }
 
-  private toExam(row: any): Exam {
+  private computeExamMetrics(
+    exam: {
+      id: string;
+      updatedAt: Date;
+      passingScore: number | null;
+      sections: { id: string; topics: { id: string }[] }[];
+    },
+    mockExams: {
+      examId: string;
+      createdAt: Date;
+      attempts: { score: number | null; finishedAt: Date | null }[];
+    }[],
+    examQuestions: { examId: string | null; sectionId: string | null; topicId: string | null; createdAt: Date }[]
+  ): ExamMetrics {
+    const examMockExams = mockExams.filter((m) => m.examId === exam.id);
+    const examQuestionsForExam = examQuestions.filter((q) => q.examId === exam.id);
+
+    const finishedAttempts = examMockExams
+      .flatMap((m) => m.attempts)
+      .filter((a): a is { score: number; finishedAt: Date } => a.finishedAt != null && a.score != null);
+
+    const generatedQuestionsCount = examQuestionsForExam.length;
+    const simuladosCount = examMockExams.length;
+
+    const accuracyPercent =
+      finishedAttempts.length === 0
+        ? null
+        : Math.round(finishedAttempts.reduce((sum, a) => sum + a.score, 0) / finishedAttempts.length);
+
+    const activityDates = [
+      exam.updatedAt,
+      ...examMockExams.map((m) => m.createdAt),
+      ...finishedAttempts.map((a) => a.finishedAt),
+      ...examQuestionsForExam.map((q) => q.createdAt),
+    ];
+    const lastActivityAt = new Date(Math.max(...activityDates.map((d) => d.getTime()))).toISOString();
+
+    return {
+      generatedQuestionsCount,
+      simuladosCount,
+      accuracyPercent,
+      lastActivityAt,
+      ...this.deriveReadinessAndStatus(exam, examQuestionsForExam, finishedAttempts),
+    };
+  }
+
+  private deriveReadinessAndStatus(
+    _exam: { sections: { id: string; topics: { id: string }[] }[]; passingScore: number | null },
+    _examQuestionsForExam: { sectionId: string | null; topicId: string | null }[],
+    _finishedAttempts: { score: number; finishedAt: Date }[]
+  ): Pick<ExamMetrics, 'readinessPercent' | 'status' | 'completedScore' | 'completedAt'> {
+    return { readinessPercent: 0, status: 'active', completedScore: null, completedAt: null };
+  }
+
+  private toExam(row: any, metrics?: ExamMetrics): Exam {
     return {
       id: row.id,
       type: row.type as ExamType,
@@ -762,6 +846,7 @@ export class ExamService {
         maxQuestions: s.maxQuestions,
         topics: (s.topics ?? []).map((t: any) => ({ id: t.id, name: t.name })),
       })),
+      ...(metrics ?? {}),
     };
   }
 }

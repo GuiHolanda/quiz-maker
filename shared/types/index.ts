@@ -44,6 +44,8 @@ export interface ExamSection {
   readonly questions?: number;
 }
 
+export type ExamStatus = 'draft' | 'active' | 'completed';
+
 export interface Exam {
   readonly id?: string;
   readonly type: ExamType;
@@ -60,6 +62,14 @@ export interface Exam {
   readonly createdAt?: string;
   readonly updatedAt?: string;
   readonly sections: ExamSection[];
+  readonly generatedQuestionsCount?: number;
+  readonly simuladosCount?: number;
+  readonly accuracyPercent?: number | null;
+  readonly lastActivityAt?: string | null;
+  readonly readinessPercent?: number;
+  readonly status?: ExamStatus;
+  readonly completedScore?: number | null;
+  readonly completedAt?: string | null;
 }
 
 export interface SectionUpdatePayload {
