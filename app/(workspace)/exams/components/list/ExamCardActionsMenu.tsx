@@ -1,7 +1,14 @@
 'use client';
 
 import NextLink from 'next/link';
-import { faWandMagicSparkles, faFileLines, faBookOpen, faPen, faTrash } from '@fortawesome/free-solid-svg-icons';
+import {
+  faWandMagicSparkles,
+  faFileLines,
+  faBookOpen,
+  faPen,
+  faLock,
+  faTrash,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -9,10 +16,12 @@ import type { Exam } from '@/shared/types';
 
 interface ExamCardActionsMenuProps {
   readonly exam: Exam;
+  readonly canEdit: boolean;
   readonly onDelete: () => void;
+  readonly onUpgradeRequired: () => void;
 }
 
-export function ExamCardActionsMenu({ exam, onDelete }: ExamCardActionsMenuProps) {
+export function ExamCardActionsMenu({ exam, canEdit, onDelete, onUpgradeRequired }: ExamCardActionsMenuProps) {
   const { t } = useTranslation();
 
   const linkClass =
@@ -37,10 +46,17 @@ export function ExamCardActionsMenu({ exam, onDelete }: ExamCardActionsMenuProps
         <FontAwesomeIcon className="text-xs" icon={faBookOpen} />
         {t('exam.actionQuestionBank')}
       </NextLink>
-      <NextLink className={linkClass} data-testid="exam-card-action-edit" href={`/exams/${exam.id}/edit`}>
-        <FontAwesomeIcon className="text-xs" icon={faPen} />
-        {t('certification.editCertification')}
-      </NextLink>
+      {canEdit ? (
+        <NextLink className={linkClass} data-testid="exam-card-action-edit" href={`/exams/${exam.id}/edit`}>
+          <FontAwesomeIcon className="text-xs" icon={faPen} />
+          {t('certification.editCertification')}
+        </NextLink>
+      ) : (
+        <button className={linkClass} data-testid="exam-card-action-upgrade" type="button" onClick={onUpgradeRequired}>
+          <FontAwesomeIcon className="text-xs" icon={faLock} />
+          {t('billing.upgradeModal.cta')}
+        </button>
+      )}
       <button
         className={`${linkClass} text-danger`}
         data-testid="exam-card-action-remove"

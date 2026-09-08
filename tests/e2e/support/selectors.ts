@@ -132,6 +132,7 @@ export const TID = {
   examCardActionSimulado: 'exam-card-action-simulado',
   examCardActionQuestionBank: 'exam-card-action-question-bank',
   examCardActionEdit: 'exam-card-action-edit',
+  examCardActionUpgrade: 'exam-card-action-upgrade',
   examCardActionRemove: 'exam-card-action-remove',
   catalogForkBtn: 'catalog-fork-btn',
   catalogForkConfirmBtn: 'catalog-fork-confirm-btn',

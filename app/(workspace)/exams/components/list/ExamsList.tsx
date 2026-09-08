@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
+import { useSession } from 'next-auth/react';
 
 import { ExamCard } from './ExamCard';
 import { ExamsListToolbar } from './ExamsListToolbar';
@@ -9,6 +10,7 @@ import { filterAndSortExams, type ExamListSort, type ExamListTab } from './exams
 import { CatalogDiscoveryCard } from '@/app/(workspace)/exams/components/catalog/CatalogDiscoveryCard';
 import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
 import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
+import { UpgradeModal } from '@/shared/components/ui/UpgradeModal';
 import { EntityListShell } from '@/shared/components/ui/EntityListShell';
 import { usePaginatedItems } from '@/features/hooks/usePaginatedItems.hook';
 import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
@@ -16,6 +18,7 @@ import { deleteExam } from '@/features/connectors';
 import type { Exam } from '@/shared/types';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { notify } from '@/shared/lib/notify';
+import { canEditExams } from '@/config/constants';
 import { faGraduationCap } from '@fortawesome/free-solid-svg-icons';
 
 interface ExamsListProps {
@@ -25,12 +28,15 @@ interface ExamsListProps {
 export function ExamsList({ onCreateNew }: ExamsListProps) {
   const { t } = useTranslation();
   const { exams, isLoading, removeExam } = useExamsContext();
+  const { data: session } = useSession();
+  const canEdit = !session?.user?.plan || canEditExams(session.user.plan);
 
   const [tab, setTab] = useState<ExamListTab>('all');
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<ExamListSort>('activity');
   const [deletingExam, setDeletingExam] = useState<Exam | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
 
   const filtered = useMemo(() => filterAndSortExams(exams, { tab, search, sort }), [exams, tab, search, sort]);
   const hasActiveFilters = tab !== 'all' || search.trim() !== '';
@@ -106,7 +112,13 @@ export function ExamsList({ onCreateNew }: ExamsListProps) {
         >
           <div className="flex flex-col gap-3">
             {pageItems.map((exam) => (
-              <ExamCard key={exam.id ?? exam.name} exam={exam} onDelete={() => setDeletingExam(exam)} />
+              <ExamCard
+                key={exam.id ?? exam.name}
+                canEdit={canEdit}
+                exam={exam}
+                onDelete={() => setDeletingExam(exam)}
+                onUpgradeRequired={() => setIsUpgradeOpen(true)}
+              />
             ))}
             {tab !== 'draft' && filtered.length > 0 && (
               <CatalogDiscoveryCard type={tab === 'public_exam' ? 'public_exam' : 'certification'} />
@@ -135,6 +147,8 @@ export function ExamsList({ onCreateNew }: ExamsListProps) {
         onClose={() => setDeletingExam(null)}
         onConfirm={handleDeleteConfirm}
       />
+
+      <UpgradeModal isOpen={isUpgradeOpen} product="pro" onClose={() => setIsUpgradeOpen(false)} />
     </>
   );
 }

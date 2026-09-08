@@ -25,7 +25,9 @@ import type { Exam, ExamStatus } from '@/shared/types';
 
 interface ExamCardProps {
   readonly exam: Exam;
+  readonly canEdit: boolean;
   readonly onDelete: () => void;
+  readonly onUpgradeRequired: () => void;
 }
 
 const STATUS_COLOR: Record<ExamStatus, 'success' | 'warning' | 'default'> = {
@@ -48,7 +50,7 @@ function readinessNoteKey(exam: Exam): string {
   return 'exam.readinessNoteGaps';
 }
 
-export function ExamCard({ exam, onDelete }: ExamCardProps) {
+export function ExamCard({ exam, canEdit, onDelete, onUpgradeRequired }: ExamCardProps) {
   const { t } = useTranslation();
   const [isDomainsOpen, setIsDomainsOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -165,7 +167,14 @@ export function ExamCard({ exam, onDelete }: ExamCardProps) {
         </div>
 
         {isDomainsOpen && exam.sections.length > 0 && <ExamCardDomainsPanel sections={exam.sections} />}
-        {isMenuOpen && <ExamCardActionsMenu exam={exam} onDelete={onDelete} />}
+        {isMenuOpen && (
+          <ExamCardActionsMenu
+            canEdit={canEdit}
+            exam={exam}
+            onDelete={onDelete}
+            onUpgradeRequired={onUpgradeRequired}
+          />
+        )}
       </CardBody>
     </Card>
   );
