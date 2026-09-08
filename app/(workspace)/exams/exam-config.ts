@@ -8,8 +8,6 @@ export interface ExamTypeConfig {
   readonly referenceEntityLabel: 'provider' | 'examBoard';
   readonly hasYearField: boolean;
   readonly hasRoleField: boolean;
-  readonly pageTitle: string;
-  readonly pageSubtitle: string;
   readonly tabNew: string;
   readonly step2SectionsTitle: string;
   readonly discardDraftTitle: string;
@@ -37,8 +35,6 @@ export const EXAM_CONFIG: Record<ExamType, ExamTypeConfig> = {
     referenceEntityLabel: 'provider',
     hasYearField: true,
     hasRoleField: false,
-    pageTitle: 'certification.pageTitle',
-    pageSubtitle: 'certification.pageSubtitle',
     tabNew: 'certification.tabNew',
     step2SectionsTitle: 'certification.studyDomains',
     discardDraftTitle: 'certification.discardDraftTitle',
@@ -64,8 +60,6 @@ export const EXAM_CONFIG: Record<ExamType, ExamTypeConfig> = {
     referenceEntityLabel: 'examBoard',
     hasYearField: true,
     hasRoleField: true,
-    pageTitle: 'concurso.pageTitle',
-    pageSubtitle: 'concurso.pageSubtitle',
     tabNew: 'concurso.tabNew',
     step2SectionsTitle: 'concurso.subjectsTitle',
     discardDraftTitle: 'concurso.discardDraftTitle',
