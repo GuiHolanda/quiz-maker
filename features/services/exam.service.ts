@@ -1,6 +1,6 @@
 import { prisma, PrismaService } from '@/lib/prisma';
 import { defaultFormatForSource, isQuestionFormatKey, resolveQuestionFormat } from '@/config/question-formats';
-import { Exam, ExamType, SectionUpdatePayload } from '@/shared/types';
+import { Exam, ExamStatus, ExamType, SectionUpdatePayload } from '@/shared/types';
 import { normalizeName } from '@/shared/utils';
 
 interface ExamMetrics {
@@ -9,7 +9,7 @@ interface ExamMetrics {
   accuracyPercent: number | null;
   lastActivityAt: string;
   readinessPercent: number;
-  status: 'draft' | 'active' | 'completed';
+  status: ExamStatus;
   completedScore: number | null;
   completedAt: string | null;
 }
@@ -127,7 +127,8 @@ export class ExamService {
         select: {
           examId: true,
           createdAt: true,
-          attempts: { select: { score: true, finishedAt: true } },
+          attempts: { select: { score: true, finishedAt: true, timedOut: true } },
+          _count: { select: { questions: true } },
         },
       }),
       this.prismaService.examQuestion.findMany({
@@ -779,29 +780,47 @@ export class ExamService {
     mockExams: {
       examId: string;
       createdAt: Date;
-      attempts: { score: number | null; finishedAt: Date | null }[];
+      attempts: { score: number | null; finishedAt: Date | null; timedOut: boolean }[];
+      _count: { questions: number };
     }[],
     examQuestions: { examId: string | null; sectionId: string | null; topicId: string | null; createdAt: Date }[]
   ): ExamMetrics {
     const examMockExams = mockExams.filter((m) => m.examId === exam.id);
     const examQuestionsForExam = examQuestions.filter((q) => q.examId === exam.id);
 
-    const finishedAttempts = examMockExams
+    const allFinishedAttempts = examMockExams
       .flatMap((m) => m.attempts)
-      .filter((a): a is { score: number; finishedAt: Date } => a.finishedAt != null && a.score != null);
+      .filter(
+        (a): a is { score: number; finishedAt: Date; timedOut: boolean } => a.finishedAt != null && a.score != null
+      );
+
+    // score is a raw correct-answer count (MockExamAttempt.score), not a percent — normalize
+    // per mock exam's own question count (mirrors mock-exam.service.ts's bestScore/overallPreviousAvgPercent),
+    // and drop timedOut attempts the same way that service's bestScore does.
+    const scoredAttempts = examMockExams.flatMap((m) =>
+      m.attempts
+        .filter(
+          (a): a is { score: number; finishedAt: Date; timedOut: boolean } =>
+            a.finishedAt != null && a.score != null && !a.timedOut && m._count.questions > 0
+        )
+        .map((a) => ({
+          percent: Math.round((a.score / m._count.questions) * 100),
+          finishedAt: a.finishedAt,
+        }))
+    );
 
     const generatedQuestionsCount = examQuestionsForExam.length;
     const simuladosCount = examMockExams.length;
 
     const accuracyPercent =
-      finishedAttempts.length === 0
+      scoredAttempts.length === 0
         ? null
-        : Math.round(finishedAttempts.reduce((sum, a) => sum + a.score, 0) / finishedAttempts.length);
+        : Math.round(scoredAttempts.reduce((sum, a) => sum + a.percent, 0) / scoredAttempts.length);
 
     const activityDates = [
       exam.updatedAt,
       ...examMockExams.map((m) => m.createdAt),
-      ...finishedAttempts.map((a) => a.finishedAt),
+      ...allFinishedAttempts.map((a) => a.finishedAt),
       ...examQuestionsForExam.map((q) => q.createdAt),
     ];
     const lastActivityAt = new Date(Math.max(...activityDates.map((d) => d.getTime()))).toISOString();
@@ -811,14 +830,14 @@ export class ExamService {
       simuladosCount,
       accuracyPercent,
       lastActivityAt,
-      ...this.deriveReadinessAndStatus(exam, examQuestionsForExam, finishedAttempts),
+      ...this.deriveReadinessAndStatus(exam, examQuestionsForExam, scoredAttempts),
     };
   }
 
   private deriveReadinessAndStatus(
     exam: { sections: { id: string; topics: { id: string }[] }[]; passingScore: number | null },
     examQuestionsForExam: { sectionId: string | null; topicId: string | null }[],
-    finishedAttempts: { score: number; finishedAt: Date }[]
+    scoredAttempts: { percent: number; finishedAt: Date }[]
   ): Pick<ExamMetrics, 'readinessPercent' | 'status' | 'completedScore' | 'completedAt'> {
     if (exam.sections.length === 0) {
       return { readinessPercent: 0, status: 'draft', completedScore: null, completedAt: null };
@@ -838,15 +857,15 @@ export class ExamService {
           );
 
     if (exam.passingScore != null) {
-      const qualifying = finishedAttempts.filter((a) => a.score >= exam.passingScore!);
+      const qualifying = scoredAttempts.filter((a) => a.percent >= exam.passingScore!);
 
       if (qualifying.length > 0) {
-        const best = qualifying.reduce((max, a) => (a.score > max.score ? a : max));
+        const best = qualifying.reduce((max, a) => (a.percent > max.percent ? a : max));
 
         return {
           readinessPercent,
           status: 'completed',
-          completedScore: best.score,
+          completedScore: best.percent,
           completedAt: best.finishedAt.toISOString(),
         };
       }

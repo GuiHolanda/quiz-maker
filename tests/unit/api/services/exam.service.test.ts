@@ -401,16 +401,17 @@ describe('ExamService', () => {
       expect(exam.simuladosCount).toBe(2);
     });
 
-    it('averages score across finished attempts only for accuracyPercent', async () => {
+    it('normalizes score (a raw correct-answer count) by the mock exam question count for accuracyPercent', async () => {
       prismaMock.exam.findMany.mockResolvedValue([baseExamRow] as any);
       prismaMock.mockExam.findMany.mockResolvedValue([
         {
           examId: 'exam-1',
           createdAt: new Date('2026-01-05T00:00:00Z'),
+          _count: { questions: 10 },
           attempts: [
-            { score: 80, finishedAt: new Date('2026-01-06T00:00:00Z') },
-            { score: 60, finishedAt: new Date('2026-01-07T00:00:00Z') },
-            { score: 100, finishedAt: null },
+            { score: 8, finishedAt: new Date('2026-01-06T00:00:00Z'), timedOut: false }, // 80%
+            { score: 6, finishedAt: new Date('2026-01-07T00:00:00Z'), timedOut: false }, // 60%
+            { score: 10, finishedAt: null, timedOut: false }, // unfinished, excluded
           ],
         },
       ] as any);
@@ -420,6 +421,27 @@ describe('ExamService', () => {
       const [exam] = await service.getExams('user-1');
 
       expect(exam.accuracyPercent).toBe(70);
+    });
+
+    it('excludes timedOut attempts from accuracyPercent, matching mock-exam.service.ts bestScore', async () => {
+      prismaMock.exam.findMany.mockResolvedValue([baseExamRow] as any);
+      prismaMock.mockExam.findMany.mockResolvedValue([
+        {
+          examId: 'exam-1',
+          createdAt: new Date('2026-01-05T00:00:00Z'),
+          _count: { questions: 10 },
+          attempts: [
+            { score: 8, finishedAt: new Date('2026-01-06T00:00:00Z'), timedOut: false }, // 80%
+            { score: 2, finishedAt: new Date('2026-01-07T00:00:00Z'), timedOut: true }, // timed out, excluded
+          ],
+        },
+      ] as any);
+      prismaMock.examQuestion.findMany.mockResolvedValue([] as any);
+
+      const service = new ExamService(prismaMock as any);
+      const [exam] = await service.getExams('user-1');
+
+      expect(exam.accuracyPercent).toBe(80);
     });
 
     it('returns null accuracyPercent when there are no finished attempts', async () => {
@@ -439,7 +461,8 @@ describe('ExamService', () => {
         {
           examId: 'exam-1',
           createdAt: new Date('2026-01-11T00:00:00Z'),
-          attempts: [{ score: 80, finishedAt: new Date('2026-01-20T00:00:00Z') }],
+          _count: { questions: 100 },
+          attempts: [{ score: 80, finishedAt: new Date('2026-01-20T00:00:00Z'), timedOut: false }],
         },
       ] as any);
       prismaMock.examQuestion.findMany.mockResolvedValue([
@@ -523,7 +546,7 @@ describe('ExamService', () => {
       expect(exam.readinessPercent).toBe(50);
     });
 
-    it('marks status completed with the best qualifying attempt when a finished attempt clears passingScore', async () => {
+    it('marks status completed with the best qualifying attempt (as a percent, not the raw score) when a finished attempt clears passingScore', async () => {
       prismaMock.exam.findMany.mockResolvedValue([
         { ...baseExamRow, passingScore: 70, sections: [{ id: 'sec-1', name: 'A', minQuestions: 100, maxQuestions: 100, topics: [] }] },
       ] as any);
@@ -531,9 +554,10 @@ describe('ExamService', () => {
         {
           examId: 'exam-1',
           createdAt: new Date('2026-01-05T00:00:00Z'),
+          _count: { questions: 20 },
           attempts: [
-            { score: 60, finishedAt: new Date('2026-01-06T00:00:00Z') },
-            { score: 74, finishedAt: new Date('2026-05-12T00:00:00Z') },
+            { score: 12, finishedAt: new Date('2026-01-06T00:00:00Z'), timedOut: false }, // 60%, below passingScore
+            { score: 15, finishedAt: new Date('2026-05-12T00:00:00Z'), timedOut: false }, // 75%, clears it
           ],
         },
       ] as any);
@@ -543,8 +567,30 @@ describe('ExamService', () => {
       const [exam] = await service.getExams('user-1');
 
       expect(exam.status).toBe('completed');
-      expect(exam.completedScore).toBe(74);
+      expect(exam.completedScore).toBe(75);
       expect(exam.completedAt).toBe(new Date('2026-05-12T00:00:00Z').toISOString());
+    });
+
+    it('marks status completed for 18/20 correct against a passingScore of 72 (90% accuracy)', async () => {
+      prismaMock.exam.findMany.mockResolvedValue([
+        { ...baseExamRow, passingScore: 72, sections: [{ id: 'sec-1', name: 'A', minQuestions: 100, maxQuestions: 100, topics: [] }] },
+      ] as any);
+      prismaMock.mockExam.findMany.mockResolvedValue([
+        {
+          examId: 'exam-1',
+          createdAt: new Date('2026-01-05T00:00:00Z'),
+          _count: { questions: 20 },
+          attempts: [{ score: 18, finishedAt: new Date('2026-02-01T00:00:00Z'), timedOut: false }],
+        },
+      ] as any);
+      prismaMock.examQuestion.findMany.mockResolvedValue([] as any);
+
+      const service = new ExamService(prismaMock as any);
+      const [exam] = await service.getExams('user-1');
+
+      expect(exam.accuracyPercent).toBe(90);
+      expect(exam.status).toBe('completed');
+      expect(exam.completedScore).toBe(90);
     });
 
     it('stays active when passingScore is null even with finished attempts', async () => {
@@ -552,7 +598,12 @@ describe('ExamService', () => {
         { ...baseExamRow, passingScore: null, sections: [{ id: 'sec-1', name: 'A', minQuestions: 100, maxQuestions: 100, topics: [] }] },
       ] as any);
       prismaMock.mockExam.findMany.mockResolvedValue([
-        { examId: 'exam-1', createdAt: new Date(), attempts: [{ score: 95, finishedAt: new Date() }] },
+        {
+          examId: 'exam-1',
+          createdAt: new Date(),
+          _count: { questions: 100 },
+          attempts: [{ score: 95, finishedAt: new Date(), timedOut: false }],
+        },
       ] as any);
       prismaMock.examQuestion.findMany.mockResolvedValue([] as any);
 
