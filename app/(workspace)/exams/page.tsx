@@ -1,18 +1,18 @@
 'use client';
 
-import { Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { BreadcrumbItem, Breadcrumbs } from '@heroui/breadcrumbs';
 import { Button } from '@heroui/button';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlusSquare } from '@fortawesome/free-solid-svg-icons';
 
 import { ExamsList } from './components/list/ExamsList';
-import { EXAM_CONFIG } from './exam-config';
+import { ExamTypePickerModal } from './components/ExamTypePickerModal';
 
 import { ExamsProvider } from '@/features/providers/exams.provider';
-import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import type { ExamType } from '@/shared/types';
@@ -30,45 +30,52 @@ export default function ExamsPage() {
 function ExamsContent() {
   const { t } = useTranslation();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const rawType = searchParams.get('type');
-  const type: ExamType = rawType === 'public_exam' ? 'public_exam' : 'certification';
-  const config = EXAM_CONFIG[type];
-  const { certifications, publicExams, isLoading } = useExamsContext();
+  const { usage } = useUsageContext();
+  const [isTypePickerOpen, setIsTypePickerOpen] = useState(false);
 
-  const exams = type === 'certification' ? certifications : publicExams;
-  const hasExams = !isLoading && exams.length > 0;
+  const openTypePicker = () => setIsTypePickerOpen(true);
+  const handleConfirmType = (type: ExamType) => router.push(`/exams/new?type=${type}`);
 
-  const addButtonLabel = type === 'certification' ? t('exam.addNewCertification') : t('exam.addNewConcurso');
-  const breadcrumbListLabel = type === 'certification' ? t('nav.certifications') : t('nav.publicExams');
+  const subtitle =
+    usage && usage.examsLimit !== -1
+      ? `${t('exam.listPageSubtitle')} ${t('exam.quotaNote', {
+          used: String(usage.examsUsed),
+          limit: String(usage.examsLimit),
+          plan: usage.plan,
+        })}`
+      : t('exam.listPageSubtitle');
 
   return (
     <PageHeader
       action={
-        hasExams ? (
-          <Button
-            className={buttonStyles.primary}
-            data-testid="add-new-exam-btn"
-            onPress={() => router.push(`/exams/new?type=${type}`)}
-            radius="sm"
-            startContent={<FontAwesomeIcon icon={faPlusSquare} />}
-          >
-            {addButtonLabel}
-          </Button>
-        ) : undefined
+        <Button
+          className={buttonStyles.primary}
+          data-testid="add-new-exam-btn"
+          radius="sm"
+          startContent={<FontAwesomeIcon icon={faPlusSquare} />}
+          onPress={openTypePicker}
+        >
+          {t('exam.createButtonLabel')}
+        </Button>
       }
       breadcrumbs={
         <Breadcrumbs>
           <BreadcrumbItem href="/">{t('nav.dashboard')}</BreadcrumbItem>
-          <BreadcrumbItem>{breadcrumbListLabel}</BreadcrumbItem>
+          <BreadcrumbItem>{t('nav.myExams')}</BreadcrumbItem>
         </Breadcrumbs>
       }
-      subtitle={t(config.pageSubtitle)}
-      title={t(config.pageTitle)}
+      subtitle={subtitle}
+      title={t('exam.listPageTitle')}
     >
       <section data-testid="configure-list-section">
-        <ExamsList type={type} />
+        <ExamsList onCreateNew={openTypePicker} />
       </section>
+
+      <ExamTypePickerModal
+        isOpen={isTypePickerOpen}
+        onClose={() => setIsTypePickerOpen(false)}
+        onConfirm={handleConfirmType}
+      />
     </PageHeader>
   );
 }
