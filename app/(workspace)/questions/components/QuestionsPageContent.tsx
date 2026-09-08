@@ -62,8 +62,10 @@ export function QuestionsPageContent() {
   const { t, language: uiLanguage } = useTranslation();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { certifications, publicExams, isLoading } = useExamsContext();
+  const { exams: allExams, certifications, publicExams, isLoading } = useExamsContext();
   const { jobs, startJob, cancelJob, dismissJob } = useGenerationJobsContext();
+
+  const requestedExamId = searchParams.get('examId');
 
   const [scope, setScope] = useState<ExamType>((searchParams.get('type') as ExamType) ?? 'certification');
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
@@ -72,6 +74,7 @@ export function QuestionsPageContent() {
   const [isStarting, setIsStarting] = useState(false);
 
   const languageTouched = useRef(false);
+  const appliedExamIdRequest = useRef(false);
 
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const [mounted, setMounted] = useState(false);
@@ -102,12 +105,24 @@ export function QuestionsPageContent() {
 
   useEffect(() => {
     if (isLoading) return;
+
+    if (requestedExamId && !appliedExamIdRequest.current) {
+      appliedExamIdRequest.current = true;
+      const requested = allExams.find((exam) => exam.id === requestedExamId);
+      if (requested) {
+        setScope(requested.type);
+        setSelectedExamId(examKey(requested));
+        setTotal(requested.totalQuestions);
+        return;
+      }
+    }
+
     const stillValid = exams.some((exam) => examKey(exam) === selectedExamId);
     if (stillValid) return;
     const first = exams[0] ?? null;
     setSelectedExamId(first ? examKey(first) : null);
     setTotal(first?.totalQuestions ?? 0);
-  }, [isLoading, exams, selectedExamId]);
+  }, [isLoading, exams, allExams, selectedExamId, requestedExamId]);
 
   const activeJobCount = jobs.filter((job) => job.status !== 'done').length;
   const prevActiveJobCount = useRef(activeJobCount);
