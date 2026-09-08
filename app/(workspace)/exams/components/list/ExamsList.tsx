@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 import { ExamCard } from './ExamCard';
 import { ExamsListToolbar } from './ExamsListToolbar';
@@ -31,7 +31,7 @@ export function ExamsList({ onCreateNew }: ExamsListProps) {
   const [deletingExam, setDeletingExam] = useState<Exam | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const filtered = filterAndSortExams(exams, { tab, search, sort });
+  const filtered = useMemo(() => filterAndSortExams(exams, { tab, search, sort }), [exams, tab, search, sort]);
   const hasActiveFilters = tab !== 'all' || search.trim() !== '';
 
   const { pageItems, page, totalPages, perPage, setPage, setPerPage } = usePaginatedItems(filtered);
