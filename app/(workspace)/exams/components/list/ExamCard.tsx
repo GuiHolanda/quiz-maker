@@ -8,6 +8,7 @@ import {
   faLayerGroup,
   faChevronDown,
   faChevronUp,
+  faEllipsis,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Card, CardBody } from '@heroui/card';
@@ -78,7 +79,7 @@ export function ExamCard({ exam, canEdit, onDelete, onUpgradeRequired }: ExamCar
               </Chip>
             </div>
             <p className="mt-2 text-lg font-bold text-foreground truncate">{exam.name}</p>
-            <p className="mt-1 font-mono text-xs text-default-400 truncate">
+            <p className="mt-1 font-mono text-xs text-navy-600 truncate">
               {[referenceEntity?.name, exam.key].filter(Boolean).join(' · ')}
             </p>
             <div className="mt-3 flex items-center divide-x divide-default-200 dark:divide-default-100/10 text-sm">
@@ -86,17 +87,17 @@ export function ExamCard({ exam, canEdit, onDelete, onUpgradeRequired }: ExamCar
                 <span className="font-mono text-foreground">
                   {(exam.generatedQuestionsCount ?? 0).toLocaleString('pt-BR')}
                 </span>
-                <span className="text-default-500">{t('exam.questionBankStat')}</span>
+                <span className="text-navy-500">{t('exam.questionBankStat')}</span>
               </div>
               <div className="flex items-baseline gap-1.5 px-4">
                 <span className="font-mono text-foreground">
                   {exam.accuracyPercent == null ? '—' : `${exam.accuracyPercent}%`}
                 </span>
-                <span className="text-default-500">{t('dashboard.accuracy')}</span>
+                <span className="text-navy-500">{t('dashboard.accuracy')}</span>
               </div>
               <div className="flex items-baseline gap-1.5 pl-4">
                 <span className="font-mono text-foreground">{exam.simuladosCount ?? 0}</span>
-                <span className="text-default-500">{t('nav.simulados')}</span>
+                <span className="text-navy-500">{t('nav.simulados')}</span>
               </div>
             </div>
           </div>
@@ -113,29 +114,29 @@ export function ExamCard({ exam, canEdit, onDelete, onUpgradeRequired }: ExamCar
               trackClass="bg-background"
               value={readiness}
             />
-            <p className="mt-2 text-xs text-default-500 leading-snug">{t(readinessNoteKey(exam))}</p>
+            <p className="mt-2 text-xs text-navy-500 leading-snug">{t(readinessNoteKey(exam))}</p>
           </div>
 
           <Button
             isIconOnly
             aria-label={t('common.expand')}
-            className={buttonStyles.iconOnly.neutral}
+            className="w-9 h-9 rounded-lg border border-divider bg-transparent text-navy-400 transition-colors duration-200 hover:bg-content2 hover:text-foreground"
             data-testid="exam-card-menu-toggle"
-            size="sm"
+            variant="bordered"
             onPress={() => setIsMenuOpen((open) => !open)}
           >
-            <FontAwesomeIcon icon={isMenuOpen ? faChevronUp : faChevronDown} />
+            <FontAwesomeIcon icon={faEllipsis} />
           </Button>
         </div>
 
         <div className="mt-4 pt-3 border-t border-default-200 dark:border-transparent flex items-center gap-5 flex-wrap text-sm text-default-500">
           <span className="inline-flex items-center gap-1.5">
-            <FontAwesomeIcon className="text-default-400" icon={faHashtag} size="sm" />
+            <FontAwesomeIcon className="text-default-500" icon={faHashtag} size="sm" />
             {t('certification.questionsCount', { count: String(exam.totalQuestions) })}
           </span>
           {exam.examDurationMinutes && (
             <span className="inline-flex items-center gap-1.5">
-              <FontAwesomeIcon className="text-default-400" icon={faClock} size="sm" />
+              <FontAwesomeIcon className="text-default-500" icon={faClock} size="sm" />
               {t('certification.durationValue', { minutes: String(exam.examDurationMinutes) })}
             </span>
           )}

@@ -20,7 +20,7 @@ export function ExamTypePickerModal({ isOpen, onClose, onConfirm }: ExamTypePick
   const [type, setType] = useState<ExamType>('certification');
 
   return (
-    <Modal isOpen={isOpen} size="lg" onClose={onClose}>
+    <Modal isOpen={isOpen} size="2xl" onClose={onClose}>
       <ModalContent>
         <ModalHeader className="border-b border-default-200 dark:border-transparent">
           {t('exam.typePickerModalTitle')}
@@ -28,7 +28,6 @@ export function ExamTypePickerModal({ isOpen, onClose, onConfirm }: ExamTypePick
         <ModalBody className="py-6">
           <ExamTypePicker
             certification={{ title: t('nav.certifications'), body: t('certification.pageSubtitle') }}
-            label=""
             publicExam={{ title: t('nav.publicExams'), body: t('concurso.pageSubtitle') }}
             value={type}
             onChange={setType}
