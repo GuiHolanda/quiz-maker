@@ -191,16 +191,24 @@ Filtros: `search` (deferido), `source` (multi), `type`, `topic` (multi), `diffic
 
 Três regiões: desktop (`w-64 sticky`), mobile top bar (hamburger), mobile drawer. Rodapé com contadores de uso via `useUsageContext()`. User dropdown, theme/language switch, sign out ficam no `WorkspaceHeader`, não no sidebar.
 
-### Domínio: Exams (`/exams?type=certification|public_exam`)
+### Domínio: Exams (`/exams` — lista unificada, sem `?type=`)
 
 | Arquivo | Papel |
 |---|---|
 | `exam-config.ts` | `EXAM_CONFIG[type]` — todas as diferenças de domínio |
-| `components/list/ExamCard.tsx` | Card com logo/initials/icon, stats, `footerAction?` |
-| `components/list/ExamDetailPanel.tsx` | Painel somente-leitura (seções + tópicos); "Editar" leva a `/exams/[id]/edit` |
-| `components/list/ExamsList.tsx` | Lista + skeleton + empty state + detail panel animado |
+| `components/list/ExamsList.tsx` | Lista unificada: tabs (todas/certificações/concursos/rascunhos) + busca + ordenação + paginação |
+| `components/list/ExamsListToolbar.tsx` | Tabs, busca e select de ordenação da lista |
+| `components/list/examsListFilters.ts` | Lógica pura de filtro/ordenação (`filterAndSortExams`, `countByTab`) |
+| `components/list/ExamCard.tsx` | Card com status, readiness, accuracy e ações inline; sem painel de detalhe separado |
+| `components/list/ExamCardDomainsPanel.tsx` | Painel expansível de pesos por domínio/seção, dentro do próprio card |
+| `components/list/ExamCardActionsMenu.tsx` | Menu kebab do card — gerar questões, simulado, banco de questões, editar (gated por `canEditExams`) e remover |
+| `components/ExamTypePickerModal.tsx` | Modal do botão "Nova" — escolhe certificação ou concurso antes de ir para `/exams/new` |
 | `new/` + `[id]/edit/` | Editor único (`ExamEditor`) para criar e editar — três sementes (IA / edital / em branco) na criação |
-| `components/catalog/CatalogSection.tsx` | Catálogo de templates — filtra por type, inscrição via `addExam` no contexto |
+| `components/catalog/CatalogSection.tsx` | Catálogo de templates (`/exams/catalog`, fora de escopo do redesign) — filtra por type, inscrição via `addExam` no contexto |
+| `components/catalog/CatalogExamCard.tsx` | Card pré-redesign, exclusivo do catálogo (templates não têm métricas de dono) |
+| `components/catalog/CatalogDiscoveryCard.tsx` | Card final da lista linkando para `/exams/catalog?type=` |
+
+`ExamDetailPanel.tsx` foi removido — suas responsabilidades (seções/tópicos, editar, excluir) foram absorvidas pelo painel de domínios e pelo menu kebab do próprio `ExamCard`.
 
 Importar config via `@/app/(workspace)/exams/exam-config` (nunca relativo).
 

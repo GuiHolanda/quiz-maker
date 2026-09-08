@@ -7,6 +7,7 @@ import { ExamCard } from './ExamCard';
 import { ExamsListToolbar } from './ExamsListToolbar';
 import { filterAndSortExams, type ExamListSort, type ExamListTab } from './examsListFilters';
 
+import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
 import { CatalogDiscoveryCard } from '@/app/(workspace)/exams/components/catalog/CatalogDiscoveryCard';
 import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
 import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
@@ -50,21 +51,15 @@ export function ExamsList({ onCreateNew }: ExamsListProps) {
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!deletingExam?.id) return;
-    const isCertification = deletingExam.type === 'certification';
+    const config = EXAM_CONFIG[deletingExam.type];
     setIsDeleting(true);
     try {
       await deleteExam(deletingExam.id);
       removeExam(deletingExam.id);
-      notify.success(
-        t('toast.success'),
-        t(isCertification ? 'certification.certificationDeleted' : 'concurso.examDeleted', { name: deletingExam.name })
-      );
+      notify.success(t('toast.success'), t(config.deleteSuccessKey, { name: deletingExam.name }));
       setDeletingExam(null);
     } catch {
-      notify.error(
-        t('toast.error'),
-        t(isCertification ? 'certification.certificationDeleteError' : 'concurso.examDeleteError')
-      );
+      notify.error(t('toast.error'), t(config.deleteErrorKey));
     } finally {
       setIsDeleting(false);
     }
@@ -130,20 +125,15 @@ export function ExamsList({ onCreateNew }: ExamsListProps) {
       <ConfirmModal
         body={
           <p className="text-sm text-default-500">
-            {t(
-              deletingExam?.type === 'public_exam'
-                ? 'concurso.deleteExamConfirm'
-                : 'certification.deleteCertificationConfirm',
-              { name: deletingExam?.name ?? '' }
-            )}
+            {t(EXAM_CONFIG[deletingExam?.type ?? 'certification'].deleteConfirmKey, {
+              name: deletingExam?.name ?? '',
+            })}
           </p>
         }
         confirmLabel={t('common.remove')}
         isLoading={isDeleting}
         isOpen={deletingExam !== null}
-        title={t(
-          deletingExam?.type === 'public_exam' ? 'concurso.deleteExamTitle' : 'certification.deleteCertificationTitle'
-        )}
+        title={t(EXAM_CONFIG[deletingExam?.type ?? 'certification'].deleteTitle)}
         onClose={() => setDeletingExam(null)}
         onConfirm={handleDeleteConfirm}
       />

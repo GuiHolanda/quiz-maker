@@ -14,9 +14,6 @@ export interface ExamTypeConfig {
   readonly discardDraftBody: string;
   readonly discardDraftLabel: string;
   readonly listTitle: string;
-  readonly emptyTitle: string;
-  readonly emptyDescription: string;
-  readonly emptyActionLabel: string;
   readonly deleteTitle: string;
   readonly deleteConfirmKey: string;
   readonly deleteSuccessKey: string;
@@ -41,9 +38,6 @@ export const EXAM_CONFIG: Record<ExamType, ExamTypeConfig> = {
     discardDraftBody: 'certification.discardDraftBody',
     discardDraftLabel: 'certification.discardDraft',
     listTitle: 'certification.tabList',
-    emptyTitle: 'certification.noCertificationsTitle',
-    emptyDescription: 'certification.noCertificationsDescription',
-    emptyActionLabel: 'certification.tabNew',
     deleteTitle: 'certification.deleteCertificationTitle',
     deleteConfirmKey: 'certification.deleteCertificationConfirm',
     deleteSuccessKey: 'certification.certificationDeleted',
@@ -66,9 +60,6 @@ export const EXAM_CONFIG: Record<ExamType, ExamTypeConfig> = {
     discardDraftBody: 'concurso.discardDraftBody',
     discardDraftLabel: 'concurso.discardDraft',
     listTitle: 'concurso.tabList',
-    emptyTitle: 'concurso.noExamsTitle',
-    emptyDescription: 'concurso.noExamsDescription',
-    emptyActionLabel: 'concurso.tabNew',
     deleteTitle: 'concurso.deleteExamTitle',
     deleteConfirmKey: 'concurso.deleteExamConfirm',
     deleteSuccessKey: 'concurso.examDeleted',
