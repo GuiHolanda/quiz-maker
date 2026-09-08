@@ -60,6 +60,7 @@ export function ExamCard({ exam, onDelete }: ExamCardProps) {
   return (
     <Card
       className="bg-content1 rounded-xl border border-default-200 dark:border-transparent"
+      data-testid="exam-card"
       disableAnimation
       shadow="none"
     >
@@ -117,6 +118,7 @@ export function ExamCard({ exam, onDelete }: ExamCardProps) {
             isIconOnly
             aria-label={t('common.expand')}
             className={buttonStyles.iconOnly.neutral}
+            data-testid="exam-card-menu-toggle"
             size="sm"
             onPress={() => setIsMenuOpen((open) => !open)}
           >
@@ -149,6 +151,7 @@ export function ExamCard({ exam, onDelete }: ExamCardProps) {
           {exam.sections.length > 0 && (
             <Button
               className={`${buttonStyles.flat} ml-auto`}
+              data-testid="exam-card-domains-toggle"
               endContent={
                 <FontAwesomeIcon className="text-[10px]" icon={isDomainsOpen ? faChevronUp : faChevronDown} />
               }

@@ -70,7 +70,6 @@ export const TID = {
   examEditorDiscardBtn: 'exam-editor-discard-btn',
   examEditorSaveBtn: 'exam-editor-save-btn',
   examEditorProvenanceCard: 'exam-editor-provenance-card',
-  examDetailEditBtn: 'exam-detail-edit-btn',
 
   // Exam seed identification (inside the /exams/new loading screen)
   examSearchInput: 'exam-search-input',
@@ -125,12 +124,23 @@ export const TID = {
   emptyState: 'empty-state',
   illustratedEmptyState: 'illustrated-empty-state',
 
-  // Catalog (/exams/catalog)
+  // Catalog (/exams/catalog) — examCard is also used by the unified /exams list card
   examCard: 'exam-card',
+  examCardMenuToggle: 'exam-card-menu-toggle',
+  examCardDomainsToggle: 'exam-card-domains-toggle',
+  examCardActionGenerate: 'exam-card-action-generate',
+  examCardActionSimulado: 'exam-card-action-simulado',
+  examCardActionQuestionBank: 'exam-card-action-question-bank',
+  examCardActionEdit: 'exam-card-action-edit',
+  examCardActionRemove: 'exam-card-action-remove',
   catalogForkBtn: 'catalog-fork-btn',
   catalogForkConfirmBtn: 'catalog-fork-confirm-btn',
   catalogPoolChip: 'catalog-pool-chip',
   catalogEnrolledChip: 'catalog-enrolled-chip',
+
+  // Unified exams list (/exams)
+  examsSearch: 'exams-search',
+  examsSortSelect: 'exams-sort-select',
 
   // Confirmation dialogs
   confirmDiscardBtn: 'confirm-discard-btn',

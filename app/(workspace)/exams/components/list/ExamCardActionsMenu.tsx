@@ -21,23 +21,32 @@ export function ExamCardActionsMenu({ exam, onDelete }: ExamCardActionsMenuProps
 
   return (
     <div className="mt-3 pt-3 border-t border-default-200 dark:border-transparent flex flex-wrap items-center justify-end gap-2">
-      <NextLink className={linkClass} href={`/questions?examId=${exam.id}`}>
+      <NextLink className={linkClass} data-testid="exam-card-action-generate" href={`/questions?examId=${exam.id}`}>
         <FontAwesomeIcon className="text-xs" icon={faWandMagicSparkles} />
         {t('exam.actionGenerate')}
       </NextLink>
-      <NextLink className={linkClass} href={`/simulados?examId=${exam.id}`}>
+      <NextLink className={linkClass} data-testid="exam-card-action-simulado" href={`/simulados?examId=${exam.id}`}>
         <FontAwesomeIcon className="text-xs" icon={faFileLines} />
         {t('exam.actionCreateSimulado')}
       </NextLink>
-      <NextLink className={linkClass} href={`/question-bank?examId=${exam.id}`}>
+      <NextLink
+        className={linkClass}
+        data-testid="exam-card-action-question-bank"
+        href={`/question-bank?examId=${exam.id}`}
+      >
         <FontAwesomeIcon className="text-xs" icon={faBookOpen} />
         {t('exam.actionQuestionBank')}
       </NextLink>
-      <NextLink className={linkClass} href={`/exams/${exam.id}/edit`}>
+      <NextLink className={linkClass} data-testid="exam-card-action-edit" href={`/exams/${exam.id}/edit`}>
         <FontAwesomeIcon className="text-xs" icon={faPen} />
         {t('certification.editCertification')}
       </NextLink>
-      <button className={`${linkClass} text-danger`} type="button" onClick={onDelete}>
+      <button
+        className={`${linkClass} text-danger`}
+        data-testid="exam-card-action-remove"
+        type="button"
+        onClick={onDelete}
+      >
         <FontAwesomeIcon className="text-xs" icon={faTrash} />
         {t('common.remove')}
       </button>
