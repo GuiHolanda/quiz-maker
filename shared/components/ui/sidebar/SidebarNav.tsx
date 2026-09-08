@@ -1,17 +1,9 @@
 'use client';
 
 import NextLink from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import {
-  IconHome,
-  IconSchool,
-  IconClipboardText,
-  IconSparkles,
-  IconListDetails,
-  IconPlayerPlay,
-  IconSettings,
-} from '@tabler/icons-react';
+import { IconHome, IconSchool, IconSparkles, IconListDetails, IconPlayerPlay, IconSettings } from '@tabler/icons-react';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
@@ -32,8 +24,6 @@ export function SidebarNav({ collapsed = false, isMobile = false, onClose }: Sid
   const { data: session, status } = useSession();
   const { t } = useTranslation();
   const pathname = usePathname() ?? '';
-  const searchParams = useSearchParams();
-  const currentExamType = searchParams.get('type') ?? 'certification';
   const isAdminScope = pathname.startsWith('/admin');
 
   const col = isMobile ? false : collapsed;
@@ -51,23 +41,13 @@ export function SidebarNav({ collapsed = false, isMobile = false, onClose }: Sid
       </NextLink>
 
       <NextLink
-        className={navLinkClass(pathname === '/exams' && currentExamType !== 'public_exam', col)}
-        href="/exams?type=certification"
-        title={col ? t('nav.certificates') : undefined}
+        className={navLinkClass(pathname === '/exams', col)}
+        href="/exams"
+        title={col ? t('nav.myExams') : undefined}
         onClick={onClose}
       >
         <IconSchool size={16} />
-        {!col && t('nav.certificates')}
-      </NextLink>
-
-      <NextLink
-        className={navLinkClass(pathname === '/exams' && currentExamType === 'public_exam', col)}
-        href="/exams?type=public_exam"
-        title={col ? t('nav.concursos') : undefined}
-        onClick={onClose}
-      >
-        <IconClipboardText size={16} />
-        {!col && t('nav.concursos')}
+        {!col && t('nav.myExams')}
       </NextLink>
 
       <NextLink
