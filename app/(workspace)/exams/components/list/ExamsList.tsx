@@ -6,6 +6,7 @@ import { ExamCard } from './ExamCard';
 import { ExamsListToolbar } from './ExamsListToolbar';
 import { filterAndSortExams, type ExamListSort, type ExamListTab } from './examsListFilters';
 
+import { CatalogDiscoveryCard } from '@/app/(workspace)/exams/components/catalog/CatalogDiscoveryCard';
 import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
 import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptyState';
 import { EntityListShell } from '@/shared/components/ui/EntityListShell';
@@ -107,6 +108,9 @@ export function ExamsList({ onCreateNew }: ExamsListProps) {
             {pageItems.map((exam) => (
               <ExamCard key={exam.id ?? exam.name} exam={exam} onDelete={() => setDeletingExam(exam)} />
             ))}
+            {tab !== 'draft' && filtered.length > 0 && (
+              <CatalogDiscoveryCard type={tab === 'public_exam' ? 'public_exam' : 'certification'} />
+            )}
           </div>
         </EntityListShell>
       </div>
