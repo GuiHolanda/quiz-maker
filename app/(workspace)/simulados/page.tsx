@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { BreadcrumbItem, Breadcrumbs } from '@heroui/breadcrumbs';
 
 import { CreateSimuladoSection } from './components/CreateSimuladoSection';
@@ -25,7 +26,9 @@ function SimuladosPageContent() {
       title={t('simulado.create.title')}
     >
       <div className="flex flex-col gap-12">
-        <CreateSimuladoSection />
+        <Suspense>
+          <CreateSimuladoSection />
+        </Suspense>
         <SimuladosCreatedSection />
       </div>
     </PageHeader>
