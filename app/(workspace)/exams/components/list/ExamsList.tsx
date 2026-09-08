@@ -83,7 +83,7 @@ export function ExamsList({ onCreateNew }: ExamsListProps) {
           totalItems={filtered.length}
           emptyState={
             <IllustratedEmptyState
-              action={{ label: t('exam.listPageTitle'), onPress: onCreateNew }}
+              action={{ label: t('exam.createButtonLabel'), onPress: onCreateNew }}
               description={t('exam.listEmptyDescription')}
               icon={faGraduationCap}
               title={t('exam.listEmptyTitle')}
