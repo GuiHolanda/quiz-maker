@@ -99,17 +99,6 @@ export interface AuthUser {
   image: string | null;
 }
 
-export type ChatMessageRole = 'user' | 'assistant';
-
-export interface ChatMessage {
-  readonly role: ChatMessageRole;
-  readonly content: string;
-  readonly examDraft?: Exam;
-  readonly sources?: string[];
-  readonly isError?: boolean;
-  readonly attachmentName?: string;
-}
-
 export type UserPlan = 'free' | 'pro' | 'pro_ai' | 'sprint' | 'tester' | 'admin';
 
 export type QuotaAction =

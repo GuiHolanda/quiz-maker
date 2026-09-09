@@ -4,8 +4,6 @@ import { SessionProvider } from 'next-auth/react';
 
 import { Sidebar } from '@/shared/components/ui/sidebar/Sidebar';
 import { WorkspaceHeader } from '@/shared/components/ui/workspace-header/WorkspaceHeader';
-import { AiChatWrapper } from '@/shared/components/ai-chat/AiChatWrapper';
-import { AiChatUIProvider } from '@/features/providers/ai-chat-ui.provider';
 import { UsageProvider } from '@/features/providers/usage.provider';
 import { LimitModalProvider } from '@/features/providers/limit-modal.provider';
 import { NotificationsProvider } from '@/features/providers/notifications.provider';
@@ -33,16 +31,13 @@ export default async function WorkspaceLayout({ children }: { children: React.Re
         <NotificationsProvider>
           <UsageProvider>
             <LimitModalProvider>
-              <AiChatUIProvider>
-                <div className="flex min-h-screen bg-background2">
-                  <Sidebar defaultCollapsed={defaultCollapsed} />
-                  <div className="flex flex-col flex-1 min-w-0">
-                    <WorkspaceHeader />
-                    <main className="flex-grow pt-14 md:pt-0">{children}</main>
-                  </div>
-                  <AiChatWrapper />
+              <div className="flex min-h-screen bg-background2">
+                <Sidebar defaultCollapsed={defaultCollapsed} />
+                <div className="flex flex-col flex-1 min-w-0">
+                  <WorkspaceHeader />
+                  <main className="flex-grow pt-14 md:pt-0">{children}</main>
                 </div>
-              </AiChatUIProvider>
+              </div>
             </LimitModalProvider>
           </UsageProvider>
         </NotificationsProvider>
