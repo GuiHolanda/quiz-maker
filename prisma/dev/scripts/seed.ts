@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { ExamCatalogService } from '@/features/services/exam-catalog.service';
+import { ExamCatalogService } from '@/features/services/exam/exam-catalog.service';
 
 interface SeedQuestion {
   text: string;

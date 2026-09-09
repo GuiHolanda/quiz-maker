@@ -6,7 +6,7 @@ import {
   readGenerationProgress,
   type GenerationJobSnapshot,
   type GenerationTopicSnapshot,
-} from '@/features/services/job-progress.service';
+} from '@/features/services/generation/job-progress.service';
 
 export const maxDuration = 300;
 

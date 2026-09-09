@@ -1,4 +1,4 @@
-import { sanitizeAiQuestions, validateAiQuestions } from '@/features/services/exam-question.service';
+import { sanitizeAiQuestions, validateAiQuestions } from '@/features/services/exam/exam-question.service';
 import { QUESTION_FORMATS } from '@/config/question-formats';
 
 const question = (overrides: Record<string, unknown> = {}) => ({

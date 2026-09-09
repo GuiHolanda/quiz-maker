@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import type { PrismaService } from '@/lib/prisma';
-import { ExamQuestionService, validateAiQuestions } from '@/features/services/exam-question.service';
+import { ExamQuestionService, validateAiQuestions } from '@/features/services/exam/exam-question.service';
 
 export async function finalizeAwaitingReviewJobs(
   client: PrismaClient

@@ -5,8 +5,8 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { toApiErrorResponse } from '@/lib/api-error';
 import { enforceRateLimit } from '@/lib/rate-limit';
-import { claimSlots, processTopic } from '@/features/services/generation-job.service';
-import { QuotaService } from '@/features/services/quota.service';
+import { claimSlots, processTopic } from '@/features/services/generation/generation-job.service';
+import { QuotaService } from '@/features/services/billing/quota.service';
 import { isGenerationLanguage, resolveGenerationLanguage } from '@/config/generation-languages';
 import {
   GENERATION_MAX_TOPICS_PER_JOB,

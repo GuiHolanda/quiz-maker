@@ -25,13 +25,13 @@ const {
   };
 });
 
-vi.mock('@/features/services/openAI.service', () => ({
+vi.mock('@/features/services/generation/openai.service', () => ({
   OpenAIService: class {
     call = openAICallMock;
   },
 }));
 
-vi.mock('@/features/services/quota.service', () => ({
+vi.mock('@/features/services/billing/quota.service', () => ({
   QuotaService: quotaConstructorMock,
 }));
 
@@ -43,7 +43,7 @@ vi.mock('@/lib/edital/fetch', () => ({
   fetchEditalPdf: fetchEditalPdfMock,
 }));
 
-vi.mock('@/features/services/edital-extractor.service', () => ({
+vi.mock('@/features/services/auto-config/edital-extractor.service', () => ({
   EditalExtractorService: class {
     extract = editalExtractMock;
     verifyIsMainEdital = editalVerifyMock;
@@ -57,7 +57,7 @@ import {
   createAutoConfigJob,
   runAutoConfigJob,
   cancelAutoConfigJob,
-} from '@/features/services/auto-config-job.service';
+} from '@/features/services/auto-config/auto-config-job.service';
 
 const makeJob = (overrides = {}) => ({
   id: 'job-1',

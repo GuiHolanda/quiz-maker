@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { cancelAutoConfigJob } from '@/features/services/auto-config-job.service';
+import { cancelAutoConfigJob } from '@/features/services/auto-config/auto-config-job.service';
 import { toApiErrorResponse } from '@/lib/api-error';
 
 // Polling fallback for clients that can't hold an SSE connection open.

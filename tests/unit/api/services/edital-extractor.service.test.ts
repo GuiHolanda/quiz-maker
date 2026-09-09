@@ -14,13 +14,13 @@ vi.mock('openai', () => ({
   },
 }));
 
-vi.mock('@/features/services/metrics.service', () => ({
+vi.mock('@/features/services/billing/metrics.service', () => ({
   MetricsService: class {
     recordStep = recordStepMock;
   },
 }));
 
-import { EditalExtractorService } from '@/features/services/edital-extractor.service';
+import { EditalExtractorService } from '@/features/services/auto-config/edital-extractor.service';
 
 const DUMMY_FILE = {} as File;
 const INPUT = { examName: 'Concurso X', role: 'Analista' };

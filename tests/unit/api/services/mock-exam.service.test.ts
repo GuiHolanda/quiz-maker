@@ -3,7 +3,7 @@ import { MockExamService } from '@/app/api/mock-exams/mock-exam.service';
 
 const openAICallMock = vi.fn();
 
-vi.mock('@/features/services/openAI.service', () => ({
+vi.mock('@/features/services/generation/openai.service', () => ({
   OpenAIService: class {
     call = openAICallMock;
   },
@@ -13,7 +13,7 @@ const metricsCreateLogMock = vi.fn().mockResolvedValue('log-1');
 const metricsRecordStepMock = vi.fn();
 const metricsFinalizeMock = vi.fn();
 
-vi.mock('@/features/services/metrics.service', () => ({
+vi.mock('@/features/services/billing/metrics.service', () => ({
   MetricsService: class {
     createLog = metricsCreateLogMock;
     recordStep = metricsRecordStepMock;

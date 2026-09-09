@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { after } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
-import { claimGlobalSlotsAndDispatch } from '@/features/services/generation-job.service';
-import { QuotaService } from '@/features/services/quota.service';
+import { claimGlobalSlotsAndDispatch } from '@/features/services/generation/generation-job.service';
+import { QuotaService } from '@/features/services/billing/quota.service';
 
 // Called by Vercel Cron — secured via CRON_SECRET header
 export const maxDuration = 60;

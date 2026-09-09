@@ -1,22 +1,22 @@
 import { after } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
-import { publishGenerationProgress } from '@/features/services/job-progress.service';
+import { publishGenerationProgress } from '@/features/services/generation/job-progress.service';
 import { shuffleOptionTexts } from '@/lib/exam/distribution';
 import { extractJson, sanitizeLlmError, type LlmErrorType } from '@/lib/llm/response';
 import { resolveQuestionFormat } from '@/config/question-formats';
 import type { QuestionFormat } from '@/config/question-formats';
 import { resolveGenerationLanguage } from '@/config/generation-languages';
 import { detectQuestionLanguage } from '@/lib/exam/question-language';
-import { OpenAIService } from '@/features/services/openAI.service';
-import { QuotaService } from '@/features/services/quota.service';
-import { MetricsService } from '@/features/services/metrics.service';
-import { ReferralService } from '@/features/services/referral.service';
+import { OpenAIService } from '@/features/services/generation/openai.service';
+import { QuotaService } from '@/features/services/billing/quota.service';
+import { MetricsService } from '@/features/services/billing/metrics.service';
+import { ReferralService } from '@/features/services/billing/referral.service';
 import {
   sanitizeAiQuestions,
   validateAiQuestions,
   ExamQuestionService,
-} from '@/features/services/exam-question.service';
+} from '@/features/services/exam/exam-question.service';
 import { EXAM_PROMPTS } from '@/config/prompts';
 import {
   GENERATION_MAX_CONCURRENT_TOPICS,

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { ExamCatalogService } from '@/features/services/exam-catalog.service';
+import { ExamCatalogService } from '@/features/services/exam/exam-catalog.service';
 import { toApiErrorResponse } from '@/lib/api-error';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';

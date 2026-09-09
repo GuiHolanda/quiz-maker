@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { readAutoConfigProgress, type AutoConfigJobSnapshot } from '@/features/services/job-progress.service';
+import { readAutoConfigProgress, type AutoConfigJobSnapshot } from '@/features/services/generation/job-progress.service';
 
 export const maxDuration = 300;
 

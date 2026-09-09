@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { EditalExtractorService } from '@/features/services/edital-extractor.service';
-import { QuotaService } from '@/features/services/quota.service';
+import { EditalExtractorService } from '@/features/services/auto-config/edital-extractor.service';
+import { QuotaService } from '@/features/services/billing/quota.service';
 import { canEditExams } from '@/config/constants';
 import { toApiErrorResponse } from '@/lib/api-error';
 import { enforceRateLimit } from '@/lib/rate-limit';

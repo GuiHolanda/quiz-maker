@@ -1,5 +1,5 @@
 import { prismaMock } from '../__mocks__/prisma';
-import { QuotaService } from '@/features/services/quota.service';
+import { QuotaService } from '@/features/services/billing/quota.service';
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 

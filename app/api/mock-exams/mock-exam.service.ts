@@ -11,10 +11,10 @@ import {
   MockExamAvailability,
   ExamType,
 } from '@/shared/types';
-import { OpenAIService } from '@/features/services/openAI.service';
-import { ExamQuestionService } from '@/features/services/exam-question.service';
-import { MetricsService } from '@/features/services/metrics.service';
-import { ReferralService } from '@/features/services/referral.service';
+import { OpenAIService } from '@/features/services/generation/openai.service';
+import { ExamQuestionService } from '@/features/services/exam/exam-question.service';
+import { MetricsService } from '@/features/services/billing/metrics.service';
+import { ReferralService } from '@/features/services/billing/referral.service';
 import { certificationAnswersPrompt } from '@/config/prompts/certification-questions/answers.prompt';
 import { publicExamAnswersPrompt } from '@/config/prompts/public-exam-questions/answers.prompt';
 
