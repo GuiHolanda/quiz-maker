@@ -9,5 +9,3 @@ export function useExamsContext() {
 
   return ctx;
 }
-
-export default useExamsContext;

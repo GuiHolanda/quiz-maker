@@ -169,4 +169,3 @@ export function ExamsProvider({ children }: Readonly<{ children: React.ReactNode
 }
 
 export type { ExamsState };
-export default ExamsProvider;

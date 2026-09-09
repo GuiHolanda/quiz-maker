@@ -50,5 +50,3 @@ export function examsReducer(state: ExamsState, action: ExamsAction): ExamsState
       return state;
   }
 }
-
-export default examsReducer;
