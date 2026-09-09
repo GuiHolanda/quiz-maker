@@ -247,7 +247,6 @@ Domínio compartilhado: `CertificationManager`, `PublicExamManager`, `SectionsTa
 
 | Hook | Resumo |
 |---|---|
-| `useRequest` | HTTP wrapper com loading + toast de erro automático |
 | `useTranslation` | `{ t, language, setLanguage }` |
 | `useUsageContext` | `{ usage, refreshUsage }` — chame `refreshUsage()` após salvar questões |
 | `useExamsContext` | Estado do `ExamsProvider` — `addExam`, `removeExam`, `updateExam`, etc. |
@@ -255,9 +254,9 @@ Domínio compartilhado: `CertificationManager`, `PublicExamManager`, `SectionsTa
 | `useInactivityLogout` | Auto-logout por inatividade — via `<InactivityGuard />` em `providers.tsx` |
 | `useAiChat(userId)` | Chat com histórico isolado por `userId` em localStorage |
 
-**`useRequest` vs try/catch manual:** use `useRequest` para mutações simples (1 chamada HTTP + `onSuccess`). Use try/catch manual para fluxos multi-step com lógica entre chamadas ou `router.push()` mid-flow.
+**HTTP em componentes:** leituras via `.then()` em `useEffect`; mutações via try/catch manual. Feedback de erro com `notify.error` (fallback `err?.response?.data?.message` → chave i18n, nunca `err?.message`); `setIsBusy(false)` só no `catch`.
 
-**Toasts:** sempre via `notify` de `shared/lib/notify.ts` — nunca `addToast` direto. `useRequest` já trata erros; não duplique. Mutations devem mostrar toast em sucesso E em erro.
+**Toasts:** sempre via `notify` de `shared/lib/notify.ts` — nunca `addToast` direto. Um handler de erro por chamada; não aninhe um segundo `catch`. Mutations devem mostrar toast em sucesso E em erro.
 
 ---
 
@@ -305,7 +304,7 @@ Não precisa chamar em: quiz Generate (gabarito incluído no fluxo), browse/libr
 - [ ] Chips sempre `size="sm"`, cor via `color=`
 - [ ] Inputs com `label` sempre acompanhados de `placeholder`; senha via `<PasswordInput>`
 - [ ] Tokens semânticos, dark + light mode verificados
-- [ ] HTTP via `useRequest`; toast de sucesso em toda mutation
+- [ ] HTTP via connectors + try/catch manual; toast de sucesso em toda mutation
 - [ ] Lista com provider → `<SkeletonListLoader />` durante `isLoading`
 - [ ] Estado vazio: `<EmptyState>` para feedback contextual (filtros, erros, widgets); `<IllustratedEmptyState>` para estado primário de lista/página
 
