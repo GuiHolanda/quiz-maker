@@ -1,6 +1,5 @@
 import {
   SAVE_EXAM_URL,
-  SAVE_EXAM_QUESTIONS_URL,
   EXAM_QUESTION_EXPLANATION_URL,
   EXAMS_URL,
   BILLING_USAGE_URL,
@@ -39,7 +38,6 @@ import {
 } from '@/config/constants';
 import type { GenerationLanguage } from '@/config/generation-languages';
 import {
-  AIExamQuestion,
   Exam,
   ExamType,
   ExamSection,
@@ -179,10 +177,6 @@ export async function deleteTopic(topicId: string): Promise<void> {
 }
 
 // — Questions —
-
-export async function saveExamQuestions(type: ExamType, questions: AIExamQuestion[], examId?: string): Promise<void> {
-  await api.post(SAVE_EXAM_QUESTIONS_URL, { type, questions, ...(examId && { examId }) });
-}
 
 export async function getExamQuestionExplanation(questionId: number): Promise<Record<string, string>> {
   const { data } = await api.get<{ explanations: Record<string, string> }>(

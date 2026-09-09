@@ -1,30 +1,12 @@
 import { test, expect } from '../fixtures/auth.fixture';
 import { tid, TID } from '../support/selectors';
-import { E2E_CERT_LABEL, E2E_CERT_TOPIC } from '../support/constants';
+import { seedCertQuestions } from '../support/db-seed';
 
 const BANK_Q1 = 'BANK_Q1: object storage service?';
 
-function seedQuestions(texts: string[]) {
-  return {
-    type: 'certification',
-    questions: texts.map((text) => ({
-      examName: E2E_CERT_LABEL,
-      sectionName: E2E_CERT_TOPIC,
-      text,
-      topic: E2E_CERT_TOPIC,
-      difficulty: 'medium',
-      correctCount: 1,
-      options: { A: 'S3', B: 'EC2', C: 'RDS', D: 'Lambda' },
-    })),
-  };
-}
-
 test.describe('question bank', () => {
   test('seed → verify → search → delete', async ({ authedPage: page }) => {
-    const res = await page.request.post('/api/exam/save-questions', {
-      data: seedQuestions([BANK_Q1, 'BANK_Q2: compute service?', 'BANK_Q3: relational db?']),
-    });
-    expect(res.ok()).toBeTruthy();
+    await seedCertQuestions([BANK_Q1, 'BANK_Q2: compute service?', 'BANK_Q3: relational db?']);
 
     await page.goto('/question-bank');
     await expect(page.locator(tid(TID.questionBankCard)).filter({ hasText: BANK_Q1 })).toBeVisible();
@@ -43,10 +25,7 @@ test.describe('question bank', () => {
   });
 
   test('search with no match shows the empty state', async ({ authedPage: page }) => {
-    const res = await page.request.post('/api/exam/save-questions', {
-      data: seedQuestions(['BANK_SEARCH: seed for empty-state test']),
-    });
-    expect(res.ok()).toBeTruthy();
+    await seedCertQuestions(['BANK_SEARCH: seed for empty-state test']);
 
     await page.goto('/question-bank');
     await expect(page.locator(tid(TID.questionBankSearch))).toBeVisible();
@@ -58,8 +37,7 @@ test.describe('question bank', () => {
 
   test('select questions → bulk delete', async ({ authedPage: page }) => {
     const texts = ['BULK_A: first to remove', 'BULK_B: second to remove'];
-    const res = await page.request.post('/api/exam/save-questions', { data: seedQuestions(texts) });
-    expect(res.ok()).toBeTruthy();
+    await seedCertQuestions(texts);
 
     await page.goto('/question-bank');
     await page.locator(tid(TID.questionBankSearch)).fill('BULK_');

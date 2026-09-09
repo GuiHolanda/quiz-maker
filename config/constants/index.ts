@@ -5,7 +5,6 @@ export * from './generation-job';
 
 export const EXAMS_URL = '/exam/exams';
 export const SAVE_EXAM_URL = '/exam/save-exam';
-export const SAVE_EXAM_QUESTIONS_URL = '/exam/save-questions';
 export const EXAM_QUESTION_EXPLANATION_URL = '/exam/questions';
 export const BROWSE_SUMMARY_URL = '/exam/browse-questions/summary';
 export const BROWSE_QUESTIONS_URL = '/exam/browse-questions/questions';

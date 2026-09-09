@@ -50,7 +50,6 @@ Unified domain for `ExamType: 'certification' | 'public_exam'`.
 | `exam/save-exam` | POST/PUT/PATCH/DELETE | Create exam; add section; update exam/section/topic; delete. Every write except exam-level `DELETE` requires `pro`+ (`free` is catalog-only, read-only). |
 | `exam/providers` | GET | List all providers |
 | `exam/exam-boards` | GET/POST | List / create exam boards |
-| `exam/save-questions` | POST | Persist generated questions to DB |
 | `exam/questions/[questionId]/explanation` | GET | Generate and cache per-option explanation |
 | `exam/browse-questions/questions` | GET/DELETE | Paginated list + delete (ownership check) |
 | `exam/browse-questions/summary` | GET | Question counts grouped by exam/section |

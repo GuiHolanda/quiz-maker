@@ -64,7 +64,7 @@ Everything reusable lives here. Specs compose these helpers; they don't hand-rol
 | `generation-errors.spec.ts` | 2 (×2 domains) | ✓ | 403 quota failure surfaces an error and **no** success badge; a network abort on the generation POST shows the generic error toast. |
 | `sse-reconnect.spec.ts` | 2 (×2 domains) | ✓ | Cancel a running job calls `DELETE` and resets state; a `running` job is restored after reload (cancel button reappears). |
 | `wizard-validation.spec.ts` | 2 (×2 domains) | ✓ | Discard-draft returns to the list tab; cannot advance past step 1 with an empty title. |
-| `question-bank.spec.ts` | 2 | cert only | Seed 3 questions via the real `save-questions` API → verify → search narrows to one → delete; search with no match shows the empty state. |
+| `question-bank.spec.ts` | 3 | cert only | Seed questions via a direct Prisma helper (`support/db-seed.ts`) → verify → search narrows to one → delete; search with no match shows the empty state; select two → bulk delete. |
 | `empty-states.spec.ts` | 2 | mixed | Simulados list shows the empty state when both list endpoints return empty; certifications list shows the empty state when its endpoint returns empty. |
 | `simulado-timer.spec.ts` | 1 | cert only | Create a simulado with a custom time limit → start the attempt → the countdown (`simulado-timer`) is visible on the tentativa page. |
 
