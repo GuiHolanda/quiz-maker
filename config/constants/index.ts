@@ -43,15 +43,12 @@ export const REFERRAL_CODE_COOKIE_KEY = 'certifiqueai_referral_code';
 // 30 days: needs to survive a browse-now-signup-later gap, not just a redirect round-trip.
 export const UTM_COOKIE_KEY = 'certifiqueai_utm';
 export const UTM_COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
-export const AI_CHAT_LOCAL_STORAGE_KEY = (userId: string) => `AI_CHAT_MESSAGES_${userId}`;
-export const AI_CHAT_FOLLOWUP_TIMESTAMP_KEY = (userId: string) => `AI_CHAT_FOLLOWUP_TS_${userId}`;
 export const SIMULADO_ATTEMPT_PROGRESS_KEY = (attemptId: number) => `SIMULADO_ATTEMPT_PROGRESS_${attemptId}`;
 export const SIMULADO_ATTEMPT_PAUSE_KEY = (attemptId: number) => `SIMULADO_ATTEMPT_PAUSE_${attemptId}`;
 export const APP_NOTIFICATIONS_LOCAL_STORAGE_KEY = 'APP_NOTIFICATIONS';
 export const SIMULADO_NEW_PREFILL_KEY = 'SIMULADO_NEW_PREFILL';
-export const AI_CHAT_INACTIVITY_TIMEOUT_MS = 60 * 60 * 1000;
-// Auto-logout after 30 minutes of no mouse/keyboard/touch activity while chat is open
-export const AI_CHAT_LOGOUT_INACTIVITY_MS = 30 * 60 * 1000;
+// Auto-logout after 30 minutes of no mouse/keyboard/touch activity anywhere in the app
+export const INACTIVITY_LOGOUT_MS = 30 * 60 * 1000;
 export const QUESTIONS_PER_PAGE_OPTIONS = [
   { key: '1', label: '1' },
   { key: '5', label: '5' },
@@ -87,50 +84,42 @@ export const BILLING_CANCEL_URL = '/billing/cancel';
 // those amounts before checkout actually charges them (see the Stripe setup guide).
 // sprint mirrors pro_ai exactly — "tudo do Pro AI" for 90 days, one-time payment, no
 // renewal. Access itself is time-boxed via User.sprintExpiresAt (see auth.ts), not by a
-// lower quota here. aiChatMessagesPerPeriod (achado 15): 0 for free/pro is never actually
-// reached — AI_CHAT_ALLOWED_PLANS blocks those plans from the route entirely — set for
-// type completeness only, same convention as free's autoConfigPerPeriod: 0 below.
+// lower quota here.
 export const PLAN_LIMITS = {
   free: {
     questionsPerPeriod: 100,
     maxExams: 2,
     autoConfigPerPeriod: 0,
-    aiChatMessagesPerPeriod: 0,
     canEditExams: false,
   },
   pro: {
     questionsPerPeriod: 1000,
     maxExams: 6,
     autoConfigPerPeriod: 15,
-    aiChatMessagesPerPeriod: 0,
     canEditExams: true,
   },
   pro_ai: {
     questionsPerPeriod: 2000,
     maxExams: 12,
     autoConfigPerPeriod: 30,
-    aiChatMessagesPerPeriod: 300,
     canEditExams: true,
   },
   sprint: {
     questionsPerPeriod: 2000,
     maxExams: 12,
     autoConfigPerPeriod: 30,
-    aiChatMessagesPerPeriod: 300,
     canEditExams: true,
   },
   tester: {
     questionsPerPeriod: Infinity,
     maxExams: Infinity,
     autoConfigPerPeriod: Infinity,
-    aiChatMessagesPerPeriod: Infinity,
     canEditExams: true,
   },
   admin: {
     questionsPerPeriod: Infinity,
     maxExams: Infinity,
     autoConfigPerPeriod: Infinity,
-    aiChatMessagesPerPeriod: Infinity,
     canEditExams: true,
   },
 } as const;
@@ -195,5 +184,3 @@ export const QUESTION_BANK_SOURCES_URL = '/question-bank/sources';
 export const SEARCH_URL = '/search';
 
 export const DASHBOARD_STATS_URL = '/dashboard/stats';
-
-export const AI_CHAT_ALLOWED_PLANS: string[] = ['pro_ai', 'sprint', 'tester', 'admin'];

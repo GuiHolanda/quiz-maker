@@ -105,7 +105,6 @@ export type QuotaAction =
   | 'generate_questions'
   | 'create_exam'
   | 'extract_edital'
-  | 'ai_chat'
   | 'auto_config'
   | 'generate_explanation'
   | 'generate_mock_answers';
@@ -126,8 +125,6 @@ export interface UsageStats {
   examsLimit: number; // -1 = unlimited
   certificationsUsed: number; // display only
   publicExamsUsed: number; // display only
-  aiChatUsed: number; // messages sent this period
-  aiChatLimit: number; // -1 = unlimited (tester/admin), 0 = plan doesn't include AI Chat
   autoConfigUsed: number; // auto-config runs this period
   autoConfigLimit: number; // -1 = unlimited, 0 = plan doesn't include auto-config
   periodStartDate: string;

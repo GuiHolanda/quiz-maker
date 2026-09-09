@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 
-import { AI_CHAT_LOGOUT_INACTIVITY_MS } from '@/config/constants';
+import { INACTIVITY_LOGOUT_MS } from '@/config/constants';
 
 const ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'] as const;
 
@@ -20,7 +20,7 @@ export function useInactivityLogout() {
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
         signOut({ callbackUrl: '/login' });
-      }, AI_CHAT_LOGOUT_INACTIVITY_MS);
+      }, INACTIVITY_LOGOUT_MS);
     }
 
     resetTimer();
