@@ -1,45 +1,4 @@
-import {
-  E2E_CERT_KEY,
-  E2E_CERT_LABEL,
-  E2E_CERT_TOPIC,
-  E2E_PUBLIC_EXAM_NAME,
-  E2E_EXAM_BOARD,
-  E2E_SUBJECT,
-} from '../support/constants';
-
-export {
-  E2E_CERT_KEY,
-  E2E_CERT_LABEL,
-  E2E_CERT_TOPIC,
-  E2E_PUBLIC_EXAM_NAME,
-  E2E_EXAM_BOARD,
-  E2E_SUBJECT,
-};
-
-// Stub returned by GET /api/exam/browse-questions/summary — tells CreateSimuladoSection that
-// questions are available so it renders the creation form instead of the EmptyState.
-// Unified shape: { exams: [{ id, name, type, referenceName, totalCount, sections }] }.
-// Both verticals are included so totalSavedQuestions > 0 regardless of the selected exam.
-export const mockBrowseSummary = {
-  exams: [
-    {
-      id: 'e2e-cert-exam-id',
-      name: E2E_CERT_LABEL,
-      type: 'certification',
-      referenceName: 'E2E',
-      totalCount: 3,
-      sections: [{ name: E2E_CERT_TOPIC, questionCount: 3 }],
-    },
-    {
-      id: 'e2e-public-exam-id',
-      name: E2E_PUBLIC_EXAM_NAME,
-      type: 'public_exam',
-      referenceName: E2E_EXAM_BOARD,
-      totalCount: 3,
-      sections: [{ name: E2E_SUBJECT, questionCount: 3 }],
-    },
-  ],
-};
+import { E2E_CERT_LABEL, E2E_CERT_TOPIC, E2E_SUBJECT } from '../support/constants';
 
 // ensure-answers stub — always returns generated:0 (idempotent no-op).
 export const mockAnswersResponse = { generated: 0 };

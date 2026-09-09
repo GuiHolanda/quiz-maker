@@ -52,7 +52,6 @@ Unified domain for `ExamType: 'certification' | 'public_exam'`.
 | `exam/exam-boards` | GET/POST | List / create exam boards |
 | `exam/questions/[questionId]/explanation` | GET | Generate and cache per-option explanation |
 | `exam/browse-questions/questions` | GET/DELETE | Paginated list + delete (ownership check) |
-| `exam/browse-questions/summary` | GET | Question counts grouped by exam/section |
 | `exam/catalog` | GET | List exam templates (`isTemplate=true`), filtered by userId |
 | `exam/fork-exam` | POST | Fork catalog template into user's exam; returns full `Exam` object |
 | `exam/extract-from-edital` | POST | Extract exam structure from an uploaded edital via OpenAI (public_exam alternative to auto-config-by-name). Requires `pro`+, consumes `auto_config` quota. |
