@@ -61,7 +61,6 @@ const PLANS: readonly PlanEntry[] = [
     features: [
       { key: 'pricing.features.questionsPerMonth', value: 'pricing.features.proAi.questions' },
       { key: 'pricing.features.customExams', value: 'pricing.features.proAi.certifications' },
-      { key: 'pricing.features.aiChat' },
       { key: 'pricing.features.canEditExams' },
     ],
   },
