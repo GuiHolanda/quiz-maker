@@ -234,7 +234,7 @@ Gate in two places: API (403) + UI (not rendered). `session.user.plan` client-si
 | Env | Schema | DB |
 |---|---|---|
 | Dev | `prisma/dev/schema.prisma` | SQLite (`prisma/dev.db`) |
-| Prod | `prisma/prod/schema.prisma` | LibSQL (Turso) |
+| Prod | `prisma/prod/schema.prisma` | PostgreSQL |
 
 **Section percentage unit:** `ExamSection.minQuestions`/`maxQuestions` are **integers 0–100** (25 = 25%). Do not multiply or divide by 100 — the entire stack uses integer 0–100. Exception: `QuizGeneratorService.distributeQuestions` divides internally (`minQuestions / 100 * total`).
 
