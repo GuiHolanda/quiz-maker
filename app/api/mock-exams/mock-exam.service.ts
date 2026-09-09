@@ -2,6 +2,7 @@ import type { Prisma } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
 import { shuffleItems } from '@/lib/exam/distribution';
+import { normalizeName, looseKey } from '@/lib/exam/normalize';
 import { MOCK_EXAM_TIME_GRACE_MINUTES } from '@/config/constants';
 import {
   CreateMockExamPayload,
@@ -10,7 +11,6 @@ import {
   MockExamAvailability,
   ExamType,
 } from '@/shared/types';
-import { normalizeName, looseKey } from '@/shared/utils';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { ExamQuestionService } from '@/features/services/exam-question.service';
 import { MetricsService } from '@/features/services/metrics.service';
