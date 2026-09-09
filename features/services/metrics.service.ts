@@ -6,7 +6,6 @@ type MetricsStep =
   | 'review'
   | 'format'
   | 'extract'
-  | 'chat'
   | 'identify'
   | 'locate'
   | 'verify_edital'

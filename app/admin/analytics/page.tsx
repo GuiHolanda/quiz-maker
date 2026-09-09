@@ -65,7 +65,6 @@ const planColors: Record<UserPlan, 'default' | 'primary' | 'secondary' | 'succes
 const ACTION_LABELS: Record<string, string> = {
   generate_questions: 'Geração de Questões',
   extract_edital: 'Extração de Edital',
-  ai_chat: 'AI Chat',
   create_exam: 'Criar Certificação',
   auto_config: 'Auto-config',
   generate_explanation: 'Explicações por Alternativa',
@@ -77,7 +76,6 @@ const STEP_LABELS: Record<string, string> = {
   review: 'Review',
   format: 'Format',
   extract: 'Extract',
-  chat: 'Chat',
   identify: 'Identify',
   config_research: 'Config Research',
   config_review: 'Config Review',
