@@ -2,7 +2,7 @@
 // root object wholesale, so it silently loses the inherited `images`. Every page that
 // sets an openGraph block must spread this in, or its link previews render blank on
 // Facebook, LinkedIn and WhatsApp.
-export const OG_IMAGE = {
+const OG_IMAGE = {
   url: '/og-image.png',
   width: 1200,
   height: 630,

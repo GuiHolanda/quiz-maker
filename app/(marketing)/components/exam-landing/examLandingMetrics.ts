@@ -38,7 +38,7 @@ export function simuladoRows(config: ExamLandingConfig, limit: number): readonly
     }));
 }
 
-export function sortedTopics(config: ExamLandingConfig): readonly ExamLandingTopic[] {
+function sortedTopics(config: ExamLandingConfig): readonly ExamLandingTopic[] {
   return [...config.topics].sort((topic, other) => other.weight - topic.weight);
 }
 

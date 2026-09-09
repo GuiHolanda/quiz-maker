@@ -1,10 +1,5 @@
 import { test as base, Page } from '@playwright/test';
-import {
-  mockAnswersResponse,
-  mockFinishAttemptResponse,
-  mockMockExamResult,
-  mockBrowseSummary,
-} from './mock-data';
+import { mockAnswersResponse, mockFinishAttemptResponse, mockMockExamResult } from './mock-data';
 
 type AuthFixtures = {
   authedPage: Page;
@@ -58,18 +53,6 @@ export const test = base.extend<AuthFixtures>({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({ items: [], total: 0, page: 1, limit: 10 }),
-      });
-    });
-
-    // ── Browse summary mock — lets CreateSimuladoSection render the creation form
-    //    instead of the EmptyState. Without this, totalSavedQuestions stays null
-    //    until the real DB responds, and the form may show a skeleton or empty state.
-    //    Unified endpoint returns { exams: [{ id, name, type, referenceName, totalCount, sections }] }.
-    await page.route('**/api/exam/browse-questions/summary**', (route) => {
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(mockBrowseSummary),
       });
     });
 

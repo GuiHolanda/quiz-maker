@@ -1,6 +1,5 @@
 import {
   SAVE_EXAM_URL,
-  SAVE_EXAM_QUESTIONS_URL,
   EXAM_QUESTION_EXPLANATION_URL,
   EXAMS_URL,
   BILLING_USAGE_URL,
@@ -9,7 +8,6 @@ import {
   BILLING_REFERRAL_URL,
   BILLING_SUBSCRIPTION_URL,
   BILLING_CANCEL_URL,
-  BROWSE_SUMMARY_URL,
   BROWSE_QUESTIONS_URL,
   PROVIDERS_URL,
   EXAM_BOARDS_URL,
@@ -20,7 +18,6 @@ import {
   MOCK_EXAMS_URL,
   MOCK_EXAMS_AVAILABILITY_URL,
   ADMIN_USERS_URL,
-  ADMIN_OVERVIEW_URL,
   ADMIN_AUDIT_LOG_URL,
   ADMIN_EXCHANGE_RATE_URL,
   QUESTION_BANK_URL,
@@ -39,16 +36,11 @@ import {
 } from '@/config/constants';
 import type { GenerationLanguage } from '@/config/generation-languages';
 import {
-  AIExamQuestion,
   Exam,
   ExamType,
-  ExamSection,
-  ExamTopic,
-  SectionUpdatePayload,
   UsageStats,
   ReferralStats,
   BillingDetails,
-  BrowseSummary,
   Provider,
   ExamBoard,
   MockExamListItem,
@@ -58,7 +50,6 @@ import {
   FinishAttemptPayload,
   MockExamResult,
   MockExamAvailability,
-  AdminOverviewStats,
   AdminUsersResponse,
   AdminAuditLogResponse,
   UserAdminRow,
@@ -68,7 +59,6 @@ import {
   GenerationJobStatus,
   AutoConfigIdentifyResult,
   ExamIdentifyHints,
-  AutoConfigJobStatus,
   LocateEditalResult,
   GenerationHistoryResponse,
   GenerationHistoryFilters,
@@ -106,83 +96,11 @@ export async function updateExam(examId: string, exam: Exam): Promise<Exam> {
   return data.exam;
 }
 
-export async function updateExamMeta(
-  examId: string,
-  updates: {
-    newName?: string;
-    newKey?: string | null;
-    newRole?: string | null;
-    newYear?: number | null;
-    newProviderName?: string | null;
-    newExamBoardName?: string | null;
-    newTotalQuestions?: number;
-    newExamDurationMinutes?: number | null;
-    newPassingScore?: number | null;
-  }
-): Promise<Exam> {
-  const { data } = await api.patch<{ exam: Exam }>(SAVE_EXAM_URL, { examId, ...updates });
-
-  return data.exam;
-}
-
 export async function deleteExam(examId: string): Promise<void> {
   await api.delete(`${SAVE_EXAM_URL}?examId=${encodeURIComponent(examId)}`);
 }
 
-// — Sections —
-
-export async function addSection(
-  examId: string,
-  name: string,
-  minQuestions: number,
-  maxQuestions: number
-): Promise<ExamSection> {
-  const { data } = await api.put<{ section: ExamSection }>(SAVE_EXAM_URL, {
-    examId,
-    kind: 'section',
-    name,
-    minQuestions,
-    maxQuestions,
-  });
-
-  return data.section;
-}
-
-export async function updateSection(payload: SectionUpdatePayload): Promise<void> {
-  await api.patch(SAVE_EXAM_URL, { kind: 'section', ...payload });
-}
-
-export async function deleteSection(sectionId: string): Promise<void> {
-  await api.delete(`${SAVE_EXAM_URL}?sectionId=${encodeURIComponent(sectionId)}`);
-}
-
-// — Topics —
-
-export async function addTopic(sectionId: string, name: string): Promise<ExamTopic> {
-  const { data } = await api.put<{ topic: ExamTopic }>(SAVE_EXAM_URL, {
-    kind: 'topic',
-    sectionId,
-    name,
-  });
-
-  return data.topic;
-}
-
-export async function updateTopic(topicId: string, newName: string): Promise<ExamTopic> {
-  const { data } = await api.patch<{ topic: ExamTopic }>(SAVE_EXAM_URL, { kind: 'topic', topicId, newName });
-
-  return data.topic;
-}
-
-export async function deleteTopic(topicId: string): Promise<void> {
-  await api.delete(`${SAVE_EXAM_URL}?topicId=${encodeURIComponent(topicId)}`);
-}
-
 // — Questions —
-
-export async function saveExamQuestions(type: ExamType, questions: AIExamQuestion[], examId?: string): Promise<void> {
-  await api.post(SAVE_EXAM_QUESTIONS_URL, { type, questions, ...(examId && { examId }) });
-}
 
 export async function getExamQuestionExplanation(questionId: number): Promise<Record<string, string>> {
   const { data } = await api.get<{ explanations: Record<string, string> }>(
@@ -277,19 +195,10 @@ export const getActiveAutoConfigJob = (type: ExamType): Promise<ActiveAutoConfig
     .then((r) => r.data.job)
     .catch(() => null);
 
-export const getAutoConfigJob = (jobId: string): Promise<AutoConfigJobStatus> =>
-  api.get<AutoConfigJobStatus>(`${AUTO_CONFIG_URL}/${jobId}`).then((r) => r.data);
-
 export const cancelAutoConfigJob = (jobId: string): Promise<void> =>
   api.delete(`${AUTO_CONFIG_URL}/${jobId}`).then(() => undefined);
 
 // — Browse questions —
-
-export async function getBrowseSummary(): Promise<BrowseSummary> {
-  const { data } = await api.get<BrowseSummary>(BROWSE_SUMMARY_URL);
-
-  return data;
-}
 
 export async function deleteBrowseQuestion(id: number): Promise<void> {
   await api.delete(`${BROWSE_QUESTIONS_URL}?id=${id}`);
@@ -395,12 +304,6 @@ export async function getMockExamAttemptResult(mockExamId: number, attemptId: nu
 }
 
 // — Admin —
-
-export async function getAdminOverview(): Promise<AdminOverviewStats> {
-  const { data } = await api.get<AdminOverviewStats>(ADMIN_OVERVIEW_URL);
-
-  return data;
-}
 
 export async function getAdminUsers(params: {
   page?: number;

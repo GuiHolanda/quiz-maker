@@ -16,7 +16,7 @@
 | Icons | FontAwesome (`@fortawesome/react-fontawesome`) |
 | Animations | Framer Motion |
 | State | React Context + useReducer (no Redux/Zustand) |
-| Database | Prisma 6 + SQLite (dev) / LibSQL (prod) |
+| Database | Prisma 6 + SQLite (dev) / PostgreSQL (prod) |
 | HTTP Client | Axios (via `@/lib/bff.api`) |
 | AI | OpenAI SDK |
 
@@ -52,7 +52,7 @@ lib/
   api-error.ts       # toApiErrorResponse(err)
 prisma/
   dev/               # SQLite dev schema + migrations
-  prod/              # LibSQL prod schema + migrations
+  prod/              # PostgreSQL prod schema + migrations
 tests/
   unit/              # Vitest — service unit tests
   e2e/               # Playwright — full journey tests
@@ -65,7 +65,7 @@ tests/
 | Thing | Convention | Example |
 |---|---|---|
 | Components | PascalCase `.tsx` | `QuestionCard.tsx` |
-| Custom hooks | camelCase `.hook.ts` | `useRequest.hook.ts` |
+| Custom hooks | camelCase `.hook.ts` | `useAiChat.hook.ts` |
 | Providers | camelCase `.provider.tsx` | `exams.provider.tsx` |
 | Reducers | camelCase `.reducer.ts` | `exams.reducer.ts` |
 | Services | PascalCase `.service.ts` | `exam.service.ts` |
@@ -122,7 +122,7 @@ tests/
 | Env | Schema | DB |
 |---|---|---|
 | Dev | `prisma/dev/schema.prisma` | SQLite (`prisma/dev.db`) |
-| Prod | `prisma/prod/schema.prisma` | LibSQL (Turso) |
+| Prod | `prisma/prod/schema.prisma` | PostgreSQL |
 
 ---
 

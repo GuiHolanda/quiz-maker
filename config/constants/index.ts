@@ -5,9 +5,7 @@ export * from './generation-job';
 
 export const EXAMS_URL = '/exam/exams';
 export const SAVE_EXAM_URL = '/exam/save-exam';
-export const SAVE_EXAM_QUESTIONS_URL = '/exam/save-questions';
 export const EXAM_QUESTION_EXPLANATION_URL = '/exam/questions';
-export const BROWSE_SUMMARY_URL = '/exam/browse-questions/summary';
 export const BROWSE_QUESTIONS_URL = '/exam/browse-questions/questions';
 export const PROVIDERS_URL = '/exam/providers';
 export const EXAM_BOARDS_URL = '/exam/exam-boards';
@@ -156,7 +154,6 @@ export const REFERRAL_REWARD = {
 } as const;
 
 export const ADMIN_USERS_URL = '/admin/users';
-export const ADMIN_OVERVIEW_URL = '/admin/overview';
 export const ADMIN_AUDIT_LOG_URL = '/admin/audit-log';
 export const ADMIN_EXCHANGE_RATE_URL = '/admin/exchange-rate';
 

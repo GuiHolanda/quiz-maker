@@ -4,7 +4,7 @@
 
 import { InputLabelPlacement, InputVariant } from '@/shared/types';
 
-export const inputLabelClass = 'text-xs font-medium text-default-500';
+const inputLabelClass = 'text-xs font-medium text-default-500';
 
 const borderedInputClassNames = {
   label: inputLabelClass,
@@ -69,11 +69,4 @@ export const compactSelectClassNames = {
   label: inputLabelClass,
   trigger: 'h-8 bg-background rounded-lg',
   value: 'text-xs font-semibold',
-};
-
-export const tableClassNames = {
-  wrapper: 'bg-background shadow-none rounded-xl border border-default-200 p-0',
-  th: 'bg-content1 text-default-400 font-mono text-[11px] uppercase tracking-widest border-b border-default-200 first:rounded-tl-xl last:rounded-tr-xl',
-  td: 'text-sm text-foreground border-b border-default-100 group-data-[last=true]:border-0 py-3',
-  tr: 'group hover:bg-content1 transition-colors duration-150',
 };

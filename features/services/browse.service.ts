@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { BrowseQuestionsResponse, BrowseSummary, ExamType } from '@/shared/types';
+import { BrowseQuestionsResponse } from '@/shared/types';
 
 // ---- Ownership-checked delete for ExamQuestion ----
 
@@ -75,56 +75,5 @@ export class BrowseQuestionsService {
     }));
 
     return { questions, total, page, pageSize };
-  }
-}
-
-// ---- Summary grouped by exam and section ----
-
-export class BrowseSummaryService {
-  async getSummary(userId: string, type?: ExamType): Promise<BrowseSummary> {
-    const rows = await prisma.examQuestion.groupBy({
-      by: ['examName', 'sectionName'],
-      where: { userId },
-      _count: { id: true },
-      orderBy: { examName: 'asc' },
-    });
-
-    type ExamData = { totalCount: number; sections: Map<string, number> };
-    const examMap = new Map<string, ExamData>();
-
-    for (const row of rows) {
-      const exam = examMap.get(row.examName) ?? { totalCount: 0, sections: new Map() };
-      const count = row._count.id;
-
-      exam.totalCount += count;
-      exam.sections.set(row.sectionName, count);
-      examMap.set(row.examName, exam);
-    }
-
-    const examRecords = await prisma.exam.findMany({
-      where: { userId, ...(type && { type }) },
-      select: { id: true, name: true, type: true, provider: true, examBoard: true },
-    });
-    const byName = new Map(examRecords.map((e) => [e.name, e]));
-
-    const exams = Array.from(examMap.entries())
-      .filter(([name]) => (type ? byName.has(name) : true))
-      .map(([name, data]) => {
-        const record = byName.get(name);
-
-        return {
-          id: record?.id ?? name,
-          name,
-          type: (record?.type as ExamType) ?? 'certification',
-          referenceName: record?.provider?.name ?? record?.examBoard?.name ?? '',
-          totalCount: data.totalCount,
-          sections: Array.from(data.sections.entries()).map(([sectionName, questionCount]) => ({
-            name: sectionName,
-            questionCount,
-          })),
-        };
-      });
-
-    return { exams };
   }
 }

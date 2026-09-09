@@ -24,7 +24,7 @@ export interface DomainConfig {
   readonly streamRouteGlob: string;
 }
 
-export const DOMAINS: Record<DomainType, DomainConfig> = {
+const DOMAINS: Record<DomainType, DomainConfig> = {
   certification: {
     type: 'certification',
     typeOptionTid: TID.typeOptionCertification,

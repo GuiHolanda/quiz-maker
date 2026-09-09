@@ -52,7 +52,7 @@ export function normalizeMock(m: MockExamListItem): UnifiedSimulado {
   };
 }
 
-export function deriveStatus(openAttemptId: number | null, attemptCount: number): UnifiedSimulado['status'] {
+function deriveStatus(openAttemptId: number | null, attemptCount: number): UnifiedSimulado['status'] {
   if (openAttemptId != null) return 'in_progress';
   if (attemptCount > 0) return 'answered';
 

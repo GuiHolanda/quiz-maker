@@ -205,31 +205,6 @@ export interface BillingDetails {
   invoices: BillingInvoice[];
 }
 
-export interface BrowseSectionSummary {
-  name: string;
-  questionCount: number;
-}
-
-export interface BrowseExamSummary {
-  id: string;
-  name: string;
-  type: ExamType;
-  referenceName: string; // provider.name (cert) or examBoard.name (concurso)
-  totalCount: number;
-  sections: BrowseSectionSummary[];
-}
-
-export interface BrowseSummary {
-  exams: BrowseExamSummary[];
-}
-
-export interface BrowseQuestionsParams {
-  examName: string;
-  section: string;
-  page: number;
-  pageSize: number;
-}
-
 export interface BrowseQuestionsResponse {
   questions: StoredExamQuestion[];
   total: number;

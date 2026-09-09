@@ -21,7 +21,7 @@ The product is not limited to any single industry vertical. When generating ques
 | Thing | Convention | Example |
 |---|---|---|
 | Components | PascalCase `.tsx` | `QuestionCard.tsx` |
-| Custom hooks | camelCase `.hook.ts` | `useRequest.hook.ts` |
+| Custom hooks | camelCase `.hook.ts` | `useAiChat.hook.ts` |
 | Providers | camelCase `.provider.tsx` | `certifications.provider.tsx` |
 | Reducers | camelCase `.reducer.ts` | `exams.reducer.ts` |
 | Services | PascalCase `.service.ts` | `exam.service.ts` |
@@ -64,13 +64,12 @@ Extract to a new file when: the piece has its own props interface; it manages it
 
 **Use renderer functions** (declared after `return`, named `render<What>`) only for conditional blocks or table-cell variants that share too much scope to extract cleanly.
 
-### useRequest vs manual try/catch
+### HTTP calls in components
 
-`useRequest` — single HTTP call + optional `onSuccess`. Do **not** use for multi-step flows with multiple sequential calls, intermediate logic between calls, or `router.push()` mid-flow.
-
-For multi-step flows, use manual `try/catch`:
-- `setIsBusy(false)` in `catch` only — on success the user navigates away
-- Error feedback via `notify.error` with `err?.response?.data?.message` fallback to i18n key — never `err?.message`
+All component HTTP goes through `features/connectors.ts`. Reads: call in a `useEffect` and set state. Mutations: manual `try/catch`.
+- `setIsBusy(false)` in `catch` only — on success the user navigates away or a provider updates
+- Error feedback via `notify.error` with `err?.response?.data?.message` fallback to an i18n key — never `err?.message`
+- One error handler per call — don't wrap a call that already reports its own error in a second `catch`
 
 ### State Management
 - Context + Reducer pattern everywhere
@@ -97,7 +96,7 @@ For multi-step flows, use manual `try/catch`:
 | Other `PrismaClientKnownRequestError` | absent | 500 |
 | Any other `Error` | present (for server logs) | 500 |
 
-**Rules:** every catch block uses `toApiErrorResponse` — no raw `err.message` in responses. Never log the raw Prisma message to the response body. Components with `useRequest` get error toasts automatically — do not add a second `catch`.
+**Rules:** every catch block uses `toApiErrorResponse` — no raw `err.message` in responses. Never log the raw Prisma message to the response body. On the client, handle a failed connector call once — one `try/catch` with `notify.error` — never nest a second `catch` around it.
 
 ### HTTP timeouts (request chain)
 
@@ -235,7 +234,7 @@ Gate in two places: API (403) + UI (not rendered). `session.user.plan` client-si
 | Env | Schema | DB |
 |---|---|---|
 | Dev | `prisma/dev/schema.prisma` | SQLite (`prisma/dev.db`) |
-| Prod | `prisma/prod/schema.prisma` | LibSQL (Turso) |
+| Prod | `prisma/prod/schema.prisma` | PostgreSQL |
 
 **Section percentage unit:** `ExamSection.minQuestions`/`maxQuestions` are **integers 0–100** (25 = 25%). Do not multiply or divide by 100 — the entire stack uses integer 0–100. Exception: `QuizGeneratorService.distributeQuestions` divides internally (`minQuestions / 100 * total`).
 

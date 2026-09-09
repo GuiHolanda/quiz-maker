@@ -8,7 +8,7 @@ interface AuthBrandPanelProps {
   readonly page: 'login' | 'register';
 }
 
-export function AuthBrandPanel({ page }: AuthBrandPanelProps) {
+function AuthBrandPanel({ page }: AuthBrandPanelProps) {
   const { t } = useTranslation();
 
   const titleStart = page === 'register' ? t('register.brandTitleStart') : t('login.brandTitleStart');
@@ -25,15 +25,6 @@ export function AuthBrandPanel({ page }: AuthBrandPanelProps) {
         <CertBadgesIllustration />
       </div>
     </section>
-  );
-}
-
-function BrandMark() {
-  return (
-    <svg aria-hidden="true" className="w-7 h-7" fill="none" viewBox="0 0 28 28">
-      <rect fill="#e07820" height="28" rx="6" width="28" />
-      <path d="M8 14.5L12 18.5L20 9.5" stroke="white" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
-    </svg>
   );
 }
 

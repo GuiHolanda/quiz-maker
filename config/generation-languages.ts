@@ -6,7 +6,7 @@ export type GenerationLanguage = 'pt' | 'en';
 
 export const GENERATION_LANGUAGES = ['pt', 'en'] as const;
 
-export const DEFAULT_GENERATION_LANGUAGE: GenerationLanguage = 'pt';
+const DEFAULT_GENERATION_LANGUAGE: GenerationLanguage = 'pt';
 
 // The name written into the prompts — "Brazilian Portuguese" (not just "Portuguese")
 // keeps the model from drifting to the European variant.
