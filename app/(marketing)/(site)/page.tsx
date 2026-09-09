@@ -16,9 +16,8 @@ import { HomepagePricingSection } from '@/app/(marketing)/components/home/Homepa
 import { FaqSection } from '@/app/(marketing)/components/home/FaqSection';
 import { CtaSectionCta } from '@/app/(marketing)/components/home/CtaSectionCta';
 import { OG_IMAGES } from '@/config/og';
-import { alternatesFor } from '@/lib/seo';
-import { parseProperties } from '@/lib/properties-parser';
-import { jsonLd } from '@/lib/json-ld';
+import { alternatesFor, jsonLd } from '@/lib/seo';
+import { parseProperties } from '@/lib/i18n/properties-parser';
 
 export const metadata: Metadata = {
   title: 'Questões com IA para Certificações e Concursos Públicos',

@@ -3,7 +3,7 @@ import NextLink from 'next/link';
 
 import { LanguageSwitch } from '@/shared/components/ui/language-switch';
 import { LanguageProvider } from '@/features/providers/language.provider';
-import { loadMessagesForPrefixes } from '@/lib/load-messages';
+import { loadMessagesForPrefixes } from '@/lib/i18n/messages';
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },

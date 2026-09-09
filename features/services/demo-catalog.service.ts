@@ -1,6 +1,5 @@
 import { prisma, PrismaService } from '@/lib/prisma';
-import { distributeByWeight } from '@/lib/largest-remainder';
-import { shuffleItems } from '@/lib/shuffle-options';
+import { distributeByWeight, shuffleItems } from '@/lib/exam/distribution';
 import { DEMO_MIN_OPTIONS, DEMO_QUIZ_SIZE, DEMO_SLICE_MAX, DEMO_SLICE_MIN } from '@/config/constants';
 import type { DemoCatalogExam, DemoQuestion } from '@/shared/types';
 

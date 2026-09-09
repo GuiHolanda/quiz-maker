@@ -5,7 +5,7 @@ import { Button } from '@heroui/button';
 
 import { CardHeading } from '@/shared/components/ui/CardHeading';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { getDistributionSumTone, DISTRIBUTION_SUM_TONE_CLASS } from '@/lib/exam-draft-validation';
+import { getDistributionSumTone, DISTRIBUTION_SUM_TONE_CLASS } from '@/lib/exam/draft-validation';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { ExamDistributionTable } from '@/shared/components/exam-editor/ExamDistributionTable';
 import { faPlusCircle } from '@fortawesome/free-solid-svg-icons';

@@ -12,8 +12,7 @@ import { ExamTrustSection } from '@/app/(marketing)/components/exam-landing/Exam
 import { ExamFaqSection } from '@/app/(marketing)/components/exam-landing/ExamFaqSection';
 import { ExamFinalCtaSection } from '@/app/(marketing)/components/exam-landing/ExamFinalCtaSection';
 import { OG_IMAGES } from '@/config/og';
-import { alternatesFor } from '@/lib/seo';
-import { jsonLd } from '@/lib/json-ld';
+import { alternatesFor, jsonLd } from '@/lib/seo';
 import type { ExamLandingConfig } from '@/shared/types';
 
 interface PageProps {

@@ -1,7 +1,7 @@
 import type { Prisma } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
-import { shuffleItems } from '@/lib/shuffle-options';
+import { shuffleItems } from '@/lib/exam/distribution';
 import { MOCK_EXAM_TIME_GRACE_MINUTES } from '@/config/constants';
 import {
   CreateMockExamPayload,

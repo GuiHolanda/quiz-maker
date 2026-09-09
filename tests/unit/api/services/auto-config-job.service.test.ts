@@ -39,7 +39,7 @@ vi.mock('next/server', () => ({
   after: vi.fn(),
 }));
 
-vi.mock('@/lib/edital-fetch', () => ({
+vi.mock('@/lib/edital/fetch', () => ({
   fetchEditalPdf: fetchEditalPdfMock,
 }));
 

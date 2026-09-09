@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { classifyEditalUrl } from '@/lib/edital-classifier';
+import { classifyEditalUrl } from '@/lib/edital/rules';
 
 describe('classifyEditalUrl', () => {
   it('flags a quadro de vagas as annex even though the filename contains "edital"', () => {

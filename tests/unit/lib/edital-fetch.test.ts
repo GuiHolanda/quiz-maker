@@ -6,7 +6,7 @@ vi.mock('node:dns/promises', () => ({
   lookup: lookupMock,
 }));
 
-import { fetchEditalPdf } from '@/lib/edital-fetch';
+import { fetchEditalPdf } from '@/lib/edital/fetch';
 
 function chunksOf(bytes: Uint8Array, chunkSize = 4096): Uint8Array[] {
   const chunks: Uint8Array[] = [];

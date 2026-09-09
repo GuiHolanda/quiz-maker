@@ -1,4 +1,4 @@
-import { compactEditalReference } from '@/lib/edital-reference';
+import { compactEditalReference } from '@/lib/edital/rules';
 
 import type { PromptDefinition } from '../types';
 

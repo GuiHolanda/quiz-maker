@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { parseProperties } from '@/lib/properties-parser';
+import { parseProperties } from '@/lib/i18n/properties-parser';
 
 let cached: Record<string, string> | null = null;
 
@@ -35,4 +35,8 @@ export async function loadMessagesForPrefixes(prefixes: readonly string[]): Prom
   }
 
   return filtered;
+}
+
+export function hasMessages(messages?: Record<string, string>): boolean {
+  return !!messages && Object.keys(messages).length > 0;
 }

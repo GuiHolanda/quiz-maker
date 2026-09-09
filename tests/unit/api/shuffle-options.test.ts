@@ -1,4 +1,4 @@
-import { shuffleItems, shuffleOptionTexts } from '@/lib/shuffle-options';
+import { shuffleItems, shuffleOptionTexts } from '@/lib/exam/distribution';
 
 describe('shuffleOptionTexts', () => {
   it('keeps the same label set', () => {

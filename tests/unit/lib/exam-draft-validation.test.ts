@@ -1,4 +1,4 @@
-import { getExamDraftValidation, getDistributionSumTone } from '@/lib/exam-draft-validation';
+import { getExamDraftValidation, getDistributionSumTone } from '@/lib/exam/draft-validation';
 import type { Exam } from '@/shared/types';
 
 // Regression: an empty sections array made `sections.every(...)` vacuously true, so an

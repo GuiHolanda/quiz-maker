@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 
 import { Exam } from '@/shared/types';
 import { MetricsService } from '@/features/services/metrics.service';
-import { normalizeCase, splitTopics, stripNumbering } from '@/lib/exam-blueprint';
+import { normalizeCase, splitTopics, stripNumbering } from '@/lib/exam/blueprint';
 import { editalExtractPrompt, editalVerifyPrompt } from '@/config/prompts';
 import type { EditalVerifyInput } from '@/config/prompts';
 

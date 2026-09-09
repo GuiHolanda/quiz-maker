@@ -4,9 +4,8 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { EXAM_LANDING_PAGES } from '@/config/exam-landing-pages';
-import { alternatesFor } from '@/lib/seo';
-import { jsonLd } from '@/lib/json-ld';
-import { parseProperties } from '@/lib/properties-parser';
+import { alternatesFor, jsonLd } from '@/lib/seo';
+import { parseProperties } from '@/lib/i18n/properties-parser';
 import { OG_IMAGES } from '@/config/og';
 import type { ExamLandingConfig } from '@/shared/types';
 

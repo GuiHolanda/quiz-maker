@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { REFERRAL_REWARD } from '@/config/constants';
 import { EmailService } from '@/features/services/email.service';
-import { generateUniqueReferralCode } from '@/lib/referral-code';
+import { generateUniqueReferralCode } from '@/lib/growth/referral-code';
 
 export class ReferralService {
   private emailServiceInstance: EmailService | null = null;

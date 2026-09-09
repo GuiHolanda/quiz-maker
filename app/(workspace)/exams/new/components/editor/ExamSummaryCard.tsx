@@ -1,5 +1,5 @@
 'use client';
-import type { DistributionSumTone } from '@/lib/exam-draft-validation';
+import type { DistributionSumTone } from '@/lib/exam/draft-validation';
 
 import { CardHeading } from '@/shared/components/ui/CardHeading';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';

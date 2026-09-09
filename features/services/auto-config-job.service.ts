@@ -2,15 +2,14 @@ import { after } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
 import { publishAutoConfigProgress } from '@/features/services/job-progress.service';
-import { extractJson, sanitizeLlmError, type LlmErrorType } from '@/lib/llm-response';
-import { validateExamBlueprint, type ParsedExamBlueprint } from '@/lib/exam-blueprint';
+import { extractJson, sanitizeLlmError, type LlmErrorType } from '@/lib/llm/response';
+import { validateExamBlueprint, type ParsedExamBlueprint } from '@/lib/exam/blueprint';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { QuotaService } from '@/features/services/quota.service';
 import { MetricsService } from '@/features/services/metrics.service';
 import { AUTO_CONFIG_PROMPTS, editalLocatePrompt, IDENTIFY_PROMPTS } from '@/config/prompts';
-import { fetchEditalPdf } from '@/lib/edital-fetch';
-import { classifyEditalUrl } from '@/lib/edital-classifier';
-import { classifyEditalDomain, resolveAllowedDomains } from '@/lib/edital-domains';
+import { fetchEditalPdf } from '@/lib/edital/fetch';
+import { classifyEditalUrl, classifyEditalDomain, resolveAllowedDomains } from '@/lib/edital/rules';
 import { EditalExtractorService } from '@/features/services/edital-extractor.service';
 import type {
   EditalCandidate,

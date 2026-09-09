@@ -23,9 +23,7 @@ import {
 } from '@/features/connectors';
 import { useLimitModal } from '@/features/hooks/useLimitModal.hook';
 import { DEFAULT_QUESTION_FORMAT } from '@/config/question-formats';
-import { classifyEditalUrl } from '@/lib/edital-classifier';
-import { classifyEditalDomain } from '@/lib/edital-domains';
-import { parseEditalReference } from '@/lib/edital-reference';
+import { classifyEditalUrl, classifyEditalDomain, parseEditalReference } from '@/lib/edital/rules';
 import { AUTO_CONFIG_URL } from '@/config/constants';
 
 export type ExamSeedState =

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { normalizeCase, stripNumbering, splitTopics, validateExamBlueprint } from '@/lib/exam-blueprint';
+import { normalizeCase, stripNumbering, splitTopics, validateExamBlueprint } from '@/lib/exam/blueprint';
 
 describe('normalizeCase', () => {
   it('converts fully-uppercase string to sentence case', () => {

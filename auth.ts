@@ -9,8 +9,8 @@ import authConfig from './auth.config';
 
 import { prisma } from '@/lib/prisma';
 import { REFERRAL_CODE_COOKIE_KEY, UTM_COOKIE_KEY } from '@/config/constants';
-import { generateUniqueReferralCode } from '@/lib/referral-code';
-import { parseUtmCookie } from '@/lib/utm';
+import { generateUniqueReferralCode } from '@/lib/growth/referral-code';
+import { parseUtmCookie } from '@/lib/growth/utm';
 import { syncTokenPlan } from '@/lib/auth-plan-sync';
 
 class EmailNotVerifiedError extends CredentialsSignin {

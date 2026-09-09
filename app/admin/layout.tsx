@@ -8,7 +8,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { AdminNavLink } from '@/app/admin/components/AdminNavLink';
 import { LanguageProvider } from '@/features/providers/language.provider';
-import { loadAllMessages } from '@/lib/load-messages';
+import { loadAllMessages } from '@/lib/i18n/messages';
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },

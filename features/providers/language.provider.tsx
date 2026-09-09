@@ -6,8 +6,8 @@ import React, { useReducer, useEffect, useCallback, useMemo } from 'react';
 
 import { LANGUAGE_LOCAL_STORAGE_KEY } from '@/config/constants';
 import { languageReducer } from '@/features/reducers/language.reducer';
-import { parseProperties } from '@/lib/properties-parser';
-import { hasMessages } from '@/lib/i18n-utils';
+import { parseProperties } from '@/lib/i18n/properties-parser';
+import { hasMessages } from '@/lib/i18n/messages';
 
 export const LanguageContext = React.createContext<LanguageStoreApi | null>(null);
 

@@ -2,12 +2,12 @@ import { after } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
 import { publishGenerationProgress } from '@/features/services/job-progress.service';
-import { shuffleOptionTexts } from '@/lib/shuffle-options';
-import { extractJson, sanitizeLlmError, type LlmErrorType } from '@/lib/llm-response';
+import { shuffleOptionTexts } from '@/lib/exam/distribution';
+import { extractJson, sanitizeLlmError, type LlmErrorType } from '@/lib/llm/response';
 import { resolveQuestionFormat } from '@/config/question-formats';
 import type { QuestionFormat } from '@/config/question-formats';
 import { resolveGenerationLanguage } from '@/config/generation-languages';
-import { detectQuestionLanguage } from '@/lib/detect-question-language';
+import { detectQuestionLanguage } from '@/lib/exam/question-language';
 import { OpenAIService } from '@/features/services/openAI.service';
 import { QuotaService } from '@/features/services/quota.service';
 import { MetricsService } from '@/features/services/metrics.service';

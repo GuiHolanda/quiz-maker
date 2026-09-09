@@ -1,4 +1,4 @@
-import { detectQuestionLanguage } from '@/lib/detect-question-language';
+import { detectQuestionLanguage } from '@/lib/exam/question-language';
 
 describe('detectQuestionLanguage', () => {
   it('detects a plain Portuguese question', () => {

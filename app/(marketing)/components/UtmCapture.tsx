@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-import { captureUtmFromUrl } from '@/lib/utm';
+import { captureUtmFromUrl } from '@/lib/growth/utm';
 
 export function UtmCapture() {
   const searchParams = useSearchParams();

@@ -11,7 +11,7 @@ import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
 import { CardHeading } from '@/shared/components/ui/CardHeading';
 import { WorkspaceSplitLayout } from '@/shared/components/ui/WorkspaceSplitLayout';
 import { useExamDraftCard } from '@/features/hooks/useExamDraftCard.hook';
-import { getExamDraftValidation } from '@/lib/exam-draft-validation';
+import { getExamDraftValidation } from '@/lib/exam/draft-validation';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { EXAM_CONFIG } from '@/app/(workspace)/exams/exam-config';
 import { NewExamHeader } from './seed/NewExamHeader';
