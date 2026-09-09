@@ -1,5 +1,5 @@
 import { prismaMock } from '../__mocks__/prisma';
-import { ExamCatalogService } from '@/features/services/exam-catalog.service';
+import { ExamCatalogService } from '@/features/services/exam/exam-catalog.service';
 
 describe('ExamCatalogService', () => {
   let service: ExamCatalogService;

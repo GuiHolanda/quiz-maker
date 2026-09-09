@@ -10,7 +10,7 @@ vi.mock('@/features/services/email.service', () => {
 });
 
 import { prismaMock } from '../__mocks__/prisma';
-import { ReferralService } from '@/features/services/referral.service';
+import { ReferralService } from '@/features/services/billing/referral.service';
 import { EmailService } from '@/features/services/email.service';
 
 const sendReferralRewardToFriend = EmailService.prototype.sendReferralRewardToFriend as ReturnType<typeof vi.fn>;

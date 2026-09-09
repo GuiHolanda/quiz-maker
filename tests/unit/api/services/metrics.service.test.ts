@@ -1,5 +1,5 @@
 import { prismaMock } from '../__mocks__/prisma';
-import { MetricsService } from '@/features/services/metrics.service';
+import { MetricsService } from '@/features/services/billing/metrics.service';
 
 describe('MetricsService', () => {
   let service: MetricsService;

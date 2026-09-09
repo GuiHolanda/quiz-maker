@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFileLines, faClock, faCircleCheck, faRectangleList } from '@fortawesome/free-regular-svg-icons';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import type { DemoCatalogExam, DemoCatalogDomain } from '@/shared/types';
-import { distributeByWeight } from '@/lib/largest-remainder';
+import { distributeByWeight } from '@/lib/exam/distribution';
 import { PLAN_LIMITS } from '@/config/constants';
 import { BlueprintCorners } from '@/app/(marketing)/components/shared/BlueprintCorners';
 import { DemoProgressBar } from './DemoProgressBar';

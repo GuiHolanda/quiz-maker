@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { QuotaService } from '@/features/services/quota.service';
+import { QuotaService } from '@/features/services/billing/quota.service';
 import { auth } from '@/auth';
 import { toApiErrorResponse } from '@/lib/api-error';
 

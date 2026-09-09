@@ -10,7 +10,7 @@ import { NotificationsProvider } from '@/features/providers/notifications.provid
 import { LanguageProvider } from '@/features/providers/language.provider';
 import { SIDEBAR_COLLAPSED_COOKIE_KEY } from '@/config/constants';
 import { auth } from '@/auth';
-import { loadMessagesForPrefixes } from '@/lib/load-messages';
+import { loadMessagesForPrefixes } from '@/lib/i18n/messages';
 import { WORKSPACE_MESSAGE_PREFIXES } from '@/config/i18n-prefixes';
 
 export const metadata: Metadata = {

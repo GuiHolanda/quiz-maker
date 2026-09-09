@@ -17,7 +17,7 @@ import { REGISTER_URL, REFERRAL_CODE_COOKIE_KEY } from '@/config/constants';
 import { inputProperties } from '@/config/constants/inputStyles';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PasswordInput } from '@/shared/components/ui/PasswordInput';
-import { captureUtmFromUrl, readUtmCookie } from '@/lib/utm';
+import { captureUtmFromUrl, readUtmCookie } from '@/lib/growth/utm';
 
 export function RegisterForm() {
   const router = useRouter();

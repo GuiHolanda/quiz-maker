@@ -1,8 +1,8 @@
 'use client';
 import type { BlueprintConfidence, Exam } from '@/shared/types';
-import type { ExamDraftValidation } from '@/lib/exam-draft-validation';
+import type { ExamDraftValidation } from '@/lib/exam/draft-validation';
 
-import { getDistributionSumTone } from '@/lib/exam-draft-validation';
+import { getDistributionSumTone } from '@/lib/exam/draft-validation';
 import { ExamProvenanceCard } from '@/app/(workspace)/exams/new/components/editor/ExamProvenanceCard';
 import { ExamChecklistCard } from '@/app/(workspace)/exams/new/components/editor/ExamChecklistCard';
 import { ExamSummaryCard } from '@/app/(workspace)/exams/new/components/editor/ExamSummaryCard';

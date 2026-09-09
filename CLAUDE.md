@@ -104,7 +104,7 @@ All component HTTP goes through `features/connectors.ts`. Reads: call in a `useE
 |---|---|---|
 | Vercel function | `maxDuration = 300` | route handler |
 | axios client | `timeout: 280_000` | `lib/bff.api.ts` |
-| OpenAI SDK | `timeout: 280_000`, `maxRetries: 0` | `features/services/openAI.service.ts` |
+| OpenAI SDK | `timeout: 280_000`, `maxRetries: 0` | `features/services/generation/openai.service.ts` |
 
 **When raising one, raise the others** — they're co-dependent. `maxRetries: 0` is intentional: timeouts are slow-generation, not transient failures.
 
@@ -232,7 +232,7 @@ Gate in two places: API (403) + UI (not rendered). `session.user.plan` client-si
 | Dev | `prisma/dev/schema.prisma` | SQLite (`prisma/dev.db`) |
 | Prod | `prisma/prod/schema.prisma` | PostgreSQL |
 
-**Section percentage unit:** `ExamSection.minQuestions`/`maxQuestions` are **integers 0–100** (25 = 25%). Do not multiply or divide by 100 — the entire stack uses integer 0–100. Exception: `QuizGeneratorService.distributeQuestions` divides internally (`minQuestions / 100 * total`).
+**Section percentage unit:** `ExamSection.minQuestions`/`maxQuestions` are **integers 0–100** (25 = 25%). Do not multiply or divide by 100 — the entire stack uses integer 0–100.
 
 ---
 

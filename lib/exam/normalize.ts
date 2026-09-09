@@ -1,19 +1,3 @@
-export function parseNumber(value: string | null, fallback: number | null = null) {
-  if (value === null) return fallback;
-  const n = Number(value);
-
-  return Number.isFinite(n) ? n : fallback;
-}
-
-export function toSafeString(v: unknown) {
-  if (typeof v === 'string') return v;
-  if (v == null) return '';
-  // Prefer JSON when possible
-  const json = JSON.stringify(v);
-
-  return json || Object.prototype.toString.call(v);
-}
-
 /**
  * Normalize a free-form name (subject, topic, exam name) to a canonical form
  * for byte-exact equality storage and comparison.
@@ -36,4 +20,12 @@ export function normalizeName(s: string): string {
  */
 export function looseKey(s: string): string {
   return normalizeName(s).toLowerCase();
+}
+
+export function toSafeString(v: unknown) {
+  if (typeof v === 'string') return v;
+  if (v == null) return '';
+  const json = JSON.stringify(v);
+
+  return json || Object.prototype.toString.call(v);
 }

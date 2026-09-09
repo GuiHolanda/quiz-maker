@@ -1,7 +1,8 @@
 import type { Prisma } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
-import { shuffleItems } from '@/lib/shuffle-options';
+import { shuffleItems } from '@/lib/exam/distribution';
+import { normalizeName, looseKey } from '@/lib/exam/normalize';
 import { MOCK_EXAM_TIME_GRACE_MINUTES } from '@/config/constants';
 import {
   CreateMockExamPayload,
@@ -10,11 +11,10 @@ import {
   MockExamAvailability,
   ExamType,
 } from '@/shared/types';
-import { normalizeName, looseKey } from '@/shared/utils';
-import { OpenAIService } from '@/features/services/openAI.service';
-import { ExamQuestionService } from '@/features/services/exam-question.service';
-import { MetricsService } from '@/features/services/metrics.service';
-import { ReferralService } from '@/features/services/referral.service';
+import { OpenAIService } from '@/features/services/generation/openai.service';
+import { ExamQuestionService } from '@/features/services/exam/exam-question.service';
+import { MetricsService } from '@/features/services/billing/metrics.service';
+import { ReferralService } from '@/features/services/billing/referral.service';
 import { certificationAnswersPrompt } from '@/config/prompts/certification-questions/answers.prompt';
 import { publicExamAnswersPrompt } from '@/config/prompts/public-exam-questions/answers.prompt';
 

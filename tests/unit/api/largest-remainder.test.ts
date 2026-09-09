@@ -1,4 +1,4 @@
-import { distributeByWeight } from '@/lib/largest-remainder';
+import { distributeByWeight } from '@/lib/exam/distribution';
 
 describe('distributeByWeight', () => {
   it('splits proportionally when capacity is not binding', () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { classifyEditalDomain, resolveAllowedDomains } from '@/lib/edital-domains';
+import { classifyEditalDomain, resolveAllowedDomains } from '@/lib/edital/rules';
 
 describe('classifyEditalDomain', () => {
   it('classifies a gov.br host as official-org', () => {

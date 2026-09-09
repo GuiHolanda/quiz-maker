@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { ExamService } from '@/features/services/exam.service';
-import { QuotaService } from '@/features/services/quota.service';
+import { ExamService } from '@/features/services/exam/exam.service';
+import { QuotaService } from '@/features/services/billing/quota.service';
 import { toApiErrorResponse } from '@/lib/api-error';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';

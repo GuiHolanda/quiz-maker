@@ -1,7 +1,7 @@
 import { beforeEach } from 'vitest';
 
 import { prismaMock } from '../__mocks__/prisma';
-import { QuestionBankService } from '@/features/services/question-bank.service';
+import { QuestionBankService } from '@/features/services/exam/question-bank.service';
 
 const service = new QuestionBankService();
 

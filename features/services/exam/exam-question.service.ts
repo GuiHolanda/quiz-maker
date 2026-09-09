@@ -1,9 +1,9 @@
 import { prisma, PrismaService } from '@/lib/prisma';
-import { shuffleOptionTexts } from '@/lib/shuffle-options';
+import { shuffleOptionTexts } from '@/lib/exam/distribution';
+import { looseKey, normalizeName, toSafeString } from '@/lib/exam/normalize';
 import { resolveQuestionFormat } from '@/config/question-formats';
 import type { QuestionFormat } from '@/config/question-formats';
 import { AIExamQuestion, Answer, ExamQuestionParams, ExamType } from '@/shared/types';
-import { toSafeString, normalizeName, looseKey } from '@/shared/utils';
 
 // `format` is optional so callers that only need the structural checks (a legacy
 // payload, a job saved before the exam carried a format) keep working. When supplied,

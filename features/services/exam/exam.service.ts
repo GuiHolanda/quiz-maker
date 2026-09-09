@@ -1,7 +1,7 @@
 import { prisma, PrismaService } from '@/lib/prisma';
+import { normalizeName } from '@/lib/exam/normalize';
 import { defaultFormatForSource, isQuestionFormatKey, resolveQuestionFormat } from '@/config/question-formats';
 import { Exam, ExamStatus, ExamType, SectionUpdatePayload } from '@/shared/types';
-import { normalizeName } from '@/shared/utils';
 
 interface ExamMetrics {
   generatedQuestionsCount: number;

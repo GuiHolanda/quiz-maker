@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { OpenAIService } from '@/features/services/openAI.service';
+import { OpenAIService } from '@/features/services/generation/openai.service';
 import type { PromptDefinition } from '@/config/prompts/types';
 
 const prompt: PromptDefinition<Record<string, never>> = { build: () => 'hello' };

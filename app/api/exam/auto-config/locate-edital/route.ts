@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { locateEdital } from '@/features/services/auto-config-job.service';
-import { QuotaService } from '@/features/services/quota.service';
+import { locateEdital } from '@/features/services/auto-config/auto-config-job.service';
+import { QuotaService } from '@/features/services/billing/quota.service';
 import { canEditExams } from '@/config/constants';
 import { toApiErrorResponse } from '@/lib/api-error';
 

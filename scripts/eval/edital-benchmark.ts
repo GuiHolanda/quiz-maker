@@ -61,8 +61,8 @@ import {
 // These import the real production code — no reimplementation, no `@/` resolution issue (tsx
 // with --tsconfig resolves the alias fine; see plan's "Viabilidade" section for the probe that
 // established this).
-import { identifyExam, locateEdital, type IdentifyMatch } from '../../features/services/auto-config-job.service';
-import { EditalExtractorService } from '../../features/services/edital-extractor.service';
+import { identifyExam, locateEdital, type IdentifyMatch } from '../../features/services/auto-config/auto-config-job.service';
+import { EditalExtractorService } from '../../features/services/auto-config/edital-extractor.service';
 import { prisma } from '../../lib/prisma';
 import type { EditalCandidate } from '../../shared/types';
 

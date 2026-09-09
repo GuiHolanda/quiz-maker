@@ -8,10 +8,9 @@ import { PricingCardList } from '@/app/(marketing)/components/pricing/PricingCar
 import { BottomCtaCta } from '@/app/(marketing)/components/pricing/BottomCtaCta';
 import { FeatureComparisonTable } from '@/app/(marketing)/components/pricing/FeatureComparisonTable';
 import { PricingFaq } from '@/app/(marketing)/components/pricing/PricingFaq';
-import { parseProperties } from '@/lib/properties-parser';
-import { jsonLd } from '@/lib/json-ld';
+import { parseProperties } from '@/lib/i18n/properties-parser';
+import { alternatesFor, jsonLd } from '@/lib/seo';
 import { OG_IMAGES } from '@/config/og';
-import { alternatesFor } from '@/lib/seo';
 
 export const metadata: Metadata = {
   title: 'Planos e Preços',

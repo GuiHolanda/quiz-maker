@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { parseProperties } from '@/lib/properties-parser';
+import { parseProperties } from '@/lib/i18n/properties-parser';
 
 let cached: Record<string, string> | null = null;
 

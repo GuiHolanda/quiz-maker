@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { compactEditalReference, parseEditalReference } from '@/lib/edital-reference';
+import { compactEditalReference, parseEditalReference } from '@/lib/edital/rules';
 
 describe('compactEditalReference', () => {
   it('reduces a long official edital key to the number/year pair used in searches', () => {

@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 
 import { prisma } from '@/lib/prisma';
 import { EmailService } from '@/features/services/email.service';
-import { generateUniqueReferralCode } from '@/lib/referral-code';
+import { generateUniqueReferralCode } from '@/lib/growth/referral-code';
 
 export class RegisterService {
   async register(body: unknown): Promise<{ id: string; email: string; redirectToVerify: boolean }> {

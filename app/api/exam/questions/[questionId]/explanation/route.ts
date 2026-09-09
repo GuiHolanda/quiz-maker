@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { OpenAIService } from '@/features/services/openAI.service';
-import { ExamQuestionService } from '@/features/services/exam-question.service';
-import { MetricsService } from '@/features/services/metrics.service';
+import { OpenAIService } from '@/features/services/generation/openai.service';
+import { ExamQuestionService } from '@/features/services/exam/exam-question.service';
+import { MetricsService } from '@/features/services/billing/metrics.service';
 import { certificationExplanationsPrompt } from '@/config/prompts/certification-questions/explanations.prompt';
 import { publicExamExplanationsPrompt } from '@/config/prompts/public-exam-questions/explanations.prompt';
 import { toApiErrorResponse } from '@/lib/api-error';

@@ -3,9 +3,9 @@ import { after } from 'next/server';
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { publishGenerationProgress } from '@/features/services/job-progress.service';
+import { publishGenerationProgress } from '@/features/services/generation/job-progress.service';
 import { toApiErrorResponse } from '@/lib/api-error';
-import { claimGlobalSlotsAndDispatch } from '@/features/services/generation-job.service';
+import { claimGlobalSlotsAndDispatch } from '@/features/services/generation/generation-job.service';
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ jobId: string }> }) {
   const session = await auth();

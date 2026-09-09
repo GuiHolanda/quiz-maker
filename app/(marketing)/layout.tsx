@@ -2,10 +2,10 @@ import clsx from 'clsx';
 import { Suspense } from 'react';
 
 import { fontBarlow, fontBarlowCondensed } from '@/config/fonts';
-import { jsonLd } from '@/lib/json-ld';
+import { jsonLd } from '@/lib/seo';
 import { UtmCapture } from '@/app/(marketing)/components/UtmCapture';
 import { LanguageProvider } from '@/features/providers/language.provider';
-import { loadMessagesForPrefixes } from '@/lib/load-messages';
+import { loadMessagesForPrefixes } from '@/lib/i18n/messages';
 import { MARKETING_MESSAGE_PREFIXES } from '@/config/i18n-prefixes';
 
 const organizationSchema = {

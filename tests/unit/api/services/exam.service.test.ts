@@ -1,5 +1,5 @@
 import { prismaMock } from '../__mocks__/prisma';
-import { ExamService } from '@/features/services/exam.service';
+import { ExamService } from '@/features/services/exam/exam.service';
 import type { Exam } from '@/shared/types';
 
 describe('ExamService', () => {

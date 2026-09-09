@@ -38,7 +38,6 @@ sharedComponents/             # Components reused across pages
   ui/                         # Generic UI primitives
 config/
   constants/                  # App-wide constants, API URLs, localStorage keys
-  promptSchemas/              # JSON schemas for LLM output validation
 features/
   connectors.ts               # All HTTP calls (single file)
   hooks/                      # Custom React hooks (*.hook.ts)

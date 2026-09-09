@@ -5,7 +5,7 @@ import type { QuestionFormatKey } from '@/config/question-formats';
 import { ExamIdentityFields } from '@/shared/components/exam-editor/ExamIdentityFields';
 import { ExamFormatFields } from '@/shared/components/exam-editor/ExamFormatFields';
 import { ExamDistributionTable } from '@/shared/components/exam-editor/ExamDistributionTable';
-import { getExamDraftValidation } from '@/lib/exam-draft-validation';
+import { getExamDraftValidation } from '@/lib/exam/draft-validation';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface ExamEditorProps {

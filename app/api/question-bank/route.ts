@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { auth } from '@/auth';
-import { QuestionBankService } from '@/features/services/question-bank.service';
+import { QuestionBankService } from '@/features/services/exam/question-bank.service';
 
 const service = new QuestionBankService();
 

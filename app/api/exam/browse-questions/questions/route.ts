@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { auth } from '@/auth';
-import { BrowseQuestionsService } from '@/features/services/browse.service';
+import { BrowseQuestionsService } from '@/features/services/exam/browse.service';
 import { toApiErrorResponse } from '@/lib/api-error';
 
 const service = new BrowseQuestionsService();

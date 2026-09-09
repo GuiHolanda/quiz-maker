@@ -7,7 +7,7 @@ import {
   readAutoConfigProgress,
   publishAutoConfigProgress,
   JOB_SNAPSHOT_TTL_SECONDS,
-} from '@/features/services/job-progress.service';
+} from '@/features/services/generation/job-progress.service';
 
 const cacheGet = vi.fn();
 const cacheSet = vi.fn();

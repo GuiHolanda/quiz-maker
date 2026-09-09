@@ -29,7 +29,7 @@ All API routes live under `app/api/` (one `route.ts` per folder). Business logic
 
 ### `billing/`
 
-Services: `features/services/quota.service.ts` (usage), `features/services/billing.service.ts` (Stripe read-through + cancel), `features/services/referral.service.ts` (referral stats).
+Services: `features/services/billing/quota.service.ts` (usage), `features/services/billing/billing.service.ts` (Stripe read-through + cancel), `features/services/billing/referral.service.ts` (referral stats).
 
 | Route | Method | Description |
 |---|---|---|
@@ -60,7 +60,7 @@ Unified domain for `ExamType: 'certification' | 'public_exam'`.
 | `exam/auto-config/[jobId]` | GET/DELETE | Polling fallback for job status / cancel (best-effort — refunds the quota unit, doesn't abort an in-flight LLM call). |
 | `exam/auto-config/[jobId]/stream` | GET | SSE: `progress` (`{ stage }`) / `done` (`{ exam }`) / `error` / `cancelled`. `maxDuration = 300`. |
 
-Services: `exam.service.ts`, `exam-question.service.ts`, `exam-catalog.service.ts`, `quiz-generator.service.ts`, `auto-config-job.service.ts`.
+Services: `exam/exam.service.ts`, `exam/exam-question.service.ts`, `exam/exam-catalog.service.ts`, `auto-config/auto-config-job.service.ts`.
 
 ### `generation-job/`
 
@@ -74,7 +74,7 @@ Async question generation with SSE progress streaming.
 | `generation-job/[jobId]` | DELETE | Cancel running job |
 | `generation-job/[jobId]/stream` | GET | SSE stream: `progress`/`done`/`error` with `topics[]`. `maxDuration = 300`. |
 
-Service: `features/services/generation-job.service.ts`.
+Service: `features/services/generation/generation-job.service.ts`.
 
 ### `mock-exams/`
 
@@ -168,7 +168,7 @@ processar quando não há trava, nunca pular.
 
 | Uso | Módulo | Nota |
 |---|---|---|
-| Snapshot de progresso de job (SSE) | `features/services/job-progress.service.ts` | O escritor publica a cada transição; o leitor cai no Postgres em cache miss. TTL de 30s limita a defasagem no único caminho ruim (publish que falhou). |
+| Snapshot de progresso de job (SSE) | `features/services/generation/job-progress.service.ts` | O escritor publica a cada transição; o leitor cai no Postgres em cache miss. TTL de 30s limita a defasagem no único caminho ruim (publish que falhou). |
 | Rate limit das rotas de LLM | `lib/rate-limit.ts` | Proteção de rajada, **separada** de `PLAN_LIMITS` — quota diz quanto, isto diz com que velocidade. Chamado como primeira linha do `try` de cada rota, antes de qualquer débito de quota. Erro sobe como `status: 429` + `code: 'rate_limited'` via `toApiErrorResponse`. |
 | Idempotência do webhook Stripe | `app/api/webhooks/stripe/route.ts` | `claimOnce` por `event.id` (24h). A trava é **liberada no catch** — sem isso a reentrega do Stripe seria descartada como duplicata e o evento se perderia. |
 
@@ -181,19 +181,18 @@ antes de ler o cache — as chaves são indexadas só por `jobId`.
 
 | File | Responsibility |
 |---|---|
-| `openAI.service.ts` | `call(prompt, input)` via Responses API with `web_search` forced via `tool_choice: 'required'` when `webSearch: true` (default) — the tool being available doesn't mean the model uses it; forcing avoids it silently answering from training data. Returns `{ text, inputTokens, outputTokens }`. |
-| `quota.service.ts` | `checkAndRecordQuestions(userId, count)` → `{ logId }`. Also enforces `create_exam` and `checkAndRecordAutoConfig(userId)` (per-period `autoConfigThisPeriod`, `PLAN_LIMITS[plan].autoConfigPerPeriod`). `checkAutoConfigAvailable(userId)` is a read-only peek (no increment) used before the identify call. `rollbackQuota(logId)` refunds `questionsGeneratedThisPeriod` or `autoConfigThisPeriod` depending on the log's `action`. |
-| `metrics.service.ts` | `createLog(userId, action, count = 1)` — `count: 0` tracks tokens without consuming a billable unit (used by the auto-config identify call). `recordStep(logId, step, tokens, durationMs)` (fire-and-forget) + `finalize(logId, ms)`. |
-| `exam.service.ts` | Unified CRUD for Exam/Section/Topic (both types). |
-| `exam-question.service.ts` | `saveAnswers`, `saveExplanations`. |
-| `exam-catalog.service.ts` | `getTemplates(userId)`, `forkExam`, `promoteExam`, admin catalog entries. |
-| `quiz-generator.service.ts` | Distribute questions across sections. |
-| `question-bank.service.ts` | Unified question search across exam types. |
-| `generation-job.service.ts` | Async batch generation — batches of 5 topics, per-topic status tracking. Publica o progresso no Redis a cada transição (ver seção Redis). |
-| `job-progress.service.ts` | Snapshot de progresso de job para o SSE — `read*`/`publish*` para geração e auto-config, com fallback no Postgres. |
-| `auto-config-job.service.ts` | Auto-config pipeline — `identifyExam` (cheap lookup) + `createAutoConfigJob`/`runAutoConfigJob`/`cancelAutoConfigJob` (research→review→format, one `AutoConfigJob` row, one `auto_config` unit). |
-| `billing.service.ts` | `getBillingDetails(userId)` reads the Stripe customer/subscription/invoices into `BillingDetails` (current-period end lives on `subscription.items.data[0].current_period_end`, not the subscription root). `cancelSubscription(userId, reason?)` sets `cancel_at_period_end`. Optional bits (tax id, upcoming-invoice preview) fail soft to `null`. |
-| `referral.service.ts` | `getStats(userId)`, `getOrCreateReferralCode(userId)` (lazy backfill), `activateIfEligible(userId)` — two-way bonus on real activation, capped per account. |
+| `generation/openai.service.ts` | `call(prompt, input)` via Responses API with `web_search` forced via `tool_choice: 'required'` when `webSearch: true` (default) — the tool being available doesn't mean the model uses it; forcing avoids it silently answering from training data. Returns `{ text, inputTokens, outputTokens }`. |
+| `billing/quota.service.ts` | `checkAndRecordQuestions(userId, count)` → `{ logId }`. Also enforces `create_exam` and `checkAndRecordAutoConfig(userId)` (per-period `autoConfigThisPeriod`, `PLAN_LIMITS[plan].autoConfigPerPeriod`). `checkAutoConfigAvailable(userId)` is a read-only peek (no increment) used before the identify call. `rollbackQuota(logId)` refunds `questionsGeneratedThisPeriod` or `autoConfigThisPeriod` depending on the log's `action`. |
+| `billing/metrics.service.ts` | `createLog(userId, action, count = 1)` — `count: 0` tracks tokens without consuming a billable unit (used by the auto-config identify call). `recordStep(logId, step, tokens, durationMs)` (fire-and-forget) + `finalize(logId, ms)`. |
+| `exam/exam.service.ts` | Unified CRUD for Exam/Section/Topic (both types). |
+| `exam/exam-question.service.ts` | `saveAnswers`, `saveExplanations`. |
+| `exam/exam-catalog.service.ts` | `getTemplates(userId)`, `forkExam`, `promoteExam`, admin catalog entries. |
+| `exam/question-bank.service.ts` | Unified question search across exam types. |
+| `generation/generation-job.service.ts` | Async batch generation — batches of 5 topics, per-topic status tracking. Publica o progresso no Redis a cada transição (ver seção Redis). |
+| `generation/job-progress.service.ts` | Snapshot de progresso de job para o SSE — `read*`/`publish*` para geração e auto-config, com fallback no Postgres. |
+| `auto-config/auto-config-job.service.ts` | Auto-config pipeline — `identifyExam` (cheap lookup) + `createAutoConfigJob`/`runAutoConfigJob`/`cancelAutoConfigJob` (research→review→format, one `AutoConfigJob` row, one `auto_config` unit). |
+| `billing/billing.service.ts` | `getBillingDetails(userId)` reads the Stripe customer/subscription/invoices into `BillingDetails` (current-period end lives on `subscription.items.data[0].current_period_end`, not the subscription root). `cancelSubscription(userId, reason?)` sets `cancel_at_period_end`. Optional bits (tax id, upcoming-invoice preview) fail soft to `null`. |
+| `billing/referral.service.ts` | `getStats(userId)`, `getOrCreateReferralCode(userId)` (lazy backfill), `activateIfEligible(userId)` — two-way bonus on real activation, capped per account. |
 
 Co-located services (not in `features/services/`): auth services in `app/api/auth/`, mock exam in `app/api/mock-exams/`, admin in `app/api/admin/`.
 

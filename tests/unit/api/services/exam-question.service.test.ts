@@ -1,5 +1,5 @@
 import { prismaMock } from '../__mocks__/prisma';
-import { ExamQuestionService } from '@/features/services/exam-question.service';
+import { ExamQuestionService } from '@/features/services/exam/exam-question.service';
 
 describe('ExamQuestionService', () => {
   it('saveAnswers upserts an ExamAnswer per question', async () => {

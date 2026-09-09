@@ -14,7 +14,7 @@ vi.mock('stripe', () => ({
 }));
 
 import { prismaMock } from '../__mocks__/prisma';
-import { BillingService } from '@/features/services/billing.service';
+import { BillingService } from '@/features/services/billing/billing.service';
 
 function stripeCustomer(overrides: Record<string, unknown> = {}) {
   return {

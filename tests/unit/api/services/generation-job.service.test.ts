@@ -19,13 +19,13 @@ const { openAICallMock, quotaConstructorMock, createFromPayloadMock } = vi.hoist
   };
 });
 
-vi.mock('@/features/services/openAI.service', () => ({
+vi.mock('@/features/services/generation/openai.service', () => ({
   OpenAIService: class {
     call = openAICallMock;
   },
 }));
 
-vi.mock('@/features/services/exam-question.service', () => ({
+vi.mock('@/features/services/exam/exam-question.service', () => ({
   validateAiQuestions: vi.fn().mockReturnValue([{ id: 1, text: 'Q1' }]),
   sanitizeAiQuestions: vi.fn().mockReturnValue({ questions: [{ id: 1, text: 'Q1' }], dropped: [] }),
   ExamQuestionService: class {
@@ -35,7 +35,7 @@ vi.mock('@/features/services/exam-question.service', () => ({
   PublicExamQuestionService: vi.fn(),
 }));
 
-vi.mock('@/features/services/quota.service', () => ({
+vi.mock('@/features/services/billing/quota.service', () => ({
   QuotaService: quotaConstructorMock,
 }));
 
@@ -53,7 +53,7 @@ vi.mock('@/config/constants', () => ({
   GENERATION_MAX_PROMPT_TOPICS: 20,
 }));
 
-import { claimSlots, processTopic, claimGlobalSlotsAndDispatch, extractJson, sanitizeError } from '@/features/services/generation-job.service';
+import { claimSlots, processTopic, claimGlobalSlotsAndDispatch, extractJson, sanitizeError } from '@/features/services/generation/generation-job.service';
 
 const makeTopic = (overrides = {}) => ({
   id: 'topic-1',
@@ -219,7 +219,7 @@ describe('processTopic — pipeline e finalização', () => {
   });
 
   it('acumula savedCount de pool e LLM em tópico misto', async () => {
-    const { validateAiQuestions } = await import('@/features/services/exam-question.service');
+    const { validateAiQuestions } = await import('@/features/services/exam/exam-question.service');
     (validateAiQuestions as any).mockReturnValueOnce([{ id: 1 }, { id: 2 }, { id: 3 }]);
     prismaMock.generationJobTopic.count.mockResolvedValue(0);
     prismaMock.generationJob.updateMany.mockResolvedValue({ count: 1 } as any);
@@ -286,7 +286,7 @@ describe('processTopic — pipeline e finalização', () => {
   });
 
   it('marca o tópico como error com errorType generation quando o pipeline lança', async () => {
-    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    const { sanitizeAiQuestions } = await import('@/features/services/exam/exam-question.service');
     (sanitizeAiQuestions as any).mockImplementationOnce(() => {
       throw new Error('bad json');
     });
@@ -306,7 +306,7 @@ describe('processTopic — pipeline e finalização', () => {
   });
 
   it('marca o tópico como error quando todas as questões do lote são descartadas', async () => {
-    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    const { sanitizeAiQuestions } = await import('@/features/services/exam/exam-question.service');
     (sanitizeAiQuestions as any).mockReturnValueOnce({
       questions: [],
       dropped: ['Invalid format: correctCount must be between 1 and 3'],
@@ -323,7 +323,7 @@ describe('processTopic — pipeline e finalização', () => {
   });
 
   it('mantém as questões válidas do lote quando só algumas são descartadas', async () => {
-    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    const { sanitizeAiQuestions } = await import('@/features/services/exam/exam-question.service');
     (sanitizeAiQuestions as any).mockReturnValueOnce({
       questions: [{ id: 1, text: 'Q1' }, { id: 2, text: 'Q2' }],
       dropped: ['Invalid format: correctCount must be between 1 and 3'],
@@ -373,7 +373,7 @@ describe('processTopic — pipeline e finalização', () => {
       options: { A: 'the first choice here', B: 'the second choice here', C: 'the third one', D: 'the fourth one', E: 'the fifth one' },
     };
 
-    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    const { sanitizeAiQuestions } = await import('@/features/services/exam/exam-question.service');
     (sanitizeAiQuestions as any).mockReturnValueOnce({ questions: [ptQuestion, enQuestion], dropped: [] });
 
     await processTopic('topic-1');
@@ -400,7 +400,7 @@ describe('processTopic — pipeline e finalização', () => {
       options: { A: 'the first choice here', B: 'the second choice here', C: 'the third one', D: 'the fourth one', E: 'the fifth one' },
     };
 
-    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    const { sanitizeAiQuestions } = await import('@/features/services/exam/exam-question.service');
     (sanitizeAiQuestions as any).mockReturnValueOnce({ questions: [enQuestion], dropped: [] });
 
     await processTopic('topic-1');
@@ -421,7 +421,7 @@ describe('processTopic — pipeline e finalização', () => {
         rollbackQuota: rollbackMock,
       };
     });
-    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    const { sanitizeAiQuestions } = await import('@/features/services/exam/exam-question.service');
     (sanitizeAiQuestions as any).mockImplementationOnce(() => {
       throw new Error('bad json');
     });
@@ -514,7 +514,7 @@ describe('processTopic — branch public_exam', () => {
   });
 
   it('marca tópico de concurso como error quando o pipeline lança', async () => {
-    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    const { sanitizeAiQuestions } = await import('@/features/services/exam/exam-question.service');
     (sanitizeAiQuestions as any).mockImplementationOnce(() => {
       throw new Error('bad public exam json');
     });
@@ -811,7 +811,7 @@ describe('processTopic — pool-serving path', () => {
       .mockResolvedValueOnce([makePoolQuestion(1), makePoolQuestion(2)]); // pool serves 2 of 3
     prismaMock.examQuestion.create.mockResolvedValue({} as any);
 
-    const { sanitizeAiQuestions } = await import('@/features/services/exam-question.service');
+    const { sanitizeAiQuestions } = await import('@/features/services/exam/exam-question.service');
     (sanitizeAiQuestions as any).mockImplementationOnce(() => {
       throw new Error('bad json');
     });
