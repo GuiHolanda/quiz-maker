@@ -181,7 +181,7 @@ Filtros: `search` (deferido), `source` (multi), `type`, `topic` (multi), `diffic
 | `(marketing)` | `layout.tsx` fino: `.marketing-ds` + fontes Barlow + JSON-LD (sem navbar/footer) | contém os sub-grupos `(site)` e `(focused-cta)` |
 | `(marketing)/(site)` | `MarketingNavbar` + `MarketingFooter` | `/`, `/pricing`, `/privacy`, `/terms`, `/security`, `/lgpd` |
 | `(marketing)/(focused-cta)` | `FocusedCtaNavbar` minimal + mesmo `MarketingFooter` | `/simulado/[exam-slug]` |
-| `(workspace)` | Sidebar + WorkspaceHeader + AiChatWrapper | `/dashboard`, `/exams`, `/questions`, `/simulados`, `/question-bank`, `/billing` |
+| `(workspace)` | Sidebar + WorkspaceHeader | `/dashboard`, `/exams`, `/questions`, `/simulados`, `/question-bank`, `/billing` |
 | `(auth)` | Top bar discreta | `/login`, `/register`, `/forgot-password`, `/reset-password` |
 | `admin/` | Sidebar admin própria | `/admin/*` |
 
@@ -237,7 +237,6 @@ Status chip map: `pending → default`, `in_progress → warning`, `answered →
 | `PasswordInput.tsx` | Input senha com toggle, spread de `inputProperties.input` |
 | `RelativeDate.tsx` | Data relativa (`Intl.RelativeTimeFormat`) com `suppressHydrationWarning` |
 | `UsageBadge.tsx` | Barra de uso — se oculta quando `questionsLimit === -1` |
-| `AiChatWrapper.tsx` | FAB + Drawer — visível apenas para `pro_ai`, `tester`, `admin` |
 
 Domínio compartilhado: `CertificationManager`, `PublicExamManager`, `SectionsTable`, `PublicExamSubjectsTable`, `QuestionCard`, `AnsweredQuestionCard`.
 
@@ -252,7 +251,6 @@ Domínio compartilhado: `CertificationManager`, `PublicExamManager`, `SectionsTa
 | `useExamsContext` | Estado do `ExamsProvider` — `addExam`, `removeExam`, `updateExam`, etc. |
 | `useCertificationsContext` / `usePublicExamsContext` / `useQuizContext` / `useMockExamsContext` | Contextos de domínio |
 | `useInactivityLogout` | Auto-logout por inatividade — via `<InactivityGuard />` em `providers.tsx` |
-| `useAiChat(userId)` | Chat com histórico isolado por `userId` em localStorage |
 
 **HTTP em componentes:** leituras via `.then()` em `useEffect`; mutações via try/catch manual. Feedback de erro com `notify.error` (fallback `err?.response?.data?.message` → chave i18n, nunca `err?.message`); `setIsBusy(false)` só no `catch`.
 
@@ -264,9 +262,7 @@ Domínio compartilhado: `CertificationManager`, `PublicExamManager`, `SectionsTa
 
 **Inatividade:** `useInactivityLogout` → signOut após 30 min sem interação. Montado globalmente via `<InactivityGuard />` dentro de `<SessionProvider>` em `providers.tsx` — não mover para fora do provider (usa `useSession()`).
 
-**JWT:** expira 8h após login (`auth.ts → session.maxAge`). Constante de inatividade em `config/constants/index.ts`.
-
-**AI chat isolation:** `useAiChat(userId)` usa chaves `AI_CHAT_LOCAL_STORAGE_KEY(userId)` e `AI_CHAT_FOLLOWUP_TIMESTAMP_KEY(userId)`. Nunca chamar sem `userId` ou com string estática — colapsaria histórico de todos os usuários na mesma chave.
+**JWT:** expira 8h após login (`auth.ts → session.maxAge`). Constante de inatividade (`INACTIVITY_LOGOUT_MS`) em `config/constants/index.ts`.
 
 ---
 

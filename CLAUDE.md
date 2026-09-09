@@ -21,7 +21,7 @@ The product is not limited to any single industry vertical. When generating ques
 | Thing | Convention | Example |
 |---|---|---|
 | Components | PascalCase `.tsx` | `QuestionCard.tsx` |
-| Custom hooks | camelCase `.hook.ts` | `useAiChat.hook.ts` |
+| Custom hooks | camelCase `.hook.ts` | `useTranslation.hook.ts` |
 | Providers | camelCase `.provider.tsx` | `certifications.provider.tsx` |
 | Reducers | camelCase `.reducer.ts` | `exams.reducer.ts` |
 | Services | PascalCase `.service.ts` | `exam.service.ts` |
@@ -110,9 +110,9 @@ All component HTTP goes through `features/connectors.ts`. Reads: call in a `useE
 
 ### Prompt management (LLM)
 
-All prompts in `config/prompts/` as TypeScript files, grouped into subfolders by domain — none stored in the OpenAI dashboard. Each exports a `PromptDefinition<TInput>` with a `build(input): string` method (the two `ai-chat/` prompts are the one exception: bare template-string constants, since `AiChatService` doesn't go through `OpenAIService`).
+All prompts in `config/prompts/` as TypeScript files, grouped into subfolders by domain — none stored in the OpenAI dashboard. Each exports a `PromptDefinition<TInput>` with a `build(input): string` method.
 
-**Calling:** always `openAIService.call(prompt, input)` — never `openAIClient` directly. **Model:** `OPENAI_MODEL` env var (default `gpt-4o`). **Exception:** `AiChatService` uses streaming with its own `responses.create()`.
+**Calling:** always `openAIService.call(prompt, input)` — never `openAIClient` directly. **Model:** `OPENAI_MODEL` env var (default `gpt-4o`).
 
 Dispatch by exam type via `EXAM_PROMPTS: Record<ExamType, { research, review, format, answers, explanations }>` (question generation) and `AUTO_CONFIG_PROMPTS: Record<ExamType, { research, review, format }>` (auto-config blueprint), both in `config/prompts/index.ts`.
 
@@ -122,7 +122,6 @@ Dispatch by exam type via `EXAM_PROMPTS: Record<ExamType, { research, review, fo
 | `public-exam-questions/` | Question generation for concursos brasileiros — same five-file shape |
 | `certification-config/` | Auto-config blueprint pipeline for certifications — `research`/`review`/`format.prompt.ts` |
 | `public-exam-config/` | Auto-config blueprint pipeline for concursos — same three-file shape |
-| `ai-chat/` | Conversational chat drawer (streaming) — `identify`/`topics.prompt.ts` |
 | `exam-identify.prompt.ts` | Auto-config's shared identify lookup — one file, used by both exam types |
 
 ### Imports
@@ -190,14 +189,14 @@ DATABASE_URL="file:/caminho/absoluto/prisma/dev.db" npm run e2e
 type UserPlan = 'free' | 'pro' | 'pro_ai' | 'sprint' | 'tester' | 'admin';
 ```
 
-| Plan | Questions/period | Exams | Create/edit exams | Auto-config/period | AI Chat | Admin |
-|---|---|---|---|---|---|---|
-| `free` | 100 | 2 | ✗ (catalog-only, read-only) | 0 | ✗ | ✗ |
-| `pro` | 1000 | 6 | ✓ | 15 | ✗ | ✗ |
-| `pro_ai` | 2000 | 12 | ✓ | 30 | ✓ | ✗ |
-| `sprint` | 2000 | 12 | ✓ | 30 | ✓ | ✗ |
-| `tester` | ∞ | ∞ | ✓ | ∞ | ✓ | ✗ |
-| `admin` | ∞ | ∞ | ✓ | ∞ | ✓ | ✓ |
+| Plan | Questions/period | Exams | Create/edit exams | Auto-config/period | Admin |
+|---|---|---|---|---|---|
+| `free` | 100 | 2 | ✗ (catalog-only, read-only) | 0 | ✗ |
+| `pro` | 1000 | 6 | ✓ | 15 | ✗ |
+| `pro_ai` | 2000 | 12 | ✓ | 30 | ✗ |
+| `sprint` | 2000 | 12 | ✓ | 30 | ✗ |
+| `tester` | ∞ | ∞ | ✓ | ∞ | ✗ |
+| `admin` | ∞ | ∞ | ✓ | ∞ | ✓ |
 
 
 **`-1` is the "unlimited" sentinel** throughout the UI — `UsageBadge` hides when `questionsLimit === -1`.
@@ -212,7 +211,6 @@ Gate in two places: API (403) + UI (not rendered). `session.user.plan` client-si
 
 | Feature | Plans |
 |---|---|
-| AI Chat FAB + Drawer | `pro_ai`, `sprint`, `tester`, `admin` |
 | Admin link in sidebar | `admin` |
 | Usage badge (header) | plans with finite limit |
 | Upgrade CTA | `free` |
@@ -223,9 +221,7 @@ Gate in two places: API (403) + UI (not rendered). `session.user.plan` client-si
 
 **JWT:** expires 8h after login (`auth.ts → session.maxAge`). Do not increase without approval.
 
-**Inactivity:** `useInactivityLogout` → signOut after 30 min without interaction. Wired globally via `<InactivityGuard />` in `app/providers.tsx` — do not move outside `<SessionProvider>` (uses `useSession()`).
-
-**AI chat isolation:** `useAiChat(userId)` uses `AI_CHAT_LOCAL_STORAGE_KEY(userId)` and `AI_CHAT_FOLLOWUP_TIMESTAMP_KEY(userId)`. Never call without `userId` or with a static string — would collapse all users' history into one key.
+**Inactivity:** `useInactivityLogout` → signOut after 30 min without interaction (`INACTIVITY_LOGOUT_MS`). Wired globally via `<InactivityGuard />` in `app/providers.tsx` — do not move outside `<SessionProvider>` (uses `useSession()`).
 
 ---
 
