@@ -1,5 +1,4 @@
-import { hasMessages } from '@/lib/i18n/messages';
-import { parseProperties } from '@/lib/i18n/properties-parser';
+import { hasMessages, parseProperties } from '@/lib/i18n/properties-parser';
 
 // ── hasMessages ────────────────────────────────────────────────────────────────
 // Regression: Bug 2 — loadDefaultMessages() silently returns {} on Vercel when

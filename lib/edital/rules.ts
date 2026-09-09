@@ -97,7 +97,7 @@ export function classifyEditalUrl(url: string): EditalDocumentKind {
 
 // Deterministic classifier for who is serving a located edital PDF, and the reverse lookup
 // used to scope the locate step's web_search to a banca's own domain first. Same rationale as
-// edital-classifier.ts: no network, no LLM — the locate step's own judgment regularly ranks a
+// `classifyEditalUrl` above: no network, no LLM — the locate step's own judgment regularly ranks a
 // third-party aggregator mirror above the official file (search engines index mirrors just as
 // well, sometimes better), so we correct that on top of its output instead of trusting it.
 

@@ -21,3 +21,11 @@ export function normalizeName(s: string): string {
 export function looseKey(s: string): string {
   return normalizeName(s).toLowerCase();
 }
+
+export function toSafeString(v: unknown) {
+  if (typeof v === 'string') return v;
+  if (v == null) return '';
+  const json = JSON.stringify(v);
+
+  return json || Object.prototype.toString.call(v);
+}
