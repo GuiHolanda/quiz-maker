@@ -65,7 +65,7 @@ tests/
 | Thing | Convention | Example |
 |---|---|---|
 | Components | PascalCase `.tsx` | `QuestionCard.tsx` |
-| Custom hooks | camelCase `.hook.ts` | `useAiChat.hook.ts` |
+| Custom hooks | camelCase `.hook.ts` | `useTranslation.hook.ts` |
 | Providers | camelCase `.provider.tsx` | `exams.provider.tsx` |
 | Reducers | camelCase `.reducer.ts` | `exams.reducer.ts` |
 | Services | PascalCase `.service.ts` | `exam.service.ts` |

@@ -48,7 +48,7 @@ export function ExamEditorActions({
         startContent={isSaving ? <Spinner color="current" size="sm" /> : undefined}
         onPress={onSave}
       >
-        {isSaving ? t('chat.saving') : saveLabel}
+        {isSaving ? t('common.saving') : saveLabel}
       </Button>
     </>
   );

@@ -11,7 +11,6 @@ export type RateLimitedAction =
   | 'auto_config'
   | 'identify_exam'
   | 'extract_edital'
-  | 'ai_chat'
   | 'explanation';
 
 const LIMITS: Record<RateLimitedAction, { requests: number; window: `${number} ${'s' | 'm'}` }> = {
@@ -19,7 +18,6 @@ const LIMITS: Record<RateLimitedAction, { requests: number; window: `${number} $
   auto_config: { requests: 5, window: '1 m' },
   identify_exam: { requests: 20, window: '1 m' },
   extract_edital: { requests: 5, window: '1 m' },
-  ai_chat: { requests: 20, window: '1 m' },
   explanation: { requests: 30, window: '1 m' },
 };
 

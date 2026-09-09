@@ -41,7 +41,6 @@ const FEATURES: readonly FeatureRow[] = [
   { labelKey: 'pricing.features.topicDistribution', free: true, pro: true, proAi: true, sprint: true },
   { labelKey: 'pricing.features.simulados', free: true, pro: true, proAi: true, sprint: true },
   { labelKey: 'pricing.features.browseQuestions', free: true, pro: true, proAi: true, sprint: true },
-  { labelKey: 'pricing.features.aiChat', free: false, pro: false, proAi: true, sprint: true },
 ];
 
 interface FeatureCellProps {

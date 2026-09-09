@@ -27,7 +27,6 @@ const FREE_FEATURES: readonly PricingFeature[] = [
   { labelKey: 'pricing.features.topicDistribution', included: true },
   { labelKey: 'pricing.features.simulados', included: true },
   { labelKey: 'pricing.features.browseQuestions', included: true },
-  { labelKey: 'pricing.features.aiChat', included: false },
 ];
 
 const PRO_FEATURES: readonly PricingFeature[] = [
@@ -39,7 +38,6 @@ const PRO_FEATURES: readonly PricingFeature[] = [
   { labelKey: 'pricing.features.topicDistribution', included: true },
   { labelKey: 'pricing.features.simulados', included: true },
   { labelKey: 'pricing.features.browseQuestions', included: true },
-  { labelKey: 'pricing.features.aiChat', included: false },
 ];
 
 const PRO_AI_FEATURES: readonly PricingFeature[] = [
@@ -51,7 +49,6 @@ const PRO_AI_FEATURES: readonly PricingFeature[] = [
   { labelKey: 'pricing.features.topicDistribution', included: true },
   { labelKey: 'pricing.features.simulados', included: true },
   { labelKey: 'pricing.features.browseQuestions', included: true },
-  { labelKey: 'pricing.features.aiChat', included: true },
 ];
 
 // Sprint is "tudo do Pro AI" for a fixed 90-day term — same feature set, no separate list.

@@ -76,7 +76,6 @@ Create a `.env` file in the project root:
 # Required
 OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-5.4              # default model for all non-streaming generation
-AI_CHAT_MODEL=gpt-5.4-mini        # model used for the AI chat feature
 
 # Optional per-stage overrides — each falls back to OPENAI_MODEL when unset. Useful for
 # spending more on the stages that most need reasoning (e.g. locate) without raising the

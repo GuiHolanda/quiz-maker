@@ -209,16 +209,6 @@ export function BillingOverview() {
           },
         ]
       : []),
-    ...(usage.aiChatLimit !== 0
-      ? [
-          {
-            label: t('billing.meter.aiChat'),
-            used: usage.aiChatUsed,
-            limit: usage.aiChatLimit,
-            note: t('billing.meter.aiChatNote'),
-          },
-        ]
-      : []),
   ];
 
   const statusInfo = resolveStatus();

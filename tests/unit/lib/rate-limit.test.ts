@@ -38,7 +38,7 @@ describe('enforceRateLimit', () => {
     it('não limita nada e não constrói limitador', async () => {
       getRedis.mockReturnValue(null);
 
-      await expect(enforceRateLimit('ai_chat', 'user-1')).resolves.toBeUndefined();
+      await expect(enforceRateLimit('generate_questions', 'user-1')).resolves.toBeUndefined();
       expect(ratelimitConstructor).not.toHaveBeenCalled();
     });
   });
@@ -64,10 +64,10 @@ describe('enforceRateLimit', () => {
       limit.mockResolvedValue({ success: true, reset: Date.now() + 60_000 });
 
       await enforceRateLimit('generate_questions', 'user-1');
-      await enforceRateLimit('ai_chat', 'user-1');
+      await enforceRateLimit('auto_config', 'user-1');
 
       const prefixes = ratelimitConstructor.mock.calls.map(([config]: any) => config.prefix);
-      expect(prefixes).toEqual(['rl:generate_questions', 'rl:ai_chat']);
+      expect(prefixes).toEqual(['rl:generate_questions', 'rl:auto_config']);
     });
 
     // O padrão da lib é 5s. Numa rota que já é cara, esperar 5s por um limitador lento é

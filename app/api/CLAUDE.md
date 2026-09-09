@@ -138,7 +138,6 @@ Rotas públicas (sem auth). Service: `features/services/demo-catalog.service.ts`
 
 | Route | Method | Description |
 |---|---|---|
-| `ai/ai-chat` | POST | Streaming SSE chat. Requires `pro_ai`, `sprint`, `tester`, or `admin` (`AI_CHAT_ALLOWED_PLANS`). Metered and capped via `checkAndRecordAiChatMessage` — 300 msg/period on `pro_ai`/`sprint`. |
 | `dashboard/stats` | GET | Dashboard metrics |
 | `usage/history` | GET | Paginated usage log for current user |
 | `usage/history/filters` | GET | Filter options for usage history page |
@@ -183,7 +182,7 @@ antes de ler o cache — as chaves são indexadas só por `jobId`.
 | File | Responsibility |
 |---|---|
 | `openAI.service.ts` | `call(prompt, input)` via Responses API with `web_search` forced via `tool_choice: 'required'` when `webSearch: true` (default) — the tool being available doesn't mean the model uses it; forcing avoids it silently answering from training data. Returns `{ text, inputTokens, outputTokens }`. |
-| `quota.service.ts` | `checkAndRecordQuestions(userId, count)` → `{ logId }`. Also enforces `create_exam`, `checkAndRecordAutoConfig(userId)` (per-period `autoConfigThisPeriod`, `PLAN_LIMITS[plan].autoConfigPerPeriod`), and `checkAndRecordAiChatMessage(userId)` (per-period `aiChatMessagesThisPeriod`, `PLAN_LIMITS[plan].aiChatMessagesPerPeriod`). `checkAutoConfigAvailable(userId)` is a read-only peek (no increment) used before the identify call. `rollbackQuota(logId)` refunds `questionsGeneratedThisPeriod`, `autoConfigThisPeriod`, or `aiChatMessagesThisPeriod` depending on the log's `action`. |
+| `quota.service.ts` | `checkAndRecordQuestions(userId, count)` → `{ logId }`. Also enforces `create_exam` and `checkAndRecordAutoConfig(userId)` (per-period `autoConfigThisPeriod`, `PLAN_LIMITS[plan].autoConfigPerPeriod`). `checkAutoConfigAvailable(userId)` is a read-only peek (no increment) used before the identify call. `rollbackQuota(logId)` refunds `questionsGeneratedThisPeriod` or `autoConfigThisPeriod` depending on the log's `action`. |
 | `metrics.service.ts` | `createLog(userId, action, count = 1)` — `count: 0` tracks tokens without consuming a billable unit (used by the auto-config identify call). `recordStep(logId, step, tokens, durationMs)` (fire-and-forget) + `finalize(logId, ms)`. |
 | `exam.service.ts` | Unified CRUD for Exam/Section/Topic (both types). |
 | `exam-question.service.ts` | `saveAnswers`, `saveExplanations`. |
@@ -193,7 +192,6 @@ antes de ler o cache — as chaves são indexadas só por `jobId`.
 | `generation-job.service.ts` | Async batch generation — batches of 5 topics, per-topic status tracking. Publica o progresso no Redis a cada transição (ver seção Redis). |
 | `job-progress.service.ts` | Snapshot de progresso de job para o SSE — `read*`/`publish*` para geração e auto-config, com fallback no Postgres. |
 | `auto-config-job.service.ts` | Auto-config pipeline — `identifyExam` (cheap lookup) + `createAutoConfigJob`/`runAutoConfigJob`/`cancelAutoConfigJob` (research→review→format, one `AutoConfigJob` row, one `auto_config` unit). |
-| `aiChat.service.ts` | Validate messages, select prompt, stream response — powers the `pro_ai` chat drawer only; unrelated to the auto-config job pipeline above. |
 | `billing.service.ts` | `getBillingDetails(userId)` reads the Stripe customer/subscription/invoices into `BillingDetails` (current-period end lives on `subscription.items.data[0].current_period_end`, not the subscription root). `cancelSubscription(userId, reason?)` sets `cancel_at_period_end`. Optional bits (tax id, upcoming-invoice preview) fail soft to `null`. |
 | `referral.service.ts` | `getStats(userId)`, `getOrCreateReferralCode(userId)` (lazy backfill), `activateIfEligible(userId)` — two-way bonus on real activation, capped per account. |
 

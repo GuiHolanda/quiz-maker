@@ -19,7 +19,6 @@ export const WORKSPACE_MESSAGE_PREFIXES = [
   'busy',
   'catalog',
   'certification',
-  'chat',
   'common',
   'concurso',
   'dashboard',

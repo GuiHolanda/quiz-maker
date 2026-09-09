@@ -5,16 +5,10 @@ import { PLAN_LIMITS } from '@/config/constants';
 
 const PERIOD_DAYS = 30;
 
-// ai_chat_limit isn't in the shared QuotaLimitCode union: that type also drives
-// LimitReachedModal's per-code upgrade copy, and there's no higher plan to upsell someone
-// who is already on pro_ai/sprint (the only plans AI Chat is even available on) — the chat
-// UI shows its own inline message for this one instead of routing through that modal.
-type LimitErrorCode = QuotaLimitCode | 'ai_chat_limit';
-
 // Every quota rejection carries the same shape: `error` stays 'quota_exceeded' for
 // backward compatibility, `code` says *which* limit so the client can pick the right
 // copy and upgrade CTA instead of falling back to a generic failure toast.
-function quotaError(code: LimitErrorCode, message: string, limit: number, used: number, plan: UserPlan) {
+function quotaError(code: QuotaLimitCode, message: string, limit: number, used: number, plan: UserPlan) {
   return Object.assign(new Error(message), {
     status: 403,
     body: { error: 'quota_exceeded', code, message, limit, used, plan },
@@ -35,7 +29,6 @@ export class QuotaService {
         data: {
           questionsGeneratedThisPeriod: 0,
           autoConfigThisPeriod: 0,
-          aiChatMessagesThisPeriod: 0,
           periodStartDate: now,
         },
       });
@@ -222,57 +215,15 @@ export class QuotaService {
     return { logId: log.id };
   }
 
-  // Atomic check+record for an AI Chat message, one unit per call — mirrors
-  // checkAndRecordAutoConfig but against aiChatMessagesThisPeriod (achado 15 of the pricing
-  // tier audit: the one feature that justifies Pro AI's price over Pro had a metric but no
-  // cap). Returns the usageLog id so the route can pass it into AiChatService.streamChat
-  // instead of that service creating its own log — one row per message, not two.
-  async checkAndRecordAiChatMessage(userId: string): Promise<{ logId: string }> {
-    const user = await this.getUserWithPeriodReset(userId);
-    const plan = this.resolvePlan(user.plan);
-    const limit = PLAN_LIMITS[plan].aiChatMessagesPerPeriod;
-
-    if (limit === Infinity) {
-      const [, log] = await Promise.all([
-        prisma.user.update({ where: { id: userId }, data: { aiChatMessagesThisPeriod: { increment: 1 } } }),
-        prisma.usageLog.create({ data: { userId, action: 'ai_chat', count: 1 } }),
-      ]);
-      return { logId: log.id };
-    }
-
-    const updated = await prisma.user.updateMany({
-      where: { id: userId, aiChatMessagesThisPeriod: { lte: limit - 1 } },
-      data: { aiChatMessagesThisPeriod: { increment: 1 } },
-    });
-
-    if (updated.count === 0) {
-      throw quotaError(
-        'ai_chat_limit',
-        `AI chat message limit reached (${limit}/period)`,
-        limit,
-        user.aiChatMessagesThisPeriod,
-        plan
-      );
-    }
-
-    const log = await prisma.usageLog.create({ data: { userId, action: 'ai_chat', count: 1 } });
-    return { logId: log.id };
-  }
-
-  // Undo a prior checkAndRecordQuestions/checkAndRecordAutoConfig/checkAndRecordAiChatMessage
-  // when the pipeline ultimately failed: give the user their quota back and drop the usage
-  // log so it never counts toward cost analytics. Which period counter to refund follows the
-  // log's own action, so one method serves all three quota families.
+  // Undo a prior checkAndRecordQuestions/checkAndRecordAutoConfig when the pipeline
+  // ultimately failed: give the user their quota back and drop the usage log so it never
+  // counts toward cost analytics. Which period counter to refund follows the log's own
+  // action, so one method serves both quota families.
   async rollbackQuota(logId: string): Promise<void> {
     const log = await prisma.usageLog.findUnique({ where: { id: logId } });
     if (!log) return;
 
-    const field =
-      log.action === 'auto_config'
-        ? 'autoConfigThisPeriod'
-        : log.action === 'ai_chat'
-          ? 'aiChatMessagesThisPeriod'
-          : 'questionsGeneratedThisPeriod';
+    const field = log.action === 'auto_config' ? 'autoConfigThisPeriod' : 'questionsGeneratedThisPeriod';
 
     await prisma.user.update({
       where: { id: log.userId },
@@ -317,8 +268,6 @@ export class QuotaService {
       examsLimit: limits.maxExams === Infinity ? -1 : limits.maxExams,
       certificationsUsed: certCount,
       publicExamsUsed: examConcursoCount,
-      aiChatUsed: user.aiChatMessagesThisPeriod,
-      aiChatLimit: limits.aiChatMessagesPerPeriod === Infinity ? -1 : limits.aiChatMessagesPerPeriod,
       autoConfigUsed: user.autoConfigThisPeriod,
       autoConfigLimit: limits.autoConfigPerPeriod === Infinity ? -1 : limits.autoConfigPerPeriod,
       periodStartDate: user.periodStartDate.toISOString(),
