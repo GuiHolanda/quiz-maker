@@ -2,7 +2,8 @@
 
 import type { Exam, ExamType, MockExamQuestionSource } from '@/shared/types';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Input } from '@heroui/input';
 
 import { fmtTempo } from './list/normalizeSimulado';
@@ -65,7 +66,11 @@ function deriveFromExam(exam: Exam): Partial<SimuladoFormState> {
 
 export function CreateSimuladoSection() {
   const { t } = useTranslation();
-  const { certifications, publicExams, isLoading } = useExamsContext();
+  const searchParams = useSearchParams();
+  const { exams: allExams, certifications, publicExams, isLoading } = useExamsContext();
+
+  const requestedExamId = searchParams.get('examId');
+  const appliedExamIdRequest = useRef(false);
 
   const [state, setState] = useState<SimuladoFormState>(INITIAL_STATE);
 
@@ -86,12 +91,23 @@ export function CreateSimuladoSection() {
   });
 
   useEffect(() => {
-    if (isLoading || list.length === 0 || !list[0]?.id) return;
+    if (isLoading) return;
+
+    if (requestedExamId && !appliedExamIdRequest.current) {
+      appliedExamIdRequest.current = true;
+      const requested = allExams.find((candidate) => candidate.id === requestedExamId);
+      if (requested) {
+        setState((prev) => ({ ...prev, scope: requested.type, ...deriveFromExam(requested) }));
+        return;
+      }
+    }
+
+    if (list.length === 0 || !list[0]?.id) return;
     const isValid = list.some((candidate) => candidate.id === state.examId);
 
     if (isValid) return;
     setState((prev) => ({ ...prev, ...deriveFromExam(list[0]) }));
-  }, [isLoading, list, state.examId]);
+  }, [isLoading, list, allExams, state.examId, requestedExamId]);
 
   const weights = exam ? sectionWeights(exam.sections) : {};
   const distribution = exam ? distributeQuestions(exam.sections, state.selectedSections, state.totalQuestions) : [];

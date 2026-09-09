@@ -17,6 +17,7 @@ import { IllustratedEmptyState } from '@/shared/components/ui/IllustratedEmptySt
 import { ConfirmModal } from '@/shared/components/ui/ConfirmModal';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { deleteBrowseQuestion, getExamQuestionExplanation, getQuestionBank } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
 import { writeSimuladoPrefill } from '@/app/(workspace)/simulados/components/create/simuladoPrefill';
@@ -41,11 +42,25 @@ export function QuestionBankContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const { exams, isLoading: examsLoading } = useExamsContext();
+  const requestedExamId = searchParams.get('examId');
+  const appliedExamIdRequest = useRef(false);
+
   const [filters, setFilters] = useState<QuestionBankFilters>(() => ({
     ...EMPTY_FILTERS,
     search: searchParams.get('search') ?? '',
     topic: searchParams.get('topic') ?? '',
   }));
+
+  useEffect(() => {
+    if (examsLoading || !requestedExamId || appliedExamIdRequest.current) return;
+    appliedExamIdRequest.current = true;
+    const requested = exams.find((exam) => exam.id === requestedExamId);
+    if (requested) {
+      setFilters((prev) => ({ ...prev, certification: requested.name }));
+    }
+  }, [examsLoading, exams, requestedExamId]);
+
   const [sort, setSort] = useState<QuestionBankSort>('desc');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);

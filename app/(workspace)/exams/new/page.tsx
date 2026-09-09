@@ -238,8 +238,8 @@ function NewExamContent() {
   const rawType = searchParams.get('type');
   const type: ExamType = rawType === 'public_exam' ? 'public_exam' : 'certification';
   const config = EXAM_CONFIG[type];
-  const listHref = `/exams?type=${type}`;
-  const listLabel = type === 'certification' ? t('nav.certifications') : t('nav.publicExams');
+  const listHref = '/exams';
+  const listLabel = t('nav.myExams');
   const pageTitle = type === 'certification' ? t('exam.newCertificationTitle') : t('exam.newConcursoTitle');
 
   const seed = useExamSeed(type, language);

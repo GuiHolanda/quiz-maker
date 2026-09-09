@@ -15,7 +15,7 @@ interface ExamTypeOption {
 interface ExamTypePickerProps {
   readonly value: ExamType;
   readonly onChange: (value: ExamType) => void;
-  readonly label: string;
+  readonly label?: string;
   readonly certification: ExamTypeOption;
   readonly publicExam: ExamTypeOption;
   readonly isDisabled?: boolean;
@@ -36,8 +36,8 @@ export function ExamTypePicker({
 
   return (
     <div className="flex flex-col gap-3">
-      <FieldLabel>{label}</FieldLabel>
-      <div className="grid gap-3.5 sm:grid-cols-2">
+      {label && <FieldLabel>{label}</FieldLabel>}
+      <div className="grid gap-4 sm:grid-cols-2">
         {options.map((option) => {
           const isSelected = option.scope === value;
 

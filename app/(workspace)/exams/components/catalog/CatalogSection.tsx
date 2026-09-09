@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Chip } from '@heroui/chip';
 
-import { ExamCard } from '../list/ExamCard';
+import { CatalogExamCard } from './CatalogExamCard';
 
 import { getCatalogExams, forkCatalogExam } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -92,7 +92,7 @@ export function CatalogSection({ type }: CatalogSectionProps) {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
           {pageItems.map((exam) => (
             <div key={exam.id} data-testid="exam-card">
-              <ExamCard
+              <CatalogExamCard
                 exam={exam}
                 isSelected={false}
                 isDisabled={exam.isSubscribed}

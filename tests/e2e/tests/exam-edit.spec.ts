@@ -25,9 +25,10 @@ for (const domain of ALL_DOMAINS) {
       const { exam } = await createRes.json();
 
       try {
-        await page.goto(`/exams?type=${domain.type}`);
-        await page.getByRole('button', { name: examName }).click();
-        await page.locator(tid(TID.examDetailEditBtn)).click();
+        await page.goto('/exams');
+        const card = page.locator(tid(TID.examCard)).filter({ hasText: examName });
+        await card.locator(tid(TID.examCardMenuToggle)).click();
+        await card.locator(tid(TID.examCardActionEdit)).click();
         await page.waitForURL(new RegExp(`/exams/${exam.id}/edit$`));
 
         const nameInput = page.locator(tid(TID.examEditorNameInput));
@@ -39,8 +40,11 @@ for (const domain of ALL_DOMAINS) {
         await nameInput.fill(updatedName);
         await page.locator(tid(TID.examEditorSaveBtn)).click();
 
-        await page.waitForURL(`**/exams?type=${domain.type}`);
-        await expect(page.getByRole('button', { name: updatedName })).toBeVisible();
+        // The editor still redirects to /exams?type=<type> (a leftover from the pre-unification
+        // per-type routing) — the unified list ignores the query string, but the URL match must
+        // tolerate it rather than requiring an exact "/exams" tail.
+        await page.waitForURL(/\/exams(\?.*)?$/);
+        await expect(page.locator(tid(TID.examCard)).filter({ hasText: updatedName })).toBeVisible();
       } finally {
         await page.request.delete(`/api/exam/save-exam?examId=${exam.id}`);
       }

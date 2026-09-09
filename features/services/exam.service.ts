@@ -1,7 +1,18 @@
 import { prisma, PrismaService } from '@/lib/prisma';
 import { defaultFormatForSource, isQuestionFormatKey, resolveQuestionFormat } from '@/config/question-formats';
-import { Exam, ExamType, SectionUpdatePayload } from '@/shared/types';
+import { Exam, ExamStatus, ExamType, SectionUpdatePayload } from '@/shared/types';
 import { normalizeName } from '@/shared/utils';
+
+interface ExamMetrics {
+  generatedQuestionsCount: number;
+  simuladosCount: number;
+  accuracyPercent: number | null;
+  lastActivityAt: string;
+  readinessPercent: number;
+  status: ExamStatus;
+  completedScore: number | null;
+  completedAt: string | null;
+}
 
 function dedupeByName<T extends { name: string }>(items: T[]): T[] {
   const seen = new Set<string>();
@@ -106,7 +117,27 @@ export class ExamService {
       orderBy: { updatedAt: 'desc' },
     });
 
-    return exams.map((exam) => this.toExam(exam));
+    if (exams.length === 0) return [];
+
+    const examIds = exams.map((exam) => exam.id);
+
+    const [mockExams, examQuestions] = await Promise.all([
+      this.prismaService.mockExam.findMany({
+        where: { userId, examId: { in: examIds } },
+        select: {
+          examId: true,
+          createdAt: true,
+          attempts: { select: { score: true, finishedAt: true, timedOut: true } },
+          _count: { select: { questions: true } },
+        },
+      }),
+      this.prismaService.examQuestion.findMany({
+        where: { userId, examId: { in: examIds } },
+        select: { examId: true, sectionId: true, topicId: true, createdAt: true },
+      }),
+    ]);
+
+    return exams.map((exam) => this.toExam(exam, this.computeExamMetrics(exam, mockExams, examQuestions)));
   }
 
   public async save(exam: Exam, userId: string) {
@@ -739,7 +770,111 @@ export class ExamService {
     });
   }
 
-  private toExam(row: any): Exam {
+  private computeExamMetrics(
+    exam: {
+      id: string;
+      updatedAt: Date;
+      passingScore: number | null;
+      sections: { id: string; topics: { id: string }[] }[];
+    },
+    mockExams: {
+      examId: string;
+      createdAt: Date;
+      attempts: { score: number | null; finishedAt: Date | null; timedOut: boolean }[];
+      _count: { questions: number };
+    }[],
+    examQuestions: { examId: string | null; sectionId: string | null; topicId: string | null; createdAt: Date }[]
+  ): ExamMetrics {
+    const examMockExams = mockExams.filter((m) => m.examId === exam.id);
+    const examQuestionsForExam = examQuestions.filter((q) => q.examId === exam.id);
+
+    const allFinishedAttempts = examMockExams
+      .flatMap((m) => m.attempts)
+      .filter(
+        (a): a is { score: number; finishedAt: Date; timedOut: boolean } => a.finishedAt != null && a.score != null
+      );
+
+    // score is a raw correct-answer count (MockExamAttempt.score), not a percent — normalize
+    // per mock exam's own question count (mirrors mock-exam.service.ts's bestScore/overallPreviousAvgPercent),
+    // and drop timedOut attempts the same way that service's bestScore does.
+    const scoredAttempts = examMockExams.flatMap((m) =>
+      m.attempts
+        .filter(
+          (a): a is { score: number; finishedAt: Date; timedOut: boolean } =>
+            a.finishedAt != null && a.score != null && !a.timedOut && m._count.questions > 0
+        )
+        .map((a) => ({
+          percent: Math.round((a.score / m._count.questions) * 100),
+          finishedAt: a.finishedAt,
+        }))
+    );
+
+    const generatedQuestionsCount = examQuestionsForExam.length;
+    const simuladosCount = examMockExams.length;
+
+    const accuracyPercent =
+      scoredAttempts.length === 0
+        ? null
+        : Math.round(scoredAttempts.reduce((sum, a) => sum + a.percent, 0) / scoredAttempts.length);
+
+    const activityDates = [
+      exam.updatedAt,
+      ...examMockExams.map((m) => m.createdAt),
+      ...allFinishedAttempts.map((a) => a.finishedAt),
+      ...examQuestionsForExam.map((q) => q.createdAt),
+    ];
+    const lastActivityAt = new Date(Math.max(...activityDates.map((d) => d.getTime()))).toISOString();
+
+    return {
+      generatedQuestionsCount,
+      simuladosCount,
+      accuracyPercent,
+      lastActivityAt,
+      ...this.deriveReadinessAndStatus(exam, examQuestionsForExam, scoredAttempts),
+    };
+  }
+
+  private deriveReadinessAndStatus(
+    exam: { sections: { id: string; topics: { id: string }[] }[]; passingScore: number | null },
+    examQuestionsForExam: { sectionId: string | null; topicId: string | null }[],
+    scoredAttempts: { percent: number; finishedAt: Date }[]
+  ): Pick<ExamMetrics, 'readinessPercent' | 'status' | 'completedScore' | 'completedAt'> {
+    if (exam.sections.length === 0) {
+      return { readinessPercent: 0, status: 'draft', completedScore: null, completedAt: null };
+    }
+
+    const allTopics = exam.sections.flatMap((s) => s.topics);
+    const readinessPercent =
+      allTopics.length > 0
+        ? Math.round(
+            (allTopics.filter((t) => examQuestionsForExam.some((q) => q.topicId === t.id)).length / allTopics.length) *
+              100
+          )
+        : Math.round(
+            (exam.sections.filter((s) => examQuestionsForExam.some((q) => q.sectionId === s.id)).length /
+              exam.sections.length) *
+              100
+          );
+
+    if (exam.passingScore != null) {
+      const qualifying = scoredAttempts.filter((a) => a.percent >= exam.passingScore!);
+
+      if (qualifying.length > 0) {
+        const best = qualifying.reduce((max, a) => (a.percent > max.percent ? a : max));
+
+        return {
+          readinessPercent,
+          status: 'completed',
+          completedScore: best.percent,
+          completedAt: best.finishedAt.toISOString(),
+        };
+      }
+    }
+
+    return { readinessPercent, status: 'active', completedScore: null, completedAt: null };
+  }
+
+  private toExam(row: any, metrics?: ExamMetrics): Exam {
     return {
       id: row.id,
       type: row.type as ExamType,
@@ -762,6 +897,7 @@ export class ExamService {
         maxQuestions: s.maxQuestions,
         topics: (s.topics ?? []).map((t: any) => ({ id: t.id, name: t.name })),
       })),
+      ...(metrics ?? {}),
     };
   }
 }
