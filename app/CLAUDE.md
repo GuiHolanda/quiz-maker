@@ -161,7 +161,7 @@ app/(workspace)/question-bank/
   components/QuestionBankCard.tsx
   components/QuestionBankFiltersBar.tsx
 app/api/question-bank/route.ts / topics/route.ts / sources/route.ts
-features/services/question-bank.service.ts
+features/services/exam/question-bank.service.ts
 ```
 
 Filtros: `search` (deferido), `source` (multi), `type`, `topic` (multi), `difficulty` (multi), `hasAnswer+hasExplanation`.
