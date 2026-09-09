@@ -31,7 +31,7 @@ Substituir a página inteira pelo hub "Início" do mockup, com **todos os cards 
 Decisões de escopo confirmadas:
 - **Escopo backend:** Completo — reescrita de `DashboardService`, readiness real, feed sintetizado.
 - **Analytics atual:** deletar por inteiro (o mockup é a nova página).
-- **Fórmula de readiness:** prontidão por seção ponderada (ver §4).
+- **Fórmula de readiness:** reusar a de `/exams` (cobertura de conteúdo) via helper compartilhado — um "Preparo" só no produto (ver §4.0).
 - **"Provas em andamento":** exames com atividade, menos preparado primeiro, limite 5.
 
 ## 3. Contrato de dados — `shared/types/index.ts`
@@ -97,81 +97,115 @@ export interface DashboardActivityItem {
 
 Texto de "Atividade" e da frase-resumo é **montado no client** via `t()` — o service não tem o idioma do usuário. `connectors.ts` `getDashboardStats()` passa a devolver `DashboardHome`.
 
-## 4. Backend — `app/api/dashboard/stats/dashboard.service.ts` (reescrita completa)
+## 4. Backend
 
-`getStats(userId): Promise<DashboardHome>` — um bloco `Promise.all`, agregação em memória (mesmo padrão do `computeDomainBreakdown` atual). Route handler **não muda** (`valida sessão → service → NextResponse.json`, erro por `toApiErrorResponse`).
+### 4.0 Helper compartilhado de readiness — `lib/exam/readiness.ts` (novo)
 
-Timezone para todo bucketing por dia: **`America/Sao_Paulo`** — nova constante `DASHBOARD_TZ` no topo do service (não é config de app, é regra desta métrica).
+`ExamService.deriveReadinessAndStatus` (`features/services/exam/exam.service.ts:846-857`) calcula "preparo" como **cobertura de conteúdo**: `% de tópicos que têm ≥ 1 questão gerada` (ou `% de seções`, quando o exame não tem tópicos). Decisão do usuário: o dashboard reusa **exatamente** esse número — um "Preparo" só no produto inteiro.
 
-### 4.1 KPIs
+Extrair a expressão inline para uma função pura:
 
-| Campo | Fonte | Lógica |
-|---|---|---|
-| `streakDays` | `MockExamAttempt.finishedAt` (userId, não-nulo) + `UsageLog.createdAt` (userId, qualquer `action`) | conjunto de datas locais distintas (TZ acima) → conta dias consecutivos para trás a partir de hoje; se hoje não tem atividade, começa de ontem; sem atividade nenhuma → `0` |
-| `questionsThisWeek` | `MockExamAttempt` finalizadas em `[agora-7d, agora]`, `Σ _count.answers` | `MockExamAttemptAnswer` não tem timestamp — a janela vem do `finishedAt` da tentativa |
-| `questionsWeekDelta` | mesmo, janela `[agora-14d, agora-7d]` | `thisWeek - prior` |
-| `avgAccuracy` | `mockExamAttempt.aggregate({ _avg: { score }, where: finalizada em [agora-30d, agora] })` | `null` quando a janela não tem tentativa |
-| `avgAccuracyDelta` | mesmo, janela `[agora-60d, agora-30d]` | `null` se qualquer das duas janelas estiver vazia; senão `round(atual - anterior)` |
-| `simuladosTotal` | `mockExam.count({ userId })` | |
-| `simuladosOpen` | `mockExamAttempt.count({ userId, finishedAt: null })` | |
+```ts
+// lib/exam/readiness.ts
+interface ReadinessSection { readonly id: string; readonly topics: readonly { readonly id: string }[]; }
+interface ReadinessQuestion { readonly sectionId: string | null; readonly topicId: string | null; }
 
-### 4.2 `resume`
+export function computeExamReadiness(
+  sections: readonly ReadinessSection[],
+  questions: readonly ReadinessQuestion[],
+): number {
+  if (sections.length === 0) return 0;
+  const topics = sections.flatMap((s) => s.topics);
+  if (topics.length > 0) {
+    const covered = topics.filter((t) => questions.some((q) => q.topicId === t.id)).length;
+    return Math.round((covered / topics.length) * 100);
+  }
+  const covered = sections.filter((s) => questions.some((q) => q.sectionId === s.id)).length;
+  return Math.round((covered / sections.length) * 100);
+}
+```
 
-`mockExamAttempt.findFirst({ where: { userId, finishedAt: null }, orderBy: { startedAt: 'desc' }, include: { mockExam: { select: { name, durationMinutes, _count: { questions }, exam: { select: { name, examBoard: { select: { name } } } } } }, _count: { select: { answers } } } })`.
+`exam.service.ts` passa a chamar `computeExamReadiness(exam.sections, examQuestionsForExam)` no lugar do bloco inline; o resto de `deriveReadinessAndStatus` (status/completed) não muda. Os testes de `exam.service.test.ts` que cobrem readiness continuam passando sem edição.
 
-`null` se não houver tentativa aberta. `simuladoName = mockExam.name ?? exam.name`. `answeredQuestions = _count.answers`, `totalQuestions = mockExam._count.questions`.
+### 4.1 `dashboard.service.ts` — reescrita completa
 
-### 4.3 `examsInProgress`
+`getStats(userId): Promise<DashboardHome>` — um `Promise.all` de leituras, depois agregação em memória (mesmo padrão do `computeDomainBreakdown` atual). Route handler **não muda**.
 
-1. `exam.findMany({ where: { userId, isTemplate: false }, select: { id, name, type, key, role, year, examBoard: { select: { name } }, sections: { select: { name, minQuestions } } } })`.
-2. `examQuestion.groupBy({ by: ['examId', 'sectionName'], where: { userId, examId: { in: examIds } }, _count: { _all: true } })` — questões salvas por seção.
-3. Respostas de tentativa do usuário, com `examId` e `sectionName`: `mockExamAttemptAnswer.findMany({ where: { attempt: { userId } }, select: { isCorrect, mockExamQuestion: { select: { examQuestion: { select: { examId, sectionName } } } } } })` — sem janela de tempo (readiness é acumulado).
-4. Por exame:
-   - Filtra: mantém exames com `≥ 1` questão salva **ou** `≥ 1` resposta de tentativa.
-   - **Readiness (prontidão por seção ponderada):**
-     ```
-     answered(s)  = respostas de tentativa nessa (examId, sectionName)
-     accuracy(s)  = corretas(s) / answered(s)   (0 se answered(s) === 0)
-     sectionReadiness(s) = min(1, answered(s) / 10) * min(1, accuracy(s) / 0.70)
-     weight(s)    = s.minQuestions               // inteiro 0-100
-     readiness    = round( 100 * Σ(weight(s) * sectionReadiness(s)) / Σ weight(s) )
-     ```
-     Se `Σ weight(s) === 0` (todas as seções com `minQuestions` 0), usa peso igual para todas. Exame sem seções → `readiness = 0`.
-   - `accuracy` (nível card) = `corretas / total` de todas as respostas de tentativa daquele exame, acumulado; `null` se nunca teve tentativa.
-   - `keyLabel = key ?? role ?? (year ? String(year) : null)`.
-5. Ordena por `readiness` ascendente (menos preparado no topo = mais acionável). `take 5`.
+**Constante:** `DASHBOARD_TZ = 'America/Sao_Paulo'` no topo do arquivo (regra desta métrica, não config de app).
 
-### 4.4 `weakDomains`
+**`MockExamAttempt.score` é contagem crua de acertos**, não percentual (`mock-exam.service.ts:582` faz `score += 1`; `:716` normaliza por `score / totalQuestions * 100`). Todo cálculo de acerto no dashboard **normaliza** por `mockExam._count.questions`: `accuracyPct(attempt) = round(attempt.score / totalQuestions * 100)` (ignora `totalQuestions === 0`). O código antigo tratava `score` como percentual — não copiar esse comportamento.
 
-Respostas de tentativa onde `attempt.finishedAt` está nos últimos 14 dias, agrupadas por `sectionName` (mesmo join do `computeDomainBreakdown` atual + filtro de `finishedAt`):
+**Leituras (`Promise.all`):**
+
+- `A` = `mockExamAttempt.findMany({ where: { userId }, select: { startedAt, finishedAt, score, mockExamId, mockExam: { select: { name, durationMinutes, _count: { select: { questions } }, exam: { select: { name, examBoard: { select: { name } } } } } }, _count: { select: { answers } } } })` — **uma** leitura de todas as tentativas do usuário.
+- `U` = `usageLog.findMany({ where: { userId, createdAt: { gte: now - 60d } }, select: { action, count, refName, createdAt } })`.
+- `E` = `exam.findMany({ where: { userId, isTemplate: false }, select: { id, name, type, key, role, year, updatedAt, examBoard: { select: { name } }, sections: { select: { id, topics: { select: { id } } } } } })`.
+- `Q` = `examQuestion.findMany({ where: { userId }, select: { examId, sectionId, topicId } })`.
+- `S` = respostas de tentativa por seção, para `weakDomains` e `wrongOpenCount`:
+  `mockExamAttemptAnswer.findMany({ where: { attempt: { userId } }, select: { isCorrect, mockExamQuestion: { select: { examQuestionId, examQuestion: { select: { examId, sectionName } } }, }, attempt: { select: { finishedAt } } } })`.
+- `AC` = `autoConfigJob.findMany({ where: { userId, status: 'done', updatedAt: { gte: now - 7d } }, select: { seedName, updatedAt }, orderBy: { updatedAt: 'desc' }, take: 5 })`.
+
+### 4.2 KPIs (de `A` e `U`)
+
+Datas locais: converter `Date` → `YYYY-MM-DD` no `DASHBOARD_TZ` via `Intl.DateTimeFormat('en-CA', { timeZone: DASHBOARD_TZ })`.
+
+| Campo | Lógica |
+|---|---|
+| `streakDays` | conjunto de datas locais distintas de `{ A.finishedAt não-nulo } ∪ { U.createdAt }`. A partir de hoje (local), conta dias consecutivos para trás enquanto a data estiver no conjunto; se hoje não está mas ontem está, começa de ontem; senão `0` |
+| `questionsThisWeek` | `Σ A._count.answers` sobre `A` com `finishedAt ∈ [now-7d, now]` |
+| `questionsWeekDelta` | `questionsThisWeek − (Σ answers sobre finishedAt ∈ [now-14d, now-7d])` |
+| `avgAccuracy` | média de `accuracyPct(a)` sobre `A` com `finishedAt ∈ [now-30d, now]` e `_count.questions > 0`; `null` se a janela estiver vazia |
+| `avgAccuracyDelta` | `round(avgAccuracy − avgAccuracyPrev)` onde `prev` é a mesma média em `[now-60d, now-30d]`; `null` se qualquer das duas janelas estiver vazia |
+| `simuladosTotal` | `new Set(A.map(a => a.mockExamId)).size` |
+| `simuladosOpen` | `A.filter(a => a.finishedAt == null).length` |
+
+### 4.3 `resume` (de `A`)
+
+`A` filtrado para `finishedAt == null`, `sort` por `startedAt` desc, primeiro. `null` se nenhum. Map:
+`{ mockExamId, attemptId: a.id, simuladoName: mockExam.name ?? mockExam.exam.name, examName: mockExam.exam.name, examBoardName: mockExam.exam.examBoard?.name ?? null, totalQuestions: mockExam._count.questions, answeredQuestions: a._count.answers, durationMinutes: mockExam.durationMinutes, startedAt: a.startedAt.toISOString() }`.
+
+> `A` precisa incluir `id` no select (adicionar) — a linha acima usa `a.id` como `attemptId`.
+
+### 4.4 `examsInProgress` (de `E`, `Q`, `A`)
+
+Para cada exame em `E`:
+- `qs` = `Q.filter(q => q.examId === exam.id)`. **Filtra**: mantém só exames com `qs.length > 0` **ou** `A.some(a => a.mockExam` … pertence a esse exame`)` — isto é, `A` precisa expor `examId` (via `mockExam.exam` não; usar `mockExam.examId` — **adicionar `examId` ao select de `mockExam` em `A`**).
+- `readiness = computeExamReadiness(exam.sections, qs)` (§4.0).
+- `accuracy` = média de `accuracyPct(a)` sobre as tentativas finalizadas (`finishedAt != null`, `_count.questions > 0`) cujo `mockExam.examId === exam.id`; `null` se nenhuma.
+- `boardName = exam.examBoard?.name ?? null`; `keyLabel = exam.key ?? exam.role ?? (exam.year ? String(exam.year) : null)`.
+- Ordena por `readiness` asc (menos preparado no topo). `slice(0, 5)`.
+
+### 4.5 `weakDomains` (de `S`)
+
+`S` filtrado para `attempt.finishedAt ∈ [now-14d, now]`, agrupado por `mockExamQuestion.examQuestion.sectionName`:
 - `accuracy = round(corretas / total * 100)`
 - `questionVolume = total`
 - mantém só seções com `questionVolume >= 5` (evita um domínio de 1 questão a 0% dominar o card)
-- ordena `accuracy` ascendente, `take 4`
+- ordena `accuracy` asc, `slice(0, 4)`
 
-### 4.5 `quickActions`
+### 4.6 `quickActions` (de `Q` e `S`)
 
-| Campo | Fonte |
+| Campo | Lógica |
 |---|---|
-| `bankCount` | `examQuestion.count({ where: { userId } })` |
-| `wrongOpenCount` | questões distintas com `≥ 1` resposta errada e `0` respostas certas do usuário. Cálculo: sobre as mesmas respostas do §4.3.3 (ou uma query dedicada `mockExamAttemptAnswer.findMany({ where: { attempt: { userId } }, select: { isCorrect, mockExamQuestion: { select: { examQuestionId } } } })`), agrupa por `examQuestionId`; conta os grupos com `algumaErrada && nenhumaCerta`. **Aproximação documentada** — "em aberto" = nunca acertou desde então. |
+| `bankCount` | `Q.length` (todas as questões do usuário, com ou sem `examId`) |
+| `wrongOpenCount` | agrupa **todo** `S` (sem janela) por `mockExamQuestion.examQuestionId`; conta grupos com `alguma isCorrect === false` **e** `nenhuma isCorrect === true`. Aproximação documentada — "em aberto" = errou e nunca acertou desde então |
 
-### 4.6 `activity`
+### 4.7 `activity` (de `A`, `U`, `AC`, `E`)
 
-Quatro sub-queries, cada uma nos últimos 7 dias, `take ~5`, depois merge → ordena `at` desc → `take 6`:
+Monta os 4 tipos, cada um nos últimos 7 dias, `take 5` cada; concatena; `sort` por `at` desc; `slice(0, 6)`:
 
-| `kind` | Query | `at` | `params` |
+| `kind` | Fonte | `at` | `params` |
 |---|---|---|---|
-| `simulado_finished` | `mockExamAttempt` finalizada, `include mockExam{ name, exam{ name } }` | `finishedAt` | `{ name: mockExam.name ?? exam.name, score }` |
-| `questions_generated` | `usageLog` `action: 'generate_questions'` | `createdAt` | `{ count: usageLog.count, name: refName ?? undefined }` |
-| `auto_config_done` | `autoConfigJob` `status: 'done'` | `updatedAt` | `{ name: seedName }` |
-| `exam_created` | `exam` `{ userId, isTemplate: false }` | `createdAt` | `{ name }` |
+| `simulado_finished` | `A` com `finishedAt ∈ [now-7d, now]` | `finishedAt` | `{ name: mockExam.name ?? mockExam.exam.name, score: accuracyPct(a) }` |
+| `questions_generated` | `U` com `action === 'generate_questions'` e `createdAt ∈ [now-7d, now]` | `createdAt` | `{ count: u.count, name: u.refName ?? undefined }` |
+| `auto_config_done` | `AC` (já filtrado a 7d na query) | `updatedAt` | `{ name: seedName }` |
+| `exam_created` | `E` com `updatedAt`… → usar `exam.createdAt`; **adicionar `createdAt` ao select de `E`**; filtro `createdAt ∈ [now-7d, now]` | `createdAt` | `{ name: exam.name }` |
 
 (O mockup também tem "questões marcadas para revisão" — não existe feature de bookmark; omitido.)
 
-### 4.7 Performance
+### 4.8 Performance
 
-~9 queries num único `Promise.all` (hoje são 5). Os dois `groupBy` / `findMany` grandes batem em índices existentes (`ExamQuestion@@index([userId])`, `MockExamAttemptAnswer@@index([attemptId])`, `MockExamAttempt@@index([userId, finishedAt])`). As respostas de tentativa são lidas uma vez e reaproveitadas entre §4.3, §4.4 e §4.5 (uma leitura, um select com `isCorrect` + `examQuestion.examId` + `sectionName` + `examQuestionId` + `attempt.finishedAt`). Aceitável; sinalizar no review.
+6 leituras num único `Promise.all` (hoje são 5). As tentativas (`A`) e as respostas por seção (`S`) são lidas **uma vez cada** e reaproveitadas entre KPIs / resume / examsInProgress / activity (A) e weakDomains / quickActions (S). Índices existentes cobrem tudo: `MockExamAttempt@@index([userId, finishedAt])`, `MockExamAttemptAnswer@@index([attemptId])`, `ExamQuestion@@index([userId])`, `UsageLog@@index([userId, createdAt])`, `AutoConfigJob@@index([userId])`. `S` faz nested-select em `mockExamQuestion → examQuestion` — mesmo shape do `computeDomainBreakdown` atual, que já roda em produção. Sinalizar no review mesmo assim.
 
 ## 5. Frontend — `app/(workspace)/dashboard/`
 
@@ -265,27 +299,40 @@ Chaves mortas dos componentes deletados removidas dos dois arquivos **no mesmo c
 
 ### 7.1 Unit — `tests/unit/api/services/dashboard.service.test.ts` (reescrita completa)
 
-Trava:
+Trava em `dashboard.service.test.ts`:
 - **streak:** dias consecutivos; buraco quebra a sequência; hoje sem atividade começa de ontem; sem atividade → 0.
-- **questionsWeekDelta:** soma na janela vs janela anterior.
-- **avgAccuracy:** `null` quando a janela de 30d está vazia; delta `null` se qualquer janela vazia.
-- **readiness (fórmula ponderada por seção):** multi-seção com pesos diferentes; fallback de peso igual quando `Σ minQuestions === 0`; exame sem seções → 0; `accuracy(s)` usa só respostas daquela seção/exame.
-- **weakDomains:** janela de 14d aplicada; corte `volume >= 5`; ordenação ascendente por acerto; `take 4`.
-- **activity:** merge das 4 fontes, ordenação `at` desc, `take 6`.
-- **resume:** pega a tentativa aberta mais recente; `null` quando não há.
+- **questionsThisWeek/Delta:** soma de `_count.answers` na janela de 7d vs janela anterior.
+- **avgAccuracy:** normaliza `score` por `_count.questions` (não trata como percentual); `null` quando a janela de 30d está vazia; delta `null` se qualquer janela vazia.
+- **examsInProgress:** filtra exames sem atividade; ordena por `readiness` asc; `accuracy` normalizada e `null` sem tentativa; `slice(0,5)`.
+- **weakDomains:** janela de 14d aplicada; corte `volume >= 5`; ordenação ascendente por acerto; `slice(0,4)`.
+- **activity:** merge das 4 fontes, ordenação `at` desc, `slice(0,6)`; `score` do `simulado_finished` normalizado.
+- **resume:** pega a tentativa aberta mais recente por `startedAt`; `null` quando não há.
 - **wrongOpenCount:** exclui questão que foi acertada depois.
 
-Mock do Prisma via `prismaMock` (deep-mock global). As múltiplas leituras de `mockExamAttempt` se distinguem por `where`/`orderBy`/`take` no `mockImplementation` (padrão já usado no teste atual).
+Trava em `lib/exam/readiness.test.ts` (novo): cobertura por tópicos; fallback para seções quando não há tópicos; exame sem seções → 0; arredondamento.
+
+Trava em `exam.service.test.ts`: os testes de readiness existentes continuam passando após a extração (sem editar o teste).
+
+Mock do Prisma via `prismaMock` (deep-mock global). As múltiplas leituras de `mockExamAttempt`/`mockExamAttemptAnswer`/`exam`/`examQuestion`/`usageLog`/`autoConfigJob` se distinguem pelo model (`prismaMock.<model>.findMany.mockResolvedValue(...)`) — cada model tem uma leitura só.
 
 ### 7.2 E2E — `tests/e2e/tests/dashboard.spec.ts` (reescrita)
 
 Novos `data-testid` no `TID` de `tests/e2e/support/selectors.ts`: `dashboardKpis`, `dashboardResume`, `dashboardExamsProgress`, `dashboardWeakDomains`, `dashboardQuickActions`, `dashboardActivity`, `dashboardCredits` (e remover `dashboardKpiRibbon`, `dashboardFocusAreas`, `dashboardRecentSessions`, `dashboardDomainBreakdown`, `dashboardSessionRow` se não usados em outro spec).
 
-O seed do `globalSetup` gera **uma tentativa finalizada** (score 67) e nenhuma aberta. Asserções:
-- `dashboard-root`, `dashboard-kpis`, `dashboard-activity` visíveis; a atividade contém o item do simulado finalizado.
-- `dashboard-resume` **ausente** (`await expect(locator).toHaveCount(0)`).
-- `dashboard-exams-progress` e `dashboard-weak-domains` renderizam (com dado ou `EmptyState` — 14d cobre o seed).
-- Teste de empty total: `page.route('**/api/dashboard/stats', …)` devolvendo um `DashboardHome` zerado → cada card mostra seu `EmptyState` / KPIs em `0`.
+**Ajuste no seed** (`tests/e2e/global-setup.ts`, `seedCompletedMockExamAttempt`): as datas hardcoded `2024-06-01` deixam a tentativa fora de todas as janelas (7d/14d/30d) das métricas novas — o card de atividade e os KPIs ficariam vazios. Trocar por datas relativas:
+```ts
+const finishedAt = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);        // 3 dias atrás
+const startedAt = new Date(finishedAt.getTime() - 30 * 60 * 1000);
+```
+`dashboard.spec.ts` é o único consumidor dessa tentativa (grep confirmado) — mudança segura.
+
+Asserções (seed = 1 tentativa finalizada 3 dias atrás, 2/3 corretas, nenhuma aberta):
+- `dashboard-root`, `dashboard-kpis`, `dashboard-activity`, `dashboard-quick-actions`, `dashboard-credits` visíveis.
+- `dashboard-activity` contém 1 item de simulado finalizado (dentro de 7d).
+- `dashboard-resume` **ausente** (`await expect(page.locator(tid(TID.dashboardResume))).toHaveCount(0)`).
+- `dashboard-exams-progress` renderiza com ≥ 1 linha (cert + concurso semeados têm questões).
+- `dashboard-weak-domains` renderiza (só 3 respostas na seção < corte de 5 → `EmptyState` dentro do card; asserção aceita card visível).
+- Teste de empty total: `page.route('**/api/dashboard/stats', route => route.fulfill({ status: 200, body: JSON.stringify(EMPTY_HOME) }))` → cada card mostra `EmptyState` / KPIs em `0`, `dashboard-resume` ausente. `EMPTY_HOME` inline no spec.
 
 Sem novos models → `db-cleanup.ts` não muda.
 
@@ -295,10 +342,11 @@ Sem novos models → `db-cleanup.ts` não muda.
 
 ## 8. Commits (fatias revisáveis)
 
-1. `refactor: replace dashboard types with DashboardHome shape` — `shared/types` + `connectors.ts`
-2. `feat: rewrite dashboard service for the início home hub` — `dashboard.service.ts` + unit tests
-3. `feat: build início dashboard page and cards` — componentes + `page.tsx` + `loading.tsx` + i18n + testids; deleta os componentes antigos
-4. `test: rewrite dashboard e2e for início layout` — `dashboard.spec.ts` + `selectors.ts`
+1. `refactor: extract computeExamReadiness into lib/exam/readiness` — `lib/exam/readiness.ts` + teste; `exam.service.ts` passa a chamar o helper
+2. `refactor: replace dashboard types with DashboardHome shape` — `shared/types` + `connectors.ts`
+3. `feat: rewrite dashboard service for the início home hub` — `dashboard.service.ts` + unit tests
+4. `feat: build início dashboard page and cards` — componentes + `page.tsx` + `loading.tsx` + i18n + testids; deleta os componentes antigos
+5. `test: rewrite dashboard e2e for início layout` — `dashboard.spec.ts` + `selectors.ts` + `global-setup.ts`
 
 ## 9. Fora de escopo / follow-ups
 
