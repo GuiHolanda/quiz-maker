@@ -4,7 +4,7 @@ import { randomBytes } from 'crypto';
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const CODE_LENGTH = 8;
 
-export function generateReferralCode(): string {
+function generateReferralCode(): string {
   const bytes = randomBytes(CODE_LENGTH);
   let code = '';
 

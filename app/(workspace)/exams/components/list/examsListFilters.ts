@@ -3,7 +3,7 @@ import type { Exam } from '@/shared/types';
 export type ExamListTab = 'all' | 'certification' | 'public_exam' | 'draft';
 export type ExamListSort = 'activity' | 'name' | 'readiness';
 
-export function matchesTab(exam: Exam, tab: ExamListTab): boolean {
+function matchesTab(exam: Exam, tab: ExamListTab): boolean {
   if (tab === 'all') return true;
   if (tab === 'draft') return exam.status === 'draft';
   return exam.type === tab;

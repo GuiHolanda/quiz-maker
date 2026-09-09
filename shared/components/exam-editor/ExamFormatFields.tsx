@@ -10,7 +10,7 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { inputProperties, compactInputClassNames, compactSelectClassNames } from '@/config/constants/inputStyles';
 import { DEFAULT_QUESTION_FORMAT } from '@/config/question-formats';
 
-export const QUESTION_FORMAT_OPTIONS: ReadonlyArray<{ key: QuestionFormatKey; labelKey: string }> = [
+const QUESTION_FORMAT_OPTIONS: ReadonlyArray<{ key: QuestionFormatKey; labelKey: string }> = [
   { key: 'mc_5', labelKey: 'exam.questionFormatMc5' },
   { key: 'mc_4', labelKey: 'exam.questionFormatMc4' },
   { key: 'true_false', labelKey: 'exam.questionFormatTrueFalse' },

@@ -13,7 +13,7 @@ export const PRICING_USD = {
   inputPerMillion: Number(process.env.EVAL_PRICE_INPUT ?? 0.75),
   outputPerMillion: Number(process.env.EVAL_PRICE_OUTPUT ?? 4.5),
 };
-export const USD_TO_BRL = 5.7;
+const USD_TO_BRL = 5.7;
 
 export function computeCost(inputTokens: number, outputTokens: number): { costUSD: number; costBRL: number } {
   const costUSD =

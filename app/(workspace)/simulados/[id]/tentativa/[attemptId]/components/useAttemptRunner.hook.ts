@@ -31,7 +31,7 @@ export interface AttemptDerivedState {
   readonly navigatorItems: NavigatorItem[];
 }
 
-export function isQuestionAnswered(question: AttemptQuestion, answers: AnswersMap): boolean {
+function isQuestionAnswered(question: AttemptQuestion, answers: AnswersMap): boolean {
   const selected = answers[question.examQuestionId] ?? [];
   return selected.length >= Math.max(1, question.correctCount);
 }
