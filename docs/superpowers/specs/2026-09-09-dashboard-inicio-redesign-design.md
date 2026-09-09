@@ -137,15 +137,16 @@ export function computeExamReadiness(
 
 **Leituras (`Promise.all`):**
 
-- `A` = `mockExamAttempt.findMany({ where: { userId }, select: { startedAt, finishedAt, score, mockExamId, mockExam: { select: { name, durationMinutes, _count: { select: { questions } }, exam: { select: { name, examBoard: { select: { name } } } } } }, _count: { select: { answers } } } })` — **uma** leitura de todas as tentativas do usuário.
+- `A` = `mockExamAttempt.findMany({ where: { userId }, select: { id, startedAt, finishedAt, score, mockExamId, mockExam: { select: { name, examId, durationMinutes, _count: { select: { questions } }, exam: { select: { name, examBoard: { select: { name } } } } } }, _count: { select: { answers } } } })` — **uma** leitura de todas as tentativas do usuário.
 - `U` = `usageLog.findMany({ where: { userId, createdAt: { gte: now - 60d } }, select: { action, count, refName, createdAt } })`.
-- `E` = `exam.findMany({ where: { userId, isTemplate: false }, select: { id, name, type, key, role, year, updatedAt, examBoard: { select: { name } }, sections: { select: { id, topics: { select: { id } } } } } })`.
+- `E` = `exam.findMany({ where: { userId, isTemplate: false }, select: { id, name, type, key, role, year, createdAt, examBoard: { select: { name } }, sections: { select: { id, topics: { select: { id } } } } } })`.
 - `Q` = `examQuestion.findMany({ where: { userId }, select: { examId, sectionId, topicId } })`.
 - `S` = respostas de tentativa por seção, para `weakDomains` e `wrongOpenCount`:
-  `mockExamAttemptAnswer.findMany({ where: { attempt: { userId } }, select: { isCorrect, mockExamQuestion: { select: { examQuestionId, examQuestion: { select: { examId, sectionName } } }, }, attempt: { select: { finishedAt } } } })`.
+  `mockExamAttemptAnswer.findMany({ where: { attempt: { userId } }, select: { isCorrect, mockExamQuestion: { select: { examQuestionId, examQuestion: { select: { sectionName } } } }, attempt: { select: { finishedAt } } } })`.
 - `AC` = `autoConfigJob.findMany({ where: { userId, status: 'done', updatedAt: { gte: now - 7d } }, select: { seedName, updatedAt }, orderBy: { updatedAt: 'desc' }, take: 5 })`.
+- `MC` = `mockExam.count({ where: { userId } })` — total de simulados criados (não só os com tentativa).
 
-### 4.2 KPIs (de `A` e `U`)
+### 4.2 KPIs (de `A`, `U`, `MC`)
 
 Datas locais: converter `Date` → `YYYY-MM-DD` no `DASHBOARD_TZ` via `Intl.DateTimeFormat('en-CA', { timeZone: DASHBOARD_TZ })`.
 
@@ -156,7 +157,7 @@ Datas locais: converter `Date` → `YYYY-MM-DD` no `DASHBOARD_TZ` via `Intl.Date
 | `questionsWeekDelta` | `questionsThisWeek − (Σ answers sobre finishedAt ∈ [now-14d, now-7d])` |
 | `avgAccuracy` | média de `accuracyPct(a)` sobre `A` com `finishedAt ∈ [now-30d, now]` e `_count.questions > 0`; `null` se a janela estiver vazia |
 | `avgAccuracyDelta` | `round(avgAccuracy − avgAccuracyPrev)` onde `prev` é a mesma média em `[now-60d, now-30d]`; `null` se qualquer das duas janelas estiver vazia |
-| `simuladosTotal` | `new Set(A.map(a => a.mockExamId)).size` |
+| `simuladosTotal` | `MC` (total de simulados criados) |
 | `simuladosOpen` | `A.filter(a => a.finishedAt == null).length` |
 
 ### 4.3 `resume` (de `A`)
@@ -164,15 +165,13 @@ Datas locais: converter `Date` → `YYYY-MM-DD` no `DASHBOARD_TZ` via `Intl.Date
 `A` filtrado para `finishedAt == null`, `sort` por `startedAt` desc, primeiro. `null` se nenhum. Map:
 `{ mockExamId, attemptId: a.id, simuladoName: mockExam.name ?? mockExam.exam.name, examName: mockExam.exam.name, examBoardName: mockExam.exam.examBoard?.name ?? null, totalQuestions: mockExam._count.questions, answeredQuestions: a._count.answers, durationMinutes: mockExam.durationMinutes, startedAt: a.startedAt.toISOString() }`.
 
-> `A` precisa incluir `id` no select (adicionar) — a linha acima usa `a.id` como `attemptId`.
-
 ### 4.4 `examsInProgress` (de `E`, `Q`, `A`)
 
-Para cada exame em `E`:
-- `qs` = `Q.filter(q => q.examId === exam.id)`. **Filtra**: mantém só exames com `qs.length > 0` **ou** `A.some(a => a.mockExam` … pertence a esse exame`)` — isto é, `A` precisa expor `examId` (via `mockExam.exam` não; usar `mockExam.examId` — **adicionar `examId` ao select de `mockExam` em `A`**).
+`A._select` já traz `mockExam.examId` (via `mockExam: { select: { examId } }`). Para cada exame em `E`:
+- `qs` = `Q.filter(q => q.examId === exam.id)`. **Filtra**: mantém só exames com `qs.length > 0` **ou** alguma tentativa em `A` com `a.mockExam.examId === exam.id`.
 - `readiness = computeExamReadiness(exam.sections, qs)` (§4.0).
-- `accuracy` = média de `accuracyPct(a)` sobre as tentativas finalizadas (`finishedAt != null`, `_count.questions > 0`) cujo `mockExam.examId === exam.id`; `null` se nenhuma.
-- `boardName = exam.examBoard?.name ?? null`; `keyLabel = exam.key ?? exam.role ?? (exam.year ? String(exam.year) : null)`.
+- `accuracy` = média de `accuracyPct(a.score, a.mockExam._count.questions)` sobre as tentativas de `A` finalizadas (`finishedAt != null`, `_count.questions > 0`) com `a.mockExam.examId === exam.id`; `null` se nenhuma.
+- `boardName = exam.examBoard?.name ?? null`; `keyLabel = exam.key ?? exam.role ?? (exam.year != null ? String(exam.year) : null)`.
 - Ordena por `readiness` asc (menos preparado no topo). `slice(0, 5)`.
 
 ### 4.5 `weakDomains` (de `S`)
@@ -205,7 +204,7 @@ Monta os 4 tipos, cada um nos últimos 7 dias, `take 5` cada; concatena; `sort` 
 
 ### 4.8 Performance
 
-6 leituras num único `Promise.all` (hoje são 5). As tentativas (`A`) e as respostas por seção (`S`) são lidas **uma vez cada** e reaproveitadas entre KPIs / resume / examsInProgress / activity (A) e weakDomains / quickActions (S). Índices existentes cobrem tudo: `MockExamAttempt@@index([userId, finishedAt])`, `MockExamAttemptAnswer@@index([attemptId])`, `ExamQuestion@@index([userId])`, `UsageLog@@index([userId, createdAt])`, `AutoConfigJob@@index([userId])`. `S` faz nested-select em `mockExamQuestion → examQuestion` — mesmo shape do `computeDomainBreakdown` atual, que já roda em produção. Sinalizar no review mesmo assim.
+7 leituras num único `Promise.all` (hoje são 5). As tentativas (`A`) e as respostas por seção (`S`) são lidas **uma vez cada** e reaproveitadas entre KPIs / resume / examsInProgress / activity (A) e weakDomains / quickActions (S). Índices existentes cobrem tudo: `MockExamAttempt@@index([userId, finishedAt])`, `MockExamAttemptAnswer@@index([attemptId])`, `ExamQuestion@@index([userId])`, `UsageLog@@index([userId, createdAt])`, `AutoConfigJob@@index([userId])`. `S` faz nested-select em `mockExamQuestion → examQuestion` — mesmo shape do `computeDomainBreakdown` atual, que já roda em produção. Sinalizar no review mesmo assim.
 
 ## 5. Frontend — `app/(workspace)/dashboard/`
 
@@ -309,7 +308,7 @@ Trava em `dashboard.service.test.ts`:
 - **resume:** pega a tentativa aberta mais recente por `startedAt`; `null` quando não há.
 - **wrongOpenCount:** exclui questão que foi acertada depois.
 
-Trava em `lib/exam/readiness.test.ts` (novo): cobertura por tópicos; fallback para seções quando não há tópicos; exame sem seções → 0; arredondamento.
+Trava em `tests/unit/lib/exam-readiness.test.ts` (novo): cobertura por tópicos; fallback para seções quando não há tópicos; exame sem seções → 0; arredondamento; tópico contado uma vez.
 
 Trava em `exam.service.test.ts`: os testes de readiness existentes continuam passando após a extração (sem editar o teste).
 
@@ -319,20 +318,15 @@ Mock do Prisma via `prismaMock` (deep-mock global). As múltiplas leituras de `m
 
 Novos `data-testid` no `TID` de `tests/e2e/support/selectors.ts`: `dashboardKpis`, `dashboardResume`, `dashboardExamsProgress`, `dashboardWeakDomains`, `dashboardQuickActions`, `dashboardActivity`, `dashboardCredits` (e remover `dashboardKpiRibbon`, `dashboardFocusAreas`, `dashboardRecentSessions`, `dashboardDomainBreakdown`, `dashboardSessionRow` se não usados em outro spec).
 
-**Ajuste no seed** (`tests/e2e/global-setup.ts`, `seedCompletedMockExamAttempt`): as datas hardcoded `2024-06-01` deixam a tentativa fora de todas as janelas (7d/14d/30d) das métricas novas — o card de atividade e os KPIs ficariam vazios. Trocar por datas relativas:
-```ts
-const finishedAt = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);        // 3 dias atrás
-const startedAt = new Date(finishedAt.getTime() - 30 * 60 * 1000);
-```
-`dashboard.spec.ts` é o único consumidor dessa tentativa (grep confirmado) — mudança segura.
+**Ajuste no seed** (`tests/e2e/global-setup.ts`, `seedCompletedMockExamAttempt`): (a) as datas hardcoded `2024-06-01` deixam a tentativa fora de todas as janelas (7d/14d/30d) das métricas novas — trocar por datas relativas (`finishedAt = agora − 3 dias`, `startedAt = finishedAt − 30 min`); (b) `score: 67` é o valor errado — `score` é contagem crua de acertos, essa tentativa acerta 2 de 3 — trocar para `score: 2` (o dashboard antigo lia `score` como percentual; o novo normaliza `2/3 → 67%`). `dashboard.spec.ts` é o único consumidor (grep confirmado).
 
-Asserções (seed = 1 tentativa finalizada 3 dias atrás, 2/3 corretas, nenhuma aberta):
+Asserções (seed = 1 tentativa finalizada 3 dias atrás, `score: 2` de 3, nenhuma aberta; questões semeadas têm `sectionName`/`examName` mas **não** `examId`/`sectionId`):
 - `dashboard-root`, `dashboard-kpis`, `dashboard-activity`, `dashboard-quick-actions`, `dashboard-credits` visíveis.
-- `dashboard-activity` contém 1 item de simulado finalizado (dentro de 7d).
-- `dashboard-resume` **ausente** (`await expect(page.locator(tid(TID.dashboardResume))).toHaveCount(0)`).
-- `dashboard-exams-progress` renderiza com ≥ 1 linha (cert + concurso semeados têm questões).
-- `dashboard-weak-domains` renderiza (só 3 respostas na seção < corte de 5 → `EmptyState` dentro do card; asserção aceita card visível).
-- Teste de empty total: `page.route('**/api/dashboard/stats', route => route.fulfill({ status: 200, body: JSON.stringify(EMPTY_HOME) }))` → cada card mostra `EmptyState` / KPIs em `0`, `dashboard-resume` ausente. `EMPTY_HOME` inline no spec.
+- `dashboard-activity` não vazio (o simulado finalizado + os `exam_created` dos exames semeados nesta rodada estão dentro de 7d).
+- `dashboard-resume` **ausente** (`toHaveCount(0)`).
+- `dashboard-exams-progress` não vazio — a certificação entra via a tentativa semeada (`mockExam.examId` aponta pra ela); o concurso fica de fora (sem `examId` nas questões, sem tentativa). Readiness da cert = 0 (questões sem `sectionId`), acerto = 67%.
+- `dashboard-weak-domains` renderiza (3 respostas na seção < corte de 5 → `EmptyState` dentro do card; asserção aceita o card visível, não checa conteúdo).
+- Teste de empty total: `page.route('**/api/dashboard/stats', …)` devolvendo `EMPTY_HOME` → cada card mostra `EmptyState` / KPIs em `0`, `dashboard-resume` ausente. `EMPTY_HOME` inline no spec.
 
 Sem novos models → `db-cleanup.ts` não muda.
 
@@ -342,11 +336,15 @@ Sem novos models → `db-cleanup.ts` não muda.
 
 ## 8. Commits (fatias revisáveis)
 
-1. `refactor: extract computeExamReadiness into lib/exam/readiness` — `lib/exam/readiness.ts` + teste; `exam.service.ts` passa a chamar o helper
-2. `refactor: replace dashboard types with DashboardHome shape` — `shared/types` + `connectors.ts`
+Ver o plano de implementação (`docs/superpowers/plans/2026-09-09-dashboard-inicio-redesign.md`) para os passos. Sete commits:
+
+1. `refactor: extract computeExamReadiness into lib/exam/readiness` — `lib/exam/readiness.ts` + teste; `exam.service.ts` chama o helper
+2. `feat: add DashboardHome types for the início hub` — `shared/types` (aditivo)
 3. `feat: rewrite dashboard service for the início home hub` — `dashboard.service.ts` + unit tests
-4. `feat: build início dashboard page and cards` — componentes + `page.tsx` + `loading.tsx` + i18n + testids; deleta os componentes antigos
-5. `test: rewrite dashboard e2e for início layout` — `dashboard.spec.ts` + `selectors.ts` + `global-setup.ts`
+4. `feat: add dashboard.home i18n keys for the início hub` — `en/pt.properties` (aditivo)
+5. `feat: build início dashboard cards` — os 12 componentes novos
+6. `feat: replace dashboard with the início home hub` — `page.tsx` + `loading.tsx` + `connectors.ts` + remove tipos antigos + remove chaves i18n mortas + deleta os 11 componentes antigos
+7. `test: rewrite dashboard e2e for the início layout` — `dashboard.spec.ts` + `selectors.ts` + `global-setup.ts`
 
 ## 9. Fora de escopo / follow-ups
 
