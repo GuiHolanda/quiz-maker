@@ -68,68 +68,67 @@ export class DashboardService {
   async getStats(userId: string): Promise<DashboardHome> {
     const now = Date.now();
 
-    const [attempts, usageLogs, exams, questions, sectionAnswers, autoConfigJobs, simuladosTotal] =
-      await Promise.all([
-        prisma.mockExamAttempt.findMany({
-          where: { userId },
-          select: {
-            id: true,
-            startedAt: true,
-            finishedAt: true,
-            score: true,
-            mockExamId: true,
-            mockExam: {
-              select: {
-                name: true,
-                examId: true,
-                durationMinutes: true,
-                _count: { select: { questions: true } },
-                exam: { select: { name: true, examBoard: { select: { name: true } } } },
-              },
-            },
-            _count: { select: { answers: true } },
-          },
-        }) as Promise<AttemptRow[]>,
-        prisma.usageLog.findMany({
-          where: { userId, createdAt: { gte: new Date(now - 60 * DAY) } },
-          select: { action: true, count: true, refName: true, createdAt: true },
-        }) as Promise<UsageLogRow[]>,
-        prisma.exam.findMany({
-          where: { userId, isTemplate: false },
-          select: {
-            id: true,
-            name: true,
-            type: true,
-            key: true,
-            role: true,
-            year: true,
-            createdAt: true,
-            examBoard: { select: { name: true } },
-            sections: { select: { id: true, topics: { select: { id: true } } } },
-          },
-        }) as Promise<ExamRow[]>,
-        prisma.examQuestion.findMany({
-          where: { userId },
-          select: { examId: true, sectionId: true, topicId: true },
-        }) as Promise<QuestionRow[]>,
-        prisma.mockExamAttemptAnswer.findMany({
-          where: { attempt: { userId } },
-          select: {
-            isCorrect: true,
-            attempt: { select: { finishedAt: true } },
-            mockExamQuestion: {
-              select: { examQuestionId: true, examQuestion: { select: { sectionName: true } } },
+    const [attempts, usageLogs, exams, questions, sectionAnswers, autoConfigJobs, simuladosTotal] = await Promise.all([
+      prisma.mockExamAttempt.findMany({
+        where: { userId },
+        select: {
+          id: true,
+          startedAt: true,
+          finishedAt: true,
+          score: true,
+          mockExamId: true,
+          mockExam: {
+            select: {
+              name: true,
+              examId: true,
+              durationMinutes: true,
+              _count: { select: { questions: true } },
+              exam: { select: { name: true, examBoard: { select: { name: true } } } },
             },
           },
-        }) as Promise<SectionAnswerRow[]>,
-        prisma.autoConfigJob.findMany({
-          where: { userId, status: 'done', updatedAt: { gte: new Date(now - 7 * DAY) } },
-          select: { seedName: true, updatedAt: true },
-          orderBy: { updatedAt: 'desc' },
-          take: 5,
-        }) as Promise<AutoConfigRow[]>,
-        prisma.mockExam.count({ where: { userId } }),
-      ]);
+          _count: { select: { answers: true } },
+        },
+      }) as Promise<AttemptRow[]>,
+      prisma.usageLog.findMany({
+        where: { userId, createdAt: { gte: new Date(now - 60 * DAY) } },
+        select: { action: true, count: true, refName: true, createdAt: true },
+      }) as Promise<UsageLogRow[]>,
+      prisma.exam.findMany({
+        where: { userId, isTemplate: false },
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          key: true,
+          role: true,
+          year: true,
+          createdAt: true,
+          examBoard: { select: { name: true } },
+          sections: { select: { id: true, topics: { select: { id: true } } } },
+        },
+      }) as Promise<ExamRow[]>,
+      prisma.examQuestion.findMany({
+        where: { userId },
+        select: { examId: true, sectionId: true, topicId: true },
+      }) as Promise<QuestionRow[]>,
+      prisma.mockExamAttemptAnswer.findMany({
+        where: { attempt: { userId } },
+        select: {
+          isCorrect: true,
+          attempt: { select: { finishedAt: true } },
+          mockExamQuestion: {
+            select: { examQuestionId: true, examQuestion: { select: { sectionName: true } } },
+          },
+        },
+      }) as Promise<SectionAnswerRow[]>,
+      prisma.autoConfigJob.findMany({
+        where: { userId, status: 'done', updatedAt: { gte: new Date(now - 7 * DAY) } },
+        select: { seedName: true, updatedAt: true },
+        orderBy: { updatedAt: 'desc' },
+        take: 5,
+      }) as Promise<AutoConfigRow[]>,
+      prisma.mockExam.count({ where: { userId } }),
+    ]);
 
     return {
       kpis: this.computeKpis(attempts, usageLogs, simuladosTotal, now),
@@ -148,7 +147,7 @@ export class DashboardService {
     attempts: AttemptRow[],
     usageLogs: UsageLogRow[],
     simuladosTotal: number,
-    now: number,
+    now: number
   ): DashboardKpis {
     const activeDays = new Set<string>();
     for (const attempt of attempts) {
@@ -165,12 +164,9 @@ export class DashboardService {
     }
 
     const finishedIn = (from: number, to: number) =>
-      attempts.filter(
-        (a) => a.finishedAt !== null && a.finishedAt.getTime() >= from && a.finishedAt.getTime() < to,
-      );
+      attempts.filter((a) => a.finishedAt !== null && a.finishedAt.getTime() >= from && a.finishedAt.getTime() < to);
 
-    const answersIn = (from: number, to: number) =>
-      finishedIn(from, to).reduce((sum, a) => sum + a._count.answers, 0);
+    const answersIn = (from: number, to: number) => finishedIn(from, to).reduce((sum, a) => sum + a._count.answers, 0);
 
     const questionsThisWeek = answersIn(now - 7 * DAY, now + 1);
     const questionsWeekDelta = questionsThisWeek - answersIn(now - 14 * DAY, now - 7 * DAY);
@@ -185,8 +181,7 @@ export class DashboardService {
 
     const avgAccuracy = avgIn(now - 30 * DAY, now + 1);
     const avgAccuracyPrev = avgIn(now - 60 * DAY, now - 30 * DAY);
-    const avgAccuracyDelta =
-      avgAccuracy !== null && avgAccuracyPrev !== null ? avgAccuracy - avgAccuracyPrev : null;
+    const avgAccuracyDelta = avgAccuracy !== null && avgAccuracyPrev !== null ? avgAccuracy - avgAccuracyPrev : null;
 
     return {
       streakDays,
@@ -222,7 +217,7 @@ export class DashboardService {
   private computeExamsInProgress(
     exams: ExamRow[],
     questions: QuestionRow[],
-    attempts: AttemptRow[],
+    attempts: AttemptRow[]
   ): DashboardExamProgress[] {
     const finishedByExam = new Map<string, number[]>();
     const attemptExamIds = new Set<string>();
@@ -304,7 +299,7 @@ export class DashboardService {
     usageLogs: UsageLogRow[],
     autoConfigJobs: AutoConfigRow[],
     exams: ExamRow[],
-    now: number,
+    now: number
   ): DashboardActivityItem[] {
     const since = now - 7 * DAY;
     const items: DashboardActivityItem[] = [];

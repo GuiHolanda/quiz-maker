@@ -10,7 +10,7 @@ interface ReadinessQuestion {
 
 export function computeExamReadiness(
   sections: readonly ReadinessSection[],
-  questions: readonly ReadinessQuestion[],
+  questions: readonly ReadinessQuestion[]
 ): number {
   if (sections.length === 0) return 0;
 

@@ -2,56 +2,69 @@
 
 import { useEffect, useState } from 'react';
 
-import { PerformanceHeader } from './components/header/PerformanceHeader';
-import { KpiRibbon } from './components/kpi/KpiRibbon';
-import { FocusAreasSection } from './components/focus/FocusAreasSection';
-import { ScoreTrendSection } from './components/ScoreTrendSection';
-import { RecentSessionsSection } from './components/sessions/RecentSessionsSection';
-import { DomainBreakdownSection } from './components/domains/DomainBreakdownSection';
+import { HomeHeader } from './components/HomeHeader';
+import { HomeKpiGrid } from './components/kpi/HomeKpiGrid';
+import { ResumeCard } from './components/resume/ResumeCard';
+import { ExamsInProgressCard } from './components/exams/ExamsInProgressCard';
+import { WeakDomainsCard } from './components/weak/WeakDomainsCard';
+import { QuickActionsCard } from './components/actions/QuickActionsCard';
+import { ActivityCard } from './components/activity/ActivityCard';
+import { CreditsCard } from './components/credits/CreditsCard';
 
 import { PageHeader } from '@/shared/components/ui/PageHeader';
-import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { getDashboardStats } from '@/features/connectors';
-import type { DashboardStats } from '@/shared/types';
+import type { DashboardHome } from '@/shared/types';
 
-const EMPTY_STATS: DashboardStats = {
-  totalSimuladosCompleted: 0,
-  bestScore: null,
-  recentSessions: [],
-  scoreTrend: [],
-  domainBreakdown: [],
+const EMPTY_HOME: DashboardHome = {
+  kpis: {
+    streakDays: 0,
+    questionsThisWeek: 0,
+    questionsWeekDelta: 0,
+    avgAccuracy: null,
+    avgAccuracyDelta: null,
+    simuladosTotal: 0,
+    simuladosOpen: 0,
+  },
+  resume: null,
+  examsInProgress: [],
+  weakDomains: [],
+  quickActions: { bankCount: 0, wrongOpenCount: 0 },
+  activity: [],
 };
 
 export default function DashboardPage() {
-  return <DashboardContent />;
-}
-
-function DashboardContent() {
-  const { usage } = useUsageContext();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [home, setHome] = useState<DashboardHome | null>(null);
 
   useEffect(() => {
     getDashboardStats()
-      .then(setStats)
-      .catch(() => setStats(EMPTY_STATS));
+      .then(setHome)
+      .catch(() => setHome(EMPTY_HOME));
   }, []);
 
   return (
     <PageHeader>
-      <div className="space-y-5" data-testid="dashboard-root">
-        <PerformanceHeader />
+      <div className="space-y-6" data-testid="dashboard-root">
+        <HomeHeader
+          loading={home === null}
+          resumeName={home?.resume?.simuladoName ?? null}
+          summaryExams={home?.examsInProgress.length ?? 0}
+          summaryWrong={home?.quickActions.wrongOpenCount ?? 0}
+        />
 
-        <KpiRibbon stats={stats} usage={usage} />
+        <HomeKpiGrid kpis={home?.kpis ?? null} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-          <FocusAreasSection domainBreakdown={stats?.domainBreakdown ?? null} />
-          <div className="lg:col-span-2 flex flex-col gap-4">
-            <ScoreTrendSection scoreTrend={stats?.scoreTrend ?? null} />
-            <RecentSessionsSection sessions={stats?.recentSessions ?? null} />
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] gap-4 items-start">
+          <div className="grid gap-4">
+            <ResumeCard loading={home === null} resume={home?.resume ?? null} />
+            <ExamsInProgressCard exams={home?.examsInProgress ?? null} />
+            <WeakDomainsCard domains={home?.weakDomains ?? null} />
+          </div>
+          <div className="grid gap-4">
+            <QuickActionsCard counts={home?.quickActions ?? null} />
+            <ActivityCard items={home?.activity ?? null} />
+            <CreditsCard />
           </div>
         </div>
-
-        <DomainBreakdownSection domainBreakdown={stats?.domainBreakdown ?? null} />
       </div>
     </PageHeader>
   );

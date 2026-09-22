@@ -63,7 +63,7 @@ import {
   GenerationHistoryResponse,
   GenerationHistoryFilters,
   GenerationHistoryFilterOptions,
-  DashboardStats,
+  DashboardHome,
   SearchResponse,
   CatalogExam,
   CatalogListResponse,
@@ -408,8 +408,8 @@ export const getGenerationHistoryFilters = (): Promise<GenerationHistoryFilterOp
 
 // — Dashboard —
 
-export async function getDashboardStats(): Promise<DashboardStats> {
-  const { data } = await api.get<DashboardStats>(DASHBOARD_STATS_URL);
+export async function getDashboardStats(): Promise<DashboardHome> {
+  const { data } = await api.get<DashboardHome>(DASHBOARD_STATS_URL);
   return data;
 }
 
