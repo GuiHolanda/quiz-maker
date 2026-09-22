@@ -24,11 +24,22 @@ export function HomeHeader({ summaryExams, summaryWrong, resumeName, loading }: 
   const { t, language } = useTranslation();
   const router = useRouter();
   const [hour, setHour] = useState(0);
+  const [dateLabel, setDateLabel] = useState('');
   const [isPickerOpen, setIsPickerOpen] = useState(false);
 
   useEffect(() => {
-    setHour(new Date().getHours());
-  }, []);
+    const now = new Date();
+    setHour(now.getHours());
+    setDateLabel(
+      new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'pt-BR', {
+        weekday: 'long',
+        day: '2-digit',
+        month: 'long',
+      })
+        .format(now)
+        .toUpperCase()
+    );
+  }, [language]);
 
   const first = session?.user?.name?.split(' ')[0] ?? '';
   const greetingKey =
@@ -38,14 +49,6 @@ export function HomeHeader({ summaryExams, summaryWrong, resumeName, loading }: 
         ? 'dashboard.greeting.afternoon'
         : 'dashboard.greeting.evening';
   const greeting = `${t(greetingKey)}${first ? `, ${first}` : ''}.`;
-
-  const dateLabel = new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'pt-BR', {
-    weekday: 'long',
-    day: '2-digit',
-    month: 'long',
-  })
-    .format(new Date())
-    .toUpperCase();
 
   const summary = loading
     ? ''

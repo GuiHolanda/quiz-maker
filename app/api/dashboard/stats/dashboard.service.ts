@@ -29,6 +29,7 @@ type AttemptRow = {
   startedAt: Date;
   finishedAt: Date | null;
   score: number | null;
+  timedOut: boolean;
   mockExamId: number;
   mockExam: {
     name: string | null;
@@ -76,6 +77,7 @@ export class DashboardService {
           startedAt: true,
           finishedAt: true,
           score: true,
+          timedOut: true,
           mockExamId: true,
           mockExam: {
             select: {
@@ -173,6 +175,7 @@ export class DashboardService {
 
     const avgIn = (from: number, to: number): number | null => {
       const pcts = finishedIn(from, to)
+        .filter((a) => !a.timedOut)
         .map((a) => accuracyPct(a.score, a.mockExam._count.questions))
         .filter((p): p is number => p !== null);
       if (pcts.length === 0) return null;
@@ -224,7 +227,7 @@ export class DashboardService {
     for (const attempt of attempts) {
       attemptExamIds.add(attempt.mockExam.examId);
       const pct = accuracyPct(attempt.score, attempt.mockExam._count.questions);
-      if (attempt.finishedAt !== null && pct !== null) {
+      if (attempt.finishedAt !== null && !attempt.timedOut && pct !== null) {
         const list = finishedByExam.get(attempt.mockExam.examId) ?? [];
         list.push(pct);
         finishedByExam.set(attempt.mockExam.examId, list);
@@ -311,7 +314,7 @@ export class DashboardService {
         at: attempt.finishedAt.toISOString(),
         params: {
           name: attempt.mockExam.name ?? attempt.mockExam.exam.name,
-          score: accuracyPct(attempt.score, attempt.mockExam._count.questions) ?? 0,
+          score: attempt.timedOut ? undefined : (accuracyPct(attempt.score, attempt.mockExam._count.questions) ?? 0),
         },
       });
     }

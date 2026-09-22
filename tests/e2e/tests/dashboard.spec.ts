@@ -29,13 +29,10 @@ test.describe('dashboard', () => {
     await expect(page.locator(tid(TID.dashboardActivity))).toBeVisible();
     await expect(page.locator(tid(TID.dashboardCredits))).toBeVisible();
 
-    // Seeded finished attempt (3 days ago) shows up in the activity feed.
     await expect(page.locator(tid(TID.dashboardActivity)).locator(tid(TID.emptyState))).toHaveCount(0);
 
-    // No unfinished attempt is seeded, so the resume card is not rendered.
     await expect(page.locator(tid(TID.dashboardResume))).toHaveCount(0);
 
-    // Seeded exams (cert + concurso) have saved questions, so they list here.
     await expect(page.locator(tid(TID.dashboardExamsProgress)).locator(tid(TID.emptyState))).toHaveCount(0);
   });
 

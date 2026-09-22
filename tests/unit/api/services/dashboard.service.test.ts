@@ -12,6 +12,7 @@ function attempt(overrides: Partial<{
   startedAt: Date;
   finishedAt: Date | null;
   score: number | null;
+  timedOut: boolean;
   name: string | null;
   examId: string;
   examName: string;
@@ -21,12 +22,13 @@ function attempt(overrides: Partial<{
   answerCount: number;
 }> = {}) {
   const o = {
-    id: 1, mockExamId: 1, startedAt: daysAgo(1), finishedAt: daysAgo(1), score: 8,
+    id: 1, mockExamId: 1, startedAt: daysAgo(1), finishedAt: daysAgo(1), score: 8, timedOut: false,
     name: 'Simulado 1', examId: 'exam-1', examName: 'AWS SAA', boardName: null,
     durationMinutes: 60, questionCount: 10, answerCount: 10, ...overrides,
   };
   return {
     id: o.id, mockExamId: o.mockExamId, startedAt: o.startedAt, finishedAt: o.finishedAt, score: o.score,
+    timedOut: o.timedOut,
     mockExam: {
       name: o.name, examId: o.examId, durationMinutes: o.durationMinutes,
       _count: { questions: o.questionCount },
@@ -128,12 +130,13 @@ describe('DashboardService.getStats', () => {
     expect(home.kpis.questionsWeekDelta).toBe(23);
   });
 
-  it('normalizes score to a percent for avgAccuracy and returns a null delta when the prior window is empty', async () => {
+  it('normalizes score to a percent for avgAccuracy, excludes timedOut attempts, and returns a null delta when the prior window is empty', async () => {
     setup({
       attempts: [
         attempt({ id: 1, finishedAt: daysAgo(3), score: 8, questionCount: 10 }),
         attempt({ id: 2, finishedAt: daysAgo(3), score: 6, questionCount: 10 }),
         attempt({ id: 3, finishedAt: daysAgo(200), score: 5, questionCount: 10 }),
+        attempt({ id: 4, finishedAt: daysAgo(3), score: 10, questionCount: 10, timedOut: true }),
       ],
     });
     const home = await service.getStats('u1');
@@ -169,39 +172,59 @@ describe('DashboardService.getStats', () => {
     });
   });
 
-  it('builds examsInProgress from coverage, filters no-activity exams, sorts least-ready first', async () => {
+  it('builds examsInProgress from coverage, filters no-activity exams, sorts least-ready first, caps at five, and excludes timedOut attempts from accuracy', async () => {
     setup({
       exams: [
         { id: 'e1', name: 'Ready-ish', type: 'certification', key: 'K1', role: null, year: null, createdAt: daysAgo(40), examBoard: { name: 'B1' }, sections: [{ id: 's1', topics: [{ id: 't1' }, { id: 't2' }] }] },
         { id: 'e2', name: 'Barely started', type: 'public_exam', key: null, role: 'Analista', year: 2026, createdAt: daysAgo(40), examBoard: null, sections: [{ id: 's2', topics: [{ id: 't3' }, { id: 't4' }] }] },
         { id: 'e3', name: 'No activity', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(40), examBoard: null, sections: [{ id: 's3', topics: [{ id: 't5' }] }] },
+        { id: 'e4', name: 'Untouched', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(40), examBoard: null, sections: [{ id: 's4', topics: [{ id: 't4a' }] }] },
+        { id: 'e5', name: 'Quarter covered', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(40), examBoard: null, sections: [{ id: 's5', topics: [{ id: 't5a' }, { id: 't5b' }, { id: 't5c' }, { id: 't5d' }] }] },
+        { id: 'e6', name: 'Third covered', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(40), examBoard: null, sections: [{ id: 's6', topics: [{ id: 't6a' }, { id: 't6b' }, { id: 't6c' }] }] },
+        { id: 'e7', name: 'Also fully covered', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(40), examBoard: null, sections: [{ id: 's7', topics: [{ id: 't7a' }] }] },
       ],
       questions: [
         { examId: 'e1', sectionId: 's1', topicId: 't1' },
         { examId: 'e1', sectionId: 's1', topicId: 't2' },
         { examId: 'e2', sectionId: 's2', topicId: 't3' },
+        { examId: 'e4', sectionId: 's4', topicId: null },
+        { examId: 'e5', sectionId: 's5', topicId: 't5a' },
+        { examId: 'e6', sectionId: 's6', topicId: 't6a' },
+        { examId: 'e7', sectionId: 's7', topicId: 't7a' },
       ],
-      attempts: [attempt({ id: 1, mockExamId: 1, examId: 'e1', finishedAt: daysAgo(2), score: 7, questionCount: 10 })],
+      attempts: [
+        attempt({ id: 1, mockExamId: 1, examId: 'e1', finishedAt: daysAgo(2), score: 7, questionCount: 10 }),
+        attempt({ id: 2, mockExamId: 2, examId: 'e1', finishedAt: daysAgo(1), score: 10, questionCount: 10, timedOut: true }),
+      ],
     });
     const home = await service.getStats('u1');
-    expect(home.examsInProgress.map((e) => e.name)).toEqual(['Barely started', 'Ready-ish']);
-    expect(home.examsInProgress[0]).toMatchObject({ examId: 'e2', readiness: 50, accuracy: null, boardName: null, keyLabel: 'Analista' });
-    expect(home.examsInProgress[1]).toMatchObject({ examId: 'e1', readiness: 100, accuracy: 70, boardName: 'B1', keyLabel: 'K1' });
+    expect(home.examsInProgress).toHaveLength(5);
+    expect(home.examsInProgress.map((e) => e.examId)).toEqual(['e4', 'e5', 'e6', 'e2', 'e1']);
+    expect(home.examsInProgress.some((e) => e.examId === 'e3')).toBe(false);
+    expect(home.examsInProgress.some((e) => e.examId === 'e7')).toBe(false);
+    expect(home.examsInProgress.find((e) => e.examId === 'e2')).toMatchObject({ readiness: 50, accuracy: null, boardName: null, keyLabel: 'Analista' });
+    expect(home.examsInProgress.find((e) => e.examId === 'e1')).toMatchObject({ readiness: 100, accuracy: 70, boardName: 'B1', keyLabel: 'K1' });
   });
 
-  it('windows weakDomains to 14 days, drops sections under 5 answers, sorts worst first', async () => {
+  it('windows weakDomains to 14 days, drops sections under 5 answers, sorts worst first, caps at four', async () => {
     const answers = [
       ...Array.from({ length: 6 }, (_, i) => sectionAnswer(i + 1, 'Fundos', i < 2, daysAgo(3))),
       ...Array.from({ length: 8 }, (_, i) => sectionAnswer(i + 100, 'Ética', i < 6, daysAgo(5))),
       ...Array.from({ length: 6 }, (_, i) => sectionAnswer(i + 200, 'Stale', false, daysAgo(30))),
       sectionAnswer(999, 'Thin', false, daysAgo(1)),
+      ...Array.from({ length: 5 }, (_, i) => sectionAnswer(i + 300, 'Direito', i < 1, daysAgo(4))),
+      ...Array.from({ length: 5 }, (_, i) => sectionAnswer(i + 400, 'Matemática', i < 4, daysAgo(6))),
+      ...Array.from({ length: 5 }, (_, i) => sectionAnswer(i + 500, 'Português', false, daysAgo(2))),
     ];
     setup({ sectionAnswers: answers });
     const home = await service.getStats('u1');
     expect(home.weakDomains).toEqual([
+      { sectionName: 'Português', accuracy: 0, questionVolume: 5 },
+      { sectionName: 'Direito', accuracy: 20, questionVolume: 5 },
       { sectionName: 'Fundos', accuracy: 33, questionVolume: 6 },
       { sectionName: 'Ética', accuracy: 75, questionVolume: 8 },
     ]);
+    expect(home.weakDomains.some((d) => d.sectionName === 'Matemática')).toBe(false);
   });
 
   it('counts wrongOpenCount as questions wrong and never later right', async () => {
@@ -223,25 +246,36 @@ describe('DashboardService.getStats', () => {
 
   it('merges activity from four sources, newest first, capped at six', async () => {
     setup({
-      attempts: [attempt({ id: 1, finishedAt: daysAgo(1), score: 8, questionCount: 10, name: 'Sim A', examName: 'Exam A' })],
+      attempts: [
+        attempt({ id: 1, finishedAt: daysAgo(1), score: 8, questionCount: 10, name: 'Sim A', examName: 'Exam A' }),
+        attempt({ id: 2, finishedAt: daysAgo(4), score: 5, questionCount: 10, name: 'Sim C', examName: 'Exam C' }),
+      ],
       usageLogs: [
         { action: 'generate_questions', count: 30, refName: 'AWS MLA', createdAt: daysAgo(2) },
         { action: 'generate_explanation', count: 1, refName: null, createdAt: daysAgo(2) },
+        { action: 'generate_questions', count: 12, refName: 'AWS DVA', createdAt: daysAgo(4.5) },
       ],
-      autoConfigJobs: [{ seedName: 'TRT 4', updatedAt: daysAgo(3) }],
+      autoConfigJobs: [
+        { seedName: 'TRT 4', updatedAt: daysAgo(3) },
+        { seedName: 'TRT 5', updatedAt: daysAgo(5) },
+      ],
       exams: [
-        { id: 'e1', name: 'Novo Exame', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(4), examBoard: null, sections: [] },
+        { id: 'e1', name: 'Novo Exame', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(3.5), examBoard: null, sections: [] },
         { id: 'e2', name: 'Antigo', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(30), examBoard: null, sections: [] },
+        { id: 'e3', name: 'Exame Y', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(5.5), examBoard: null, sections: [] },
       ],
     });
     const home = await service.getStats('u1');
+    expect(home.activity).toHaveLength(6);
     expect(home.activity.map((a) => a.kind)).toEqual([
-      'simulado_finished', 'questions_generated', 'auto_config_done', 'exam_created',
+      'simulado_finished', 'questions_generated', 'auto_config_done', 'exam_created', 'simulado_finished', 'questions_generated',
     ]);
     expect(home.activity[0]).toEqual({
       kind: 'simulado_finished', at: daysAgo(1).toISOString(), params: { name: 'Sim A', score: 80 },
     });
     expect(home.activity[1].params).toEqual({ count: 30, name: 'AWS MLA' });
+    expect(home.activity.some((a) => a.params.name === 'TRT 5')).toBe(false);
+    expect(home.activity.some((a) => a.params.name === 'Exame Y')).toBe(false);
   });
 
   it('reports simuladosTotal from the mock-exam count and simuladosOpen from unfinished attempts', async () => {
