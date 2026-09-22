@@ -114,7 +114,10 @@ export class DashboardService {
         select: { examId: true, sectionId: true, topicId: true },
       }) as Promise<QuestionRow[]>,
       prisma.mockExamAttemptAnswer.findMany({
-        where: { attempt: { userId } },
+        where: {
+          attempt: { userId, finishedAt: { not: null } },
+          mockExamQuestion: { examQuestion: { userId } },
+        },
         select: {
           isCorrect: true,
           attempt: { select: { finishedAt: true, timedOut: true } },
@@ -280,19 +283,19 @@ export class DashboardService {
   }
 
   private computeWrongOpenCount(sectionAnswers: SectionAnswerRow[]): number {
-    const byQuestion = new Map<number, { wrong: boolean; right: boolean }>();
+    const latestByQuestion = new Map<number, { isCorrect: boolean; finishedAt: number }>();
     for (const answer of sectionAnswers) {
-      if (answer.attempt.timedOut) continue;
       const id = answer.mockExamQuestion.examQuestionId;
-      const current = byQuestion.get(id) ?? { wrong: false, right: false };
-      if (answer.isCorrect) current.right = true;
-      else current.wrong = true;
-      byQuestion.set(id, current);
+      const finishedAt = answer.attempt.finishedAt?.getTime() ?? 0;
+      const current = latestByQuestion.get(id);
+      if (!current || finishedAt > current.finishedAt) {
+        latestByQuestion.set(id, { isCorrect: answer.isCorrect, finishedAt });
+      }
     }
 
     let count = 0;
-    for (const entry of Array.from(byQuestion.values())) {
-      if (entry.wrong && !entry.right) count += 1;
+    for (const entry of Array.from(latestByQuestion.values())) {
+      if (!entry.isCorrect) count += 1;
     }
     return count;
   }

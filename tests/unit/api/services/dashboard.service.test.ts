@@ -244,7 +244,7 @@ describe('DashboardService.getStats', () => {
     expect(home.weakDomains).toEqual([{ sectionName: 'Fundos', accuracy: 100, questionVolume: 5 }]);
   });
 
-  it('counts wrongOpenCount as questions wrong and never later right', async () => {
+  it('counts wrongOpenCount from each question\'s latest answer', async () => {
     setup({
       sectionAnswers: [
         sectionAnswer(1, 'A', false, daysAgo(2)),
@@ -261,12 +261,21 @@ describe('DashboardService.getStats', () => {
     expect(home.quickActions).toEqual({ bankCount: 2, wrongOpenCount: 1 });
   });
 
-  it('excludes answers from timedOut attempts from wrongOpenCount', async () => {
+  it('counts a question as wrong again once its latest answer flips back to wrong', async () => {
     setup({
       sectionAnswers: [
-        sectionAnswer(1, 'A', false, daysAgo(2)),
-        sectionAnswer(2, 'A', false, daysAgo(2), true),
+        sectionAnswer(1, 'A', false, daysAgo(3)),
+        sectionAnswer(1, 'A', true, daysAgo(2)),
+        sectionAnswer(1, 'A', false, daysAgo(1)),
       ],
+    });
+    const home = await service.getStats('u1');
+    expect(home.quickActions.wrongOpenCount).toBe(1);
+  });
+
+  it('counts a wrong answer from a timedOut attempt when it is the latest for that question', async () => {
+    setup({
+      sectionAnswers: [sectionAnswer(1, 'A', false, daysAgo(1), true)],
     });
     const home = await service.getStats('u1');
     expect(home.quickActions.wrongOpenCount).toBe(1);
