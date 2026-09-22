@@ -20,7 +20,11 @@ const EMPTY_HOME = {
 
 test.describe('dashboard', () => {
   test('renders the início hub with data from the seeded attempt', async ({ authedPage: page }) => {
-    await page.goto('/dashboard');
+    const [statsResponse] = await Promise.all([
+      page.waitForResponse((res) => res.url().includes('/api/dashboard/stats') && res.status() === 200),
+      page.goto('/dashboard'),
+    ]);
+    await statsResponse.json();
 
     await expect(page.locator(tid(TID.dashboardRoot))).toBeVisible();
     await expect(page.locator(tid(TID.dashboardKpis))).toBeVisible();
