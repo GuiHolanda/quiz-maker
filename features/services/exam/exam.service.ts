@@ -1,5 +1,6 @@
 import { prisma, PrismaService } from '@/lib/prisma';
 import { normalizeName } from '@/lib/exam/normalize';
+import { computeExamReadiness } from '@/lib/exam/readiness';
 import { defaultFormatForSource, isQuestionFormatKey, resolveQuestionFormat } from '@/config/question-formats';
 import { Exam, ExamStatus, ExamType, SectionUpdatePayload } from '@/shared/types';
 
@@ -843,18 +844,7 @@ export class ExamService {
       return { readinessPercent: 0, status: 'draft', completedScore: null, completedAt: null };
     }
 
-    const allTopics = exam.sections.flatMap((s) => s.topics);
-    const readinessPercent =
-      allTopics.length > 0
-        ? Math.round(
-            (allTopics.filter((t) => examQuestionsForExam.some((q) => q.topicId === t.id)).length / allTopics.length) *
-              100
-          )
-        : Math.round(
-            (exam.sections.filter((s) => examQuestionsForExam.some((q) => q.sectionId === s.id)).length /
-              exam.sections.length) *
-              100
-          );
+    const readinessPercent = computeExamReadiness(exam.sections, examQuestionsForExam);
 
     if (exam.passingScore != null) {
       const qualifying = scoredAttempts.filter((a) => a.percent >= exam.passingScore!);
