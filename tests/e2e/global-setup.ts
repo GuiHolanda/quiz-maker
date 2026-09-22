@@ -121,7 +121,7 @@ async function seedPublicExamData(userId: string) {
 
 // Seeds a completed MockExamAttempt so the dashboard has data to display.
 // Creates a MockExam linked to the cert exam, 3 MockExamQuestions, one finished
-// attempt with answers (2/3 correct → score = 67), and one section config.
+// attempt with answers (2/3 correct → score = 2), and one section config.
 async function seedCompletedMockExamAttempt(userId: string, certExamId: string) {
   const examQuestions = await prisma.examQuestion.findMany({
     where: { userId, examName: E2E_CERT_LABEL },
@@ -147,8 +147,8 @@ async function seedCompletedMockExamAttempt(userId: string, certExamId: string) 
     include: { questions: true },
   });
 
-  const startedAt = new Date('2024-06-01T10:00:00Z');
-  const finishedAt = new Date('2024-06-01T10:30:00Z');
+  const finishedAt = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+  const startedAt = new Date(finishedAt.getTime() - 30 * 60 * 1000);
 
   await prisma.mockExamAttempt.create({
     data: {
@@ -156,7 +156,7 @@ async function seedCompletedMockExamAttempt(userId: string, certExamId: string) 
       userId,
       startedAt,
       finishedAt,
-      score: 67,
+      score: 2,
       answers: {
         create: mockExam.questions.map((mq, i) => ({
           mockExamQuestionId: mq.id,

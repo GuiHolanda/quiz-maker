@@ -114,11 +114,13 @@ export const TID = {
 
   // Dashboard (/dashboard)
   dashboardRoot: 'dashboard-root',
-  dashboardKpiRibbon: 'dashboard-kpi-ribbon',
-  dashboardFocusAreas: 'dashboard-focus-areas',
-  dashboardRecentSessions: 'dashboard-recent-sessions',
-  dashboardSessionRow: 'dashboard-session-row',
-  dashboardDomainBreakdown: 'dashboard-domain-breakdown',
+  dashboardKpis: 'dashboard-kpis',
+  dashboardResume: 'dashboard-resume',
+  dashboardExamsProgress: 'dashboard-exams-progress',
+  dashboardWeakDomains: 'dashboard-weak-domains',
+  dashboardQuickActions: 'dashboard-quick-actions',
+  dashboardActivity: 'dashboard-activity',
+  dashboardCredits: 'dashboard-credits',
 
   // Shared empty state
   emptyState: 'empty-state',
