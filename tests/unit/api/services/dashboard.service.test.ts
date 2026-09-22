@@ -123,6 +123,25 @@ describe('DashboardService.getStats', () => {
     expect(home.kpis.streakDays).toBe(2);
   });
 
+  it('counts the streak correctly across a runtime-local DST transition (Sao Paulo has none)', async () => {
+    const originalTz = process.env.TZ;
+    process.env.TZ = 'America/New_York';
+    try {
+      const dstNow = new Date('2026-03-09T02:00:00.000Z');
+      vi.setSystemTime(dstNow);
+      setup({
+        usageLogs: [
+          { action: 'generate_questions', count: 1, refName: null, createdAt: dstNow },
+          { action: 'generate_questions', count: 1, refName: null, createdAt: new Date(dstNow.getTime() - DAY) },
+        ],
+      });
+      const home = await service.getStats('u1');
+      expect(home.kpis.streakDays).toBe(2);
+    } finally {
+      process.env.TZ = originalTz;
+    }
+  });
+
   it('sums answered questions in the 7-day window and the week-over-week delta', async () => {
     setup({
       attempts: [

@@ -160,12 +160,14 @@ export class DashboardService {
     }
     for (const log of usageLogs) activeDays.add(localDay(log.createdAt));
 
-    const cursor = new Date(now);
-    if (!activeDays.has(localDay(cursor))) cursor.setDate(cursor.getDate() - 1);
+    // Step by exact epoch millis, not setDate/getDate — those read the runtime's local
+    // calendar, which can disagree with localDay's fixed DASHBOARD_TZ across a DST boundary.
+    let cursor = new Date(now);
+    if (!activeDays.has(localDay(cursor))) cursor = new Date(cursor.getTime() - DAY);
     let streakDays = 0;
     while (activeDays.has(localDay(cursor))) {
       streakDays += 1;
-      cursor.setDate(cursor.getDate() - 1);
+      cursor = new Date(cursor.getTime() - DAY);
     }
 
     const finishedIn = (from: number, to: number) =>
