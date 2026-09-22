@@ -13,33 +13,19 @@ import { CreditsCard } from './components/credits/CreditsCard';
 
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { getDashboardStats } from '@/features/connectors';
+import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { notify } from '@/shared/lib/notify';
 import type { DashboardHome } from '@/shared/types';
 
-const EMPTY_HOME: DashboardHome = {
-  kpis: {
-    streakDays: 0,
-    questionsThisWeek: 0,
-    questionsWeekDelta: 0,
-    avgAccuracy: null,
-    avgAccuracyDelta: null,
-    simuladosTotal: 0,
-    simuladosOpen: 0,
-  },
-  resume: null,
-  examsInProgress: [],
-  weakDomains: [],
-  quickActions: { bankCount: 0, wrongOpenCount: 0 },
-  activity: [],
-};
-
 export default function DashboardPage() {
+  const { t } = useTranslation();
   const [home, setHome] = useState<DashboardHome | null>(null);
 
   useEffect(() => {
     getDashboardStats()
       .then(setHome)
-      .catch(() => setHome(EMPTY_HOME));
-  }, []);
+      .catch((err) => notify.error(err?.response?.data?.message ?? t('dashboard.home.loadError')));
+  }, [t]);
 
   return (
     <PageHeader>
