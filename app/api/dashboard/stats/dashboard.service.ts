@@ -59,7 +59,7 @@ type QuestionRow = { examId: string | null; sectionId: string | null; topicId: s
 
 type SectionAnswerRow = {
   isCorrect: boolean;
-  attempt: { finishedAt: Date | null };
+  attempt: { finishedAt: Date | null; timedOut: boolean };
   mockExamQuestion: { examQuestionId: number; examQuestion: { sectionName: string } };
 };
 
@@ -117,7 +117,7 @@ export class DashboardService {
         where: { attempt: { userId } },
         select: {
           isCorrect: true,
-          attempt: { select: { finishedAt: true } },
+          attempt: { select: { finishedAt: true, timedOut: true } },
           mockExamQuestion: {
             select: { examQuestionId: true, examQuestion: { select: { sectionName: true } } },
           },
@@ -211,7 +211,6 @@ export class DashboardService {
       examName: open.mockExam.exam.name,
       examBoardName: open.mockExam.exam.examBoard?.name ?? null,
       totalQuestions: open.mockExam._count.questions,
-      answeredQuestions: open._count.answers,
       durationMinutes: open.mockExam.durationMinutes,
       startedAt: open.startedAt.toISOString(),
     };
@@ -261,7 +260,7 @@ export class DashboardService {
 
     for (const answer of sectionAnswers) {
       const finishedAt = answer.attempt.finishedAt;
-      if (finishedAt === null || finishedAt.getTime() < cutoff) continue;
+      if (finishedAt === null || finishedAt.getTime() < cutoff || answer.attempt.timedOut) continue;
       const section = answer.mockExamQuestion.examQuestion.sectionName;
       const current = bySection.get(section) ?? { correct: 0, total: 0 };
       current.correct += answer.isCorrect ? 1 : 0;
@@ -283,6 +282,7 @@ export class DashboardService {
   private computeWrongOpenCount(sectionAnswers: SectionAnswerRow[]): number {
     const byQuestion = new Map<number, { wrong: boolean; right: boolean }>();
     for (const answer of sectionAnswers) {
+      if (answer.attempt.timedOut) continue;
       const id = answer.mockExamQuestion.examQuestionId;
       const current = byQuestion.get(id) ?? { wrong: false, right: false };
       if (answer.isCorrect) current.right = true;
@@ -345,6 +345,6 @@ export class DashboardService {
       });
     }
 
-    return items.sort((a, b) => (a.at < b.at ? 1 : -1)).slice(0, ACTIVITY_LIMIT);
+    return items.sort((a, b) => (a.at === b.at ? 0 : a.at < b.at ? 1 : -1)).slice(0, ACTIVITY_LIMIT);
   }
 }

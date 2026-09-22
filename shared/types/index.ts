@@ -655,7 +655,6 @@ export interface DashboardResume {
   readonly examName: string;
   readonly examBoardName: string | null;
   readonly totalQuestions: number;
-  readonly answeredQuestions: number;
   readonly durationMinutes: number | null;
   readonly startedAt: string;
 }

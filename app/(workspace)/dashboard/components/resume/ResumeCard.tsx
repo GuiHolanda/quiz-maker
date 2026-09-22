@@ -26,7 +26,6 @@ export function ResumeCard({ resume, loading }: ResumeCardProps) {
 
   if (!resume) return null;
 
-  const pct = resume.totalQuestions > 0 ? Math.round((resume.answeredQuestions / resume.totalQuestions) * 100) : 0;
   const board = resume.examBoardName ?? resume.examName;
   const meta =
     resume.durationMinutes !== null
@@ -58,16 +57,6 @@ export function ResumeCard({ resume, loading }: ResumeCardProps) {
         >
           {t('dashboard.home.resumeCta')}
         </Button>
-      </div>
-
-      <div className="mt-4 h-2 rounded-full bg-background overflow-hidden">
-        <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
-      </div>
-      <div className="mt-2 flex items-center justify-between gap-3 text-xs text-default-500">
-        <span>
-          {t('dashboard.home.resumeProgress', { answered: resume.answeredQuestions, total: resume.totalQuestions })}
-        </span>
-        <span className="font-mono">{pct}%</span>
       </div>
     </div>
   );

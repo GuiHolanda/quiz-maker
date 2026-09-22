@@ -38,10 +38,16 @@ function attempt(overrides: Partial<{
   };
 }
 
-function sectionAnswer(examQuestionId: number, sectionName: string, isCorrect: boolean, finishedAt: Date | null) {
+function sectionAnswer(
+  examQuestionId: number,
+  sectionName: string,
+  isCorrect: boolean,
+  finishedAt: Date | null,
+  timedOut = false
+) {
   return {
     isCorrect,
-    attempt: { finishedAt },
+    attempt: { finishedAt, timedOut },
     mockExamQuestion: { examQuestionId, examQuestion: { sectionName } },
   };
 }
@@ -159,7 +165,7 @@ describe('DashboardService.getStats', () => {
   it('picks the most recently started unfinished attempt as resume', async () => {
     setup({
       attempts: [
-        attempt({ id: 10, mockExamId: 3, finishedAt: null, startedAt: daysAgo(1), answerCount: 12, questionCount: 40, name: 'Simulado 04', examName: 'CPA-20', boardName: 'ANBIMA', durationMinutes: 150 }),
+        attempt({ id: 10, mockExamId: 3, finishedAt: null, startedAt: daysAgo(1), questionCount: 40, name: 'Simulado 04', examName: 'CPA-20', boardName: 'ANBIMA', durationMinutes: 150 }),
         attempt({ id: 11, mockExamId: 4, finishedAt: null, startedAt: daysAgo(3) }),
         attempt({ id: 12, mockExamId: 5, finishedAt: daysAgo(2) }),
       ],
@@ -167,7 +173,7 @@ describe('DashboardService.getStats', () => {
     const home = await service.getStats('u1');
     expect(home.resume).toEqual({
       mockExamId: 3, attemptId: 10, simuladoName: 'Simulado 04', examName: 'CPA-20',
-      examBoardName: 'ANBIMA', totalQuestions: 40, answeredQuestions: 12,
+      examBoardName: 'ANBIMA', totalQuestions: 40,
       durationMinutes: 150, startedAt: daysAgo(1).toISOString(),
     });
   });
@@ -227,6 +233,17 @@ describe('DashboardService.getStats', () => {
     expect(home.weakDomains.some((d) => d.sectionName === 'Matemática')).toBe(false);
   });
 
+  it('excludes answers from timedOut attempts from weakDomains', async () => {
+    setup({
+      sectionAnswers: [
+        ...Array.from({ length: 5 }, (_, i) => sectionAnswer(i + 1, 'Fundos', true, daysAgo(3))),
+        ...Array.from({ length: 5 }, (_, i) => sectionAnswer(i + 100, 'Fundos', false, daysAgo(3), true)),
+      ],
+    });
+    const home = await service.getStats('u1');
+    expect(home.weakDomains).toEqual([{ sectionName: 'Fundos', accuracy: 100, questionVolume: 5 }]);
+  });
+
   it('counts wrongOpenCount as questions wrong and never later right', async () => {
     setup({
       sectionAnswers: [
@@ -242,6 +259,17 @@ describe('DashboardService.getStats', () => {
     });
     const home = await service.getStats('u1');
     expect(home.quickActions).toEqual({ bankCount: 2, wrongOpenCount: 1 });
+  });
+
+  it('excludes answers from timedOut attempts from wrongOpenCount', async () => {
+    setup({
+      sectionAnswers: [
+        sectionAnswer(1, 'A', false, daysAgo(2)),
+        sectionAnswer(2, 'A', false, daysAgo(2), true),
+      ],
+    });
+    const home = await service.getStats('u1');
+    expect(home.quickActions.wrongOpenCount).toBe(1);
   });
 
   it('merges activity from four sources, newest first, capped at six', async () => {
