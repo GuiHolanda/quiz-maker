@@ -666,6 +666,72 @@ export interface DashboardStats {
   readonly domainBreakdown: DashboardDomainStat[];
 }
 
+export interface DashboardKpis {
+  readonly streakDays: number;
+  readonly questionsThisWeek: number;
+  readonly questionsWeekDelta: number;
+  readonly avgAccuracy: number | null;
+  readonly avgAccuracyDelta: number | null;
+  readonly simuladosTotal: number;
+  readonly simuladosOpen: number;
+}
+
+export interface DashboardResume {
+  readonly mockExamId: number;
+  readonly attemptId: number;
+  readonly simuladoName: string;
+  readonly examName: string;
+  readonly examBoardName: string | null;
+  readonly totalQuestions: number;
+  readonly answeredQuestions: number;
+  readonly durationMinutes: number | null;
+  readonly startedAt: string;
+}
+
+export interface DashboardExamProgress {
+  readonly examId: string;
+  readonly name: string;
+  readonly type: ExamType;
+  readonly boardName: string | null;
+  readonly keyLabel: string | null;
+  readonly readiness: number;
+  readonly accuracy: number | null;
+}
+
+export interface DashboardWeakDomain {
+  readonly sectionName: string;
+  readonly accuracy: number;
+  readonly questionVolume: number;
+}
+
+export type DashboardActivityKind =
+  | 'simulado_finished'
+  | 'questions_generated'
+  | 'exam_created'
+  | 'auto_config_done';
+
+export interface DashboardActivityItem {
+  readonly kind: DashboardActivityKind;
+  readonly at: string;
+  readonly params: {
+    readonly name?: string;
+    readonly score?: number;
+    readonly count?: number;
+  };
+}
+
+export interface DashboardHome {
+  readonly kpis: DashboardKpis;
+  readonly resume: DashboardResume | null;
+  readonly examsInProgress: DashboardExamProgress[];
+  readonly weakDomains: DashboardWeakDomain[];
+  readonly quickActions: {
+    readonly bankCount: number;
+    readonly wrongOpenCount: number;
+  };
+  readonly activity: DashboardActivityItem[];
+}
+
 export interface CatalogExam {
   readonly id: string;
   readonly type: ExamType;
