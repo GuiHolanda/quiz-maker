@@ -21,7 +21,7 @@ import { useExamsContext } from '@/features/hooks/useExamsContext.hook';
 import { deleteBrowseQuestion, getExamQuestionExplanation, getQuestionBank } from '@/features/connectors';
 import { notify } from '@/shared/lib/notify';
 import { writeSimuladoPrefill } from '@/app/(workspace)/simulados/components/create/simuladoPrefill';
-import type { QuestionBankResponse, QuestionBankSort, UnifiedQuestion } from '@/shared/types';
+import type { QuestionBankResponse, QuestionBankSort, QuestionSituation, UnifiedQuestion } from '@/shared/types';
 
 import { QuestionBankSummary } from './QuestionBankSummary';
 import { QuestionBankToolbar } from './QuestionBankToolbar';
@@ -46,10 +46,15 @@ export function QuestionBankContent() {
   const requestedExamId = searchParams.get('examId');
   const appliedExamIdRequest = useRef(false);
 
+  const requestedSituation = searchParams.get('situation');
+  const isQuestionSituation = (value: string | null): value is QuestionSituation =>
+    value === 'correct' || value === 'wrong' || value === 'unanswered';
+
   const [filters, setFilters] = useState<QuestionBankFilters>(() => ({
     ...EMPTY_FILTERS,
     search: searchParams.get('search') ?? '',
     topic: searchParams.get('topic') ?? '',
+    situation: isQuestionSituation(requestedSituation) ? requestedSituation : '',
   }));
 
   useEffect(() => {

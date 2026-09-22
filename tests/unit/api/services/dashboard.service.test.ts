@@ -1,228 +1,359 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { prismaMock } from '../__mocks__/prisma';
 import { DashboardService } from '@/app/api/dashboard/stats/dashboard.service';
 
-describe('DashboardService', () => {
+const NOW = new Date('2026-09-09T12:00:00Z');
+const DAY = 24 * 60 * 60 * 1000;
+const daysAgo = (n: number) => new Date(NOW.getTime() - n * DAY);
+
+function attempt(overrides: Partial<{
+  id: number;
+  mockExamId: number;
+  startedAt: Date;
+  finishedAt: Date | null;
+  score: number | null;
+  timedOut: boolean;
+  name: string | null;
+  examId: string;
+  examName: string;
+  boardName: string | null;
+  durationMinutes: number | null;
+  questionCount: number;
+  answerCount: number;
+}> = {}) {
+  const o = {
+    id: 1, mockExamId: 1, startedAt: daysAgo(1), finishedAt: daysAgo(1), score: 8, timedOut: false,
+    name: 'Simulado 1', examId: 'exam-1', examName: 'AWS SAA', boardName: null,
+    durationMinutes: 60, questionCount: 10, answerCount: 10, ...overrides,
+  };
+  return {
+    id: o.id, mockExamId: o.mockExamId, startedAt: o.startedAt, finishedAt: o.finishedAt, score: o.score,
+    timedOut: o.timedOut,
+    mockExam: {
+      name: o.name, examId: o.examId, durationMinutes: o.durationMinutes,
+      _count: { questions: o.questionCount },
+      exam: { name: o.examName, examBoard: o.boardName ? { name: o.boardName } : null },
+    },
+    _count: { answers: o.answerCount },
+  };
+}
+
+function sectionAnswer(
+  examQuestionId: number,
+  sectionName: string,
+  isCorrect: boolean,
+  finishedAt: Date | null,
+  timedOut = false
+) {
+  return {
+    isCorrect,
+    attempt: { finishedAt, timedOut },
+    mockExamQuestion: { examQuestionId, examQuestion: { sectionName } },
+  };
+}
+
+function setup(opts: {
+  attempts?: ReturnType<typeof attempt>[];
+  usageLogs?: { action: string; count: number; refName: string | null; createdAt: Date }[];
+  exams?: any[];
+  questions?: { examId: string | null; sectionId: string | null; topicId: string | null }[];
+  sectionAnswers?: ReturnType<typeof sectionAnswer>[];
+  autoConfigJobs?: { seedName: string; updatedAt: Date }[];
+  mockExamCount?: number;
+} = {}) {
+  prismaMock.mockExamAttempt.findMany.mockResolvedValue((opts.attempts ?? []) as any);
+  prismaMock.usageLog.findMany.mockResolvedValue((opts.usageLogs ?? []) as any);
+  prismaMock.exam.findMany.mockResolvedValue((opts.exams ?? []) as any);
+  prismaMock.examQuestion.findMany.mockResolvedValue((opts.questions ?? []) as any);
+  prismaMock.mockExamAttemptAnswer.findMany.mockResolvedValue((opts.sectionAnswers ?? []) as any);
+  prismaMock.autoConfigJob.findMany.mockResolvedValue((opts.autoConfigJobs ?? []) as any);
+  prismaMock.mockExam.count.mockResolvedValue(opts.mockExamCount ?? 0);
+}
+
+describe('DashboardService.getStats', () => {
   let service: DashboardService;
 
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
     service = new DashboardService();
   });
 
-  function makeRecentAttempt(overrides: {
-    score?: number | null;
-    startedAt?: Date;
-    finishedAt?: Date | null;
-    mockExamName?: string | null;
-    examName?: string;
-    answerCount?: number;
-  } = {}) {
-    const {
-      score = 80,
-      startedAt = new Date('2024-01-01T10:00:00Z'),
-      finishedAt = new Date('2024-01-01T11:00:00Z'),
-      mockExamName = 'Test Simulado',
-      examName = 'Test Exam',
-      answerCount = 0,
-    } = overrides;
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
-    return {
-      score,
-      startedAt,
-      finishedAt,
-      mockExam: { name: mockExamName, exam: { name: examName } },
-      _count: { answers: answerCount },
-    };
-  }
-
-  function makeSectionAnswer(attemptId: number, sectionName: string, isCorrect: boolean) {
-    return { attemptId, isCorrect, mockExamQuestion: { examQuestion: { sectionName } } };
-  }
-
-  // As duas leituras de mockExamAttempt.findMany se distinguem pelo `take`: a de sessões
-  // recentes pede 5, a de tendência pede 10.
-  function setup(options: {
-    total?: number;
-    bestScore?: number | null;
-    recent?: ReturnType<typeof makeRecentAttempt>[];
-    trend?: { score: number | null; finishedAt: Date | null }[];
-    sectionAnswers?: ReturnType<typeof makeSectionAnswer>[];
-  } = {}) {
-    const { total = 0, bestScore = null, recent = [], trend = [], sectionAnswers = [] } = options;
-
-    prismaMock.mockExamAttempt.count.mockResolvedValue(total);
-    prismaMock.mockExamAttempt.aggregate.mockResolvedValue({ _max: { score: bestScore } } as any);
-    prismaMock.mockExamAttempt.findMany.mockImplementation((args: any) =>
-      Promise.resolve(args?.take === 5 ? recent : trend) as any
-    );
-    prismaMock.mockExamAttemptAnswer.findMany.mockResolvedValue(sectionAnswers as any);
-  }
-
-  describe('getStats', () => {
-    it('returns empty stats when user has no completed attempts', async () => {
-      setup();
-
-      const result = await service.getStats('user-1');
-
-      expect(result.totalSimuladosCompleted).toBe(0);
-      expect(result.bestScore).toBeNull();
-      expect(result.recentSessions).toEqual([]);
-      expect(result.scoreTrend).toEqual([]);
-      expect(result.domainBreakdown).toEqual([]);
+  it('returns a fully-zeroed shape for a user with no data', async () => {
+    setup();
+    const home = await service.getStats('u1');
+    expect(home).toEqual({
+      kpis: {
+        streakDays: 0, questionsThisWeek: 0, questionsWeekDelta: 0,
+        avgAccuracy: null, avgAccuracyDelta: null, simuladosTotal: 0, simuladosOpen: 0,
+      },
+      resume: null,
+      examsInProgress: [],
+      weakDomains: [],
+      quickActions: { bankCount: 0, wrongOpenCount: 0 },
+      activity: [],
     });
+  });
 
-    it('returns bestScore as null when all attempt scores are null', async () => {
-      setup({ total: 2, bestScore: null, recent: [makeRecentAttempt({ score: null })] });
-
-      const result = await service.getStats('user-1');
-
-      expect(result.bestScore).toBeNull();
+  it('counts a consecutive-day streak ending today from mixed activity sources', async () => {
+    setup({
+      attempts: [attempt({ finishedAt: NOW })],
+      usageLogs: [
+        { action: 'generate_questions', count: 5, refName: 'x', createdAt: daysAgo(1) },
+        { action: 'generate_explanation', count: 1, refName: null, createdAt: daysAgo(2) },
+      ],
     });
+    const home = await service.getStats('u1');
+    expect(home.kpis.streakDays).toBe(3);
+  });
 
-    it('returns the highest score as bestScore', async () => {
-      setup({ total: 3, bestScore: 90 });
-
-      const result = await service.getStats('user-1');
-
-      expect(result.bestScore).toBe(90);
+  it('starts the streak from yesterday when today has no activity, and breaks on a gap', async () => {
+    setup({
+      usageLogs: [
+        { action: 'generate_questions', count: 1, refName: null, createdAt: daysAgo(1) },
+        { action: 'generate_questions', count: 1, refName: null, createdAt: daysAgo(2) },
+        { action: 'generate_questions', count: 1, refName: null, createdAt: daysAgo(5) },
+      ],
     });
+    const home = await service.getStats('u1');
+    expect(home.kpis.streakDays).toBe(2);
+  });
 
-    it('counts every finished attempt but only reads the 5 most recent sessions', async () => {
-      setup({ total: 7, recent: Array.from({ length: 5 }, () => makeRecentAttempt()) });
-
-      const result = await service.getStats('user-1');
-
-      expect(result.totalSimuladosCompleted).toBe(7);
-      expect(result.recentSessions).toHaveLength(5);
-    });
-
-    it('pushes the session and trend limits down to the database', async () => {
-      setup({ total: 40 });
-
-      await service.getStats('user-1');
-
-      const takes = prismaMock.mockExamAttempt.findMany.mock.calls.map(([args]: any) => args.take);
-      expect(takes).toEqual([5, 10]);
-    });
-
-    it('excludes null scores from the trend query instead of filtering in memory', async () => {
-      setup({ total: 3 });
-
-      await service.getStats('user-1');
-
-      const trendCall = prismaMock.mockExamAttempt.findMany.mock.calls.find(
-        ([args]: any) => args.take === 10
-      )?.[0] as any;
-      expect(trendCall.where.score).toEqual({ not: null });
-    });
-
-    it('maps recentSessions fields correctly', async () => {
-      const startedAt = new Date('2024-03-01T09:00:00Z');
-      const finishedAt = new Date('2024-03-01T09:45:00Z');
+  it('counts the streak correctly across a runtime-local DST transition (Sao Paulo has none)', async () => {
+    const originalTz = process.env.TZ;
+    process.env.TZ = 'America/New_York';
+    try {
+      const dstNow = new Date('2026-03-09T02:00:00.000Z');
+      vi.setSystemTime(dstNow);
       setup({
-        total: 1,
-        recent: [
-          makeRecentAttempt({
-            score: 75,
-            startedAt,
-            finishedAt,
-            mockExamName: 'Meu Simulado',
-            examName: 'AWS SAA',
-            answerCount: 2,
-          }),
+        usageLogs: [
+          { action: 'generate_questions', count: 1, refName: null, createdAt: dstNow },
+          { action: 'generate_questions', count: 1, refName: null, createdAt: new Date(dstNow.getTime() - DAY) },
         ],
       });
+      const home = await service.getStats('u1');
+      expect(home.kpis.streakDays).toBe(2);
+    } finally {
+      process.env.TZ = originalTz;
+    }
+  });
 
-      const result = await service.getStats('user-1');
-
-      expect(result.recentSessions[0]).toMatchObject({
-        simuladoName: 'Meu Simulado',
-        examName: 'AWS SAA',
-        score: 75,
-        totalQuestions: 2,
-        durationMs: finishedAt.getTime() - startedAt.getTime(),
-        finishedAt: finishedAt.toISOString(),
-      });
+  it('sums answered questions in the 7-day window and the week-over-week delta', async () => {
+    setup({
+      attempts: [
+        attempt({ id: 1, finishedAt: daysAgo(2), answerCount: 20 }),
+        attempt({ id: 2, finishedAt: daysAgo(6), answerCount: 15 }),
+        attempt({ id: 3, finishedAt: daysAgo(10), answerCount: 12 }),
+      ],
     });
+    const home = await service.getStats('u1');
+    expect(home.kpis.questionsThisWeek).toBe(35);
+    expect(home.kpis.questionsWeekDelta).toBe(23);
+  });
 
-    it('falls back to examName as simuladoName when mockExam.name is null', async () => {
-      setup({ total: 1, recent: [makeRecentAttempt({ mockExamName: null, examName: 'AWS SAA' })] });
-
-      const result = await service.getStats('user-1');
-
-      expect(result.recentSessions[0].simuladoName).toBe('AWS SAA');
+  it('normalizes score to a percent for avgAccuracy, excludes timedOut attempts, and returns a null delta when the prior window is empty', async () => {
+    setup({
+      attempts: [
+        attempt({ id: 1, finishedAt: daysAgo(3), score: 8, questionCount: 10 }),
+        attempt({ id: 2, finishedAt: daysAgo(3), score: 6, questionCount: 10 }),
+        attempt({ id: 3, finishedAt: daysAgo(200), score: 5, questionCount: 10 }),
+        attempt({ id: 4, finishedAt: daysAgo(3), score: 10, questionCount: 10, timedOut: true }),
+      ],
     });
+    const home = await service.getStats('u1');
+    expect(home.kpis.avgAccuracy).toBe(70);
+    expect(home.kpis.avgAccuracyDelta).toBeNull();
+  });
 
-    it('returns scoreTrend in chronological order (oldest first)', async () => {
-      // O banco devolve do mais novo para o mais antigo (orderBy: finishedAt desc)
-      setup({
-        total: 3,
-        trend: [
-          { score: 90, finishedAt: new Date('2024-03-03T10:00:00Z') },
-          { score: 70, finishedAt: new Date('2024-03-02T10:00:00Z') },
-          { score: 60, finishedAt: new Date('2024-03-01T10:00:00Z') },
-        ],
-      });
-
-      const result = await service.getStats('user-1');
-
-      expect(result.scoreTrend.map((p) => p.score)).toEqual([60, 70, 90]);
+  it('computes avgAccuracyDelta against the prior 30-day window', async () => {
+    setup({
+      attempts: [
+        attempt({ id: 1, finishedAt: daysAgo(5), score: 9, questionCount: 10 }),
+        attempt({ id: 2, finishedAt: daysAgo(40), score: 6, questionCount: 10 }),
+      ],
     });
+    const home = await service.getStats('u1');
+    expect(home.kpis.avgAccuracy).toBe(90);
+    expect(home.kpis.avgAccuracyDelta).toBe(30);
+  });
 
-    it('computes domainBreakdown average per section across attempts', async () => {
-      // Tentativa 1: Math 2/4 → 50, Science 3/3 → 100
-      // Tentativa 2: Math 4/4 → 100, Science 1/2 → 50
-      // Esperado: Math (50+100)/2 = 75, Science (100+50)/2 = 75
-      setup({
-        total: 2,
-        sectionAnswers: [
-          makeSectionAnswer(1, 'Math', true),
-          makeSectionAnswer(1, 'Math', true),
-          makeSectionAnswer(1, 'Math', false),
-          makeSectionAnswer(1, 'Math', false),
-          makeSectionAnswer(1, 'Science', true),
-          makeSectionAnswer(1, 'Science', true),
-          makeSectionAnswer(1, 'Science', true),
-          makeSectionAnswer(2, 'Math', true),
-          makeSectionAnswer(2, 'Math', true),
-          makeSectionAnswer(2, 'Math', true),
-          makeSectionAnswer(2, 'Math', true),
-          makeSectionAnswer(2, 'Science', true),
-          makeSectionAnswer(2, 'Science', false),
-        ],
-      });
-
-      const result = await service.getStats('user-1');
-
-      const math = result.domainBreakdown.find((d) => d.sectionName === 'Math');
-      const science = result.domainBreakdown.find((d) => d.sectionName === 'Science');
-
-      expect(math).toMatchObject({ sectionName: 'Math', avgScore: 75, totalAttempts: 2 });
-      expect(science).toMatchObject({ sectionName: 'Science', avgScore: 75, totalAttempts: 2 });
+  it('picks the most recently started unfinished attempt as resume', async () => {
+    setup({
+      attempts: [
+        attempt({ id: 10, mockExamId: 3, finishedAt: null, startedAt: daysAgo(1), questionCount: 40, name: 'Simulado 04', examName: 'CPA-20', boardName: 'ANBIMA', durationMinutes: 150 }),
+        attempt({ id: 11, mockExamId: 4, finishedAt: null, startedAt: daysAgo(3) }),
+        attempt({ id: 12, mockExamId: 5, finishedAt: daysAgo(2) }),
+      ],
     });
-
-    it('keeps a section separate per attempt when scoring the breakdown', async () => {
-      // A mesma seção em duas tentativas conta como duas amostras, não como um pote só:
-      // 1/1 e 0/1 → (100 + 0) / 2 = 50, e não 1/2 = 50 por acaso — totalAttempts prova a diferença.
-      setup({
-        total: 2,
-        sectionAnswers: [makeSectionAnswer(1, 'Math', true), makeSectionAnswer(2, 'Math', false)],
-      });
-
-      const result = await service.getStats('user-1');
-
-      expect(result.domainBreakdown).toEqual([{ sectionName: 'Math', avgScore: 50, totalAttempts: 2 }]);
+    const home = await service.getStats('u1');
+    expect(home.resume).toEqual({
+      mockExamId: 3, attemptId: 10, simuladoName: 'Simulado 04', examName: 'CPA-20',
+      examBoardName: 'ANBIMA', totalQuestions: 40,
+      durationMinutes: 150, startedAt: daysAgo(1).toISOString(),
     });
+  });
 
-    it('treats an answer stored as incorrect (no gabarito at finish time) as wrong', async () => {
-      setup({
-        total: 1,
-        sectionAnswers: [makeSectionAnswer(1, 'Math', false), makeSectionAnswer(1, 'Math', true)],
-      });
-
-      const result = await service.getStats('user-1');
-
-      expect(result.domainBreakdown.find((d) => d.sectionName === 'Math')?.avgScore).toBe(50);
+  it('builds examsInProgress from coverage, filters no-activity exams, sorts least-ready first, caps at five, and excludes timedOut attempts from accuracy', async () => {
+    setup({
+      exams: [
+        { id: 'e1', name: 'Ready-ish', type: 'certification', key: 'K1', role: null, year: null, createdAt: daysAgo(40), examBoard: { name: 'B1' }, sections: [{ id: 's1', topics: [{ id: 't1' }, { id: 't2' }] }] },
+        { id: 'e2', name: 'Barely started', type: 'public_exam', key: null, role: 'Analista', year: 2026, createdAt: daysAgo(40), examBoard: null, sections: [{ id: 's2', topics: [{ id: 't3' }, { id: 't4' }] }] },
+        { id: 'e3', name: 'No activity', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(40), examBoard: null, sections: [{ id: 's3', topics: [{ id: 't5' }] }] },
+        { id: 'e4', name: 'Untouched', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(40), examBoard: null, sections: [{ id: 's4', topics: [{ id: 't4a' }] }] },
+        { id: 'e5', name: 'Quarter covered', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(40), examBoard: null, sections: [{ id: 's5', topics: [{ id: 't5a' }, { id: 't5b' }, { id: 't5c' }, { id: 't5d' }] }] },
+        { id: 'e6', name: 'Third covered', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(40), examBoard: null, sections: [{ id: 's6', topics: [{ id: 't6a' }, { id: 't6b' }, { id: 't6c' }] }] },
+        { id: 'e7', name: 'Also fully covered', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(40), examBoard: null, sections: [{ id: 's7', topics: [{ id: 't7a' }] }] },
+      ],
+      questions: [
+        { examId: 'e1', sectionId: 's1', topicId: 't1' },
+        { examId: 'e1', sectionId: 's1', topicId: 't2' },
+        { examId: 'e2', sectionId: 's2', topicId: 't3' },
+        { examId: 'e4', sectionId: 's4', topicId: null },
+        { examId: 'e5', sectionId: 's5', topicId: 't5a' },
+        { examId: 'e6', sectionId: 's6', topicId: 't6a' },
+        { examId: 'e7', sectionId: 's7', topicId: 't7a' },
+      ],
+      attempts: [
+        attempt({ id: 1, mockExamId: 1, examId: 'e1', finishedAt: daysAgo(2), score: 7, questionCount: 10 }),
+        attempt({ id: 2, mockExamId: 2, examId: 'e1', finishedAt: daysAgo(1), score: 10, questionCount: 10, timedOut: true }),
+      ],
     });
+    const home = await service.getStats('u1');
+    expect(home.examsInProgress).toHaveLength(5);
+    expect(home.examsInProgress.map((e) => e.examId)).toEqual(['e4', 'e5', 'e6', 'e2', 'e1']);
+    expect(home.examsInProgress.some((e) => e.examId === 'e3')).toBe(false);
+    expect(home.examsInProgress.some((e) => e.examId === 'e7')).toBe(false);
+    expect(home.examsInProgress.find((e) => e.examId === 'e2')).toMatchObject({ readiness: 50, accuracy: null, boardName: null, keyLabel: 'Analista' });
+    expect(home.examsInProgress.find((e) => e.examId === 'e1')).toMatchObject({ readiness: 100, accuracy: 70, boardName: 'B1', keyLabel: 'K1' });
+  });
+
+  it('windows weakDomains to 14 days, drops sections under 5 answers, sorts worst first, caps at four', async () => {
+    const answers = [
+      ...Array.from({ length: 6 }, (_, i) => sectionAnswer(i + 1, 'Fundos', i < 2, daysAgo(3))),
+      ...Array.from({ length: 8 }, (_, i) => sectionAnswer(i + 100, 'Ética', i < 6, daysAgo(5))),
+      ...Array.from({ length: 6 }, (_, i) => sectionAnswer(i + 200, 'Stale', false, daysAgo(30))),
+      sectionAnswer(999, 'Thin', false, daysAgo(1)),
+      ...Array.from({ length: 5 }, (_, i) => sectionAnswer(i + 300, 'Direito', i < 1, daysAgo(4))),
+      ...Array.from({ length: 5 }, (_, i) => sectionAnswer(i + 400, 'Matemática', i < 4, daysAgo(6))),
+      ...Array.from({ length: 5 }, (_, i) => sectionAnswer(i + 500, 'Português', false, daysAgo(2))),
+    ];
+    setup({ sectionAnswers: answers });
+    const home = await service.getStats('u1');
+    expect(home.weakDomains).toEqual([
+      { sectionName: 'Português', accuracy: 0, questionVolume: 5 },
+      { sectionName: 'Direito', accuracy: 20, questionVolume: 5 },
+      { sectionName: 'Fundos', accuracy: 33, questionVolume: 6 },
+      { sectionName: 'Ética', accuracy: 75, questionVolume: 8 },
+    ]);
+    expect(home.weakDomains.some((d) => d.sectionName === 'Matemática')).toBe(false);
+  });
+
+  it('excludes answers from timedOut attempts from weakDomains', async () => {
+    setup({
+      sectionAnswers: [
+        ...Array.from({ length: 5 }, (_, i) => sectionAnswer(i + 1, 'Fundos', true, daysAgo(3))),
+        ...Array.from({ length: 5 }, (_, i) => sectionAnswer(i + 100, 'Fundos', false, daysAgo(3), true)),
+      ],
+    });
+    const home = await service.getStats('u1');
+    expect(home.weakDomains).toEqual([{ sectionName: 'Fundos', accuracy: 100, questionVolume: 5 }]);
+  });
+
+  it('counts wrongOpenCount from each question\'s latest answer', async () => {
+    setup({
+      sectionAnswers: [
+        sectionAnswer(1, 'A', false, daysAgo(2)),
+        sectionAnswer(1, 'A', true, daysAgo(1)),
+        sectionAnswer(2, 'A', false, daysAgo(2)),
+        sectionAnswer(3, 'B', true, daysAgo(2)),
+      ],
+      questions: [
+        { examId: 'e1', sectionId: 's1', topicId: null },
+        { examId: null, sectionId: null, topicId: null },
+      ],
+    });
+    const home = await service.getStats('u1');
+    expect(home.quickActions).toEqual({ bankCount: 2, wrongOpenCount: 1 });
+  });
+
+  it('counts a question as wrong again once its latest answer flips back to wrong', async () => {
+    setup({
+      sectionAnswers: [
+        sectionAnswer(1, 'A', false, daysAgo(3)),
+        sectionAnswer(1, 'A', true, daysAgo(2)),
+        sectionAnswer(1, 'A', false, daysAgo(1)),
+      ],
+    });
+    const home = await service.getStats('u1');
+    expect(home.quickActions.wrongOpenCount).toBe(1);
+  });
+
+  it('counts a wrong answer from a timedOut attempt when it is the latest for that question', async () => {
+    setup({
+      sectionAnswers: [sectionAnswer(1, 'A', false, daysAgo(1), true)],
+    });
+    const home = await service.getStats('u1');
+    expect(home.quickActions.wrongOpenCount).toBe(1);
+  });
+
+  it('merges activity from four sources, newest first, capped at six', async () => {
+    setup({
+      attempts: [
+        attempt({ id: 1, finishedAt: daysAgo(1), score: 8, questionCount: 10, name: 'Sim A', examName: 'Exam A' }),
+        attempt({ id: 2, finishedAt: daysAgo(4), score: 5, questionCount: 10, name: 'Sim C', examName: 'Exam C' }),
+      ],
+      usageLogs: [
+        { action: 'generate_questions', count: 30, refName: 'AWS MLA', createdAt: daysAgo(2) },
+        { action: 'generate_explanation', count: 1, refName: null, createdAt: daysAgo(2) },
+        { action: 'generate_questions', count: 12, refName: 'AWS DVA', createdAt: daysAgo(4.5) },
+      ],
+      autoConfigJobs: [
+        { seedName: 'TRT 4', updatedAt: daysAgo(3) },
+        { seedName: 'TRT 5', updatedAt: daysAgo(5) },
+      ],
+      exams: [
+        { id: 'e1', name: 'Novo Exame', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(3.5), examBoard: null, sections: [] },
+        { id: 'e2', name: 'Antigo', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(30), examBoard: null, sections: [] },
+        { id: 'e3', name: 'Exame Y', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(5.5), examBoard: null, sections: [] },
+      ],
+    });
+    const home = await service.getStats('u1');
+    expect(home.activity).toHaveLength(6);
+    expect(home.activity.map((a) => a.kind)).toEqual([
+      'simulado_finished', 'questions_generated', 'auto_config_done', 'exam_created', 'simulado_finished', 'questions_generated',
+    ]);
+    expect(home.activity[0]).toEqual({
+      kind: 'simulado_finished', at: daysAgo(1).toISOString(), params: { name: 'Sim A', score: 80 },
+    });
+    expect(home.activity[1].params).toEqual({ count: 30, name: 'AWS MLA' });
+    expect(home.activity.some((a) => a.params.name === 'TRT 5')).toBe(false);
+    expect(home.activity.some((a) => a.params.name === 'Exame Y')).toBe(false);
+  });
+
+  it('omits score from a timed-out attempt in the activity feed instead of reporting 0%', async () => {
+    setup({
+      attempts: [attempt({ id: 1, finishedAt: daysAgo(1), timedOut: true, score: 9, questionCount: 10, name: 'Sim T' })],
+    });
+    const home = await service.getStats('u1');
+    expect(home.activity).toEqual([
+      { kind: 'simulado_finished', at: daysAgo(1).toISOString(), params: { name: 'Sim T', score: undefined } },
+    ]);
+  });
+
+  it('reports simuladosTotal from the mock-exam count and simuladosOpen from unfinished attempts', async () => {
+    setup({
+      mockExamCount: 11,
+      attempts: [
+        attempt({ id: 1, finishedAt: null }),
+        attempt({ id: 2, finishedAt: daysAgo(2) }),
+      ],
+    });
+    const home = await service.getStats('u1');
+    expect(home.kpis.simuladosTotal).toBe(11);
+    expect(home.kpis.simuladosOpen).toBe(1);
   });
 });
