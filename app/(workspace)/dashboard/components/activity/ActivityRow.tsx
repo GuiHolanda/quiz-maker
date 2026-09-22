@@ -26,7 +26,9 @@ function textFor(item: DashboardActivityItem, t: Translate): string {
   const count = item.params.count ?? 0;
 
   if (item.kind === 'simulado_finished') {
-    return t('dashboard.home.activitySimuladoFinished', { name, score: item.params.score ?? 0 });
+    return item.params.score === undefined
+      ? t('dashboard.home.activitySimuladoTimedOut', { name })
+      : t('dashboard.home.activitySimuladoFinished', { name, score: item.params.score });
   }
   if (item.kind === 'questions_generated') {
     return item.params.name

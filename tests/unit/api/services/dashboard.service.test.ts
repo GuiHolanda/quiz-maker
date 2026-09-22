@@ -278,6 +278,16 @@ describe('DashboardService.getStats', () => {
     expect(home.activity.some((a) => a.params.name === 'Exame Y')).toBe(false);
   });
 
+  it('omits score from a timed-out attempt in the activity feed instead of reporting 0%', async () => {
+    setup({
+      attempts: [attempt({ id: 1, finishedAt: daysAgo(1), timedOut: true, score: 9, questionCount: 10, name: 'Sim T' })],
+    });
+    const home = await service.getStats('u1');
+    expect(home.activity).toEqual([
+      { kind: 'simulado_finished', at: daysAgo(1).toISOString(), params: { name: 'Sim T', score: undefined } },
+    ]);
+  });
+
   it('reports simuladosTotal from the mock-exam count and simuladosOpen from unfinished attempts', async () => {
     setup({
       mockExamCount: 11,
