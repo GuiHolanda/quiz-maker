@@ -15,7 +15,9 @@ interface HomeKpiGridProps {
 }
 
 function signed(n: number): string {
-  return n > 0 ? `+${n}` : String(n);
+  if (n > 0) return `+${n}`;
+  if (n < 0) return String(n);
+  return '±0';
 }
 
 export function HomeKpiGrid({ kpis }: HomeKpiGridProps) {
