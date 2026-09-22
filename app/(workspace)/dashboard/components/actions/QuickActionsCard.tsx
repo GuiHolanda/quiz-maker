@@ -38,7 +38,7 @@ export function QuickActionsCard({ counts }: QuickActionsCardProps) {
       icon: faRotateLeft,
       label: t('dashboard.home.actionReview'),
       note: t('dashboard.home.actionReviewNote', { count: counts ? counts.wrongOpenCount : 0 }),
-      href: '/question-bank',
+      href: '/question-bank?situation=wrong',
     },
   ];
 
