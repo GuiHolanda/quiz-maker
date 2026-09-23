@@ -1,5 +1,7 @@
 'use client';
 
+import type { Icon } from '@tabler/icons-react';
+
 import NextLink from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -13,11 +15,58 @@ interface SidebarNavProps {
   readonly onClose?: () => void;
 }
 
-function navLinkClass(isActive: boolean, collapsed = false): string {
-  const base = collapsed
-    ? 'flex items-center justify-center w-10 h-10 rounded-lg transition-colors duration-200'
-    : 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors duration-200';
-  return `${base} ${isActive ? 'bg-primary/10 text-primary font-semibold' : 'text-default-500 hover:text-foreground hover:bg-default-100'}`;
+interface NavItem {
+  readonly href: string;
+  readonly labelKey: string;
+  readonly icon: Icon;
+  readonly isActive: (pathname: string) => boolean;
+}
+
+interface NavGroup {
+  readonly titleKey: string;
+  readonly items: readonly NavItem[];
+}
+
+const NAV_GROUPS: readonly NavGroup[] = [
+  {
+    titleKey: 'nav.groupStudy',
+    items: [
+      { href: '/dashboard', labelKey: 'nav.dashboard', icon: IconHome, isActive: (p) => p === '/dashboard' },
+      { href: '/exams', labelKey: 'nav.myExams', icon: IconSchool, isActive: (p) => p === '/exams' },
+    ],
+  },
+  {
+    titleKey: 'nav.groupPractice',
+    items: [
+      {
+        href: '/questions',
+        labelKey: 'nav.generateQuestions',
+        icon: IconSparkles,
+        isActive: (p) => p.startsWith('/questions'),
+      },
+      {
+        href: '/question-bank',
+        labelKey: 'nav.questionBank',
+        icon: IconListDetails,
+        isActive: (p) => p === '/question-bank',
+      },
+      {
+        href: '/simulados',
+        labelKey: 'nav.simulados',
+        icon: IconPlayerPlay,
+        isActive: (p) => p.startsWith('/simulados'),
+      },
+    ],
+  },
+];
+
+function navLinkClass(isActive: boolean): string {
+  const base = 'flex items-center gap-3 px-3 py-2 rounded-lg border-l-2 text-sm transition-colors duration-200';
+  return `${base} ${
+    isActive
+      ? 'bg-content2 border-primary text-foreground font-semibold'
+      : 'border-transparent text-default-500 font-medium hover:bg-content2 hover:text-foreground'
+  }`;
 }
 
 export function SidebarNav({ collapsed = false, isMobile = false, onClose }: SidebarNavProps) {
@@ -25,79 +74,57 @@ export function SidebarNav({ collapsed = false, isMobile = false, onClose }: Sid
   const { t } = useTranslation();
   const pathname = usePathname() ?? '';
   const isAdminScope = pathname.startsWith('/admin');
-
   const col = isMobile ? false : collapsed;
 
   return (
-    <nav className={`flex flex-col ${col ? 'items-center gap-1' : 'gap-0.5'}`}>
-      <NextLink
-        className={navLinkClass(pathname === '/dashboard', col)}
-        href="/dashboard"
-        title={col ? t('nav.dashboard') : undefined}
-        onClick={onClose}
-      >
-        <IconHome size={16} />
-        {!col && t('nav.dashboard')}
-      </NextLink>
-
-      <NextLink
-        className={navLinkClass(pathname === '/exams', col)}
-        href="/exams"
-        title={col ? t('nav.myExams') : undefined}
-        onClick={onClose}
-      >
-        <IconSchool size={16} />
-        {!col && t('nav.myExams')}
-      </NextLink>
-
-      <NextLink
-        className={navLinkClass(pathname.startsWith('/questions'), col)}
-        href="/questions"
-        title={col ? t('nav.generateQuestions') : undefined}
-        onClick={onClose}
-      >
-        <IconSparkles size={16} />
-        {!col && t('nav.generateQuestions')}
-      </NextLink>
-
-      <NextLink
-        className={navLinkClass(pathname === '/question-bank', col)}
-        href="/question-bank"
-        title={col ? t('nav.questionBank') : undefined}
-        onClick={onClose}
-      >
-        <IconListDetails size={16} />
-        {!col && t('nav.questionBank')}
-      </NextLink>
-
-      <NextLink
-        className={navLinkClass(pathname.startsWith('/simulados'), col)}
-        href="/simulados"
-        title={col ? t('nav.simulados') : undefined}
-        onClick={onClose}
-      >
-        <IconPlayerPlay size={16} />
-        {!col && t('nav.simulados')}
-      </NextLink>
+    <nav className="flex flex-col gap-4">
+      {NAV_GROUPS.map((group) => renderGroup(group))}
 
       {status === 'authenticated' && session?.user?.plan === 'admin' && (
-        <>
+        <div className="flex flex-col gap-0.5">
           {!col && (
-            <div className="pt-4 pb-1">
-              <p className="px-3 text-xs font-semibold text-default-400">{t('nav.settings')}</p>
-            </div>
+            <p className="px-3 pb-1 font-mono text-xs text-default-400 uppercase tracking-widest">
+              {t('nav.settings')}
+            </p>
           )}
           <NextLink
-            className={navLinkClass(isAdminScope, col)}
+            className={navLinkClass(isAdminScope)}
             href="/admin"
             title={col ? t('nav.admin') : undefined}
             onClick={onClose}
           >
-            <IconSettings size={16} />
-            {!col && t('nav.admin')}
+            <IconSettings className="shrink-0" size={16} />
+            {!col && <span className="truncate">{t('nav.admin')}</span>}
           </NextLink>
-        </>
+        </div>
       )}
     </nav>
   );
+
+  function renderGroup(group: NavGroup) {
+    return (
+      <div key={group.titleKey} className="flex flex-col gap-0.5">
+        {!col && (
+          <p className="px-3 pb-1 font-mono text-xs text-default-400 uppercase tracking-widest">{t(group.titleKey)}</p>
+        )}
+        {group.items.map((item) => {
+          const ItemIcon = item.icon;
+          const active = item.isActive(pathname);
+
+          return (
+            <NextLink
+              key={item.href}
+              className={navLinkClass(active)}
+              href={item.href}
+              title={col ? t(item.labelKey) : undefined}
+              onClick={onClose}
+            >
+              <ItemIcon className="shrink-0" size={16} />
+              {!col && <span className="truncate">{t(item.labelKey)}</span>}
+            </NextLink>
+          );
+        })}
+      </div>
+    );
+  }
 }

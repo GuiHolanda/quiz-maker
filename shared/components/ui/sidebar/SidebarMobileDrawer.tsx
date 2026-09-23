@@ -1,11 +1,10 @@
 'use client';
 
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody } from '@heroui/drawer';
-import NextLink from 'next/link';
-import Image from 'next/image';
 import { IconX } from '@tabler/icons-react';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { SidebarBrandLockup } from '@/shared/components/ui/sidebar/SidebarBrandLockup';
 import { SidebarNav } from '@/shared/components/ui/sidebar/SidebarNav';
 import { SidebarUsageCounters } from '@/shared/components/ui/sidebar/SidebarUsageCounters';
 
@@ -20,14 +19,11 @@ export function SidebarMobileDrawer({ isOpen, onClose }: SidebarMobileDrawerProp
   return (
     <Drawer hideCloseButton isOpen={isOpen} placement="left" size="xs" onClose={onClose}>
       <DrawerContent className="bg-background2">
-        <DrawerHeader className="flex items-center justify-between border-b border-divider px-4 py-3">
-          <NextLink className="flex items-center gap-2" href="/" onClick={onClose}>
-            <Image alt="CertifiqueAI" className="rounded-md" height={22} src="/icon.svg" width={22} />
-            <p className="font-sora font-semibold text-foreground tracking-wide text-sm">Certifique AI</p>
-          </NextLink>
+        <DrawerHeader className="flex items-center gap-2 justify-between border-b border-content2 px-4 py-3">
+          <SidebarBrandLockup onClick={onClose} />
           <button
             aria-label={t('nav.closeSidebar')}
-            className="p-1.5 text-default-400 hover:text-foreground transition-colors rounded-lg hover:bg-default-100"
+            className="p-1.5 text-default-400 hover:text-foreground transition-colors rounded-lg hover:bg-content2 shrink-0"
             onClick={onClose}
           >
             <IconX size={16} />
