@@ -251,10 +251,11 @@ export class QuotaService {
     const user = await this.getUserWithPeriodReset(userId);
     const plan = this.resolvePlan(user.plan);
     const limits = PLAN_LIMITS[plan];
-    const [certCount, examConcursoCount, savedQuestions] = await Promise.all([
+    const [certCount, examConcursoCount, savedQuestions, simuladosOpen] = await Promise.all([
       prisma.exam.count({ where: { userId, type: 'certification' } }),
       prisma.exam.count({ where: { userId, type: 'public_exam' } }),
       prisma.examQuestion.count({ where: { userId } }),
+      prisma.mockExamAttempt.count({ where: { userId, finishedAt: null } }),
     ]);
     const examsUsed = certCount + examConcursoCount;
     const questionsLimit = this.resolveQuestionsLimit(user);
@@ -270,6 +271,7 @@ export class QuotaService {
       publicExamsUsed: examConcursoCount,
       autoConfigUsed: user.autoConfigThisPeriod,
       autoConfigLimit: limits.autoConfigPerPeriod === Infinity ? -1 : limits.autoConfigPerPeriod,
+      simuladosOpen,
       periodStartDate: user.periodStartDate.toISOString(),
       hasStripePortalAccess: !!user.stripeCustomerId,
       sprintExpiresAt: user.sprintExpiresAt ? user.sprintExpiresAt.toISOString() : null,

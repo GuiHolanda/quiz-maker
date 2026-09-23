@@ -1,10 +1,10 @@
 'use client';
 
-import NextLink from 'next/link';
 import Image from 'next/image';
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { SidebarBrandLockup } from '@/shared/components/ui/sidebar/SidebarBrandLockup';
 import { SidebarNav } from '@/shared/components/ui/sidebar/SidebarNav';
 import { SidebarUsageCounters } from '@/shared/components/ui/sidebar/SidebarUsageCounters';
 
@@ -18,11 +18,11 @@ export function SidebarDesktop({ isCollapsed, onToggleCollapsed }: SidebarDeskto
 
   return (
     <aside
-      className={`hidden md:flex shrink-0 h-screen sticky top-0 flex-col bg-background border-r border-divider overflow-hidden transition-[width] duration-200 ease-out ${isCollapsed ? 'w-16' : 'w-64'}`}
+      className={`hidden md:flex shrink-0 h-screen sticky top-0 flex-col bg-background2 border-r border-content2 overflow-hidden transition-[width] duration-200 ease-out ${isCollapsed ? 'w-[68px]' : 'w-[280px]'}`}
     >
       {renderBrand()}
       <div
-        className={`flex-1 py-3 ${isCollapsed ? 'px-3 flex flex-col items-center overflow-hidden' : 'px-3 overflow-y-auto'}`}
+        className={`flex-1 py-3.5 ${isCollapsed ? 'px-3 flex flex-col items-center overflow-hidden' : 'px-3 overflow-y-auto'}`}
       >
         <SidebarNav collapsed={isCollapsed} />
       </div>
@@ -35,24 +35,21 @@ export function SidebarDesktop({ isCollapsed, onToggleCollapsed }: SidebarDeskto
       return (
         <button
           aria-label={t('nav.expandSidebar')}
-          className="h-14 flex items-center justify-center gap-2 border-b border-divider shrink-0 w-full text-default-400 hover:text-foreground hover:bg-default-100 transition-colors duration-200"
+          className="h-14 flex items-center justify-center gap-1 border-b border-content2 shrink-0 w-full text-navy-500 hover:text-foreground hover:bg-content2 transition-colors duration-200"
           onClick={onToggleCollapsed}
         >
-          <Image alt="CertifiqueAI" className="rounded-md shrink-0" height={18} src="/icon.svg" width={18} />
+          <Image alt="CertifiqueAI" className="rounded-md shrink-0" height={22} src="/icon.svg" width={22} />
           <IconChevronRight size={10} />
         </button>
       );
     }
 
     return (
-      <div className="h-14 flex items-center px-4 border-b border-divider shrink-0">
-        <NextLink className="flex items-center gap-2 flex-1 min-w-0" href="/">
-          <Image alt="CertifiqueAI" className="rounded-md shrink-0" height={22} src="/icon.svg" width={22} />
-          <p className="font-sora font-semibold text-foreground tracking-wide text-sm truncate">Certifique AI</p>
-        </NextLink>
+      <div className="h-14 flex items-center gap-2 px-4 border-b border-content2 shrink-0">
+        <SidebarBrandLockup />
         <button
           aria-label={t('nav.collapseSidebar')}
-          className="p-1.5 text-default-400 hover:text-foreground transition-colors rounded-lg hover:bg-default-100 shrink-0 ml-auto"
+          className="p-1.5 text-navy-500 hover:text-foreground transition-colors rounded-lg hover:bg-content2 shrink-0 ml-auto"
           onClick={onToggleCollapsed}
         >
           <IconChevronLeft size={14} />

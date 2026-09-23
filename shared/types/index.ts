@@ -127,6 +127,7 @@ export interface UsageStats {
   publicExamsUsed: number; // display only
   autoConfigUsed: number; // auto-config runs this period
   autoConfigLimit: number; // -1 = unlimited, 0 = plan doesn't include auto-config
+  simuladosOpen: number; // mock exam attempts not yet finished — display only
   periodStartDate: string;
   hasStripePortalAccess: boolean; // true only if user has a stripeCustomerId (not all paid plans do)
   sprintExpiresAt: string | null; // set only when plan === 'sprint'

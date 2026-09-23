@@ -150,6 +150,7 @@ describe('QuotaService', () => {
     // exam.count is called twice: certification then public_exam
     prismaMock.exam.count.mockResolvedValueOnce(3).mockResolvedValueOnce(1);
     prismaMock.examQuestion.count.mockResolvedValue(0);
+    prismaMock.mockExamAttempt.count.mockResolvedValue(2);
 
     const usage = await service.getUsage('user-1');
 
@@ -162,7 +163,11 @@ describe('QuotaService', () => {
       certificationsUsed: 3,
       publicExamsUsed: 1,
       autoConfigLimit: -1,
+      simuladosOpen: 2,
       periodStartDate: periodStart.toISOString(),
+    });
+    expect(prismaMock.mockExamAttempt.count).toHaveBeenCalledWith({
+      where: { userId: 'user-1', finishedAt: null },
     });
   });
 
