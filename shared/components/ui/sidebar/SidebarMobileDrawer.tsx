@@ -23,7 +23,7 @@ export function SidebarMobileDrawer({ isOpen, onClose }: SidebarMobileDrawerProp
           <SidebarBrandLockup onClick={onClose} />
           <button
             aria-label={t('nav.closeSidebar')}
-            className="p-1.5 text-default-400 hover:text-foreground transition-colors rounded-lg hover:bg-content2 shrink-0"
+            className="p-1.5 text-navy-500 hover:text-foreground transition-colors rounded-lg hover:bg-content2 shrink-0"
             onClick={onClose}
           >
             <IconX size={16} />

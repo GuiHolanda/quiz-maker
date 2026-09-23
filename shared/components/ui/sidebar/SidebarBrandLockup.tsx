@@ -24,7 +24,7 @@ export function SidebarBrandLockup({ onClick }: SidebarBrandLockupProps) {
           Certifique AI
         </p>
         {planLabel && (
-          <p className="font-mono text-[10px] text-default-400 uppercase tracking-widest truncate">{planLabel}</p>
+          <p className="font-mono text-[10px] text-navy-500 uppercase tracking-widest truncate">{planLabel}</p>
         )}
       </div>
     </NextLink>

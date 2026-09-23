@@ -35,7 +35,7 @@ export function SidebarDesktop({ isCollapsed, onToggleCollapsed }: SidebarDeskto
       return (
         <button
           aria-label={t('nav.expandSidebar')}
-          className="h-14 flex items-center justify-center gap-1 border-b border-content2 shrink-0 w-full text-default-400 hover:text-foreground hover:bg-content2 transition-colors duration-200"
+          className="h-14 flex items-center justify-center gap-1 border-b border-content2 shrink-0 w-full text-navy-500 hover:text-foreground hover:bg-content2 transition-colors duration-200"
           onClick={onToggleCollapsed}
         >
           <Image alt="CertifiqueAI" className="rounded-md shrink-0" height={22} src="/icon.svg" width={22} />
@@ -49,7 +49,7 @@ export function SidebarDesktop({ isCollapsed, onToggleCollapsed }: SidebarDeskto
         <SidebarBrandLockup />
         <button
           aria-label={t('nav.collapseSidebar')}
-          className="p-1.5 text-default-400 hover:text-foreground transition-colors rounded-lg hover:bg-content2 shrink-0 ml-auto"
+          className="p-1.5 text-navy-500 hover:text-foreground transition-colors rounded-lg hover:bg-content2 shrink-0 ml-auto"
           onClick={onToggleCollapsed}
         >
           <IconChevronLeft size={14} />

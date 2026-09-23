@@ -1,6 +1,7 @@
 'use client';
 
 import type { Icon } from '@tabler/icons-react';
+import type { UsageStats } from '@/shared/types';
 
 import NextLink from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -8,6 +9,7 @@ import { useSession } from 'next-auth/react';
 import { IconHome, IconSchool, IconSparkles, IconListDetails, IconPlayerPlay, IconSettings } from '@tabler/icons-react';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 
 interface SidebarNavProps {
   readonly collapsed?: boolean;
@@ -20,6 +22,7 @@ interface NavItem {
   readonly labelKey: string;
   readonly icon: Icon;
   readonly isActive: (pathname: string) => boolean;
+  readonly badgeKey?: keyof Pick<UsageStats, 'questionsSavedInLibrary' | 'simuladosOpen'>;
 }
 
 interface NavGroup {
@@ -36,7 +39,7 @@ const NAV_GROUPS: readonly NavGroup[] = [
     ],
   },
   {
-    titleKey: 'nav.groupPractice',
+    titleKey: 'nav.groupQuestions',
     items: [
       {
         href: '/questions',
@@ -49,12 +52,19 @@ const NAV_GROUPS: readonly NavGroup[] = [
         labelKey: 'nav.questionBank',
         icon: IconListDetails,
         isActive: (p) => p === '/question-bank',
+        badgeKey: 'questionsSavedInLibrary',
       },
+    ],
+  },
+  {
+    titleKey: 'nav.groupSimulados',
+    items: [
       {
         href: '/simulados',
         labelKey: 'nav.simulados',
         icon: IconPlayerPlay,
         isActive: (p) => p.startsWith('/simulados'),
+        badgeKey: 'simuladosOpen',
       },
     ],
   },
@@ -65,12 +75,13 @@ function navLinkClass(isActive: boolean): string {
   return `${base} ${
     isActive
       ? 'bg-content2 border-primary text-foreground font-semibold'
-      : 'border-transparent text-default-500 font-medium hover:bg-content2 hover:text-foreground'
+      : 'border-transparent text-navy-400 font-medium hover:bg-content2 hover:text-foreground'
   }`;
 }
 
 export function SidebarNav({ collapsed = false, isMobile = false, onClose }: SidebarNavProps) {
   const { data: session, status } = useSession();
+  const { usage } = useUsageContext();
   const { t } = useTranslation();
   const pathname = usePathname() ?? '';
   const isAdminScope = pathname.startsWith('/admin');
@@ -83,9 +94,7 @@ export function SidebarNav({ collapsed = false, isMobile = false, onClose }: Sid
       {status === 'authenticated' && session?.user?.plan === 'admin' && (
         <div className="flex flex-col gap-0.5">
           {!col && (
-            <p className="px-3 pb-1 font-mono text-xs text-default-400 uppercase tracking-widest">
-              {t('nav.settings')}
-            </p>
+            <p className="px-3 pb-1 font-mono text-xs text-navy-500 uppercase tracking-widest">{t('nav.settings')}</p>
           )}
           <NextLink
             className={navLinkClass(isAdminScope)}
@@ -105,11 +114,12 @@ export function SidebarNav({ collapsed = false, isMobile = false, onClose }: Sid
     return (
       <div key={group.titleKey} className="flex flex-col gap-0.5">
         {!col && (
-          <p className="px-3 pb-1 font-mono text-xs text-default-400 uppercase tracking-widest">{t(group.titleKey)}</p>
+          <p className="px-3 pb-1 font-mono text-xs text-navy-500 uppercase tracking-widest">{t(group.titleKey)}</p>
         )}
         {group.items.map((item) => {
           const ItemIcon = item.icon;
           const active = item.isActive(pathname);
+          const badgeCount = item.badgeKey ? usage?.[item.badgeKey] : undefined;
 
           return (
             <NextLink
@@ -121,6 +131,11 @@ export function SidebarNav({ collapsed = false, isMobile = false, onClose }: Sid
             >
               <ItemIcon className="shrink-0" size={16} />
               {!col && <span className="truncate">{t(item.labelKey)}</span>}
+              {!col && !!badgeCount && (
+                <span className="ml-auto shrink-0 rounded-full bg-primary/15 px-1.5 py-0.5 font-mono text-[10px] text-primary">
+                  {badgeCount}
+                </span>
+              )}
             </NextLink>
           );
         })}

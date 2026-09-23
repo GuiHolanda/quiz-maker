@@ -34,7 +34,7 @@ export function SidebarUsageCounters({ isCollapsed }: SidebarUsageCountersProps)
   return (
     <div className={`p-3 border-t border-content2 shrink-0 ${isCollapsed ? 'hidden' : ''}`}>
       <div className="rounded-xl border border-default-200 dark:border-transparent bg-content1 p-3">
-        <p className="font-mono text-xs text-default-400 uppercase tracking-widest">{t('sidebar.planUsage')}</p>
+        <p className="font-mono text-xs text-navy-500 uppercase tracking-widest">{t('sidebar.planUsage')}</p>
         <div className="mt-2.5 flex flex-col gap-2.5">{metrics.map((metric) => renderMetricRow(metric))}</div>
         {showUpgradeCta && (
           <NextLink
@@ -57,8 +57,8 @@ export function SidebarUsageCounters({ isCollapsed }: SidebarUsageCountersProps)
     return (
       <div key={metric.labelKey}>
         <div className="flex items-baseline justify-between gap-2">
-          <span className="text-xs text-default-500 truncate">{t(metric.labelKey)}</span>
-          <span className="font-mono text-xs text-foreground shrink-0">
+          <span className="text-xs text-navy-400 truncate">{t(metric.labelKey)}</span>
+          <span className="font-mono text-xs text-navy-200 shrink-0">
             {unlimited ? '∞' : `${metric.used} / ${metric.limit}`}
           </span>
         </div>
