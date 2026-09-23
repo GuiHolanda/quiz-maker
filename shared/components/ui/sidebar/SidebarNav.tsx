@@ -6,7 +6,14 @@ import type { UsageStats } from '@/shared/types';
 import NextLink from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { IconHome, IconSchool, IconSparkles, IconListDetails, IconPlayerPlay, IconSettings } from '@tabler/icons-react';
+import {
+  IconLayoutDashboard,
+  IconFolderOpen,
+  IconSparkles,
+  IconLibrary,
+  IconClipboardList,
+  IconSettings,
+} from '@tabler/icons-react';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
@@ -34,8 +41,13 @@ const NAV_GROUPS: readonly NavGroup[] = [
   {
     titleKey: 'nav.groupStudy',
     items: [
-      { href: '/dashboard', labelKey: 'nav.dashboard', icon: IconHome, isActive: (p) => p === '/dashboard' },
-      { href: '/exams', labelKey: 'nav.myExams', icon: IconSchool, isActive: (p) => p === '/exams' },
+      {
+        href: '/dashboard',
+        labelKey: 'nav.dashboard',
+        icon: IconLayoutDashboard,
+        isActive: (p) => p === '/dashboard',
+      },
+      { href: '/exams', labelKey: 'nav.myExams', icon: IconFolderOpen, isActive: (p) => p === '/exams' },
     ],
   },
   {
@@ -50,7 +62,7 @@ const NAV_GROUPS: readonly NavGroup[] = [
       {
         href: '/question-bank',
         labelKey: 'nav.questionBank',
-        icon: IconListDetails,
+        icon: IconLibrary,
         isActive: (p) => p === '/question-bank',
         badgeKey: 'questionsSavedInLibrary',
       },
@@ -62,7 +74,7 @@ const NAV_GROUPS: readonly NavGroup[] = [
       {
         href: '/simulados',
         labelKey: 'nav.simulados',
-        icon: IconPlayerPlay,
+        icon: IconClipboardList,
         isActive: (p) => p.startsWith('/simulados'),
         badgeKey: 'simuladosOpen',
       },

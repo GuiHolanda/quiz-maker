@@ -18,7 +18,7 @@ export function SidebarDesktop({ isCollapsed, onToggleCollapsed }: SidebarDeskto
 
   return (
     <aside
-      className={`hidden md:flex shrink-0 h-screen sticky top-0 flex-col bg-background2 border-r border-content2 overflow-hidden transition-[width] duration-200 ease-out ${isCollapsed ? 'w-[68px]' : 'w-[248px]'}`}
+      className={`hidden md:flex shrink-0 h-screen sticky top-0 flex-col bg-background2 border-r border-content2 overflow-hidden transition-[width] duration-200 ease-out ${isCollapsed ? 'w-[68px]' : 'w-[280px]'}`}
     >
       {renderBrand()}
       <div
