@@ -18,6 +18,7 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { FauxCheckbox } from '@/shared/components/ui/FauxCheckbox';
 import { RelativeDate } from '@/shared/components/ui/RelativeDate';
+import { ReportQuestionButton } from '@/shared/components/ui/ReportQuestionButton';
 import type { UnifiedQuestion } from '@/shared/types';
 
 interface QuestionBankCardProps {
@@ -188,6 +189,7 @@ export function QuestionBankCard({
             {t('questionBank.answerAfterResponding')}
           </span>
         )}
+        <ReportQuestionButton examQuestionId={question.id} surface="question_bank" />
         <Button
           isIconOnly
           aria-label={t('questionBank.deleteQuestion')}

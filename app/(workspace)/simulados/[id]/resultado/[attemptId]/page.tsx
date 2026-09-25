@@ -106,7 +106,13 @@ export default function SimuladoResultadoPage() {
     }
   }
 
-  const review = <QuestionReviewPanel view={view} onLoadExplanation={getExamQuestionExplanation} />;
+  const review = (
+    <QuestionReviewPanel
+      attemptId={Number(params.attemptId)}
+      view={view}
+      onLoadExplanation={getExamQuestionExplanation}
+    />
+  );
 
   return (
     <PageHeader
