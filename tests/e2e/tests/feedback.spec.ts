@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 
 import { test, expect } from '../fixtures/auth.fixture';
 import { mockMockExamResult } from '../fixtures/mock-data';
-import { findQuestionReports, seedCertQuestions } from '../support/db-seed';
+import { clearQuestionReports, findQuestionReports, seedCertQuestions } from '../support/db-seed';
 import { ALL_DOMAINS } from '../support/journey-config';
 import { dismissNotificationDialog, exitAndDiscardAttempt, pickSimuladoScopeAndExam } from '../support/flows';
 import { tid, TID } from '../support/selectors';
@@ -24,6 +24,10 @@ async function pickWrongAnswerKeyReason(page: Page) {
 }
 
 test.describe('report a question', () => {
+  test.beforeEach(async () => {
+    await clearQuestionReports();
+  });
+
   test('reports from the question bank, then is told the question was already reported', async ({
     authedPage: page,
   }) => {
