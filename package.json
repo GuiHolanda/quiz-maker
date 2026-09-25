@@ -54,6 +54,7 @@
     "@heroui/pagination": "2.2.23",
     "@heroui/popover": "2.3.26",
     "@heroui/progress": "2.2.21",
+    "@heroui/radio": "2.3.26",
     "@heroui/select": "2.4.27",
     "@heroui/skeleton": "2.2.16",
     "@heroui/spinner": "2.2.23",

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@heroui/button';
 import { Textarea } from '@heroui/input';
 import { ModalBody, ModalFooter, ModalHeader } from '@heroui/modal';
-import { Select, SelectItem } from '@heroui/select';
+import { Radio, RadioGroup } from '@heroui/radio';
 
 import {
   QUESTION_REPORT_COMMENT_MAX_LENGTH,
@@ -46,23 +46,20 @@ export function ReportQuestionForm({ isLoading, onSubmit, onClose }: ReportQuest
         <span className="text-sm font-normal text-default-500">{t('feedback.reportModalSubtitle')}</span>
       </ModalHeader>
       <ModalBody className="gap-5 py-6" data-testid="question-report-modal">
-        <Select
-          {...inputProperties.select}
-          data-testid="question-report-reason-select"
+        <RadioGroup
           errorMessage={t('feedback.reasonRequired')}
           isDisabled={isLoading}
           isInvalid={isReasonMissing}
           label={t('feedback.reasonLabel')}
-          placeholder={t('feedback.reasonPlaceholder')}
-          selectedKeys={reason ? [reason] : []}
-          onSelectionChange={(keys) => setReason((Array.from(keys)[0] as QuestionReportReason | undefined) ?? null)}
+          value={reason}
+          onValueChange={(value) => setReason(value as QuestionReportReason)}
         >
           {QUESTION_REPORT_REASONS.map(({ id, labelKey }) => (
-            <SelectItem key={id} data-testid={`question-report-reason-${id.replaceAll('_', '-')}`}>
+            <Radio key={id} value={id}>
               {t(labelKey)}
-            </SelectItem>
+            </Radio>
           ))}
-        </Select>
+        </RadioGroup>
         <Textarea
           {...inputProperties.input}
           data-testid="question-report-comment"

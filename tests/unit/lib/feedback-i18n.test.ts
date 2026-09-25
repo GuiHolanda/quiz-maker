@@ -22,7 +22,6 @@ const EXPECTED_KEYS = [
   'reportModalTitle',
   'reportModalSubtitle',
   'reasonLabel',
-  'reasonPlaceholder',
   'reasonWrongAnswerKey',
   'reasonAmbiguousStatement',
   'reasonOutOfScope',
