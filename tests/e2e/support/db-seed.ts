@@ -42,3 +42,15 @@ export async function seedCertQuestions(texts: string[]): Promise<void> {
     await prisma.$disconnect();
   }
 }
+
+export async function findQuestionReports(where: { questionText?: string; mockExamAttemptId?: number }) {
+  const prisma = new PrismaClient({
+    datasources: { db: { url: process.env.DATABASE_URL ?? 'file:./prisma/dev.db' } },
+  });
+
+  try {
+    return await prisma.questionReport.findMany({ where, orderBy: { createdAt: 'asc' } });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
