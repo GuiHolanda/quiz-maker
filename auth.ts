@@ -9,7 +9,7 @@ import authConfig from './auth.config';
 
 import { prisma } from '@/lib/prisma';
 import { REFERRAL_CODE_COOKIE_KEY, UTM_COOKIE_KEY } from '@/config/constants';
-import { generateUniqueReferralCode } from '@/lib/growth/referral-code';
+import { generateUniqueReferralCode } from '@/features/services/billing/referral.service';
 import { parseUtmCookie } from '@/lib/growth/utm';
 import { syncTokenPlan } from '@/features/services/billing/quota.service';
 
