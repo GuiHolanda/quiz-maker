@@ -1,7 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Prisma } from '@prisma/client';
 
-import { toApiErrorResponse } from '@/lib/api-error';
+import { logApiError, toApiErrorResponse } from '@/lib/api-error';
+
+const loggerMock = vi.hoisted(() => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn() }));
+
+vi.mock('@/lib/logger', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/logger')>()),
+  logger: loggerMock,
+}));
 
 describe('toApiErrorResponse', () => {
   // Business-logic errors from the service layer
@@ -118,5 +125,41 @@ describe('toApiErrorResponse', () => {
       expect(result.status).toBe(500);
       expect(result.error).toBe('Internal server error');
     });
+  });
+});
+
+describe('logApiError', () => {
+  beforeEach(() => {
+    loggerMock.info.mockClear();
+    loggerMock.warn.mockClear();
+    loggerMock.error.mockClear();
+  });
+
+  it('logs an unexpected failure as an error with status, error details and the caller context', () => {
+    logApiError('mock_exam.finish.failed', new TypeError('boom'), { attemptId: 10, userId: 'u1' });
+
+    expect(loggerMock.error).toHaveBeenCalledWith(
+      'mock_exam.finish.failed',
+      expect.objectContaining({
+        attemptId: 10,
+        userId: 'u1',
+        status: 500,
+        errorName: 'TypeError',
+        errorMessage: 'boom',
+      })
+    );
+    expect(loggerMock.warn).not.toHaveBeenCalled();
+  });
+
+  it('logs a business-logic rejection as a warning with its own status', () => {
+    logApiError('mock_exam.finish.failed', Object.assign(new Error('Tentativa não encontrada'), { status: 404 }), {
+      attemptId: 10,
+    });
+
+    expect(loggerMock.warn).toHaveBeenCalledWith(
+      'mock_exam.finish.failed',
+      expect.objectContaining({ attemptId: 10, status: 404, errorMessage: 'Tentativa não encontrada' })
+    );
+    expect(loggerMock.error).not.toHaveBeenCalled();
   });
 });
