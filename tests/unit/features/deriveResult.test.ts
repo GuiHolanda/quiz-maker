@@ -120,3 +120,43 @@ describe('deriveResult — comparable gating', () => {
     expect(view.marginPP).toBe(-20);
   });
 });
+
+describe('deriveResult — questions without gabarito', () => {
+  function withoutGabarito(result: MockExamResult, indexes: number[]): MockExamResult {
+    for (const index of indexes) (result.questions[index].examQuestion as { answer: unknown }).answer = null;
+
+    return result;
+  }
+
+  it('marks an answered question that has no gabarito as ungraded, not wrong', () => {
+    const result = makeResult({ score: 7 });
+
+    result.attempt.score = 6;
+    const view = deriveResult(withoutGabarito(result, [6]));
+
+    expect(view.questions[6].status).toBe('ungraded');
+    expect(view.ungradedCount).toBe(1);
+  });
+
+  it('does not count an ungraded question as wrong', () => {
+    const result = makeResult({ score: 7 });
+
+    result.attempt.score = 6;
+    const view = deriveResult(withoutGabarito(result, [6]));
+
+    expect(view.correct).toBe(6);
+    expect(view.blank).toBe(3);
+    expect(view.wrong).toBe(0);
+  });
+
+  it('keeps a blank question without gabarito as blank, since its score never depends on the gabarito', () => {
+    const view = deriveResult(withoutGabarito(makeResult({ score: 8 }), [9]));
+
+    expect(view.questions[9].status).toBe('blank');
+    expect(view.ungradedCount).toBe(0);
+  });
+
+  it('reports zero ungraded questions when every answered question has a gabarito', () => {
+    expect(deriveResult(makeResult({ score: 8 })).ungradedCount).toBe(0);
+  });
+});

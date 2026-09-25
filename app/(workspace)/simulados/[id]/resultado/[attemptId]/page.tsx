@@ -1,21 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { BreadcrumbItem, Breadcrumbs } from '@heroui/breadcrumbs';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faListUl } from '@fortawesome/free-solid-svg-icons';
+import { faListUl, faRotateRight } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import {
-  ensureMockExamAnswers,
-  getMockExamAttemptResult,
-  startMockExamAttempt,
-  getExamQuestionExplanation,
-} from '@/features/connectors';
-import { MockExamResult } from '@/shared/types';
+import { startMockExamAttempt, getExamQuestionExplanation } from '@/features/connectors';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { PageHeader } from '@/shared/components/ui/PageHeader';
 import { WorkspaceSplitLayout } from '@/shared/components/ui/WorkspaceSplitLayout';
 import { buttonStyles } from '@/config/constants/buttonStyles';
@@ -27,55 +22,14 @@ import { ComparisonPanel } from './components/ComparisonPanel';
 import { NextStepPanel } from './components/NextStepPanel';
 import { ResultSkeleton } from './components/ResultSkeleton';
 import { deriveResult, formatFinishedAt } from './components/deriveResult';
-
-const MAX_ENSURE_ROUNDS = 3;
-
-async function ensureAllAnswers(mockExamId: number) {
-  for (let round = 0; round < MAX_ENSURE_ROUNDS; round++) {
-    const { generated, remaining } = await ensureMockExamAnswers(mockExamId);
-
-    if (!remaining || generated === 0) return;
-  }
-}
+import { useAttemptResult } from './components/useAttemptResult.hook';
 
 export default function SimuladoResultadoPage() {
   const { t, language } = useTranslation();
   const params = useParams<{ id: string; attemptId: string }>();
   const router = useRouter();
-  const [result, setResult] = useState<MockExamResult | null>(null);
+  const { result, loadFailed, reload } = useAttemptResult(Number(params.id), Number(params.attemptId));
   const [isStarting, setIsStarting] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      const data = await getMockExamAttemptResult(Number(params.id), Number(params.attemptId));
-
-      if (cancelled) return;
-
-      const hasMissingAnswer = data.questions.some((mq) => !mq.examQuestion.answer);
-
-      if (hasMissingAnswer) {
-        try {
-          await ensureAllAnswers(Number(params.id));
-          const refreshed = await getMockExamAttemptResult(Number(params.id), Number(params.attemptId));
-
-          if (!cancelled) setResult(refreshed);
-
-          return;
-        } catch {
-          // fall back to whatever we already have — better partial than blank
-        }
-      }
-      setResult(data);
-    }
-
-    load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [params.id, params.attemptId]);
 
   const breadcrumbs = (
     <Breadcrumbs>
@@ -96,6 +50,18 @@ export default function SimuladoResultadoPage() {
     </Button>
   );
 
+  if (loadFailed) {
+    return (
+      <PageHeader breadcrumbs={breadcrumbs} title={t('simulado.scoreTitle')}>
+        <EmptyState
+          action={{ label: t('common.retry'), icon: faRotateRight, onPress: reload }}
+          description={t('simulado.result.loadErrorBody')}
+          title={t('simulado.result.loadErrorTitle')}
+        />
+      </PageHeader>
+    );
+  }
+
   if (!result) {
     return (
       <PageHeader breadcrumbs={breadcrumbs} subtitle={t('simulado.result.building')} title={t('simulado.scoreTitle')}>
@@ -105,6 +71,7 @@ export default function SimuladoResultadoPage() {
   }
 
   const view = deriveResult(result);
+  const isFullyGraded = view.ungradedCount === 0;
 
   const headerAction = (
     <div className="flex items-center gap-3">
@@ -139,6 +106,8 @@ export default function SimuladoResultadoPage() {
     }
   }
 
+  const review = <QuestionReviewPanel view={view} onLoadExplanation={getExamQuestionExplanation} />;
+
   return (
     <PageHeader
       action={headerAction}
@@ -147,20 +116,36 @@ export default function SimuladoResultadoPage() {
       title={t('simulado.result.title', { exam: view.examName })}
     >
       <div className="flex flex-col gap-6">
-        <ScorePanel view={view} />
+        {isFullyGraded ? (
+          <>
+            <ScorePanel view={view} />
 
-        <WorkspaceSplitLayout
-          stickyRail
-          rail={
-            <>
-              <ComparisonPanel view={view} />
-              <NextStepPanel isRetrying={isStarting} view={view} onRetry={handleTryAgain} />
-            </>
-          }
-        >
-          <TopicPerformancePanel view={view} />
-          <QuestionReviewPanel view={view} onLoadExplanation={getExamQuestionExplanation} />
-        </WorkspaceSplitLayout>
+            <WorkspaceSplitLayout
+              stickyRail
+              rail={
+                <>
+                  <ComparisonPanel view={view} />
+                  <NextStepPanel isRetrying={isStarting} view={view} onRetry={handleTryAgain} />
+                </>
+              }
+            >
+              <TopicPerformancePanel view={view} />
+              {review}
+            </WorkspaceSplitLayout>
+          </>
+        ) : (
+          <>
+            <EmptyState
+              action={{ label: t('common.retry'), icon: faRotateRight, onPress: reload }}
+              description={t('simulado.result.ungradedBody')}
+              title={t(
+                view.ungradedCount === 1 ? 'simulado.result.ungradedTitle' : 'simulado.result.ungradedTitlePlural',
+                { count: view.ungradedCount }
+              )}
+            />
+            {review}
+          </>
+        )}
       </div>
     </PageHeader>
   );
