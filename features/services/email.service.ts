@@ -1,5 +1,7 @@
 import { Resend } from 'resend';
 
+import { logger, serializeError } from '@/lib/logger';
+
 const BRAND_COLOR = '#4f46e5';
 const BRAND_NAME = 'CertifiqueAI';
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
@@ -72,6 +74,66 @@ function emailLayout(bodyHtml: string, bodyText: string) {
 </html>`;
 
   return { html, text: bodyText };
+}
+
+const INTERNAL_SUBJECT_PREFIX = `[${BRAND_NAME}] `;
+const INTERNAL_SUBJECT_MAX_LENGTH = 150;
+
+export function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+export interface InternalAlertRow {
+  readonly label: string;
+  readonly value: string;
+}
+
+export interface InternalAlertInput {
+  readonly subject: string;
+  readonly heading: string;
+  readonly rows: ReadonlyArray<InternalAlertRow>;
+  readonly body?: string;
+}
+
+export function buildInternalAlert(input: InternalAlertInput) {
+  const subject = `${INTERNAL_SUBJECT_PREFIX}${input.subject.replace(/\s+/g, ' ').trim().slice(0, INTERNAL_SUBJECT_MAX_LENGTH)}`;
+
+  const rowsHtml = input.rows
+    .map(
+      ({ label, value }) => `
+    <tr>
+      <td valign="top" width="120" style="width:120px;padding-top:8px;padding-right:16px;padding-bottom:8px;padding-left:0;border-bottom:1px solid #e2e8f0;font-family:${FONT};font-size:13px;font-weight:700;color:#64748b;line-height:1.5;">${escapeHtml(label)}</td>
+      <td valign="top" style="padding-top:8px;padding-right:0;padding-bottom:8px;padding-left:0;border-bottom:1px solid #e2e8f0;font-family:${FONT};font-size:14px;color:#0f172a;line-height:1.5;">${escapeHtml(value)}</td>
+    </tr>`
+    )
+    .join('');
+
+  const bodyBlock = input.body
+    ? `
+<p style="margin:24px 0 0;font-family:${FONT};font-size:15px;color:#0f172a;line-height:1.6;">${escapeHtml(input.body).replace(/\r?\n/g, '<br>')}</p>`
+    : '';
+
+  const bodyHtml = `
+<h1 style="margin:0 0 16px;font-family:${FONT};font-size:22px;font-weight:700;color:#0f172a;line-height:1.2;">${escapeHtml(input.heading)}</h1>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;">${rowsHtml}
+</table>${bodyBlock}`;
+
+  const bodyText = [
+    input.heading,
+    '',
+    ...input.rows.map(({ label, value }) => `${label}: ${value}`),
+    ...(input.body ? ['', input.body] : []),
+  ].join('\n');
+
+  const { html, text } = emailLayout(bodyHtml, bodyText);
+
+  return { subject, html, text };
 }
 
 export class EmailService {
@@ -302,6 +364,33 @@ export class EmailService {
     if (error) {
       console.error('[EmailService] sendReferralRewardToReferrer failed:', error);
       throw Object.assign(new Error(error.message ?? 'Failed to send referral reward email'), { status: 500 });
+    }
+  }
+
+  async sendInternalAlert(input: InternalAlertInput): Promise<boolean> {
+    const to = process.env.FEEDBACK_INBOX_EMAIL?.trim();
+
+    if (!to) {
+      logger.warn('email.internal_alert_skipped', { reason: 'FEEDBACK_INBOX_EMAIL is not set' });
+
+      return false;
+    }
+
+    try {
+      const { subject, html, text } = buildInternalAlert(input);
+      const { error } = await this.resend.emails.send({ from: this.sender, to, subject, html, text });
+
+      if (error) {
+        logger.warn('email.internal_alert_failed', { errorName: error.name, errorMessage: error.message });
+
+        return false;
+      }
+
+      return true;
+    } catch (err) {
+      logger.warn('email.internal_alert_failed', serializeError(err));
+
+      return false;
     }
   }
 }

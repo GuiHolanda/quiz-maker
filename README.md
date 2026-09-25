@@ -101,6 +101,10 @@ STRIPE_PRICE_ID_SPRINT=price_...          # one-time (not recurring) price — R
 # Email (password reset)
 RESEND_API_KEY=re_...
 
+# Feedback inbox (optional) — where user feedback and question reports are emailed.
+# Leave it unset and no internal email is sent, so local dev and E2E stay silent.
+# FEEDBACK_INBOX_EMAIL=you@example.com
+
 # Redis (optional — see "Redis (optional)" below).
 # Leave these unset and the app runs exactly as it does today: job progress falls back to
 # polling Postgres, rate limiting is off, and the Stripe webhook processes every delivery.
