@@ -29,6 +29,7 @@ export function ExamTypePickerModal({ isOpen, onClose, onConfirm }: ExamTypePick
           <ExamTypePicker
             certification={{ title: t('nav.certifications'), body: t('certification.pageSubtitle') }}
             publicExam={{ title: t('nav.publicExams'), body: t('concurso.pageSubtitle') }}
+            orientation="vertical"
             value={type}
             onChange={setType}
           />
