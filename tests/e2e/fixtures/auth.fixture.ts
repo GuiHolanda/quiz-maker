@@ -24,9 +24,8 @@ export const test = base.extend<AuthFixtures>({
     });
 
     // finishAttempt (PATCH) and result (GET) for mock exams.
-    // The server-side finishAttempt calls ensureAnswers when Answer rows are missing,
-    // which would make a real OpenAI call in tests. Intercepting the PATCH prevents that.
-    // The GET stub lets the result page render without hitting the real DB result.
+    // The PATCH stub keeps the tests off the real DB; the GET stub lets the result page
+    // render without hitting the real DB result.
     await page.route('**/api/mock-exams/**/attempts/**', (route) => {
       const method = route.request().method();
 

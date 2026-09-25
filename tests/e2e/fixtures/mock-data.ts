@@ -1,12 +1,11 @@
 import { E2E_CERT_LABEL, E2E_CERT_TOPIC, E2E_SUBJECT } from '../support/constants';
 
 // ensure-answers stub — always returns generated:0 (idempotent no-op).
-export const mockAnswersResponse = { generated: 0 };
+export const mockAnswersResponse = { generated: 0, remaining: 0 };
 
 // Stub returned by PATCH .../attempts/:id (finishAttempt).
-// The server-side finishAttempt calls ensureAnswers when Answer rows are missing,
-// which would make a real OpenAI call in tests. Intercepting the PATCH prevents that,
-// and the subsequent GET result endpoint is served by mockMockExamResult below.
+// Intercepting the PATCH keeps the tests off the real DB, and the subsequent GET result
+// endpoint is served by mockMockExamResult below.
 export const mockFinishAttemptResponse = {};
 
 // Unified MockExamResult stub served by GET /api/mock-exams/:id/attempts/:attemptId.

@@ -28,6 +28,16 @@ import { NextStepPanel } from './components/NextStepPanel';
 import { ResultSkeleton } from './components/ResultSkeleton';
 import { deriveResult, formatFinishedAt } from './components/deriveResult';
 
+const MAX_ENSURE_ROUNDS = 3;
+
+async function ensureAllAnswers(mockExamId: number) {
+  for (let round = 0; round < MAX_ENSURE_ROUNDS; round++) {
+    const { generated, remaining } = await ensureMockExamAnswers(mockExamId);
+
+    if (!remaining || generated === 0) return;
+  }
+}
+
 export default function SimuladoResultadoPage() {
   const { t, language } = useTranslation();
   const params = useParams<{ id: string; attemptId: string }>();
@@ -47,7 +57,7 @@ export default function SimuladoResultadoPage() {
 
       if (hasMissingAnswer) {
         try {
-          await ensureMockExamAnswers(Number(params.id));
+          await ensureAllAnswers(Number(params.id));
           const refreshed = await getMockExamAttemptResult(Number(params.id), Number(params.attemptId));
 
           if (!cancelled) setResult(refreshed);

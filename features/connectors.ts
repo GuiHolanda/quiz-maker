@@ -279,8 +279,8 @@ export async function startMockExamAttempt(mockExamId: number): Promise<MockExam
   return data.attempt;
 }
 
-export async function ensureMockExamAnswers(mockExamId: number): Promise<{ generated: number }> {
-  const { data } = await api.post<{ generated: number }>(`${MOCK_EXAMS_URL}/${mockExamId}/answers`);
+export async function ensureMockExamAnswers(mockExamId: number): Promise<{ generated: number; remaining: number }> {
+  const { data } = await api.post<{ generated: number; remaining: number }>(`${MOCK_EXAMS_URL}/${mockExamId}/answers`);
 
   return data;
 }

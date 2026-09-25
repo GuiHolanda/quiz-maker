@@ -9,6 +9,13 @@ vi.mock('@/features/services/generation/openai.service', () => ({
   },
 }));
 
+const loggerMock = vi.hoisted(() => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn() }));
+
+vi.mock('@/lib/logger', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/logger')>()),
+  logger: loggerMock,
+}));
+
 const metricsCreateLogMock = vi.fn().mockResolvedValue('log-1');
 const metricsRecordStepMock = vi.fn();
 const metricsFinalizeMock = vi.fn();
@@ -30,6 +37,9 @@ describe('MockExamService', () => {
     metricsCreateLogMock.mockClear();
     metricsRecordStepMock.mockClear();
     metricsFinalizeMock.mockClear();
+    loggerMock.info.mockClear();
+    loggerMock.warn.mockClear();
+    loggerMock.error.mockClear();
   });
 
   // Behaviour 1: validateSectionAvailability throws 422 when count < requested (tested via create())
@@ -362,7 +372,7 @@ describe('MockExamService', () => {
 
       const result = await service.ensureAnswers(1, 'user-1');
 
-      expect(result).toEqual({ generated: 0 });
+      expect(result).toEqual({ generated: 0, remaining: 0 });
       expect(openAICallMock).not.toHaveBeenCalled();
       expect(metricsCreateLogMock).not.toHaveBeenCalled();
     });
@@ -394,7 +404,7 @@ describe('MockExamService', () => {
               correctCount: 1,
               difficulty: 'easy',
               examName: 'Concurso ABC',
-              options: [{ label: 'A', text: 'opt-a' }],
+              options: [{ label: 'A', text: 'opt-a' }, { label: 'B', text: 'opt-b' }],
               answer: null,
             },
           },
@@ -838,6 +848,303 @@ describe('MockExamService', () => {
           'u1',
         ),
       ).rejects.toMatchObject({ status: 400 });
+    });
+  });
+
+  describe('finishAttempt — não depende do LLM', () => {
+    const trueFalseOptions = [
+      { label: 'C', text: 'Certo' },
+      { label: 'E', text: 'Errado' },
+    ];
+
+    function seedOpenAttempt(questions: any[]) {
+      prismaMock.mockExamAttempt.findFirst.mockResolvedValue({
+        id: 10, mockExamId: 1, userId: 'u1', startedAt: new Date(),
+      } as any);
+      prismaMock.mockExam.findFirst.mockResolvedValue({
+        id: 1,
+        durationMinutes: null,
+        exam: { name: 'Concurso', type: 'public_exam', role: null, examBoard: { name: 'CEBRASPE' } },
+        questions: questions.map((mq) => ({ examQuestion: { ...mq.examQuestion, id: mq.id, options: trueFalseOptions } })),
+      } as any);
+      prismaMock.mockExamQuestion.findMany.mockResolvedValue(questions as any);
+      prismaMock.$transaction.mockImplementation(async (arr: any) => arr);
+      openAICallMock.mockResolvedValue({
+        text: JSON.stringify({ answers: [{ questionId: 5, correctOptions: ['C'] }] }),
+        inputTokens: 0,
+        outputTokens: 0,
+      });
+    }
+
+    const questionWithoutAnswer = {
+      id: 5,
+      examQuestion: { sectionName: 'Direito', topicName: null, text: 'Q', correctCount: 1, difficulty: 'easy', examName: 'C', format: 'true_false', answer: null },
+    };
+
+    it('finishAttempt() saves the attempt without calling the LLM when the gabarito is missing', async () => {
+      seedOpenAttempt([questionWithoutAnswer]);
+
+      await service.finishAttempt(1, 10, 'u1', [{ mockExamQuestionId: 5, selectedOptions: ['C'] }]);
+
+      expect(openAICallMock).not.toHaveBeenCalled();
+      expect(prismaMock.mockExamAttempt.update).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 10 }, data: expect.objectContaining({ finishedAt: expect.any(Date) }) })
+      );
+    });
+
+    it('finishAttempt() logs a warning with the missing-gabarito count', async () => {
+      seedOpenAttempt([questionWithoutAnswer]);
+
+      await service.finishAttempt(1, 10, 'u1', [{ mockExamQuestionId: 5, selectedOptions: ['C'] }]);
+
+      expect(loggerMock.warn).toHaveBeenCalledWith(
+        'mock_exam.finish.completed',
+        expect.objectContaining({ mockExamId: 1, attemptId: 10, userId: 'u1', questions: 1, missingAnswers: 1 })
+      );
+    });
+
+    it('finishAttempt() logs at info level when every question has a gabarito', async () => {
+      seedOpenAttempt([{ id: 5, examQuestion: { answer: { correctOptions: ['C'] } } }]);
+
+      await service.finishAttempt(1, 10, 'u1', [{ mockExamQuestionId: 5, selectedOptions: ['C'] }]);
+
+      expect(loggerMock.info).toHaveBeenCalledWith(
+        'mock_exam.finish.completed',
+        expect.objectContaining({ missingAnswers: 0, score: 1 })
+      );
+      expect(loggerMock.warn).not.toHaveBeenCalled();
+    });
+
+    it('finishAttempt() ignores answers that do not belong to the mock exam', async () => {
+      seedOpenAttempt([{ id: 5, examQuestion: { answer: { correctOptions: ['C'] } } }]);
+
+      await service.finishAttempt(1, 10, 'u1', [
+        { mockExamQuestionId: 5, selectedOptions: ['C'] },
+        { mockExamQuestionId: 999, selectedOptions: ['C'] },
+      ]);
+
+      const { data } = prismaMock.mockExamAttemptAnswer.createMany.mock.calls[0][0]!;
+
+      expect(data).toEqual([expect.objectContaining({ mockExamQuestionId: 5 })]);
+    });
+
+    it('finishAttempt() stores an empty selection when selectedOptions is not an array', async () => {
+      seedOpenAttempt([{ id: 5, examQuestion: { answer: { correctOptions: ['C'] } } }]);
+
+      await service.finishAttempt(1, 10, 'u1', [{ mockExamQuestionId: 5, selectedOptions: 'C' as any }]);
+
+      const { data } = prismaMock.mockExamAttemptAnswer.createMany.mock.calls[0][0]!;
+
+      expect(data).toEqual([expect.objectContaining({ selectedOptions: '[]', isCorrect: false })]);
+    });
+  });
+
+  describe('ensureAnswers — robustez do gabarito', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    const trueFalseOptions = [
+      { label: 'C', text: 'Certo' },
+      { label: 'E', text: 'Errado' },
+    ];
+
+    function question(id: number, overrides: Record<string, unknown> = {}) {
+      return {
+        id,
+        sectionName: 'Direito',
+        topicName: null,
+        text: `Q${id}`,
+        correctCount: 1,
+        difficulty: 'medium',
+        examName: 'Concurso',
+        format: 'true_false',
+        options: trueFalseOptions,
+        answer: null,
+        ...overrides,
+      };
+    }
+
+    function seedMockExam(questions: any[], exam: Record<string, unknown> = {}) {
+      prismaMock.mockExam.findFirst.mockResolvedValue({
+        id: 1,
+        exam: { name: 'Concurso', type: 'public_exam', role: null, examBoard: { name: 'CEBRASPE' }, ...exam },
+        questions: questions.map((examQuestion) => ({ examQuestion })),
+      } as any);
+      prismaMock.$transaction.mockImplementation(async (arg: any) => (typeof arg === 'function' ? arg(prismaMock) : arg));
+      prismaMock.mockExamQuestion.findMany.mockResolvedValue([] as any);
+      prismaMock.mockExamAttempt.findMany.mockResolvedValue([] as any);
+    }
+
+    const llmAnswers = (answers: unknown[]) => ({
+      text: JSON.stringify({ answers }),
+      inputTokens: 1,
+      outputTokens: 1,
+    });
+
+    it.each([['public_exam'], ['certification']])(
+      'sends the question format to the %s answers prompt',
+      async (type) => {
+        seedMockExam([question(1)], { type });
+        openAICallMock.mockResolvedValue(llmAnswers([{ questionId: 1, correctOptions: ['C'] }]));
+
+        await service.ensureAnswers(1, 'u1');
+
+        expect(openAICallMock.mock.calls[0][1].format).toBe('true_false');
+      }
+    );
+
+    it('accepts a JSON payload wrapped in a markdown fence', async () => {
+      seedMockExam([question(1)]);
+      openAICallMock.mockResolvedValue({
+        text: 'Aqui está o gabarito:\n```json\n' + JSON.stringify({ answers: [{ questionId: 1, correctOptions: ['E'] }] }) + '\n```',
+        inputTokens: 1,
+        outputTokens: 1,
+      });
+
+      const result = await service.ensureAnswers(1, 'u1');
+
+      expect(result).toEqual({ generated: 1, remaining: 0 });
+      expect(prismaMock.examAnswer.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({ create: { questionId: 1, correctOptions: ['E'] } })
+      );
+    });
+
+    it('keeps the other batches going when one batch fails and reports what is still missing', async () => {
+      seedMockExam([question(1, { sectionName: 'Penal' }), question(2, { sectionName: 'Civil' })]);
+      openAICallMock
+        .mockRejectedValueOnce(new Error('boom'))
+        .mockResolvedValueOnce(llmAnswers([{ questionId: 2, correctOptions: ['C'] }]));
+
+      const result = await service.ensureAnswers(1, 'u1');
+
+      expect(result).toEqual({ generated: 1, remaining: 1 });
+    });
+
+    it('logs the failed batch with its section, format and error details', async () => {
+      seedMockExam([question(1, { sectionName: 'Penal' }), question(2, { sectionName: 'Civil' })]);
+      openAICallMock
+        .mockRejectedValueOnce(Object.assign(new Error('boom'), { status: 429 }))
+        .mockResolvedValueOnce(llmAnswers([{ questionId: 2, correctOptions: ['C'] }]));
+
+      await service.ensureAnswers(1, 'u1');
+
+      expect(loggerMock.error).toHaveBeenCalledWith(
+        'mock_exam.answers.batch_failed',
+        expect.objectContaining({
+          mockExamId: 1,
+          userId: 'u1',
+          section: 'Penal',
+          format: 'true_false',
+          size: 1,
+          errorMessage: 'boom',
+          errorStatus: 429,
+        })
+      );
+    });
+
+    it('throws 502 when every batch fails', async () => {
+      seedMockExam([question(1, { sectionName: 'Penal' }), question(2, { sectionName: 'Civil' })]);
+      openAICallMock.mockRejectedValue(new Error('boom'));
+
+      await expect(service.ensureAnswers(1, 'u1')).rejects.toMatchObject({ status: 502 });
+    });
+
+    it.each([
+      ['a label outside the question options', ['A']],
+      ['more entries than correctCount', ['C', 'E']],
+    ])('drops a gabarito entry with %s', async (_label, correctOptions) => {
+      seedMockExam([question(1)]);
+      openAICallMock.mockResolvedValue(llmAnswers([{ questionId: 1, correctOptions }]));
+
+      const result = await service.ensureAnswers(1, 'u1');
+
+      expect(result).toEqual({ generated: 0, remaining: 1 });
+      expect(prismaMock.examAnswer.upsert).not.toHaveBeenCalled();
+      expect(prismaMock.mockExamAttempt.findMany).not.toHaveBeenCalled();
+      expect(loggerMock.warn).toHaveBeenCalledWith(
+        'mock_exam.answers.batch_invalid_entries',
+        expect.objectContaining({ invalid: 1 })
+      );
+    });
+
+    it('stops starting batches once the time budget is spent and reports what remains', async () => {
+      const t0 = 1_700_000_000_000;
+      let now = t0;
+
+      vi.spyOn(Date, 'now').mockImplementation(() => now);
+      seedMockExam([
+        question(1, { sectionName: 'S1' }),
+        question(2, { sectionName: 'S2' }),
+        question(3, { sectionName: 'S3' }),
+      ]);
+      openAICallMock.mockImplementation(async () => {
+        now += 10 * 60_000;
+
+        return llmAnswers([{ questionId: 1, correctOptions: ['C'] }]);
+      });
+
+      const result = await service.ensureAnswers(1, 'u1');
+
+      expect(openAICallMock).toHaveBeenCalledTimes(1);
+      expect(result).toEqual({ generated: 1, remaining: 2 });
+    });
+
+    it('regrades finished attempts once new gabarito entries were saved', async () => {
+      seedMockExam([question(1)]);
+      openAICallMock.mockResolvedValue(llmAnswers([{ questionId: 1, correctOptions: ['C'] }]));
+      prismaMock.mockExamQuestion.findMany.mockResolvedValue([
+        { id: 5, examQuestion: { answer: { correctOptions: ['C'] } } },
+        { id: 6, examQuestion: { answer: { correctOptions: ['E'] } } },
+      ] as any);
+      prismaMock.mockExamAttempt.findMany.mockResolvedValue([
+        {
+          id: 10,
+          score: 0,
+          answers: [
+            { id: 100, mockExamQuestionId: 5, selectedOptions: '["C"]', isCorrect: false },
+            { id: 101, mockExamQuestionId: 6, selectedOptions: '["C"]', isCorrect: false },
+          ],
+        },
+      ] as any);
+
+      await service.ensureAnswers(1, 'u1');
+
+      expect(prismaMock.mockExamAttemptAnswer.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: [100] } },
+        data: { isCorrect: true },
+      });
+      expect(prismaMock.mockExamAttempt.update).toHaveBeenCalledWith({ where: { id: 10 }, data: { score: 1 } });
+    });
+
+    it('leaves an attempt untouched when its grading already matches the gabarito', async () => {
+      seedMockExam([question(1)]);
+      openAICallMock.mockResolvedValue(llmAnswers([{ questionId: 1, correctOptions: ['C'] }]));
+      prismaMock.mockExamQuestion.findMany.mockResolvedValue([
+        { id: 5, examQuestion: { answer: { correctOptions: ['C'] } } },
+      ] as any);
+      prismaMock.mockExamAttempt.findMany.mockResolvedValue([
+        { id: 10, score: 1, answers: [{ id: 100, mockExamQuestionId: 5, selectedOptions: '["C"]', isCorrect: true }] },
+      ] as any);
+
+      await service.ensureAnswers(1, 'u1');
+
+      expect(prismaMock.mockExamAttemptAnswer.updateMany).not.toHaveBeenCalled();
+      expect(prismaMock.mockExamAttempt.update).not.toHaveBeenCalled();
+    });
+
+    it('still returns the generated count when the regrade itself fails', async () => {
+      seedMockExam([question(1)]);
+      openAICallMock.mockResolvedValue(llmAnswers([{ questionId: 1, correctOptions: ['C'] }]));
+      prismaMock.mockExamAttempt.findMany.mockRejectedValue(new Error('db down'));
+
+      const result = await service.ensureAnswers(1, 'u1');
+
+      expect(result).toEqual({ generated: 1, remaining: 0 });
+      expect(loggerMock.error).toHaveBeenCalledWith(
+        'mock_exam.answers.regrade_failed',
+        expect.objectContaining({ mockExamId: 1, errorMessage: 'db down' })
+      );
     });
   });
 });
