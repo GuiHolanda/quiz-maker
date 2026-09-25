@@ -21,7 +21,7 @@
 
 | Frente | Fase | Esforço | Status | Progresso |
 |---|---|---|---|---|
-| Fase 0 — Infra compartilhada | 1 | M | Em andamento | 3/17 |
+| Fase 0 — Infra compartilhada | 1 | M | Em andamento | 17/19 |
 | F1 — Reportar questão | 1 | M | Não iniciado | 0/21 |
 | F2 — Widget de feedback global | 1 | M | Não iniciado | 0/15 |
 | Backlog (F3–F7) | 2+ | — | Não iniciado | 0/5 |
@@ -116,45 +116,55 @@ Tudo aqui precisa existir **antes** de qualquer UI. A ordem importa — os itens
 
 ### Checklist
 
-- [ ] **0.1 Models.** Adicionar `QuestionReport` e `Feedback` ao fim de `prisma/dev/schema.prisma` **e**
+- [x] **0.1 Models.** Adicionar `QuestionReport` e `Feedback` ao fim de `prisma/dev/schema.prisma` **e**
   `prisma/prod/schema.prisma` (campos no [SDD](../sdd/feedback-e-comunicacao.md#modelo-de-dados), incluindo
   `updatedAt`). Colunas escalares, **sem `@relation`**.
-- [ ] **0.2 Migration dev.** SQL gerado por `prisma migrate diff` e aplicado com `prisma migrate deploy` (mesma
+- [x] **0.2 Migration dev.** SQL gerado por `prisma migrate diff` e aplicado com `prisma migrate deploy` (mesma
   saída de `migrate dev`, sem prompt interativo), depois `npm run prisma:generate:dev`. **Uma** migration para os
   dois models — o ritual de pareamento é a parte cara; fazer duas vezes dobra o risco.
-- [ ] **0.3 Migration prod.** `prisma/prod/migrations/<ts+1s>_add_feedback_tables/migration.sql` com o **mesmo
+- [x] **0.3 Migration prod.** `prisma/prod/migrations/<ts+1s>_add_feedback_tables/migration.sql` com o **mesmo
   sufixo** da dev. SQL PostgreSQL gerado por `migrate diff` entre os datamodels, com o estilo da migration
   `20260901003406_add_generation_job_language` (cabeçalho comentado + `IF NOT EXISTS`).
-- [ ] **0.4 Validar schema e migrations.** `diff prisma/dev/schema.prisma prisma/prod/schema.prisma` deve mostrar
+- [x] **0.4 Validar schema e migrations.** `diff prisma/dev/schema.prisma prisma/prod/schema.prisma` deve mostrar
   **exatamente 2 hunks** (`1c1` e `6c6`); depois `npm run check:migrations` e `npm test`.
-- [ ] **0.5 i18n.** Adicionar **todas** as chaves `feedback.*` de F1 e F2 (listas nas seções abaixo) em
+- [x] **0.5 i18n.** Adicionar **todas** as chaves `feedback.*` de F1 e F2 (listas nas seções abaixo) em
   `public/messages/pt.properties` e `en.properties` **primeiro**; só depois registrar `'feedback'` em
   `WORKSPACE_MESSAGE_PREFIXES` de [i18n-prefixes.ts](../../config/i18n-prefixes.ts).
-- [ ] **0.6 Rate limit.** Duas entradas em `RateLimitedAction` e `LIMITS` de
+- [x] **0.6 Rate limit.** Duas entradas em `RateLimitedAction` e `LIMITS` de
   [rate-limit.ts](../../lib/rate-limit.ts): `question_report: { requests: 8, window: '5 m' }` e
   `feedback_submit: { requests: 3, window: '10 m' }`.
-- [ ] **0.7 E-mail interno.** Em [email.service.ts](../../features/services/email.service.ts): `escapeHtml`,
+- [x] **0.7 E-mail interno.** Em [email.service.ts](../../features/services/email.service.ts): `escapeHtml`,
   função pura `buildInternalAlert(input)` e `sendInternalAlert` (assinatura abaixo). Os wrappers
   `sendQuestionReportAlert` e `sendFeedbackAlert` ficam em F1/F2 (1.2 e 2.2): dependem do que cada service devolve.
-- [ ] **0.8 Env.** Documentar `FEEDBACK_INBOX_EMAIL` no bloco de env do [README.md](../../README.md) (junto de
-  `RESEND_API_KEY`) e configurá-la na Vercel. **Não** definir em `.env.test`.
-- [ ] **0.9 Provider.** `features/reducers/feedback.reducer.ts` (reducer puro), `features/providers/feedback.provider.tsx`,
+- [x] **0.8 Env.** Documentar `FEEDBACK_INBOX_EMAIL` no bloco de env do [README.md](../../README.md) (junto de
+  `RESEND_API_KEY`). **Não** definir em `.env.test`. A configuração na Vercel é ação do dono do produto e está no
+  aceite abaixo.
+- [x] **0.9 Provider.** `features/reducers/feedback.reducer.ts` (reducer puro), `features/providers/feedback.provider.tsx`,
   `features/hooks/useFeedback.hook.ts` e `lib/feedback-error.ts` (`resolveFeedbackError`), montados em
   `app/(workspace)/layout.tsx` dentro do `LimitModalProvider`. O provider já nasce com `openQuestionReport`,
   `openFeedback` e o envio (ADR-0004); **sem modais** — F1/F2 os renderizam. Molde:
   [limit-modal.provider.tsx](../../features/providers/limit-modal.provider.tsx) e
   [notifications.reducer.ts](../../features/reducers/notifications.reducer.ts).
-- [ ] **0.10 Constantes e tipos.** `config/constants/feedback.ts` (URLs, `QUESTION_REPORT_REASONS`,
-  `FEEDBACK_CATEGORIES`, superfícies, status, limites de tamanho e tipos derivados), re-exportado por
+- [x] **0.10 Constantes e tipos.** `config/constants/feedback.ts` (URLs, `QUESTION_REPORT_REASONS`,
+  `FEEDBACK_CATEGORIES`, superfícies, status e tipos derivados; os limites de tamanho entram com o primeiro
+  consumidor, em F1/F2), re-exportado por
   `config/constants/index.ts` como `generation-job.ts`. Payloads e resultados em `shared/types/index.ts`.
-- [ ] **0.11 Connectors.** `submitQuestionReport` e `submitFeedback` em
+- [x] **0.11 Connectors.** `submitQuestionReport` e `submitFeedback` em
   [connectors.ts](../../features/connectors.ts) (nomes propostos).
-- [ ] **0.12 Suporte de E2E.** As duas tabelas em [db-cleanup.ts](../../tests/e2e/support/db-cleanup.ts). As
+- [x] **0.12 Suporte de E2E.** As duas tabelas em [db-cleanup.ts](../../tests/e2e/support/db-cleanup.ts). As
   entradas de [selectors.ts](../../tests/e2e/support/selectors.ts) entram com os componentes (1.10 e 2.8).
-- [ ] **0.13 Docs internas.** Seção `feedback/` na tabela de rotas de [app/api/CLAUDE.md](../../app/api/CLAUDE.md).
-- [ ] **0.14 Testes unitários da Fase 0.** `feedback.reducer.test.ts` (RN-23), `feedback-error.test.ts` (RN-25),
+- [x] **0.13 Docs internas.** Seção `feedback/` na tabela de rotas de [app/api/CLAUDE.md](../../app/api/CLAUDE.md).
+- [x] **0.14 Testes unitários da Fase 0.** `feedback.reducer.test.ts` (RN-23), `feedback-error.test.ts` (RN-25),
   `feedback-i18n.test.ts` (paridade pt/en), `rate-limit.test.ts` estendido (RN-02) e
   `email.service.test.ts` (RN-19 a RN-21; hoje `EmailService` não tem nenhum teste).
+
+### Aceite da Fase 0
+
+Código concluído e verificado (`tsc`, suíte unitária, `check:migrations` e smoke de E2E). Falta o que não é código:
+
+- [ ] `FEEDBACK_INBOX_EMAIL` configurada na Vercel (Production) — **ação do dono do produto**. Sem ela nenhum
+  e-mail chega ao time (RN-20)
+- [ ] Merge na `main` aplicou `add_feedback_tables` em produção (conferir o workflow `Migrate Prod`)
 
 ### Canal de saída para o time: e-mail por evento (decisão)
 
@@ -539,3 +549,4 @@ Fora da Fase 1. Cada item tem um **gatilho de promoção**: o que precisa ser ve
 |---|---|
 | 2026-09-25 | Documento criado. Fase 1 = Fase 0 + F1 + F2. Schema aprovado apenas para models novos |
 | 2026-09-25 | ADRs 0001–0007 e SDD escritos. Refinamentos de design (SDD §Decisões de design): `updatedAt` nos models; `sendInternalAlert` devolve `boolean`; wrappers de e-mail em F1/F2; seletores E2E com os componentes; namespace único `feedback`; provider baseado em reducer, já com `openFeedback` na Fase 0 |
+| 2026-09-25 | Fase 0 implementada na branch `feature/feedback-infra` (models e migrations, i18n, constantes, reducer, provider, resolvedor de erro, `sendInternalAlert`, rate limit). Aguarda o aceite acima |

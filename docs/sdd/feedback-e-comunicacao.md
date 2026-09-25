@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tópico** | Como os usuários falam com o time e como o time os ouve |
-| **Status** | Ativo · Fase 0 em implementação |
+| **Status** | Ativo · Fase 0 implementada (aguardando aceite) · F1 e F2 não iniciadas |
 | **Versão** | 1.0 (2026-09-25) |
 | **Autor** | Claude (Solution Architect) · **Aprovação de escopo:** Guilherme Holanda |
 | **Roadmap** | [feedback-e-comunicacao](../roadmap/feedback-e-comunicacao.md) |
@@ -455,7 +455,8 @@ e E2E nunca dispara, então o caso 429 **não é testável em E2E** — só em u
 
 - `config/constants/feedback.ts`, re-exportado por `config/constants/index.ts` (mesmo padrão de
   `generation-job.ts`): URLs, listas de motivos/categorias/superfícies/status (cada motivo e categoria com o
-  `labelKey` i18n **explícito**, sem convenção mágica), limites de tamanho e os tipos derivados.
+  `labelKey` i18n **explícito**, sem convenção mágica) e os tipos derivados. Os limites de tamanho (1000, 2000, 200
+  e 300) entram com o primeiro consumidor, em F1/F2 — na Fase 0 seriam constantes sem uso.
 - `shared/types/index.ts`: `SubmitQuestionReportPayload`, `QuestionReportResult`, `SubmitFeedbackPayload`,
   `FeedbackResult`.
 - `features/connectors.ts`: `submitQuestionReport(payload)` e `submitFeedback(payload)`.
@@ -757,3 +758,4 @@ Ganhos já embutidos neste design, para os itens do backlog **não** exigirem mi
 | Versão | Data | Mudança |
 |---|---|---|
 | 1.0 | 2026-09-25 | Versão inicial: Fase 0, F1 e F2 |
+| 1.1 | 2026-09-25 | Fase 0 implementada. Limites de tamanho adiados para F1/F2; migration dev gerada por `migrate diff` + `migrate deploy` |
