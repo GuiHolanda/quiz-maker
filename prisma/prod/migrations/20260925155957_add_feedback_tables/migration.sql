@@ -1,7 +1,7 @@
 -- Migration: add_feedback_tables
 -- Reporte de questao (QuestionReport) e feedback geral (Feedback). Sem foreign keys de
 -- proposito: ExamQuestion nao e alterado e os registros guardam snapshot do contexto
--- (ADR-0002). Campos de triagem (status, resolutionNote, resolvedAt, notifiedAt) ja incluidos
+-- (ADR-0001). Campos de triagem (status, resolutionNote, resolvedAt, notifiedAt) ja incluidos
 -- para a tela de inbox do admin nao exigir nova migration.
 --
 -- Idempotente: IF NOT EXISTS em tabelas e indices.
