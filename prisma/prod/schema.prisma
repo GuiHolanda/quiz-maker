@@ -396,3 +396,46 @@ model AutoConfigJob {
   @@index([userId])
   @@index([status])
 }
+
+model QuestionReport {
+  id                String    @id @default(cuid())
+  examQuestionId    Int
+  userId            String
+  reason            String
+  comment           String?
+  questionText      String
+  examName          String
+  sectionName       String?
+  topicName         String?
+  surface           String
+  mockExamAttemptId Int?
+  status            String    @default("open")
+  resolutionNote    String?
+  resolvedAt        DateTime?
+  notifiedAt        DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([userId, examQuestionId])
+  @@index([status, createdAt])
+  @@index([examQuestionId])
+}
+
+model Feedback {
+  id         String    @id @default(cuid())
+  userId     String?
+  email      String?
+  plan       String?
+  category   String
+  message    String
+  route      String?
+  userAgent  String?
+  locale     String?
+  status     String    @default("open")
+  notifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([status, createdAt])
+  @@index([userId])
+}
