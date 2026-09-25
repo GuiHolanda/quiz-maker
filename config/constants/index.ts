@@ -68,6 +68,8 @@ export const INITIAL_EXAMS_STATE: ExamsState = {
 export const REGISTER_URL = '/auth/register';
 export const FORGOT_PASSWORD_URL = '/auth/forgot-password';
 export const RESET_PASSWORD_URL = '/auth/reset-password';
+export const VERIFY_EMAIL_URL = '/auth/verify-email';
+export const RESEND_VERIFICATION_URL = '/auth/resend-verification';
 
 export const BILLING_USAGE_URL = '/billing/usage';
 export const BILLING_CHECKOUT_URL = '/billing/checkout';

@@ -844,6 +844,16 @@ export interface ExamLandingConfig {
   readonly faqs: readonly ExamLandingFaq[];
 }
 
+export interface RegisterPayload {
+  readonly name: string;
+  readonly email: string;
+  readonly password: string;
+  readonly ref?: string;
+  readonly utmSource?: string | null;
+  readonly utmMedium?: string | null;
+  readonly utmCampaign?: string | null;
+}
+
 export interface SubmitQuestionReportPayload {
   readonly examQuestionId: number;
   readonly reason: QuestionReportReason;

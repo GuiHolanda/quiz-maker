@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 import {
   SAVE_EXAM_URL,
   EXAM_QUESTION_EXPLANATION_URL,
@@ -35,6 +37,11 @@ import {
   ADMIN_CATALOG_URL,
   FEEDBACK_URL,
   QUESTION_REPORT_URL,
+  REGISTER_URL,
+  FORGOT_PASSWORD_URL,
+  RESET_PASSWORD_URL,
+  VERIFY_EMAIL_URL,
+  RESEND_VERIFICATION_URL,
 } from '@/config/constants';
 import type { GenerationLanguage } from '@/config/generation-languages';
 import {
@@ -75,12 +82,19 @@ import {
   DemoCatalogResponse,
   DemoQuestion,
   DemoQuizResponse,
+  RegisterPayload,
   SubmitQuestionReportPayload,
   QuestionReportResult,
   SubmitFeedbackPayload,
   FeedbackResult,
 } from '@/shared/types';
-import api from '@/lib/bff.api';
+
+const api = axios.create({
+  baseURL: '/api',
+  withCredentials: true,
+  timeout: 280_000,
+  paramsSerializer: { indexes: null },
+});
 
 // — Exams (certification + public_exam) —
 
@@ -474,4 +488,26 @@ export async function submitFeedback(payload: SubmitFeedbackPayload): Promise<Fe
   const { data } = await api.post<FeedbackResult>(FEEDBACK_URL, payload);
 
   return data;
+}
+
+// — Auth —
+
+export async function registerUser(payload: RegisterPayload): Promise<void> {
+  await api.post(REGISTER_URL, payload);
+}
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  await api.post(FORGOT_PASSWORD_URL, { email });
+}
+
+export async function resetPassword(token: string, password: string): Promise<void> {
+  await api.post(RESET_PASSWORD_URL, { token, password });
+}
+
+export async function verifyEmail(email: string, code: string): Promise<void> {
+  await api.post(VERIFY_EMAIL_URL, { email, code });
+}
+
+export async function resendVerification(email: string): Promise<void> {
+  await api.post(RESEND_VERIFICATION_URL, { email });
 }

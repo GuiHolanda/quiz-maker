@@ -9,7 +9,7 @@ import NextLink from 'next/link';
 import { addToast } from '@heroui/toast';
 
 import { AuthSplitLayout } from '@/app/(auth)/components/AuthSplitLayout';
-import api from '@/lib/bff.api';
+import { resendVerification, verifyEmail } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 interface VerifyEmailFormProps {
@@ -29,7 +29,7 @@ export function VerifyEmailForm({ email }: VerifyEmailFormProps) {
     setLoading(true);
     setError(null);
     try {
-      await api.post('/auth/verify-email', { email, code: value });
+      await verifyEmail(email, value);
       router.push('/login?verified=1');
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
@@ -49,7 +49,7 @@ export function VerifyEmailForm({ email }: VerifyEmailFormProps) {
     setCode('');
     setError(null);
     try {
-      await api.post('/auth/resend-verification', { email });
+      await resendVerification(email);
       addToast({ title: t('toast.success'), description: t('verify.resendSuccess'), color: 'success' });
     } catch {
       addToast({ title: t('toast.error'), description: t('toast.somethingWrong'), color: 'danger' });
