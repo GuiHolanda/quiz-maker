@@ -104,6 +104,7 @@ npx playwright show-report
 | `full-journey` (×2) | gerar → salvar → simulado → responder → resultado → tentar novamente |
 | `generation-errors` (×2) | quota 403; abort de rede → toast de erro |
 | `sse-reconnect` (×2) | cancelar job; restaura `running` após reload |
+| `simulado-result-gabarito` (×3) | resultado sem gabarito esconde o score e oferece retry; gabarito completado antes de exibir; erro de carga com retry e recuperação |
 | `exam-editor-validation` (×2) | discard de draft (limpa localStorage); guard de Salvar sem nome |
 | `exam-identify` (×2) | identificação dentro da tela de loading: cancelar em voo não é ressuscitado por resposta tardia (guarda `runId`); sem match oferece retry inline; falha do identify não despeja no editor em branco; desambiguação confirma o match escolhido |
 | `question-bank` | seed via API → verificar → buscar → deletar; empty state |
