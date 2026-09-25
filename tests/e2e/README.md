@@ -67,6 +67,7 @@ Everything reusable lives here. Specs compose these helpers; they don't hand-rol
 | `question-bank.spec.ts` | 3 | cert only | Seed questions via a direct Prisma helper (`support/db-seed.ts`) → verify → search narrows to one → delete; search with no match shows the empty state; select two → bulk delete. |
 | `empty-states.spec.ts` | 2 | mixed | Simulados list shows the empty state when both list endpoints return empty; certifications list shows the empty state when its endpoint returns empty. |
 | `simulado-timer.spec.ts` | 1 | cert only | Create a simulado with a custom time limit → start the attempt → the countdown (`simulado-timer`) is visible on the tentativa page. |
+| `feedback.spec.ts` | 5 | cert only | Reporte de questão: pelo banco (reporta e confere a linha no banco; reportar de novo mostra "já reportada", o que valida o índice único), comentário acima do limite sem chamar a API, dentro de um simulado com tempo (o relógio segue correndo e o usuário não sai da tentativa), pela revisão do resultado (POST interceptado, confere o payload) e chamada anônima recusada. Faz 3 POSTs reais: com Redis configurado (`KV_REST_API_URL`) o limite `question_report` de 8 por 5 min vale também no dev. |
 
 **Total: 45 tests.**
 

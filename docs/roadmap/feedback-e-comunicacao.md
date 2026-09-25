@@ -21,8 +21,8 @@
 
 | Frente | Fase | Esforço | Status | Progresso |
 |---|---|---|---|---|
-| Fase 0 — Infra compartilhada | 1 | M | Em andamento | 17/19 |
-| F1 — Reportar questão | 1 | M | Não iniciado | 0/21 |
+| Fase 0 — Infra compartilhada | 1 | M | Em andamento | 18/19 |
+| F1 — Reportar questão | 1 | M | Em andamento | 19/23 |
 | F2 — Widget de feedback global | 1 | M | Não iniciado | 0/15 |
 | Backlog (F3–F7) | 2+ | — | Não iniciado | 0/5 |
 | Riscos abertos | — | — | Em aberto | 0/2 |
@@ -164,7 +164,7 @@ Código concluído e verificado (`tsc`, suíte unitária, `check:migrations` e s
 
 - [ ] `FEEDBACK_INBOX_EMAIL` configurada na Vercel (Production) — **ação do dono do produto**. Sem ela nenhum
   e-mail chega ao time (RN-20)
-- [ ] Merge na `main` aplicou `add_feedback_tables` em produção (conferir o workflow `Migrate Prod`)
+- [x] Merge na `main` aplicou `add_feedback_tables` em produção (`Migrate Prod`, run `36164385545`, 2026-09-25)
 
 ### Canal de saída para o time: e-mail por evento (decisão)
 
@@ -240,7 +240,7 @@ Todas verificadas no código durante a exploração.
 
 ## F1 — Reportar questão
 
-**Status:** Não iniciado · **Fase:** 1 · **Depende de:** Fase 0
+**Status:** Em andamento · **Fase:** 1 · **Depende de:** Fase 0
 
 Botão de report em 3 superfícies, com modal de motivo pré-definido + comentário livre e contexto capturado
 automaticamente. **Fecha a promessa do marketing** (parcialmente — ver [Riscos abertos](#riscos-abertos)).
@@ -319,7 +319,7 @@ O precedente de "um modal, vários gatilhos" é o `LimitModalProvider`. Estado n
 | Arquivo | Papel |
 |---|---|
 | `features/providers/feedback.provider.tsx` (Fase 0) | Provider único de F1 e F2. Expõe `openQuestionReport(ctx)`; dono de estado do alvo, `isBusy`, submit e `notify`. `setIsBusy(false)` só no `catch` |
-| `shared/components/ui/ReportQuestionModal.tsx` (novo) | Apresentacional puro. Props: `isOpen`, `isLoading`, `onSubmit(reason, comment)`, `onClose`. HeroUI `Modal` + `RadioGroup` + `Textarea`; footer no formato de [ConfirmModal.tsx](../../shared/components/ui/ConfirmModal.tsx) |
+| `shared/components/ui/ReportQuestionModal.tsx` e `ReportQuestionForm.tsx` (novos) | Modal apresentacional (`isOpen`, `isLoading`, `onSubmit(reason, comment)`, `onClose`); o formulário, com estado próprio, vive dentro do `ModalContent` e zera a cada abertura. HeroUI `Modal` + `RadioGroup` (`@heroui/radio`, SDD D-14) + `Textarea`; footer no formato de [ConfirmModal.tsx](../../shared/components/ui/ConfirmModal.tsx) |
 | `shared/components/ui/ReportQuestionButton.tsx` (novo) | Gatilho. Props: `{ examQuestionId, surface, mockExamAttemptId? }`. Lê o contexto sozinho ⇒ as 3 superfícies **não ganham estado novo**. `isIconOnly` + `buttonStyles.iconOnly.neutral` (report não é destrutivo) + `faFlag` |
 
 Superfícies:
@@ -341,40 +341,42 @@ Superfícies:
 
 ### Checklist
 
-- [ ] **1.1** `question-report.service.ts` com validação, visibilidade, dedupe/reabertura e snapshot
-- [ ] **1.2** `route.ts` (handler + rate limit + `after()` do e-mail) e `EmailService.sendQuestionReportAlert`
-- [ ] **1.3** `ReportQuestionModal.tsx`
-- [ ] **1.4** `ReportQuestionButton.tsx`
-- [ ] **1.5** Integrar em `QuestionBankCard.tsx`
-- [ ] **1.6** Integrar em `AttemptQuestionPanel.tsx` + prop `attemptId` em `AttemptShell.tsx`
-- [ ] **1.7** Integrar em `ReviewQuestionRow.tsx`
+- [x] **1.1** `question-report.service.ts` com validação, visibilidade, dedupe/reabertura e snapshot
+- [x] **1.2** `route.ts` (handler + rate limit + `after()` do e-mail) e `EmailService.sendQuestionReportAlert`
+- [x] **1.3** `ReportQuestionModal.tsx`
+- [x] **1.4** `ReportQuestionButton.tsx`
+- [x] **1.5** Integrar em `QuestionBankCard.tsx`
+- [x] **1.6** Integrar em `AttemptQuestionPanel.tsx` + prop `attemptId` em `AttemptShell.tsx`
+- [x] **1.7** Integrar em `ReviewQuestionRow.tsx`
 - [ ] **1.8** Conferir que abrir o modal na tentativa **não** dispara `useNavigationGuard` e que o cronômetro
-  (`useAttemptDeadline`) segue correndo
-- [ ] **1.9** Testes unitários — `tests/unit/api/services/question-report.service.test.ts` (10 casos, abaixo)
-- [ ] **1.10** `data-testid` novos nos componentes e em `selectors.ts` (seção `// Feedback`)
-- [ ] **1.11** E2E em `tests/e2e/tests/feedback.spec.ts`
+  (`useAttemptDeadline`) segue correndo. Sem atalhos de teclado na tentativa e o guard só intercepta `<a>`, então o
+  código não muda; a prova é o cenário 3 do E2E (1.11)
+- [x] **1.9** Testes unitários — `tests/unit/api/services/question-report.service.test.ts` (56 casos; os 10 principais, abaixo)
+- [x] **1.10** `data-testid` novos nos componentes e em `selectors.ts` (seção `// Feedback`)
+- [ ] **1.11** E2E em `tests/e2e/tests/feedback.spec.ts` (5 cenários; 3 verdes, 2 aguardam o `next dev` reiniciado)
 
 **Casos unitários (1.9):**
 
-- [ ] 404 quando a questão não existe
-- [ ] 404 quando `question.userId` é de outro usuário
-- [ ] **Permite** quando `question.userId === null` (pool)
-- [ ] Grava snapshot vindo do banco, ignorando campos homônimos do payload
-- [ ] 409 com `body.code === 'already_reported'` quando já há report aberto
-- [ ] Reabre report `fixed`/`rejected` em vez de duplicar
-- [ ] `reason` fora da whitelist → `rejects.toMatchObject({ status: 400 })`
-- [ ] `comment` > 1000 → 400; `comment` é trimado
-- [ ] `examQuestionId` não-inteiro → 400
-- [ ] Retorno `{ id, status: 'open', createdAt }`
+- [x] 404 quando a questão não existe
+- [x] 404 quando `question.userId` é de outro usuário
+- [x] **Permite** quando `question.userId === null` (pool)
+- [x] Grava snapshot vindo do banco, ignorando campos homônimos do payload
+- [x] 409 com `body.code === 'already_reported'` quando já há report aberto
+- [x] Reabre report `fixed`/`rejected` em vez de duplicar
+- [x] `reason` fora da whitelist → `rejects.toMatchObject({ status: 400 })`
+- [x] `comment` > 1000 → 400; `comment` é trimado
+- [x] `examQuestionId` não-inteiro → 400
+- [x] Retorno `{ id, status: 'open', createdAt }`
 
 **`data-testid` (1.10):** `question-report-btn` · `question-report-modal` ·
-`question-report-reason-{wrong-answer-key|ambiguous-statement|out-of-scope|typo|duplicate-options|other}` ·
-`question-report-comment` · `question-report-submit-btn`. Seis explícitos em vez de seletor por `data-value` —
-a regra do repo é seleção só por `data-testid`.
+`question-report-comment` · `question-report-submit-btn`. Os motivos não têm `data-testid`: são escolhidos por
+`getByRole('radio', { name })`, como o repo faz com opções de lista.
 
 **Cenários E2E (1.11):** question-bank → reportar → toast de sucesso · reenviar o mesmo report → toast
 `alreadyReported` (valida o unique ponta a ponta) · resultado de simulado → expandir accordion → reportar.
 O `Radio` do HeroUI tem input com `opacity: 0.0001`: usar `dispatchEvent('click')`, nunca `.click({ force: true })`.
+Com Redis configurado (`KV_REST_API_URL` no `.env`) o limite `question_report` (8 por 5 min) **vale no dev**: o spec faz
+no máximo 3 POSTs reais por execução, mas rodar várias vezes seguidas pode dar 429.
 
 ### Critérios de aceite
 
@@ -383,6 +385,16 @@ O `Radio` do HeroUI tem input com `opacity: 0.0001`: usar `dispatchEvent('click'
 - Reportar duas vezes a mesma questão mostra o toast de "já reportada", não erro genérico
 - Usuário EN vê todas as mensagens em inglês, inclusive no caso de 429
 - Questão de pool/catálogo é reportável
+
+### Aceite da F1
+
+Código concluído; 56 testes unitários do service, 16 novos do e-mail e o smoke do service contra o SQLite real
+passaram. Falta o que depende de você:
+
+- [ ] Reiniciar o `next dev` (o client Prisma em memória é anterior às tabelas) e rodar
+  `feedback.spec.ts` até 5/5. Os 2 cenários com POST real (banco e tentativa) falharam com 500
+  `reading 'findUnique'` de `undefined` por causa disso
+- [ ] Um reporte real em produção chega por e-mail em `FEEDBACK_INBOX_EMAIL` e `notifiedAt` é preenchido (RN-22)
 
 ### Decisão registrada
 

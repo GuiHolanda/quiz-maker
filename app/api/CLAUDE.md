@@ -113,12 +113,12 @@ Service: `app/api/mock-exams/mock-exam.service.ts` (co-located).
 
 ### `feedback/`
 
-**Planned — Phase 1, not implemented yet.** Business rules (`RN-xx`): [docs/sdd/feedback-e-comunicacao.md](../../docs/sdd/feedback-e-comunicacao.md). Decisions: [docs/adr/](../../docs/adr/README.md) 0001–0002, plus the SDD design decisions. Validation lives in the co-located services, not in the handlers (SDD D-11).
+**Phase 1 — `feedback/question-report` (F1) is implemented; `feedback` (F2) is still planned.** Business rules (`RN-xx`): [docs/sdd/feedback-e-comunicacao.md](../../docs/sdd/feedback-e-comunicacao.md). Decisions: [docs/adr/](../../docs/adr/README.md) 0001–0002, plus the SDD design decisions. Validation lives in the co-located services, not in the handlers (SDD D-11).
 
 | Route | Method | Description |
 |---|---|---|
-| `feedback/question-report` | POST | Report a question (F1). One report per user + question: an active one → `409 already_reported`; a `fixed`/`rejected` one is reopened (`200`). Rate limit `question_report` (8 / 5 min) |
-| `feedback` | POST | General feedback (F2). `plan`, `email` and `userAgent` are read server-side, never from the body. Rate limit `feedback_submit` (3 / 10 min) |
+| `feedback/question-report` | POST | Report a question (F1, implemented: `question-report.service.ts`). One report per user + question: an active one → `409 already_reported`; a `fixed`/`rejected` one is reopened (`200`). Rate limit `question_report` (8 / 5 min) |
+| `feedback` | POST | General feedback (F2, planned). `plan`, `email` and `userAgent` are read server-side, never from the body. Rate limit `feedback_submit` (3 / 10 min) |
 
 Both persist first, then email the team inside `after()` through `EmailService.sendInternalAlert`, which never throws and only sends when `FEEDBACK_INBOX_EMAIL` is set (ADR-0002). `QuestionReport` and `Feedback` have **no foreign keys** (ADR-0001): any account-deletion flow must delete them by `userId`.
 
