@@ -53,6 +53,7 @@ vi.mock('bcryptjs', () => ({ default: { hash: vi.fn().mockResolvedValue('hashed'
 | `exam.service.test.ts` | CRUD Exam/Section/Topic; propagação `updatedAt`; snapshot em rename; `updateExam` (diff completo seções/tópicos, 403/404/409) |
 | `exam-question.service.test.ts` | `saveAnswers` (upsert idempotente), `saveExplanations`, embaralhamento das alternativas ao persistir, gravação do formato e guarda de labels semânticos |
 | `shuffle-options.test.ts` | Permutação de alternativas — preserva labels e textos, quebra o viés posicional |
+| `generationScope.test.ts` | Escopo inicial de Gerar Questões — `?type=` validado, abre em concurso quando só há concursos, escolha explícita nunca é sobrescrita |
 | `question-formats.test.ts` | Registry de formatos — labels, teto de corretas, flag semântica, default por banca |
 | `validate-ai-questions.test.ts` | `validateAiQuestions` — checagens estruturais, teto de `correctCount`, conjunto de labels do formato |
 | `question-format-prompts.test.ts` | Prompts derivam regra, template, skeleton JSON e labels do gabarito a partir do formato |
@@ -108,6 +109,7 @@ npx playwright show-report
 | `exam-editor-validation` (×2) | discard de draft (limpa localStorage); guard de Salvar sem nome |
 | `exam-identify` (×2) | identificação dentro da tela de loading: cancelar em voo não é ressuscitado por resposta tardia (guarda `runId`); sem match oferece retry inline; falha do identify não despeja no editor em branco; desambiguação confirma o match escolhido |
 | `question-bank` | seed via API → verificar → buscar → deletar; empty state |
+| `questions-scope` (×3) | usuário só com concursos abre em Concurso em vez do empty state de certificação; picker segue visível num escopo vazio pedido por `?type=`; `?type=` inválido não quebra |
 | `empty-states` | empty state de simulados e certificações |
 
 ### Notas técnicas — HeroUI

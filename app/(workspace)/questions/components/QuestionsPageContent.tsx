@@ -13,6 +13,7 @@ import { ActiveJobStatus } from './ActiveJobStatus';
 import { GenerationDistributionTable } from './GenerationDistributionTable';
 import { GenerationSummarySidebar } from './GenerationSummarySidebar';
 import { useGenerationDistribution } from './useGenerationDistribution.hook';
+import { parseRequestedScope, resolveGenerationScope } from './generationScope';
 
 import type { Exam, ExamType } from '@/shared/types';
 import { EntitySelect } from '@/shared/components/EntitySelect';
@@ -67,7 +68,7 @@ export function QuestionsPageContent() {
 
   const requestedExamId = searchParams.get('examId');
 
-  const [scope, setScope] = useState<ExamType>((searchParams.get('type') as ExamType) ?? 'certification');
+  const [chosenScope, setChosenScope] = useState<ExamType | null>(() => parseRequestedScope(searchParams.get('type')));
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [language, setLanguage] = useState<GenerationLanguage>(() => resolveGenerationLanguage(uiLanguage));
@@ -81,6 +82,10 @@ export function QuestionsPageContent() {
 
   const jobsSectionRef = useRef<HTMLDivElement>(null);
 
+  const scope = resolveGenerationScope(chosenScope, {
+    certifications: certifications.length,
+    publicExams: publicExams.length,
+  });
   const exams = scope === 'certification' ? certifications : publicExams;
   const selectedExam = exams.find((exam) => examKey(exam) === selectedExamId) ?? null;
   const weightedTopics = useMemo(
@@ -110,7 +115,7 @@ export function QuestionsPageContent() {
       appliedExamIdRequest.current = true;
       const requested = allExams.find((exam) => exam.id === requestedExamId);
       if (requested) {
-        setScope(requested.type);
+        setChosenScope(requested.type);
         setSelectedExamId(examKey(requested));
         setTotal(requested.totalQuestions);
         return;
@@ -158,7 +163,7 @@ export function QuestionsPageContent() {
       <div className="flex flex-col gap-6">
         {isLoading && visibleJobs.length === 0 ? (
           <SkeletonListLoader count={4} />
-        ) : exams.length === 0 && visibleJobs.length === 0 ? (
+        ) : allExams.length === 0 && visibleJobs.length === 0 ? (
           renderEmptyState()
         ) : (
           <WorkspaceSplitLayout
@@ -177,7 +182,7 @@ export function QuestionsPageContent() {
               />
             }
           >
-            {exams.length > 0 && renderConfig()}
+            {allExams.length > 0 && renderConfig()}
             {renderActiveJobs()}
           </WorkspaceSplitLayout>
         )}
@@ -241,15 +246,21 @@ export function QuestionsPageContent() {
           value={scope}
           onChange={handleScopeChange}
         />
-        {renderExamRow()}
-        {selectedExam && (
-          <GenerationDistributionTable
-            isModified={dist.isModified}
-            rows={dist.rows}
-            onCountChange={dist.setCount}
-            onRedistribute={dist.redistribute}
-            onRemove={dist.remove}
-          />
+        {exams.length === 0 ? (
+          renderEmptyState()
+        ) : (
+          <>
+            {renderExamRow()}
+            {selectedExam && (
+              <GenerationDistributionTable
+                isModified={dist.isModified}
+                rows={dist.rows}
+                onCountChange={dist.setCount}
+                onRedistribute={dist.redistribute}
+                onRemove={dist.remove}
+              />
+            )}
+          </>
         )}
       </div>
     );
@@ -359,7 +370,7 @@ export function QuestionsPageContent() {
 
   function handleScopeChange(next: ExamType) {
     if (next === scope) return;
-    setScope(next);
+    setChosenScope(next);
     const list = next === 'certification' ? certifications : publicExams;
     const first = list[0] ?? null;
     setSelectedExamId(first ? examKey(first) : null);
