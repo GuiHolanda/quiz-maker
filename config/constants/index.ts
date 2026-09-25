@@ -2,6 +2,7 @@ import { ExamsState } from '@/features/reducers/exams.reducer';
 import { MockExamsState } from '@/features/reducers/mockExams.reducer';
 
 export * from './generation-job';
+export * from './feedback';
 
 export const EXAMS_URL = '/exam/exams';
 export const SAVE_EXAM_URL = '/exam/save-exam';

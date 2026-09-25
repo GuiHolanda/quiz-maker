@@ -33,6 +33,8 @@ import {
   DEMO_QUIZ_URL,
   FORK_EXAM_URL,
   ADMIN_CATALOG_URL,
+  FEEDBACK_URL,
+  QUESTION_REPORT_URL,
 } from '@/config/constants';
 import type { GenerationLanguage } from '@/config/generation-languages';
 import {
@@ -73,6 +75,10 @@ import {
   DemoCatalogResponse,
   DemoQuestion,
   DemoQuizResponse,
+  SubmitQuestionReportPayload,
+  QuestionReportResult,
+  SubmitFeedbackPayload,
+  FeedbackResult,
 } from '@/shared/types';
 import api from '@/lib/bff.api';
 
@@ -456,4 +462,16 @@ export async function getDemoCatalog(): Promise<DemoCatalogExam[]> {
 export async function generateDemoQuiz(examId: string, alloc: Record<string, number>): Promise<DemoQuestion[]> {
   const { data } = await api.post<DemoQuizResponse>(DEMO_QUIZ_URL, { examId, alloc });
   return [...data.questions];
+}
+
+export async function submitQuestionReport(payload: SubmitQuestionReportPayload): Promise<QuestionReportResult> {
+  const { data } = await api.post<QuestionReportResult>(QUESTION_REPORT_URL, payload);
+
+  return data;
+}
+
+export async function submitFeedback(payload: SubmitFeedbackPayload): Promise<FeedbackResult> {
+  const { data } = await api.post<FeedbackResult>(FEEDBACK_URL, payload);
+
+  return data;
 }
