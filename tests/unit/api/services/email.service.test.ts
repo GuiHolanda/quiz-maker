@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, vi, type MockInstance } from 'vitest';
 
-import { buildInternalAlert, EmailService, escapeHtml } from '@/features/services/email.service';
+import {
+  buildInternalAlert,
+  buildQuestionReportAlert,
+  EmailService,
+  escapeHtml,
+} from '@/features/services/email.service';
 
 const { send } = vi.hoisted(() => ({ send: vi.fn() }));
 
@@ -112,6 +117,122 @@ describe('buildInternalAlert', () => {
   });
 });
 
+describe('buildQuestionReportAlert', () => {
+  const REPORT = {
+    examQuestionId: 12,
+    reason: 'wrong_answer_key',
+    surface: 'review',
+    examName: 'AWS SAA-C03',
+    sectionName: 'Design Resilient Architectures',
+    topicName: 'S3',
+    questionText: 'Qual serviço oferece armazenamento de objetos?',
+    comment: 'O gabarito indica B, mas a correta é C.',
+  };
+  const REPORTER = { email: 'ana@example.com', plan: 'pro' };
+
+  const rowsOf = (alert: ReturnType<typeof buildQuestionReportAlert>) =>
+    Object.fromEntries(alert.rows.map(({ label, value }) => [label, value]));
+
+  it('RN-21: o assunto usa só o rótulo fixo do motivo, nunca o comentário do usuário', () => {
+    const alert = buildQuestionReportAlert({ report: REPORT, reopened: false, reporter: REPORTER });
+
+    expect(alert.subject).toBe('Reporte de questão — Gabarito errado');
+    expect(alert.subject).not.toContain('wrong_answer_key');
+    expect(alert.subject).not.toContain(REPORT.comment);
+  });
+
+  it.each([
+    ['wrong_answer_key', 'Gabarito errado'],
+    ['ambiguous_statement', 'Enunciado ambíguo'],
+    ['out_of_scope', 'Fora do escopo'],
+    ['typo', 'Erro de português ou digitação'],
+    ['duplicate_options', 'Alternativas repetidas'],
+    ['other', 'Outro problema'],
+  ])('traduz o motivo %s para "%s"', (reason, label) => {
+    const alert = buildQuestionReportAlert({ report: { ...REPORT, reason }, reopened: false, reporter: REPORTER });
+
+    expect(rowsOf(alert)['Motivo']).toBe(label);
+    expect(alert.subject).toContain(label);
+  });
+
+  it('um motivo desconhecido não vaza para o assunto', () => {
+    const alert = buildQuestionReportAlert({
+      report: { ...REPORT, reason: '<b>hack</b>' },
+      reopened: false,
+      reporter: REPORTER,
+    });
+
+    expect(alert.subject).toBe('Reporte de questão — Não classificado');
+  });
+
+  it('RN-12: marca o assunto e o título como reaberto', () => {
+    const alert = buildQuestionReportAlert({ report: REPORT, reopened: true, reporter: REPORTER });
+
+    expect(alert.subject).toBe('Reporte reaberto — Gabarito errado');
+    expect(alert.heading).toBe('Reporte de questão reaberto');
+  });
+
+  it('lista o contexto completo do reporte', () => {
+    const rows = rowsOf(buildQuestionReportAlert({ report: REPORT, reopened: false, reporter: REPORTER }));
+
+    expect(rows).toEqual({
+      Motivo: 'Gabarito errado',
+      Exame: 'AWS SAA-C03',
+      Seção: 'Design Resilient Architectures',
+      Tópico: 'S3',
+      Superfície: 'Revisão do simulado',
+      Questão: '#12',
+      Usuário: 'ana@example.com',
+      Plano: 'pro',
+    });
+  });
+
+  it('omite seção e tópico quando a questão não os tem', () => {
+    const rows = rowsOf(
+      buildQuestionReportAlert({
+        report: { ...REPORT, sectionName: null, topicName: null },
+        reopened: false,
+        reporter: REPORTER,
+      })
+    );
+
+    expect(rows).not.toHaveProperty('Seção');
+    expect(rows).not.toHaveProperty('Tópico');
+  });
+
+  it('mostra o usuário como desconhecido quando ele não foi encontrado', () => {
+    const rows = rowsOf(buildQuestionReportAlert({ report: REPORT, reopened: false, reporter: null }));
+
+    expect(rows['Usuário']).toBe('Desconhecido');
+  });
+
+  it('põe o enunciado e o comentário no corpo', () => {
+    const { body } = buildQuestionReportAlert({ report: REPORT, reopened: false, reporter: REPORTER });
+
+    expect(body).toBe(`${REPORT.questionText}\n\nComentário do usuário:\n${REPORT.comment}`);
+  });
+
+  it('sem comentário, o corpo tem só o enunciado', () => {
+    const { body } = buildQuestionReportAlert({
+      report: { ...REPORT, comment: null },
+      reopened: false,
+      reporter: REPORTER,
+    });
+
+    expect(body).toBe(REPORT.questionText);
+  });
+
+  it('RN-21: o resultado passa pelo escape do buildInternalAlert (texto do usuário não vira HTML)', () => {
+    const alert = buildQuestionReportAlert({
+      report: { ...REPORT, comment: '<script>alert(1)</script>' },
+      reopened: false,
+      reporter: REPORTER,
+    });
+
+    expect(buildInternalAlert(alert).html).not.toContain('<script>');
+  });
+});
+
 describe('EmailService.sendInternalAlert', () => {
   let warn: MockInstance<typeof console.warn>;
 
@@ -182,6 +303,34 @@ describe('EmailService.sendInternalAlert', () => {
 
     await expect(new EmailService().sendInternalAlert(ALERT)).resolves.toBe(false);
     expect(warnedEvents()).toEqual(['email.internal_alert_failed']);
+  });
+
+  it('sendQuestionReportAlert envia o reporte montado para o endereço configurado', async () => {
+    send.mockResolvedValue({ data: { id: 'email-1' }, error: null });
+
+    const sent = await new EmailService().sendQuestionReportAlert({
+      report: {
+        examQuestionId: 12,
+        reason: 'typo',
+        surface: 'question_bank',
+        examName: 'AWS SAA-C03',
+        sectionName: 'Design',
+        topicName: null,
+        questionText: 'Enunciado',
+        comment: null,
+      },
+      reopened: false,
+      reporter: { email: 'ana@example.com', plan: 'pro' },
+    });
+
+    expect(sent).toBe(true);
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: INBOX,
+        subject: '[CertifiqueAI] Reporte de questão — Erro de português ou digitação',
+        text: expect.stringContaining('Usuário: ana@example.com'),
+      })
+    );
   });
 
   it('RN-19: exceção do Resend (rede fora do ar) vira false e log, sem lançar', async () => {
