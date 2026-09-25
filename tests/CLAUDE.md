@@ -59,7 +59,8 @@ vi.mock('bcryptjs', () => ({ default: { hash: vi.fn().mockResolvedValue('hashed'
 | `quota.service.test.ts` | Verificação e registro; `create_exam` vs `maxExams`; `getUsage` dual |
 | `register.service.test.ts` | Registro de usuário |
 | `reset-password.service.test.ts` | Reset de senha |
-| `mock-exam.service.test.ts` | Simulados — disponibilidade, score, breakdown, ensureAnswers, sorteio uniforme das questões |
+| `mock-exam.service.test.ts` | Simulados — disponibilidade, score, breakdown, finish sem LLM, ensureAnswers (formato, JSON com fence, lotes que falham, orçamento de tempo, recorreção), sorteio uniforme das questões |
+| `logger.test.ts` / `api-error.test.ts` | Logger JSON de uma linha (níveis, campo não serializável, `serializeError`) e `logApiError` (5xx → error, 4xx → warn) |
 | `api-error.test.ts` | Todos os ramos de `toApiErrorResponse` |
 
 ---

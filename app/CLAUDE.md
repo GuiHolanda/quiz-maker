@@ -272,7 +272,7 @@ Questões salvas podem não ter `Answer` no banco. Antes de iniciar tentativa ou
 
 Ponto de uso 1: `SimuladosCreatedSection.handleStart()` antes de `start*Attempt`.
 
-Ponto de uso 2: página de resultado — ao detectar `answer === null` em qualquer questão, chamar ensure + refetch.
+Ponto de uso 2: página de resultado — ao detectar `answer === null` em qualquer questão, chamar ensure (até 3 rodadas enquanto `remaining > 0`) + refetch. O servidor recorrige a tentativa ao salvar o gabarito, então o refetch já traz o score final.
 
 Não precisa chamar em: quiz Generate (gabarito incluído no fluxo), browse/library (só leitura).
 
