@@ -9,9 +9,10 @@ import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import {
   feedbackReducer,
   INITIAL_FEEDBACK_STATE,
+  resolveFeedbackError,
+  type FeedbackErrorKind,
   type QuestionReportTarget,
 } from '@/features/reducers/feedback.reducer';
-import { resolveFeedbackError, type FeedbackErrorKind } from '@/lib/feedback-error';
 import { ReportQuestionModal } from '@/shared/components/ui/ReportQuestionModal';
 import { notify } from '@/shared/lib/notify';
 

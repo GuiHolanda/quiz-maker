@@ -139,8 +139,8 @@ Tudo aqui precisa existir **antes** de qualquer UI. A ordem importa — os itens
 - [x] **0.8 Env.** Documentar `FEEDBACK_INBOX_EMAIL` no bloco de env do [README.md](../../README.md) (junto de
   `RESEND_API_KEY`). **Não** definir em `.env.test`. A configuração na Vercel é ação do dono do produto e está no
   aceite abaixo.
-- [x] **0.9 Provider.** `features/reducers/feedback.reducer.ts` (reducer puro), `features/providers/feedback.provider.tsx`,
-  `features/hooks/useFeedback.hook.ts` e `lib/feedback-error.ts` (`resolveFeedbackError`), montados em
+- [x] **0.9 Provider.** `features/reducers/feedback.reducer.ts` (reducer puro e `resolveFeedbackError`), `features/providers/feedback.provider.tsx`,
+  `features/hooks/useFeedback.hook.ts`, montados em
   `app/(workspace)/layout.tsx` dentro do `LimitModalProvider`. O provider já nasce com `openQuestionReport`,
   `openFeedback` e o envio (SDD D-10); **sem modais** — F1/F2 os renderizam. Molde:
   [limit-modal.provider.tsx](../../features/providers/limit-modal.provider.tsx) e
@@ -154,7 +154,7 @@ Tudo aqui precisa existir **antes** de qualquer UI. A ordem importa — os itens
 - [x] **0.12 Suporte de E2E.** As duas tabelas em [db-cleanup.ts](../../tests/e2e/support/db-cleanup.ts). As
   entradas de [selectors.ts](../../tests/e2e/support/selectors.ts) entram com os componentes (1.10 e 2.8).
 - [x] **0.13 Docs internas.** Seção `feedback/` na tabela de rotas de [app/api/CLAUDE.md](../../app/api/CLAUDE.md).
-- [x] **0.14 Testes unitários da Fase 0.** `feedback.reducer.test.ts` (RN-23), `feedback-error.test.ts` (RN-25),
+- [x] **0.14 Testes unitários da Fase 0.** `feedback.reducer.test.ts` (RN-23 e RN-25),
   `feedback-i18n.test.ts` (paridade pt/en), `rate-limit.test.ts` estendido (RN-02) e
   `email.service.test.ts` (RN-19 a RN-21; hoje `EmailService` não tem nenhum teste).
 

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { FEEDBACK_CATEGORIES, QUESTION_REPORT_REASONS } from '@/config/constants';
 import { WORKSPACE_MESSAGE_PREFIXES } from '@/config/i18n-prefixes';
 import { parseProperties } from '@/lib/i18n/properties-parser';
-import { resolveFeedbackError, type FeedbackErrorKind } from '@/lib/feedback-error';
+import { resolveFeedbackError, type FeedbackErrorKind } from '@/features/reducers/feedback.reducer';
 
 const load = (language: 'pt' | 'en') =>
   parseProperties(readFileSync(join(process.cwd(), 'public', 'messages', `${language}.properties`), 'utf-8'));
