@@ -7,7 +7,7 @@
 | **Versão** | 1.0 (2026-09-25) |
 | **Autor** | Claude (Solution Architect) · **Aprovação de escopo:** Guilherme Holanda |
 | **Roadmap** | [feedback-e-comunicacao](../roadmap/feedback-e-comunicacao.md) |
-| **ADRs** | [0002](../adr/0002-persistencia-de-feedback-sem-foreign-key.md) · [0003](../adr/0003-notificar-o-time-por-email-por-evento.md) · [0004](../adr/0004-provider-unico-de-feedback-com-reducer.md) · [0005](../adr/0005-regras-de-negocio-validadas-no-service.md) · [0006](../adr/0006-um-reporte-por-usuario-por-questao-com-reabertura.md) · [0007](../adr/0007-moderacao-de-questoes-adiada.md) |
+| **ADRs** | [0001](../adr/0001-persistencia-de-feedback-sem-foreign-key.md) · [0002](../adr/0002-notificar-o-time-por-email-por-evento.md) |
 
 ## Índice
 
@@ -48,10 +48,10 @@ infraestrutura compartilhada (Fase 0), o **reporte de questão** (F1) e o **widg
 
 | Item | Onde está decidido |
 |---|---|
-| Retirar a questão de circulação após reporte | [ADR-0007](../adr/0007-moderacao-de-questoes-adiada.md) |
+| Retirar a questão de circulação após reporte | [D-13](#decisões-de-design) e [Q-01](#questões-em-aberto) |
 | Tela de inbox no admin (F3) | Backlog do roadmap |
 | Resposta ao usuário / notificação de "resolvido" (F5) | Backlog do roadmap |
-| Feedback em páginas públicas de marketing | Não previsto; `Feedback.userId` nulável deixa a porta aberta ([ADR-0002](../adr/0002-persistencia-de-feedback-sem-foreign-key.md)) |
+| Feedback em páginas públicas de marketing | Não previsto; `Feedback.userId` nulável deixa a porta aberta ([ADR-0001](../adr/0001-persistencia-de-feedback-sem-foreign-key.md)) |
 | Alterar `ExamQuestion` ou qualquer model existente | Não aprovado |
 
 > **SDDs do backlog (F3–F7) não foram escritos de propósito.** Cada um será escrito quando o item for promovido
@@ -75,7 +75,7 @@ infraestrutura compartilhada (Fase 0), o **reporte de questão** (F1) e o **widg
 | **Reporte** (`QuestionReport`) | Aviso de um usuário de que uma questão específica tem um problema |
 | **Feedback** (`Feedback`) | Mensagem geral do usuário sobre a plataforma (bug, sugestão, elogio, dúvida) |
 | **Superfície** (`surface`) | Tela de onde o reporte partiu: `question_bank`, `attempt` (durante o simulado) ou `review` (revisão do resultado) |
-| **Snapshot** | Cópia, no momento do envio, de dados lidos do banco, para o registro ser autossuficiente ([ADR-0002](../adr/0002-persistencia-de-feedback-sem-foreign-key.md)) |
+| **Snapshot** | Cópia, no momento do envio, de dados lidos do banco, para o registro ser autossuficiente ([ADR-0001](../adr/0001-persistencia-de-feedback-sem-foreign-key.md)) |
 | **Status ativo** | `open`, `triaged`, `accepted` |
 | **Status terminal** | `rejected`, `fixed` |
 | **Questão de pool** | `ExamQuestion` com `userId = null` (catálogo compartilhado) |
@@ -135,7 +135,7 @@ Os ids são **estáveis**: nunca renumerar. Testes citam o id no título (`it('R
 | RN-08 | A questão precisa existir e ser **visível**: `ExamQuestion.userId` é `null` (pool) ou igual ao solicitante. Caso contrário → **404** (não 403: não revela que a questão existe) | Service | 1 |
 | RN-09 | `mockExamAttemptId` é opcional; só é aceito com `surface` `attempt` ou `review` (com `question_bank` → 400) e precisa pertencer ao solicitante (senão 404) | Service | 1 |
 | RN-10 | `questionText`, `examName`, `sectionName` e `topicName` vêm **do banco**; campos homônimos no payload são ignorados | Service | 1 |
-| RN-11 | Um reporte por par (usuário, questão), garantido pelo índice único. Reportar de novo com status **ativo** → 409 `already_reported`. Com status **terminal** → reabre (ver RN-12). Corrida (`P2002` no insert) → 409 `already_reported` | Service + banco ([ADR-0006](../adr/0006-um-reporte-por-usuario-por-questao-com-reabertura.md)) | 1 |
+| RN-11 | Um reporte por par (usuário, questão), garantido pelo índice único. Reportar de novo com status **ativo** → 409 `already_reported`. Com status **terminal** → reabre (ver RN-12). Corrida (`P2002` no insert) → 409 `already_reported` | Service + banco ([D-12](#decisões-de-design)) | 1 |
 | RN-12 | **Reabrir** = `status = 'open'`; motivo, comentário, `surface`, `mockExamAttemptId` e snapshot atualizados; `resolvedAt`, `resolutionNote` e `notifiedAt` zerados; resposta **200**; e-mail reenviado como "reaberto". Reporte novo nasce `open` com `notifiedAt = null` e responde **201** | Service | 1 |
 
 ### Feedback geral
@@ -252,7 +252,7 @@ sequenceDiagram
 
 ## Modelo de dados
 
-Colunas escalares, **sem `@relation`** ([ADR-0002](../adr/0002-persistencia-de-feedback-sem-foreign-key.md)). Os dois
+Colunas escalares, **sem `@relation`** ([ADR-0001](../adr/0001-persistencia-de-feedback-sem-foreign-key.md)). Os dois
 arquivos ([prisma/dev/schema.prisma](../../prisma/dev/schema.prisma) e
 [prisma/prod/schema.prisma](../../prisma/prod/schema.prisma)) diferem só nas linhas 1 e 6.
 
@@ -338,7 +338,7 @@ model Feedback {
 
 | Campo | Decisão |
 |---|---|
-| `userId` | **Nulável** ([ADR-0002](../adr/0002-persistencia-de-feedback-sem-foreign-key.md) §5). Hoje é sempre preenchido |
+| `userId` | **Nulável** ([ADR-0001](../adr/0001-persistencia-de-feedback-sem-foreign-key.md) §5). Hoje é sempre preenchido |
 | `email`, `plan` | Snapshot do `User` no envio (RN-16) |
 | `category` | `bug` · `suggestion` · `praise` · `question` (RN-13) |
 | `message` | Máx. 2000 após `trim()` (RN-14) |
@@ -411,7 +411,7 @@ Arquivos: `app/api/feedback/route.ts` e `feedback.service.ts` (F2).
 
 **Respostas:** **201** `{ id }` · 400 · 401 · 429 `code: "rate_limited"` · 500.
 
-### Ordem do handler (RN-03, [ADR-0005](../adr/0005-regras-de-negocio-validadas-no-service.md))
+### Ordem do handler (RN-03, [D-11](#decisões-de-design))
 
 `auth()` → 401 → `enforceRateLimit` → 429 → `request.json().catch(() => null)` → 400 se nulo → `service.create` →
 resposta → `after()` do e-mail. O `catch` faz `logApiError` + `toApiErrorResponse`.
@@ -465,7 +465,7 @@ e E2E nunca dispara, então o caso 429 **não é testável em E2E** — só em u
 
 ## Notificação ao time
 
-Decisão em [ADR-0003](../adr/0003-notificar-o-time-por-email-por-evento.md).
+Decisão em [ADR-0002](../adr/0002-notificar-o-time-por-email-por-evento.md).
 
 ### `EmailService` (Fase 0)
 
@@ -530,7 +530,7 @@ Os rótulos do assunto vêm de mapas fixos em português — **nunca** de texto 
 | `shared/components/ui/workspace-header/FeedbackButton.tsx` | Gatilho do header, com a classe do trigger do sino e `faCommentDots` | F2 |
 
 O `FeedbackProvider` é montado em [app/(workspace)/layout.tsx](../../app/(workspace)/layout.tsx) **dentro** do
-`LimitModalProvider`. Em F1/F2 ele passa a renderizar os modais por props ([ADR-0004](../adr/0004-provider-unico-de-feedback-com-reducer.md)).
+`LimitModalProvider`. Em F1/F2 ele passa a renderizar os modais por props ([D-10](#decisões-de-design)).
 
 ### Estado (`feedbackReducer`, RN-23)
 
@@ -712,7 +712,7 @@ com os componentes**); `tests/e2e/support/db-cleanup.ts` apaga as duas tabelas (
 
 ## Decisões de design
 
-Decisões menores que não justificam uma ADR, mas precisam ficar registradas.
+Decisões que não são arquiteturais o bastante para uma ADR (convenções, regras de produto, escopo), mas precisam ficar registradas, com o porquê e o que foi descartado.
 
 | Id | Decisão | Por quê |
 |---|---|---|
@@ -725,6 +725,10 @@ Decisões menores que não justificam uma ADR, mas precisam ficar registradas.
 | D-07 | Entradas de `selectors.ts` entram com os componentes (F1/F2), não na Fase 0 | O catálogo é "mantido em sincronia com os `data-testid` dos componentes"; entradas sem componente seriam código morto |
 | D-08 | Reportar não pausa o cronômetro do simulado | Leva segundos; pausar abriria brecha de burla (RN-26) |
 | D-09 | `already_reported` mantém o modal aberto | Simplicidade; refinar é decisão de UX do F1 |
+| D-10 | Um `FeedbackProvider` com `feedbackReducer` puro, em vez de estado por superfície | Três telas de questão e dois gatilhos globais repetiriam estado, envio, toast e tratamento de erro cinco vezes. É a convenção Context + Reducer do `CLAUDE.md` e deixa a lógica testável em node (o vitest não tem jsdom). Descartados: `useState` em cada gatilho e um modal por botão. Custo: o provider monta em toda página do workspace (um `useReducer`); gatilhos fora de `(workspace)` exigiriam um provider próprio |
+| D-11 | Regras de negócio no service, handler fino | `tests/CLAUDE.md` manda não testar handlers, então validação no handler ficaria sem teste; e `ExamQuestion.id` é `Int`: um `"12"` no corpo viraria `PrismaClientValidationError` e 500 em vez de 400. O handler só faz auth, rate limit, parse do JSON e `catch`; o service valida whitelists, tipos, tamanhos e visibilidade. Sem biblioteca de schema (zod etc.): não há precedente no projeto. Desvio consciente do "validate → call service" literal do `CLAUDE.md` |
+| D-12 | Um reporte por (usuário, questão), com reabertura | Evita spam e e-mail duplicado (RN-11), mas uma questão corrigida pode voltar a errar (RN-12). O índice único no banco garante o dedupe mesmo em corrida. Descartados: vários reportes por par (polui a fila), unique sem reabertura (impede reportar de novo) e um `reportCount` na questão (exigiria alterar `ExamQuestion`). Custo: reabrir sobrescreve o motivo e o comentário anteriores; reavaliar se o F3/F5 precisar de histórico |
+| D-13 | A Fase 1 não altera `ExamQuestion`: reportar só registra e avisa | O schema só foi aprovado para models novos. "Sair de circulação" exigiria um campo de moderação e um filtro em toda consulta de questões (banco, criação de simulado, disponibilidade por seção, pool, demo pública), e um reporte falso poderia esconder uma questão boa antes de haver alguém para triar. Consequência: a promessa do site (`landing.trust.report.desc`) fica sem cobertura — ver Q-01 |
 
 ---
 
@@ -732,7 +736,7 @@ Decisões menores que não justificam uma ADR, mas precisam ficar registradas.
 
 | Id | Questão | Dono | Bloqueia |
 |---|---|---|---|
-| Q-01 | A promessa "itens sinalizados saem de circulação" ([ADR-0007](../adr/0007-moderacao-de-questoes-adiada.md)): aprovar o campo de moderação **ou** ajustar o copy | Guilherme | Lançamento público |
+| Q-01 | A promessa "itens sinalizados saem de circulação" ([D-13](#decisões-de-design)): aprovar o campo de moderação **ou** ajustar o copy | Guilherme | Lançamento público |
 | Q-02 | A política de privacidade deve citar o conteúdo de feedback como categoria de dado? | Guilherme | Lançamento público |
 | Q-03 | Prazo de retenção de `Feedback` e `QuestionReport` | Guilherme | — |
 | Q-04 | Usar `replyTo = Feedback.email` no e-mail do time, para responder ao usuário com um "Responder"? Barato, mas ainda não pedido | Guilherme | F2 |
@@ -759,3 +763,4 @@ Ganhos já embutidos neste design, para os itens do backlog **não** exigirem mi
 |---|---|---|
 | 1.0 | 2026-09-25 | Versão inicial: Fase 0, F1 e F2 |
 | 1.1 | 2026-09-25 | Fase 0 implementada. Limites de tamanho adiados para F1/F2; migration dev gerada por `migrate diff` + `migrate deploy` |
+| 1.2 | 2026-09-25 | ADRs cortadas de 7 para 2: o porquê das antigas 0004 a 0007 virou D-10 a D-13; as ADRs 0002 e 0003 foram renumeradas para 0001 e 0002 |

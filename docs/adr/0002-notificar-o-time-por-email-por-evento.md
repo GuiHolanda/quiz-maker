@@ -1,9 +1,9 @@
-# ADR-0003 — Notificar o time por e-mail por evento
+# ADR-0002 — Notificar o time por e-mail por evento
 
 - **Status:** Aceita
 - **Data:** 2026-09-25
 - **Proposta por:** Claude (Solution Architect) · **Aprovada:** Guilherme Holanda, no plano do roadmap (2026-09-25)
-- **Relacionadas:** [ADR-0002](0002-persistencia-de-feedback-sem-foreign-key.md) · SDD §[Notificação ao time](../sdd/feedback-e-comunicacao.md#notificação-ao-time)
+- **Relacionadas:** [ADR-0001](0001-persistencia-de-feedback-sem-foreign-key.md) · SDD §[Notificação ao time](../sdd/feedback-e-comunicacao.md#notificação-ao-time)
 
 ## Contexto
 

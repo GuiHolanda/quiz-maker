@@ -1,10 +1,10 @@
-# ADR-0002 — Persistência de feedback em tabelas sem FK, com snapshot
+# ADR-0001 — Persistência de feedback em tabelas sem FK, com snapshot
 
 - **Status:** Aceita
 - **Data:** 2026-09-25
 - **Proposta por:** Claude (Solution Architect) · **Aprovação de schema:** Guilherme Holanda (2026-09-25,
   "aprovado criar models novos; não alterar models existentes")
-- **Relacionadas:** [ADR-0007](0007-moderacao-de-questoes-adiada.md) · SDD §[Modelo de dados](../sdd/feedback-e-comunicacao.md#modelo-de-dados)
+- **Relacionadas:** SDD §[Modelo de dados](../sdd/feedback-e-comunicacao.md#modelo-de-dados)
 
 ## Contexto
 
@@ -31,13 +31,13 @@ Restrições:
    `QuestionReport.{questionText, examName, sectionName, topicName}` e `Feedback.{email, plan}`. O registro é
    auto-suficiente: o e-mail ao time e a futura tela de triagem não dependem de join.
 3. **`String` no lugar de enum** para `reason`, `category`, `surface` e `status`; a whitelist é validada no
-   service ([ADR-0005](0005-regras-de-negocio-validadas-no-service.md)).
+   service (SDD §[Decisões de design](../sdd/feedback-e-comunicacao.md#decisões-de-design), D-11).
 4. **PK cuid** (`String @id @default(cuid())`) — mantém o SQL dev/prod quase idêntico e evita `AUTOINCREMENT`,
    que o teste de migrations rejeita em prod.
 5. **Nulabilidade de `userId` diverge de propósito:**
    - `QuestionReport.userId` **não-nulável.** Em PostgreSQL, `NULL`s são distintos num índice único: um `userId`
      nulável quebraria em silêncio o dedupe `@@unique([userId, examQuestionId])`
-     ([ADR-0006](0006-um-reporte-por-usuario-por-questao-com-reabertura.md)). Além disso, só se reporta questão
+     (SDD, [RN-11](../sdd/feedback-e-comunicacao.md#regras-de-negócio)). Além disso, só se reporta questão
      dentro do workspace autenticado.
    - `Feedback.userId` **nulável.** Páginas públicas de marketing são um uso futuro declarado. Tornar a coluna
      nulável depois custaria caro: `DROP NOT NULL` em prod mais rebuild completo da tabela no SQLite (`PRAGMA
@@ -80,6 +80,6 @@ Restrições:
 
 ## Revisitar quando
 
-- O time aprovar alterar `ExamQuestion` para moderação ([ADR-0007](0007-moderacao-de-questoes-adiada.md)): avaliar
+- O time aprovar alterar `ExamQuestion` para moderação (SDD, [Q-01](../sdd/feedback-e-comunicacao.md#questões-em-aberto)): avaliar
   se vale adicionar a relação nessa mesma mudança.
 - Existir fluxo de exclusão de conta: o apagamento de `Feedback` e `QuestionReport` entra nele.

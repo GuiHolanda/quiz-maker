@@ -3,7 +3,7 @@
 > Última atualização: 2026-09-25 · Tópico: como os usuários falam com a gente e como a gente ouve.
 >
 > **Design e decisões:** [SDD](../sdd/feedback-e-comunicacao.md) (regras de negócio `RN-xx`, contratos, modelo de
-> dados) · [ADRs](../adr/README.md) (0002 a 0007 cobrem este tópico).
+> dados) · [ADRs](../adr/README.md) (0001 e 0002 cobrem este tópico).
 
 ## Índice
 
@@ -110,9 +110,9 @@ Tudo aqui precisa existir **antes** de qualquer UI. A ordem importa — os itens
 
 ### Documentação (pré-requisito)
 
-- [x] **D.1** ADRs 0001 a 0007 em [docs/adr/](../adr/README.md)
+- [x] **D.1** ADRs 0001 e 0002 em [docs/adr/](../adr/README.md)
 - [x] **D.2** [SDD](../sdd/feedback-e-comunicacao.md) com regras de negócio, contratos e matriz de testes
-- [x] **D.3** `.gitignore` deixa de ignorar `docs/roadmap/`, `docs/adr/` e `docs/sdd/` (ADR-0001)
+- [x] **D.3** `.gitignore` deixa de ignorar `docs/roadmap/`, `docs/adr/` e `docs/sdd/` (ver [docs/adr/README.md](../adr/README.md))
 
 ### Checklist
 
@@ -142,7 +142,7 @@ Tudo aqui precisa existir **antes** de qualquer UI. A ordem importa — os itens
 - [x] **0.9 Provider.** `features/reducers/feedback.reducer.ts` (reducer puro), `features/providers/feedback.provider.tsx`,
   `features/hooks/useFeedback.hook.ts` e `lib/feedback-error.ts` (`resolveFeedbackError`), montados em
   `app/(workspace)/layout.tsx` dentro do `LimitModalProvider`. O provider já nasce com `openQuestionReport`,
-  `openFeedback` e o envio (ADR-0004); **sem modais** — F1/F2 os renderizam. Molde:
+  `openFeedback` e o envio (SDD D-10); **sem modais** — F1/F2 os renderizam. Molde:
   [limit-modal.provider.tsx](../../features/providers/limit-modal.provider.tsx) e
   [notifications.reducer.ts](../../features/reducers/notifications.reducer.ts).
 - [x] **0.10 Constantes e tipos.** `config/constants/feedback.ts` (URLs, `QUESTION_REPORT_REASONS`,
@@ -540,8 +540,8 @@ Fora da Fase 1. Cada item tem um **gatilho de promoção**: o que precisa ser ve
   lugares no mesmo commit; a tabela existe só para dar o panorama sem rolar o arquivo.
 - Um tópico novo (qualidade das questões, monetização, onboarding…) vira `docs/roadmap/<topico>.md`. Quando
   existirem 3 arquivos, criar um `README.md` como índice.
-- Decisões viram ADR em `docs/adr/` e regras de negócio ficam no SDD do tópico em `docs/sdd/` (ADR-0001). Não
-  se edita ADR aceita: escreve-se uma nova que a substitui.
+- Decisões viram ADR em `docs/adr/` e regras de negócio ficam no SDD do tópico em `docs/sdd/` (critérios em
+  [docs/adr/README.md](../adr/README.md)). Não se edita ADR aceita: escreve-se uma nova que a substitui.
 - Cada frente vira uma branch `feature/<kebab-case>` e passa por um plano de implementação próprio antes de
   qualquer código.
 
@@ -550,3 +550,4 @@ Fora da Fase 1. Cada item tem um **gatilho de promoção**: o que precisa ser ve
 | 2026-09-25 | Documento criado. Fase 1 = Fase 0 + F1 + F2. Schema aprovado apenas para models novos |
 | 2026-09-25 | ADRs 0001–0007 e SDD escritos. Refinamentos de design (SDD §Decisões de design): `updatedAt` nos models; `sendInternalAlert` devolve `boolean`; wrappers de e-mail em F1/F2; seletores E2E com os componentes; namespace único `feedback`; provider baseado em reducer, já com `openFeedback` na Fase 0 |
 | 2026-09-25 | Fase 0 implementada na branch `feature/feedback-infra` (models e migrations, i18n, constantes, reducer, provider, resolvedor de erro, `sendInternalAlert`, rate limit). Aguarda o aceite acima |
+| 2026-09-25 | ADRs cortadas de 7 para 2 (persistência sem FK e e-mail por evento). O porquê das demais está no SDD (D-10 a D-13); o risco da moderação segue em "Riscos abertos" |
