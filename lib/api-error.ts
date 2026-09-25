@@ -1,5 +1,7 @@
 import { Prisma } from '@prisma/client';
 
+import { logger, serializeError, type LogFields } from '@/lib/logger';
+
 interface ApiErrorResponse {
   readonly error: string;
   readonly message?: string;
@@ -59,4 +61,10 @@ export function toApiErrorResponse(err: unknown): ApiErrorResponse {
   }
 
   return { error: 'Internal server error', status: 500 };
+}
+
+export function logApiError(event: string, err: unknown, context: LogFields = {}): void {
+  const { status } = toApiErrorResponse(err);
+
+  logger[status >= 500 ? 'error' : 'warn'](event, { ...context, status, ...serializeError(err) });
 }

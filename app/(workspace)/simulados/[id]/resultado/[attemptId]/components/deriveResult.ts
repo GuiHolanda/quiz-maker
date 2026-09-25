@@ -14,7 +14,7 @@ export const TONE_BG: Record<ScoreTone, string> = {
   danger: 'bg-danger',
 };
 export type TopicTag = 'strong' | 'attention' | 'critical';
-export type QuestionStatus = 'correct' | 'wrong' | 'blank';
+export type QuestionStatus = 'correct' | 'wrong' | 'blank' | 'ungraded';
 
 export interface ReviewQuestion {
   examQuestionId: number;
@@ -46,6 +46,7 @@ export interface ResultView {
   correct: number;
   wrong: number;
   blank: number;
+  ungradedCount: number;
   percent: number;
   tone: ScoreTone;
   passingScorePercent: number | null;
@@ -109,6 +110,13 @@ function formatBudget(totalMinutes: number): string {
   return `${minutes}min`;
 }
 
+function questionStatus(selectedOptions: string[], correctOptions: string[], isCorrect: boolean): QuestionStatus {
+  if (selectedOptions.length === 0) return 'blank';
+  if (correctOptions.length === 0) return 'ungraded';
+
+  return isCorrect ? 'correct' : 'wrong';
+}
+
 export function deriveResult(result: MockExamResult): ResultView {
   const total = result.questions.length;
   const correct = result.attempt.score ?? 0;
@@ -123,7 +131,7 @@ export function deriveResult(result: MockExamResult): ResultView {
         correctOptions.length > 0 &&
         selectedOptions.length === correctOptions.length &&
         selectedOptions.every((option) => correctOptions.includes(option));
-      const status: QuestionStatus = selectedOptions.length === 0 ? 'blank' : isCorrect ? 'correct' : 'wrong';
+      const status: QuestionStatus = questionStatus(selectedOptions, correctOptions, isCorrect);
 
       return {
         examQuestionId: mq.examQuestion.id,
@@ -141,7 +149,8 @@ export function deriveResult(result: MockExamResult): ResultView {
     .sort((a, b) => a.order - b.order);
 
   const blank = questions.filter((question) => question.status === 'blank').length;
-  const wrong = total - correct - blank;
+  const ungradedCount = questions.filter((question) => question.status === 'ungraded').length;
+  const wrong = total - correct - blank - ungradedCount;
   const percent = total > 0 ? Math.round((correct / total) * 100) : 0;
 
   const timedOut = result.attempt.timedOut;
@@ -185,6 +194,7 @@ export function deriveResult(result: MockExamResult): ResultView {
     correct,
     wrong,
     blank,
+    ungradedCount,
     percent,
     tone,
     passingScorePercent,

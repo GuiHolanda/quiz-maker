@@ -19,6 +19,7 @@ interface ExamTypePickerProps {
   readonly certification: ExamTypeOption;
   readonly publicExam: ExamTypeOption;
   readonly isDisabled?: boolean;
+  readonly orientation?: 'horizontal' | 'vertical';
 }
 
 export function ExamTypePicker({
@@ -28,6 +29,7 @@ export function ExamTypePicker({
   certification,
   publicExam,
   isDisabled = false,
+  orientation = 'horizontal',
 }: ExamTypePickerProps) {
   const options: (ExamTypeOption & { scope: ExamType; icon: typeof faGraduationCap })[] = [
     { ...certification, scope: 'certification', icon: faGraduationCap },
@@ -37,7 +39,7 @@ export function ExamTypePicker({
   return (
     <div className="flex flex-col gap-3">
       {label && <FieldLabel>{label}</FieldLabel>}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className={`grid gap-4 ${orientation === 'horizontal' ? 'sm:grid-cols-2' : ''}`}>
         {options.map((option) => {
           const isSelected = option.scope === value;
 

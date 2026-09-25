@@ -59,7 +59,8 @@ vi.mock('bcryptjs', () => ({ default: { hash: vi.fn().mockResolvedValue('hashed'
 | `quota.service.test.ts` | Verificação e registro; `create_exam` vs `maxExams`; `getUsage` dual |
 | `register.service.test.ts` | Registro de usuário |
 | `reset-password.service.test.ts` | Reset de senha |
-| `mock-exam.service.test.ts` | Simulados — disponibilidade, score, breakdown, ensureAnswers, sorteio uniforme das questões |
+| `mock-exam.service.test.ts` | Simulados — disponibilidade, score, breakdown, finish sem LLM, ensureAnswers (formato, JSON com fence, lotes que falham, orçamento de tempo, recorreção), sorteio uniforme das questões |
+| `logger.test.ts` / `api-error.test.ts` | Logger JSON de uma linha (níveis, campo não serializável, `serializeError`) e `logApiError` (5xx → error, 4xx → warn) |
 | `api-error.test.ts` | Todos os ramos de `toApiErrorResponse` |
 
 ---
@@ -103,6 +104,7 @@ npx playwright show-report
 | `full-journey` (×2) | gerar → salvar → simulado → responder → resultado → tentar novamente |
 | `generation-errors` (×2) | quota 403; abort de rede → toast de erro |
 | `sse-reconnect` (×2) | cancelar job; restaura `running` após reload |
+| `simulado-result-gabarito` (×3) | resultado sem gabarito esconde o score e oferece retry; gabarito completado antes de exibir; erro de carga com retry e recuperação |
 | `exam-editor-validation` (×2) | discard de draft (limpa localStorage); guard de Salvar sem nome |
 | `exam-identify` (×2) | identificação dentro da tela de loading: cancelar em voo não é ressuscitado por resposta tardia (guarda `runId`); sem match oferece retry inline; falha do identify não despeja no editor em branco; desambiguação confirma o match escolhido |
 | `question-bank` | seed via API → verificar → buscar → deletar; empty state |

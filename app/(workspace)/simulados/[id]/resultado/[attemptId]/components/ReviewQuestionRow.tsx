@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Skeleton } from '@heroui/skeleton';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faXmark, faMinus, faChevronDown, faLightbulb } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faXmark, faMinus, faQuestion, faChevronDown, faLightbulb } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
@@ -20,6 +20,7 @@ const STATUS_META: Record<QuestionStatus, { icon: typeof faCheck; badge: string;
   correct: { icon: faCheck, badge: 'bg-success/10 text-success', label: 'simulado.result.statusCorrect' },
   wrong: { icon: faXmark, badge: 'bg-danger/10 text-danger', label: 'simulado.result.statusWrong' },
   blank: { icon: faMinus, badge: 'bg-default-200 text-default-400', label: 'simulado.result.statusBlank' },
+  ungraded: { icon: faQuestion, badge: 'bg-warning/10 text-warning', label: 'simulado.result.statusUngraded' },
 };
 
 const COMMENT_SKELETON_ROWS: readonly (readonly string[])[] = [

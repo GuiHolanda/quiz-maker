@@ -26,6 +26,15 @@ import { formatElapsed, formatMMSS, formatPerQuestion } from './attemptFormat';
 
 const CRITICAL_MS = 5 * 60_000;
 
+function finishErrorMessage(error: unknown, t: ReturnType<typeof useTranslation>['t']): string {
+  const response = (error as { response?: { status?: number; data?: { message?: string } } } | undefined)?.response;
+
+  if (response?.status === 401) return t('simulado.attempt.sessionExpired');
+  if (!response || response.status === 504) return t('simulado.attempt.finishUnavailable');
+
+  return response.data?.message ?? t('toast.somethingWrong');
+}
+
 interface AttemptShellProps {
   readonly mockExamId: number;
   readonly attemptId: number;
@@ -107,10 +116,7 @@ export function AttemptShell({ mockExamId, attemptId }: AttemptShellProps) {
       finishingRef.current = false;
       setIsAutoSubmitting(false);
       setIsFinishing(false);
-      notify.error(
-        t('toast.error'),
-        (e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t('toast.somethingWrong')
-      );
+      notify.error(t('toast.error'), finishErrorMessage(e, t));
     }
   }, [mockExam, answers, mockExamId, attemptId, clearProgress, clearPause, bypassNext, router, t]);
 

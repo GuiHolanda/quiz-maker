@@ -1,6 +1,8 @@
 import type { Prisma } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
+import { logger, serializeError, type LogFields } from '@/lib/logger';
+import { extractJson } from '@/lib/llm/response';
 import { shuffleItems } from '@/lib/exam/distribution';
 import { normalizeName, looseKey } from '@/lib/exam/normalize';
 import { MOCK_EXAM_TIME_GRACE_MINUTES } from '@/config/constants';
@@ -15,10 +17,73 @@ import { OpenAIService } from '@/features/services/generation/openai.service';
 import { ExamQuestionService } from '@/features/services/exam/exam-question.service';
 import { MetricsService } from '@/features/services/billing/metrics.service';
 import { ReferralService } from '@/features/services/billing/referral.service';
+import { resolveQuestionFormat, type QuestionFormatKey } from '@/config/question-formats';
 import { certificationAnswersPrompt } from '@/config/prompts/certification-questions/answers.prompt';
 import { publicExamAnswersPrompt } from '@/config/prompts/public-exam-questions/answers.prompt';
 
 const ANSWERS_BATCH_SIZE = 10;
+const ANSWERS_CONCURRENCY = 4;
+// Leaves headroom under the answers route's maxDuration (300s) for batches already in flight.
+const ANSWERS_DEADLINE_MS = 200_000;
+
+type QuestionWithOptions = Prisma.ExamQuestionGetPayload<{ include: { options: true } }>;
+
+interface AnswerBatch {
+  readonly sectionName: string;
+  readonly format: QuestionFormatKey;
+  readonly questions: QuestionWithOptions[];
+}
+
+interface AnswersExamRef {
+  readonly name: string;
+  readonly type: string;
+  readonly role: string | null;
+  readonly examBoardName: string;
+}
+
+class InvalidAnswersPayloadError extends Error {
+  constructor(
+    readonly responseLength: number,
+    readonly responsePreview: string
+  ) {
+    super('LLM response is not a valid gabarito payload');
+    this.name = 'InvalidAnswersPayloadError';
+  }
+}
+
+function parseAnswersPayload(text: string): unknown[] {
+  try {
+    const parsed = JSON.parse(extractJson(text)) as { answers?: unknown } | null;
+
+    if (Array.isArray(parsed?.answers)) return parsed.answers;
+  } catch {
+    // falls through to the typed error below, which carries a preview of the raw text
+  }
+
+  throw new InvalidAnswersPayloadError(text.length, text.slice(0, 300));
+}
+
+function normalizeOptionLabel(label: unknown): unknown {
+  return typeof label === 'string' ? label.trim().toUpperCase() : label;
+}
+
+function parseSelectedOptions(raw: string): string[] {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function isAnswerCorrect(correctOptions: string[], selected: string[]): boolean {
+  return (
+    correctOptions.length > 0 &&
+    selected.length === correctOptions.length &&
+    selected.every((option) => correctOptions.includes(option))
+  );
+}
 
 export class MockExamService {
   private openAIServiceInstance: OpenAIService | null = null;
@@ -422,11 +487,13 @@ export class MockExamService {
   /**
    * Generates and persists ExamAnswer rows for any question in this mock exam
    * that still lacks one. Idempotent — questions that already have an answer
-   * are skipped. Used by the frontend before starting an attempt so the result
-   * page always has a gabarito to compare against. Dispatches the answers
-   * prompt by the exam type (certification vs public_exam).
+   * are skipped. Batches run in parallel and stop at a time budget, so a big
+   * mock exam ends before the route's maxDuration instead of being killed;
+   * `remaining` tells the caller to ask again. Dispatches the answers prompt
+   * by the exam type (certification vs public_exam).
    */
-  async ensureAnswers(mockExamId: number, userId: string) {
+  async ensureAnswers(mockExamId: number, userId: string): Promise<{ generated: number; remaining: number }> {
+    const startTime = Date.now();
     const mockExam = await prisma.mockExam.findFirst({
       where: { id: mockExamId, userId },
       include: {
@@ -443,92 +510,307 @@ export class MockExamService {
 
     const missing = mockExam.questions.map((mq) => mq.examQuestion).filter((q) => !q.answer);
 
-    if (missing.length === 0) return { generated: 0 };
+    if (missing.length === 0) return { generated: 0, remaining: 0 };
 
-    type MissingQuestion = (typeof missing)[number];
-    // Group by section so each LLM call has consistent context.
-    const bySection = new Map<string, MissingQuestion[]>();
-
-    for (const q of missing) {
-      const list = bySection.get(q.sectionName) ?? [];
-
-      list.push(q);
-      bySection.set(q.sectionName, list);
-    }
-
-    const isCert = mockExam.exam.type === 'certification';
-    let totalGenerated = 0;
+    const batches = this.buildAnswerBatches(missing);
+    const examRef: AnswersExamRef = {
+      name: mockExam.exam.name,
+      type: mockExam.exam.type,
+      role: mockExam.exam.role,
+      examBoardName: mockExam.exam.examBoard?.name ?? '',
+    };
+    const context = {
+      mockExamId,
+      userId,
+      examType: examRef.type,
+      missing: missing.length,
+      batches: batches.length,
+    };
 
     // count: 0 — backfilling a gabarito isn't a billable quota unit, but tokens still need
     // to land in UsageLogStep so plan margin in /admin/analytics reflects them (see achado 14).
     const logId = await this.metricsService.createLog(userId, 'generate_mock_answers', 0);
-    const startTime = Date.now();
+    const deadlineAt = startTime + ANSWERS_DEADLINE_MS;
+    const queue = batches.map((batch, index) => ({ batch, index }));
+    let generated = 0;
+    let failedBatches = 0;
 
-    for (const [sectionName, sectionQuestions] of Array.from(bySection.entries())) {
-      for (let i = 0; i < sectionQuestions.length; i += ANSWERS_BATCH_SIZE) {
-        const slice = sectionQuestions.slice(i, i + ANSWERS_BATCH_SIZE);
-        const batchStart = Date.now();
+    logger.info('mock_exam.answers.started', context);
 
-        const llmResponse = isCert
-          ? await this.openAIService.call(certificationAnswersPrompt, {
-              certification_name: mockExam.exam.name,
-              topic: sectionName,
-              questions: JSON.stringify(
-                slice.map((q: MissingQuestion) => ({
-                  id: q.id,
-                  text: q.text,
-                  correctCount: q.correctCount,
-                  options: Object.fromEntries(q.options.map((o) => [o.label, o.text])),
-                })),
-                null,
-                2
-              ),
-            })
-          : await this.openAIService.call(publicExamAnswersPrompt, {
-              public_exam_name: mockExam.exam.name,
-              exam_board_name: mockExam.exam.examBoard?.name ?? '',
-              role: mockExam.exam.role ?? undefined,
-              subject_name: sectionName,
-              topic_name: slice[0]?.topicName ?? undefined,
-              questions: slice.map((q: MissingQuestion) => ({
-                id: q.id,
-                examName: q.examName,
-                sectionName: q.sectionName,
-                topic: q.topicName ?? undefined,
-                text: q.text,
-                correctCount: q.correctCount,
-                difficulty: q.difficulty,
-                options: Object.fromEntries(q.options.map((o) => [o.label, o.text])),
-              })),
-            });
+    const worker = async () => {
+      while (queue.length > 0 && Date.now() < deadlineAt) {
+        const { batch, index } = queue.shift()!;
 
-        void this.metricsService.recordStep(
-          logId,
-          'answers',
-          { inputTokens: llmResponse.inputTokens, outputTokens: llmResponse.outputTokens },
-          Date.now() - batchStart
-        );
+        try {
+          const saved = await this.generateAnswersBatch(examRef, batch, index, logId, context);
 
-        const parsed = JSON.parse(llmResponse.text) as {
-          answers?: { questionId: number; correctOptions: string[] }[];
-        };
-
-        if (Array.isArray(parsed?.answers)) {
-          await this.questionService.saveAnswers(
-            parsed.answers.map((a) => ({
-              questionId: a.questionId,
-              correctOptions: a.correctOptions,
-              explanations: {},
-            }))
-          );
-          totalGenerated += parsed.answers.length;
+          generated += saved;
+        } catch (err) {
+          failedBatches += 1;
+          logger.error('mock_exam.answers.batch_failed', {
+            ...context,
+            batchIndex: index,
+            section: batch.sectionName,
+            format: batch.format,
+            size: batch.questions.length,
+            ...(err instanceof InvalidAnswersPayloadError && {
+              responseLength: err.responseLength,
+              responsePreview: err.responsePreview,
+            }),
+            ...serializeError(err),
+          });
         }
+      }
+    };
+
+    await Promise.all(Array.from({ length: Math.min(ANSWERS_CONCURRENCY, batches.length) }, worker));
+    await this.bestEffortMetrics(logId, () => this.metricsService.finalize(logId, Date.now() - startTime));
+
+    const remaining = missing.length - generated;
+    const outcome = {
+      ...context,
+      generated,
+      remaining,
+      failedBatches,
+      skippedBatches: queue.length,
+      durationMs: Date.now() - startTime,
+    };
+
+    if (generated > 0) {
+      try {
+        await this.regradeFinishedAttempts(mockExamId, userId);
+      } catch (err) {
+        logger.error('mock_exam.answers.regrade_failed', { mockExamId, userId, ...serializeError(err) });
       }
     }
 
-    await this.metricsService.finalize(logId, Date.now() - startTime);
+    if (generated === 0 && failedBatches > 0) {
+      logger.error('mock_exam.answers.failed', outcome);
 
-    return { generated: totalGenerated };
+      throw Object.assign(new Error('Não foi possível gerar o gabarito agora. Tente novamente em instantes.'), {
+        status: 502,
+      });
+    }
+
+    logger[remaining > 0 ? 'warn' : 'info']('mock_exam.answers.completed', outcome);
+
+    return { generated, remaining };
+  }
+
+  private buildAnswerBatches(questions: QuestionWithOptions[]): AnswerBatch[] {
+    const groups = new Map<string, AnswerBatch>();
+
+    for (const question of questions) {
+      const format = resolveQuestionFormat(question.format).key;
+      const key = `${question.sectionName}\u0000${format}`;
+      const group = groups.get(key) ?? { sectionName: question.sectionName, format, questions: [] };
+
+      group.questions.push(question);
+      groups.set(key, group);
+    }
+
+    return Array.from(groups.values()).flatMap((group) => {
+      const slices: AnswerBatch[] = [];
+
+      for (let i = 0; i < group.questions.length; i += ANSWERS_BATCH_SIZE) {
+        slices.push({ ...group, questions: group.questions.slice(i, i + ANSWERS_BATCH_SIZE) });
+      }
+
+      return slices;
+    });
+  }
+
+  private callAnswersPrompt(exam: AnswersExamRef, batch: AnswerBatch) {
+    const { sectionName, format, questions } = batch;
+
+    if (exam.type === 'certification') {
+      return this.openAIService.call(certificationAnswersPrompt, {
+        certification_name: exam.name,
+        topic: sectionName,
+        format,
+        questions: JSON.stringify(
+          questions.map((q) => ({
+            id: q.id,
+            text: q.text,
+            correctCount: q.correctCount,
+            options: Object.fromEntries(q.options.map((o) => [o.label, o.text])),
+          })),
+          null,
+          2
+        ),
+      });
+    }
+
+    return this.openAIService.call(publicExamAnswersPrompt, {
+      public_exam_name: exam.name,
+      exam_board_name: exam.examBoardName,
+      role: exam.role ?? undefined,
+      subject_name: sectionName,
+      topic_name: questions[0]?.topicName ?? undefined,
+      format,
+      questions: questions.map((q) => ({
+        id: q.id,
+        examName: q.examName,
+        sectionName: q.sectionName,
+        topic: q.topicName ?? undefined,
+        text: q.text,
+        correctCount: q.correctCount,
+        difficulty: q.difficulty,
+        options: Object.fromEntries(q.options.map((o) => [o.label, o.text])),
+      })),
+    });
+  }
+
+  private async generateAnswersBatch(
+    exam: AnswersExamRef,
+    batch: AnswerBatch,
+    batchIndex: number,
+    logId: string,
+    context: LogFields
+  ): Promise<number> {
+    const batchStart = Date.now();
+    const llmResponse = await this.callAnswersPrompt(exam, batch);
+    const llmDurationMs = Date.now() - batchStart;
+
+    await this.bestEffortMetrics(logId, () =>
+      this.metricsService.recordStep(
+        logId,
+        'answers',
+        { inputTokens: llmResponse.inputTokens, outputTokens: llmResponse.outputTokens },
+        llmDurationMs
+      )
+    );
+
+    const { valid, invalid } = this.validateAnswers(parseAnswersPayload(llmResponse.text), batch.questions);
+    const batchContext = {
+      ...context,
+      batchIndex,
+      section: batch.sectionName,
+      format: batch.format,
+      size: batch.questions.length,
+    };
+
+    if (invalid.length > 0) {
+      logger.warn('mock_exam.answers.batch_invalid_entries', {
+        ...batchContext,
+        invalid: invalid.length,
+        samples: invalid.slice(0, 5),
+      });
+    }
+
+    if (valid.length > 0) {
+      await this.questionService.saveAnswers(valid.map((answer) => ({ ...answer, explanations: {} })));
+    }
+
+    logger.info('mock_exam.answers.batch_done', {
+      ...batchContext,
+      saved: valid.length,
+      invalid: invalid.length,
+      inputTokens: llmResponse.inputTokens,
+      outputTokens: llmResponse.outputTokens,
+      llmDurationMs,
+      durationMs: Date.now() - batchStart,
+    });
+
+    return valid.length;
+  }
+
+  private validateAnswers(rawAnswers: unknown[], questions: QuestionWithOptions[]) {
+    const questionsById = new Map(questions.map((question) => [question.id, question]));
+    const seen = new Set<number>();
+    const valid: { questionId: number; correctOptions: string[] }[] = [];
+    const invalid: { questionId: unknown; correctOptions: unknown }[] = [];
+
+    for (const raw of rawAnswers) {
+      const entry = raw as { questionId?: unknown; correctOptions?: unknown } | null;
+      const question = questionsById.get(Number(entry?.questionId));
+
+      if (question && seen.has(question.id)) continue;
+
+      const proposed = Array.isArray(entry?.correctOptions)
+        ? Array.from(new Set(entry.correctOptions.map(normalizeOptionLabel)))
+        : [];
+      const optionLabels = new Set(question?.options.map((option) => option.label));
+      const isValid =
+        question !== undefined &&
+        proposed.length === question.correctCount &&
+        proposed.every((label) => typeof label === 'string' && optionLabels.has(label));
+
+      if (isValid) {
+        seen.add(question.id);
+        valid.push({ questionId: question.id, correctOptions: proposed as string[] });
+      } else {
+        invalid.push({ questionId: entry?.questionId, correctOptions: entry?.correctOptions });
+      }
+    }
+
+    return { valid, invalid };
+  }
+
+  private async bestEffortMetrics(logId: string, write: () => Promise<unknown>) {
+    try {
+      await write();
+    } catch (err) {
+      logger.warn('mock_exam.answers.metrics_failed', { logId, ...serializeError(err) });
+    }
+  }
+
+  private async regradeFinishedAttempts(mockExamId: number, userId: string) {
+    const [questions, attempts] = await Promise.all([
+      prisma.mockExamQuestion.findMany({
+        where: { mockExamId },
+        include: { examQuestion: { include: { answer: true } } },
+      }),
+      prisma.mockExamAttempt.findMany({
+        where: { mockExamId, userId, finishedAt: { not: null } },
+        include: { answers: true },
+      }),
+    ]);
+    const correctOptionsByQuestionId = new Map(
+      questions.map((mq) => [mq.id, (mq.examQuestion.answer?.correctOptions ?? []) as unknown as string[]])
+    );
+    const writes: Prisma.PrismaPromise<unknown>[] = [];
+
+    for (const attempt of attempts) {
+      const nowCorrectIds: number[] = [];
+      const nowIncorrectIds: number[] = [];
+      let score = 0;
+
+      for (const answer of attempt.answers) {
+        const isCorrect = isAnswerCorrect(
+          correctOptionsByQuestionId.get(answer.mockExamQuestionId) ?? [],
+          parseSelectedOptions(answer.selectedOptions)
+        );
+
+        if (isCorrect) score += 1;
+        if (isCorrect !== answer.isCorrect) (isCorrect ? nowCorrectIds : nowIncorrectIds).push(answer.id);
+      }
+
+      if (nowCorrectIds.length > 0) {
+        writes.push(
+          prisma.mockExamAttemptAnswer.updateMany({
+            where: { id: { in: nowCorrectIds } },
+            data: { isCorrect: true },
+          })
+        );
+      }
+      if (nowIncorrectIds.length > 0) {
+        writes.push(
+          prisma.mockExamAttemptAnswer.updateMany({
+            where: { id: { in: nowIncorrectIds } },
+            data: { isCorrect: false },
+          })
+        );
+      }
+      if (score !== attempt.score) {
+        writes.push(prisma.mockExamAttempt.update({ where: { id: attempt.id }, data: { score } }));
+      }
+    }
+
+    if (writes.length === 0) return;
+
+    await prisma.$transaction(writes);
+    logger.info('mock_exam.answers.regraded', { mockExamId, userId, attempts: attempts.length, writes: writes.length });
   }
 
   async finishAttempt(
@@ -537,34 +819,41 @@ export class MockExamService {
     userId: string,
     answers: { mockExamQuestionId: number; selectedOptions: string[] }[]
   ) {
+    const startTime = Date.now();
+    const context = { mockExamId, attemptId, userId };
     const attempt = await prisma.mockExamAttempt.findFirst({
       where: { id: attemptId, mockExamId, userId },
     });
 
     if (!attempt) throw Object.assign(new Error('Tentativa não encontrada'), { status: 404 });
-    if (attempt.finishedAt != null) return;
+    if (attempt.finishedAt != null) {
+      logger.info('mock_exam.finish.already_finished', context);
+
+      return;
+    }
 
     const mockExam = await prisma.mockExam.findFirst({
       where: { id: mockExamId },
       select: { durationMinutes: true },
     });
 
-    let mockExamQuestions = await prisma.mockExamQuestion.findMany({
+    const mockExamQuestions = await prisma.mockExamQuestion.findMany({
       where: { mockExamId },
       include: { examQuestion: { include: { answer: true } } },
     });
 
-    const hasMissing = mockExamQuestions.some((mq) => !mq.examQuestion.answer);
+    const missingAnswers = mockExamQuestions.filter((mq) => !mq.examQuestion.answer).length;
+    const mockExamQuestionIds = new Set(mockExamQuestions.map((mq) => mq.id));
+    const submittedAnswers = answers
+      .filter((a) => mockExamQuestionIds.has(a.mockExamQuestionId))
+      .map((a) => ({
+        mockExamQuestionId: a.mockExamQuestionId,
+        selectedOptions: Array.isArray(a.selectedOptions)
+          ? a.selectedOptions.filter((option): option is string => typeof option === 'string')
+          : [],
+      }));
 
-    if (hasMissing) {
-      await this.ensureAnswers(mockExamId, userId);
-      mockExamQuestions = await prisma.mockExamQuestion.findMany({
-        where: { mockExamId },
-        include: { examQuestion: { include: { answer: true } } },
-      });
-    }
-
-    const answersMap = new Map(answers.map((a) => [a.mockExamQuestionId, a.selectedOptions]));
+    const answersMap = new Map(submittedAnswers.map((a) => [a.mockExamQuestionId, a.selectedOptions]));
     const correctByMockExamQuestionId = new Map<number, boolean>();
     let score = 0;
 
@@ -572,11 +861,7 @@ export class MockExamService {
       const correctOptions: string[] = mq.examQuestion.answer
         ? (mq.examQuestion.answer.correctOptions as unknown as string[])
         : [];
-      const selected = answersMap.get(mq.id) ?? [];
-      const isCorrect =
-        correctOptions.length > 0 &&
-        selected.length === correctOptions.length &&
-        selected.every((s) => correctOptions.includes(s));
+      const isCorrect = isAnswerCorrect(correctOptions, answersMap.get(mq.id) ?? []);
 
       correctByMockExamQuestionId.set(mq.id, isCorrect);
       if (isCorrect) score += 1;
@@ -588,7 +873,7 @@ export class MockExamService {
 
     await prisma.$transaction([
       prisma.mockExamAttemptAnswer.createMany({
-        data: answers.map((a) => ({
+        data: submittedAnswers.map((a) => ({
           attemptId,
           mockExamQuestionId: a.mockExamQuestionId,
           selectedOptions: JSON.stringify(a.selectedOptions),
@@ -601,12 +886,22 @@ export class MockExamService {
       }),
     ]);
 
+    logger[missingAnswers > 0 ? 'warn' : 'info']('mock_exam.finish.completed', {
+      ...context,
+      questions: mockExamQuestions.length,
+      answered: submittedAnswers.filter((a) => a.selectedOptions.length > 0).length,
+      missingAnswers,
+      score,
+      timedOut,
+      durationMs: Date.now() - startTime,
+    });
+
     // Finishing a mock exam is one of the two referral activation triggers (the other is
     // generating a first question batch) — never let this side effect fail the attempt.
     try {
       await this.referralService.activateIfEligible(userId);
     } catch (err) {
-      console.error('Failed to process referral activation:', err);
+      logger.error('mock_exam.finish.referral_failed', { ...context, ...serializeError(err) });
     }
   }
 

@@ -87,15 +87,19 @@ Simulados based on saved questions. Each mock exam is a fixed question selection
 | `mock-exams?id={id}` | DELETE | Delete mock exam |
 | `mock-exams/availability` | GET | Per-section question counts by source (library/unseen/wrong) for a given `examId` |
 | `mock-exams/[id]` | GET | Full detail (questions + options + answers + explanations) |
-| `mock-exams/[id]/answers` | POST | **Ensure answers** — generate missing `Answer` rows idempotently. Returns `{ generated: N }`. |
+| `mock-exams/[id]/answers` | POST | **Ensure answers** — generate missing `Answer` rows idempotently. Returns `{ generated, remaining }`; `502` when every batch fails. |
 | `mock-exams/[id]/attempts` | POST | Start new attempt |
-| `mock-exams/[id]/attempts/[attemptId]` | PATCH/GET | Finish attempt / Get result with score and breakdown |
+| `mock-exams/[id]/attempts/[attemptId]` | PATCH/GET/DELETE | Finish attempt (never calls the LLM) / Get result with score and breakdown / Discard open attempt |
 
 Service: `app/api/mock-exams/mock-exam.service.ts` (co-located).
 
 **Colunas do redesign:** `MockExam.durationMinutes` (null = livre) + `MockExam.questionSource` (`library`/`unseen`/`wrong`) + `MockExamAttempt.timedOut` + `MockExamAttemptAnswer.isCorrect` (backfilled uma vez via `prisma/dev/scripts/backfill-mock-exam-answer-correctness.ts`).
 
-**Ensure-answers:** frontend calls `POST /[id]/answers` before every attempt. Without it, result page has no `correctOptions` and `/explanation` returns 404.
+**Ensure-answers:** o gabarito só nasce em `ensureAnswers` — a geração salva perguntas e opções, nunca `Answer`. O frontend dispara `POST /[id]/answers` (fire-and-forget) ao iniciar a tentativa e a página de resultado repete a chamada, em até 3 rodadas, enquanto `remaining > 0`. Sem o gabarito o resultado não tem `correctOptions` e `/explanation` devolve 404.
+
+`ensureAnswers` roda lotes de 10 questões (por seção + formato) com concorrência 4 e para de iniciar lotes aos 200s, para terminar antes do `maxDuration = 300` da rota. Um lote que falha (JSON inválido, timeout) é logado e não derruba os demais; só lança `502` se **todos** falharem. Entradas de gabarito com rótulo fora das opções ou quantidade diferente de `correctCount` são descartadas. Após salvar, as tentativas já finalizadas são recorrigidas (`isCorrect` + `score`).
+
+`finishAttempt` **não chama o LLM**: corrige com o gabarito que existir (`missingAnswers` no log) e a página de resultado completa e recorrige depois. Nunca reintroduza uma chamada ao LLM no PATCH — ele não tem `maxDuration` próprio.
 
 ### `question-bank/`
 
@@ -174,6 +178,24 @@ processar quando não há trava, nunca pular.
 
 **Autorização nunca vem do snapshot.** As rotas de stream continuam checando dono no Postgres
 antes de ler o cache — as chaves são indexadas só por `jobId`.
+
+---
+
+## Logs estruturados (`lib/logger.ts`)
+
+Uma linha JSON por evento, no formato `{"level","event",...campos}` — a Vercel mostra cada linha como uma entrada pesquisável, com o nível vindo do stream (`console.info/warn/error`).
+
+```ts
+logger.info('mock_exam.finish.completed', { mockExamId, attemptId, userId, score, durationMs });
+logApiError('mock_exam.finish.failed', err, { mockExamId, attemptId, userId });
+```
+
+- **Nome do evento:** `dominio.acao.resultado` em snake/dot (`mock_exam.answers.batch_failed`). É o que se busca no painel da Vercel.
+- **`logApiError(event, err, context)`** (`lib/api-error.ts`) no `catch` das rotas, antes de `toApiErrorResponse`: status ≥ 500 vira `error`, o resto `warn`. Inclui `errorName`, `errorMessage` (truncada), `errorCode` (Prisma), `errorStatus`/`errorRequestId` (OpenAI) e as 4 primeiras linhas do stack.
+- **Contexto mínimo:** ids (`userId`, `mockExamId`, `attemptId`), contagens e durações. Nunca logue respostas do usuário, e-mail, tokens ou o prompt do LLM.
+- **`auth()` fica dentro do `try`** das rotas: um erro de banco na sessão precisa cair no log e virar JSON, não num 500 sem corpo.
+
+Eventos de simulado: `mock_exam.finish.{completed,already_finished,failed,unauthorized,referral_failed}`, `mock_exam.answers.{started,batch_done,batch_failed,batch_invalid_entries,completed,failed,regraded,regrade_failed,request_failed,unauthorized,metrics_failed}`, `mock_exam.result.*`, `mock_exam.discard.*`. `batch_failed` traz `responseLength`/`responsePreview` quando o LLM devolveu algo que não é o JSON esperado.
 
 ---
 
