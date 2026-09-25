@@ -12,7 +12,7 @@ The product is not limited to any single industry vertical. When generating ques
 
 **Component co-location:** page-specific components in `app/(workspace)/<domain>/<page>/components/`; components used by 2+ pages in `shared/components/`. Group 3+ related files in a subfolder (`seed/`, `list/`).
 
-**`lib/bff.api.ts` — client-side only.** Uses `baseURL: '/api'`. Never import in server components or API routes. Server components call services directly.
+**`features/connectors.ts` — client-side only.** Owns the axios instance (`baseURL: '/api'`), kept private to the file. Never import in server components or API routes. Server components call services directly.
 
 ---
 
@@ -103,7 +103,7 @@ All component HTTP goes through `features/connectors.ts`. Reads: call in a `useE
 | Layer | Setting | File |
 |---|---|---|
 | Vercel function | `maxDuration = 300` | route handler |
-| axios client | `timeout: 280_000` | `lib/bff.api.ts` |
+| axios client | `timeout: 280_000` | `features/connectors.ts` |
 | OpenAI SDK | `timeout: 280_000`, `maxRetries: 0` | `features/services/generation/openai.service.ts` |
 
 **When raising one, raise the others** — they're co-dependent. `maxRetries: 0` is intentional: timeouts are slow-generation, not transient failures.

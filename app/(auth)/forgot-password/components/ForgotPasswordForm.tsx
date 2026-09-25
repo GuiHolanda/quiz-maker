@@ -7,9 +7,8 @@ import { Link } from '@heroui/link';
 import NextLink from 'next/link';
 
 import { AuthSplitLayout } from '@/app/(auth)/components/AuthSplitLayout';
-import api from '@/lib/bff.api';
-import { FORGOT_PASSWORD_URL } from '@/config/constants';
 import { inputProperties } from '@/config/constants/inputStyles';
+import { requestPasswordReset } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 
 export function ForgotPasswordForm() {
@@ -22,7 +21,7 @@ export function ForgotPasswordForm() {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post(FORGOT_PASSWORD_URL, { email });
+      await requestPasswordReset(email);
     } catch {
       // intentionally silent — always show success to prevent user enumeration
     } finally {

@@ -10,17 +10,23 @@ if (!process.env.DATABASE_URL) {
 
 const SEED_QUESTION_OPTIONS = { A: 'S3', B: 'EC2', C: 'RDS', D: 'Lambda' };
 
+async function findE2eUser(prisma: PrismaClient): Promise<{ id: string }> {
+  const email = process.env.E2E_USER_EMAIL;
+  if (!email) throw new Error('E2E_USER_EMAIL is not set');
+
+  const user = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+  if (!user) throw new Error(`E2E user not found: ${email}`);
+
+  return user;
+}
+
 export async function seedCertQuestions(texts: string[]): Promise<void> {
   const prisma = new PrismaClient({
     datasources: { db: { url: process.env.DATABASE_URL ?? 'file:./prisma/dev.db' } },
   });
 
   try {
-    const email = process.env.E2E_USER_EMAIL;
-    if (!email) throw new Error('E2E_USER_EMAIL is not set');
-
-    const user = await prisma.user.findUnique({ where: { email }, select: { id: true } });
-    if (!user) throw new Error(`E2E user not found: ${email}`);
+    const user = await findE2eUser(prisma);
 
     for (const text of texts) {
       await prisma.examQuestion.create({
@@ -50,6 +56,20 @@ export async function findQuestionReports(where: { questionText?: string; mockEx
 
   try {
     return await prisma.questionReport.findMany({ where, orderBy: { createdAt: 'asc' } });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+export async function clearQuestionReports(): Promise<void> {
+  const prisma = new PrismaClient({
+    datasources: { db: { url: process.env.DATABASE_URL ?? 'file:./prisma/dev.db' } },
+  });
+
+  try {
+    const user = await findE2eUser(prisma);
+
+    await prisma.questionReport.deleteMany({ where: { userId: user.id } });
   } finally {
     await prisma.$disconnect();
   }

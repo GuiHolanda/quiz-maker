@@ -12,12 +12,12 @@ import NextLink from 'next/link';
 
 import { AuthSplitLayout } from '@/app/(auth)/components/AuthSplitLayout';
 import { GoogleIcon } from '@/app/(auth)/components/GoogleIcon';
-import api from '@/lib/bff.api';
-import { REGISTER_URL, REFERRAL_CODE_COOKIE_KEY } from '@/config/constants';
+import { REFERRAL_CODE_COOKIE_KEY } from '@/config/constants';
 import { inputProperties } from '@/config/constants/inputStyles';
+import { registerUser } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PasswordInput } from '@/shared/components/ui/PasswordInput';
-import { captureUtmFromUrl, readUtmCookie } from '@/lib/growth/utm';
+import { captureUtmFromUrl, readUtmCookie } from '@/lib/utm';
 
 export function RegisterForm() {
   const router = useRouter();
@@ -48,7 +48,7 @@ export function RegisterForm() {
       const ref = searchParams.get('ref');
       const utm = readUtmCookie();
 
-      await api.post(REGISTER_URL, { name, email, password, ...(ref && { ref }), ...(utm ?? {}) });
+      await registerUser({ name, email, password, ...(ref && { ref }), ...(utm ?? {}) });
       router.push('/verify-email?email=' + encodeURIComponent(email));
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };

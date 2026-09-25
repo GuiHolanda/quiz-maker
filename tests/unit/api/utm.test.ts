@@ -1,4 +1,4 @@
-import { extractUtmParams, buildUtmCookieValue, parseUtmCookie } from '@/lib/growth/utm';
+import { extractUtmParams, buildUtmCookieValue, parseUtmCookie } from '@/lib/utm';
 
 describe('extractUtmParams', () => {
   it('extracts all three fields when present', () => {

@@ -164,7 +164,7 @@ Os ids são **estáveis**: nunca renumerar. Testes citam o id no título (`it('R
 |---|---|---|---|
 | RN-23 | Um diálogo de feedback por vez; abrir e fechar são **ignorados** enquanto há envio em andamento (`isBusy`); `submitStarted` sem diálogo aberto é ignorado; falha mantém o diálogo aberto; sucesso reinicia o estado | `feedbackReducer` | **0** |
 | RN-24 | Falha de envio mantém o diálogo aberto para nova tentativa | Provider | **0** |
-| RN-25 | Mensagens de erro do envio são **sempre chaves i18n**, escolhidas por `resolveFeedbackError`: `rate_limited` (ou HTTP 429) → "muitos envios"; `already_reported` (só reporte) → "já reportada"; qualquer outro → erro genérico do tipo. A mensagem do servidor **não** é exibida | `lib/feedback-error.ts` | **0** |
+| RN-25 | Mensagens de erro do envio são **sempre chaves i18n**, escolhidas por `resolveFeedbackError`: `rate_limited` (ou HTTP 429) → "muitos envios"; `already_reported` (só reporte) → "já reportada"; qualquer outro → erro genérico do tipo. A mensagem do servidor **não** é exibida | `features/reducers/feedback.reducer.ts` | **0** |
 | RN-26 | Reportar durante o simulado **não** pausa o cronômetro, e abrir o modal não dispara o guard de navegação | Componentes (F1) | 1 |
 | RN-27 | O modal de feedback informa que rota, plano e navegador seguem junto (`feedback.contextNotice`) | Componente (F2) | 1 |
 | RN-28 | O gatilho global é alcançável no mobile (botão no `SidebarNav`, presente no rail desktop e no drawer mobile) | Componente (F2) | 1 |
@@ -520,10 +520,9 @@ Os rótulos do assunto vêm de mapas fixos em português — **nunca** de texto 
 
 | Arquivo | Papel | Fase |
 |---|---|---|
-| `features/reducers/feedback.reducer.ts` | `feedbackReducer` puro + `INITIAL_FEEDBACK_STATE` | **0** |
+| `features/reducers/feedback.reducer.ts` | `feedbackReducer` puro + `INITIAL_FEEDBACK_STATE` + `resolveFeedbackError(err, kind)` puro | **0** |
 | `features/providers/feedback.provider.tsx` | `FeedbackProvider` + `FeedbackContext`; dono do estado, do envio e dos toasts | **0** |
 | `features/hooks/useFeedback.hook.ts` | `useContext(FeedbackContext)` | **0** |
-| `lib/feedback-error.ts` | `resolveFeedbackError(err, kind)` puro | **0** |
 | `shared/components/ui/ReportQuestionModal.tsx` | Modal apresentacional (`isOpen`, `isLoading`, `onSubmit`, `onClose`); monta o `ReportQuestionForm` dentro do `ModalContent` | F1 |
 | `shared/components/ui/ReportQuestionForm.tsx` | Conteúdo do modal, com estado próprio (motivo, comentário, tentativa de envio): `RadioGroup` de motivos + `Textarea`. Vive dentro do `ModalContent`, então o estado zera a cada abertura sem `useEffect` | F1 |
 | `shared/components/ui/ReportQuestionButton.tsx` | Gatilho: `{ examQuestionId, surface, mockExamAttemptId? }`. `isIconOnly`, `buttonStyles.iconOnly.neutral`, `faFlag` | F1 |
@@ -678,8 +677,7 @@ unitário** (`tests/CLAUDE.md`). Decisão vai para módulo puro; o JSX é verifi
 
 | Arquivo | Cobre |
 |---|---|
-| `tests/unit/features/feedback.reducer.test.ts` | RN-23 |
-| `tests/unit/lib/feedback-error.test.ts` | RN-25 |
+| `tests/unit/features/feedback.reducer.test.ts` | RN-23, RN-25 |
 | `tests/unit/lib/feedback-i18n.test.ts` | RF-07: cada `labelKey` e cada chave devolvida pelo resolvedor existe em pt **e** en; os conjuntos `feedback.*` de pt e en são idênticos |
 | `tests/unit/lib/rate-limit.test.ts` (estendido) | RN-02: limite e janela das duas ações novas; isolamento de prefixo |
 | `tests/unit/api/services/email.service.test.ts` | RN-19 (nunca lança), RN-20, RN-21, `escapeHtml`, `buildInternalAlert` |

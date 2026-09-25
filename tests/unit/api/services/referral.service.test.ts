@@ -10,7 +10,7 @@ vi.mock('@/features/services/email.service', () => {
 });
 
 import { prismaMock } from '../__mocks__/prisma';
-import { ReferralService } from '@/features/services/billing/referral.service';
+import { ReferralService, generateUniqueReferralCode } from '@/features/services/billing/referral.service';
 import { EmailService } from '@/features/services/email.service';
 
 const sendReferralRewardToFriend = EmailService.prototype.sendReferralRewardToFriend as ReturnType<typeof vi.fn>;
@@ -191,5 +191,33 @@ describe('ReferralService', () => {
       expect(stats.bonusQuestionsEarned).toBe(10 * 150); // capped at 10 rewarded referrals
       expect(stats.referralLink).toContain('MYCODE01');
     });
+  });
+});
+
+describe('generateUniqueReferralCode', () => {
+  it('returns an 8-char code from the unambiguous alphabet when the first candidate is free', async () => {
+    const isTaken = vi.fn().mockResolvedValue(false);
+
+    const code = await generateUniqueReferralCode(isTaken);
+
+    expect(code).toMatch(/^[A-HJ-NP-Z2-9]{8}$/);
+    expect(isTaken).toHaveBeenCalledTimes(1);
+    expect(isTaken).toHaveBeenCalledWith(code);
+  });
+
+  it('retries with a new candidate when the first one is already taken', async () => {
+    const isTaken = vi.fn().mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+
+    const code = await generateUniqueReferralCode(isTaken);
+
+    expect(isTaken).toHaveBeenCalledTimes(2);
+    expect(isTaken).toHaveBeenLastCalledWith(code);
+  });
+
+  it('fails with status 500 after five taken candidates', async () => {
+    const isTaken = vi.fn().mockResolvedValue(true);
+
+    await expect(generateUniqueReferralCode(isTaken)).rejects.toMatchObject({ status: 500 });
+    expect(isTaken).toHaveBeenCalledTimes(5);
   });
 });

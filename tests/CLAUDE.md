@@ -57,7 +57,7 @@ vi.mock('bcryptjs', () => ({ default: { hash: vi.fn().mockResolvedValue('hashed'
 | `question-formats.test.ts` | Registry de formatos — labels, teto de corretas, flag semântica, default por banca |
 | `validate-ai-questions.test.ts` | `validateAiQuestions` — checagens estruturais, teto de `correctCount`, conjunto de labels do formato |
 | `question-format-prompts.test.ts` | Prompts derivam regra, template, skeleton JSON e labels do gabarito a partir do formato |
-| `quota.service.test.ts` | Verificação e registro; `create_exam` vs `maxExams`; `getUsage` dual |
+| `quota.service.test.ts` | Verificação e registro; `create_exam` vs `maxExams`; `getUsage` dual; `syncTokenPlan` (plano no JWT) |
 | `register.service.test.ts` | Registro de usuário |
 | `reset-password.service.test.ts` | Reset de senha |
 | `mock-exam.service.test.ts` | Simulados — disponibilidade, score, breakdown, finish sem LLM, ensureAnswers (formato, JSON com fence, lotes que falham, orçamento de tempo, recorreção), sorteio uniforme das questões |

@@ -17,7 +17,7 @@
 | Animations | Framer Motion |
 | State | React Context + useReducer (no Redux/Zustand) |
 | Database | Prisma 6 + SQLite (dev) / PostgreSQL (prod) |
-| HTTP Client | Axios (via `@/lib/bff.api`) |
+| HTTP Client | Axios (owned by `@/features/connectors`) |
 | AI | OpenAI SDK |
 
 ---
@@ -41,14 +41,13 @@ config/
   constants/buttonStyles.ts # buttonStyles.* constants (HeroUI buttons)
   prompts/                  # LLM prompt files (PromptDefinition pattern)
 features/
-  connectors.ts      # ALL HTTP calls — single file, no exceptions
+  connectors.ts      # ALL HTTP calls + the Axios instance (baseURL: "/api") — client-side ONLY
   hooks/             # *.hook.ts
   providers/         # *.provider.tsx
   reducers/          # *.reducer.ts
   services/          # Server-side services (*.service.ts)
 lib/
   prisma.ts          # Prisma client singleton
-  bff.api.ts         # Axios client (baseURL: "/api") — client-side ONLY
   api-error.ts       # toApiErrorResponse(err)
 prisma/
   dev/               # SQLite dev schema + migrations

@@ -7,8 +7,7 @@ import { Link } from '@heroui/link';
 import NextLink from 'next/link';
 
 import { AuthSplitLayout } from '@/app/(auth)/components/AuthSplitLayout';
-import api from '@/lib/bff.api';
-import { RESET_PASSWORD_URL } from '@/config/constants';
+import { resetPassword } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { PasswordInput } from '@/shared/components/ui/PasswordInput';
 
@@ -53,7 +52,7 @@ export function ResetPasswordForm() {
     );
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     if (password !== confirm) {
@@ -68,7 +67,7 @@ export function ResetPasswordForm() {
     }
     setLoading(true);
     try {
-      await api.post(RESET_PASSWORD_URL, { token, password });
+      await resetPassword(token, password);
       router.push('/login?reset=success');
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
@@ -77,7 +76,7 @@ export function ResetPasswordForm() {
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <AuthSplitLayout>

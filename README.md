@@ -304,7 +304,7 @@ Token counts are recorded to `UsageLog` after each generation call. See [Admin D
 | UI-only state (active tab, etc.) | `localStorage` |
 | Domain data | Database (source of truth) via API |
 
-All HTTP calls go through `features/connectors.ts`. The Axios instance lives at `@/lib/bff.api`.
+All HTTP calls go through `features/connectors.ts`. The Axios instance is private to that file.
 
 ### API Routes
 
