@@ -6,6 +6,7 @@ import { Sidebar } from '@/shared/components/ui/sidebar/Sidebar';
 import { WorkspaceHeader } from '@/shared/components/ui/workspace-header/WorkspaceHeader';
 import { UsageProvider } from '@/features/providers/usage.provider';
 import { LimitModalProvider } from '@/features/providers/limit-modal.provider';
+import { FeedbackProvider } from '@/features/providers/feedback.provider';
 import { NotificationsProvider } from '@/features/providers/notifications.provider';
 import { LanguageProvider } from '@/features/providers/language.provider';
 import { SIDEBAR_COLLAPSED_COOKIE_KEY } from '@/config/constants';
@@ -31,13 +32,15 @@ export default async function WorkspaceLayout({ children }: { children: React.Re
         <NotificationsProvider>
           <UsageProvider>
             <LimitModalProvider>
-              <div className="flex min-h-screen bg-background2">
-                <Sidebar defaultCollapsed={defaultCollapsed} />
-                <div className="flex flex-col flex-1 min-w-0">
-                  <WorkspaceHeader />
-                  <main className="flex-grow pt-14 md:pt-0">{children}</main>
+              <FeedbackProvider>
+                <div className="flex min-h-screen bg-background2">
+                  <Sidebar defaultCollapsed={defaultCollapsed} />
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <WorkspaceHeader />
+                    <main className="flex-grow pt-14 md:pt-0">{children}</main>
+                  </div>
                 </div>
-              </div>
+              </FeedbackProvider>
             </LimitModalProvider>
           </UsageProvider>
         </NotificationsProvider>
