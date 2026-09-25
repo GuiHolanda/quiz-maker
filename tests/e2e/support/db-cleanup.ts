@@ -3,6 +3,9 @@ import type { PrismaClient } from '@prisma/client';
 // FK-safe delete sequence for all data owned by a user.
 // Shared by global-setup (pre-seed reset) and global-teardown (final cleanup).
 export async function cleanupUserData(prisma: PrismaClient, userId: string): Promise<void> {
+  await prisma.questionReport.deleteMany({ where: { userId } });
+  await prisma.feedback.deleteMany({ where: { userId } });
+
   await prisma.mockExamAttemptAnswer.deleteMany({ where: { attempt: { userId } } });
   await prisma.mockExamAttempt.deleteMany({ where: { userId } });
   await prisma.mockExamQuestion.deleteMany({ where: { mockExam: { userId } } });

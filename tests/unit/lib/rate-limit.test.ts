@@ -133,4 +133,37 @@ describe('enforceRateLimit', () => {
       await expect(enforceRateLimit('extract_edital', 'user-1')).rejects.toMatchObject({ status: 429 });
     });
   });
+
+  describe('ações de feedback', () => {
+    it.each([
+      ['question_report', 8, '5 m'],
+      ['feedback_submit', 3, '10 m'],
+    ] as const)('RN-02: %s permite %i envios por janela de %s', async (action, requests, window) => {
+      limit.mockResolvedValue({ success: true, reset: Date.now() + 60_000 });
+
+      await enforceRateLimit(action, 'user-1');
+
+      expect(slidingWindow).toHaveBeenCalledWith(requests, window);
+    });
+
+    it('RN-02: cada ação tem o próprio prefixo, para reportar questão não gastar o limite do feedback', async () => {
+      limit.mockResolvedValue({ success: true, reset: Date.now() + 60_000 });
+
+      await enforceRateLimit('question_report', 'user-1');
+      await enforceRateLimit('feedback_submit', 'user-1');
+
+      const prefixes = ratelimitConstructor.mock.calls.map(([config]: any) => config.prefix);
+      expect(prefixes).toEqual(['rl:question_report', 'rl:feedback_submit']);
+    });
+
+    it('RN-02: estourar o limite responde 429 com o código que o cliente reconhece', async () => {
+      limit.mockResolvedValue({ success: false, reset: Date.now() + 30_000 });
+
+      const thrown = await enforceRateLimit('feedback_submit', 'user-1').catch((err) => err);
+      const response = toApiErrorResponse(thrown);
+
+      expect(response.status).toBe(429);
+      expect(response.code).toBe('rate_limited');
+    });
+  });
 });

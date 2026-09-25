@@ -254,9 +254,42 @@ Dev unlock: `sqlite3 prisma/dev.db "UPDATE FullExamJob SET status='error' WHERE 
 
 Before any non-trivial task, ask the user whether to create a new branch: `feature/<kebab-case>` or `fix/<kebab-case>`.
 
+Na mesma hora, ao iniciar uma feature nova, avalie a documentação: ver **Nova feature — avaliar SDD e ADR** abaixo.
+
 **Never commit directly to `main`.** All work through a feature/fix branch.
 
 Group related changes into logical commits — not one giant commit, not micro-commits per file. Keep the diff reviewable (if a commit touches more than ~10 files, look for a natural split).
+
+---
+
+## Nova feature — avaliar SDD e ADR
+
+Ao iniciar uma feature nova (junto com a pergunta de branch) e **antes de escrever código**:
+
+1. **Procure o tópico.** Leia `docs/roadmap/`, `docs/sdd/` e `docs/adr/`: a feature pertence a um tópico existente? Respeite as `RN-xx`, `D-xx` e ADRs vigentes; não reabra o que já foi decidido (para mudar, ver item 4).
+2. **Avalie o SDD** — um arquivo por tópico, não por feature:
+
+   | Situação | Ação |
+   |---|---|
+   | Regra de negócio, contrato de API ou modelo de dados novos | Seção nova no SDD do tópico (ou `docs/sdd/<topico>.md` se o tópico for novo) |
+   | Muda uma regra existente | Atualize a `RN-xx` no mesmo PR (ids nunca são renumerados) |
+   | Ajuste pequeno, sem regra nem contrato novos | Sem SDD |
+
+3. **Avalie a ADR.** Só se as **três** forem verdade: difícil de reverter, alternativas reais e atravessa mais de um módulo. Caso contrário o destino é outro:
+
+   | É... | Vai para |
+   |---|---|
+   | Convenção de código | Este arquivo |
+   | Regra de negócio | SDD, como `RN-xx` |
+   | Decisão pequena, com porquê e alternativas | SDD, como `D-xx` |
+   | Pendência ou risco | Roadmap ("Riscos abertos") e SDD, como `Q-xx` |
+
+   Na dúvida, **não** escreva ADR. Não existe ADR "aceita com decisão pendente".
+4. **Mudar algo já decidido:** ADR aceita não se edita; escreva uma nova que a substitua (a antiga vira `Substituída por ADR-NNNN`). Cortar ou reescrever só é barato antes do merge do PR.
+5. **Diga o veredito ao usuário no início**, em uma linha, com o porquê: `SDD: estender <tópico> | novo | dispensável · ADR: nenhuma | <título>`. Ele pode discordar antes de você gastar tempo escrevendo.
+6. **Ao longo e ao fechar:** títulos de teste citam a regra (`it('RN-11: …')`); SDD e roadmap (checkboxes e tabela de status) são atualizados no mesmo PR.
+
+Critérios completos e regras de numeração: [docs/adr/README.md](docs/adr/README.md). Mudança no schema Prisma continua exigindo aprovação explícita (ver *Important Constraints*).
 
 ---
 
@@ -289,3 +322,6 @@ Backlog at **https://github.com/GuiHolanda/quiz-maker/issues**. Create via `gh i
 - **[app/CLAUDE.md](app/CLAUDE.md)** — frontend patterns, component inventory, visual rules.
 - **[app/api/CLAUDE.md](app/api/CLAUDE.md)** — API routes, service layer map, backend patterns.
 - **[tests/CLAUDE.md](tests/CLAUDE.md)** — test infrastructure, Prisma mock patterns, E2E setup.
+- **[docs/adr/](docs/adr/README.md)** — decisões arquiteturais (ADRs). Consulte antes de mudar algo já decidido; para mudar, escreva uma ADR nova que a substitua.
+- **[docs/sdd/](docs/sdd/feedback-e-comunicacao.md)** — design docs com as regras de negócio numeradas (`RN-xx`). Atualize no mesmo PR que muda o comportamento.
+- **[docs/roadmap/](docs/roadmap/feedback-e-comunicacao.md)** — o que já foi feito e o que falta, por tópico.

@@ -1,3 +1,9 @@
+import type {
+  FeedbackCategory,
+  QuestionReportReason,
+  QuestionReportStatus,
+  QuestionReportSurface,
+} from '@/config/constants';
 import type { QuestionFormatKey } from '@/config/question-formats';
 
 import { SVGProps } from 'react';
@@ -836,4 +842,29 @@ export interface ExamLandingConfig {
   readonly seoTitle: string;
   readonly seoDescription: string;
   readonly faqs: readonly ExamLandingFaq[];
+}
+
+export interface SubmitQuestionReportPayload {
+  readonly examQuestionId: number;
+  readonly reason: QuestionReportReason;
+  readonly surface: QuestionReportSurface;
+  readonly comment?: string;
+  readonly mockExamAttemptId?: number;
+}
+
+export interface QuestionReportResult {
+  readonly id: string;
+  readonly status: QuestionReportStatus;
+  readonly createdAt: string;
+}
+
+export interface SubmitFeedbackPayload {
+  readonly category: FeedbackCategory;
+  readonly message: string;
+  readonly route: string;
+  readonly locale: string;
+}
+
+export interface FeedbackResult {
+  readonly id: string;
 }

@@ -11,7 +11,9 @@ export type RateLimitedAction =
   | 'auto_config'
   | 'identify_exam'
   | 'extract_edital'
-  | 'explanation';
+  | 'explanation'
+  | 'question_report'
+  | 'feedback_submit';
 
 const LIMITS: Record<RateLimitedAction, { requests: number; window: `${number} ${'s' | 'm'}` }> = {
   generate_questions: { requests: 10, window: '1 m' },
@@ -19,6 +21,8 @@ const LIMITS: Record<RateLimitedAction, { requests: number; window: `${number} $
   identify_exam: { requests: 20, window: '1 m' },
   extract_edital: { requests: 5, window: '1 m' },
   explanation: { requests: 30, window: '1 m' },
+  question_report: { requests: 8, window: '5 m' },
+  feedback_submit: { requests: 3, window: '10 m' },
 };
 
 const RATE_LIMITED_CODE = 'rate_limited';

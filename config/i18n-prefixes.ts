@@ -24,6 +24,7 @@ export const WORKSPACE_MESSAGE_PREFIXES = [
   'dashboard',
   'error',
   'exam',
+  'feedback',
   'footer',
   'generate',
   'header',
