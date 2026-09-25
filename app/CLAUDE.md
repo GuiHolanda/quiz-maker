@@ -166,7 +166,7 @@ features/services/exam/question-bank.service.ts
 
 Filtros: `search` (deferido), `source` (multi), `type`, `topic` (multi), `difficulty` (multi), `hasAnswer+hasExplanation`.
 
-**Gotcha arrays:** `lib/bff.api.ts` usa `paramsSerializer: { indexes: null }` — arrays chegam sem colchetes (`difficulty=easy&difficulty=hard`). Route handler lê com `searchParams.getAll('difficulty')`. Não remover o paramsSerializer.
+**Gotcha arrays:** `features/connectors.ts` usa `paramsSerializer: { indexes: null }` — arrays chegam sem colchetes (`difficulty=easy&difficulty=hard`). Route handler lê com `searchParams.getAll('difficulty')`. Não remover o paramsSerializer.
 
 **Delete de questões:** SQLite não tem `onDelete: Cascade` em `Option/Answer/Explanation`. `BrowseQuestionsService.deleteQuestion` deleta na ordem: `explanation → answer → option → question`. Mesmo padrão para `PublicExam*`.
 

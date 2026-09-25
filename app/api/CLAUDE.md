@@ -109,7 +109,7 @@ Service: `app/api/mock-exams/mock-exam.service.ts` (co-located).
 | `question-bank/topics` | GET | Distinct topics for filter select |
 | `question-bank/sources` | GET | Distinct cert/exam names for filter select |
 
-**Array params:** `paramsSerializer: { indexes: null }` in `lib/bff.api.ts` — arrays arrive without brackets (`difficulty=easy&difficulty=hard`). Route handler reads with `searchParams.getAll('difficulty')`. Do not remove the paramsSerializer.
+**Array params:** `paramsSerializer: { indexes: null }` in `features/connectors.ts` — arrays arrive without brackets (`difficulty=easy&difficulty=hard`). Route handler reads with `searchParams.getAll('difficulty')`. Do not remove the paramsSerializer.
 
 ### `feedback/`
 
@@ -215,17 +215,17 @@ Eventos de simulado: `mock_exam.finish.{completed,already_finished,failed,unauth
 | File | Responsibility |
 |---|---|
 | `generation/openai.service.ts` | `call(prompt, input)` via Responses API with `web_search` forced via `tool_choice: 'required'` when `webSearch: true` (default) — the tool being available doesn't mean the model uses it; forcing avoids it silently answering from training data. Returns `{ text, inputTokens, outputTokens }`. |
-| `billing/quota.service.ts` | `checkAndRecordQuestions(userId, count)` → `{ logId }`. Also enforces `create_exam` and `checkAndRecordAutoConfig(userId)` (per-period `autoConfigThisPeriod`, `PLAN_LIMITS[plan].autoConfigPerPeriod`). `checkAutoConfigAvailable(userId)` is a read-only peek (no increment) used before the identify call. `rollbackQuota(logId)` refunds `questionsGeneratedThisPeriod` or `autoConfigThisPeriod` depending on the log's `action`. |
+| `billing/quota.service.ts` | `checkAndRecordQuestions(userId, count)` → `{ logId }`. Also enforces `create_exam` and `checkAndRecordAutoConfig(userId)` (per-period `autoConfigThisPeriod`, `PLAN_LIMITS[plan].autoConfigPerPeriod`). `checkAutoConfigAvailable(userId)` is a read-only peek (no increment) used before the identify call. `rollbackQuota(logId)` refunds `questionsGeneratedThisPeriod` or `autoConfigThisPeriod` depending on the log's `action`. Also exports `syncTokenPlan(token, trigger)` — refreshes the JWT's plan from the DB (5 min TTL, sprint expiry), called by `auth.ts`. |
 | `billing/metrics.service.ts` | `createLog(userId, action, count = 1)` — `count: 0` tracks tokens without consuming a billable unit (used by the auto-config identify call). `recordStep(logId, step, tokens, durationMs)` (fire-and-forget) + `finalize(logId, ms)`. |
 | `exam/exam.service.ts` | Unified CRUD for Exam/Section/Topic (both types). |
 | `exam/exam-question.service.ts` | `saveAnswers`, `saveExplanations`. |
 | `exam/exam-catalog.service.ts` | `getTemplates(userId)`, `forkExam`, `promoteExam`, admin catalog entries. |
 | `exam/question-bank.service.ts` | Unified question search across exam types. |
-| `generation/generation-job.service.ts` | Async batch generation — batches of 5 topics, per-topic status tracking. Publica o progresso no Redis a cada transição (ver seção Redis). |
+| `generation/generation-job.service.ts` | Async batch generation — batches of 5 topics, per-topic status tracking. Publica o progresso no Redis a cada transição (ver seção Redis). Exporta `detectQuestionLanguage(text)`, heurística que detecta a questão gerada no idioma errado. |
 | `generation/job-progress.service.ts` | Snapshot de progresso de job para o SSE — `read*`/`publish*` para geração e auto-config, com fallback no Postgres. |
 | `auto-config/auto-config-job.service.ts` | Auto-config pipeline — `identifyExam` (cheap lookup) + `createAutoConfigJob`/`runAutoConfigJob`/`cancelAutoConfigJob` (research→review→format, one `AutoConfigJob` row, one `auto_config` unit). |
 | `billing/billing.service.ts` | `getBillingDetails(userId)` reads the Stripe customer/subscription/invoices into `BillingDetails` (current-period end lives on `subscription.items.data[0].current_period_end`, not the subscription root). `cancelSubscription(userId, reason?)` sets `cancel_at_period_end`. Optional bits (tax id, upcoming-invoice preview) fail soft to `null`. |
-| `billing/referral.service.ts` | `getStats(userId)`, `getOrCreateReferralCode(userId)` (lazy backfill), `activateIfEligible(userId)` — two-way bonus on real activation, capped per account. |
+| `billing/referral.service.ts` | `getStats(userId)`, `getOrCreateReferralCode(userId)` (lazy backfill), `activateIfEligible(userId)` — two-way bonus on real activation, capped per account. Also exports `generateUniqueReferralCode(isTaken)`, used by register and `auth.ts`. |
 
 Co-located services (not in `features/services/`): auth services in `app/api/auth/`, mock exam in `app/api/mock-exams/`, admin in `app/api/admin/`.
 
