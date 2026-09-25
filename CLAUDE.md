@@ -289,3 +289,6 @@ Backlog at **https://github.com/GuiHolanda/quiz-maker/issues**. Create via `gh i
 - **[app/CLAUDE.md](app/CLAUDE.md)** — frontend patterns, component inventory, visual rules.
 - **[app/api/CLAUDE.md](app/api/CLAUDE.md)** — API routes, service layer map, backend patterns.
 - **[tests/CLAUDE.md](tests/CLAUDE.md)** — test infrastructure, Prisma mock patterns, E2E setup.
+- **[docs/adr/](docs/adr/README.md)** — decisões arquiteturais (ADRs). Consulte antes de mudar algo já decidido; para mudar, escreva uma ADR nova que a substitua.
+- **[docs/sdd/](docs/sdd/feedback-e-comunicacao.md)** — design docs com as regras de negócio numeradas (`RN-xx`). Atualize no mesmo PR que muda o comportamento.
+- **[docs/roadmap/](docs/roadmap/feedback-e-comunicacao.md)** — o que já foi feito e o que falta, por tópico.

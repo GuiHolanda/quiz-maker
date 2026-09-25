@@ -1,6 +1,9 @@
 # Roadmap — Feedback e Comunicação
 
 > Última atualização: 2026-09-25 · Tópico: como os usuários falam com a gente e como a gente ouve.
+>
+> **Design e decisões:** [SDD](../sdd/feedback-e-comunicacao.md) (regras de negócio `RN-xx`, contratos, modelo de
+> dados) · [ADRs](../adr/README.md) (0002 a 0007 cobrem este tópico).
 
 ## Índice
 
@@ -18,7 +21,7 @@
 
 | Frente | Fase | Esforço | Status | Progresso |
 |---|---|---|---|---|
-| Fase 0 — Infra compartilhada | 1 | M | Não iniciado | 0/14 |
+| Fase 0 — Infra compartilhada | 1 | M | Em andamento | 3/17 |
 | F1 — Reportar questão | 1 | M | Não iniciado | 0/21 |
 | F2 — Widget de feedback global | 1 | M | Não iniciado | 0/15 |
 | Backlog (F3–F7) | 2+ | — | Não iniciado | 0/5 |
@@ -101,19 +104,27 @@ fórum ou comunidade · roadmap público votável.
 
 ## Fase 0 — Infra compartilhada
 
-**Status:** Não iniciado · **Fase:** 1 · **Depende de:** nada
+**Status:** Em andamento · **Fase:** 1 · **Depende de:** nada
 
 Tudo aqui precisa existir **antes** de qualquer UI. A ordem importa — os itens estão na sequência de execução.
+
+### Documentação (pré-requisito)
+
+- [x] **D.1** ADRs 0001 a 0007 em [docs/adr/](../adr/README.md)
+- [x] **D.2** [SDD](../sdd/feedback-e-comunicacao.md) com regras de negócio, contratos e matriz de testes
+- [x] **D.3** `.gitignore` deixa de ignorar `docs/roadmap/`, `docs/adr/` e `docs/sdd/` (ADR-0001)
 
 ### Checklist
 
 - [ ] **0.1 Models.** Adicionar `QuestionReport` e `Feedback` ao fim de `prisma/dev/schema.prisma` **e**
-  `prisma/prod/schema.prisma` (campos detalhados em F1 e F2). Colunas escalares, **sem `@relation`**.
-- [ ] **0.2 Migration dev.** `npm run prisma:migrate:dev -- --name add_feedback_tables`. **Uma** migration para
-  os dois models — o ritual de pareamento é a parte cara; fazer duas vezes dobra o risco.
-- [ ] **0.3 Migration prod.** Escrita à mão em `prisma/prod/migrations/<ts+1s>_add_feedback_tables/migration.sql`,
-  com o **mesmo sufixo** da dev. Seguir o estilo da migration `20260901003406_add_generation_job_language`
-  (cabeçalho comentado + `IF NOT EXISTS`).
+  `prisma/prod/schema.prisma` (campos no [SDD](../sdd/feedback-e-comunicacao.md#modelo-de-dados), incluindo
+  `updatedAt`). Colunas escalares, **sem `@relation`**.
+- [ ] **0.2 Migration dev.** SQL gerado por `prisma migrate diff` e aplicado com `prisma migrate deploy` (mesma
+  saída de `migrate dev`, sem prompt interativo), depois `npm run prisma:generate:dev`. **Uma** migration para os
+  dois models — o ritual de pareamento é a parte cara; fazer duas vezes dobra o risco.
+- [ ] **0.3 Migration prod.** `prisma/prod/migrations/<ts+1s>_add_feedback_tables/migration.sql` com o **mesmo
+  sufixo** da dev. SQL PostgreSQL gerado por `migrate diff` entre os datamodels, com o estilo da migration
+  `20260901003406_add_generation_job_language` (cabeçalho comentado + `IF NOT EXISTS`).
 - [ ] **0.4 Validar schema e migrations.** `diff prisma/dev/schema.prisma prisma/prod/schema.prisma` deve mostrar
   **exatamente 2 hunks** (`1c1` e `6c6`); depois `npm run check:migrations` e `npm test`.
 - [ ] **0.5 i18n.** Adicionar **todas** as chaves `feedback.*` de F1 e F2 (listas nas seções abaixo) em
@@ -123,24 +134,27 @@ Tudo aqui precisa existir **antes** de qualquer UI. A ordem importa — os itens
   [rate-limit.ts](../../lib/rate-limit.ts): `question_report: { requests: 8, window: '5 m' }` e
   `feedback_submit: { requests: 3, window: '10 m' }`.
 - [ ] **0.7 E-mail interno.** Em [email.service.ts](../../features/services/email.service.ts): `escapeHtml`,
-  função pura `buildInternalAlert(input)`, e `sendInternalAlert` (assinatura abaixo) + wrappers
-  `sendQuestionReportAlert` e `sendFeedbackAlert`.
+  função pura `buildInternalAlert(input)` e `sendInternalAlert` (assinatura abaixo). Os wrappers
+  `sendQuestionReportAlert` e `sendFeedbackAlert` ficam em F1/F2 (1.2 e 2.2): dependem do que cada service devolve.
 - [ ] **0.8 Env.** Documentar `FEEDBACK_INBOX_EMAIL` no bloco de env do [README.md](../../README.md) (junto de
   `RESEND_API_KEY`) e configurá-la na Vercel. **Não** definir em `.env.test`.
-- [ ] **0.9 Provider.** `features/providers/feedback.provider.tsx` (novo) + `features/hooks/useFeedback.hook.ts`
-  (novo), montados em `app/(workspace)/layout.tsx` dentro do `LimitModalProvider`. Molde exato:
+- [ ] **0.9 Provider.** `features/reducers/feedback.reducer.ts` (reducer puro), `features/providers/feedback.provider.tsx`,
+  `features/hooks/useFeedback.hook.ts` e `lib/feedback-error.ts` (`resolveFeedbackError`), montados em
+  `app/(workspace)/layout.tsx` dentro do `LimitModalProvider`. O provider já nasce com `openQuestionReport`,
+  `openFeedback` e o envio (ADR-0004); **sem modais** — F1/F2 os renderizam. Molde:
   [limit-modal.provider.tsx](../../features/providers/limit-modal.provider.tsx) e
-  [useLimitModal.hook.ts](../../features/hooks/useLimitModal.hook.ts).
-- [ ] **0.10 Constantes e tipos.** Em `config/constants/index.ts`: `QUESTION_REPORT_REASONS` e
-  `FEEDBACK_CATEGORIES` (+ URLs, seguindo o padrão existente ali). Tipos derivados em `shared/types/index.ts`.
+  [notifications.reducer.ts](../../features/reducers/notifications.reducer.ts).
+- [ ] **0.10 Constantes e tipos.** `config/constants/feedback.ts` (URLs, `QUESTION_REPORT_REASONS`,
+  `FEEDBACK_CATEGORIES`, superfícies, status, limites de tamanho e tipos derivados), re-exportado por
+  `config/constants/index.ts` como `generation-job.ts`. Payloads e resultados em `shared/types/index.ts`.
 - [ ] **0.11 Connectors.** `submitQuestionReport` e `submitFeedback` em
   [connectors.ts](../../features/connectors.ts) (nomes propostos).
-- [ ] **0.12 Suporte de E2E.** Entradas das duas features em
-  [db-cleanup.ts](../../tests/e2e/support/db-cleanup.ts) e [selectors.ts](../../tests/e2e/support/selectors.ts),
-  de uma vez.
+- [ ] **0.12 Suporte de E2E.** As duas tabelas em [db-cleanup.ts](../../tests/e2e/support/db-cleanup.ts). As
+  entradas de [selectors.ts](../../tests/e2e/support/selectors.ts) entram com os componentes (1.10 e 2.8).
 - [ ] **0.13 Docs internas.** Seção `feedback/` na tabela de rotas de [app/api/CLAUDE.md](../../app/api/CLAUDE.md).
-- [ ] **0.14 Testes de e-mail.** `tests/unit/api/services/email.service.test.ts` cobrindo `escapeHtml` e
-  `buildInternalAlert` sem tocar no Resend (hoje `EmailService` não tem nenhum teste).
+- [ ] **0.14 Testes unitários da Fase 0.** `feedback.reducer.test.ts` (RN-23), `feedback-error.test.ts` (RN-25),
+  `feedback-i18n.test.ts` (paridade pt/en), `rate-limit.test.ts` estendido (RN-02) e
+  `email.service.test.ts` (RN-19 a RN-21; hoje `EmailService` não tem nenhum teste).
 
 ### Canal de saída para o time: e-mail por evento (decisão)
 
@@ -163,12 +177,12 @@ async sendInternalAlert(input: {
   heading: string;
   rows: ReadonlyArray<{ label: string; value: string }>;
   body?: string;
-}): Promise<void>
+}): Promise<boolean>
 ```
 
 Três desvios **obrigatórios** em relação aos 4 métodos existentes de `EmailService`:
 
-1. **Nunca lança.** Os 4 atuais fazem `throw` no erro do Resend. Aqui o feedback já está persistido; derrubar a
+1. **Nunca lança** e devolve `true` só quando o Resend confirma (o chamador usa isso para `notifiedAt`). Os 4 atuais fazem `throw` no erro do Resend. Aqui o feedback já está persistido; derrubar a
    resposta do usuário porque nosso inbox caiu é errado, e dentro de `after()` um `throw` vira unhandled
    rejection. Loga com `logger.warn` e retorna.
 2. **`escapeHtml` em `heading`, `rows[].value` e `body`.** Nenhum método atual interpola texto livre; aqui entra
@@ -243,11 +257,12 @@ Colunas escalares, **sem `@relation`** (ver [consequência 3](#consequências-qu
 | `resolvedAt` | `DateTime?` | Fase 2 |
 | `notifiedAt` | `DateTime?` | Gancho: se o e-mail por evento falhar, fica `null` e um cron futuro varre sem nova migration |
 | `createdAt` | `DateTime @default(now())` | |
+| `updatedAt` | `DateTime @updatedAt` | Reabrir (F1) não muda `createdAt`; a fila do F3 precisa da atividade mais recente |
 
 Índices: `@@unique([userId, examQuestionId])` (dedupe no banco, não na aplicação),
 `@@index([status, createdAt])` (fila de triagem do F3), `@@index([examQuestionId])`.
 
-Os campos "Fase 2" entram já na migration da Fase 0 para não exigir uma segunda migration pareada.
+Os campos "Fase 2" e `updatedAt` entram já na migration da Fase 0 para não exigir uma segunda migration pareada.
 
 **Razões (`reason`):** `wrong_answer_key` · `ambiguous_statement` · `out_of_scope` · `typo` ·
 `duplicate_options` · `other`.
@@ -317,7 +332,7 @@ Superfícies:
 ### Checklist
 
 - [ ] **1.1** `question-report.service.ts` com validação, visibilidade, dedupe/reabertura e snapshot
-- [ ] **1.2** `route.ts` (handler + rate limit + `after()` do e-mail)
+- [ ] **1.2** `route.ts` (handler + rate limit + `after()` do e-mail) e `EmailService.sendQuestionReportAlert`
 - [ ] **1.3** `ReportQuestionModal.tsx`
 - [ ] **1.4** `ReportQuestionButton.tsx`
 - [ ] **1.5** Integrar em `QuestionBankCard.tsx`
@@ -326,7 +341,7 @@ Superfícies:
 - [ ] **1.8** Conferir que abrir o modal na tentativa **não** dispara `useNavigationGuard` e que o cronômetro
   (`useAttemptDeadline`) segue correndo
 - [ ] **1.9** Testes unitários — `tests/unit/api/services/question-report.service.test.ts` (10 casos, abaixo)
-- [ ] **1.10** `data-testid` novos em `selectors.ts` (seção `// Feedback`)
+- [ ] **1.10** `data-testid` novos nos componentes e em `selectors.ts` (seção `// Feedback`)
 - [ ] **1.11** E2E em `tests/e2e/tests/feedback.spec.ts`
 
 **Casos unitários (1.9):**
@@ -388,6 +403,7 @@ Ponto de entrada sempre visível abrindo um modal com categoria + texto livre + 
 | `status` | `String @default("open")` | Usado pelo F3 |
 | `notifiedAt` | `DateTime?` | Mesmo gancho de F1 |
 | `createdAt` | `DateTime @default(now())` | |
+| `updatedAt` | `DateTime @updatedAt` | Reabrir (F1) não muda `createdAt`; a fila do F3 precisa da atividade mais recente |
 
 Índices: `@@index([status, createdAt])`, `@@index([userId])`. Sem FK.
 
@@ -434,15 +450,15 @@ O header do workspace é `hidden md:flex`; no mobile só existe `SidebarMobileTo
 `messageTooLong` · `contextNotice` · `send` · `sendSuccessTitle` · `sendSuccessDescription` ·
 `sendErrorTitle` · `sendErrorDescription`.
 
-Em namespaces existentes: `nav.feedback` (rótulo do botão em `SidebarNav`) e `aria.sendFeedback`.
-`feedback.contextNotice` é transparência: avisa que rota, plano e navegador vão junto.
+Mais `feedback.navLabel` (rótulo do botão em `SidebarNav`): o namespace é único, sem `nav.feedback` nem
+`aria.sendFeedback`. `feedback.contextNotice` é transparência: avisa que rota, plano e navegador vão junto.
 
 ### Checklist
 
 - [ ] **2.1** `feedback.service.ts` com validação, snapshot de `plan`/`email` e truncamentos
-- [ ] **2.2** `route.ts` (handler + rate limit + `after()` do e-mail)
+- [ ] **2.2** `route.ts` (handler + rate limit + `after()` do e-mail) e `EmailService.sendFeedbackAlert`
 - [ ] **2.3** `FeedbackModal.tsx` em `shared/components/ui/` (apresentacional; estado no `FeedbackProvider`)
-- [ ] **2.4** `openFeedback` no `FeedbackProvider` (~15 linhas)
+- [ ] **2.4** Renderizar o `FeedbackModal` no `FeedbackProvider` (o `openFeedback` já existe desde a 0.9)
 - [ ] **2.5** `FeedbackButton.tsx` no header (desktop)
 - [ ] **2.6** Botão em `SidebarNav.tsx` (desktop + mobile)
 - [ ] **2.7** Testes unitários — `tests/unit/api/services/feedback.service.test.ts` (casos abaixo)
@@ -514,9 +530,12 @@ Fora da Fase 1. Cada item tem um **gatilho de promoção**: o que precisa ser ve
   lugares no mesmo commit; a tabela existe só para dar o panorama sem rolar o arquivo.
 - Um tópico novo (qualidade das questões, monetização, onboarding…) vira `docs/roadmap/<topico>.md`. Quando
   existirem 3 arquivos, criar um `README.md` como índice.
+- Decisões viram ADR em `docs/adr/` e regras de negócio ficam no SDD do tópico em `docs/sdd/` (ADR-0001). Não
+  se edita ADR aceita: escreve-se uma nova que a substitui.
 - Cada frente vira uma branch `feature/<kebab-case>` e passa por um plano de implementação próprio antes de
   qualquer código.
 
 | Data | Mudança |
 |---|---|
 | 2026-09-25 | Documento criado. Fase 1 = Fase 0 + F1 + F2. Schema aprovado apenas para models novos |
+| 2026-09-25 | ADRs 0001–0007 e SDD escritos. Refinamentos de design (SDD §Decisões de design): `updatedAt` nos models; `sendInternalAlert` devolve `boolean`; wrappers de e-mail em F1/F2; seletores E2E com os componentes; namespace único `feedback`; provider baseado em reducer, já com `openFeedback` na Fase 0 |
