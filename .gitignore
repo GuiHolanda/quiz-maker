@@ -4,7 +4,10 @@
 /node_modules
 /.pnp
 .pnp.js
-/docs
+/docs/*
+!/docs/roadmap/
+!/docs/adr/
+!/docs/sdd/
 
 # testing
 /coverage
