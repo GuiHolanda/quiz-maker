@@ -6,10 +6,12 @@ import { faChevronLeft, faChevronRight, faFlag, faForwardStep } from '@fortaweso
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
+import { ReportQuestionButton } from '@/shared/components/ui/ReportQuestionButton';
 import { AttemptQuestion } from './useAttemptRunner.hook';
 
 interface AttemptQuestionPanelProps {
   readonly question: AttemptQuestion;
+  readonly attemptId: number;
   readonly index: number;
   readonly total: number;
   readonly topic: string;
@@ -27,6 +29,7 @@ interface AttemptQuestionPanelProps {
 
 export function AttemptQuestionPanel({
   question,
+  attemptId,
   index,
   total,
   topic,
@@ -53,9 +56,16 @@ export function AttemptQuestionPanel({
           </span>
           {topic && <span className="text-xs text-default-400">{topic}</span>}
         </div>
-        <span className="text-xs text-default-400">
-          {t('simulado.attempt.answeredOpen', { answered: answeredCount, open: openCount })}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-default-400">
+            {t('simulado.attempt.answeredOpen', { answered: answeredCount, open: openCount })}
+          </span>
+          <ReportQuestionButton
+            examQuestionId={question.examQuestionId}
+            mockExamAttemptId={attemptId}
+            surface="attempt"
+          />
+        </div>
       </div>
 
       <div className="attempt-question-enter rounded-xl border border-divider bg-content1 p-6 md:p-8">

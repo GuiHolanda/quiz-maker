@@ -12,6 +12,7 @@ import type { ResultView } from './deriveResult';
 
 interface QuestionReviewPanelProps {
   readonly view: ResultView;
+  readonly attemptId: number;
   readonly onLoadExplanation: (questionId: number) => Promise<Record<string, string>>;
 }
 
@@ -21,7 +22,7 @@ const PILL_BASE = 'rounded-full border px-3.5 py-1.5 text-xs font-medium transit
 const PILL_ACTIVE = 'border-primary bg-primary/10 text-primary';
 const PILL_IDLE = 'border-divider text-default-500 hover:bg-content2 hover:text-foreground';
 
-export function QuestionReviewPanel({ view, onLoadExplanation }: QuestionReviewPanelProps) {
+export function QuestionReviewPanel({ view, attemptId, onLoadExplanation }: QuestionReviewPanelProps) {
   const { t } = useTranslation();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -158,6 +159,7 @@ export function QuestionReviewPanel({ view, onLoadExplanation }: QuestionReviewP
           visible.map((question) => (
             <ReviewQuestionRow
               key={question.mockExamQuestionId}
+              attemptId={attemptId}
               isOpen={openId === question.mockExamQuestionId}
               onLoadExplanation={onLoadExplanation}
               onToggle={() =>

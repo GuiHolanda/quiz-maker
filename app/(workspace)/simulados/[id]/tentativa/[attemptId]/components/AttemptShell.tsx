@@ -244,6 +244,7 @@ export function AttemptShell({ mockExamId, attemptId }: AttemptShellProps) {
           <AttemptQuestionPanel
             key={currentQuestion.mockExamQuestionId}
             answeredCount={runner.answeredCount}
+            attemptId={attemptId}
             index={runner.currentIndex + 1}
             isFirst={runner.isFirst}
             isLast={runner.isLast}

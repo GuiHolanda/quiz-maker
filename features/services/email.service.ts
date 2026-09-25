@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 
+import type { QuestionReportReason, QuestionReportSurface } from '@/config/constants';
 import { logger, serializeError } from '@/lib/logger';
 
 const BRAND_COLOR = '#4f46e5';
@@ -134,6 +135,57 @@ export function buildInternalAlert(input: InternalAlertInput) {
   const { html, text } = emailLayout(bodyHtml, bodyText);
 
   return { subject, html, text };
+}
+
+const QUESTION_REPORT_REASON_LABELS: Record<QuestionReportReason, string> = {
+  wrong_answer_key: 'Gabarito errado',
+  ambiguous_statement: 'Enunciado ambíguo',
+  out_of_scope: 'Fora do escopo',
+  typo: 'Erro de português ou digitação',
+  duplicate_options: 'Alternativas repetidas',
+  other: 'Outro problema',
+};
+
+const QUESTION_REPORT_SURFACE_LABELS: Record<QuestionReportSurface, string> = {
+  question_bank: 'Banco de questões',
+  attempt: 'Durante o simulado',
+  review: 'Revisão do simulado',
+};
+
+export interface QuestionReportAlertInput {
+  readonly report: {
+    readonly examQuestionId: number;
+    readonly reason: string;
+    readonly surface: string;
+    readonly examName: string;
+    readonly sectionName: string | null;
+    readonly topicName: string | null;
+    readonly questionText: string;
+    readonly comment: string | null;
+  };
+  readonly reopened: boolean;
+  readonly reporter: { readonly email: string; readonly plan: string } | null;
+}
+
+export function buildQuestionReportAlert({ report, reopened, reporter }: QuestionReportAlertInput): InternalAlertInput {
+  const reasonLabel = QUESTION_REPORT_REASON_LABELS[report.reason as QuestionReportReason] ?? 'Não classificado';
+  const surfaceLabel = QUESTION_REPORT_SURFACE_LABELS[report.surface as QuestionReportSurface] ?? 'Não informada';
+
+  return {
+    subject: `${reopened ? 'Reporte reaberto' : 'Reporte de questão'} — ${reasonLabel}`,
+    heading: reopened ? 'Reporte de questão reaberto' : 'Novo reporte de questão',
+    rows: [
+      { label: 'Motivo', value: reasonLabel },
+      { label: 'Exame', value: report.examName },
+      ...(report.sectionName ? [{ label: 'Seção', value: report.sectionName }] : []),
+      ...(report.topicName ? [{ label: 'Tópico', value: report.topicName }] : []),
+      { label: 'Superfície', value: surfaceLabel },
+      { label: 'Questão', value: `#${report.examQuestionId}` },
+      { label: 'Usuário', value: reporter?.email ?? 'Desconhecido' },
+      { label: 'Plano', value: reporter?.plan ?? '—' },
+    ],
+    body: report.comment ? `${report.questionText}\n\nComentário do usuário:\n${report.comment}` : report.questionText,
+  };
 }
 
 export class EmailService {
@@ -392,5 +444,9 @@ export class EmailService {
 
       return false;
     }
+  }
+
+  async sendQuestionReportAlert(input: QuestionReportAlertInput): Promise<boolean> {
+    return this.sendInternalAlert(buildQuestionReportAlert(input));
   }
 }

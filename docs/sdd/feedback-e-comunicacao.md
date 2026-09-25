@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tópico** | Como os usuários falam com o time e como o time os ouve |
-| **Status** | Ativo · Fase 0 implementada (aguardando aceite) · F1 e F2 não iniciadas |
+| **Status** | Ativo · Fase 0 implementada (aguardando aceite) · F1 implementada (aguardando E2E com o dev server reiniciado) · F2 não iniciada |
 | **Versão** | 1.0 (2026-09-25) |
 | **Autor** | Claude (Solution Architect) · **Aprovação de escopo:** Guilherme Holanda |
 | **Roadmap** | [feedback-e-comunicacao](../roadmap/feedback-e-comunicacao.md) |
@@ -106,7 +106,7 @@ infraestrutura compartilhada (Fase 0), o **reporte de questão** (F1) e o **widg
 | RNF-03 | Nenhum dado de outro usuário é exposto ou revelado (nem a existência de uma questão alheia) |
 | RNF-04 | Acessibilidade: gatilhos com rótulo acessível, modal com foco gerenciado pelo HeroUI, grupo de rádios rotulado, operável por teclado |
 | RNF-05 | Acessível em telas abaixo de 768 px (o header some no mobile) |
-| RNF-06 | Nenhuma dependência nova no `package.json` |
+| RNF-06 | Nenhuma dependência nova no `package.json`, exceto `@heroui/radio` (ver [D-14](#decisões-de-design)) |
 | RNF-07 | Lógica de decisão em módulos puros testáveis no vitest `environment: 'node'` (sem jsdom) |
 
 ---
@@ -455,8 +455,8 @@ e E2E nunca dispara, então o caso 429 **não é testável em E2E** — só em u
 
 - `config/constants/feedback.ts`, re-exportado por `config/constants/index.ts` (mesmo padrão de
   `generation-job.ts`): URLs, listas de motivos/categorias/superfícies/status (cada motivo e categoria com o
-  `labelKey` i18n **explícito**, sem convenção mágica) e os tipos derivados. Os limites de tamanho (1000, 2000, 200
-  e 300) entram com o primeiro consumidor, em F1/F2 — na Fase 0 seriam constantes sem uso.
+  `labelKey` i18n **explícito**, sem convenção mágica) e os tipos derivados. Os limites de tamanho entram com o primeiro consumidor: o do comentário (1000) e os status terminais
+  (`QUESTION_REPORT_TERMINAL_STATUSES`) entraram na F1; os de 2000, 200 e 300 entram na F2.
 - `shared/types/index.ts`: `SubmitQuestionReportPayload`, `QuestionReportResult`, `SubmitFeedbackPayload`,
   `FeedbackResult`.
 - `features/connectors.ts`: `submitQuestionReport(payload)` e `submitFeedback(payload)`.
@@ -524,7 +524,8 @@ Os rótulos do assunto vêm de mapas fixos em português — **nunca** de texto 
 | `features/providers/feedback.provider.tsx` | `FeedbackProvider` + `FeedbackContext`; dono do estado, do envio e dos toasts | **0** |
 | `features/hooks/useFeedback.hook.ts` | `useContext(FeedbackContext)` | **0** |
 | `lib/feedback-error.ts` | `resolveFeedbackError(err, kind)` puro | **0** |
-| `shared/components/ui/ReportQuestionModal.tsx` | Modal apresentacional: `RadioGroup` de motivos + `Textarea` | F1 |
+| `shared/components/ui/ReportQuestionModal.tsx` | Modal apresentacional (`isOpen`, `isLoading`, `onSubmit`, `onClose`); monta o `ReportQuestionForm` dentro do `ModalContent` | F1 |
+| `shared/components/ui/ReportQuestionForm.tsx` | Conteúdo do modal, com estado próprio (motivo, comentário, tentativa de envio): `RadioGroup` de motivos + `Textarea`. Vive dentro do `ModalContent`, então o estado zera a cada abertura sem `useEffect` | F1 |
 | `shared/components/ui/ReportQuestionButton.tsx` | Gatilho: `{ examQuestionId, surface, mockExamAttemptId? }`. `isIconOnly`, `buttonStyles.iconOnly.neutral`, `faFlag` | F1 |
 | `shared/components/ui/FeedbackModal.tsx` | Modal apresentacional: categoria + mensagem + aviso de contexto | F2 |
 | `shared/components/ui/workspace-header/FeedbackButton.tsx` | Gatilho do header, com a classe do trigger do sino e `faCommentDots` | F2 |
@@ -611,9 +612,9 @@ Reaproveita `common.cancel`. `{max}` é o placeholder de limite de caracteres.
 ### Acessibilidade (RNF-04)
 
 Gatilhos com `aria-label` (`reportQuestionAria`, `widgetAria`); modal do HeroUI (foco preso e devolvido ao
-gatilho); motivos em `RadioGroup` com `label`; contador de caracteres associado ao campo; envio operável por
-teclado. **Nota de teste:** o `Radio` do HeroUI tem o input com `opacity: 0.0001` — em E2E usar
-`dispatchEvent('click')`, nunca `.click({ force: true })`.
+gatilho); motivos em `RadioGroup` com `label` (setas e leitor de tela nativos); contador de caracteres associado
+ao campo; envio operável por teclado. **Nota de teste:** o `Radio` do HeroUI tem o input com `opacity: 0.0001` —
+em E2E usar `dispatchEvent('click')` no `getByRole('radio', { name })`, nunca `.click({ force: true })`.
 
 ---
 
@@ -661,6 +662,7 @@ Logs estruturados via `lib/logger.ts` (JSON de uma linha). **Nunca** se loga tex
 | `feedback.created` | info | `kind`, `id`, `reopened?` |
 | `email.internal_alert_skipped` | warn | `reason` — variável ausente |
 | `email.internal_alert_failed` | warn | `error*` |
+| `feedback.question_report.notify_failed` | warn | `reportId`, `error*` — falha ao avisar o time ou ao gravar `notifiedAt` |
 
 **Consulta operacional:** registros que não chegaram ao time —
 `SELECT id, "createdAt" FROM "QuestionReport" WHERE "notifiedAt" IS NULL` (idem `Feedback`).
@@ -729,6 +731,7 @@ Decisões que não são arquiteturais o bastante para uma ADR (convenções, reg
 | D-11 | Regras de negócio no service, handler fino | `tests/CLAUDE.md` manda não testar handlers, então validação no handler ficaria sem teste; e `ExamQuestion.id` é `Int`: um `"12"` no corpo viraria `PrismaClientValidationError` e 500 em vez de 400. O handler só faz auth, rate limit, parse do JSON e `catch`; o service valida whitelists, tipos, tamanhos e visibilidade. Sem biblioteca de schema (zod etc.): não há precedente no projeto. Desvio consciente do "validate → call service" literal do `CLAUDE.md` |
 | D-12 | Um reporte por (usuário, questão), com reabertura | Evita spam e e-mail duplicado (RN-11), mas uma questão corrigida pode voltar a errar (RN-12). O índice único no banco garante o dedupe mesmo em corrida. Descartados: vários reportes por par (polui a fila), unique sem reabertura (impede reportar de novo) e um `reportCount` na questão (exigiria alterar `ExamQuestion`). Custo: reabrir sobrescreve o motivo e o comentário anteriores; reavaliar se o F3/F5 precisar de histórico |
 | D-13 | A Fase 1 não altera `ExamQuestion`: reportar só registra e avisa | O schema só foi aprovado para models novos. "Sair de circulação" exigiria um campo de moderação e um filtro em toda consulta de questões (banco, criação de simulado, disponibilidade por seção, pool, demo pública), e um reporte falso poderia esconder uma questão boa antes de haver alguém para triar. Consequência: a promessa do site (`landing.trust.report.desc`) fica sem cobertura — ver Q-01 |
+| D-14 | Motivo do reporte em `RadioGroup` (`@heroui/radio@2.3.26`), não em `Select` | O `Select` dentro de um `Modal` abre o popover com `aria-hidden="true"` (react-aria esconde o que é portado para fora do diálogo): leitor de tela não lê as opções e o Playwright não as enxerga por `getByRole`. O `RadioGroup` mostra os 6 motivos de uma vez, tem setas e foco nativos e não depende de popover. Custo: um pacote HeroUI novo, na mesma leva dos instalados, com versão exata como o resto (o lockfile é ignorado pelo git e o CI roda `npm install`). Revisa o RNF-06. Descartado: `RadioGroup` próprio com botões (acessibilidade de teclado por nossa conta) |
 
 ---
 
@@ -764,3 +767,4 @@ Ganhos já embutidos neste design, para os itens do backlog **não** exigirem mi
 | 1.0 | 2026-09-25 | Versão inicial: Fase 0, F1 e F2 |
 | 1.1 | 2026-09-25 | Fase 0 implementada. Limites de tamanho adiados para F1/F2; migration dev gerada por `migrate diff` + `migrate deploy` |
 | 1.2 | 2026-09-25 | ADRs cortadas de 7 para 2: o porquê das antigas 0004 a 0007 virou D-10 a D-13; as ADRs 0002 e 0003 foram renumeradas para 0001 e 0002 |
+| 1.3 | 2026-09-25 | F1 implementada. Motivo em `RadioGroup` (D-14) por causa do `aria-hidden` do popover do `Select` em modal; dependência `@heroui/radio`; sem chave `reasonPlaceholder` |

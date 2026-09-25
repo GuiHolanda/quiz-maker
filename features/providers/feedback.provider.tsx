@@ -12,6 +12,7 @@ import {
   type QuestionReportTarget,
 } from '@/features/reducers/feedback.reducer';
 import { resolveFeedbackError, type FeedbackErrorKind } from '@/lib/feedback-error';
+import { ReportQuestionModal } from '@/shared/components/ui/ReportQuestionModal';
 import { notify } from '@/shared/lib/notify';
 
 interface FeedbackContextValue {
@@ -128,5 +129,15 @@ export function FeedbackProvider({ children }: { readonly children: ReactNode })
     ]
   );
 
-  return <FeedbackContext.Provider value={contextValue}>{children}</FeedbackContext.Provider>;
+  return (
+    <FeedbackContext.Provider value={contextValue}>
+      {children}
+      <ReportQuestionModal
+        isLoading={isBusy}
+        isOpen={reportTarget !== null}
+        onClose={close}
+        onSubmit={sendQuestionReport}
+      />
+    </FeedbackContext.Provider>
+  );
 }

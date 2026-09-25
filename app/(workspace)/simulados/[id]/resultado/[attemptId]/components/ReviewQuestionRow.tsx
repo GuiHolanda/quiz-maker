@@ -6,11 +6,13 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faXmark, faMinus, faQuestion, faChevronDown, faLightbulb } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { ReportQuestionButton } from '@/shared/components/ui/ReportQuestionButton';
 
 import type { QuestionStatus, ReviewQuestion } from './deriveResult';
 
 interface ReviewQuestionRowProps {
   readonly question: ReviewQuestion;
+  readonly attemptId: number;
   readonly isOpen: boolean;
   readonly onToggle: () => void;
   readonly onLoadExplanation: (questionId: number) => Promise<Record<string, string>>;
@@ -30,7 +32,13 @@ const COMMENT_SKELETON_ROWS: readonly (readonly string[])[] = [
   ['w-[80%]'],
 ];
 
-export function ReviewQuestionRow({ question, isOpen, onToggle, onLoadExplanation }: ReviewQuestionRowProps) {
+export function ReviewQuestionRow({
+  question,
+  attemptId,
+  isOpen,
+  onToggle,
+  onLoadExplanation,
+}: ReviewQuestionRowProps) {
   const { t } = useTranslation();
   const [explanations, setExplanations] = useState<Record<string, string> | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -192,8 +200,13 @@ export function ReviewQuestionRow({ question, isOpen, onToggle, onLoadExplanatio
               </div>
             )}
 
-            <div className="mt-4 border-t border-divider pt-3">
+            <div className="mt-4 flex items-center justify-between gap-3 border-t border-divider pt-3">
               <span className="text-xs text-default-500">{reference}</span>
+              <ReportQuestionButton
+                examQuestionId={question.examQuestionId}
+                mockExamAttemptId={attemptId}
+                surface="review"
+              />
             </div>
           </div>
         </div>

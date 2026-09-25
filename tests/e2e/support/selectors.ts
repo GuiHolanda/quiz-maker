@@ -145,6 +145,12 @@ export const TID = {
   examsSearch: 'exams-search',
   examsSortSelect: 'exams-sort-select',
 
+  // Question report modal (question bank, attempt, review)
+  questionReportBtn: 'question-report-btn',
+  questionReportModal: 'question-report-modal',
+  questionReportComment: 'question-report-comment',
+  questionReportSubmitBtn: 'question-report-submit-btn',
+
   // Confirmation dialogs
   confirmDiscardBtn: 'confirm-discard-btn',
   confirmDeleteBtn: 'confirm-delete-btn',

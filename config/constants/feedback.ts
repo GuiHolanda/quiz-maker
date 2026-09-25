@@ -20,6 +20,10 @@ export const QUESTION_REPORT_STATUSES = ['open', 'triaged', 'accepted', 'rejecte
 
 export type QuestionReportStatus = (typeof QUESTION_REPORT_STATUSES)[number];
 
+export const QUESTION_REPORT_TERMINAL_STATUSES = ['rejected', 'fixed'] as const;
+
+export const QUESTION_REPORT_COMMENT_MAX_LENGTH = 1000;
+
 export const FEEDBACK_CATEGORIES = [
   { id: 'bug', labelKey: 'feedback.categoryBug' },
   { id: 'suggestion', labelKey: 'feedback.categorySuggestion' },
