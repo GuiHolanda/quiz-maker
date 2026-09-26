@@ -54,6 +54,7 @@ const EXPECTED_KEYS = [
   'categoryRequired',
   'messageLabel',
   'messagePlaceholder',
+  'messageHelper',
   'messageRequired',
   'messageTooLong',
   'contextNotice',
@@ -87,7 +88,12 @@ describe('i18n do feedback', () => {
       feedbackKeys(messages).filter((key) => messages[key].includes('{max}'));
 
     expect(withMax(en)).toEqual(withMax(pt));
-    expect(withMax(pt)).toEqual(['feedback.commentHelper', 'feedback.commentTooLong', 'feedback.messageTooLong']);
+    expect(withMax(pt)).toEqual([
+      'feedback.commentHelper',
+      'feedback.commentTooLong',
+      'feedback.messageHelper',
+      'feedback.messageTooLong',
+    ]);
   });
 
   it('RF-07: todo motivo de reporte aponta para um rótulo que existe nos dois idiomas', () => {

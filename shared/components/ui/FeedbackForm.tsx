@@ -23,13 +23,12 @@ export function FeedbackForm({ isLoading, onSubmit, onClose }: FeedbackFormProps
   const [message, setMessage] = useState('');
   const [hasTriedToSubmit, setHasTriedToSubmit] = useState(false);
 
+  const limit = { max: FEEDBACK_MESSAGE_MAX_LENGTH };
   const messageLength = message.trim().length;
   const isMessageTooLong = messageLength > FEEDBACK_MESSAGE_MAX_LENGTH;
   const isMessageMissing = hasTriedToSubmit && messageLength === 0;
   const isCategoryMissing = hasTriedToSubmit && category === null;
-  const messageError = isMessageTooLong
-    ? t('feedback.messageTooLong', { max: FEEDBACK_MESSAGE_MAX_LENGTH })
-    : t('feedback.messageRequired');
+  const messageError = isMessageTooLong ? t('feedback.messageTooLong', limit) : t('feedback.messageRequired');
 
   function handleSubmit() {
     setHasTriedToSubmit(true);
@@ -64,6 +63,7 @@ export function FeedbackForm({ isLoading, onSubmit, onClose }: FeedbackFormProps
         <Textarea
           {...inputProperties.input}
           data-testid="feedback-message"
+          description={t('feedback.messageHelper', limit)}
           errorMessage={messageError}
           isDisabled={isLoading}
           isInvalid={isMessageMissing || isMessageTooLong}
