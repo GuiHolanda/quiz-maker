@@ -1,8 +1,9 @@
 'use client';
 
 import NextLink from 'next/link';
-import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
+import { faFileLines, faWandMagicSparkles, type IconDefinition } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Button } from '@heroui/button';
 
 import { readinessNote, type ReadinessNoteAction } from './examReadinessNote';
 
@@ -10,6 +11,7 @@ import { ProgressTrack } from '@/shared/components/ui/ProgressTrack';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { readinessBar, readinessTone } from '@/shared/lib/examReadiness';
 import { toneText } from '@/shared/lib/scoreTone';
+import { buttonStyles } from '@/config/constants/buttonStyles';
 import type { Exam } from '@/shared/types';
 
 interface ExamCardReadinessProps {
@@ -24,6 +26,11 @@ const ACTION_LABEL_KEY: Record<ReadinessNoteAction, string> = {
 const ACTION_PATH: Record<ReadinessNoteAction, string> = {
   generate: '/questions',
   simulado: '/simulados',
+};
+
+const ACTION_ICON: Record<ReadinessNoteAction, IconDefinition> = {
+  generate: faWandMagicSparkles,
+  simulado: faFileLines,
 };
 
 export function ExamCardReadiness({ exam }: ExamCardReadinessProps) {
@@ -48,14 +55,16 @@ export function ExamCardReadiness({ exam }: ExamCardReadinessProps) {
       />
       <p className="mt-2 text-xs text-navy-500 leading-snug">{t(note.key, note.params)}</p>
       {note.action && (
-        <NextLink
-          className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+        <Button
+          as={NextLink}
+          className={`${buttonStyles.primaryFlat} mt-2.5`}
           data-testid="exam-card-readiness-action"
           href={`${ACTION_PATH[note.action]}?examId=${exam.id}`}
+          size="sm"
+          startContent={<FontAwesomeIcon aria-hidden="true" className="w-3 h-3" icon={ACTION_ICON[note.action]} />}
         >
           {t(ACTION_LABEL_KEY[note.action])}
-          <FontAwesomeIcon className="text-[10px]" icon={faArrowRight} />
-        </NextLink>
+        </Button>
       )}
     </div>
   );

@@ -61,7 +61,7 @@ Hierarquia: `.page-header-title` → `text-3xl font-extrabold` → `text-xl font
 
 Todos os classNames via `buttonStyles` de `config/constants/buttonStyles.ts` — nunca inline.
 
-Variantes: `primary`, `secondary` (`variant="bordered"`), `flat`, `primarySm`, `danger`, `dangerFlat`, `iconOnly.neutral/primary/danger`.
+Variantes: `primary`, `secondary` (`variant="bordered"`), `flat`, `primaryFlat` (próximo passo sugerido, tingido de primary), `primarySm`, `danger`, `dangerFlat`, `iconOnly.neutral/primary/danger`.
 
 **Regras obrigatórias:**
 - Nunca use `color=` em `<Button>` — coloração via `className={buttonStyles.*}` apenas

@@ -8,6 +8,8 @@ export const buttonStyles = {
   secondarySm:
     'border-default-200 text-default-600 hover:text-foreground hover:border-default-400 rounded-lg h-8 px-3 text-xs font-semibold transition-colors duration-200',
   flat: 'bg-content2 border border-content2 font-semibold text-default-500 hover:bg-primary/10 hover:text-primary hover:border-primary/30 rounded-lg transition-colors duration-200',
+  primaryFlat:
+    'bg-primary/10 text-primary border border-primary/20 font-semibold rounded-lg hover:bg-primary/15 hover:border-primary/40 transition-colors duration-200',
   danger: 'bg-danger text-white font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200',
   dangerFlat:
     'bg-danger/10 text-danger border border-danger/20 font-semibold rounded-lg hover:opacity-90 transition-opacity duration-200',
