@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tópico** | Como os usuários falam com o time e como o time os ouve |
-| **Status** | Ativo · Fase 0 implementada (aguardando aceite) · F1 implementada (aguardando E2E com o dev server reiniciado) · F2 não iniciada |
+| **Status** | Ativo · Fase 0 implementada (aguardando aceite) · F1 e F2 implementadas, E2E verde (aguardando verificação do e-mail em produção) |
 | **Versão** | 1.0 (2026-09-25) |
 | **Autor** | Claude (Solution Architect) · **Aprovação de escopo:** Guilherme Holanda |
 | **Roadmap** | [feedback-e-comunicacao](../roadmap/feedback-e-comunicacao.md) |
@@ -456,7 +456,7 @@ e E2E nunca dispara, então o caso 429 **não é testável em E2E** — só em u
 - `config/constants/feedback.ts`, re-exportado por `config/constants/index.ts` (mesmo padrão de
   `generation-job.ts`): URLs, listas de motivos/categorias/superfícies/status (cada motivo e categoria com o
   `labelKey` i18n **explícito**, sem convenção mágica) e os tipos derivados. Os limites de tamanho entram com o primeiro consumidor: o do comentário (1000) e os status terminais
-  (`QUESTION_REPORT_TERMINAL_STATUSES`) entraram na F1; os de 2000, 200 e 300 entram na F2.
+  (`QUESTION_REPORT_TERMINAL_STATUSES`) entraram na F1; os de 2000, 200 e 300 e `FEEDBACK_LOCALES` (`pt`, `en`), na F2.
 - `shared/types/index.ts`: `SubmitQuestionReportPayload`, `QuestionReportResult`, `SubmitFeedbackPayload`,
   `FeedbackResult`.
 - `features/connectors.ts`: `submitQuestionReport(payload)` e `submitFeedback(payload)`.
@@ -479,6 +479,7 @@ export interface InternalAlertInput {
   readonly heading: string;
   readonly rows: ReadonlyArray<{ readonly label: string; readonly value: string }>;
   readonly body?: string;
+  readonly replyTo?: string;
 }
 
 export function buildInternalAlert(input: InternalAlertInput): { subject: string; html: string; text: string };
@@ -492,14 +493,14 @@ class EmailService {
 |---|---|
 | `escapeHtml` | Escapa `& < > " '`. Aplicado a `heading`, `rows[].label`, `rows[].value` e `body` (RN-21) |
 | `buildInternalAlert` | **Função pura**, exportada do módulo: testável sem instanciar `EmailService` (cujo construtor cria o cliente Resend). Reusa `emailLayout`. Assunto: prefixo fixo, espaços em branco normalizados e truncado; quebras de linha do `body` viram `<br>` depois do escape. Versão em texto puro com `label: value` |
-| `sendInternalAlert` | `to = process.env.FEEDBACK_INBOX_EMAIL`, lido **na chamada**. Ausente → `logger.warn` e `false` (RN-20). Erro do Resend ou exceção → `logger.warn` e `false`. Nunca lança (RN-19). `true` só quando o Resend confirma |
+| `sendInternalAlert` | `to = process.env.FEEDBACK_INBOX_EMAIL`, lido **na chamada**. Ausente → `logger.warn` e `false` (RN-20). Erro do Resend ou exceção → `logger.warn` e `false`. Nunca lança (RN-19). `true` só quando o Resend confirma. `replyTo` só é repassado ao Resend quando definido ([D-15](#decisões-de-design)) |
 
 ### Conteúdo dos e-mails (montado em F1 e F2)
 
 | Evento | Assunto (rótulos fixos) | Linhas | Corpo |
 |---|---|---|---|
 | Reporte | `[CertifiqueAI] Reporte de questão — <rótulo do motivo>` (`Reaberto` quando `reopened`) | Motivo, Exame, Seção, Tópico, Superfície, Questão (id), Usuário (e-mail), Plano | Enunciado da questão + comentário |
-| Feedback | `[CertifiqueAI] Feedback — <rótulo da categoria>` | Categoria, Usuário (e-mail), Plano, Rota, Idioma, Navegador | Mensagem |
+| Feedback | `[CertifiqueAI] Feedback — <rótulo da categoria>` | Categoria, Usuário (e-mail), Plano, Rota, Idioma, Navegador | Mensagem. `replyTo` = e-mail do usuário, quando houver ([D-15](#decisões-de-design)) |
 
 Os rótulos do assunto vêm de mapas fixos em português — **nunca** de texto livre (RN-21).
 
@@ -526,7 +527,8 @@ Os rótulos do assunto vêm de mapas fixos em português — **nunca** de texto 
 | `shared/components/ui/ReportQuestionModal.tsx` | Modal apresentacional (`isOpen`, `isLoading`, `onSubmit`, `onClose`); monta o `ReportQuestionForm` dentro do `ModalContent` | F1 |
 | `shared/components/ui/ReportQuestionForm.tsx` | Conteúdo do modal, com estado próprio (motivo, comentário, tentativa de envio): `RadioGroup` de motivos + `Textarea`. Vive dentro do `ModalContent`, então o estado zera a cada abertura sem `useEffect` | F1 |
 | `shared/components/ui/ReportQuestionButton.tsx` | Gatilho: `{ examQuestionId, surface, mockExamAttemptId? }`. `isIconOnly`, `buttonStyles.iconOnly.neutral`, `faFlag` | F1 |
-| `shared/components/ui/FeedbackModal.tsx` | Modal apresentacional: categoria + mensagem + aviso de contexto | F2 |
+| `shared/components/ui/FeedbackModal.tsx` | Modal apresentacional (`isOpen`, `isLoading`, `onSubmit`, `onClose`); monta o `FeedbackForm` dentro do `ModalContent` | F2 |
+| `shared/components/ui/FeedbackForm.tsx` | Conteúdo do modal, com estado próprio (categoria, mensagem, tentativa de envio): `RadioGroup` horizontal de categorias ([D-16](#decisões-de-design)) + `Textarea` + aviso de contexto (RN-27) | F2 |
 | `shared/components/ui/workspace-header/FeedbackButton.tsx` | Gatilho do header, com a classe do trigger do sino e `faCommentDots` | F2 |
 
 O `FeedbackProvider` é montado em [app/(workspace)/layout.tsx](../../app/(workspace)/layout.tsx) **dentro** do
@@ -592,8 +594,8 @@ Descartados: replicar o header no `SidebarMobileTopBar` (duplica sino, popover e
 ### i18n
 
 Namespace único **`feedback`**, registrado em `WORKSPACE_MESSAGE_PREFIXES` ([config/i18n-prefixes.ts](../../config/i18n-prefixes.ts)).
-Todas as 44 chaves entram na Fase 0, em `pt.properties` e `en.properties`, **na mesma posição** (arquivos
-alinhados linha a linha), com acento literal UTF-8.
+As 44 chaves originais entraram na Fase 0 e `categoryRequired` na F2 ([D-16](#decisões-de-design)), em
+`pt.properties` e `en.properties`, **na mesma posição** (arquivos alinhados linha a linha), com acento literal UTF-8.
 
 - **Reporte (25):** `reportQuestion`, `reportQuestionAria`, `reportModalTitle`, `reportModalSubtitle`,
   `reasonLabel`, `reasonWrongAnswerKey`, `reasonAmbiguousStatement`, `reasonOutOfScope`, `reasonTypo`,
@@ -601,8 +603,8 @@ alinhados linha a linha), com acento literal UTF-8.
   `commentTooLong`, `reasonRequired`, `submitReport`, `reportSuccessTitle`, `reportSuccessDescription`,
   `reportErrorTitle`, `reportErrorDescription`, `alreadyReportedTitle`, `alreadyReportedDescription`,
   `rateLimitedTitle`, `rateLimitedDescription`
-- **Feedback (19):** `navLabel`, `widgetAria`, `widgetTitle`, `widgetSubtitle`, `categoryLabel`, `categoryBug`,
-  `categorySuggestion`, `categoryPraise`, `categoryQuestion`, `messageLabel`, `messagePlaceholder`,
+- **Feedback (20):** `navLabel`, `widgetAria`, `widgetTitle`, `widgetSubtitle`, `categoryLabel`, `categoryBug`,
+  `categorySuggestion`, `categoryPraise`, `categoryQuestion`, `categoryRequired`, `messageLabel`, `messagePlaceholder`,
   `messageRequired`, `messageTooLong`, `contextNotice`, `send`, `sendSuccessTitle`, `sendSuccessDescription`,
   `sendErrorTitle`, `sendErrorDescription`
 
@@ -662,6 +664,7 @@ Logs estruturados via `lib/logger.ts` (JSON de uma linha). **Nunca** se loga tex
 | `email.internal_alert_skipped` | warn | `reason` — variável ausente |
 | `email.internal_alert_failed` | warn | `error*` |
 | `feedback.question_report.notify_failed` | warn | `reportId`, `error*` — falha ao avisar o time ou ao gravar `notifiedAt` |
+| `feedback.submit.notify_failed` | warn | `feedbackId`, `error*` — idem, para o feedback geral |
 
 **Consulta operacional:** registros que não chegaram ao time —
 `SELECT id, "createdAt" FROM "QuestionReport" WHERE "notifiedAt" IS NULL` (idem `Feedback`).
@@ -730,6 +733,8 @@ Decisões que não são arquiteturais o bastante para uma ADR (convenções, reg
 | D-12 | Um reporte por (usuário, questão), com reabertura | Evita spam e e-mail duplicado (RN-11), mas uma questão corrigida pode voltar a errar (RN-12). O índice único no banco garante o dedupe mesmo em corrida. Descartados: vários reportes por par (polui a fila), unique sem reabertura (impede reportar de novo) e um `reportCount` na questão (exigiria alterar `ExamQuestion`). Custo: reabrir sobrescreve o motivo e o comentário anteriores; reavaliar se o F3/F5 precisar de histórico |
 | D-13 | A Fase 1 não altera `ExamQuestion`: reportar só registra e avisa | O schema só foi aprovado para models novos. "Sair de circulação" exigiria um campo de moderação e um filtro em toda consulta de questões (banco, criação de simulado, disponibilidade por seção, pool, demo pública), e um reporte falso poderia esconder uma questão boa antes de haver alguém para triar. Consequência: a promessa do site (`landing.trust.report.desc`) fica sem cobertura — ver Q-01 |
 | D-14 | Motivo do reporte em `RadioGroup` (`@heroui/radio@2.3.26`), não em `Select` | O `Select` dentro de um `Modal` abre o popover com `aria-hidden="true"` (react-aria esconde o que é portado para fora do diálogo): leitor de tela não lê as opções e o Playwright não as enxerga por `getByRole`. O `RadioGroup` mostra os 6 motivos de uma vez, tem setas e foco nativos e não depende de popover. Custo: um pacote HeroUI novo, na mesma leva dos instalados, com versão exata como o resto (o lockfile é ignorado pelo git e o CI roda `npm install`). Revisa o RNF-06. Descartado: `RadioGroup` próprio com botões (acessibilidade de teclado por nossa conta) |
+| D-15 | O alerta de feedback responde ao usuário: `replyTo = Feedback.email`. `InternalAlertInput` ganha `replyTo?` e `sendInternalAlert` só o repassa ao Resend quando definido | Com 5 usuários, responder rápido é o principal valor do canal, e "Responder" no inbox custa um campo. O e-mail é snapshot do banco (RN-16), nunca do client. Sem e-mail (usuário não encontrado), nada é enviado como `replyTo` — um valor vazio faria o Resend recusar o envio inteiro. Descartado: `replyTo` no reporte de questão (não pedido). Fecha a Q-04 |
+| D-16 | Categoria do feedback em `RadioGroup` horizontal, **obrigatória e sem padrão** (chave `feedback.categoryRequired`) | Mesmo motivo de D-14 para não usar `Select` em modal. Uma categoria pré-marcada enviesaria a métrica "feedbacks por categoria" do roadmap. Como no F1, as opções não têm `data-testid`: o E2E as escolhe por `getByRole('radio', { name })`. Descartado: pré-selecionar `bug` (menos um clique, dado pior) |
 
 ---
 
@@ -740,7 +745,7 @@ Decisões que não são arquiteturais o bastante para uma ADR (convenções, reg
 | Q-01 | A promessa "itens sinalizados saem de circulação" ([D-13](#decisões-de-design)): aprovar o campo de moderação **ou** ajustar o copy | Guilherme | Lançamento público |
 | Q-02 | A política de privacidade deve citar o conteúdo de feedback como categoria de dado? | Guilherme | Lançamento público |
 | Q-03 | Prazo de retenção de `Feedback` e `QuestionReport` | Guilherme | — |
-| Q-04 | Usar `replyTo = Feedback.email` no e-mail do time, para responder ao usuário com um "Responder"? Barato, mas ainda não pedido | Guilherme | F2 |
+| Q-04 | ~~Usar `replyTo = Feedback.email` no e-mail do time?~~ **Resolvida em [D-15](#decisões-de-design)** (sim, só no feedback) | Guilherme | — |
 | Q-05 | `already_reported` deve fechar o modal? (D-09) | UX | F1 |
 
 ---
@@ -766,3 +771,4 @@ Ganhos já embutidos neste design, para os itens do backlog **não** exigirem mi
 | 1.1 | 2026-09-25 | Fase 0 implementada. Limites de tamanho adiados para F1/F2; migration dev gerada por `migrate diff` + `migrate deploy` |
 | 1.2 | 2026-09-25 | ADRs cortadas de 7 para 2: o porquê das antigas 0004 a 0007 virou D-10 a D-13; as ADRs 0002 e 0003 foram renumeradas para 0001 e 0002 |
 | 1.3 | 2026-09-25 | F1 implementada. Motivo em `RadioGroup` (D-14) por causa do `aria-hidden` do popover do `Select` em modal; dependência `@heroui/radio`; sem chave `reasonPlaceholder` |
+| 1.4 | 2026-09-26 | F2 implementada; E2E da F1 fechado (5/5). D-15 (`replyTo` no alerta de feedback, fecha a Q-04) e D-16 (categoria obrigatória, chave `categoryRequired`, 45 chaves no total) |

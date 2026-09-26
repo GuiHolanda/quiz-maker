@@ -1,6 +1,6 @@
 # Roadmap — Feedback e Comunicação
 
-> Última atualização: 2026-09-25 · Tópico: como os usuários falam com a gente e como a gente ouve.
+> Última atualização: 2026-09-26 · Tópico: como os usuários falam com a gente e como a gente ouve.
 >
 > **Design e decisões:** [SDD](../sdd/feedback-e-comunicacao.md) (regras de negócio `RN-xx`, contratos, modelo de
 > dados) · [ADRs](../adr/README.md) (0001 e 0002 cobrem este tópico).
@@ -22,8 +22,8 @@
 | Frente | Fase | Esforço | Status | Progresso |
 |---|---|---|---|---|
 | Fase 0 — Infra compartilhada | 1 | M | Em andamento | 18/19 |
-| F1 — Reportar questão | 1 | M | Em andamento | 19/23 |
-| F2 — Widget de feedback global | 1 | M | Não iniciado | 0/15 |
+| F1 — Reportar questão | 1 | M | Em andamento | 22/23 |
+| F2 — Widget de feedback global | 1 | M | Em andamento | 15/16 |
 | Backlog (F3–F7) | 2+ | — | Não iniciado | 0/5 |
 | Riscos abertos | — | — | Em aberto | 0/2 |
 
@@ -348,12 +348,12 @@ Superfícies:
 - [x] **1.5** Integrar em `QuestionBankCard.tsx`
 - [x] **1.6** Integrar em `AttemptQuestionPanel.tsx` + prop `attemptId` em `AttemptShell.tsx`
 - [x] **1.7** Integrar em `ReviewQuestionRow.tsx`
-- [ ] **1.8** Conferir que abrir o modal na tentativa **não** dispara `useNavigationGuard` e que o cronômetro
+- [x] **1.8** Conferir que abrir o modal na tentativa **não** dispara `useNavigationGuard` e que o cronômetro
   (`useAttemptDeadline`) segue correndo. Sem atalhos de teclado na tentativa e o guard só intercepta `<a>`, então o
   código não muda; a prova é o cenário 3 do E2E (1.11)
 - [x] **1.9** Testes unitários — `tests/unit/api/services/question-report.service.test.ts` (56 casos; os 10 principais, abaixo)
 - [x] **1.10** `data-testid` novos nos componentes e em `selectors.ts` (seção `// Feedback`)
-- [ ] **1.11** E2E em `tests/e2e/tests/feedback.spec.ts` (5 cenários; 3 verdes, 2 aguardam o `next dev` reiniciado)
+- [x] **1.11** E2E em `tests/e2e/tests/feedback.spec.ts` (5 cenários, 5/5 em 2026-09-26)
 
 **Casos unitários (1.9):**
 
@@ -391,9 +391,8 @@ no máximo 3 POSTs reais por execução, mas rodar várias vezes seguidas pode d
 Código concluído; 56 testes unitários do service, 16 novos do e-mail e o smoke do service contra o SQLite real
 passaram. Falta o que depende de você:
 
-- [ ] Reiniciar o `next dev` (o client Prisma em memória é anterior às tabelas) e rodar
-  `feedback.spec.ts` até 5/5. Os 2 cenários com POST real (banco e tentativa) falharam com 500
-  `reading 'findUnique'` de `undefined` por causa disso
+- [x] Reiniciar o `next dev` (o client Prisma em memória é anterior às tabelas) e rodar
+  `feedback.spec.ts` até 5/5. Feito em 2026-09-26 com o servidor do próprio Playwright: 5/5
 - [ ] Um reporte real em produção chega por e-mail em `FEEDBACK_INBOX_EMAIL` e `notifiedAt` é preenchido (RN-22)
 
 ### Decisão registrada
@@ -404,7 +403,7 @@ O modal **não** pausa o cronômetro da tentativa: reportar leva segundos e paus
 
 ## F2 — Widget de feedback global
 
-**Status:** Não iniciado · **Fase:** 1 · **Depende de:** Fase 0 (e do `FeedbackProvider`, criado lá)
+**Status:** Em andamento · **Fase:** 1 · **Depende de:** Fase 0 (e do `FeedbackProvider`, criado lá)
 
 Ponto de entrada sempre visível abrindo um modal com categoria + texto livre + contexto automático
 (rota, plano, navegador). É o canal para tudo que **não** é sobre uma questão específica.
@@ -477,31 +476,34 @@ Mais `feedback.navLabel` (rótulo do botão em `SidebarNav`): o namespace é ún
 
 ### Checklist
 
-- [ ] **2.1** `feedback.service.ts` com validação, snapshot de `plan`/`email` e truncamentos
-- [ ] **2.2** `route.ts` (handler + rate limit + `after()` do e-mail) e `EmailService.sendFeedbackAlert`
-- [ ] **2.3** `FeedbackModal.tsx` em `shared/components/ui/` (apresentacional; estado no `FeedbackProvider`)
-- [ ] **2.4** Renderizar o `FeedbackModal` no `FeedbackProvider` (o `openFeedback` já existe desde a 0.9)
-- [ ] **2.5** `FeedbackButton.tsx` no header (desktop)
-- [ ] **2.6** Botão em `SidebarNav.tsx` (desktop + mobile)
-- [ ] **2.7** Testes unitários — `tests/unit/api/services/feedback.service.test.ts` (casos abaixo)
-- [ ] **2.8** `data-testid` novos em `selectors.ts`
-- [ ] **2.9** E2E no mesmo `feedback.spec.ts`, incluindo caso mobile
+- [x] **2.1** `feedback.service.ts` com validação, snapshot de `plan`/`email` e truncamentos
+- [x] **2.2** `route.ts` (handler + rate limit + `after()` do e-mail) e `EmailService.sendFeedbackAlert`
+- [x] **2.3** `FeedbackModal.tsx` + `FeedbackForm.tsx` em `shared/components/ui/` (o formulário tem estado próprio, como o `ReportQuestionForm`; abertura e envio no `FeedbackProvider`)
+- [x] **2.4** Renderizar o `FeedbackModal` no `FeedbackProvider` (o `openFeedback` já existe desde a 0.9)
+- [x] **2.5** `FeedbackButton.tsx` no header (desktop)
+- [x] **2.6** Botão em `SidebarNav.tsx` (desktop + mobile)
+- [x] **2.7** Testes unitários — `tests/unit/api/services/feedback.service.test.ts` (38 casos; os principais, abaixo) e `buildFeedbackAlert`/`replyTo` em `email.service.test.ts`
+- [x] **2.8** `data-testid` novos em `selectors.ts`
+- [x] **2.9** E2E no mesmo `feedback.spec.ts`, incluindo caso mobile
 
 **Casos unitários (2.7):**
 
-- [ ] Persiste categoria, mensagem, rota e locale
-- [ ] Snapshot de `plan` e `email` vem do banco, não do payload
-- [ ] `userId: null` é aceito (caminho anônimo futuro)
-- [ ] Categoria inválida → 400
-- [ ] Mensagem vazia ou só espaços → 400; > 2000 → 400
-- [ ] `userAgent` truncado em 300; `route` truncada em 200
+- [x] Persiste categoria, mensagem, rota e locale
+- [x] Snapshot de `plan` e `email` vem do banco, não do payload
+- [x] `userId: null` é aceito (caminho anônimo futuro)
+- [x] Categoria inválida → 400
+- [x] Mensagem vazia ou só espaços → 400; > 2000 → 400
+- [x] `userAgent` truncado em 300; `route` truncada em 200
 
-**`data-testid` (2.8):** `feedback-widget-btn` · `feedback-sidebar-btn` · `feedback-modal` ·
-`feedback-category-{bug|suggestion|praise|question}` · `feedback-message` · `feedback-submit-btn`.
+**`data-testid` (2.8):** `feedback-widget-btn` · `feedback-sidebar-btn` · `feedback-modal` · `feedback-message` ·
+`feedback-submit-btn`. As categorias não têm `data-testid`: são escolhidas por `getByRole('radio', { name })`, como os
+motivos do F1 (SDD D-16).
 
-**E2E (2.9):** header → modal → categoria `bug` + mensagem → submeter → toast. Caso extra com viewport mobile
-(`page.setViewportSize({ width: 390, height: 844 })`) abrindo o drawer e usando `feedback-sidebar-btn` — é o
-único jeito de provar que o `hidden md:flex` foi resolvido.
+**E2E (2.9):** header → modal → categoria `bug` + mensagem → submeter → toast, conferindo no banco `plan`, `email` e
+`userAgent` preenchidos pelo servidor. Caso extra com viewport mobile (`page.setViewportSize({ width: 390, height: 844 })`)
+abrindo o drawer e usando `feedback-sidebar-btn` — é o único jeito de provar que o `hidden md:flex` foi resolvido — com
+o POST simulado. Mais o 401 anônimo. Com Redis no `.env` o limite `feedback_submit` (3 por 10 min) **vale no dev**: o
+spec faz um único POST real por execução.
 
 ### Critérios de aceite
 
@@ -509,6 +511,15 @@ Mais `feedback.navLabel` (rótulo do botão em `SidebarNav`): o namespace é ún
 - Um feedback vira uma linha em `Feedback` com `plan`, `email` e `userAgent` preenchidos pelo servidor
 - O time recebe o e-mail com categoria, mensagem e contexto legíveis (e sem HTML injetado do texto do usuário)
 - Mensagens do modal em PT e EN
+- O e-mail do time tem "Responder" apontando para o usuário (SDD D-15)
+
+### Aceite da F2
+
+Código concluído; 38 testes unitários do service, 11 novos do e-mail e o E2E (3 cenários do F2, 8/8 no spec) passaram.
+Falta o que depende de você:
+
+- [ ] Um feedback real em produção chega em `FEEDBACK_INBOX_EMAIL`, com "Responder" apontando para o usuário, e
+  `notifiedAt` é preenchido (RN-22, D-15)
 
 ---
 
@@ -563,3 +574,4 @@ Fora da Fase 1. Cada item tem um **gatilho de promoção**: o que precisa ser ve
 | 2026-09-25 | ADRs 0001–0007 e SDD escritos. Refinamentos de design (SDD §Decisões de design): `updatedAt` nos models; `sendInternalAlert` devolve `boolean`; wrappers de e-mail em F1/F2; seletores E2E com os componentes; namespace único `feedback`; provider baseado em reducer, já com `openFeedback` na Fase 0 |
 | 2026-09-25 | Fase 0 implementada na branch `feature/feedback-infra` (models e migrations, i18n, constantes, reducer, provider, resolvedor de erro, `sendInternalAlert`, rate limit). Aguarda o aceite acima |
 | 2026-09-25 | ADRs cortadas de 7 para 2 (persistência sem FK e e-mail por evento). O porquê das demais está no SDD (D-10 a D-13); o risco da moderação segue em "Riscos abertos" |
+| 2026-09-26 | E2E da F1 fechado (5/5). F2 implementada na branch `feature/feedback-widget`; Q-04 resolvida (`replyTo` no alerta de feedback, SDD D-15); categoria obrigatória com a chave nova `feedback.categoryRequired` (D-16) |
