@@ -1,3 +1,5 @@
+import type { ExamReadiness, SectionReadiness } from '@/shared/types';
+
 // NFC + trim + collapsed whitespace (incl. NBSP) is the only normalization the platform performs:
 // never lowercase or strip accents, they carry meaning. Apply on every write boundary.
 export function normalizeName(s: string): string {
@@ -17,31 +19,89 @@ export function toSafeString(v: unknown) {
   return json || Object.prototype.toString.call(v);
 }
 
-interface ReadinessSection {
-  readonly id: string;
-  readonly topics: readonly { readonly id: string }[];
+const READINESS_ANSWER_WINDOW = 30;
+
+interface ReadinessInput {
+  readonly sections: readonly { readonly id: string; readonly minQuestions: number; readonly maxQuestions: number }[];
+  readonly totalQuestions: number;
+  readonly questions: readonly { readonly sectionId: string | null }[];
+  readonly answers: readonly {
+    readonly sectionId: string | null;
+    readonly isCorrect: boolean;
+    readonly answeredAt: Date;
+  }[];
 }
 
-interface ReadinessQuestion {
-  readonly sectionId: string | null;
-  readonly topicId: string | null;
-}
-
-export function computeExamReadiness(
-  sections: readonly ReadinessSection[],
-  questions: readonly ReadinessQuestion[]
-): number {
-  if (sections.length === 0) return 0;
-
-  const topics = sections.flatMap((section) => section.topics);
-
-  if (topics.length > 0) {
-    const covered = topics.filter((topic) => questions.some((q) => q.topicId === topic.id)).length;
-    return Math.round((covered / topics.length) * 100);
+export function computeExamReadiness({ sections, totalQuestions, questions, answers }: ReadinessInput): ExamReadiness {
+  if (sections.length === 0) {
+    return { phase: 'no_sections', projectedPercent: null, coveredQuestions: 0, targetQuestions: 0, sections: [] };
   }
 
-  const covered = sections.filter((section) => questions.some((q) => q.sectionId === section.id)).length;
-  return Math.round((covered / sections.length) * 100);
+  const midpointWeights = sections.map((section) => (section.minQuestions + section.maxQuestions) / 2);
+  const hasAnyWeight = midpointWeights.some((weight) => weight > 0);
+  const weights = hasAnyWeight ? midpointWeights : sections.map(() => 1);
+
+  const targets = distributeByWeight(
+    sections.map((section, i) => ({ key: section.id, weight: weights[i], capacity: Number.POSITIVE_INFINITY })),
+    totalQuestions
+  );
+
+  const sectionReadiness: SectionReadiness[] = sections.map((section) => {
+    const recentAnswers = answers
+      .filter((answer) => answer.sectionId === section.id)
+      .sort((a, b) => b.answeredAt.getTime() - a.answeredAt.getTime())
+      .slice(0, READINESS_ANSWER_WINDOW);
+    const correctCount = recentAnswers.filter((answer) => answer.isCorrect).length;
+
+    return {
+      sectionId: section.id,
+      questionCount: questions.filter((question) => question.sectionId === section.id).length,
+      targetCount: targets[section.id],
+      accuracyPercent: recentAnswers.length > 0 ? (correctCount / recentAnswers.length) * 100 : null,
+    };
+  });
+
+  const coveredQuestions = sectionReadiness.reduce(
+    (sum, entry) => sum + Math.min(entry.questionCount, entry.targetCount),
+    0
+  );
+  const targetQuestions = sectionReadiness.reduce((sum, entry) => sum + entry.targetCount, 0);
+  const isMeasured = sectionReadiness.some((entry) => entry.accuracyPercent !== null);
+
+  const weightSum = weights.reduce((sum, weight) => sum + weight, 0);
+  const projectedPercent = isMeasured
+    ? Math.round(
+        sectionReadiness.reduce((sum, entry, i) => sum + weights[i] * (entry.accuracyPercent ?? 0), 0) / weightSum
+      )
+    : null;
+
+  const isBankComplete = sectionReadiness.every((entry) => entry.questionCount >= entry.targetCount);
+  const phase = isMeasured ? 'measured' : isBankComplete ? 'ready_to_measure' : 'building_bank';
+
+  return {
+    phase,
+    projectedPercent,
+    coveredQuestions,
+    targetQuestions,
+    sections: sectionReadiness.map((entry) => ({
+      ...entry,
+      accuracyPercent: entry.accuracyPercent === null ? null : Math.round(entry.accuracyPercent),
+    })),
+  };
+}
+
+function readinessRank(readiness: ExamReadiness | undefined): [number, number] {
+  if (!readiness || readiness.phase === 'no_sections') return [0, 0];
+  if (readiness.phase === 'measured') return [2, readiness.projectedPercent ?? 0];
+
+  return [1, readiness.targetQuestions > 0 ? readiness.coveredQuestions / readiness.targetQuestions : 1];
+}
+
+export function compareReadinessAscending(a: ExamReadiness | undefined, b: ExamReadiness | undefined): number {
+  const [tierA, valueA] = readinessRank(a);
+  const [tierB, valueB] = readinessRank(b);
+
+  return tierA - tierB || valueA - valueB;
 }
 
 export interface WeightedSlot {

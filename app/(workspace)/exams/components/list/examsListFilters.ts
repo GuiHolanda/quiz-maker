@@ -1,3 +1,4 @@
+import { compareReadinessAscending } from '@/lib/exam';
 import type { Exam } from '@/shared/types';
 
 export type ExamListTab = 'all' | 'certification' | 'public_exam' | 'draft';
@@ -27,7 +28,7 @@ function sortExams(exams: Exam[], sort: ExamListSort): Exam[] {
   const sorted = [...exams];
 
   if (sort === 'name') return sorted.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
-  if (sort === 'readiness') return sorted.sort((a, b) => (b.readinessPercent ?? 0) - (a.readinessPercent ?? 0));
+  if (sort === 'readiness') return sorted.sort((a, b) => compareReadinessAscending(b.readiness, a.readiness));
 
   return sorted.sort((a, b) => {
     const aTime = a.lastActivityAt ? new Date(a.lastActivityAt).getTime() : 0;

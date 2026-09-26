@@ -370,6 +370,18 @@ describe('ExamService', () => {
       sections: [],
     };
 
+    function attemptAnswer(sectionId: string, isCorrect: boolean, finishedAt = new Date('2026-02-01T00:00:00Z')) {
+      return {
+        isCorrect,
+        attempt: { finishedAt },
+        mockExamQuestion: { examQuestion: { examId: 'exam-1', sectionId } },
+      };
+    }
+
+    beforeEach(() => {
+      prismaMock.mockExamAttemptAnswer.findMany.mockResolvedValue([] as any);
+    });
+
     it('counts generated questions per exam separately from totalQuestions', async () => {
       prismaMock.exam.findMany.mockResolvedValue([{ ...baseExamRow, totalQuestions: 65 }] as any);
       prismaMock.mockExam.findMany.mockResolvedValue([] as any);
@@ -486,7 +498,7 @@ describe('ExamService', () => {
       expect(prismaMock.examQuestion.findMany).not.toHaveBeenCalled();
     });
 
-    it('marks status draft and readiness 0 when the exam has no sections', async () => {
+    it('RN-05: marks status draft and readiness no_sections when the exam has no sections', async () => {
       prismaMock.exam.findMany.mockResolvedValue([{ ...baseExamRow, sections: [] }] as any);
       prismaMock.mockExam.findMany.mockResolvedValue([] as any);
       prismaMock.examQuestion.findMany.mockResolvedValue([] as any);
@@ -495,40 +507,64 @@ describe('ExamService', () => {
       const [exam] = await service.getExams('user-1');
 
       expect(exam.status).toBe('draft');
-      expect(exam.readinessPercent).toBe(0);
+      expect(exam.readiness?.phase).toBe('no_sections');
     });
 
-    it('computes readiness as covered-topics / total-topics when the exam has topics', async () => {
+    it('RN-01: projects readiness from simulado answers weighted by the blueprint', async () => {
       prismaMock.exam.findMany.mockResolvedValue([
         {
           ...baseExamRow,
+          totalQuestions: 20,
           sections: [
-            {
-              id: 'sec-1',
-              name: 'Security',
-              minQuestions: 30,
-              maxQuestions: 30,
-              topics: [{ id: 'top-1', name: 'IAM' }, { id: 'top-2', name: 'KMS' }, { id: 'top-3', name: 'GuardDuty' }],
-            },
+            { id: 'sec-1', name: 'Security', minQuestions: 75, maxQuestions: 75, topics: [{ id: 'top-1', name: 'IAM' }] },
+            { id: 'sec-2', name: 'Networking', minQuestions: 25, maxQuestions: 25, topics: [] },
           ],
         },
       ] as any);
       prismaMock.mockExam.findMany.mockResolvedValue([] as any);
       prismaMock.examQuestion.findMany.mockResolvedValue([
-        { examId: 'exam-1', sectionId: 'sec-1', topicId: 'top-1', createdAt: new Date() },
+        { examId: 'exam-1', sectionId: 'sec-1', topicId: null, createdAt: new Date() },
+      ] as any);
+      prismaMock.mockExamAttemptAnswer.findMany.mockResolvedValue([
+        attemptAnswer('sec-1', true),
+        attemptAnswer('sec-1', true),
+        attemptAnswer('sec-1', true),
+        attemptAnswer('sec-1', false),
       ] as any);
 
       const service = new ExamService(prismaMock as any);
       const [exam] = await service.getExams('user-1');
 
-      expect(exam.readinessPercent).toBe(33);
-      expect(exam.status).toBe('active');
+      expect(exam.readiness).toMatchObject({ phase: 'measured', projectedPercent: 56 });
+      expect(exam.readiness?.sections).toEqual([
+        { sectionId: 'sec-1', questionCount: 1, targetCount: 15, accuracyPercent: 75 },
+        { sectionId: 'sec-2', questionCount: 0, targetCount: 5, accuracyPercent: null },
+      ]);
     });
 
-    it('falls back to section-level coverage when the exam has sections but no topics', async () => {
+    it('RN-03: reads only answers from finished, non-timed-out attempts of the listed exams', async () => {
+      prismaMock.exam.findMany.mockResolvedValue([baseExamRow] as any);
+      prismaMock.mockExam.findMany.mockResolvedValue([] as any);
+      prismaMock.examQuestion.findMany.mockResolvedValue([] as any);
+
+      const service = new ExamService(prismaMock as any);
+      await service.getExams('user-1');
+
+      expect(prismaMock.mockExamAttemptAnswer.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            attempt: { userId: 'user-1', finishedAt: { not: null }, timedOut: false },
+            mockExamQuestion: { examQuestion: { examId: { in: ['exam-1'] } } },
+          },
+        })
+      );
+    });
+
+    it('RN-05: reports bank progress while no simulado was answered', async () => {
       prismaMock.exam.findMany.mockResolvedValue([
         {
           ...baseExamRow,
+          totalQuestions: 10,
           sections: [
             { id: 'sec-1', name: 'A', minQuestions: 50, maxQuestions: 50, topics: [] },
             { id: 'sec-2', name: 'B', minQuestions: 50, maxQuestions: 50, topics: [] },
@@ -538,12 +574,18 @@ describe('ExamService', () => {
       prismaMock.mockExam.findMany.mockResolvedValue([] as any);
       prismaMock.examQuestion.findMany.mockResolvedValue([
         { examId: 'exam-1', sectionId: 'sec-1', topicId: null, createdAt: new Date() },
+        { examId: 'exam-1', sectionId: 'sec-2', topicId: null, createdAt: new Date() },
       ] as any);
 
       const service = new ExamService(prismaMock as any);
       const [exam] = await service.getExams('user-1');
 
-      expect(exam.readinessPercent).toBe(50);
+      expect(exam.readiness).toMatchObject({
+        phase: 'building_bank',
+        projectedPercent: null,
+        coveredQuestions: 2,
+        targetQuestions: 10,
+      });
     });
 
     it('marks status completed with the best qualifying attempt (as a percent, not the raw score) when a finished attempt clears passingScore', async () => {

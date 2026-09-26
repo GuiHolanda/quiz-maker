@@ -52,6 +52,23 @@ export interface ExamSection {
 
 export type ExamStatus = 'draft' | 'active' | 'completed';
 
+export type ExamReadinessPhase = 'no_sections' | 'building_bank' | 'ready_to_measure' | 'measured';
+
+export interface SectionReadiness {
+  readonly sectionId: string;
+  readonly questionCount: number;
+  readonly targetCount: number;
+  readonly accuracyPercent: number | null;
+}
+
+export interface ExamReadiness {
+  readonly phase: ExamReadinessPhase;
+  readonly projectedPercent: number | null;
+  readonly coveredQuestions: number;
+  readonly targetQuestions: number;
+  readonly sections: readonly SectionReadiness[];
+}
+
 export interface Exam {
   readonly id?: string;
   readonly type: ExamType;
@@ -72,7 +89,7 @@ export interface Exam {
   readonly simuladosCount?: number;
   readonly accuracyPercent?: number | null;
   readonly lastActivityAt?: string | null;
-  readonly readinessPercent?: number;
+  readonly readiness?: ExamReadiness;
   readonly status?: ExamStatus;
   readonly completedScore?: number | null;
   readonly completedAt?: string | null;
@@ -672,7 +689,8 @@ export interface DashboardExamProgress {
   readonly type: ExamType;
   readonly boardName: string | null;
   readonly keyLabel: string | null;
-  readonly readiness: number;
+  readonly passingScore: number | null;
+  readonly readiness: ExamReadiness;
   readonly accuracy: number | null;
 }
 
