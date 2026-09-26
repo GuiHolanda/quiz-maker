@@ -467,7 +467,7 @@ O header do workspace é `hidden md:flex`; no mobile só existe `SidebarMobileTo
 ### Chaves i18n (namespace `feedback`, nomes apenas)
 
 `widgetAria` · `widgetTitle` · `widgetSubtitle` · `categoryLabel` · `categoryBug` · `categorySuggestion` ·
-`categoryPraise` · `categoryQuestion` · `messageLabel` · `messagePlaceholder` · `messageRequired` ·
+`categoryPraise` · `categoryQuestion` · `categoryRequired` · `messageLabel` · `messagePlaceholder` · `messageHelper` · `messageRequired` ·
 `messageTooLong` · `contextNotice` · `send` · `sendSuccessTitle` · `sendSuccessDescription` ·
 `sendErrorTitle` · `sendErrorDescription`.
 
@@ -502,7 +502,7 @@ motivos do F1 (SDD D-16).
 **E2E (2.9):** header → modal → categoria `bug` + mensagem → submeter → toast, conferindo no banco `plan`, `email` e
 `userAgent` preenchidos pelo servidor. Caso extra com viewport mobile (`page.setViewportSize({ width: 390, height: 844 })`)
 abrindo o drawer e usando `feedback-sidebar-btn` — é o único jeito de provar que o `hidden md:flex` foi resolvido — com
-o POST simulado. Mais o rascunho preservado ao clicar fora do modal (SDD D-17) e a chamada anônima recusada. Com Redis no `.env` o limite `feedback_submit` (3 por 10 min) **vale no dev**: o
+o POST simulado. Mais o rascunho preservado ao clicar fora do modal (SDD D-17) e a chamada anônima recusada (307 do middleware, nada gravado). Com Redis no `.env` o limite `feedback_submit` (3 por 10 min) **vale no dev**: o
 spec faz um único POST real por execução.
 
 ### Critérios de aceite
@@ -574,4 +574,4 @@ Fora da Fase 1. Cada item tem um **gatilho de promoção**: o que precisa ser ve
 | 2026-09-25 | ADRs 0001–0007 e SDD escritos. Refinamentos de design (SDD §Decisões de design): `updatedAt` nos models; `sendInternalAlert` devolve `boolean`; wrappers de e-mail em F1/F2; seletores E2E com os componentes; namespace único `feedback`; provider baseado em reducer, já com `openFeedback` na Fase 0 |
 | 2026-09-25 | Fase 0 implementada na branch `feature/feedback-infra` (models e migrations, i18n, constantes, reducer, provider, resolvedor de erro, `sendInternalAlert`, rate limit). Aguarda o aceite acima |
 | 2026-09-25 | ADRs cortadas de 7 para 2 (persistência sem FK e e-mail por evento). O porquê das demais está no SDD (D-10 a D-13); o risco da moderação segue em "Riscos abertos" |
-| 2026-09-26 | E2E da F1 fechado (5/5). F2 implementada na branch `feature/feedback-widget`; Q-04 resolvida (`replyTo` no alerta de feedback, SDD D-15); categoria obrigatória com a chave nova `feedback.categoryRequired` (D-16) |
+| 2026-09-26 | E2E da F1 fechado (5/5). F2 implementada na branch `feature/feedback-widget`; Q-04 resolvida (`replyTo` no alerta de feedback, SDD D-15); categoria obrigatória com a chave nova `feedback.categoryRequired` (D-16); modal não fecha com clique fora (D-17); limite da mensagem visível (`feedback.messageHelper`) |
