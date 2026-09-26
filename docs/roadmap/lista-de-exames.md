@@ -17,8 +17,8 @@
 
 | Frente | Esforço | Status | Progresso |
 |---|---|---|---|
-| P1 — Preparo como nota projetada | M | Implementado, aguardando aceite | 9/10 |
-| Riscos abertos | — | Em aberto | 0/2 |
+| P1 — Preparo como nota projetada | M | Implementado, aguardando aceite (PR #103) | 10/11 |
+| Riscos abertos | — | Em aberto | 0/3 |
 
 ---
 
@@ -41,7 +41,11 @@ domínio. O diagnóstico completo está no [SDD](../sdd/lista-de-exames.md#objet
 - [x] **1.7** Linha do dashboard com as mesmas fases
 - [x] **1.8** i18n PT/EN (14 chaves novas no card, 2 no dashboard; 2 chaves mortas removidas)
 - [x] **1.9** Testes unitários e E2E citando as RN; verificação visual nos temas claro e escuro
-- [ ] **1.10** Aceite do Guilherme e merge
+- [x] **1.10** Ajustes da revisão do PR #103: preparo e simulado oficial com a mesma distribuição pelo `maxQuestions`
+  (D-09); questões sem `sectionId` casadas pelo nome (D-10); nota com corte decimal, domínio sem peso, barra do banco,
+  marcador centrado e "sem domínios" no dashboard. Preparo velho entre páginas não se confirmou: o provider é por
+  página, e um E2E passa a proteger isso
+- [ ] **1.11** Aceite do Guilherme e merge
 
 ---
 
@@ -50,5 +54,8 @@ domínio. O diagnóstico completo está no [SDD](../sdd/lista-de-exames.md#objet
 - [ ] **"Precisão" e "Preparo" lado a lado podem confundir.** O card mostra o acerto médio dos simulados (ex.: 64%)
   e o preparo projetado (ex.: 54%). A nota abaixo da barra explica a diferença (domínio não testado conta como 0),
   mas vale observar com usuários reais ([D-07](../sdd/lista-de-exames.md#decisões-de-design)).
+- [ ] **`getExams` traz todo o histórico de respostas.** O cálculo usa no máximo 30 respostas por domínio, mas a
+  consulta traz todas as de simulados finalizados, e roda a cada abertura de `/exams`. Limitar por domínio exige SQL
+  cru com window function ([SDD](../sdd/lista-de-exames.md#backend)).
 - [ ] **Prática fora de simulado não conta.** Quem só estuda pelo banco de questões fica em "Pronto para medir" até
   fazer um simulado, porque essas respostas não são persistidas ([Q-02](../sdd/lista-de-exames.md#questões-em-aberto)).
