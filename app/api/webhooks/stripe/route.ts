@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
 import { cacheDelete, claimOnce } from '@/lib/redis';
-import { resolvePlanFromPriceId, isCapacityUpgrade } from '@/app/api/webhooks/stripe/stripe-webhook.utils';
+import { resolvePlanFromPriceId } from '@/app/api/webhooks/stripe/stripe-webhook.utils';
+import { isCapacityUpgrade } from '@/config/constants';
 
 export const dynamic = 'force-dynamic';
 

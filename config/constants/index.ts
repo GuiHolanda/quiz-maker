@@ -135,6 +135,19 @@ export function canEditExams(plan: string): boolean {
   return limits ? limits.canEditExams : false;
 }
 
+// A plan change only deserves a fresh 30-day window when it actually raises the
+// questions/period ceiling — otherwise a routine subscription.updated (payment retry,
+// cancel_at_period_end toggle) or a downgrade would reset the counter for free.
+// Compares PLAN_LIMITS, not customQuotaOverride, since this is about the tier just
+// purchased. An unrecognized old plan counts as zero capacity so any real paid tier
+// reads as an upgrade.
+export function isCapacityUpgrade(oldPlan: string | null, newPlan: string): boolean {
+  const oldLimit = PLAN_LIMITS[oldPlan as keyof typeof PLAN_LIMITS]?.questionsPerPeriod ?? 0;
+  const newLimit = PLAN_LIMITS[newPlan as keyof typeof PLAN_LIMITS]?.questionsPerPeriod ?? 0;
+
+  return newLimit > oldLimit;
+}
+
 // Calibration from the pricing tier audit's referral section (achado 6): a two-way reward
 // sized in a unit users recognize, gated behind activation (never the signup itself) so it
 // can't be farmed with throwaway emails. The cap bounds how many of a single referrer's
