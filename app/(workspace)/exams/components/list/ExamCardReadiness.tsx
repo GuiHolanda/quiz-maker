@@ -1,11 +1,11 @@
 'use client';
 
 import NextLink from 'next/link';
-import { faFileLines, faWandMagicSparkles, type IconDefinition } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button } from '@heroui/button';
 
-import { readinessNote, type ReadinessNoteAction } from './examReadinessNote';
+import { EXAM_CARD_ACTIONS } from './examCardActions';
+import { readinessNote } from './examReadinessNote';
 
 import { ProgressTrack } from '@/shared/components/ui/ProgressTrack';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
@@ -18,26 +18,12 @@ interface ExamCardReadinessProps {
   readonly exam: Exam;
 }
 
-const ACTION_LABEL_KEY: Record<ReadinessNoteAction, string> = {
-  generate: 'exam.actionGenerate',
-  simulado: 'exam.actionCreateSimulado',
-};
-
-const ACTION_PATH: Record<ReadinessNoteAction, string> = {
-  generate: '/questions',
-  simulado: '/simulados',
-};
-
-const ACTION_ICON: Record<ReadinessNoteAction, IconDefinition> = {
-  generate: faWandMagicSparkles,
-  simulado: faFileLines,
-};
-
 export function ExamCardReadiness({ exam }: ExamCardReadinessProps) {
   const { t } = useTranslation();
   const passingScore = exam.passingScore ?? null;
   const bar = readinessBar(exam.readiness, passingScore);
   const note = readinessNote(exam);
+  const action = note.action ? EXAM_CARD_ACTIONS[note.action] : null;
 
   return (
     <div data-testid="exam-card-readiness">
@@ -54,16 +40,16 @@ export function ExamCardReadiness({ exam }: ExamCardReadinessProps) {
         value={bar.value}
       />
       <p className="mt-2 text-xs text-navy-500 leading-snug">{t(note.key, note.params)}</p>
-      {note.action && (
+      {action && (
         <Button
           as={NextLink}
           className={`${buttonStyles.primaryFlat} mt-2.5`}
           data-testid="exam-card-readiness-action"
-          href={`${ACTION_PATH[note.action]}?examId=${exam.id}`}
+          href={action.href(exam.id)}
           size="sm"
-          startContent={<FontAwesomeIcon aria-hidden="true" className="w-3 h-3" icon={ACTION_ICON[note.action]} />}
+          startContent={<FontAwesomeIcon aria-hidden="true" className="w-3 h-3" icon={action.icon} />}
         >
-          {t(ACTION_LABEL_KEY[note.action])}
+          {t(action.labelKey)}
         </Button>
       )}
     </div>
