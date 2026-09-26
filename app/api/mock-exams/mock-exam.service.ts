@@ -2,9 +2,7 @@ import type { Prisma } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
 import { logger, serializeError, type LogFields } from '@/lib/logger';
-import { extractJson } from '@/lib/llm/response';
-import { shuffleItems } from '@/lib/exam/distribution';
-import { normalizeName, looseKey } from '@/lib/exam/normalize';
+import { looseKey, normalizeName, shuffleItems } from '@/lib/exam';
 import { MOCK_EXAM_TIME_GRACE_MINUTES } from '@/config/constants';
 import {
   CreateMockExamPayload,
@@ -13,7 +11,7 @@ import {
   MockExamAvailability,
   ExamType,
 } from '@/shared/types';
-import { OpenAIService } from '@/features/services/generation/openai.service';
+import { extractJson, OpenAIService } from '@/features/services/generation/openai.service';
 import { ExamQuestionService } from '@/features/services/exam/exam-question.service';
 import { MetricsService } from '@/features/services/billing/metrics.service';
 import { ReferralService } from '@/features/services/billing/referral.service';

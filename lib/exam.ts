@@ -1,3 +1,49 @@
+// NFC + trim + collapsed whitespace (incl. NBSP) is the only normalization the platform performs:
+// never lowercase or strip accents, they carry meaning. Apply on every write boundary.
+export function normalizeName(s: string): string {
+  return s.normalize('NFC').replace(/\s+/g, ' ').trim();
+}
+
+// Diagnostics/recovery only — never persist.
+export function looseKey(s: string): string {
+  return normalizeName(s).toLowerCase();
+}
+
+export function toSafeString(v: unknown) {
+  if (typeof v === 'string') return v;
+  if (v == null) return '';
+  const json = JSON.stringify(v);
+
+  return json || Object.prototype.toString.call(v);
+}
+
+interface ReadinessSection {
+  readonly id: string;
+  readonly topics: readonly { readonly id: string }[];
+}
+
+interface ReadinessQuestion {
+  readonly sectionId: string | null;
+  readonly topicId: string | null;
+}
+
+export function computeExamReadiness(
+  sections: readonly ReadinessSection[],
+  questions: readonly ReadinessQuestion[]
+): number {
+  if (sections.length === 0) return 0;
+
+  const topics = sections.flatMap((section) => section.topics);
+
+  if (topics.length > 0) {
+    const covered = topics.filter((topic) => questions.some((q) => q.topicId === topic.id)).length;
+    return Math.round((covered / topics.length) * 100);
+  }
+
+  const covered = sections.filter((section) => questions.some((q) => q.sectionId === section.id)).length;
+  return Math.round((covered / sections.length) * 100);
+}
+
 export interface WeightedSlot {
   readonly key: string;
   readonly weight: number;

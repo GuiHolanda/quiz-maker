@@ -1,6 +1,5 @@
 import { prisma, PrismaService } from '@/lib/prisma';
-import { shuffleOptionTexts } from '@/lib/exam/distribution';
-import { looseKey, normalizeName, toSafeString } from '@/lib/exam/normalize';
+import { looseKey, normalizeName, shuffleOptionTexts, toSafeString } from '@/lib/exam';
 import { resolveQuestionFormat } from '@/config/question-formats';
 import type { QuestionFormat } from '@/config/question-formats';
 import { AIExamQuestion, Answer, ExamQuestionParams, ExamType } from '@/shared/types';

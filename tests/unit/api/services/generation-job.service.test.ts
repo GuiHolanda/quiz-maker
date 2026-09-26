@@ -19,7 +19,8 @@ const { openAICallMock, quotaConstructorMock, createFromPayloadMock } = vi.hoist
   };
 });
 
-vi.mock('@/features/services/generation/openai.service', () => ({
+vi.mock('@/features/services/generation/openai.service', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/features/services/generation/openai.service')>()),
   OpenAIService: class {
     call = openAICallMock;
   },

@@ -2,8 +2,8 @@
 
 import { createContext, useCallback, useState, type ReactNode } from 'react';
 
-import type { LimitError } from '@/lib/limit-error';
-import { parseLimitError } from '@/lib/limit-error';
+import type { LimitError } from '@/shared/lib/limitError';
+import { parseLimitError } from '@/shared/lib/limitError';
 import { LimitReachedModal } from '@/shared/components/ui/LimitReachedModal';
 
 interface LimitModalContextValue {

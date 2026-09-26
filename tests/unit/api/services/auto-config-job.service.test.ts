@@ -25,7 +25,8 @@ const {
   };
 });
 
-vi.mock('@/features/services/generation/openai.service', () => ({
+vi.mock('@/features/services/generation/openai.service', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/features/services/generation/openai.service')>()),
   OpenAIService: class {
     call = openAICallMock;
   },
@@ -39,11 +40,12 @@ vi.mock('next/server', () => ({
   after: vi.fn(),
 }));
 
-vi.mock('@/lib/edital/fetch', () => ({
+vi.mock('@/features/services/auto-config/edital-fetch.service', () => ({
   fetchEditalPdf: fetchEditalPdfMock,
 }));
 
-vi.mock('@/features/services/auto-config/edital-extractor.service', () => ({
+vi.mock('@/features/services/auto-config/edital-extractor.service', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/features/services/auto-config/edital-extractor.service')>()),
   EditalExtractorService: class {
     extract = editalExtractMock;
     verifyIsMainEdital = editalVerifyMock;

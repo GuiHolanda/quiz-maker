@@ -6,7 +6,7 @@ import { Button } from '@heroui/button';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowUp, faCircleExclamation } from '@fortawesome/free-solid-svg-icons';
 
-import type { LimitError } from '@/lib/limit-error';
+import type { LimitError } from '@/shared/lib/limitError';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { getCheckoutUrl } from '@/features/connectors';

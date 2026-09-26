@@ -1,6 +1,5 @@
 import { prisma, PrismaService } from '@/lib/prisma';
-import { normalizeName } from '@/lib/exam/normalize';
-import { computeExamReadiness } from '@/lib/exam/readiness';
+import { computeExamReadiness, normalizeName } from '@/lib/exam';
 import { defaultFormatForSource, isQuestionFormatKey, resolveQuestionFormat } from '@/config/question-formats';
 import { Exam, ExamStatus, ExamType, SectionUpdatePayload } from '@/shared/types';
 

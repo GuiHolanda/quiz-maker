@@ -12,6 +12,8 @@ The product is not limited to any single industry vertical. When generating ques
 
 **Component co-location:** page-specific components in `app/(workspace)/<domain>/<page>/components/`; components used by 2+ pages in `shared/components/`. Group 3+ related files in a subfolder (`seed/`, `list/`).
 
+**Where helpers live:** `lib/` holds server infrastructure (`prisma`, `redis`, `logger`, `api-error`, `rate-limit`) and pure helpers imported by both client and server (`exam.ts`, `edital.ts`, `utm.ts`, `seo.ts`). Client-only helpers go in `shared/lib/`. A helper with a single domain consumer lives in that domain's `.service.ts`. No `utils.ts` grab-bag — it would pull `node:` imports into client bundles.
+
 **`features/connectors.ts` — client-side only.** Owns the axios instance (`baseURL: '/api'`), kept private to the file. Never import in server components or API routes. Server components call services directly.
 
 ---

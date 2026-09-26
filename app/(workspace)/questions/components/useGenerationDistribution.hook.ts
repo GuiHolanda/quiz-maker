@@ -2,6 +2,8 @@
 
 import { useCallback, useMemo, useState } from 'react';
 
+import { distributeByWeight } from '@/lib/exam';
+
 export interface WeightedTopic {
   readonly name: string;
   readonly weight: number;
@@ -19,23 +21,10 @@ export interface DistributionEntry {
   readonly questionCount: number;
 }
 
-// Largest remainder method — a soma dos counts é exatamente `total`.
-function distributeByWeight(items: ReadonlyArray<WeightedTopic>, total: number): Record<string, number> {
-  const totalWeight = items.reduce((acc, item) => acc + item.weight, 0);
-  if (totalWeight === 0 || total <= 0) {
-    return Object.fromEntries(items.map((item) => [item.name, 0]));
-  }
+function distributeAcrossTopics(topics: ReadonlyArray<WeightedTopic>, total: number): Record<string, number> {
+  const slots = topics.map((topic) => ({ key: topic.name, weight: topic.weight, capacity: Number.POSITIVE_INFINITY }));
 
-  const floors = items.map((item) => {
-    const exact = (item.weight / totalWeight) * total;
-    const count = Math.floor(exact);
-    return { name: item.name, count, remainder: exact - count };
-  });
-  const remaining = total - floors.reduce((acc, item) => acc + item.count, 0);
-  const ranked = [...floors].sort((a, b) => b.remainder - a.remainder);
-  const bonus = new Set(ranked.slice(0, remaining).map((item) => item.name));
-
-  return Object.fromEntries(floors.map((item) => [item.name, item.count + (bonus.has(item.name) ? 1 : 0)]));
+  return distributeByWeight(slots, total);
 }
 
 interface UseGenerationDistributionResult {
@@ -56,7 +45,7 @@ export function useGenerationDistribution(
   resetKey: string
 ): UseGenerationDistributionResult {
   const [removed, setRemoved] = useState<Set<string>>(() => new Set());
-  const [counts, setCounts] = useState<Record<string, number>>(() => distributeByWeight(topics, defaultTotal));
+  const [counts, setCounts] = useState<Record<string, number>>(() => distributeAcrossTopics(topics, defaultTotal));
   const [manuallyEdited, setManuallyEdited] = useState(false);
   const [syncKey, setSyncKey] = useState(`${resetKey}|${total}`);
 
@@ -68,7 +57,7 @@ export function useGenerationDistribution(
 
     setSyncKey(nextSyncKey);
     if (isExamChange) setRemoved(nextRemoved);
-    setCounts(distributeByWeight(activeTopics, total));
+    setCounts(distributeAcrossTopics(activeTopics, total));
     setManuallyEdited(false);
   }
 
@@ -100,7 +89,7 @@ export function useGenerationDistribution(
         const next = new Set(prev);
         next.add(name);
         const remaining = topics.filter((topic) => !next.has(topic.name));
-        setCounts(distributeByWeight(remaining, total));
+        setCounts(distributeAcrossTopics(remaining, total));
         return next;
       });
       setManuallyEdited(false);
@@ -110,7 +99,7 @@ export function useGenerationDistribution(
 
   const redistribute = useCallback(() => {
     const remaining = topics.filter((topic) => !removed.has(topic.name));
-    setCounts(distributeByWeight(remaining, total));
+    setCounts(distributeAcrossTopics(remaining, total));
     setManuallyEdited(false);
   }, [topics, removed, total]);
 

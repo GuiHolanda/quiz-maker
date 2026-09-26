@@ -1,4 +1,4 @@
-import { distributeByWeight } from '@/lib/exam/distribution';
+import { distributeByWeight } from '@/lib/exam';
 
 describe('distributeByWeight', () => {
   it('splits proportionally when capacity is not binding', () => {
