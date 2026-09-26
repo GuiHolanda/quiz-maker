@@ -7,6 +7,7 @@ interface ProgressTrackProps {
   readonly heightClass?: string;
   readonly animated?: boolean;
   readonly overflowVisible?: boolean;
+  readonly markerPercent?: number | null;
   readonly className?: string;
   readonly children?: ReactNode;
 }
@@ -18,6 +19,7 @@ export function ProgressTrack({
   heightClass = 'h-1.5',
   animated = false,
   overflowVisible = false,
+  markerPercent = null,
   className,
   children,
 }: ProgressTrackProps) {
@@ -26,7 +28,7 @@ export function ProgressTrack({
     heightClass,
     trackClass,
     'relative rounded-full',
-    overflowVisible ? '' : 'overflow-hidden',
+    overflowVisible || markerPercent != null ? '' : 'overflow-hidden',
     className,
   ]
     .filter(Boolean)
@@ -42,6 +44,12 @@ export function ProgressTrack({
   return (
     <div className={trackClasses}>
       <div className={fillClasses} style={{ width: `${width}%` }} />
+      {markerPercent != null && (
+        <div
+          className="absolute -top-1 -bottom-1 w-0.5 -translate-x-1/2 bg-primary"
+          style={{ left: `clamp(1px, ${Math.max(0, Math.min(100, markerPercent))}%, calc(100% - 1px))` }}
+        />
+      )}
       {children}
     </div>
   );

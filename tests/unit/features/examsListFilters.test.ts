@@ -1,5 +1,5 @@
 import { countByTab, filterAndSortExams } from '@/app/(workspace)/exams/components/list/examsListFilters';
-import type { Exam } from '@/shared/types';
+import type { Exam, ExamReadiness } from '@/shared/types';
 
 function exam(overrides: Partial<Exam>): Exam {
   return {
@@ -8,7 +8,6 @@ function exam(overrides: Partial<Exam>): Exam {
     totalQuestions: 65,
     sections: [],
     status: 'active',
-    readinessPercent: 0,
     lastActivityAt: null,
     ...overrides,
   } as Exam;
@@ -63,11 +62,21 @@ describe('filterAndSortExams', () => {
     expect(result.map((e) => e.name)).toEqual(['CPA-20', 'INSS Técnico']);
   });
 
-  it('sorts by readiness descending', () => {
-    const low = exam({ name: 'Low', readinessPercent: 10 });
-    const high = exam({ name: 'High', readinessPercent: 90 });
-    const result = filterAndSortExams([low, high], { tab: 'all', search: '', sort: 'readiness' });
-    expect(result.map((e) => e.name)).toEqual(['High', 'Low']);
+  it('RN-09: sorts by readiness — measured by projected score, then bank progress, then no sections', () => {
+    const readiness = (overrides: Partial<ExamReadiness>): ExamReadiness => ({
+      phase: 'building_bank',
+      projectedPercent: null,
+      coveredQuestions: 0,
+      targetQuestions: 10,
+      sections: [],
+      ...overrides,
+    });
+    const low = exam({ name: 'Low', readiness: readiness({ phase: 'measured', projectedPercent: 10 }) });
+    const high = exam({ name: 'High', readiness: readiness({ phase: 'measured', projectedPercent: 90 }) });
+    const bank = exam({ name: 'Bank', readiness: readiness({ coveredQuestions: 9 }) });
+    const empty = exam({ name: 'Empty', readiness: readiness({ phase: 'no_sections', targetQuestions: 0 }) });
+    const result = filterAndSortExams([empty, low, bank, high], { tab: 'all', search: '', sort: 'readiness' });
+    expect(result.map((e) => e.name)).toEqual(['High', 'Low', 'Bank', 'Empty']);
   });
 
   it('sorts by activity descending, treating a null lastActivityAt as oldest', () => {

@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { computeExamReadiness } from '@/lib/exam';
+import { compareReadinessAscending, examReadiness, groupByExam, type ExamQuestionRef } from '@/lib/exam';
 import type {
   DashboardActivityItem,
   DashboardExamProgress,
@@ -51,16 +51,20 @@ type ExamRow = {
   role: string | null;
   year: number | null;
   createdAt: Date;
+  totalQuestions: number;
+  passingScore: number | null;
   examBoard: { name: string } | null;
-  sections: { id: string; topics: { id: string }[] }[];
+  sections: { id: string; name: string; minQuestions: number; maxQuestions: number }[];
 };
 
-type QuestionRow = { examId: string | null; sectionId: string | null; topicId: string | null };
-
 type SectionAnswerRow = {
+  id: number;
   isCorrect: boolean;
   attempt: { finishedAt: Date | null; timedOut: boolean };
-  mockExamQuestion: { examQuestionId: number; examQuestion: { sectionName: string } };
+  mockExamQuestion: {
+    examQuestionId: number;
+    examQuestion: ExamQuestionRef;
+  };
 };
 
 type AutoConfigRow = { seedName: string; updatedAt: Date };
@@ -105,24 +109,33 @@ export class DashboardService {
           role: true,
           year: true,
           createdAt: true,
+          totalQuestions: true,
+          passingScore: true,
           examBoard: { select: { name: true } },
-          sections: { select: { id: true, topics: { select: { id: true } } } },
+          sections: {
+            select: { id: true, name: true, minQuestions: true, maxQuestions: true },
+            orderBy: { id: 'asc' },
+          },
         },
       }) as Promise<ExamRow[]>,
       prisma.examQuestion.findMany({
         where: { userId },
-        select: { examId: true, sectionId: true, topicId: true },
-      }) as Promise<QuestionRow[]>,
+        select: { examId: true, sectionId: true, examName: true, sectionName: true },
+      }) as Promise<ExamQuestionRef[]>,
       prisma.mockExamAttemptAnswer.findMany({
         where: {
           attempt: { userId, finishedAt: { not: null } },
           mockExamQuestion: { examQuestion: { userId } },
         },
         select: {
+          id: true,
           isCorrect: true,
           attempt: { select: { finishedAt: true, timedOut: true } },
           mockExamQuestion: {
-            select: { examQuestionId: true, examQuestion: { select: { sectionName: true } } },
+            select: {
+              examQuestionId: true,
+              examQuestion: { select: { examId: true, sectionId: true, examName: true, sectionName: true } },
+            },
           },
         },
       }) as Promise<SectionAnswerRow[]>,
@@ -138,7 +151,7 @@ export class DashboardService {
     return {
       kpis: this.computeKpis(attempts, usageLogs, simuladosTotal, now),
       resume: this.computeResume(attempts),
-      examsInProgress: this.computeExamsInProgress(exams, questions, attempts),
+      examsInProgress: this.computeExamsInProgress(exams, questions, attempts, sectionAnswers),
       weakDomains: this.computeWeakDomains(sectionAnswers, now),
       quickActions: {
         bankCount: questions.length,
@@ -223,8 +236,9 @@ export class DashboardService {
 
   private computeExamsInProgress(
     exams: ExamRow[],
-    questions: QuestionRow[],
-    attempts: AttemptRow[]
+    questions: ExamQuestionRef[],
+    attempts: AttemptRow[],
+    sectionAnswers: SectionAnswerRow[]
   ): DashboardExamProgress[] {
     const finishedByExam = new Map<string, number[]>();
     const attemptExamIds = new Set<string>();
@@ -238,10 +252,20 @@ export class DashboardService {
       }
     }
 
+    const readinessAnswers = sectionAnswers
+      .filter((answer) => !answer.attempt.timedOut)
+      .map((answer) => ({
+        id: answer.id,
+        isCorrect: answer.isCorrect,
+        answeredAt: answer.attempt.finishedAt as Date,
+        question: answer.mockExamQuestion.examQuestion,
+      }));
+    const questionsByExam = groupByExam(exams, questions, (question) => question);
+    const answersByExam = groupByExam(exams, readinessAnswers, (answer) => answer.question);
+
     return exams
-      .filter((exam) => questions.some((q) => q.examId === exam.id) || attemptExamIds.has(exam.id))
+      .filter((exam) => (questionsByExam.get(exam.id) ?? []).length > 0 || attemptExamIds.has(exam.id))
       .map((exam) => {
-        const examQuestions = questions.filter((q) => q.examId === exam.id);
         const finishedPcts = finishedByExam.get(exam.id) ?? [];
         return {
           examId: exam.id,
@@ -249,13 +273,14 @@ export class DashboardService {
           type: exam.type as DashboardExamProgress['type'],
           boardName: exam.examBoard?.name ?? null,
           keyLabel: exam.key ?? exam.role ?? (exam.year !== null ? String(exam.year) : null),
-          readiness: computeExamReadiness(exam.sections, examQuestions),
+          passingScore: exam.passingScore,
+          readiness: examReadiness(exam, questionsByExam.get(exam.id) ?? [], answersByExam.get(exam.id) ?? []),
           accuracy: finishedPcts.length
             ? Math.round(finishedPcts.reduce((sum, p) => sum + p, 0) / finishedPcts.length)
             : null,
         };
       })
-      .sort((a, b) => a.readiness - b.readiness)
+      .sort((a, b) => compareReadinessAscending(a.readiness, b.readiness))
       .slice(0, EXAMS_LIMIT);
   }
 

@@ -17,8 +17,8 @@ import { Button } from '@heroui/button';
 
 import { ExamCardDomainsPanel } from './ExamCardDomainsPanel';
 import { ExamCardActionsMenu } from './ExamCardActionsMenu';
+import { ExamCardReadiness } from './ExamCardReadiness';
 
-import { ProgressTrack } from '@/shared/components/ui/ProgressTrack';
 import { RelativeDate } from '@/shared/components/ui/RelativeDate';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
@@ -43,14 +43,6 @@ const STATUS_LABEL_KEY: Record<ExamStatus, string> = {
   completed: 'exam.statusCompleted',
 };
 
-function readinessNoteKey(exam: Exam): string {
-  if (exam.status === 'draft') return 'exam.readinessNoteDraft';
-  if (exam.status === 'completed') return 'exam.readinessNoteCompleted';
-  if ((exam.readinessPercent ?? 0) >= 75) return 'exam.readinessNoteCovered';
-
-  return 'exam.readinessNoteGaps';
-}
-
 export function ExamCard({ exam, canEdit, onDelete, onUpgradeRequired }: ExamCardProps) {
   const { t } = useTranslation();
   const [isDomainsOpen, setIsDomainsOpen] = useState(false);
@@ -58,7 +50,6 @@ export function ExamCard({ exam, canEdit, onDelete, onUpgradeRequired }: ExamCar
 
   const status = exam.status ?? 'active';
   const referenceEntity = exam.provider ?? exam.examBoard;
-  const readiness = exam.readinessPercent ?? 0;
 
   return (
     <Card
@@ -102,20 +93,7 @@ export function ExamCard({ exam, canEdit, onDelete, onUpgradeRequired }: ExamCar
             </div>
           </div>
 
-          <div>
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="text-xs font-semibold text-default-400">{t('exam.readinessLabel')}</span>
-              <span className="font-mono text-sm text-foreground">{readiness}%</span>
-            </div>
-            <ProgressTrack
-              className="mt-2"
-              fillClass={readiness >= 75 ? 'bg-success' : readiness >= 40 ? 'bg-warning' : 'bg-default-300'}
-              heightClass="h-[7px]"
-              trackClass="bg-background"
-              value={readiness}
-            />
-            <p className="mt-2 text-xs text-navy-500 leading-snug">{t(readinessNoteKey(exam))}</p>
-          </div>
+          <ExamCardReadiness exam={exam} />
 
           <Button
             isIconOnly
@@ -167,7 +145,13 @@ export function ExamCard({ exam, canEdit, onDelete, onUpgradeRequired }: ExamCar
           )}
         </div>
 
-        {isDomainsOpen && exam.sections.length > 0 && <ExamCardDomainsPanel sections={exam.sections} />}
+        {isDomainsOpen && exam.sections.length > 0 && (
+          <ExamCardDomainsPanel
+            passingScore={exam.passingScore ?? null}
+            readiness={exam.readiness}
+            sections={exam.sections}
+          />
+        )}
         {isMenuOpen && (
           <ExamCardActionsMenu
             canEdit={canEdit}

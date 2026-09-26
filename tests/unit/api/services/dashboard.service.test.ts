@@ -38,17 +38,29 @@ function attempt(overrides: Partial<{
   };
 }
 
+let nextAnswerId = 1;
+
 function sectionAnswer(
   examQuestionId: number,
   sectionName: string,
   isCorrect: boolean,
   finishedAt: Date | null,
-  timedOut = false
+  timedOut = false,
+  ids: { examId?: string; sectionId?: string; examName?: string } = {}
 ) {
   return {
+    id: nextAnswerId++,
     isCorrect,
     attempt: { finishedAt, timedOut },
-    mockExamQuestion: { examQuestionId, examQuestion: { sectionName } },
+    mockExamQuestion: {
+      examQuestionId,
+      examQuestion: {
+        sectionName,
+        examName: ids.examName ?? '',
+        examId: ids.examId ?? null,
+        sectionId: ids.sectionId ?? null,
+      },
+    },
   };
 }
 
@@ -56,7 +68,7 @@ function setup(opts: {
   attempts?: ReturnType<typeof attempt>[];
   usageLogs?: { action: string; count: number; refName: string | null; createdAt: Date }[];
   exams?: any[];
-  questions?: { examId: string | null; sectionId: string | null; topicId: string | null }[];
+  questions?: { examId: string | null; sectionId: string | null; examName?: string; sectionName?: string }[];
   sectionAnswers?: ReturnType<typeof sectionAnswer>[];
   autoConfigJobs?: { seedName: string; updatedAt: Date }[];
   mockExamCount?: number;
@@ -197,38 +209,97 @@ describe('DashboardService.getStats', () => {
     });
   });
 
-  it('builds examsInProgress from coverage, filters no-activity exams, sorts least-ready first, caps at five, and excludes timedOut attempts from accuracy', async () => {
+  it('RN-10: builds examsInProgress least-ready first (unmeasured by bank progress, then measured by projected score), skipping no-activity exams and timed-out answers', async () => {
+    const examRow = (id: string, name: string, totalQuestions: number, extra: Record<string, unknown> = {}) => ({
+      id, name, type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(40), examBoard: null,
+      totalQuestions, passingScore: 70,
+      sections: [{ id: `s-${id}`, minQuestions: 100, maxQuestions: 100 }],
+      ...extra,
+    });
+    const bank = (examId: string, count: number) =>
+      Array.from({ length: count }, () => ({ examId, sectionId: `s-${examId}` }));
+    const scored = (examId: string, correct: number, wrong: number, timedOut = false) =>
+      Array.from({ length: correct + wrong }, (_, i) =>
+        sectionAnswer(i, 'A', i < correct, daysAgo(1), timedOut, { examId, sectionId: `s-${examId}` })
+      );
+
     setup({
       exams: [
-        { id: 'e1', name: 'Ready-ish', type: 'certification', key: 'K1', role: null, year: null, createdAt: daysAgo(40), examBoard: { name: 'B1' }, sections: [{ id: 's1', topics: [{ id: 't1' }, { id: 't2' }] }] },
-        { id: 'e2', name: 'Barely started', type: 'public_exam', key: null, role: 'Analista', year: 2026, createdAt: daysAgo(40), examBoard: null, sections: [{ id: 's2', topics: [{ id: 't3' }, { id: 't4' }] }] },
-        { id: 'e3', name: 'No activity', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(40), examBoard: null, sections: [{ id: 's3', topics: [{ id: 't5' }] }] },
-        { id: 'e4', name: 'Untouched', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(40), examBoard: null, sections: [{ id: 's4', topics: [{ id: 't4a' }] }] },
-        { id: 'e5', name: 'Quarter covered', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(40), examBoard: null, sections: [{ id: 's5', topics: [{ id: 't5a' }, { id: 't5b' }, { id: 't5c' }, { id: 't5d' }] }] },
-        { id: 'e6', name: 'Third covered', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(40), examBoard: null, sections: [{ id: 's6', topics: [{ id: 't6a' }, { id: 't6b' }, { id: 't6c' }] }] },
-        { id: 'e7', name: 'Also fully covered', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(40), examBoard: null, sections: [{ id: 's7', topics: [{ id: 't7a' }] }] },
+        examRow('e1', 'Measured high', 10, { key: 'K1', examBoard: { name: 'B1' } }),
+        examRow('e2', 'Measured low', 10, { type: 'public_exam', role: 'Analista', year: 2026 }),
+        examRow('e3', 'No activity', 10),
+        examRow('e4', 'Bank started', 10),
+        examRow('e5', 'Bank full', 4),
+        examRow('e6', 'Bank half', 10),
+        examRow('e7', 'Measured top', 10),
       ],
-      questions: [
-        { examId: 'e1', sectionId: 's1', topicId: 't1' },
-        { examId: 'e1', sectionId: 's1', topicId: 't2' },
-        { examId: 'e2', sectionId: 's2', topicId: 't3' },
-        { examId: 'e4', sectionId: 's4', topicId: null },
-        { examId: 'e5', sectionId: 's5', topicId: 't5a' },
-        { examId: 'e6', sectionId: 's6', topicId: 't6a' },
-        { examId: 'e7', sectionId: 's7', topicId: 't7a' },
-      ],
+      questions: [...bank('e1', 10), ...bank('e2', 4), ...bank('e4', 2), ...bank('e5', 4), ...bank('e6', 5), ...bank('e7', 10)],
+      sectionAnswers: [...scored('e1', 8, 2), ...scored('e1', 0, 5, true), ...scored('e2', 1, 3), ...scored('e7', 10, 0)],
       attempts: [
         attempt({ id: 1, mockExamId: 1, examId: 'e1', finishedAt: daysAgo(2), score: 7, questionCount: 10 }),
         attempt({ id: 2, mockExamId: 2, examId: 'e1', finishedAt: daysAgo(1), score: 10, questionCount: 10, timedOut: true }),
       ],
     });
     const home = await service.getStats('u1');
-    expect(home.examsInProgress).toHaveLength(5);
-    expect(home.examsInProgress.map((e) => e.examId)).toEqual(['e4', 'e5', 'e6', 'e2', 'e1']);
-    expect(home.examsInProgress.some((e) => e.examId === 'e3')).toBe(false);
-    expect(home.examsInProgress.some((e) => e.examId === 'e7')).toBe(false);
-    expect(home.examsInProgress.find((e) => e.examId === 'e2')).toMatchObject({ readiness: 50, accuracy: null, boardName: null, keyLabel: 'Analista' });
-    expect(home.examsInProgress.find((e) => e.examId === 'e1')).toMatchObject({ readiness: 100, accuracy: 70, boardName: 'B1', keyLabel: 'K1' });
+
+    expect(home.examsInProgress.map((e) => e.examId)).toEqual(['e4', 'e6', 'e5', 'e2', 'e1']);
+    expect(home.examsInProgress.find((e) => e.examId === 'e4')?.readiness).toMatchObject({
+      phase: 'building_bank', coveredQuestions: 2, targetQuestions: 10,
+    });
+    expect(home.examsInProgress.find((e) => e.examId === 'e5')?.readiness.phase).toBe('ready_to_measure');
+    expect(home.examsInProgress.find((e) => e.examId === 'e2')).toMatchObject({
+      readiness: { phase: 'measured', projectedPercent: 25 }, passingScore: 70, accuracy: null, boardName: null, keyLabel: 'Analista',
+    });
+    expect(home.examsInProgress.find((e) => e.examId === 'e1')).toMatchObject({
+      readiness: { phase: 'measured', projectedPercent: 80 }, accuracy: 70, boardName: 'B1', keyLabel: 'K1',
+    });
+  });
+
+  it('RN-03: counts legacy questions and answers matched to the exam by name, like the simulado', async () => {
+    setup({
+      exams: [
+        {
+          id: 'e1', name: 'AWS SAA', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(40),
+          examBoard: null, totalQuestions: 4, passingScore: 70,
+          sections: [{ id: 's1', name: 'Segurança', minQuestions: 100, maxQuestions: 100 }],
+        },
+      ],
+      questions: Array.from({ length: 4 }, () => ({
+        examId: null, sectionId: null, examName: 'AWS SAA', sectionName: 'Segurança',
+      })),
+      sectionAnswers: [
+        sectionAnswer(1, 'Segurança', true, daysAgo(1), false, { examName: 'AWS SAA' }),
+        sectionAnswer(2, 'Segurança', false, daysAgo(1), false, { examName: 'AWS SAA' }),
+      ],
+    });
+
+    const home = await service.getStats('u1');
+
+    expect(home.examsInProgress).toHaveLength(1);
+    expect(home.examsInProgress[0].readiness).toMatchObject({
+      phase: 'measured', projectedPercent: 50, coveredQuestions: 4,
+    });
+  });
+
+  it('RN-04: reads sections in blueprint order and the names the legacy match needs', async () => {
+    setup();
+
+    await service.getStats('u1');
+
+    expect(prismaMock.exam.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        select: expect.objectContaining({
+          sections: {
+            select: { id: true, name: true, minQuestions: true, maxQuestions: true },
+            orderBy: { id: 'asc' },
+          },
+        }),
+      })
+    );
+    expect(prismaMock.examQuestion.findMany).toHaveBeenCalledWith({
+      where: { userId: 'u1' },
+      select: { examId: true, sectionId: true, examName: true, sectionName: true },
+    });
   });
 
   it('windows weakDomains to 14 days, drops sections under 5 answers, sorts worst first, caps at four', async () => {
@@ -272,8 +343,8 @@ describe('DashboardService.getStats', () => {
         sectionAnswer(3, 'B', true, daysAgo(2)),
       ],
       questions: [
-        { examId: 'e1', sectionId: 's1', topicId: null },
-        { examId: null, sectionId: null, topicId: null },
+        { examId: 'e1', sectionId: 's1' },
+        { examId: null, sectionId: null },
       ],
     });
     const home = await service.getStats('u1');

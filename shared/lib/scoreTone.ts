@@ -19,10 +19,18 @@ export function scoreToneName(percent: number): ScoreToneName {
   return 'danger';
 }
 
+export function toneText(tone: ScoreToneName): string {
+  return TEXT[tone];
+}
+
+export function toneBg(tone: ScoreToneName): string {
+  return BG[tone];
+}
+
 export function scoreToneText(percent: number): string {
-  return TEXT[scoreToneName(percent)];
+  return toneText(scoreToneName(percent));
 }
 
 export function scoreToneBg(percent: number): string {
-  return BG[scoreToneName(percent)];
+  return toneBg(scoreToneName(percent));
 }

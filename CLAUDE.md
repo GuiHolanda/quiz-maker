@@ -76,7 +76,8 @@ All component HTTP goes through `features/connectors.ts`. Reads: call in a `useE
 ### State Management
 - Context + Reducer pattern everywhere
 - One provider per domain: `ExamsProvider`, `QuizProvider`
-- Providers are composed in `app/layout.tsx`
+- App-wide providers (session, theme, HeroUI) live in `app/providers.tsx`; workspace-wide ones (language, usage, feedback) in `app/(workspace)/layout.tsx`
+- Domain providers (`ExamsProvider`, `MockExamsProvider`, …) are mounted by each page that uses them, so every visit refetches. Hoisting one into a layout makes its data stale across pages unless you add explicit refreshes
 - **Prefer `useContext` over `useState`** for domain data — consume existing providers before reaching for local state
 - `useState` only for truly local, ephemeral UI state
 - All HTTP calls go through `features/connectors.ts`

@@ -1,5 +1,6 @@
 import { expect, test } from '../fixtures/auth.fixture';
 import { E2E_CERT_LABEL, E2E_PUBLIC_EXAM_NAME } from '../support/constants';
+import { seedCertQuestions } from '../support/db-seed';
 import { tid, TID } from '../support/selectors';
 
 test.describe('unified exams list', () => {
@@ -39,9 +40,7 @@ test.describe('unified exams list', () => {
 
     await expect(domainsToggle).toBeVisible();
     await domainsToggle.click();
-    // The card's own readiness header already shows "PREPARO" — the domains panel repeats
-    // the same label, so opening it must be asserted by count, not by a single toBeVisible().
-    await expect(certCard.getByText(/preparo/i)).toHaveCount(2);
+    await expect(certCard.locator(tid(TID.examCardDomainRow))).toHaveCount(1);
 
     await certCard.locator(tid(TID.examCardMenuToggle)).click();
     await certCard.locator(tid(TID.examCardActionGenerate)).click();
@@ -52,5 +51,53 @@ test.describe('unified exams list', () => {
     await expect(page.locator(tid(TID.questionGenSelectTrigger)).filter({ visible: true })).toContainText(
       E2E_CERT_LABEL
     );
+  });
+
+  test('RN-08: without a simulado, readiness shows bank progress and links to question generation', async ({
+    authedPage: page,
+  }) => {
+    await page.goto('/exams');
+
+    const publicCard = page.locator(tid(TID.examCard)).filter({ hasText: E2E_PUBLIC_EXAM_NAME });
+    const readiness = publicCard.locator(tid(TID.examCardReadiness));
+
+    await expect(readiness).toContainText(/\d+\/60/);
+    await expect(readiness).not.toContainText('—');
+    await expect(readiness.locator(tid(TID.examCardReadinessAction))).toHaveAttribute(
+      'href',
+      /\/questions\?examId=/
+    );
+  });
+
+  test('RN-03: answers to legacy questions matched by name measure the exam', async ({ authedPage: page }) => {
+    await page.goto('/exams');
+
+    const certCard = page.locator(tid(TID.examCard)).filter({ hasText: E2E_CERT_LABEL });
+    const readiness = certCard.locator(tid(TID.examCardReadiness));
+
+    await expect(readiness).toContainText(/\d+%/);
+    await expect(readiness).not.toContainText(/\d+\/65/);
+    await expect(readiness.locator(tid(TID.examCardReadinessAction))).toHaveCount(0);
+  });
+
+  test('reopening the list through the sidebar shows the bank grown elsewhere', async ({
+    authedPage: page,
+  }) => {
+    await page.goto('/exams');
+
+    const certCard = page.locator(tid(TID.examCard)).filter({ hasText: E2E_CERT_LABEL });
+    const domainRow = certCard.locator(tid(TID.examCardDomainRow)).first();
+
+    await certCard.locator(tid(TID.examCardDomainsToggle)).click();
+    const before = Number((await domainRow.textContent())?.match(/(\d+)\/65/)?.[1]);
+
+    await seedCertQuestions(['Reopen list question one?', 'Reopen list question two?']);
+    await page.locator('a[href="/dashboard"]').filter({ visible: true }).first().click();
+    await page.waitForURL(/\/dashboard/);
+    await page.locator('a[href="/exams"]').filter({ visible: true }).first().click();
+    await page.waitForURL(/\/exams$/);
+
+    await certCard.locator(tid(TID.examCardDomainsToggle)).click();
+    await expect(domainRow).toContainText(`${before + 2}/65`);
   });
 });

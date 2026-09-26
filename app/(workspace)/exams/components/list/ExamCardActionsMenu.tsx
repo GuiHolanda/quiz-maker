@@ -1,15 +1,10 @@
 'use client';
 
 import NextLink from 'next/link';
-import {
-  faWandMagicSparkles,
-  faFileLines,
-  faBookOpen,
-  faPen,
-  faLock,
-  faTrash,
-} from '@fortawesome/free-solid-svg-icons';
+import { faBookOpen, faPen, faLock, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+
+import { EXAM_CARD_ACTIONS } from './examCardActions';
 
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import type { Exam } from '@/shared/types';
@@ -23,6 +18,7 @@ interface ExamCardActionsMenuProps {
 
 export function ExamCardActionsMenu({ exam, canEdit, onDelete, onUpgradeRequired }: ExamCardActionsMenuProps) {
   const { t } = useTranslation();
+  const { generate, simulado } = EXAM_CARD_ACTIONS;
 
   const linkClass =
     'flex items-center gap-2 text-sm px-3 py-2 rounded-lg bg-background border border-default-200 ' +
@@ -30,13 +26,13 @@ export function ExamCardActionsMenu({ exam, canEdit, onDelete, onUpgradeRequired
 
   return (
     <div className="mt-3 pt-3 border-t border-default-200 dark:border-transparent flex flex-wrap items-center justify-end gap-2">
-      <NextLink className={linkClass} data-testid="exam-card-action-generate" href={`/questions?examId=${exam.id}`}>
-        <FontAwesomeIcon className="text-xs" icon={faWandMagicSparkles} />
-        {t('exam.actionGenerate')}
+      <NextLink className={linkClass} data-testid="exam-card-action-generate" href={generate.href(exam.id)}>
+        <FontAwesomeIcon className="text-xs" icon={generate.icon} />
+        {t(generate.labelKey)}
       </NextLink>
-      <NextLink className={linkClass} data-testid="exam-card-action-simulado" href={`/simulados?examId=${exam.id}`}>
-        <FontAwesomeIcon className="text-xs" icon={faFileLines} />
-        {t('exam.actionCreateSimulado')}
+      <NextLink className={linkClass} data-testid="exam-card-action-simulado" href={simulado.href(exam.id)}>
+        <FontAwesomeIcon className="text-xs" icon={simulado.icon} />
+        {t(simulado.labelKey)}
       </NextLink>
       <NextLink
         className={linkClass}
