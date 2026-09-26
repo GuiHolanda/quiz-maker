@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, vi, type MockInstance } from 'vitest';
 
 import {
+  buildFeedbackAlert,
   buildInternalAlert,
   buildQuestionReportAlert,
   EmailService,
@@ -233,6 +234,79 @@ describe('buildQuestionReportAlert', () => {
   });
 });
 
+describe('buildFeedbackAlert', () => {
+  const FEEDBACK = {
+    category: 'bug',
+    message: 'O filtro não limpa.\nTentei duas vezes.',
+    email: 'ana@example.com',
+    plan: 'pro',
+    route: '/question-bank',
+    locale: 'pt',
+    userAgent: 'Mozilla/5.0 (Macintosh)',
+  };
+
+  const rowsOf = (alert: ReturnType<typeof buildFeedbackAlert>) =>
+    Object.fromEntries(alert.rows.map(({ label, value }) => [label, value]));
+
+  it('RN-21: o assunto usa só o rótulo fixo da categoria, nunca a mensagem', () => {
+    const alert = buildFeedbackAlert({ ...FEEDBACK, message: 'URGENTE <b>leia</b>' });
+
+    expect(alert.subject).toBe('Feedback — Bug');
+    expect(buildInternalAlert(alert).subject).toBe('[CertifiqueAI] Feedback — Bug');
+  });
+
+  it('RN-21: uma categoria desconhecida não vaza para o assunto', () => {
+    expect(buildFeedbackAlert({ ...FEEDBACK, category: 'algo <script>' }).subject).toBe('Feedback — Não classificado');
+  });
+
+  it('lista categoria, usuário, plano, rota, idioma e navegador', () => {
+    expect(rowsOf(buildFeedbackAlert(FEEDBACK))).toEqual({
+      Categoria: 'Bug',
+      Usuário: 'ana@example.com',
+      Plano: 'pro',
+      Rota: '/question-bank',
+      Idioma: 'pt',
+      Navegador: 'Mozilla/5.0 (Macintosh)',
+    });
+  });
+
+  it('campos de contexto ausentes aparecem como travessão', () => {
+    const rows = rowsOf(
+      buildFeedbackAlert({ ...FEEDBACK, email: null, plan: null, route: null, locale: null, userAgent: null })
+    );
+
+    expect(rows).toMatchObject({ Usuário: 'Desconhecido', Plano: '—', Rota: '—', Idioma: '—', Navegador: '—' });
+  });
+
+  it('a mensagem vai no corpo', () => {
+    expect(buildFeedbackAlert(FEEDBACK).body).toBe(FEEDBACK.message);
+  });
+
+  it('D-15: responde para o e-mail do usuário', () => {
+    expect(buildFeedbackAlert(FEEDBACK).replyTo).toBe('ana@example.com');
+  });
+
+  it('D-15: sem e-mail do usuário não define replyTo', () => {
+    expect(buildFeedbackAlert({ ...FEEDBACK, email: null }).replyTo).toBeUndefined();
+  });
+
+  it('RN-21: mensagem, rota e navegador passam pelo escape do HTML', () => {
+    const { html } = buildInternalAlert(
+      buildFeedbackAlert({
+        ...FEEDBACK,
+        message: '<img src=x onerror=alert(1)>',
+        route: '/<script>',
+        userAgent: '"><svg>',
+      })
+    );
+
+    expect(html).not.toContain('<img src=x');
+    expect(html).not.toContain('<script>');
+    expect(html).not.toContain('"><svg>');
+    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
+  });
+});
+
 describe('EmailService.sendInternalAlert', () => {
   let warn: MockInstance<typeof console.warn>;
 
@@ -338,5 +412,45 @@ describe('EmailService.sendInternalAlert', () => {
 
     await expect(new EmailService().sendInternalAlert(ALERT)).resolves.toBe(false);
     expect(warnedEvents()).toEqual(['email.internal_alert_failed']);
+  });
+
+  it('D-15: repassa o replyTo ao Resend quando o alerta o define', async () => {
+    send.mockResolvedValue({ data: { id: 'email-1' }, error: null });
+
+    await new EmailService().sendInternalAlert({ ...ALERT, replyTo: 'ana@example.com' });
+
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({ to: INBOX, replyTo: 'ana@example.com' }));
+  });
+
+  it('D-15: sem replyTo o campo não é enviado ao Resend', async () => {
+    send.mockResolvedValue({ data: { id: 'email-1' }, error: null });
+
+    await new EmailService().sendInternalAlert(ALERT);
+
+    expect(send.mock.calls[0][0]).not.toHaveProperty('replyTo');
+  });
+
+  it('sendFeedbackAlert envia o feedback montado, respondendo para o usuário', async () => {
+    send.mockResolvedValue({ data: { id: 'email-1' }, error: null });
+
+    const sent = await new EmailService().sendFeedbackAlert({
+      category: 'suggestion',
+      message: 'Filtrar simulados por data.',
+      email: 'ana@example.com',
+      plan: 'pro',
+      route: '/simulados',
+      locale: 'pt',
+      userAgent: null,
+    });
+
+    expect(sent).toBe(true);
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: INBOX,
+        replyTo: 'ana@example.com',
+        subject: '[CertifiqueAI] Feedback — Sugestão',
+        text: expect.stringContaining('Filtrar simulados por data.'),
+      })
+    );
   });
 });

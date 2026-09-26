@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 
 import { UsageBadge } from '@/shared/components/ui/UsageBadge';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
+import { FeedbackButton } from '@/shared/components/ui/workspace-header/FeedbackButton';
 import { HeaderSearch } from '@/shared/components/ui/workspace-header/HeaderSearch';
 import { NotificationsPopover } from '@/shared/components/ui/workspace-header/NotificationsPopover';
 import { UserDropdown } from '@/shared/components/ui/workspace-header/UserDropdown';
@@ -18,6 +19,7 @@ export function WorkspaceHeader() {
       <HeaderSearch />
       <div className="flex items-center space-x-4 ml-auto">
         {status === 'authenticated' && usage && <UsageBadge usage={usage} />}
+        <FeedbackButton />
         <NotificationsPopover />
         <Divider orientation="vertical" className="h-8" />
         <UserDropdown />

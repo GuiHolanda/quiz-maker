@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 
 import { test, expect } from '../fixtures/auth.fixture';
 import { mockMockExamResult } from '../fixtures/mock-data';
-import { clearQuestionReports, findQuestionReports, seedCertQuestions } from '../support/db-seed';
+import { clearQuestionReports, findFeedback, findQuestionReports, seedCertQuestions } from '../support/db-seed';
 import { ALL_DOMAINS } from '../support/journey-config';
 import { dismissNotificationDialog, exitAndDiscardAttempt, pickSimuladoScopeAndExam } from '../support/flows';
 import { tid, TID } from '../support/selectors';
@@ -13,6 +13,16 @@ const ALREADY_REPORTED = /Você já reportou esta questão|You already reported 
 const REASON_WRONG_KEY = /gabarito está errado|answer key is wrong/i;
 const REASON_REQUIRED = /Escolha um motivo para continuar|Choose a reason to continue/i;
 const COMMENT_TOO_LONG = /no máximo 1000|at most 1000/i;
+const FEEDBACK_URL = '**/api/feedback';
+const FEEDBACK_SENT = /Feedback enviado|Feedback sent/i;
+const CATEGORY_BUG = /Algo não funciona|Something isn't working/i;
+const CATEGORY_SUGGESTION = /^(Sugestão|Suggestion)$/i;
+const CATEGORY_REQUIRED = /Escolha sobre o que é o feedback|Choose what the feedback is about/i;
+const MESSAGE_REQUIRED = /Escreva uma mensagem para continuar|Write a message to continue/i;
+const OPEN_MENU = /Abrir menu|Open menu/i;
+const CONTEXT_NOTICE = /Enviamos junto a página|We send along the page/i;
+const MESSAGE_HELPER = /Até 2000 caracteres|Up to 2000 characters/i;
+const AUTH_REJECTED = [307, 401];
 
 const domain = ALL_DOMAINS[0];
 
@@ -21,6 +31,13 @@ async function pickWrongAnswerKeyReason(page: Page) {
 
   await reason.dispatchEvent('click');
   await expect(reason).toBeChecked();
+}
+
+async function pickCategory(page: Page, name: RegExp) {
+  const category = page.getByRole('radio', { name });
+
+  await category.dispatchEvent('click');
+  await expect(category).toBeChecked();
 }
 
 test.describe('report a question', () => {
@@ -190,7 +207,107 @@ test.describe('report a question', () => {
       maxRedirects: 0,
     });
 
-    expect(response.ok()).toBe(false);
+    expect(AUTH_REJECTED).toContain(response.status());
+    await anonymous.dispose();
+  });
+});
+
+test.describe('send feedback', () => {
+  test('sends feedback from the header, with plan, email and browser filled in by the server', async ({
+    authedPage: page,
+  }) => {
+    const message = `FEEDBACK_E2E_${Date.now()}: o filtro do banco de questões não limpa.`;
+    const modal = page.locator(tid(TID.feedbackModal));
+
+    await page.goto('/question-bank');
+    await page.locator(tid(TID.feedbackWidgetBtn)).click();
+    await expect(modal).toBeVisible();
+    await expect(modal).toContainText(CONTEXT_NOTICE);
+    await expect(modal).toContainText(MESSAGE_HELPER);
+
+    await page.locator(tid(TID.feedbackSubmitBtn)).click();
+    await expect(page.getByText(CATEGORY_REQUIRED)).toBeVisible();
+    await expect(page.getByText(MESSAGE_REQUIRED)).toBeVisible();
+
+    await pickCategory(page, CATEGORY_BUG);
+    await page.locator(tid(TID.feedbackMessage)).fill(message);
+    await page.locator(tid(TID.feedbackSubmitBtn)).click();
+
+    await expect(page.getByText(FEEDBACK_SENT)).toBeVisible();
+    await expect(modal).toBeHidden();
+
+    const [saved, ...others] = await findFeedback({ message });
+
+    expect(others).toHaveLength(0);
+    expect(saved).toMatchObject({
+      category: 'bug',
+      message,
+      route: '/question-bank',
+      status: 'open',
+      notifiedAt: null,
+    });
+    expect(['pt', 'en']).toContain(saved.locale);
+    expect(saved.email).toBeTruthy();
+    expect(saved.plan).toBeTruthy();
+    expect(saved.userAgent).toContain('Mozilla');
+  });
+
+  test('keeps the draft when the backdrop is clicked by accident', async ({ authedPage: page }) => {
+    const draft = 'Um parágrafo longo que eu não quero reescrever.';
+    const modal = page.locator(tid(TID.feedbackModal));
+
+    await page.goto('/question-bank');
+    await page.locator(tid(TID.feedbackWidgetBtn)).click();
+    await page.locator(tid(TID.feedbackMessage)).fill(draft);
+    await page.mouse.click(5, 5);
+    await page.waitForTimeout(1_000);
+
+    await expect(modal).toBeVisible();
+    await expect(page.locator(tid(TID.feedbackMessage))).toHaveValue(draft);
+  });
+
+  test('opens the feedback dialog from the mobile drawer, where the header is hidden', async ({ authedPage: page }) => {
+    let sent: unknown = null;
+
+    await page.route(FEEDBACK_URL, (route) => {
+      sent = route.request().postDataJSON();
+
+      return route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id: 'stub' }) });
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/question-bank');
+
+    await expect(page.locator(tid(TID.feedbackWidgetBtn))).toBeHidden();
+    await page.getByRole('button', { name: OPEN_MENU }).click();
+    await page.locator(`${tid(TID.feedbackSidebarBtn)}:visible`).click();
+    await expect(page.locator(tid(TID.feedbackModal))).toBeVisible();
+    await expect(page.locator(`${tid(TID.feedbackSidebarBtn)}:visible`)).toHaveCount(0);
+
+    await pickCategory(page, CATEGORY_SUGGESTION);
+    await page.locator(tid(TID.feedbackMessage)).fill('Queria filtrar simulados por data.');
+    await page.locator(tid(TID.feedbackSubmitBtn)).click();
+
+    await expect(page.getByText(FEEDBACK_SENT)).toBeVisible();
+    expect(sent).toMatchObject({
+      category: 'suggestion',
+      message: 'Queria filtrar simulados por data.',
+      route: '/question-bank',
+    });
+  });
+
+  test('does not accept feedback from an anonymous caller', async ({ playwright, baseURL }) => {
+    const anonymous = await playwright.request.newContext({
+      baseURL,
+      storageState: { cookies: [], origins: [] },
+    });
+    const message = `FEEDBACK_ANON_${Date.now()}`;
+    const response = await anonymous.post('/api/feedback', {
+      data: { category: 'bug', message },
+      maxRedirects: 0,
+    });
+
+    expect(AUTH_REJECTED).toContain(response.status());
+    expect(await findFeedback({ message })).toHaveLength(0);
     await anonymous.dispose();
   });
 });

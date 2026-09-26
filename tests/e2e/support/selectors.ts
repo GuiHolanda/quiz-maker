@@ -150,6 +150,11 @@ export const TID = {
   questionReportModal: 'question-report-modal',
   questionReportComment: 'question-report-comment',
   questionReportSubmitBtn: 'question-report-submit-btn',
+  feedbackWidgetBtn: 'feedback-widget-btn',
+  feedbackSidebarBtn: 'feedback-sidebar-btn',
+  feedbackModal: 'feedback-modal',
+  feedbackMessage: 'feedback-message',
+  feedbackSubmitBtn: 'feedback-submit-btn',
 
   // Confirmation dialogs
   confirmDiscardBtn: 'confirm-discard-btn',

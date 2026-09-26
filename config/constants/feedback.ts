@@ -32,3 +32,9 @@ export const FEEDBACK_CATEGORIES = [
 ] as const;
 
 export type FeedbackCategory = (typeof FEEDBACK_CATEGORIES)[number]['id'];
+
+export const FEEDBACK_MESSAGE_MAX_LENGTH = 2000;
+export const FEEDBACK_ROUTE_MAX_LENGTH = 200;
+export const FEEDBACK_USER_AGENT_MAX_LENGTH = 300;
+
+export const FEEDBACK_LOCALES = ['pt', 'en'] as const;

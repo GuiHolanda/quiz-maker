@@ -13,6 +13,7 @@ import {
   type FeedbackErrorKind,
   type QuestionReportTarget,
 } from '@/features/reducers/feedback.reducer';
+import { FeedbackModal } from '@/shared/components/ui/FeedbackModal';
 import { ReportQuestionModal } from '@/shared/components/ui/ReportQuestionModal';
 import { notify } from '@/shared/lib/notify';
 
@@ -139,6 +140,7 @@ export function FeedbackProvider({ children }: { readonly children: ReactNode })
         onClose={close}
         onSubmit={sendQuestionReport}
       />
+      <FeedbackModal isLoading={isBusy} isOpen={state.isFeedbackOpen} onClose={close} onSubmit={sendFeedback} />
     </FeedbackContext.Provider>
   );
 }
