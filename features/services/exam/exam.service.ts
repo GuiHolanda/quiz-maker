@@ -1,5 +1,5 @@
 import { prisma, PrismaService } from '@/lib/prisma';
-import { computeExamReadiness, normalizeName } from '@/lib/exam';
+import { examReadiness, groupByExam, normalizeName, type ExamQuestionRef, type ReadinessAnswer } from '@/lib/exam';
 import { defaultFormatForSource, isQuestionFormatKey, resolveQuestionFormat } from '@/config/question-formats';
 import { Exam, ExamReadiness, ExamStatus, ExamType, SectionUpdatePayload } from '@/shared/types';
 
@@ -113,13 +113,17 @@ export class ExamService {
   public async getExams(userId: string): Promise<Exam[]> {
     const exams = await this.prismaService.exam.findMany({
       where: { userId },
-      include: { provider: true, examBoard: true, sections: { include: { topics: true } } },
+      include: { provider: true, examBoard: true, sections: { include: { topics: true }, orderBy: { id: 'asc' } } },
       orderBy: { updatedAt: 'desc' },
     });
 
     if (exams.length === 0) return [];
 
     const examIds = exams.map((exam) => exam.id);
+    const ofListedExams = {
+      OR: [{ examId: { in: examIds } }, { sectionId: null, examName: { in: exams.map((exam) => exam.name) } }],
+    };
+    const questionRef = { examId: true, sectionId: true, examName: true, sectionName: true } as const;
 
     const [mockExams, examQuestions, attemptAnswers] = await Promise.all([
       this.prismaService.mockExam.findMany({
@@ -132,30 +136,43 @@ export class ExamService {
         },
       }),
       this.prismaService.examQuestion.findMany({
-        where: { userId, examId: { in: examIds } },
-        select: { examId: true, sectionId: true, topicId: true, createdAt: true },
+        where: { userId, ...ofListedExams },
+        select: { ...questionRef, createdAt: true },
       }),
       this.prismaService.mockExamAttemptAnswer.findMany({
         where: {
           attempt: { userId, finishedAt: { not: null }, timedOut: false },
-          mockExamQuestion: { examQuestion: { examId: { in: examIds } } },
+          mockExamQuestion: { examQuestion: ofListedExams },
         },
         select: {
+          id: true,
           isCorrect: true,
           attempt: { select: { finishedAt: true } },
-          mockExamQuestion: { select: { examQuestion: { select: { examId: true, sectionId: true } } } },
+          mockExamQuestion: { select: { examQuestion: { select: questionRef } } },
         },
       }),
     ]);
 
     const answers = attemptAnswers.map((answer) => ({
-      examId: answer.mockExamQuestion.examQuestion.examId,
-      sectionId: answer.mockExamQuestion.examQuestion.sectionId,
+      id: answer.id,
       isCorrect: answer.isCorrect,
       answeredAt: answer.attempt.finishedAt as Date,
+      question: answer.mockExamQuestion.examQuestion,
     }));
+    const questionsByExam = groupByExam(exams, examQuestions, (question) => question);
+    const answersByExam = groupByExam(exams, answers, (answer) => answer.question);
 
-    return exams.map((exam) => this.toExam(exam, this.computeExamMetrics(exam, mockExams, examQuestions, answers)));
+    return exams.map((exam) =>
+      this.toExam(
+        exam,
+        this.computeExamMetrics(
+          exam,
+          mockExams.filter((mockExam) => mockExam.examId === exam.id),
+          questionsByExam.get(exam.id) ?? [],
+          answersByExam.get(exam.id) ?? []
+        )
+      )
+    );
   }
 
   public async save(exam: Exam, userId: string) {
@@ -790,29 +807,21 @@ export class ExamService {
 
   private computeExamMetrics(
     exam: {
-      id: string;
+      name: string;
       updatedAt: Date;
       totalQuestions: number;
       passingScore: number | null;
-      sections: { id: string; minQuestions: number; maxQuestions: number }[];
+      sections: { id: string; name: string; minQuestions: number; maxQuestions: number }[];
     },
-    mockExams: {
-      examId: string;
+    examMockExams: {
       createdAt: Date;
       attempts: { score: number | null; finishedAt: Date | null; timedOut: boolean }[];
       _count: { questions: number };
     }[],
-    examQuestions: { examId: string | null; sectionId: string | null; topicId: string | null; createdAt: Date }[],
-    answers: { examId: string | null; sectionId: string | null; isCorrect: boolean; answeredAt: Date }[]
+    examQuestions: (ExamQuestionRef & { createdAt: Date })[],
+    answers: ReadinessAnswer[]
   ): ExamMetrics {
-    const examMockExams = mockExams.filter((m) => m.examId === exam.id);
-    const examQuestionsForExam = examQuestions.filter((q) => q.examId === exam.id);
-    const readiness = computeExamReadiness({
-      sections: exam.sections,
-      totalQuestions: exam.totalQuestions,
-      questions: examQuestionsForExam,
-      answers: answers.filter((answer) => answer.examId === exam.id),
-    });
+    const readiness = examReadiness(exam, examQuestions, answers);
 
     const allFinishedAttempts = examMockExams
       .flatMap((m) => m.attempts)
@@ -835,7 +844,7 @@ export class ExamService {
         }))
     );
 
-    const generatedQuestionsCount = examQuestionsForExam.length;
+    const generatedQuestionsCount = examQuestions.length;
     const simuladosCount = examMockExams.length;
 
     const accuracyPercent =
@@ -847,7 +856,7 @@ export class ExamService {
       exam.updatedAt,
       ...examMockExams.map((m) => m.createdAt),
       ...allFinishedAttempts.map((a) => a.finishedAt),
-      ...examQuestionsForExam.map((q) => q.createdAt),
+      ...examQuestions.map((q) => q.createdAt),
     ];
     const lastActivityAt = new Date(Math.max(...activityDates.map((d) => d.getTime()))).toISOString();
 

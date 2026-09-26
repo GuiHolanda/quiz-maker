@@ -38,20 +38,28 @@ function attempt(overrides: Partial<{
   };
 }
 
+let nextAnswerId = 1;
+
 function sectionAnswer(
   examQuestionId: number,
   sectionName: string,
   isCorrect: boolean,
   finishedAt: Date | null,
   timedOut = false,
-  ids: { examId?: string; sectionId?: string } = {}
+  ids: { examId?: string; sectionId?: string; examName?: string } = {}
 ) {
   return {
+    id: nextAnswerId++,
     isCorrect,
     attempt: { finishedAt, timedOut },
     mockExamQuestion: {
       examQuestionId,
-      examQuestion: { sectionName, examId: ids.examId ?? null, sectionId: ids.sectionId ?? null },
+      examQuestion: {
+        sectionName,
+        examName: ids.examName ?? '',
+        examId: ids.examId ?? null,
+        sectionId: ids.sectionId ?? null,
+      },
     },
   };
 }
@@ -60,7 +68,7 @@ function setup(opts: {
   attempts?: ReturnType<typeof attempt>[];
   usageLogs?: { action: string; count: number; refName: string | null; createdAt: Date }[];
   exams?: any[];
-  questions?: { examId: string | null; sectionId: string | null; topicId: string | null }[];
+  questions?: { examId: string | null; sectionId: string | null; examName?: string; sectionName?: string }[];
   sectionAnswers?: ReturnType<typeof sectionAnswer>[];
   autoConfigJobs?: { seedName: string; updatedAt: Date }[];
   mockExamCount?: number;
@@ -209,7 +217,7 @@ describe('DashboardService.getStats', () => {
       ...extra,
     });
     const bank = (examId: string, count: number) =>
-      Array.from({ length: count }, () => ({ examId, sectionId: `s-${examId}`, topicId: null }));
+      Array.from({ length: count }, () => ({ examId, sectionId: `s-${examId}` }));
     const scored = (examId: string, correct: number, wrong: number, timedOut = false) =>
       Array.from({ length: correct + wrong }, (_, i) =>
         sectionAnswer(i, 'A', i < correct, daysAgo(1), timedOut, { examId, sectionId: `s-${examId}` })
@@ -244,6 +252,53 @@ describe('DashboardService.getStats', () => {
     });
     expect(home.examsInProgress.find((e) => e.examId === 'e1')).toMatchObject({
       readiness: { phase: 'measured', projectedPercent: 80 }, accuracy: 70, boardName: 'B1', keyLabel: 'K1',
+    });
+  });
+
+  it('RN-03: counts legacy questions and answers matched to the exam by name, like the simulado', async () => {
+    setup({
+      exams: [
+        {
+          id: 'e1', name: 'AWS SAA', type: 'certification', key: null, role: null, year: null, createdAt: daysAgo(40),
+          examBoard: null, totalQuestions: 4, passingScore: 70,
+          sections: [{ id: 's1', name: 'Segurança', minQuestions: 100, maxQuestions: 100 }],
+        },
+      ],
+      questions: Array.from({ length: 4 }, () => ({
+        examId: null, sectionId: null, examName: 'AWS SAA', sectionName: 'Segurança',
+      })),
+      sectionAnswers: [
+        sectionAnswer(1, 'Segurança', true, daysAgo(1), false, { examName: 'AWS SAA' }),
+        sectionAnswer(2, 'Segurança', false, daysAgo(1), false, { examName: 'AWS SAA' }),
+      ],
+    });
+
+    const home = await service.getStats('u1');
+
+    expect(home.examsInProgress).toHaveLength(1);
+    expect(home.examsInProgress[0].readiness).toMatchObject({
+      phase: 'measured', projectedPercent: 50, coveredQuestions: 4,
+    });
+  });
+
+  it('RN-04: reads sections in blueprint order and the names the legacy match needs', async () => {
+    setup();
+
+    await service.getStats('u1');
+
+    expect(prismaMock.exam.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        select: expect.objectContaining({
+          sections: {
+            select: { id: true, name: true, minQuestions: true, maxQuestions: true },
+            orderBy: { id: 'asc' },
+          },
+        }),
+      })
+    );
+    expect(prismaMock.examQuestion.findMany).toHaveBeenCalledWith({
+      where: { userId: 'u1' },
+      select: { examId: true, sectionId: true, examName: true, sectionName: true },
     });
   });
 
@@ -288,8 +343,8 @@ describe('DashboardService.getStats', () => {
         sectionAnswer(3, 'B', true, daysAgo(2)),
       ],
       questions: [
-        { examId: 'e1', sectionId: 's1', topicId: null },
-        { examId: null, sectionId: null, topicId: null },
+        { examId: 'e1', sectionId: 's1' },
+        { examId: null, sectionId: null },
       ],
     });
     const home = await service.getStats('u1');

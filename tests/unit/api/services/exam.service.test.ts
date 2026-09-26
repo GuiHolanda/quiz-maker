@@ -370,11 +370,21 @@ describe('ExamService', () => {
       sections: [],
     };
 
-    function attemptAnswer(sectionId: string, isCorrect: boolean, finishedAt = new Date('2026-02-01T00:00:00Z')) {
+    let nextAnswerId = 1;
+
+    function attemptAnswer(
+      sectionId: string | null,
+      isCorrect: boolean,
+      finishedAt = new Date('2026-02-01T00:00:00Z'),
+      question: { examId?: string | null; examName?: string; sectionName?: string } = {}
+    ) {
       return {
+        id: nextAnswerId++,
         isCorrect,
         attempt: { finishedAt },
-        mockExamQuestion: { examQuestion: { examId: 'exam-1', sectionId } },
+        mockExamQuestion: {
+          examQuestion: { examId: 'exam-1', sectionId, examName: 'AWS SAA', sectionName: '', ...question },
+        },
       };
     }
 
@@ -542,7 +552,7 @@ describe('ExamService', () => {
       ]);
     });
 
-    it('RN-03: reads only answers from finished, non-timed-out attempts of the listed exams', async () => {
+    it('RN-03: reads questions and finished, non-timed-out answers of the listed exams, by id or legacy name', async () => {
       prismaMock.exam.findMany.mockResolvedValue([baseExamRow] as any);
       prismaMock.mockExam.findMany.mockResolvedValue([] as any);
       prismaMock.examQuestion.findMany.mockResolvedValue([] as any);
@@ -550,12 +560,63 @@ describe('ExamService', () => {
       const service = new ExamService(prismaMock as any);
       await service.getExams('user-1');
 
-      expect(prismaMock.mockExamAttemptAnswer.findMany).toHaveBeenCalledWith(
+      const ofListedExams = {
+        OR: [{ examId: { in: ['exam-1'] } }, { sectionId: null, examName: { in: ['AWS SAA'] } }],
+      };
+      const questionRef = { examId: true, sectionId: true, examName: true, sectionName: true };
+
+      expect(prismaMock.examQuestion.findMany).toHaveBeenCalledWith({
+        where: { userId: 'user-1', ...ofListedExams },
+        select: { ...questionRef, createdAt: true },
+      });
+      expect(prismaMock.mockExamAttemptAnswer.findMany).toHaveBeenCalledWith({
+        where: {
+          attempt: { userId: 'user-1', finishedAt: { not: null }, timedOut: false },
+          mockExamQuestion: { examQuestion: ofListedExams },
+        },
+        select: {
+          id: true,
+          isCorrect: true,
+          attempt: { select: { finishedAt: true } },
+          mockExamQuestion: { select: { examQuestion: { select: questionRef } } },
+        },
+      });
+    });
+
+    it('RN-03: counts legacy questions and answers matched to the exam by name, like the simulado', async () => {
+      prismaMock.exam.findMany.mockResolvedValue([
+        {
+          ...baseExamRow,
+          totalQuestions: 4,
+          sections: [{ id: 'sec-1', name: 'Security', minQuestions: 100, maxQuestions: 100, topics: [] }],
+        },
+      ] as any);
+      prismaMock.mockExam.findMany.mockResolvedValue([] as any);
+      prismaMock.examQuestion.findMany.mockResolvedValue([
+        { examId: null, sectionId: null, examName: 'AWS SAA', sectionName: 'Security', createdAt: new Date() },
+        { examId: 'exam-1', sectionId: 'sec-1', examName: 'AWS SAA', sectionName: 'Security', createdAt: new Date() },
+      ] as any);
+      prismaMock.mockExamAttemptAnswer.findMany.mockResolvedValue([
+        attemptAnswer(null, true, undefined, { examId: null, sectionName: 'Security' }),
+        attemptAnswer(null, false, undefined, { examId: null, sectionName: 'Security' }),
+      ] as any);
+
+      const service = new ExamService(prismaMock as any);
+      const [exam] = await service.getExams('user-1');
+
+      expect(exam.generatedQuestionsCount).toBe(2);
+      expect(exam.readiness).toMatchObject({ phase: 'measured', projectedPercent: 50, coveredQuestions: 2 });
+    });
+
+    it('RN-04: reads sections in blueprint order, the order the simulado splits by', async () => {
+      prismaMock.exam.findMany.mockResolvedValue([] as any);
+
+      const service = new ExamService(prismaMock as any);
+      await service.getExams('user-1');
+
+      expect(prismaMock.exam.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: {
-            attempt: { userId: 'user-1', finishedAt: { not: null }, timedOut: false },
-            mockExamQuestion: { examQuestion: { examId: { in: ['exam-1'] } } },
-          },
+          include: expect.objectContaining({ sections: { include: { topics: true }, orderBy: { id: 'asc' } } }),
         })
       );
     });

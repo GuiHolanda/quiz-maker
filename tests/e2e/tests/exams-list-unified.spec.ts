@@ -57,14 +57,25 @@ test.describe('unified exams list', () => {
   }) => {
     await page.goto('/exams');
 
-    const certCard = page.locator(tid(TID.examCard)).filter({ hasText: E2E_CERT_LABEL });
-    const readiness = certCard.locator(tid(TID.examCardReadiness));
+    const publicCard = page.locator(tid(TID.examCard)).filter({ hasText: E2E_PUBLIC_EXAM_NAME });
+    const readiness = publicCard.locator(tid(TID.examCardReadiness));
 
-    await expect(readiness).toContainText(/\d+\/65/);
+    await expect(readiness).toContainText(/\d+\/60/);
     await expect(readiness).not.toContainText('—');
     await expect(readiness.locator(tid(TID.examCardReadinessAction))).toHaveAttribute(
       'href',
       /\/questions\?examId=/
     );
+  });
+
+  test('RN-03: answers to legacy questions matched by name measure the exam', async ({ authedPage: page }) => {
+    await page.goto('/exams');
+
+    const certCard = page.locator(tid(TID.examCard)).filter({ hasText: E2E_CERT_LABEL });
+    const readiness = certCard.locator(tid(TID.examCardReadiness));
+
+    await expect(readiness).toContainText(/\d+%/);
+    await expect(readiness).not.toContainText(/\d+\/65/);
+    await expect(readiness.locator(tid(TID.examCardReadinessAction))).toHaveCount(0);
   });
 });

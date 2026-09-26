@@ -7,6 +7,7 @@ import {
   resolveDurationMinutes,
   sectionWeights,
 } from '@/app/(workspace)/simulados/components/create/simuladoFormState';
+import { blueprintDistribution } from '@/lib/exam';
 
 const sections = [
   { name: 'A', maxQuestions: 30, minQuestions: 0 },
@@ -18,7 +19,7 @@ describe('simuladoFormState', () => {
     expect(sectionWeights(sections)).toEqual({ A: 75, B: 25 });
   });
 
-  it('distributeQuestions splits by weight and the last selected absorbs the remainder', () => {
+  it('distributeQuestions splits by weight and hands the remainder to the largest fraction', () => {
     const d = distributeQuestions(sections, ['A', 'B'], 10);
     expect(d).toEqual([
       { sectionName: 'A', questionCount: 8 },
@@ -48,6 +49,19 @@ describe('simuladoFormState', () => {
 
     expect(d.every((entry) => entry.questionCount >= 0)).toBe(true);
     expect(d.reduce((sum, entry) => sum + entry.questionCount, 0)).toBe(7);
+  });
+
+  it('RN-04: distributeQuestions asks for exactly the readiness targets of the blueprint', () => {
+    const three = [
+      { name: 'A', maxQuestions: 45, minQuestions: 45 },
+      { name: 'B', maxQuestions: 45, minQuestions: 45 },
+      { name: 'C', maxQuestions: 10, minQuestions: 10 },
+    ] as any;
+
+    expect(distributeQuestions(three, ['A', 'B', 'C'], 10).map((entry) => entry.questionCount)).toEqual(
+      blueprintDistribution(three, 10)
+    );
+    expect(blueprintDistribution(three, 10)).toEqual([5, 4, 1]);
   });
 
   it('coveragePercent = selected maxQuestions over total maxQuestions', () => {

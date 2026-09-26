@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { compareReadinessAscending, computeExamReadiness } from '@/lib/exam';
+import {
+  blueprintDistribution,
+  compareReadinessAscending,
+  computeExamReadiness,
+  examReadiness,
+  groupByExam,
+} from '@/lib/exam';
 import type { ExamReadiness } from '@/shared/types';
 
 const NOW = new Date('2026-09-26T12:00:00Z');
@@ -13,10 +19,12 @@ function questions(sectionId: string, count: number) {
   return Array.from({ length: count }, () => ({ sectionId }));
 }
 
+let nextAnswerId = 1;
+
 function answers(sectionId: string, correct: number, wrong: number, answeredAt = minutesAgo(1)) {
   return [
-    ...Array.from({ length: correct }, () => ({ sectionId, isCorrect: true, answeredAt })),
-    ...Array.from({ length: wrong }, () => ({ sectionId, isCorrect: false, answeredAt })),
+    ...Array.from({ length: correct }, () => ({ id: nextAnswerId++, sectionId, isCorrect: true, answeredAt })),
+    ...Array.from({ length: wrong }, () => ({ id: nextAnswerId++, sectionId, isCorrect: false, answeredAt })),
   ];
 }
 
@@ -45,7 +53,7 @@ describe('computeExamReadiness', () => {
     expect(readiness.targetQuestions).toBe(40);
   });
 
-  it('RN-02: weights a section by the midpoint of its min and max share', () => {
+  it('RN-02: weights a section by its max share, like the official simulado', () => {
     const readiness = computeExamReadiness({
       sections: [
         { id: 's1', minQuestions: 10, maxQuestions: 30 },
@@ -53,10 +61,22 @@ describe('computeExamReadiness', () => {
       ],
       totalQuestions: 40,
       questions: [],
-      answers: [],
+      answers: [...answers('s1', 10, 0), ...answers('s2', 0, 10)],
     });
 
-    expect(readiness.sections.map((entry) => entry.targetCount)).toEqual([20, 20]);
+    expect(readiness.sections.map((entry) => entry.targetCount)).toEqual([24, 16]);
+    expect(readiness.projectedPercent).toBe(60);
+  });
+
+  it('RN-04: targets are the split the official simulado asks for', () => {
+    const sections = [
+      { id: 's1', minQuestions: 10, maxQuestions: 30 },
+      { id: 's2', minQuestions: 30, maxQuestions: 30 },
+    ];
+    const readiness = computeExamReadiness({ sections, totalQuestions: 50, questions: [], answers: [] });
+
+    expect(readiness.sections.map((entry) => entry.targetCount)).toEqual(blueprintDistribution(sections, 50));
+    expect(blueprintDistribution(sections, 50)).toEqual([25, 25]);
   });
 
   it('RN-02: falls back to equal weights when every section weighs zero', () => {
@@ -145,16 +165,107 @@ describe('computeExamReadiness', () => {
     expect(readiness.projectedPercent).toBe(100);
   });
 
+  it('RN-03: breaks answeredAt ties by the most recent answer id', () => {
+    const sameAttempt = minutesAgo(5);
+    const readiness = computeExamReadiness({
+      sections: [section('s1', 100)],
+      totalQuestions: 10,
+      questions: [],
+      answers: [...answers('s1', 0, 30, sameAttempt), ...answers('s1', 30, 0, sameAttempt)],
+    });
+
+    expect(readiness.projectedPercent).toBe(100);
+  });
+
   it('RN-03: ignores answers whose section is not in the blueprint', () => {
     const readiness = computeExamReadiness({
       sections: [section('s1', 100)],
       totalQuestions: 10,
       questions: [{ sectionId: null }, { sectionId: 'gone' }],
-      answers: [...answers('gone', 5, 0), { sectionId: null, isCorrect: true, answeredAt: minutesAgo(1) }],
+      answers: [
+        ...answers('gone', 5, 0),
+        { id: nextAnswerId++, sectionId: null, isCorrect: true, answeredAt: minutesAgo(1) },
+      ],
     });
 
     expect(readiness.phase).toBe('building_bank');
     expect(readiness.coveredQuestions).toBe(0);
+  });
+});
+
+describe('blueprintDistribution', () => {
+  it('RN-04: splits by max share with the largest remainder, never starving a small section', () => {
+    const sections = [
+      { minQuestions: 45, maxQuestions: 45 },
+      { minQuestions: 45, maxQuestions: 45 },
+      { minQuestions: 10, maxQuestions: 10 },
+    ];
+
+    expect(blueprintDistribution(sections, 10)).toEqual([5, 4, 1]);
+  });
+
+  it('RN-02: splits evenly when every section weighs zero', () => {
+    expect(blueprintDistribution([{ maxQuestions: 0 }, { maxQuestions: 0 }], 6)).toEqual([3, 3]);
+  });
+});
+
+describe('examReadiness', () => {
+  const exam = {
+    id: 'exam-1',
+    name: 'AWS SAA',
+    totalQuestions: 10,
+    sections: [{ id: 'sec-1', name: 'Segurança  ', minQuestions: 100, maxQuestions: 100 }],
+  };
+
+  function ref(
+    overrides: Partial<{ examId: string | null; sectionId: string | null; examName: string; sectionName: string }>
+  ) {
+    return { examId: null, sectionId: null, examName: 'AWS SAA', sectionName: 'Segurança', ...overrides };
+  }
+
+  it('RN-03: counts legacy questions without sectionId that match the exam and section by name', () => {
+    const readiness = examReadiness(exam, [ref({}), ref({ sectionId: 'sec-1', examId: 'exam-1' })], []);
+
+    expect(readiness.sections[0].questionCount).toBe(2);
+  });
+
+  it('RN-03: ignores legacy questions whose exam or section name does not match', () => {
+    const readiness = examReadiness(exam, [ref({ examName: 'Other' }), ref({ sectionName: 'Redes' })], []);
+
+    expect(readiness.sections[0].questionCount).toBe(0);
+  });
+
+  it('RN-03: measures the exam from answers to legacy questions matched by name', () => {
+    const answer = (id: number, isCorrect: boolean) => ({
+      id,
+      isCorrect,
+      answeredAt: minutesAgo(1),
+      question: ref({}),
+    });
+    const readiness = examReadiness(exam, [], [answer(1, true), answer(2, true), answer(3, false), answer(4, true)]);
+
+    expect(readiness).toMatchObject({ phase: 'measured', projectedPercent: 75 });
+  });
+});
+
+describe('groupByExam', () => {
+  const exams = [
+    { id: 'exam-1', name: 'AWS SAA' },
+    { id: 'exam-2', name: 'CPA-20' },
+  ];
+
+  it('groups rows by examId, and rows without sectionId by exam name', () => {
+    const rows = [
+      { examId: 'exam-1', sectionId: 'sec-1', examName: 'AWS SAA', sectionName: 'A' },
+      { examId: null, sectionId: null, examName: 'CPA-20', sectionName: 'B' },
+      { examId: 'exam-1', sectionId: null, examName: 'CPA-20', sectionName: 'B' },
+      { examId: 'deleted', sectionId: 'sec-9', examName: 'AWS SAA', sectionName: 'A' },
+    ];
+
+    const grouped = groupByExam(exams, rows, (row) => row);
+
+    expect(grouped.get('exam-1')).toEqual([rows[0], rows[2]]);
+    expect(grouped.get('exam-2')).toEqual([rows[1], rows[2]]);
   });
 });
 

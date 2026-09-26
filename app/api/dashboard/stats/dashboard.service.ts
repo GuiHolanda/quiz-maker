@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { compareReadinessAscending, computeExamReadiness } from '@/lib/exam';
+import { compareReadinessAscending, examReadiness, groupByExam, type ExamQuestionRef } from '@/lib/exam';
 import type {
   DashboardActivityItem,
   DashboardExamProgress,
@@ -54,17 +54,16 @@ type ExamRow = {
   totalQuestions: number;
   passingScore: number | null;
   examBoard: { name: string } | null;
-  sections: { id: string; minQuestions: number; maxQuestions: number }[];
+  sections: { id: string; name: string; minQuestions: number; maxQuestions: number }[];
 };
 
-type QuestionRow = { examId: string | null; sectionId: string | null; topicId: string | null };
-
 type SectionAnswerRow = {
+  id: number;
   isCorrect: boolean;
   attempt: { finishedAt: Date | null; timedOut: boolean };
   mockExamQuestion: {
     examQuestionId: number;
-    examQuestion: { sectionName: string; examId: string | null; sectionId: string | null };
+    examQuestion: ExamQuestionRef;
   };
 };
 
@@ -113,25 +112,29 @@ export class DashboardService {
           totalQuestions: true,
           passingScore: true,
           examBoard: { select: { name: true } },
-          sections: { select: { id: true, minQuestions: true, maxQuestions: true } },
+          sections: {
+            select: { id: true, name: true, minQuestions: true, maxQuestions: true },
+            orderBy: { id: 'asc' },
+          },
         },
       }) as Promise<ExamRow[]>,
       prisma.examQuestion.findMany({
         where: { userId },
-        select: { examId: true, sectionId: true, topicId: true },
-      }) as Promise<QuestionRow[]>,
+        select: { examId: true, sectionId: true, examName: true, sectionName: true },
+      }) as Promise<ExamQuestionRef[]>,
       prisma.mockExamAttemptAnswer.findMany({
         where: {
           attempt: { userId, finishedAt: { not: null } },
           mockExamQuestion: { examQuestion: { userId } },
         },
         select: {
+          id: true,
           isCorrect: true,
           attempt: { select: { finishedAt: true, timedOut: true } },
           mockExamQuestion: {
             select: {
               examQuestionId: true,
-              examQuestion: { select: { sectionName: true, examId: true, sectionId: true } },
+              examQuestion: { select: { examId: true, sectionId: true, examName: true, sectionName: true } },
             },
           },
         },
@@ -233,7 +236,7 @@ export class DashboardService {
 
   private computeExamsInProgress(
     exams: ExamRow[],
-    questions: QuestionRow[],
+    questions: ExamQuestionRef[],
     attempts: AttemptRow[],
     sectionAnswers: SectionAnswerRow[]
   ): DashboardExamProgress[] {
@@ -250,18 +253,19 @@ export class DashboardService {
     }
 
     const readinessAnswers = sectionAnswers
-      .filter((answer) => answer.attempt.finishedAt !== null && !answer.attempt.timedOut)
+      .filter((answer) => !answer.attempt.timedOut)
       .map((answer) => ({
-        examId: answer.mockExamQuestion.examQuestion.examId,
-        sectionId: answer.mockExamQuestion.examQuestion.sectionId,
+        id: answer.id,
         isCorrect: answer.isCorrect,
         answeredAt: answer.attempt.finishedAt as Date,
+        question: answer.mockExamQuestion.examQuestion,
       }));
+    const questionsByExam = groupByExam(exams, questions, (question) => question);
+    const answersByExam = groupByExam(exams, readinessAnswers, (answer) => answer.question);
 
     return exams
-      .filter((exam) => questions.some((q) => q.examId === exam.id) || attemptExamIds.has(exam.id))
+      .filter((exam) => (questionsByExam.get(exam.id) ?? []).length > 0 || attemptExamIds.has(exam.id))
       .map((exam) => {
-        const examQuestions = questions.filter((q) => q.examId === exam.id);
         const finishedPcts = finishedByExam.get(exam.id) ?? [];
         return {
           examId: exam.id,
@@ -270,12 +274,7 @@ export class DashboardService {
           boardName: exam.examBoard?.name ?? null,
           keyLabel: exam.key ?? exam.role ?? (exam.year !== null ? String(exam.year) : null),
           passingScore: exam.passingScore,
-          readiness: computeExamReadiness({
-            sections: exam.sections,
-            totalQuestions: exam.totalQuestions,
-            questions: examQuestions,
-            answers: readinessAnswers.filter((answer) => answer.examId === exam.id),
-          }),
+          readiness: examReadiness(exam, questionsByExam.get(exam.id) ?? [], answersByExam.get(exam.id) ?? []),
           accuracy: finishedPcts.length
             ? Math.round(finishedPcts.reduce((sum, p) => sum + p, 0) / finishedPcts.length)
             : null,

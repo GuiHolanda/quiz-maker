@@ -6,6 +6,7 @@ import type {
   MockExamQuestionSource,
   MockExamSectionConfig,
 } from '@/shared/types';
+import { blueprintDistribution } from '@/lib/exam';
 
 export type TimeMode = 'oficial' | 'livre' | 'personalizado';
 
@@ -37,27 +38,9 @@ export function distributeQuestions(
   total: number
 ): MockExamSectionConfig[] {
   const selectedSections = sections.filter((section) => selected.includes(section.name));
-  const selectedMaxSum = selectedSections.reduce((sum, section) => sum + section.maxQuestions, 0);
+  const counts = blueprintDistribution(selectedSections, total);
 
-  const distribution: MockExamSectionConfig[] = selectedSections.map((section) => {
-    const proportional = selectedMaxSum > 0 ? Math.round((total * section.maxQuestions) / selectedMaxSum) : 0;
-
-    return { sectionName: section.name, questionCount: proportional };
-  });
-
-  if (distribution.length > 0) {
-    let remaining = total;
-
-    distribution.forEach((entry, index) => {
-      const isLast = index === distribution.length - 1;
-      const take = isLast ? Math.max(0, remaining) : Math.min(entry.questionCount, Math.max(0, remaining));
-
-      entry.questionCount = take;
-      remaining -= take;
-    });
-  }
-
-  return distribution;
+  return selectedSections.map((section, i) => ({ sectionName: section.name, questionCount: counts[i] }));
 }
 
 export function coveragePercent(sections: ExamSection[], selected: string[]): number {

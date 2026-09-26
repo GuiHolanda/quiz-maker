@@ -26,10 +26,27 @@ interface ReadinessInput {
   readonly totalQuestions: number;
   readonly questions: readonly { readonly sectionId: string | null }[];
   readonly answers: readonly {
+    readonly id: number;
     readonly sectionId: string | null;
     readonly isCorrect: boolean;
     readonly answeredAt: Date;
   }[];
+}
+
+export function blueprintWeights(sections: readonly { readonly maxQuestions: number }[]): number[] {
+  const hasAnyWeight = sections.some((section) => section.maxQuestions > 0);
+
+  return sections.map((section) => (hasAnyWeight ? section.maxQuestions : 1));
+}
+
+export function blueprintDistribution(sections: readonly { readonly maxQuestions: number }[], total: number): number[] {
+  const weights = blueprintWeights(sections);
+  const counts = distributeByWeight(
+    weights.map((weight, i) => ({ key: String(i), weight, capacity: Number.POSITIVE_INFINITY })),
+    total
+  );
+
+  return weights.map((_, i) => counts[String(i)]);
 }
 
 export function computeExamReadiness({ sections, totalQuestions, questions, answers }: ReadinessInput): ExamReadiness {
@@ -37,26 +54,20 @@ export function computeExamReadiness({ sections, totalQuestions, questions, answ
     return { phase: 'no_sections', projectedPercent: null, coveredQuestions: 0, targetQuestions: 0, sections: [] };
   }
 
-  const midpointWeights = sections.map((section) => (section.minQuestions + section.maxQuestions) / 2);
-  const hasAnyWeight = midpointWeights.some((weight) => weight > 0);
-  const weights = hasAnyWeight ? midpointWeights : sections.map(() => 1);
+  const weights = blueprintWeights(sections);
+  const targets = blueprintDistribution(sections, totalQuestions);
 
-  const targets = distributeByWeight(
-    sections.map((section, i) => ({ key: section.id, weight: weights[i], capacity: Number.POSITIVE_INFINITY })),
-    totalQuestions
-  );
-
-  const sectionReadiness: SectionReadiness[] = sections.map((section) => {
+  const sectionReadiness: SectionReadiness[] = sections.map((section, i) => {
     const recentAnswers = answers
       .filter((answer) => answer.sectionId === section.id)
-      .sort((a, b) => b.answeredAt.getTime() - a.answeredAt.getTime())
+      .sort((a, b) => b.answeredAt.getTime() - a.answeredAt.getTime() || b.id - a.id)
       .slice(0, READINESS_ANSWER_WINDOW);
     const correctCount = recentAnswers.filter((answer) => answer.isCorrect).length;
 
     return {
       sectionId: section.id,
       questionCount: questions.filter((question) => question.sectionId === section.id).length,
-      targetCount: targets[section.id],
+      targetCount: targets[i],
       accuracyPercent: recentAnswers.length > 0 ? (correctCount / recentAnswers.length) * 100 : null,
     };
   });
@@ -88,6 +99,79 @@ export function computeExamReadiness({ sections, totalQuestions, questions, answ
       accuracyPercent: entry.accuracyPercent === null ? null : Math.round(entry.accuracyPercent),
     })),
   };
+}
+
+export interface ExamQuestionRef {
+  readonly examId: string | null;
+  readonly sectionId: string | null;
+  readonly examName: string;
+  readonly sectionName: string;
+}
+
+export interface ReadinessAnswer {
+  readonly id: number;
+  readonly isCorrect: boolean;
+  readonly answeredAt: Date;
+  readonly question: ExamQuestionRef;
+}
+
+interface ReadinessExam {
+  readonly name: string;
+  readonly totalQuestions: number;
+  readonly sections: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly minQuestions: number;
+    readonly maxQuestions: number;
+  }[];
+}
+
+// Mirrors the simulado's draw (mock-exam.service): a question without sectionId still
+// belongs to a section when its denormalized exam and section names match.
+function readinessSectionId(question: ExamQuestionRef, exam: ReadinessExam): string | null {
+  if (question.sectionId !== null) return question.sectionId;
+  if (question.examName !== exam.name) return null;
+
+  return exam.sections.find((section) => normalizeName(section.name) === question.sectionName)?.id ?? null;
+}
+
+export function examReadiness(
+  exam: ReadinessExam,
+  questions: readonly ExamQuestionRef[],
+  answers: readonly ReadinessAnswer[]
+): ExamReadiness {
+  return computeExamReadiness({
+    sections: exam.sections,
+    totalQuestions: exam.totalQuestions,
+    questions: questions.map((question) => ({ sectionId: readinessSectionId(question, exam) })),
+    answers: answers.map((answer) => ({
+      id: answer.id,
+      sectionId: readinessSectionId(answer.question, exam),
+      isCorrect: answer.isCorrect,
+      answeredAt: answer.answeredAt,
+    })),
+  });
+}
+
+export function groupByExam<T>(
+  exams: readonly { readonly id: string; readonly name: string }[],
+  rows: readonly T[],
+  questionOf: (row: T) => ExamQuestionRef
+): Map<string, T[]> {
+  const grouped = new Map<string, T[]>(exams.map((exam) => [exam.id, []]));
+  const examIdsByName = new Map<string, string[]>();
+
+  exams.forEach((exam) => examIdsByName.set(exam.name, [...(examIdsByName.get(exam.name) ?? []), exam.id]));
+
+  rows.forEach((row) => {
+    const question = questionOf(row);
+    const legacyOwners = question.sectionId === null ? (examIdsByName.get(question.examName) ?? []) : [];
+    const owners = new Set(question.examId === null ? legacyOwners : [question.examId, ...legacyOwners]);
+
+    owners.forEach((examId) => grouped.get(examId)?.push(row));
+  });
+
+  return grouped;
 }
 
 function readinessRank(readiness: ExamReadiness | undefined): [number, number] {
