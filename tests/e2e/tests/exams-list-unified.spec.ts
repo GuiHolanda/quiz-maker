@@ -39,9 +39,7 @@ test.describe('unified exams list', () => {
 
     await expect(domainsToggle).toBeVisible();
     await domainsToggle.click();
-    // The card's own readiness header already shows "PREPARO" — the domains panel repeats
-    // the same label, so opening it must be asserted by count, not by a single toBeVisible().
-    await expect(certCard.getByText(/preparo/i)).toHaveCount(2);
+    await expect(certCard.locator(tid(TID.examCardDomainRow))).toHaveCount(1);
 
     await certCard.locator(tid(TID.examCardMenuToggle)).click();
     await certCard.locator(tid(TID.examCardActionGenerate)).click();
@@ -51,6 +49,22 @@ test.describe('unified exams list', () => {
     // examId query param to the actual pre-selected exam, not just navigate to the URL.
     await expect(page.locator(tid(TID.questionGenSelectTrigger)).filter({ visible: true })).toContainText(
       E2E_CERT_LABEL
+    );
+  });
+
+  test('RN-08: without a simulado, readiness shows bank progress and links to question generation', async ({
+    authedPage: page,
+  }) => {
+    await page.goto('/exams');
+
+    const certCard = page.locator(tid(TID.examCard)).filter({ hasText: E2E_CERT_LABEL });
+    const readiness = certCard.locator(tid(TID.examCardReadiness));
+
+    await expect(readiness).toContainText(/\d+\/65/);
+    await expect(readiness).not.toContainText('—');
+    await expect(readiness.locator(tid(TID.examCardReadinessAction))).toHaveAttribute(
+      'href',
+      /\/questions\?examId=/
     );
   });
 });
