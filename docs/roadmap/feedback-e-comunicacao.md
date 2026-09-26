@@ -502,7 +502,7 @@ motivos do F1 (SDD D-16).
 **E2E (2.9):** header → modal → categoria `bug` + mensagem → submeter → toast, conferindo no banco `plan`, `email` e
 `userAgent` preenchidos pelo servidor. Caso extra com viewport mobile (`page.setViewportSize({ width: 390, height: 844 })`)
 abrindo o drawer e usando `feedback-sidebar-btn` — é o único jeito de provar que o `hidden md:flex` foi resolvido — com
-o POST simulado. Mais o 401 anônimo. Com Redis no `.env` o limite `feedback_submit` (3 por 10 min) **vale no dev**: o
+o POST simulado. Mais o rascunho preservado ao clicar fora do modal (SDD D-17) e a chamada anônima recusada. Com Redis no `.env` o limite `feedback_submit` (3 por 10 min) **vale no dev**: o
 spec faz um único POST real por execução.
 
 ### Critérios de aceite
@@ -515,7 +515,7 @@ spec faz um único POST real por execução.
 
 ### Aceite da F2
 
-Código concluído; 38 testes unitários do service, 11 novos do e-mail e o E2E (3 cenários do F2, 8/8 no spec) passaram.
+Código concluído; 38 testes unitários do service, 11 novos do e-mail e o E2E (4 cenários do F2, 9/9 no spec) passaram.
 Falta o que depende de você:
 
 - [ ] Um feedback real em produção chega em `FEEDBACK_INBOX_EMAIL`, com "Responder" apontando para o usuário, e
