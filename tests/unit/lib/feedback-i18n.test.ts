@@ -51,6 +51,7 @@ const EXPECTED_KEYS = [
   'categorySuggestion',
   'categoryPraise',
   'categoryQuestion',
+  'categoryRequired',
   'messageLabel',
   'messagePlaceholder',
   'messageRequired',
