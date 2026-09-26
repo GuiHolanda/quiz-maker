@@ -43,10 +43,17 @@ export async function GET(request: NextRequest) {
 
     const user = await prisma.user.findUniqueOrThrow({
       where: { id: session.user.id },
-      select: { email: true, stripeCustomerId: true },
+      select: { email: true, stripeCustomerId: true, stripeSubscriptionId: true },
     });
 
+    if (user.stripeSubscriptionId) {
+      throw Object.assign(new Error('Plan changes for an existing subscription go through the billing portal'), {
+        status: 409,
+      });
+    }
+
     const priceId = resolvePriceId(product, billingPeriod);
+    const successUrl = `${process.env.AUTH_URL}/billing?upgraded=true&plan=${product}&session_id={CHECKOUT_SESSION_ID}`;
 
     // Sprint is a 90-day, one-time payment — no billing period, no recurring subscription.
     // The webhook (checkout.session.completed, mode: 'payment') sets plan + sprintExpiresAt
@@ -57,7 +64,7 @@ export async function GET(request: NextRequest) {
             mode: 'payment',
             line_items: [{ price: priceId, quantity: 1 }],
             metadata: { user_id: session.user.id, product: 'sprint' },
-            success_url: `${process.env.AUTH_URL}/billing?upgraded=true`,
+            success_url: successUrl,
             cancel_url: `${process.env.AUTH_URL}/pricing`,
             allow_promotion_codes: true,
           }
@@ -65,7 +72,7 @@ export async function GET(request: NextRequest) {
             mode: 'subscription',
             line_items: [{ price: priceId, quantity: 1 }],
             metadata: { user_id: session.user.id },
-            success_url: `${process.env.AUTH_URL}/billing?upgraded=true`,
+            success_url: successUrl,
             cancel_url: `${process.env.AUTH_URL}/pricing`,
             allow_promotion_codes: true,
           };

@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import type { BillingDetails, UsageStats } from '@/shared/types';
 import type { StatusTone } from '@/shared/components/ui/tone';
+import type { SettledToast } from '@/app/(workspace)/billing/components/billingReconcile';
 
 import { Button } from '@heroui/button';
 import { Skeleton } from '@heroui/skeleton';
@@ -22,15 +23,35 @@ import { BillingHistoryTable } from '@/app/(workspace)/billing/components/Billin
 import { ReferralCard } from '@/app/(workspace)/billing/components/ReferralCard';
 import { CancelSubscriptionPanel } from '@/app/(workspace)/billing/components/CancelSubscriptionPanel';
 import { formatDate, formatMoney, formatShortDate } from '@/app/(workspace)/billing/components/billingFormat';
-import { getBillingDetails, getBillingUsage, getPortalUrl } from '@/features/connectors';
+import {
+  isPlanReconciled,
+  resolveReconcileTarget,
+  resolveSettledToast,
+} from '@/app/(workspace)/billing/components/billingReconcile';
+import { getBillingDetails, getBillingUsage, getPortalUrl, isCheckoutProcessed } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { notify } from '@/shared/lib/notify';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { PLAN_LIMITS } from '@/config/constants';
 
-function questionsCeiling(plan: string): number {
-  return PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS]?.questionsPerPeriod ?? 0;
+const PLAN_LABEL_KEY: Record<string, string> = {
+  pro_ai: 'billing.planProAi',
+  pro: 'billing.planPro',
+  sprint: 'billing.planSprint',
+  tester: 'billing.planTester',
+  admin: 'billing.planAdmin',
+  free: 'billing.planFree',
+};
+
+function readBillingReturn(searchParams: URLSearchParams) {
+  return {
+    isUpgradeFlow: searchParams.get('upgraded') === 'true',
+    isSyncFlow: searchParams.get('synced') === '1',
+    purchasedPlan: searchParams.get('plan'),
+    checkoutSessionId: searchParams.get('session_id'),
+    planBeforePortal: searchParams.get('from'),
+  };
 }
 
 export function BillingOverview() {
@@ -46,23 +67,28 @@ export function BillingOverview() {
   const [pollTimedOut, setPollTimedOut] = useState(false);
   const [isReconciling, setIsReconciling] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [settledToast, setSettledToast] = useState<SettledToast | null>(null);
+  const [billingReturn] = useState(() => readBillingReturn(searchParams));
   const toastFiredRef = useRef(false);
   const reconciledRef = useRef(false);
-  const isUpgradeFlow = searchParams.get('upgraded') === 'true';
-  const isSyncFlow = searchParams.get('synced') === '1';
+  const { isUpgradeFlow, isSyncFlow, purchasedPlan, checkoutSessionId, planBeforePortal } = billingReturn;
   const isReconcileFlow = isUpgradeFlow || isSyncFlow;
 
-  async function loadDetails(hasCustomer: boolean) {
+  async function loadDetails(hasCustomer: boolean): Promise<BillingDetails | null> {
     if (!hasCustomer) {
       setDetails(null);
       setDetailsSettled(true);
-      return;
+      return null;
     }
 
     try {
-      setDetails(await getBillingDetails());
+      const fresh = await getBillingDetails();
+
+      setDetails(fresh);
+      return fresh;
     } catch {
       setDetails(null);
+      return null;
     } finally {
       setDetailsSettled(true);
     }
@@ -109,36 +135,65 @@ export function BillingOverview() {
     reconciledRef.current = true;
 
     let cancelled = false;
-    setIsReconciling(true);
 
     async function reconcilePlan() {
-      const tokenPlan = session?.user?.plan;
+      const previousPlan = planBeforePortal ?? session?.user?.plan ?? null;
+      const checkoutToVerify = isUpgradeFlow ? checkoutSessionId : null;
       let data = await getBillingUsage();
 
       if (cancelled) return;
       setUsage(data);
 
-      const baseline = data.plan;
+      const initialDetails = await loadDetails(data.hasStripePortalAccess);
+
+      if (cancelled) return;
+
+      const stripePlan = initialDetails?.subscription?.plan ?? null;
+      const target = resolveReconcileTarget({ isUpgradeFlow, purchasedPlan, previousPlan }, stripePlan, data.plan);
+      const readSettled = async () =>
+        checkoutToVerify ? isCheckoutProcessed(checkoutToVerify) : isPlanReconciled(data.plan, target);
+      let settled = await readSettled();
       let attempts = 0;
 
-      while (attempts < 20 && !cancelled && data.plan === baseline && data.plan === tokenPlan) {
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        data = await getBillingUsage();
+      if (cancelled) return;
+      if (!settled) setIsReconciling(true);
 
-        if (cancelled) return;
-        setUsage(data);
+      while (!settled && attempts < 20 && !cancelled) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+
+        if (!checkoutToVerify) {
+          data = await getBillingUsage();
+
+          if (cancelled) return;
+          setUsage(data);
+        }
+
+        settled = await readSettled();
         attempts++;
       }
 
       if (cancelled) return;
       setIsReconciling(false);
 
-      await loadDetails(data.hasStripePortalAccess);
-
-      if (data.plan === baseline) {
+      if (!settled) {
         setPollTimedOut(true);
         return;
       }
+
+      if (checkoutToVerify) {
+        data = await getBillingUsage();
+
+        if (cancelled) return;
+        setUsage(data);
+      }
+
+      window.history.replaceState(null, '', window.location.pathname);
+
+      const isPortalVisitWithoutChange = !isUpgradeFlow && data.plan === previousPlan;
+
+      if (isPortalVisitWithoutChange) return;
+
+      if (attempts > 0) await loadDetails(data.hasStripePortalAccess);
 
       await updateSession();
       refreshUsage();
@@ -146,15 +201,15 @@ export function BillingOverview() {
 
       if (!toastFiredRef.current) {
         toastFiredRef.current = true;
-        if (isUpgradeFlow) {
-          notify.success(t('billing.toast.upgraded'), t('billing.toast.upgradedDescription'));
-        } else if (isSyncFlow && questionsCeiling(data.plan) > questionsCeiling(baseline)) {
-          notify.success(t('billing.toast.planUpdated'), t('billing.toast.planUpdatedDescription'));
-        }
+        setSettledToast(resolveSettledToast(isUpgradeFlow, previousPlan, data.plan));
       }
     }
 
-    reconcilePlan();
+    reconcilePlan().catch(() => {
+      if (cancelled) return;
+      setIsReconciling(false);
+      setPollTimedOut(true);
+    });
 
     return () => {
       cancelled = true;
@@ -162,7 +217,21 @@ export function BillingOverview() {
     };
   }, [isReconcileFlow, status, retryCount]);
 
-  if (!usage) return null;
+  useEffect(() => {
+    if (!settledToast) return;
+
+    if (settledToast.kind === 'upgraded') {
+      const planLabel = t(PLAN_LABEL_KEY[settledToast.plan] ?? 'billing.planFree');
+
+      notify.success(t('billing.toast.upgraded', { plan: planLabel }), t('billing.toast.upgradedDescription'));
+    } else {
+      notify.success(t('billing.toast.planUpdated'), t('billing.toast.planUpdatedDescription'));
+    }
+
+    setSettledToast(null);
+  }, [settledToast, t]);
+
+  if (!usage) return renderReconcileBanner();
 
   const resetDate = new Date(usage.periodStartDate);
 
@@ -175,14 +244,6 @@ export function BillingOverview() {
   const hasStripeCustomer = usage.hasStripePortalAccess;
   const hasActiveSubscription = !!subscription && subscription.status === 'active' && !subscription.cancelAtPeriodEnd;
 
-  const PLAN_LABEL_KEY: Record<string, string> = {
-    pro_ai: 'billing.planProAi',
-    pro: 'billing.planPro',
-    sprint: 'billing.planSprint',
-    tester: 'billing.planTester',
-    admin: 'billing.planAdmin',
-    free: 'billing.planFree',
-  };
   const planLabel = t(PLAN_LABEL_KEY[usage.plan] ?? 'billing.planFree');
   const isInternalPlan = usage.plan === 'tester' || usage.plan === 'admin';
 
@@ -367,8 +428,12 @@ export function BillingOverview() {
         <section className="bg-primary/10 border border-primary/20 rounded-xl p-6 flex items-center gap-4">
           <Spinner color="primary" size="sm" />
           <div>
-            <p className="text-sm font-semibold text-foreground">{t('billing.reconciling.title')}</p>
-            <p className="text-xs text-default-500">{t('billing.reconciling.description')}</p>
+            <p className="text-sm font-semibold text-foreground">
+              {t(isUpgradeFlow ? 'billing.reconciling.title' : 'billing.reconciling.syncTitle')}
+            </p>
+            <p className="text-xs text-default-500">
+              {t(isUpgradeFlow ? 'billing.reconciling.description' : 'billing.reconciling.syncDescription')}
+            </p>
           </div>
         </section>
       );

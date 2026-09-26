@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
-import { resolvePlanFromPriceId, isCapacityUpgrade } from '@/app/api/webhooks/stripe/stripe-webhook.utils';
+import { resolvePlanFromPriceId } from '@/app/api/webhooks/stripe/stripe-webhook.utils';
+import { isCapacityUpgrade } from '@/config/constants';
 
 describe('resolvePlanFromPriceId', () => {
   const originalMonthly = process.env.STRIPE_PRICE_ID_PRO_AI_MONTHLY;
@@ -70,5 +71,9 @@ describe('isCapacityUpgrade', () => {
 
   it('returns true for unrecognized old plan (treated as zero capacity)', () => {
     expect(isCapacityUpgrade('unknown_legacy_plan', 'pro')).toBe(true);
+  });
+
+  it('returns true when there is no old plan to compare against (treated as zero capacity)', () => {
+    expect(isCapacityUpgrade(null, 'pro')).toBe(true);
   });
 });

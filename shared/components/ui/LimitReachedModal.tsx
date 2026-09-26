@@ -6,10 +6,11 @@ import { Button } from '@heroui/button';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowUp, faCircleExclamation } from '@fortawesome/free-solid-svg-icons';
 
-import type { LimitError } from '@/shared/lib/limitError';
+import { upgradeTargetFor, type LimitError } from '@/shared/lib/limitError';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
-import { getCheckoutUrl } from '@/features/connectors';
+import { getCheckoutUrl, getPortalUrl } from '@/features/connectors';
 
 interface LimitReachedModalProps {
   readonly limit: LimitError | null;
@@ -18,32 +19,36 @@ interface LimitReachedModalProps {
 
 // i18n keys per limit. Every entry names what was hit and what the upgrade buys, so the
 // user never sees a bare "something went wrong" for a block that is entirely expected.
-const COPY: Record<LimitError['code'], { title: string; body: string }> = {
-  exam_limit: { title: 'limit.examTitle', body: 'limit.examBody' },
-  questions_limit: { title: 'limit.questionsTitle', body: 'limit.questionsBody' },
-  auto_config_limit: { title: 'limit.autoConfigTitle', body: 'limit.autoConfigBody' },
-  plan_required: { title: 'limit.planTitle', body: 'limit.planBody' },
+const COPY: Record<LimitError['code'], { title: string; body: string; topTierBody: string }> = {
+  exam_limit: { title: 'limit.examTitle', body: 'limit.examBody', topTierBody: 'limit.examBodyTopTier' },
+  questions_limit: {
+    title: 'limit.questionsTitle',
+    body: 'limit.questionsBody',
+    topTierBody: 'limit.questionsBodyTopTier',
+  },
+  auto_config_limit: {
+    title: 'limit.autoConfigTitle',
+    body: 'limit.autoConfigBody',
+    topTierBody: 'limit.autoConfigBodyTopTier',
+  },
+  plan_required: { title: 'limit.planTitle', body: 'limit.planBody', topTierBody: 'limit.planBody' },
 };
-
-// A free user hitting any wall upgrades to pro; a pro user who ran out of auto-config
-// (the only limit pro_ai actually raises) is the one case where pro_ai is the answer.
-function targetProduct(limit: LimitError): 'pro' | 'pro_ai' {
-  return limit.plan === 'pro' && limit.code === 'auto_config_limit' ? 'pro_ai' : 'pro';
-}
 
 export function LimitReachedModal({ limit, onClose }: LimitReachedModalProps) {
   const { t } = useTranslation();
+  const { usage } = useUsageContext();
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   if (!limit) return null;
 
   const copy = COPY[limit.code];
-  const product = targetProduct(limit);
+  const product = upgradeTargetFor(limit.plan);
+  const isSubscriber = !!usage?.hasStripePortalAccess && (limit.plan === 'pro' || limit.plan === 'pro_ai');
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = async (target: 'pro' | 'pro_ai') => {
     setIsRedirecting(true);
     try {
-      window.location.href = await getCheckoutUrl('monthly', product);
+      window.location.href = isSubscriber ? await getPortalUrl() : await getCheckoutUrl('monthly', target);
     } catch {
       setIsRedirecting(false);
     }
@@ -57,7 +62,7 @@ export function LimitReachedModal({ limit, onClose }: LimitReachedModalProps) {
           {t(copy.title)}
         </ModalHeader>
         <ModalBody className="py-6 flex flex-col gap-4">
-          <p className="text-sm text-default-500">{t(copy.body)}</p>
+          <p className="text-sm text-default-500">{t(product ? copy.body : copy.topTierBody)}</p>
 
           {limit.limit != null && (
             <div className="flex items-center justify-between bg-content2 border border-default-200 rounded-xl px-4 py-3">
@@ -68,9 +73,11 @@ export function LimitReachedModal({ limit, onClose }: LimitReachedModalProps) {
             </div>
           )}
 
-          <p className="text-xs text-default-400">
-            {t(product === 'pro_ai' ? 'limit.upgradeHintProAi' : 'limit.upgradeHintPro')}
-          </p>
+          {product && (
+            <p className="text-xs text-default-400">
+              {t(product === 'pro_ai' ? 'limit.upgradeHintProAi' : 'limit.upgradeHintPro')}
+            </p>
+          )}
         </ModalBody>
         <ModalFooter className="border-t border-default-200">
           <Button
@@ -82,16 +89,18 @@ export function LimitReachedModal({ limit, onClose }: LimitReachedModalProps) {
           >
             {t('common.close')}
           </Button>
-          <Button
-            className={buttonStyles.primary}
-            data-testid="limit-upgrade-btn"
-            isLoading={isRedirecting}
-            size="sm"
-            startContent={isRedirecting ? undefined : <FontAwesomeIcon className="text-xs" icon={faArrowUp} />}
-            onPress={handleUpgrade}
-          >
-            {t('billing.upgradeModal.cta')}
-          </Button>
+          {product && (
+            <Button
+              className={buttonStyles.primary}
+              data-testid="limit-upgrade-btn"
+              isLoading={isRedirecting}
+              size="sm"
+              startContent={isRedirecting ? undefined : <FontAwesomeIcon className="text-xs" icon={faArrowUp} />}
+              onPress={() => handleUpgrade(product)}
+            >
+              {t('billing.upgradeModal.cta')}
+            </Button>
+          )}
         </ModalFooter>
       </ModalContent>
     </Modal>

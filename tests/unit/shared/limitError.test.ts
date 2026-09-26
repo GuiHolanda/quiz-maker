@@ -1,4 +1,4 @@
-import { parseLimitError } from '@/shared/lib/limitError';
+import { parseLimitError, upgradeTargetFor } from '@/shared/lib/limitError';
 
 // The client decides between "explain the limit with an upgrade CTA" and "show a generic
 // error toast" purely from this parser, so a wrong answer either hides a real failure
@@ -56,5 +56,21 @@ describe('parseLimitError', () => {
     expect(parseLimitError(axiosLike(403, { code: 'exam_limit', limit: '2', used: null }))).toEqual({
       code: 'exam_limit',
     });
+  });
+});
+
+describe('upgradeTargetFor', () => {
+  it('RN-02: offers Pro to a free user and to an unknown plan', () => {
+    expect(upgradeTargetFor('free')).toBe('pro');
+    expect(upgradeTargetFor(undefined)).toBe('pro');
+  });
+
+  it('RN-02: offers Pro AI to a Pro user instead of the plan they already have', () => {
+    expect(upgradeTargetFor('pro')).toBe('pro_ai');
+  });
+
+  it('RN-02: offers nothing on the plans with the highest limits', () => {
+    expect(upgradeTargetFor('pro_ai')).toBeNull();
+    expect(upgradeTargetFor('sprint')).toBeNull();
   });
 });

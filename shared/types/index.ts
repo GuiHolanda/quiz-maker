@@ -165,6 +165,7 @@ export interface BillingProfile {
 
 export interface SubscriptionInfo {
   status: string; // active | past_due | canceled | unpaid | incomplete | trialing
+  plan: UserPlan; // the plan this subscription grants, as the Stripe webhook will record it
   interval: 'month' | 'year' | null;
   amount: number | null; // recurring charge, in cents
   currency: string;

@@ -1,5 +1,7 @@
 import type { LimitCode } from '@/shared/types';
 
+import { isCapacityUpgrade } from '@/config/constants';
+
 export interface LimitError {
   readonly code: LimitCode;
   readonly limit?: number;
@@ -8,6 +10,8 @@ export interface LimitError {
 }
 
 const KNOWN_CODES: readonly LimitCode[] = ['questions_limit', 'exam_limit', 'auto_config_limit', 'plan_required'];
+
+const UPGRADE_PATH = ['pro', 'pro_ai'] as const;
 
 interface ErrorPayload {
   readonly code?: unknown;
@@ -48,4 +52,8 @@ export function parseLimitError(err: unknown): LimitError | null {
     ...(typeof payload.used === 'number' && { used: payload.used }),
     ...(typeof payload.plan === 'string' && { plan: payload.plan }),
   };
+}
+
+export function upgradeTargetFor(plan: string | undefined): (typeof UPGRADE_PATH)[number] | null {
+  return UPGRADE_PATH.find((candidate) => isCapacityUpgrade(plan ?? null, candidate)) ?? null;
 }

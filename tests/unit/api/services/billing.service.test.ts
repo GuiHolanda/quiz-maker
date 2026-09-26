@@ -5,6 +5,7 @@ const stripeMock = vi.hoisted(() => ({
   subscriptions: { retrieve: vi.fn(), update: vi.fn() },
   invoices: { list: vi.fn(), createPreview: vi.fn() },
   paymentMethods: { list: vi.fn() },
+  checkout: { sessions: { retrieve: vi.fn() } },
 }));
 
 vi.mock('stripe', () => ({
@@ -44,7 +45,7 @@ function stripeSubscription(overrides: Record<string, unknown> = {}) {
       data: [
         {
           current_period_end: 1_760_000_000,
-          price: { unit_amount: 2990, currency: 'brl', recurring: { interval: 'month' } },
+          price: { id: 'price_pro_monthly', unit_amount: 2990, currency: 'brl', recurring: { interval: 'month' } },
         },
       ],
     },
@@ -64,6 +65,7 @@ describe('BillingService', () => {
     stripeMock.invoices.list.mockReset().mockResolvedValue({ data: [] });
     stripeMock.invoices.createPreview.mockReset();
     stripeMock.paymentMethods.list.mockReset().mockResolvedValue({ data: [] });
+    stripeMock.checkout.sessions.retrieve.mockReset();
   });
 
   describe('getBillingDetails', () => {
@@ -122,6 +124,7 @@ describe('BillingService', () => {
         },
         subscription: {
           status: 'active',
+          plan: 'pro',
           interval: 'month',
           amount: 2990,
           currency: 'brl',
@@ -147,6 +150,49 @@ describe('BillingService', () => {
           },
         ],
       });
+    });
+
+    it('RN-05: reports the plan the subscription price grants, so the billing page can tell a pending webhook apart', async () => {
+      const originalProAiMonthly = process.env.STRIPE_PRICE_ID_PRO_AI_MONTHLY;
+
+      process.env.STRIPE_PRICE_ID_PRO_AI_MONTHLY = 'price_ai_monthly';
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue({
+        stripeCustomerId: 'cus_123',
+        stripeSubscriptionId: 'sub_123',
+      } as never);
+      stripeMock.customers.retrieve.mockResolvedValue(stripeCustomer());
+      stripeMock.subscriptions.retrieve.mockResolvedValue(
+        stripeSubscription({
+          items: {
+            data: [
+              {
+                current_period_end: 1_760_000_000,
+                price: { id: 'price_ai_monthly', unit_amount: 5990, currency: 'brl', recurring: { interval: 'month' } },
+              },
+            ],
+          },
+        })
+      );
+
+      const result = await service.getBillingDetails('user-1');
+
+      if (originalProAiMonthly === undefined) delete process.env.STRIPE_PRICE_ID_PRO_AI_MONTHLY;
+      else process.env.STRIPE_PRICE_ID_PRO_AI_MONTHLY = originalProAiMonthly;
+
+      expect(result?.subscription?.plan).toBe('pro_ai');
+    });
+
+    it('RN-05: reports free for a canceled subscription, matching what the deletion webhook records', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue({
+        stripeCustomerId: 'cus_123',
+        stripeSubscriptionId: 'sub_123',
+      } as never);
+      stripeMock.customers.retrieve.mockResolvedValue(stripeCustomer());
+      stripeMock.subscriptions.retrieve.mockResolvedValue(stripeSubscription({ status: 'canceled' }));
+
+      const result = await service.getBillingDetails('user-1');
+
+      expect(result?.subscription?.plan).toBe('free');
     });
 
     it('degrades to subscription: null when the Stripe subscription read fails', async () => {
@@ -196,6 +242,91 @@ describe('BillingService', () => {
         cancel_at_period_end: true,
         cancellation_details: { comment: 'in-app: price', feedback: 'too_expensive' },
       });
+    });
+  });
+
+  describe('isCheckoutProcessed', () => {
+    const SESSION_CREATED = 1_760_000_000;
+    const DAY_MS = 24 * 60 * 60 * 1000;
+
+    function checkoutSession(overrides: Record<string, unknown> = {}) {
+      return {
+        id: 'cs_123',
+        mode: 'subscription',
+        created: SESSION_CREATED,
+        subscription: 'sub_new',
+        metadata: { user_id: 'user-1' },
+        ...overrides,
+      };
+    }
+
+    it('RN-03: rejects a checkout session that belongs to another user', async () => {
+      stripeMock.checkout.sessions.retrieve.mockResolvedValue(checkoutSession({ metadata: { user_id: 'user-2' } }));
+
+      await expect(service.isCheckoutProcessed('user-1', 'cs_123')).rejects.toMatchObject({ status: 404 });
+      expect(prismaMock.user.findUniqueOrThrow).not.toHaveBeenCalled();
+    });
+
+    it('RN-03: rejects a checkout session Stripe does not know', async () => {
+      stripeMock.checkout.sessions.retrieve.mockRejectedValue(
+        Object.assign(new Error('No such checkout.session'), { code: 'resource_missing' })
+      );
+
+      await expect(service.isCheckoutProcessed('user-1', 'cs_missing')).rejects.toMatchObject({ status: 404 });
+    });
+
+    it('RN-03: surfaces any other Stripe failure instead of calling the session unknown', async () => {
+      stripeMock.checkout.sessions.retrieve.mockRejectedValue(new Error('stripe down'));
+
+      await expect(service.isCheckoutProcessed('user-1', 'cs_123')).rejects.toThrow('stripe down');
+    });
+
+    it('RN-03: a subscription checkout is processed once the webhook recorded that subscription', async () => {
+      stripeMock.checkout.sessions.retrieve.mockResolvedValue(checkoutSession());
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue({
+        plan: 'pro',
+        stripeSubscriptionId: 'sub_new',
+        sprintExpiresAt: null,
+      } as never);
+
+      await expect(service.isCheckoutProcessed('user-1', 'cs_123')).resolves.toBe(true);
+    });
+
+    it('RN-03: a subscription checkout is not processed while the user already held the purchased plan without it', async () => {
+      stripeMock.checkout.sessions.retrieve.mockResolvedValue(checkoutSession());
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue({
+        plan: 'pro',
+        stripeSubscriptionId: null,
+        sprintExpiresAt: null,
+      } as never);
+
+      await expect(service.isCheckoutProcessed('user-1', 'cs_123')).resolves.toBe(false);
+    });
+
+    it('RN-03: a Sprint checkout is processed once the webhook set an expiry counted from after the session', async () => {
+      stripeMock.checkout.sessions.retrieve.mockResolvedValue(
+        checkoutSession({ mode: 'payment', subscription: null })
+      );
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue({
+        plan: 'sprint',
+        stripeSubscriptionId: null,
+        sprintExpiresAt: new Date(SESSION_CREATED * 1000 + 90 * DAY_MS + 60_000),
+      } as never);
+
+      await expect(service.isCheckoutProcessed('user-1', 'cs_123')).resolves.toBe(true);
+    });
+
+    it('RN-03: an earlier Sprint does not count as this Sprint checkout being processed', async () => {
+      stripeMock.checkout.sessions.retrieve.mockResolvedValue(
+        checkoutSession({ mode: 'payment', subscription: null })
+      );
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue({
+        plan: 'sprint',
+        stripeSubscriptionId: null,
+        sprintExpiresAt: new Date(SESSION_CREATED * 1000 + 89 * DAY_MS),
+      } as never);
+
+      await expect(service.isCheckoutProcessed('user-1', 'cs_123')).resolves.toBe(false);
     });
   });
 });
