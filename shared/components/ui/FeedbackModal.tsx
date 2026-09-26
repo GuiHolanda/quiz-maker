@@ -14,7 +14,7 @@ interface FeedbackModalProps {
 
 export function FeedbackModal({ isOpen, isLoading, onSubmit, onClose }: FeedbackModalProps) {
   return (
-    <Modal isOpen={isOpen} size="lg" onClose={() => !isLoading && onClose()}>
+    <Modal isDismissable={false} isOpen={isOpen} size="lg" onClose={() => !isLoading && onClose()}>
       <ModalContent>
         <FeedbackForm isLoading={isLoading} onClose={onClose} onSubmit={onSubmit} />
       </ModalContent>

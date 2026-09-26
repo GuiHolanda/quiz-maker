@@ -249,6 +249,20 @@ test.describe('send feedback', () => {
     expect(saved.userAgent).toContain('Mozilla');
   });
 
+  test('keeps the draft when the backdrop is clicked by accident', async ({ authedPage: page }) => {
+    const draft = 'Um parágrafo longo que eu não quero reescrever.';
+    const modal = page.locator(tid(TID.feedbackModal));
+
+    await page.goto('/question-bank');
+    await page.locator(tid(TID.feedbackWidgetBtn)).click();
+    await page.locator(tid(TID.feedbackMessage)).fill(draft);
+    await page.mouse.click(5, 5);
+    await page.waitForTimeout(1_000);
+
+    await expect(modal).toBeVisible();
+    await expect(page.locator(tid(TID.feedbackMessage))).toHaveValue(draft);
+  });
+
   test('opens the feedback dialog from the mobile drawer, where the header is hidden', async ({ authedPage: page }) => {
     let sent: unknown = null;
 
