@@ -141,7 +141,7 @@ export function BillingOverview() {
       await loadDetails(data.hasStripePortalAccess);
 
       if (!isPlanReconciled(data.plan, target)) {
-        setPollTimedOut(true);
+        if (isUpgradeFlow) setPollTimedOut(true);
         return;
       }
 
@@ -365,7 +365,7 @@ export function BillingOverview() {
   );
 
   function renderReconcileBanner() {
-    if (!isReconcileFlow) return null;
+    if (!isUpgradeFlow) return null;
 
     if (isReconciling) {
       return (
