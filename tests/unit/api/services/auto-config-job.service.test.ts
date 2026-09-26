@@ -44,7 +44,8 @@ vi.mock('@/lib/edital/fetch', () => ({
   fetchEditalPdf: fetchEditalPdfMock,
 }));
 
-vi.mock('@/features/services/auto-config/edital-extractor.service', () => ({
+vi.mock('@/features/services/auto-config/edital-extractor.service', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/features/services/auto-config/edital-extractor.service')>()),
   EditalExtractorService: class {
     extract = editalExtractMock;
     verifyIsMainEdital = editalVerifyMock;

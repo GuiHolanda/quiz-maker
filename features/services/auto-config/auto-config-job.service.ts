@@ -2,7 +2,6 @@ import { after } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
 import { publishAutoConfigProgress } from '@/features/services/generation/job-progress.service';
-import { validateExamBlueprint, type ParsedExamBlueprint } from '@/lib/exam/blueprint';
 import {
   extractJson,
   OpenAIService,
@@ -14,7 +13,11 @@ import { MetricsService } from '@/features/services/billing/metrics.service';
 import { AUTO_CONFIG_PROMPTS, editalLocatePrompt, IDENTIFY_PROMPTS } from '@/config/prompts';
 import { fetchEditalPdf } from '@/lib/edital/fetch';
 import { classifyEditalUrl, classifyEditalDomain, resolveAllowedDomains } from '@/lib/edital/rules';
-import { EditalExtractorService } from '@/features/services/auto-config/edital-extractor.service';
+import {
+  EditalExtractorService,
+  validateExamBlueprint,
+  type ParsedExamBlueprint,
+} from '@/features/services/auto-config/edital-extractor.service';
 import type {
   EditalCandidate,
   EditalDocumentKind,
