@@ -10,6 +10,7 @@ import type {
 } from '@/shared/types';
 
 import { prisma } from '@/lib/prisma';
+import { resolvePlanFromPriceId } from '@/app/api/webhooks/stripe/stripe-webhook.utils';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-06-24.dahlia' });
 
@@ -154,9 +155,11 @@ export class BillingService {
     const item = subscription.items.data[0];
     const price = item?.price;
     const recurring = price && typeof price !== 'string' ? price.recurring : null;
+    const priceId = typeof price === 'string' ? price : price?.id;
 
     return {
       status: subscription.status,
+      plan: subscription.status === 'canceled' ? 'free' : resolvePlanFromPriceId(priceId),
       interval: recurring?.interval === 'year' || recurring?.interval === 'month' ? recurring.interval : null,
       amount: price && typeof price !== 'string' ? price.unit_amount : null,
       currency: (price && typeof price !== 'string' ? price.currency : null) ?? 'brl',

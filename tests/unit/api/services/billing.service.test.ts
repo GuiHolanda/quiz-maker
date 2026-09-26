@@ -44,7 +44,7 @@ function stripeSubscription(overrides: Record<string, unknown> = {}) {
       data: [
         {
           current_period_end: 1_760_000_000,
-          price: { unit_amount: 2990, currency: 'brl', recurring: { interval: 'month' } },
+          price: { id: 'price_pro_monthly', unit_amount: 2990, currency: 'brl', recurring: { interval: 'month' } },
         },
       ],
     },
@@ -122,6 +122,7 @@ describe('BillingService', () => {
         },
         subscription: {
           status: 'active',
+          plan: 'pro',
           interval: 'month',
           amount: 2990,
           currency: 'brl',
@@ -147,6 +148,49 @@ describe('BillingService', () => {
           },
         ],
       });
+    });
+
+    it('RN-05: reports the plan the subscription price grants, so the billing page can tell a pending webhook apart', async () => {
+      const originalProAiMonthly = process.env.STRIPE_PRICE_ID_PRO_AI_MONTHLY;
+
+      process.env.STRIPE_PRICE_ID_PRO_AI_MONTHLY = 'price_ai_monthly';
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue({
+        stripeCustomerId: 'cus_123',
+        stripeSubscriptionId: 'sub_123',
+      } as never);
+      stripeMock.customers.retrieve.mockResolvedValue(stripeCustomer());
+      stripeMock.subscriptions.retrieve.mockResolvedValue(
+        stripeSubscription({
+          items: {
+            data: [
+              {
+                current_period_end: 1_760_000_000,
+                price: { id: 'price_ai_monthly', unit_amount: 5990, currency: 'brl', recurring: { interval: 'month' } },
+              },
+            ],
+          },
+        })
+      );
+
+      const result = await service.getBillingDetails('user-1');
+
+      if (originalProAiMonthly === undefined) delete process.env.STRIPE_PRICE_ID_PRO_AI_MONTHLY;
+      else process.env.STRIPE_PRICE_ID_PRO_AI_MONTHLY = originalProAiMonthly;
+
+      expect(result?.subscription?.plan).toBe('pro_ai');
+    });
+
+    it('RN-05: reports free for a canceled subscription, matching what the deletion webhook records', async () => {
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue({
+        stripeCustomerId: 'cus_123',
+        stripeSubscriptionId: 'sub_123',
+      } as never);
+      stripeMock.customers.retrieve.mockResolvedValue(stripeCustomer());
+      stripeMock.subscriptions.retrieve.mockResolvedValue(stripeSubscription({ status: 'canceled' }));
+
+      const result = await service.getBillingDetails('user-1');
+
+      expect(result?.subscription?.plan).toBe('free');
     });
 
     it('degrades to subscription: null when the Stripe subscription read fails', async () => {
@@ -198,4 +242,5 @@ describe('BillingService', () => {
       });
     });
   });
+
 });
