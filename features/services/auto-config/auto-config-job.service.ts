@@ -11,8 +11,8 @@ import {
 import { QuotaService } from '@/features/services/billing/quota.service';
 import { MetricsService } from '@/features/services/billing/metrics.service';
 import { AUTO_CONFIG_PROMPTS, editalLocatePrompt, IDENTIFY_PROMPTS } from '@/config/prompts';
-import { fetchEditalPdf } from '@/lib/edital/fetch';
-import { classifyEditalUrl, classifyEditalDomain, resolveAllowedDomains } from '@/lib/edital/rules';
+import { fetchEditalPdf } from '@/features/services/auto-config/edital-fetch.service';
+import { classifyEditalUrl, classifyEditalDomain, resolveAllowedDomains } from '@/lib/edital';
 import {
   EditalExtractorService,
   validateExamBlueprint,

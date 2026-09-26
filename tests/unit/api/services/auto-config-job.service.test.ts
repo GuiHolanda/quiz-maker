@@ -40,7 +40,7 @@ vi.mock('next/server', () => ({
   after: vi.fn(),
 }));
 
-vi.mock('@/lib/edital/fetch', () => ({
+vi.mock('@/features/services/auto-config/edital-fetch.service', () => ({
   fetchEditalPdf: fetchEditalPdfMock,
 }));
 
