@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { cacheDelete, claimOnce } from '@/lib/redis';
 import { resolvePlanFromPriceId } from '@/app/api/webhooks/stripe/stripe-webhook.utils';
-import { isCapacityUpgrade } from '@/config/constants';
+import { isCapacityUpgrade, SPRINT_DURATION_DAYS } from '@/config/constants';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
         // fires for these users since stripeSubscriptionId stays null.
         if (session.mode === 'payment') {
           const sprintExpiresAt = new Date();
-          sprintExpiresAt.setDate(sprintExpiresAt.getDate() + 90);
+          sprintExpiresAt.setDate(sprintExpiresAt.getDate() + SPRINT_DURATION_DAYS);
 
           await prisma.user.update({
             where: { id: userId },

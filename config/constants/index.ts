@@ -73,6 +73,7 @@ export const RESEND_VERIFICATION_URL = '/auth/resend-verification';
 
 export const BILLING_USAGE_URL = '/billing/usage';
 export const BILLING_CHECKOUT_URL = '/billing/checkout';
+export const BILLING_CHECKOUT_STATUS_URL = '/billing/checkout/status';
 export const BILLING_PORTAL_URL = '/billing/portal';
 export const BILLING_REFERRAL_URL = '/billing/referral';
 export const BILLING_SUBSCRIPTION_URL = '/billing/subscription';
@@ -88,6 +89,8 @@ export const BILLING_CANCEL_URL = '/billing/cancel';
 // sprint mirrors pro_ai exactly — "tudo do Pro AI" for 90 days, one-time payment, no
 // renewal. Access itself is time-boxed via User.sprintExpiresAt (see auth.ts), not by a
 // lower quota here.
+export const SPRINT_DURATION_DAYS = 90;
+
 export const PLAN_LIMITS = {
   free: {
     questionsPerPeriod: 100,

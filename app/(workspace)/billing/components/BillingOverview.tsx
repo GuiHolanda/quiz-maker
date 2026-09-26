@@ -28,7 +28,7 @@ import {
   resolveReconcileTarget,
   resolveSettledToast,
 } from '@/app/(workspace)/billing/components/billingReconcile';
-import { getBillingDetails, getBillingUsage, getPortalUrl } from '@/features/connectors';
+import { getBillingDetails, getBillingUsage, getPortalUrl, isCheckoutProcessed } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { notify } from '@/shared/lib/notify';
@@ -49,6 +49,7 @@ function readBillingReturn(searchParams: URLSearchParams) {
     isUpgradeFlow: searchParams.get('upgraded') === 'true',
     isSyncFlow: searchParams.get('synced') === '1',
     purchasedPlan: searchParams.get('plan'),
+    checkoutSessionId: searchParams.get('session_id'),
     planBeforePortal: searchParams.get('from'),
   };
 }
@@ -70,7 +71,7 @@ export function BillingOverview() {
   const [billingReturn] = useState(() => readBillingReturn(searchParams));
   const toastFiredRef = useRef(false);
   const reconciledRef = useRef(false);
-  const { isUpgradeFlow, isSyncFlow, purchasedPlan, planBeforePortal } = billingReturn;
+  const { isUpgradeFlow, isSyncFlow, purchasedPlan, checkoutSessionId, planBeforePortal } = billingReturn;
   const isReconcileFlow = isUpgradeFlow || isSyncFlow;
 
   async function loadDetails(hasCustomer: boolean): Promise<BillingDetails | null> {
@@ -137,6 +138,7 @@ export function BillingOverview() {
 
     async function reconcilePlan() {
       const previousPlan = planBeforePortal ?? session?.user?.plan ?? null;
+      const checkoutToVerify = isUpgradeFlow ? checkoutSessionId : null;
       let data = await getBillingUsage();
 
       if (cancelled) return;
@@ -148,25 +150,41 @@ export function BillingOverview() {
 
       const stripePlan = initialDetails?.subscription?.plan ?? null;
       const target = resolveReconcileTarget({ isUpgradeFlow, purchasedPlan, previousPlan }, stripePlan, data.plan);
+      const readSettled = async () =>
+        checkoutToVerify ? isCheckoutProcessed(checkoutToVerify) : isPlanReconciled(data.plan, target);
+      let settled = await readSettled();
       let attempts = 0;
 
-      if (!isPlanReconciled(data.plan, target)) setIsReconciling(true);
+      if (cancelled) return;
+      if (!settled) setIsReconciling(true);
 
-      while (attempts < 20 && !cancelled && !isPlanReconciled(data.plan, target)) {
+      while (!settled && attempts < 20 && !cancelled) {
         await new Promise((resolve) => setTimeout(resolve, 1500));
-        data = await getBillingUsage();
 
-        if (cancelled) return;
-        setUsage(data);
+        if (!checkoutToVerify) {
+          data = await getBillingUsage();
+
+          if (cancelled) return;
+          setUsage(data);
+        }
+
+        settled = await readSettled();
         attempts++;
       }
 
       if (cancelled) return;
       setIsReconciling(false);
 
-      if (!isPlanReconciled(data.plan, target)) {
+      if (!settled) {
         setPollTimedOut(true);
         return;
+      }
+
+      if (checkoutToVerify) {
+        data = await getBillingUsage();
+
+        if (cancelled) return;
+        setUsage(data);
       }
 
       window.history.replaceState(null, '', window.location.pathname);

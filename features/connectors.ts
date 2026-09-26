@@ -6,6 +6,7 @@ import {
   EXAMS_URL,
   BILLING_USAGE_URL,
   BILLING_CHECKOUT_URL,
+  BILLING_CHECKOUT_STATUS_URL,
   BILLING_PORTAL_URL,
   BILLING_REFERRAL_URL,
   BILLING_SUBSCRIPTION_URL,
@@ -239,6 +240,14 @@ export async function getCheckoutUrl(
   const { data } = await api.get<{ url: string }>(BILLING_CHECKOUT_URL, { params: { period, product } });
 
   return data.url;
+}
+
+export async function isCheckoutProcessed(checkoutSessionId: string): Promise<boolean> {
+  const { data } = await api.get<{ processed: boolean }>(BILLING_CHECKOUT_STATUS_URL, {
+    params: { session_id: checkoutSessionId },
+  });
+
+  return data.processed;
 }
 
 export async function getPortalUrl(): Promise<string> {

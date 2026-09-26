@@ -11,6 +11,7 @@ import type {
 
 import { prisma } from '@/lib/prisma';
 import { resolvePlanFromPriceId } from '@/app/api/webhooks/stripe/stripe-webhook.utils';
+import { SPRINT_DURATION_DAYS } from '@/config/constants';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-06-24.dahlia' });
 
@@ -60,6 +61,35 @@ export class BillingService {
       upcomingInvoice: await this.resolveUpcomingInvoice(customerId, subscription),
       invoices: invoiceList.data.map((invoice) => this.buildInvoice(invoice)),
     };
+  }
+
+  async isCheckoutProcessed(userId: string, checkoutSessionId: string): Promise<boolean> {
+    const checkout = await stripe.checkout.sessions.retrieve(checkoutSessionId).catch((err: { code?: string }) => {
+      if (err?.code === 'resource_missing') return null;
+      throw err;
+    });
+
+    if (!checkout || checkout.metadata?.user_id !== userId) {
+      throw Object.assign(new Error('Checkout session not found'), { status: 404 });
+    }
+
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { plan: true, stripeSubscriptionId: true, sprintExpiresAt: true },
+    });
+
+    if (checkout.mode === 'payment') {
+      const earliestExpiry = new Date(checkout.created * 1000);
+
+      earliestExpiry.setDate(earliestExpiry.getDate() + SPRINT_DURATION_DAYS);
+
+      return user.plan === 'sprint' && !!user.sprintExpiresAt && user.sprintExpiresAt >= earliestExpiry;
+    }
+
+    const subscriptionId =
+      typeof checkout.subscription === 'string' ? checkout.subscription : checkout.subscription?.id;
+
+    return !!subscriptionId && user.stripeSubscriptionId === subscriptionId;
   }
 
   async cancelSubscription(userId: string, reason?: string): Promise<void> {

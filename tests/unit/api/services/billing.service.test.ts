@@ -5,6 +5,7 @@ const stripeMock = vi.hoisted(() => ({
   subscriptions: { retrieve: vi.fn(), update: vi.fn() },
   invoices: { list: vi.fn(), createPreview: vi.fn() },
   paymentMethods: { list: vi.fn() },
+  checkout: { sessions: { retrieve: vi.fn() } },
 }));
 
 vi.mock('stripe', () => ({
@@ -64,6 +65,7 @@ describe('BillingService', () => {
     stripeMock.invoices.list.mockReset().mockResolvedValue({ data: [] });
     stripeMock.invoices.createPreview.mockReset();
     stripeMock.paymentMethods.list.mockReset().mockResolvedValue({ data: [] });
+    stripeMock.checkout.sessions.retrieve.mockReset();
   });
 
   describe('getBillingDetails', () => {
@@ -243,4 +245,88 @@ describe('BillingService', () => {
     });
   });
 
+  describe('isCheckoutProcessed', () => {
+    const SESSION_CREATED = 1_760_000_000;
+    const DAY_MS = 24 * 60 * 60 * 1000;
+
+    function checkoutSession(overrides: Record<string, unknown> = {}) {
+      return {
+        id: 'cs_123',
+        mode: 'subscription',
+        created: SESSION_CREATED,
+        subscription: 'sub_new',
+        metadata: { user_id: 'user-1' },
+        ...overrides,
+      };
+    }
+
+    it('RN-03: rejects a checkout session that belongs to another user', async () => {
+      stripeMock.checkout.sessions.retrieve.mockResolvedValue(checkoutSession({ metadata: { user_id: 'user-2' } }));
+
+      await expect(service.isCheckoutProcessed('user-1', 'cs_123')).rejects.toMatchObject({ status: 404 });
+      expect(prismaMock.user.findUniqueOrThrow).not.toHaveBeenCalled();
+    });
+
+    it('RN-03: rejects a checkout session Stripe does not know', async () => {
+      stripeMock.checkout.sessions.retrieve.mockRejectedValue(
+        Object.assign(new Error('No such checkout.session'), { code: 'resource_missing' })
+      );
+
+      await expect(service.isCheckoutProcessed('user-1', 'cs_missing')).rejects.toMatchObject({ status: 404 });
+    });
+
+    it('RN-03: surfaces any other Stripe failure instead of calling the session unknown', async () => {
+      stripeMock.checkout.sessions.retrieve.mockRejectedValue(new Error('stripe down'));
+
+      await expect(service.isCheckoutProcessed('user-1', 'cs_123')).rejects.toThrow('stripe down');
+    });
+
+    it('RN-03: a subscription checkout is processed once the webhook recorded that subscription', async () => {
+      stripeMock.checkout.sessions.retrieve.mockResolvedValue(checkoutSession());
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue({
+        plan: 'pro',
+        stripeSubscriptionId: 'sub_new',
+        sprintExpiresAt: null,
+      } as never);
+
+      await expect(service.isCheckoutProcessed('user-1', 'cs_123')).resolves.toBe(true);
+    });
+
+    it('RN-03: a subscription checkout is not processed while the user already held the purchased plan without it', async () => {
+      stripeMock.checkout.sessions.retrieve.mockResolvedValue(checkoutSession());
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue({
+        plan: 'pro',
+        stripeSubscriptionId: null,
+        sprintExpiresAt: null,
+      } as never);
+
+      await expect(service.isCheckoutProcessed('user-1', 'cs_123')).resolves.toBe(false);
+    });
+
+    it('RN-03: a Sprint checkout is processed once the webhook set an expiry counted from after the session', async () => {
+      stripeMock.checkout.sessions.retrieve.mockResolvedValue(
+        checkoutSession({ mode: 'payment', subscription: null })
+      );
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue({
+        plan: 'sprint',
+        stripeSubscriptionId: null,
+        sprintExpiresAt: new Date(SESSION_CREATED * 1000 + 90 * DAY_MS + 60_000),
+      } as never);
+
+      await expect(service.isCheckoutProcessed('user-1', 'cs_123')).resolves.toBe(true);
+    });
+
+    it('RN-03: an earlier Sprint does not count as this Sprint checkout being processed', async () => {
+      stripeMock.checkout.sessions.retrieve.mockResolvedValue(
+        checkoutSession({ mode: 'payment', subscription: null })
+      );
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue({
+        plan: 'sprint',
+        stripeSubscriptionId: null,
+        sprintExpiresAt: new Date(SESSION_CREATED * 1000 + 89 * DAY_MS),
+      } as never);
+
+      await expect(service.isCheckoutProcessed('user-1', 'cs_123')).resolves.toBe(false);
+    });
+  });
 });

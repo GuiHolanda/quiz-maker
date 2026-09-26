@@ -33,6 +33,16 @@ test.describe('billing return reconciliation', () => {
     await expect(page.getByText(UPGRADED_TOAST)).toBeHidden();
   });
 
+  test('RN-03: checkout return with a session this user does not own is never confirmed by the plan alone', async ({
+    authedPage: page,
+  }) => {
+    await page.goto('/billing?upgraded=true&plan=tester&session_id=cs_test_not_this_users_session');
+
+    await expect(page.getByText(PENDING)).toBeVisible();
+    await expect(page.getByText(ANY_UPGRADED_TOAST)).toBeHidden();
+    await expect(page).toHaveURL(/session_id=cs_test_not_this_users_session/);
+  });
+
   test('RN-04: checkout return keeps waiting while the purchased plan is not active yet', async ({ authedPage: page }) => {
     await page.goto('/billing?upgraded=true&plan=pro');
 
