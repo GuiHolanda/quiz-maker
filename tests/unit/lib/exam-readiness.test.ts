@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeExamReadiness } from '@/lib/exam/readiness';
+import { computeExamReadiness } from '@/lib/exam';
 
 describe('computeExamReadiness', () => {
   it('returns 0 when the exam has no sections', () => {

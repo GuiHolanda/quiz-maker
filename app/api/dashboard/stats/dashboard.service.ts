@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { computeExamReadiness } from '@/lib/exam/readiness';
+import { computeExamReadiness } from '@/lib/exam';
 import type {
   DashboardActivityItem,
   DashboardExamProgress,

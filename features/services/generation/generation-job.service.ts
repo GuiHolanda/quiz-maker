@@ -2,7 +2,7 @@ import { after } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
 import { publishGenerationProgress } from '@/features/services/generation/job-progress.service';
-import { shuffleOptionTexts } from '@/lib/exam/distribution';
+import { shuffleOptionTexts } from '@/lib/exam';
 import { resolveQuestionFormat } from '@/config/question-formats';
 import type { QuestionFormat } from '@/config/question-formats';
 import { resolveGenerationLanguage } from '@/config/generation-languages';

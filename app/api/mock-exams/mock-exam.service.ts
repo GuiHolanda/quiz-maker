@@ -2,8 +2,7 @@ import type { Prisma } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
 import { logger, serializeError, type LogFields } from '@/lib/logger';
-import { shuffleItems } from '@/lib/exam/distribution';
-import { normalizeName, looseKey } from '@/lib/exam/normalize';
+import { looseKey, normalizeName, shuffleItems } from '@/lib/exam';
 import { MOCK_EXAM_TIME_GRACE_MINUTES } from '@/config/constants';
 import {
   CreateMockExamPayload,
