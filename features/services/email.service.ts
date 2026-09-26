@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 
-import type { QuestionReportReason, QuestionReportSurface } from '@/config/constants';
+import type { FeedbackCategory, QuestionReportReason, QuestionReportSurface } from '@/config/constants';
 import { logger, serializeError } from '@/lib/logger';
 
 const BRAND_COLOR = '#4f46e5';
@@ -99,6 +99,7 @@ export interface InternalAlertInput {
   readonly heading: string;
   readonly rows: ReadonlyArray<InternalAlertRow>;
   readonly body?: string;
+  readonly replyTo?: string;
 }
 
 export function buildInternalAlert(input: InternalAlertInput) {
@@ -185,6 +186,42 @@ export function buildQuestionReportAlert({ report, reopened, reporter }: Questio
       { label: 'Plano', value: reporter?.plan ?? '—' },
     ],
     body: report.comment ? `${report.questionText}\n\nComentário do usuário:\n${report.comment}` : report.questionText,
+  };
+}
+
+const FEEDBACK_CATEGORY_LABELS: Record<FeedbackCategory, string> = {
+  bug: 'Bug',
+  suggestion: 'Sugestão',
+  praise: 'Elogio',
+  question: 'Dúvida',
+};
+
+export interface FeedbackAlertInput {
+  readonly category: string;
+  readonly message: string;
+  readonly email: string | null;
+  readonly plan: string | null;
+  readonly route: string | null;
+  readonly locale: string | null;
+  readonly userAgent: string | null;
+}
+
+export function buildFeedbackAlert(feedback: FeedbackAlertInput): InternalAlertInput {
+  const categoryLabel = FEEDBACK_CATEGORY_LABELS[feedback.category as FeedbackCategory] ?? 'Não classificado';
+
+  return {
+    subject: `Feedback — ${categoryLabel}`,
+    heading: 'Novo feedback',
+    rows: [
+      { label: 'Categoria', value: categoryLabel },
+      { label: 'Usuário', value: feedback.email ?? 'Desconhecido' },
+      { label: 'Plano', value: feedback.plan ?? '—' },
+      { label: 'Rota', value: feedback.route ?? '—' },
+      { label: 'Idioma', value: feedback.locale ?? '—' },
+      { label: 'Navegador', value: feedback.userAgent ?? '—' },
+    ],
+    body: feedback.message,
+    replyTo: feedback.email ?? undefined,
   };
 }
 
@@ -430,7 +467,8 @@ export class EmailService {
 
     try {
       const { subject, html, text } = buildInternalAlert(input);
-      const { error } = await this.resend.emails.send({ from: this.sender, to, subject, html, text });
+      const replyTo = input.replyTo ? { replyTo: input.replyTo } : {};
+      const { error } = await this.resend.emails.send({ from: this.sender, to, subject, html, text, ...replyTo });
 
       if (error) {
         logger.warn('email.internal_alert_failed', { errorName: error.name, errorMessage: error.message });
@@ -448,5 +486,9 @@ export class EmailService {
 
   async sendQuestionReportAlert(input: QuestionReportAlertInput): Promise<boolean> {
     return this.sendInternalAlert(buildQuestionReportAlert(input));
+  }
+
+  async sendFeedbackAlert(feedback: FeedbackAlertInput): Promise<boolean> {
+    return this.sendInternalAlert(buildFeedbackAlert(feedback));
   }
 }
