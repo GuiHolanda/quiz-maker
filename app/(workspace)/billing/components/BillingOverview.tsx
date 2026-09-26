@@ -30,6 +30,15 @@ import { notify } from '@/shared/lib/notify';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { PLAN_LIMITS } from '@/config/constants';
 
+const PLAN_LABEL_KEY: Record<string, string> = {
+  pro_ai: 'billing.planProAi',
+  pro: 'billing.planPro',
+  sprint: 'billing.planSprint',
+  tester: 'billing.planTester',
+  admin: 'billing.planAdmin',
+  free: 'billing.planFree',
+};
+
 function questionsCeiling(plan: string | null): number {
   return PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS]?.questionsPerPeriod ?? 0;
 }
@@ -152,7 +161,9 @@ export function BillingOverview() {
       if (!toastFiredRef.current) {
         toastFiredRef.current = true;
         if (isUpgradeFlow) {
-          notify.success(t('billing.toast.upgraded'), t('billing.toast.upgradedDescription'));
+          const purchasedLabel = t(PLAN_LABEL_KEY[data.plan] ?? 'billing.planFree');
+
+          notify.success(t('billing.toast.upgraded', { plan: purchasedLabel }), t('billing.toast.upgradedDescription'));
         } else if (isSyncFlow && questionsCeiling(data.plan) > questionsCeiling(target.previousPlan)) {
           notify.success(t('billing.toast.planUpdated'), t('billing.toast.planUpdatedDescription'));
         }
@@ -180,14 +191,6 @@ export function BillingOverview() {
   const hasStripeCustomer = usage.hasStripePortalAccess;
   const hasActiveSubscription = !!subscription && subscription.status === 'active' && !subscription.cancelAtPeriodEnd;
 
-  const PLAN_LABEL_KEY: Record<string, string> = {
-    pro_ai: 'billing.planProAi',
-    pro: 'billing.planPro',
-    sprint: 'billing.planSprint',
-    tester: 'billing.planTester',
-    admin: 'billing.planAdmin',
-    free: 'billing.planFree',
-  };
   const planLabel = t(PLAN_LABEL_KEY[usage.plan] ?? 'billing.planFree');
   const isInternalPlan = usage.plan === 'tester' || usage.plan === 'admin';
 
