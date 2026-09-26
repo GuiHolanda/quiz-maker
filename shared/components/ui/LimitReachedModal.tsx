@@ -8,8 +8,9 @@ import { faArrowUp, faCircleExclamation } from '@fortawesome/free-solid-svg-icon
 
 import type { LimitError } from '@/shared/lib/limitError';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
+import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 import { buttonStyles } from '@/config/constants/buttonStyles';
-import { getCheckoutUrl } from '@/features/connectors';
+import { getCheckoutUrl, getPortalUrl } from '@/features/connectors';
 
 interface LimitReachedModalProps {
   readonly limit: LimitError | null;
@@ -33,17 +34,19 @@ function targetProduct(limit: LimitError): 'pro' | 'pro_ai' {
 
 export function LimitReachedModal({ limit, onClose }: LimitReachedModalProps) {
   const { t } = useTranslation();
+  const { usage } = useUsageContext();
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   if (!limit) return null;
 
   const copy = COPY[limit.code];
   const product = targetProduct(limit);
+  const isSubscriber = !!usage?.hasStripePortalAccess && (limit.plan === 'pro' || limit.plan === 'pro_ai');
 
   const handleUpgrade = async () => {
     setIsRedirecting(true);
     try {
-      window.location.href = await getCheckoutUrl('monthly', product);
+      window.location.href = isSubscriber ? await getPortalUrl() : await getCheckoutUrl('monthly', product);
     } catch {
       setIsRedirecting(false);
     }

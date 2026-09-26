@@ -43,8 +43,14 @@ export async function GET(request: NextRequest) {
 
     const user = await prisma.user.findUniqueOrThrow({
       where: { id: session.user.id },
-      select: { email: true, stripeCustomerId: true },
+      select: { email: true, stripeCustomerId: true, stripeSubscriptionId: true },
     });
+
+    if (user.stripeSubscriptionId) {
+      throw Object.assign(new Error('Plan changes for an existing subscription go through the billing portal'), {
+        status: 409,
+      });
+    }
 
     const priceId = resolvePriceId(product, billingPeriod);
 

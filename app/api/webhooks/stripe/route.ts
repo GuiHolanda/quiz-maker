@@ -66,8 +66,8 @@ export async function POST(request: NextRequest) {
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
         const priceId = subscription.items.data[0]?.price?.id;
 
-        // This event only ever fires from the "Fazer upgrade" flow (BillingOverview.tsx
-        // hides that CTA once the user already has a subscription), so it always represents
+        // This event only ever fires from the "Fazer upgrade" flow (billing/checkout refuses
+        // users who already have a subscription with a 409), so it always represents
         // a brand-new paid period starting right now — reset unconditionally instead of
         // leaving the counter/window tied to whatever was running before (achado 11).
         await prisma.user.update({
