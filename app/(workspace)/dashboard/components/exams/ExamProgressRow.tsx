@@ -41,6 +41,8 @@ export function ExamProgressRow({ exam }: ExamProgressRowProps) {
   function readinessLabel() {
     const { readiness } = exam;
 
+    if (readiness.phase === 'no_sections') return t('dashboard.home.examsNoSections');
+
     if (readiness.phase === 'measured') {
       return t('dashboard.home.examsReadiness', { value: readiness.projectedPercent ?? 0 });
     }

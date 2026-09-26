@@ -1,3 +1,4 @@
+import { blueprintWeights } from '@/lib/exam';
 import type { Exam } from '@/shared/types';
 
 export type ReadinessNoteAction = 'generate' | 'simulado';
@@ -23,7 +24,11 @@ export function readinessNote(exam: Exam): ReadinessNote {
 
   if (readiness.phase === 'ready_to_measure') return { key: 'exam.readinessNoteReady', action: 'simulado' };
 
-  const untested = readiness.sections.filter((entry) => entry.accuracyPercent === null).length;
+  const weights = blueprintWeights(exam.sections);
+  const weightless = new Set(exam.sections.filter((_, i) => weights[i] === 0).map((section) => section.id));
+  const untested = readiness.sections.filter(
+    (entry) => entry.accuracyPercent === null && !weightless.has(entry.sectionId)
+  ).length;
 
   if (untested > 0) {
     const key = untested === 1 ? 'exam.readinessNoteUntestedOne' : 'exam.readinessNoteUntested';
@@ -35,9 +40,11 @@ export function readinessNote(exam: Exam): ReadinessNote {
 
   if (cut == null) return { key: 'exam.readinessNoteNoCut' };
 
-  const delta = cut - (readiness.projectedPercent ?? 0);
+  const projected = readiness.projectedPercent ?? 0;
 
-  if (delta <= 0) return { key: 'exam.readinessNoteAboveCut', params: { cut } };
+  if (projected >= cut) return { key: 'exam.readinessNoteAboveCut', params: { cut } };
+
+  const delta = Math.ceil(cut - projected);
 
   const key = delta === 1 ? 'exam.readinessNoteBelowCutOne' : 'exam.readinessNoteBelowCut';
 

@@ -85,6 +85,45 @@ describe('readinessNote', () => {
     expect(note).toMatchObject({ key: 'exam.readinessNoteBelowCutOne' });
   });
 
+  it('RN-08: rounds the missing points up to whole points when the passing score has decimals', () => {
+    const note = readinessNote(
+      exam({ phase: 'measured', projectedPercent: 40, sections: [section(40)] }, { passingScore: 41.67 })
+    );
+
+    expect(note).toEqual({ key: 'exam.readinessNoteBelowCut', params: { delta: 2, cut: 41.67 } });
+  });
+
+  it('RN-08: a fraction of a point below the passing score reads as one point missing', () => {
+    const note = readinessNote(
+      exam({ phase: 'measured', projectedPercent: 72, sections: [section(72)] }, { passingScore: 72.4 })
+    );
+
+    expect(note).toEqual({ key: 'exam.readinessNoteBelowCutOne', params: { delta: 1, cut: 72.4 } });
+  });
+
+  it('RN-08: a section without weight in the blueprint never counts as untested', () => {
+    const note = readinessNote(
+      exam(
+        {
+          phase: 'measured',
+          projectedPercent: 70,
+          sections: [
+            { ...section(70), sectionId: 's1' },
+            { ...section(null), sectionId: 's2', targetCount: 0 },
+          ],
+        },
+        {
+          sections: [
+            { id: 's1', name: 'A', minQuestions: 100, maxQuestions: 100 },
+            { id: 's2', name: 'B', minQuestions: 0, maxQuestions: 0 },
+          ],
+        }
+      )
+    );
+
+    expect(note).toEqual({ key: 'exam.readinessNoteAboveCut', params: { cut: 70 } });
+  });
+
   it('RN-08: at or above the passing score, confirms it', () => {
     const note = readinessNote(exam({ phase: 'measured', projectedPercent: 70, sections: [section(70)] }));
 

@@ -33,7 +33,7 @@ export function readinessBar(readiness: ExamReadiness | undefined, passingScore:
   }
 
   const bankProgress =
-    readiness.targetQuestions > 0 ? Math.round((readiness.coveredQuestions / readiness.targetQuestions) * 100) : 100;
+    readiness.targetQuestions > 0 ? Math.floor((readiness.coveredQuestions / readiness.targetQuestions) * 100) : 100;
 
   return { value: bankProgress, fillClass: 'bg-primary', markerPercent: null };
 }

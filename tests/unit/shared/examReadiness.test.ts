@@ -45,6 +45,10 @@ describe('readinessBar', () => {
     });
   });
 
+  it('never shows a full bar while a question is still missing from the bank', () => {
+    expect(readinessBar(readiness({ coveredQuestions: 199, targetQuestions: 200 }), 70).value).toBe(99);
+  });
+
   it('shows a full brand-colored bar when ready to measure', () => {
     expect(readinessBar(readiness({ phase: 'ready_to_measure', coveredQuestions: 40 }), 70)).toEqual({
       value: 100,

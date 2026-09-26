@@ -46,8 +46,8 @@ export function ProgressTrack({
       <div className={fillClasses} style={{ width: `${width}%` }} />
       {markerPercent != null && (
         <div
-          className="absolute -top-1 -bottom-1 w-0.5 bg-primary"
-          style={{ left: `${Math.max(0, Math.min(100, markerPercent))}%` }}
+          className="absolute -top-1 -bottom-1 w-0.5 -translate-x-1/2 bg-primary"
+          style={{ left: `clamp(1px, ${Math.max(0, Math.min(100, markerPercent))}%, calc(100% - 1px))` }}
         />
       )}
       {children}
