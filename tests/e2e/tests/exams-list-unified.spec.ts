@@ -1,5 +1,6 @@
 import { expect, test } from '../fixtures/auth.fixture';
 import { E2E_CERT_LABEL, E2E_PUBLIC_EXAM_NAME } from '../support/constants';
+import { seedCertQuestions } from '../support/db-seed';
 import { tid, TID } from '../support/selectors';
 
 test.describe('unified exams list', () => {
@@ -77,5 +78,26 @@ test.describe('unified exams list', () => {
     await expect(readiness).toContainText(/\d+%/);
     await expect(readiness).not.toContainText(/\d+\/65/);
     await expect(readiness.locator(tid(TID.examCardReadinessAction))).toHaveCount(0);
+  });
+
+  test('reopening the list through the sidebar shows the bank grown elsewhere', async ({
+    authedPage: page,
+  }) => {
+    await page.goto('/exams');
+
+    const certCard = page.locator(tid(TID.examCard)).filter({ hasText: E2E_CERT_LABEL });
+    const domainRow = certCard.locator(tid(TID.examCardDomainRow)).first();
+
+    await certCard.locator(tid(TID.examCardDomainsToggle)).click();
+    const before = Number((await domainRow.textContent())?.match(/(\d+)\/65/)?.[1]);
+
+    await seedCertQuestions(['Reopen list question one?', 'Reopen list question two?']);
+    await page.locator('a[href="/dashboard"]').filter({ visible: true }).first().click();
+    await page.waitForURL(/\/dashboard/);
+    await page.locator('a[href="/exams"]').filter({ visible: true }).first().click();
+    await page.waitForURL(/\/exams$/);
+
+    await certCard.locator(tid(TID.examCardDomainsToggle)).click();
+    await expect(domainRow).toContainText(`${before + 2}/65`);
   });
 });
