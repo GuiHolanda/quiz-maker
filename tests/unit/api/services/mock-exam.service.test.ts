@@ -3,7 +3,8 @@ import { MockExamService } from '@/app/api/mock-exams/mock-exam.service';
 
 const openAICallMock = vi.fn();
 
-vi.mock('@/features/services/generation/openai.service', () => ({
+vi.mock('@/features/services/generation/openai.service', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/features/services/generation/openai.service')>()),
   OpenAIService: class {
     call = openAICallMock;
   },

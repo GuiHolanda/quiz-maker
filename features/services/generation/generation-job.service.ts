@@ -3,11 +3,15 @@ import { after } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { publishGenerationProgress } from '@/features/services/generation/job-progress.service';
 import { shuffleOptionTexts } from '@/lib/exam/distribution';
-import { extractJson, sanitizeLlmError, type LlmErrorType } from '@/lib/llm/response';
 import { resolveQuestionFormat } from '@/config/question-formats';
 import type { QuestionFormat } from '@/config/question-formats';
 import { resolveGenerationLanguage } from '@/config/generation-languages';
-import { OpenAIService } from '@/features/services/generation/openai.service';
+import {
+  extractJson,
+  OpenAIService,
+  sanitizeLlmError,
+  type LlmErrorType,
+} from '@/features/services/generation/openai.service';
 import { QuotaService } from '@/features/services/billing/quota.service';
 import { MetricsService } from '@/features/services/billing/metrics.service';
 import { ReferralService } from '@/features/services/billing/referral.service';
