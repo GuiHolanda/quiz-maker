@@ -74,3 +74,15 @@ export async function clearQuestionReports(): Promise<void> {
     await prisma.$disconnect();
   }
 }
+
+export async function findFeedback(where: { message: string }) {
+  const prisma = new PrismaClient({
+    datasources: { db: { url: process.env.DATABASE_URL ?? 'file:./prisma/dev.db' } },
+  });
+
+  try {
+    return await prisma.feedback.findMany({ where, orderBy: { createdAt: 'asc' } });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
