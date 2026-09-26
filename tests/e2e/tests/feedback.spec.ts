@@ -21,6 +21,8 @@ const CATEGORY_REQUIRED = /Escolha sobre o que é o feedback|Choose what the fee
 const MESSAGE_REQUIRED = /Escreva uma mensagem para continuar|Write a message to continue/i;
 const OPEN_MENU = /Abrir menu|Open menu/i;
 const CONTEXT_NOTICE = /Enviamos junto a página|We send along the page/i;
+const MESSAGE_HELPER = /Até 2000 caracteres|Up to 2000 characters/i;
+const AUTH_REJECTED = [307, 401];
 
 const domain = ALL_DOMAINS[0];
 
@@ -205,7 +207,7 @@ test.describe('report a question', () => {
       maxRedirects: 0,
     });
 
-    expect(response.ok()).toBe(false);
+    expect(AUTH_REJECTED).toContain(response.status());
     await anonymous.dispose();
   });
 });
@@ -221,6 +223,7 @@ test.describe('send feedback', () => {
     await page.locator(tid(TID.feedbackWidgetBtn)).click();
     await expect(modal).toBeVisible();
     await expect(modal).toContainText(CONTEXT_NOTICE);
+    await expect(modal).toContainText(MESSAGE_HELPER);
 
     await page.locator(tid(TID.feedbackSubmitBtn)).click();
     await expect(page.getByText(CATEGORY_REQUIRED)).toBeVisible();
@@ -278,6 +281,7 @@ test.describe('send feedback', () => {
     await page.getByRole('button', { name: OPEN_MENU }).click();
     await page.locator(`${tid(TID.feedbackSidebarBtn)}:visible`).click();
     await expect(page.locator(tid(TID.feedbackModal))).toBeVisible();
+    await expect(page.locator(`${tid(TID.feedbackSidebarBtn)}:visible`)).toHaveCount(0);
 
     await pickCategory(page, CATEGORY_SUGGESTION);
     await page.locator(tid(TID.feedbackMessage)).fill('Queria filtrar simulados por data.');
@@ -296,12 +300,14 @@ test.describe('send feedback', () => {
       baseURL,
       storageState: { cookies: [], origins: [] },
     });
+    const message = `FEEDBACK_ANON_${Date.now()}`;
     const response = await anonymous.post('/api/feedback', {
-      data: { category: 'bug', message: 'anônimo' },
+      data: { category: 'bug', message },
       maxRedirects: 0,
     });
 
-    expect(response.ok()).toBe(false);
+    expect(AUTH_REJECTED).toContain(response.status());
+    expect(await findFeedback({ message })).toHaveLength(0);
     await anonymous.dispose();
   });
 });

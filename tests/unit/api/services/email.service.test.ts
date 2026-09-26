@@ -255,10 +255,8 @@ describe('buildFeedbackAlert', () => {
     expect(buildInternalAlert(alert).subject).toBe('[CertifiqueAI] Feedback — Bug');
   });
 
-  it('uma categoria desconhecida não vaza para o assunto', () => {
-    expect(buildFeedbackAlert({ ...FEEDBACK, category: 'algo <script>' }).subject).toBe(
-      'Feedback — Não classificado'
-    );
+  it('RN-21: uma categoria desconhecida não vaza para o assunto', () => {
+    expect(buildFeedbackAlert({ ...FEEDBACK, category: 'algo <script>' }).subject).toBe('Feedback — Não classificado');
   });
 
   it('lista categoria, usuário, plano, rota, idioma e navegador', () => {
@@ -284,11 +282,11 @@ describe('buildFeedbackAlert', () => {
     expect(buildFeedbackAlert(FEEDBACK).body).toBe(FEEDBACK.message);
   });
 
-  it('Q-04: responde para o e-mail do usuário', () => {
+  it('D-15: responde para o e-mail do usuário', () => {
     expect(buildFeedbackAlert(FEEDBACK).replyTo).toBe('ana@example.com');
   });
 
-  it('Q-04: sem e-mail do usuário não define replyTo', () => {
+  it('D-15: sem e-mail do usuário não define replyTo', () => {
     expect(buildFeedbackAlert({ ...FEEDBACK, email: null }).replyTo).toBeUndefined();
   });
 
@@ -415,7 +413,8 @@ describe('EmailService.sendInternalAlert', () => {
     await expect(new EmailService().sendInternalAlert(ALERT)).resolves.toBe(false);
     expect(warnedEvents()).toEqual(['email.internal_alert_failed']);
   });
-  it('Q-04: repassa o replyTo ao Resend quando o alerta o define', async () => {
+
+  it('D-15: repassa o replyTo ao Resend quando o alerta o define', async () => {
     send.mockResolvedValue({ data: { id: 'email-1' }, error: null });
 
     await new EmailService().sendInternalAlert({ ...ALERT, replyTo: 'ana@example.com' });
@@ -423,7 +422,7 @@ describe('EmailService.sendInternalAlert', () => {
     expect(send).toHaveBeenCalledWith(expect.objectContaining({ to: INBOX, replyTo: 'ana@example.com' }));
   });
 
-  it('Q-04: sem replyTo o campo não é enviado ao Resend', async () => {
+  it('D-15: sem replyTo o campo não é enviado ao Resend', async () => {
     send.mockResolvedValue({ data: { id: 'email-1' }, error: null });
 
     await new EmailService().sendInternalAlert(ALERT);
