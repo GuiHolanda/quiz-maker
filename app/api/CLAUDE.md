@@ -33,8 +33,8 @@ Services: `features/services/billing/quota.service.ts` (usage), `features/servic
 
 | Route | Method | Description |
 |---|---|---|
-| `billing/checkout` | GET | Create Stripe checkout session, returns `{ url }` |
-| `billing/portal` | GET | Create Stripe customer portal URL, returns `{ url }` |
+| `billing/checkout` | GET | Create Stripe checkout session, returns `{ url }`. `success_url` carries `?upgraded=true&plan=<product>` — `BillingOverview` stops its reconcile polling once the DB plan equals it |
+| `billing/portal` | GET | Create Stripe customer portal URL, returns `{ url }`. `return_url` carries `?synced=1&from=<plan before the portal>` — the reconcile baseline, since the webhook often lands before the redirect |
 | `billing/usage` | GET | Returns current quota usage (`UsageStats`) |
 | `billing/subscription` | GET | Returns `BillingDetails` (payment method, next invoice, subscription meta, billing profile, recent invoices) — `null` when the user has no `stripeCustomerId`. Read-only; every edit path opens the Stripe portal |
 | `billing/cancel` | POST | Sets `cancel_at_period_end` on the subscription; optional `{ reason }` maps to Stripe `cancellation_details.feedback` |

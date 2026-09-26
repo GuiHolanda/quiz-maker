@@ -22,6 +22,7 @@ import { BillingHistoryTable } from '@/app/(workspace)/billing/components/Billin
 import { ReferralCard } from '@/app/(workspace)/billing/components/ReferralCard';
 import { CancelSubscriptionPanel } from '@/app/(workspace)/billing/components/CancelSubscriptionPanel';
 import { formatDate, formatMoney, formatShortDate } from '@/app/(workspace)/billing/components/billingFormat';
+import { isPlanReconciled } from '@/app/(workspace)/billing/components/billingReconcile';
 import { getBillingDetails, getBillingUsage, getPortalUrl } from '@/features/connectors';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
@@ -29,7 +30,7 @@ import { notify } from '@/shared/lib/notify';
 import { buttonStyles } from '@/config/constants/buttonStyles';
 import { PLAN_LIMITS } from '@/config/constants';
 
-function questionsCeiling(plan: string): number {
+function questionsCeiling(plan: string | null): number {
   return PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS]?.questionsPerPeriod ?? 0;
 }
 
@@ -51,6 +52,8 @@ export function BillingOverview() {
   const isUpgradeFlow = searchParams.get('upgraded') === 'true';
   const isSyncFlow = searchParams.get('synced') === '1';
   const isReconcileFlow = isUpgradeFlow || isSyncFlow;
+  const purchasedPlan = searchParams.get('plan');
+  const planBeforePortal = searchParams.get('from');
 
   async function loadDetails(hasCustomer: boolean) {
     if (!hasCustomer) {
@@ -112,16 +115,18 @@ export function BillingOverview() {
     setIsReconciling(true);
 
     async function reconcilePlan() {
-      const tokenPlan = session?.user?.plan;
+      const target = {
+        expectedPlan: isUpgradeFlow ? purchasedPlan : null,
+        previousPlan: planBeforePortal ?? session?.user?.plan ?? null,
+      };
       let data = await getBillingUsage();
 
       if (cancelled) return;
       setUsage(data);
 
-      const baseline = data.plan;
       let attempts = 0;
 
-      while (attempts < 20 && !cancelled && data.plan === baseline && data.plan === tokenPlan) {
+      while (attempts < 20 && !cancelled && !isPlanReconciled(data.plan, target)) {
         await new Promise((resolve) => setTimeout(resolve, 1500));
         data = await getBillingUsage();
 
@@ -135,7 +140,7 @@ export function BillingOverview() {
 
       await loadDetails(data.hasStripePortalAccess);
 
-      if (data.plan === baseline) {
+      if (!isPlanReconciled(data.plan, target)) {
         setPollTimedOut(true);
         return;
       }
@@ -148,7 +153,7 @@ export function BillingOverview() {
         toastFiredRef.current = true;
         if (isUpgradeFlow) {
           notify.success(t('billing.toast.upgraded'), t('billing.toast.upgradedDescription'));
-        } else if (isSyncFlow && questionsCeiling(data.plan) > questionsCeiling(baseline)) {
+        } else if (isSyncFlow && questionsCeiling(data.plan) > questionsCeiling(target.previousPlan)) {
           notify.success(t('billing.toast.planUpdated'), t('billing.toast.planUpdatedDescription'));
         }
       }

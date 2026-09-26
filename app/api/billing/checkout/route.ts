@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
             mode: 'payment',
             line_items: [{ price: priceId, quantity: 1 }],
             metadata: { user_id: session.user.id, product: 'sprint' },
-            success_url: `${process.env.AUTH_URL}/billing?upgraded=true`,
+            success_url: `${process.env.AUTH_URL}/billing?upgraded=true&plan=${product}`,
             cancel_url: `${process.env.AUTH_URL}/pricing`,
             allow_promotion_codes: true,
           }
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
             mode: 'subscription',
             line_items: [{ price: priceId, quantity: 1 }],
             metadata: { user_id: session.user.id },
-            success_url: `${process.env.AUTH_URL}/billing?upgraded=true`,
+            success_url: `${process.env.AUTH_URL}/billing?upgraded=true&plan=${product}`,
             cancel_url: `${process.env.AUTH_URL}/pricing`,
             allow_promotion_codes: true,
           };

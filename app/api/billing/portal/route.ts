@@ -15,7 +15,7 @@ export async function GET() {
 
   const user = await prisma.user.findUniqueOrThrow({
     where: { id: session.user.id },
-    select: { stripeCustomerId: true },
+    select: { stripeCustomerId: true, plan: true },
   });
 
   if (!user.stripeCustomerId) {
@@ -24,7 +24,7 @@ export async function GET() {
 
   const portalSession = await stripe.billingPortal.sessions.create({
     customer: user.stripeCustomerId,
-    return_url: `${process.env.AUTH_URL}/billing?synced=1`,
+    return_url: `${process.env.AUTH_URL}/billing?synced=1&from=${user.plan}`,
   });
 
   return NextResponse.json({ url: portalSession.url }, { status: 200 });
