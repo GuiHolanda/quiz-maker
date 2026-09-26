@@ -198,9 +198,11 @@ Três regiões: desktop (`w-64 sticky`), mobile top bar (hamburger), mobile draw
 | `exam-config.ts` | `EXAM_CONFIG[type]` — todas as diferenças de domínio |
 | `components/list/ExamsList.tsx` | Lista unificada: tabs (todas/certificações/concursos/rascunhos) + busca + ordenação + paginação |
 | `components/list/ExamsListToolbar.tsx` | Tabs, busca e select de ordenação da lista |
-| `components/list/examsListFilters.ts` | Lógica pura de filtro/ordenação (`filterAndSortExams`, `countByTab`) |
-| `components/list/ExamCard.tsx` | Card com status, readiness, accuracy e ações inline; sem painel de detalhe separado |
-| `components/list/ExamCardDomainsPanel.tsx` | Painel expansível de pesos por domínio/seção, dentro do próprio card |
+| `components/list/examsListFilters.ts` | Lógica pura de filtro/ordenação (`filterAndSortExams`, `countByTab`); ordenação "Preparo" via `compareReadinessAscending` de `lib/exam.ts` |
+| `components/list/ExamCard.tsx` | Card com status, preparo, accuracy e ações inline; sem painel de detalhe separado |
+| `components/list/ExamCardReadiness.tsx` | Bloco PREPARO do card: fase do preparo, barra com marcador na nota de corte, nota e link de ação ([SDD](../docs/sdd/lista-de-exames.md)) |
+| `components/list/examReadinessNote.ts` | Lógica pura da nota do bloco PREPARO (RN-08) |
+| `components/list/ExamCardDomainsPanel.tsx` | Painel expansível com acerto e banco coberto/meta por domínio, dentro do próprio card |
 | `components/list/ExamCardActionsMenu.tsx` | Menu kebab do card — gerar questões, simulado, banco de questões, editar (gated por `canEditExams`) e remover |
 | `components/ExamTypePickerModal.tsx` | Modal do botão "Nova" — escolhe certificação ou concurso antes de ir para `/exams/new` |
 | `new/` + `[id]/edit/` | Editor único (`ExamEditor`) para criar e editar — três sementes (IA / edital / em branco) na criação |
