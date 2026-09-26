@@ -63,6 +63,7 @@ vi.mock('bcryptjs', () => ({ default: { hash: vi.fn().mockResolvedValue('hashed'
 | `mock-exam.service.test.ts` | Simulados — disponibilidade, score, breakdown, finish sem LLM, ensureAnswers (formato, JSON com fence, lotes que falham, orçamento de tempo, recorreção), sorteio uniforme das questões |
 | `logger.test.ts` / `api-error.test.ts` | Logger JSON de uma linha (níveis, campo não serializável, `serializeError`) e `logApiError` (5xx → error, 4xx → warn) |
 | `api-error.test.ts` | Todos os ramos de `toApiErrorResponse` |
+| `billing.service.test.ts` / `billing-reconcile.test.ts` / `limitError.test.ts` | Regras de [assinatura e cobrança](../docs/sdd/assinatura-e-cobranca.md): plano do Stripe e `isCheckoutProcessed` (RN-03, RN-05), critério e toast do reconcile (RN-04 a RN-06), próximo plano do modal de limite (RN-02) |
 
 ---
 
@@ -111,7 +112,7 @@ npx playwright show-report
 | `question-bank` | seed via API → verificar → buscar → deletar; empty state |
 | `questions-scope` (×3) | usuário só com concursos abre em Concurso em vez do empty state de certificação; picker segue visível num escopo vazio pedido por `?type=`; `?type=` inválido não quebra |
 | `empty-states` | empty state de simulados e certificações |
-| `billing-reconcile` (×4) | retorno do checkout/portal encerra o aviso de confirmação na primeira leitura quando o webhook chegou antes do redirect; continua aguardando enquanto o plano comprado não está ativo; retorno do portal sem troca de plano verifica em silêncio, sem aviso |
+| `billing-reconcile` (×6) | retorno do checkout/portal encerra na primeira leitura quando o webhook chegou antes do redirect e limpa os params da URL (reload não repete o toast); `session_id` que não é do usuário nunca é confirmado pelo plano (chama o Stripe do dev server); continua aguardando enquanto o plano comprado não está ativo; retorno do portal sem troca de plano encerra sem polling, banner ou toast. As asserções de ausência esperam a URL limpa ou o banner de pendência — antes disso o reconcile ainda pode estar rodando |
 
 ### Notas técnicas — HeroUI
 

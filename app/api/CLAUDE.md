@@ -29,14 +29,15 @@ All API routes live under `app/api/` (one `route.ts` per folder). Business logic
 
 ### `billing/`
 
-Services: `features/services/billing/quota.service.ts` (usage), `features/services/billing/billing.service.ts` (Stripe read-through + cancel), `features/services/billing/referral.service.ts` (referral stats).
+Services: `features/services/billing/quota.service.ts` (usage), `features/services/billing/billing.service.ts` (Stripe read-through + cancel + checkout status), `features/services/billing/referral.service.ts` (referral stats). Business rules (`RN-xx`): [docs/sdd/assinatura-e-cobranca.md](../../docs/sdd/assinatura-e-cobranca.md).
 
 | Route | Method | Description |
 |---|---|---|
-| `billing/checkout` | GET | Create Stripe checkout session, returns `{ url }`. `success_url` carries `?upgraded=true&plan=<product>` — `BillingOverview` stops its reconcile polling once the DB plan equals it |
-| `billing/portal` | GET | Create Stripe customer portal URL, returns `{ url }`. `return_url` carries `?synced=1&from=<plan before the portal>` — the reconcile baseline, since the webhook often lands before the redirect |
+| `billing/checkout` | GET | Create Stripe checkout session, returns `{ url }`. `409` when the user already has a subscription (`stripeSubscriptionId`) — plan changes go through the portal, never a second subscription (RN-01). `success_url` carries `?upgraded=true&plan=<product>&session_id={CHECKOUT_SESSION_ID}` |
+| `billing/checkout/status` | GET | `?session_id=` → `{ processed }`: whether the webhook recorded that exact checkout (RN-03). `404` for an unknown session or one owned by another user. `BillingOverview` polls it instead of guessing from the plan; URLs without `session_id` fall back to matching `plan` (RN-04) |
+| `billing/portal` | GET | Create Stripe customer portal URL, returns `{ url }`. `return_url` carries `?synced=1&from=<plan before the portal>`. `BillingOverview` polls only while the DB plan differs from `BillingDetails.subscription.plan` (Stripe's view), and `from` tells a real change (session refresh + toast) from a visit without one (RN-05, RN-06) |
 | `billing/usage` | GET | Returns current quota usage (`UsageStats`) |
-| `billing/subscription` | GET | Returns `BillingDetails` (payment method, next invoice, subscription meta, billing profile, recent invoices) — `null` when the user has no `stripeCustomerId`. Read-only; every edit path opens the Stripe portal |
+| `billing/subscription` | GET | Returns `BillingDetails` (payment method, next invoice, subscription meta incl. the `plan` its price grants, billing profile, recent invoices) — `null` when the user has no `stripeCustomerId`. Read-only; every edit path opens the Stripe portal |
 | `billing/cancel` | POST | Sets `cancel_at_period_end` on the subscription; optional `{ reason }` maps to Stripe `cancellation_details.feedback` |
 | `billing/referral` | GET | Returns `ReferralStats` (code, link, counts, bonus earned) |
 
@@ -224,7 +225,7 @@ Eventos de simulado: `mock_exam.finish.{completed,already_finished,failed,unauth
 | `generation/generation-job.service.ts` | Async batch generation — batches of 5 topics, per-topic status tracking. Publica o progresso no Redis a cada transição (ver seção Redis). Exporta `detectQuestionLanguage(text)`, heurística que detecta a questão gerada no idioma errado. |
 | `generation/job-progress.service.ts` | Snapshot de progresso de job para o SSE — `read*`/`publish*` para geração e auto-config, com fallback no Postgres. |
 | `auto-config/auto-config-job.service.ts` | Auto-config pipeline — `identifyExam` (cheap lookup) + `createAutoConfigJob`/`runAutoConfigJob`/`cancelAutoConfigJob` (research→review→format, one `AutoConfigJob` row, one `auto_config` unit). |
-| `billing/billing.service.ts` | `getBillingDetails(userId)` reads the Stripe customer/subscription/invoices into `BillingDetails` (current-period end lives on `subscription.items.data[0].current_period_end`, not the subscription root). `cancelSubscription(userId, reason?)` sets `cancel_at_period_end`. Optional bits (tax id, upcoming-invoice preview) fail soft to `null`. |
+| `billing/billing.service.ts` | `getBillingDetails(userId)` reads the Stripe customer/subscription/invoices into `BillingDetails` (current-period end lives on `subscription.items.data[0].current_period_end`, not the subscription root; `subscription.plan` is the plan its price grants). `isCheckoutProcessed(userId, sessionId)` checks the DB reflects that checkout session. `cancelSubscription(userId, reason?)` sets `cancel_at_period_end`. Optional bits (tax id, upcoming-invoice preview) fail soft to `null`. |
 | `billing/referral.service.ts` | `getStats(userId)`, `getOrCreateReferralCode(userId)` (lazy backfill), `activateIfEligible(userId)` — two-way bonus on real activation, capped per account. Also exports `generateUniqueReferralCode(isTaken)`, used by register and `auth.ts`. |
 
 Co-located services (not in `features/services/`): auth services in `app/api/auth/`, mock exam in `app/api/mock-exams/`, admin in `app/api/admin/`.

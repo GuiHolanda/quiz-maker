@@ -143,7 +143,7 @@ Dispatch by exam type via `EXAM_PROMPTS: Record<ExamType, { research, review, fo
 
 **Uso:** `t('common.save')`, interpolação: `t('quiz.progress', { answered: 5, total: 20 })`. Componentes que usam `useTranslation` precisam de `'use client'`.
 
-**Adicionar string:** 1) `en.properties` 2) `pt.properties` (unicode escapes: `ã` → `ã`) 3) `t('chave')`.
+**Adicionar string:** 1) `en.properties` 2) `pt.properties` (acentos em UTF-8 literal, como o resto do arquivo; o parser também aceita `\uXXXX`, mas não misture numa chave nova) 3) `t('chave')`. Mantenha `en` e `pt` alinhados linha a linha.
 
 **Plural:** chaves separadas (`generate.correctAnswer` / `generate.correctAnswers`), selecione com ternário.
 
