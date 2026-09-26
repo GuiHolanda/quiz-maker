@@ -13,8 +13,10 @@ import {
   IconLibrary,
   IconClipboardList,
   IconSettings,
+  IconMessageCircle,
 } from '@tabler/icons-react';
 
+import { useFeedback } from '@/features/hooks/useFeedback.hook';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
 import { useUsageContext } from '@/features/hooks/useUsageContext.hook';
 
@@ -94,14 +96,33 @@ function navLinkClass(isActive: boolean): string {
 export function SidebarNav({ collapsed = false, isMobile = false, onClose }: SidebarNavProps) {
   const { data: session, status } = useSession();
   const { usage } = useUsageContext();
+  const { openFeedback } = useFeedback();
   const { t } = useTranslation();
   const pathname = usePathname() ?? '';
   const isAdminScope = pathname.startsWith('/admin');
   const col = isMobile ? false : collapsed;
 
+  function handleFeedbackPress() {
+    onClose?.();
+    openFeedback();
+  }
+
   return (
     <nav className="flex flex-col gap-4">
       {NAV_GROUPS.map((group) => renderGroup(group))}
+
+      <div className="flex flex-col gap-0.5">
+        <button
+          className={navLinkClass(false)}
+          data-testid="feedback-sidebar-btn"
+          title={col ? t('feedback.navLabel') : undefined}
+          type="button"
+          onClick={handleFeedbackPress}
+        >
+          <IconMessageCircle className="shrink-0" size={16} />
+          {!col && <span className="truncate">{t('feedback.navLabel')}</span>}
+        </button>
+      </div>
 
       {status === 'authenticated' && session?.user?.plan === 'admin' && (
         <div className="flex flex-col gap-0.5">
