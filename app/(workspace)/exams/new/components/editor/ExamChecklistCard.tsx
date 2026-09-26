@@ -1,6 +1,6 @@
 'use client';
 import type { Exam, ExamType } from '@/shared/types';
-import type { ExamDraftFieldId, ExamDraftValidation } from '@/lib/exam/draft-validation';
+import type { ExamDraftFieldId, ExamDraftValidation } from '@/shared/lib/examDraftValidation';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
@@ -8,7 +8,7 @@ import { faCheck, faTriangleExclamation } from '@fortawesome/free-solid-svg-icon
 import { BulletList } from '@/shared/components/ui/BulletList';
 import { CardHeading } from '@/shared/components/ui/CardHeading';
 import { useTranslation } from '@/features/hooks/useTranslation.hook';
-import { getDistributionSumTone } from '@/lib/exam/draft-validation';
+import { getDistributionSumTone } from '@/shared/lib/examDraftValidation';
 
 interface ExamChecklistCardProps {
   readonly draft: Exam;

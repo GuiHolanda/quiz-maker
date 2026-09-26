@@ -1,4 +1,4 @@
-import { parseLimitError } from '@/lib/limit-error';
+import { parseLimitError } from '@/shared/lib/limitError';
 
 // The client decides between "explain the limit with an upgrade CTA" and "show a generic
 // error toast" purely from this parser, so a wrong answer either hides a real failure
