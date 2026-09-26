@@ -111,6 +111,7 @@ npx playwright show-report
 | `question-bank` | seed via API → verificar → buscar → deletar; empty state |
 | `questions-scope` (×3) | usuário só com concursos abre em Concurso em vez do empty state de certificação; picker segue visível num escopo vazio pedido por `?type=`; `?type=` inválido não quebra |
 | `empty-states` | empty state de simulados e certificações |
+| `billing-reconcile` (×4) | retorno do checkout/portal encerra o aviso de confirmação na primeira leitura quando o webhook chegou antes do redirect; continua aguardando enquanto o plano comprado não está ativo; retorno do portal sem troca de plano verifica em silêncio, sem aviso |
 
 ### Notas técnicas — HeroUI
 
